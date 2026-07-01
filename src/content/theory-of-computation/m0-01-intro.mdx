@@ -1,0 +1,21 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+
+# The Abstraction Gap
+
+Most computer science curricula teach you the **mathematical scaffolding** practitioners use without knowing they’re using it. Theory of Computation is the perfect example — built by people like Turing, Church, and Kleene in the 1930s–50s, trying to answer one question: *what can a machine fundamentally compute, and what can’t it?*
+
+That was the whole problem. They weren’t building apps. But that question quietly produced:
+
+- **Finite Automata** → regex engines (grep, sed, every search bar ever)
+- **Pushdown Automata** → parsers (every compiler, every browser rendering HTML)
+- **Turing Machines** → the conceptual model for every CPU
+- **Decidability** → why no antivirus can perfectly detect all malware
+- **Complexity Classes (P vs NP)** → why cryptography works at all
+
+<Callout tone="orange" label="The reverse-engineering question">
+For each course topic, ask: *“What breaks if this theory didn’t exist?”* That single question cuts through the abstraction faster than any textbook chapter.
+</Callout>
+
+What you’re doing when you make those connections has a name in cognitive science: **transfer learning** — taking a principle from one domain and recognizing it in another. It’s the actual skill that separates senior engineers from juniors.
+
+This course is built around that skill. Every module pairs the formal idea with the modern tool, the job, and the failure mode you’ve already seen in the wild.

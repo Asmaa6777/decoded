@@ -1,0 +1,44 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+
+# Finite Automata → Regex Engines
+
+A **finite automaton** is the simplest computer imaginable: a fixed set of states, a starting state, some accepting states, and a transition function that reads one symbol and moves you to the next state. No memory beyond *which state am I in right now*. That’s it.
+
+It sounds like a toy. It is also the engine inside every text search you have ever performed.
+
+## The mapping
+
+A regular expression is just a human-readable way to describe a finite automaton. When you write `\d{3}-\d{4}`, the engine compiles that pattern into a state machine, then walks it across your input one character at a time. The “regex” feels magical because the underlying math is exactly powerful enough to do this — and exactly weak enough to do it in linear time.
+
+<Callout tone="neon" label="The provable limit">
+Finite automata cannot count. That’s why regex famously cannot match *balanced* parentheses. The moment you need a stack, you need a more powerful machine — a pushdown automaton — which is the next module.
+</Callout>
+
+## Where this shows up today
+
+<ApplicationsGrid>
+  <PracticalApplication title="grep, ripgrep, sed, awk" tool="UNIX">
+    Every command-line text tool. ripgrep is fast specifically because it compiles patterns to highly optimized DFAs.
+  </PracticalApplication>
+  <PracticalApplication title="Lexers in every compiler" tool="COMPILERS">
+    The first phase of every compiler — turning characters into tokens — is a finite automaton.
+  </PracticalApplication>
+  <PracticalApplication title="Form validation" tool="WEB">
+    Email, phone, postal code patterns in your sign-up forms.
+  </PracticalApplication>
+  <PracticalApplication title="Network intrusion detection" tool="SECURITY">
+    Snort and Suricata match thousands of attack patterns against packets at line rate using compiled automata.
+  </PracticalApplication>
+  <PracticalApplication title="Log parsing & SIEM" tool="OPS">
+    Splunk, Datadog, ELK pipelines all lean on regex to extract fields from unstructured logs.
+  </PracticalApplication>
+  <PracticalApplication title="Search-and-replace in editors" tool="EDITORS">
+    The Find/Replace dialog. The fuzzy file finder. Even your IDE’s syntax highlighting starts here.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+## The senior-engineer move
+
+Knowing automata changes how you read regex. When you see catastrophic backtracking blow up production (the classic ReDoS attack), you can explain *why*: someone wrote a pattern that the engine had to simulate as an NFA with exponential paths. The fix isn’t guessing — it’s rewriting toward a pattern the engine can compile to a deterministic DFA.
+
+That’s the difference between using a tool and understanding one.
