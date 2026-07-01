@@ -6,7 +6,7 @@ You now have the vocabulary, alphabets, strings, languages. thats what we learne
 
 > NOTE That if you found it hard to interpret this question, for example what a string is, go to the previous lesson
 
-The answer is a state diagram. You'll meet it twice — first as a picture you read by hand, then as a 5-tuple of sets and functions that says exactly the same thing. The hand reading comes first because the notation is easier to trust once you've already understood the picture.
+The answer is a state diagram. This lesson teaches you to read one by hand — take a picture and a string, follow the arrows, decide accept or reject. That is the intuition. In Module 1 you will see the same machine written formally as a tuple of sets and functions; the picture comes first because the notation is easier to trust once you have already convinced yourself with a finger on the page.
 
 ## The Anatomy of a State Diagram
 
@@ -24,9 +24,9 @@ A state diagram has four ingredients. That is all.
   Read one symbol. Follow the matching arrow. Repeat until the string is exhausted. Check if the final state is an accept state. That is a finite automaton.
 </Callout>
 
-## The 5-Tuple Definition
+## What "DFA" Means
 
-Those four ingredients have a name. The machine they describe is called a **deterministic finite automaton**, abbreviated **DFA**. The name does real work — think of each word as a constraint.
+Those four ingredients have a name. The machine they describe is called a **deterministic finite automaton**, abbreviated **DFA**. The name is short, but every word is a constraint.
 
 - **Deterministic** — at every state, for every symbol in the alphabet, there is *exactly one* arrow leaving. No choice, no ambiguity, no surprises. Given the current state and the next input symbol, the next state is fully decided.
 - **Finite** — the machine has a finite number of states. Its memory budget is exactly the number of circles in the diagram. Nothing else — no counter, no stack, no scratchpad.
@@ -34,21 +34,7 @@ Those four ingredients have a name. The machine they describe is called a **dete
 
 Put together: a machine with a bounded number of memory slots that reacts to each input symbol in exactly one way. That is the entire model. Every other automaton you meet later in the course is some relaxation of these three words.
 
-Formally, a DFA is a 5-tuple:
-
-$$
-M = (Q,\ \Sigma,\ \delta,\ q_0,\ F)
-$$
-
-Each piece is one of the ingredients you just read about, written precisely:
-
-- $Q$ — a finite set of **states**. The circles in the diagram.
-- $\Sigma$ — a finite set of **input symbols**. The alphabet. Every arrow label is drawn from $\Sigma$.
-- $\delta$ — the **transition function**, with signature $\delta: Q \times \Sigma \to Q$. Given a state and a symbol, it returns the next state. The arrows in the diagram *are* $\delta$, drawn graphically.
-- $q_0$ — the **initial state**, with $q_0 \in Q$. The circle with the incoming arrow.
-- $F$ — the set of **accept states**, with $F \subseteq Q$. The double-circle states.
-
-The diagram and the tuple describe the same object. The diagram is the version humans read; the tuple is the version proofs are written about. Every DFA in this course can be written either way, and you should be able to translate between them on sight.
+This is enough to start reading machines. The matching formal definition — the 5-tuple of sets and functions that names each ingredient precisely — waits for you in Module 1. For now, trust the picture.
 
 ## A Parking Meter - A First Example
 
@@ -169,15 +155,7 @@ Look back at the strings that accepted — $ab$, $aab$, $bab$ — each one's las
 
 In regex, this language is `/ab$/`. Every regex engine in every editor compiles a pattern like this into a state machine that runs in exactly the way you just traced — same circles, same arrows, same accept condition.
 
-What matters here is not the specific language but that you can trace the machine mechanically, symbol by symbol, without guessing.
-
-Written as a 5-tuple, the machine you just traced is:
-
-$$
-M = (\{q_0, q_1, q_2\},\ \{a, b\},\ \delta,\ q_0,\ \{q_2\})
-$$
-
-with $\delta$ given by the six entries on the arrows: $\delta(q_0, a) = q_1$, $\delta(q_0, b) = q_0$, $\delta(q_1, a) = q_1$, $\delta(q_1, b) = q_2$, $\delta(q_2, a) = q_1$, $\delta(q_2, b) = q_0$. The picture and the tuple are the same machine — pick the picture when you want intuition, the tuple when you want to prove something.
+What matters here is not the specific language but that you can trace the machine mechanically, symbol by symbol, without guessing. The very first lesson of Module 1 takes this exact machine and shows you how to write it down as a 5-tuple — same six arrows, formal syntax.
 
 ## What Each State Means
 

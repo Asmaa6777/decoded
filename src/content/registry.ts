@@ -1,10 +1,11 @@
 import type { ComponentType } from "react";
 
 // Lesson MDX modules (eagerly loaded so we can render synchronously)
-import TocIntro from "@/content/theory-of-computation/01-intro.mdx";
-import TocLanguageOfLanguages from "@/content/theory-of-computation/02-language-of-languages.mdx";
-import TocHowToReadAMachine from "@/content/theory-of-computation/03-how-to-read-a-machine.mdx";
-import TocAutomata from "@/content/theory-of-computation/02-automata.mdx";
+import TocIntro from "@/content/theory-of-computation/m0-01-intro.mdx";
+import TocLanguageOfLanguages from "@/content/theory-of-computation/m0-02-language-of-languages.mdx";
+import TocHowToReadAMachine from "@/content/theory-of-computation/m0-03-how-to-read-a-machine.mdx";
+import TocAutomata from "@/content/theory-of-computation/m1-02-automata.mdx";
+import TocStatesSymbols from "@/content/theory-of-computation/m1-01-states-symbols.mdx"
 import LitTyping from "@/content/computer-literacy/01-physical-layer.mdx";
 import LitLanguage from "@/content/computer-literacy/02-language-layer.mdx";
 import LitSystems from "@/content/computer-literacy/03-systems-layer.mdx";
@@ -12,6 +13,7 @@ import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-yo
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
 import ExamMindLesson04 from "@/content/the-exam-mind/04-exam-day.mdx";
+
 
 export type Lesson = {
   slug: string;
@@ -58,9 +60,10 @@ export const courses: Course[] = [
         ],
       },
       {
-        title: "Automata & Languages",
-        blurb: "From finite-state machines to the regex bar in your editor.",
+        title: "Finite Automata",
+        blurb: "The first formal computing model — and the engine behind every regex.",
         lessons: [
+          { slug: "states-symbols-and-transitions", title: "States, Symbols, and Transitions", duration: "10 min", Component: TocStatesSymbols },
           { slug: "automata", title: "Finite Automata → Regex Engines", duration: "9 min", Component: TocAutomata },
         ],
       },
