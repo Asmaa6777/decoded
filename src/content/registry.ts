@@ -4,8 +4,10 @@ import type { ComponentType } from "react";
 import TocIntro from "@/content/theory-of-computation/m0-01-intro.mdx";
 import TocLanguageOfLanguages from "@/content/theory-of-computation/m0-02-language-of-languages.mdx";
 import TocHowToReadAMachine from "@/content/theory-of-computation/m0-03-how-to-read-a-machine.mdx";
-import TocAutomata from "@/content/theory-of-computation/m1-02-automata.mdx";
-import TocStatesSymbols from "@/content/theory-of-computation/m1-01-states-symbols.mdx"
+import TocStatesSymbols from "@/content/theory-of-computation/m1-01-states-symbols.mdx";
+import TocNfa from "@/content/theory-of-computation/m1-02-nfa.mdx";
+import TocRegexPlayground from "@/content/theory-of-computation/m1-03-regex-playground.mdx";
+import TocFiniteAutomataQuiz from "@/content/theory-of-computation/m1-04-finite-automata-quiz.mdx";
 import LitTyping from "@/content/computer-literacy/01-physical-layer.mdx";
 import LitLanguage from "@/content/computer-literacy/02-language-layer.mdx";
 import LitSystems from "@/content/computer-literacy/03-systems-layer.mdx";
@@ -15,12 +17,19 @@ import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx"
 import ExamMindLesson04 from "@/content/the-exam-mind/04-exam-day.mdx";
 
 
+export type LessonKind = "theory" | "practical" | "quiz";
+
 export type Lesson = {
   slug: string;
   title: string;
   duration: string; // e.g. "8 min"
+  kind?: LessonKind; // omitted = "theory" (default)
   Component: ComponentType<Record<string, unknown>>;
 };
+
+export function lessonKind(lesson: Lesson): LessonKind {
+  return lesson.kind ?? "theory";
+}
 
 export type Module = {
   title: string;
@@ -64,7 +73,9 @@ export const courses: Course[] = [
         blurb: "The first formal computing model — and the engine behind every regex.",
         lessons: [
           { slug: "states-symbols-and-transitions", title: "States, Symbols, and Transitions", duration: "10 min", Component: TocStatesSymbols },
-          { slug: "automata", title: "Finite Automata → Regex Engines", duration: "9 min", Component: TocAutomata },
+          { slug: "nfa", title: "NFA — The Machine That Guesses Right", duration: "12 min", Component: TocNfa },
+          { slug: "regex-playground", title: "Practical: Building Regex from Automata", duration: "10 min", kind: "practical", Component: TocRegexPlayground },
+          { slug: "finite-automata-quiz", title: "Quiz: Finite Automata & Regex", duration: "6 min", kind: "quiz", Component: TocFiniteAutomataQuiz },
         ],
       },
     ],

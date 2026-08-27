@@ -1,0 +1,80 @@
+import { Callout, PracticalApplication, ApplicationsGrid, RegexPlayground } from "@/components/mdx/MdxComponents";
+
+# Practical: Building Regex from Automata
+
+A **regular expression** is just a human-readable notation for a finite automaton. When you write `\d{3}-\d{4}`, the engine compiles that pattern into a state machine, then walks it across your input one character at a time. The "regex" feels magical because the underlying math is exactly powerful enough to do this — and exactly weak enough to do it in linear time.
+
+In this practical, you'll write regex patterns that match the same languages as the automata you just learned to trace.
+
+## Where this shows up today
+
+<ApplicationsGrid>
+  <PracticalApplication title="grep, ripgrep, sed, awk" tool="UNIX">
+    Every command-line text tool. ripgrep is fast specifically because it compiles patterns to highly optimized DFAs.
+  </PracticalApplication>
+  <PracticalApplication title="Lexers in every compiler" tool="COMPILERS">
+    The first phase of every compiler — turning characters into tokens — is a finite automaton.
+  </PracticalApplication>
+  <PracticalApplication title="Form validation" tool="WEB">
+    Email, phone, postal code patterns in your sign-up forms.
+  </PracticalApplication>
+  <PracticalApplication title="Network intrusion detection" tool="SECURITY">
+    Snort and Suricata match thousands of attack patterns against packets at line rate using compiled automata.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+## Exercise A: Match an NFA language
+
+Below is the same NFA you traced in the previous lesson — the one that accepts strings ending in `ab` over the alphabet {a, b}. Write a regex pattern that matches exactly this language.
+
+<RegexPlayground
+  prompt="Write a regex that matches strings ending in 'ab' (over the alphabet {a, b}). Same language as the NFA you just traced."
+  testCases={[
+    { string: "ab", shouldMatch: true, note: "exact match" },
+    { string: "aab", shouldMatch: true, note: "longer string, still ends in ab" },
+    { string: "ba", shouldMatch: false, note: "ends in 'ba', not 'ab'" },
+    { string: "", shouldMatch: false, note: "empty string" },
+    { string: "abab", shouldMatch: true, note: "multiple passes, still ends in ab" },
+    { string: "aba", shouldMatch: false, note: "ends in 'a', not 'ab'" },
+  ]}
+  placeholder="^.*ab$"
+  solutionHint="You need to match 'any sequence' followed by 'ab' at the end. Hint: .* means 'zero or more of any character'."
+/>
+
+## Exercise B: A practical pattern
+
+Phone extensions in your company's system follow the format `DDD-DDDD` (three digits, hyphen, four digits). Write a regex that matches this pattern.
+
+<RegexPlayground
+  prompt="Match phone numbers in the format XXX-XXXX (where X is a digit 0-9)."
+  testCases={[
+    { string: "123-4567", shouldMatch: true },
+    { string: "999-0000", shouldMatch: true },
+    { string: "12-4567", shouldMatch: false, note: "only 2 digits before hyphen" },
+    { string: "123-456", shouldMatch: false, note: "only 3 digits after hyphen" },
+    { string: "123-456-7", shouldMatch: false, note: "extra digits" },
+    { string: "abc-defg", shouldMatch: false, note: "letters, not digits" },
+  ]}
+  placeholder="\d{3}-\d{4}"
+  solutionHint="Use \\d to match a digit, and {n} to match exactly n repetitions. Escape the hyphen as a literal character."
+/>
+
+## Exercise C: The ReDoS trap
+
+This exercise teaches catastrophic backtracking (ReDoS) by example. The pattern `(a+)+$` is intentionally pathological — try it against a long string of `a`'s followed by a single non-matching character (e.g., `"aaaaaaaaaaaaaaaaaaaaaaaaa!"`). Watch what happens: the regex engine will try exponentially many ways to match the nested `+` quantifiers before finally giving up. In real code, this can hang your application.
+
+<RegexPlayground
+  prompt="Try the ReDoS trap: (a+)+$ with overlapping quantifiers. Type a pattern, then test it against long strings of 'a' followed by a non-matching character to see catastrophic backtracking."
+  testCases={[
+    { string: "aaa", shouldMatch: true },
+    { string: "aaaaaaa", shouldMatch: true },
+    { string: "a".repeat(20), shouldMatch: true, note: "20 a's, should match but may be slow" },
+    { string: "a".repeat(25) + "!", shouldMatch: false, note: "25 a's then !, watch the timeout" },
+  ]}
+  placeholder="(a+)+$"
+  solutionHint="This is a demonstration, not an exercise to 'solve'. Try (a+)+$ and watch it hang on the long string with a '!' at the end. Then try a*.* as a non-catastrophic alternative."
+/>
+
+<Callout tone="sky">
+<strong>The senior-engineer move:</strong> Knowing automata changes how you read regex. When catastrophic backtracking blows up production (the classic ReDoS attack), you can explain *why*: someone wrote a pattern that the engine had to simulate as an NFA with exponential paths. The fix isn't guessing — it's rewriting toward a pattern the engine can compile to a deterministic DFA. That's the difference between using a tool and understanding one.
+</Callout>

@@ -1,4 +1,4 @@
-import { ReactNode, useId, useMemo, useState } from "react";
+import { ReactNode, useId, useMemo, useState, useRef, useCallback, useEffect } from "react";
 import {
   ReactFlow,
   Handle,
@@ -7,6 +7,7 @@ import {
   type Node as RFNode,
 } from "@xyflow/react";
 import dagre from "@dagrejs/dagre";
+import { useProgress } from "@/hooks/useProgress";
 
 type Tone = "neon" | "orange" | "sky" | "violet" | "mint";
 
@@ -107,9 +108,30 @@ type AutomatonDiagramProps = {
   transitions: AutomatonTransition[];
   initial: string;
   accepting: string[];
-};
+};type RunStatus = "idle" | "accepted" | "rejected" | "rejected-no-transition";
 
-type RunStatus = "idle" | "accepted" | "rejected" | "rejected-no-transition";
+function getEpsilonClosure(
+  current: string[],
+  transitions: AutomatonTransition[]
+): string[] {
+  const result = new Set<string>(current);
+  const queue = [...current];
+  while (queue.length > 0) {
+    const s = queue.shift()!;
+    for (const t of transitions) {
+      if (
+        t.from === s &&
+        (t.label === "ε" || t.label === "eps" || t.label === "epsilon" || t.label === "")
+      ) {
+        if (!result.has(t.to)) {
+          result.add(t.to);
+          queue.push(t.to);
+        }
+      }
+    }
+  }
+  return Array.from(result);
+}
 
 export function AutomatonDiagram({
   states,
@@ -121,9 +143,11 @@ export function AutomatonDiagram({
   const reactId = useId();
   const markerId = `automaton-arrow-${reactId.replace(/:/g, "")}`;
 
+  const getInitialActiveStates = () => getEpsilonClosure([initial], transitions);
+
   const [input, setInput] = useState("");
   const [position, setPosition] = useState(0);
-  const [currentState, setCurrentState] = useState(initial);
+  const [activeStates, setActiveStates] = useState<string[]>(() => getInitialActiveStates());
   const [status, setStatus] = useState<RunStatus>("idle");
 
   /* ---------- layout ---------- */
@@ -176,7 +200,7 @@ export function AutomatonDiagram({
   const groupedTransitions = useMemo(() => {
     const map = new Map<string, { from: string; to: string; labels: string[] }>();
     for (const t of transitions) {
-      const key = `${t.from}${t.to}`;
+      const key = `${t.from} ${t.to}`;
       if (!map.has(key)) map.set(key, { from: t.from, to: t.to, labels: [] });
       map.get(key)!.labels.push(t.label);
     }
@@ -184,11 +208,11 @@ export function AutomatonDiagram({
   }, [transitions]);
 
   const pairKeys = useMemo(
-    () => new Set(groupedTransitions.map((g) => `${g.from}${g.to}`)),
+    () => new Set(groupedTransitions.map((g) => `${g.from} ${g.to}`)),
     [groupedTransitions]
   );
   const hasReverse = (from: string, to: string) =>
-    from !== to && pairKeys.has(`${to}${from}`);
+    from !== to && pairKeys.has(`${to} ${from}`);
 
   /* ---------- tokenize input via greedy longest-match against the alphabet,
        so multi-character symbols (e.g. "$5", "$10") work alongside single-
@@ -223,48 +247,63 @@ export function AutomatonDiagram({
       return;
     }
     if (position >= tokens.length) {
-      setStatus(accepting.includes(currentState) ? "accepted" : "rejected");
+      const isAccepted = activeStates.some((s) => accepting.includes(s));
+      setStatus(isAccepted ? "accepted" : "rejected");
       return;
     }
     const symbol = tokens[position];
-    const t = transitions.find((tr) => tr.from === currentState && tr.label === symbol);
-    if (!t) {
+    const nextDirectStates = new Set<string>();
+    for (const s of activeStates) {
+      for (const tr of transitions) {
+        if (tr.from === s && tr.label === symbol) {
+          nextDirectStates.add(tr.to);
+        }
+      }
+    }
+    if (nextDirectStates.size === 0) {
+      setActiveStates([]);
       setStatus("rejected-no-transition");
       return;
     }
+    const nextActive = getEpsilonClosure(Array.from(nextDirectStates), transitions);
     const nextPos = position + 1;
-    setCurrentState(t.to);
+    setActiveStates(nextActive);
     setPosition(nextPos);
     if (nextPos >= tokens.length) {
-      setStatus(accepting.includes(t.to) ? "accepted" : "rejected");
+      const isAccepted = nextActive.some((s) => accepting.includes(s));
+      setStatus(isAccepted ? "accepted" : "rejected");
     }
   };
 
   const handleReset = () => {
     setPosition(0);
-    setCurrentState(initial);
+    setActiveStates(getInitialActiveStates());
     setStatus("idle");
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
     setPosition(0);
-    setCurrentState(initial);
+    setActiveStates(getInitialActiveStates());
     setStatus("idle");
   };
 
   const isError = status === "rejected" || status === "rejected-no-transition";
-  const isActive = (s: string) => s === currentState;
+  const isActive = (s: string) => activeStates.includes(s);
 
   const stateFillClass = (s: string) => {
     if (!isActive(s)) return "fill-transparent";
-    if (status === "accepted") return "fill-mint/30";
+    if (status === "accepted") {
+      return accepting.includes(s) ? "fill-mint/30" : "fill-neon/25";
+    }
     if (isError) return "fill-orange/30";
     return "fill-neon/25";
   };
   const stateStrokeClass = (s: string) => {
     if (!isActive(s)) return "stroke-current";
-    if (status === "accepted") return "stroke-mint";
+    if (status === "accepted") {
+      return accepting.includes(s) ? "stroke-mint" : "stroke-neon";
+    }
     if (isError) return "stroke-orange";
     return "stroke-neon";
   };
@@ -569,7 +608,13 @@ export function AutomatonDiagram({
 
           <div className="flex items-baseline gap-2">
             <span className="text-muted-foreground tracking-widest">STATE</span>
-            <span className="font-bold">{currentState}</span>
+            <span className="font-bold">
+              {activeStates.length === 0
+                ? "∅"
+                : activeStates.length === 1
+                  ? activeStates[0]
+                  : `{${activeStates.join(", ")}}`}
+            </span>
           </div>
 
           <div className="flex items-baseline gap-2">
@@ -732,6 +777,373 @@ export function Diagram({ nodes, edges, direction = "LR" }: DiagramProps) {
           maxZoom={1}
         />
       </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Regex Playground — interactive regex testing with live feedback
+// ============================================================
+
+export type RegexTestCase = {
+  string: string;
+  shouldMatch: boolean;
+  note?: string;
+};
+
+export type RegexPlaygroundProps = {
+  prompt: string;
+  testCases: RegexTestCase[];
+  flags?: string;
+  placeholder?: string;
+  solutionHint?: string;
+};
+
+export function runRegexTestCases(
+  pattern: string,
+  flags: string,
+  strings: string[]
+): boolean[] | "error" {
+  try {
+    const re = new RegExp(pattern, flags);
+    return strings.map((s) => re.test(s));
+  } catch (err) {
+    return "error";
+  }
+}
+
+const regexWorkerCode = `
+self.onmessage = (e) => {
+  const { id, pattern, flags, strings } = e.data;
+  try {
+    const re = new RegExp(pattern, flags);
+    const results = strings.map((s) => re.test(s));
+    self.postMessage({ id, ok: true, results });
+  } catch (err) {
+    self.postMessage({ id, ok: false, error: (err).message });
+  }
+};
+`;
+
+let regexWorker: Worker | null = null;
+let regexWorkerUrl: string | null = null;
+
+function getRegexWorker(): Worker {
+  if (!regexWorker) {
+    if (!regexWorkerUrl) {
+      const blob = new Blob([regexWorkerCode], { type: "application/javascript" });
+      regexWorkerUrl = URL.createObjectURL(blob);
+    }
+    regexWorker = new Worker(regexWorkerUrl);
+  }
+  return regexWorker;
+}
+
+export function RegexPlayground(props: RegexPlaygroundProps) {
+  const { prompt, testCases, flags = "", placeholder, solutionHint } = props;
+  const [pattern, setPattern] = useState("");
+  const [compileError, setCompileError] = useState<string | null>(null);
+  const [results, setResults] = useState<
+    Array<{ str: string; matched: boolean | null; expected: boolean }>
+  >(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
+  const [timedOut, setTimedOut] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const workerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const requestIdRef = useRef(0);
+
+  const testPattern = useCallback(
+    (p: string) => {
+      setCompileError(null);
+      setTimedOut(false);
+
+      if (!p.trim()) {
+        setResults(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
+        return;
+      }
+
+      // Cheap compile check on main thread
+      try {
+        new RegExp(p, flags);
+      } catch (err) {
+        setCompileError((err as Error).message);
+        setResults(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
+        return;
+      }
+
+      const currentRequestId = ++requestIdRef.current;
+      const strings = testCases.map((tc) => tc.string);
+
+      // Dispatch to worker with timeout
+      const worker = getRegexWorker();
+      worker.postMessage({ id: currentRequestId, pattern: p, flags, strings });
+
+      if (workerTimeoutRef.current) clearTimeout(workerTimeoutRef.current);
+
+      workerTimeoutRef.current = setTimeout(() => {
+        setTimedOut(true);
+        setResults(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
+      }, 500);
+
+      const handleMessage = (e: MessageEvent) => {
+        const { id, ok, results: res, error } = e.data;
+        if (id !== currentRequestId) return; // Stale response
+        if (workerTimeoutRef.current) clearTimeout(workerTimeoutRef.current);
+        worker.removeEventListener("message", handleMessage);
+
+        if (ok) {
+          setResults(
+            res.map((matched: boolean, idx: number) => ({
+              str: testCases[idx].string,
+              matched,
+              expected: testCases[idx].shouldMatch,
+            }))
+          );
+        } else {
+          setCompileError(error);
+          setResults(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
+        }
+      };
+
+      worker.addEventListener("message", handleMessage);
+    },
+    [testCases, flags]
+  );
+
+  const handlePatternChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newPattern = e.currentTarget.value;
+      setPattern(newPattern);
+
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        testPattern(newPattern);
+      }, 250);
+    },
+    [testPattern]
+  );
+
+  const passCount = results.filter((r) => r.matched === r.expected && r.matched !== null).length;
+  const totalCount = testCases.length;
+
+  return (
+    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden">
+      <div className="p-5 border-b border-border">
+        <p className="text-sm leading-relaxed">{prompt}</p>
+      </div>
+      <div className="p-5 space-y-4">
+        <div>
+          <input
+            type="text"
+            value={pattern}
+            onChange={handlePatternChange}
+            placeholder={placeholder}
+            className="w-full px-3 py-2 font-mono text-sm bg-background border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-foreground"
+          />
+        </div>
+
+        {compileError && (
+          <div className="text-orange font-mono text-xs leading-relaxed">{compileError}</div>
+        )}
+
+        {timedOut && (
+          <Callout tone="orange">
+            <strong>Timed out:</strong> This pattern likely causes catastrophic backtracking (ReDoS).
+            The regex engine is trying exponentially many combinations and got stuck. Try a simpler
+            pattern or one that narrows the backtracking possibilities.
+          </Callout>
+        )}
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse font-mono text-xs">
+            <thead className="border-b border-border">
+              <tr>
+                <th className="text-left px-2 py-2 font-semibold">String</th>
+                <th className="text-center px-2 py-2 font-semibold">Expected</th>
+                <th className="text-center px-2 py-2 font-semibold">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.map((r, idx) => (
+                <tr key={idx} className="border-b border-border/50">
+                  <td className="px-2 py-2">{r.str === "" ? "<empty>" : r.str}</td>
+                  <td className="text-center px-2 py-2">
+                    <span className={r.expected ? "text-mint" : "text-muted-foreground"}>
+                      {r.expected ? "✓" : "✗"}
+                    </span>
+                  </td>
+                  <td className="text-center px-2 py-2">
+                    {r.matched === null ? (
+                      <span className="text-neon">—</span>
+                    ) : r.matched === r.expected ? (
+                      <span className="text-mint">✓</span>
+                    ) : (
+                      <span className="text-orange">✗</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          Score: {passCount}/{totalCount}
+        </div>
+
+        {solutionHint && (
+          <button
+            onClick={() => setShowHint((v) => !v)}
+            className="text-xs font-mono uppercase tracking-widest border border-border px-3 py-1 hover:border-foreground transition"
+          >
+            {showHint ? "Hide hint" : "Reveal hint"}
+          </button>
+        )}
+
+        {showHint && solutionHint && (
+          <div className="px-3 py-2 bg-background border border-border text-xs font-mono text-muted-foreground">
+            {solutionHint}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Quiz — scored multiple-choice questions
+// ============================================================
+
+export type QuizOption = { id: string; text: string };
+
+export type QuizQuestion = {
+  id: string;
+  prompt: string;
+  options: QuizOption[];
+  correctOptionId: string;
+  explanation?: string;
+};
+
+export type QuizProps = {
+  courseSlug: string;
+  lessonSlug: string;
+  questions: QuizQuestion[];
+  passThreshold?: number;
+};
+
+export function Quiz(props: QuizProps) {
+  const { courseSlug, lessonSlug, questions, passThreshold = 0.8 } = props;
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState<Record<string, boolean>>({});
+  const { setComplete, isComplete } = useProgress(courseSlug);
+
+  const selectAnswer = useCallback(
+    (questionId: string, optionId: string) => {
+      if (submitted[questionId]) return; // Lock after first answer
+      setAnswers((a) => ({ ...a, [questionId]: optionId }));
+      setSubmitted((s) => ({ ...s, [questionId]: true }));
+    },
+    [submitted]
+  );
+
+  const answeredCount = Object.keys(submitted).length;
+  const correctCount = questions.filter((q) => answers[q.id] === q.correctOptionId).length;
+  const allAnswered = answeredCount === questions.length;
+  const scoreFraction = questions.length ? correctCount / questions.length : 0;
+  const passed = allAnswered && scoreFraction >= passThreshold;
+
+  const handleRetry = useCallback(() => {
+    setAnswers({});
+    setSubmitted({});
+  }, []);
+
+  // Auto-mark complete when passing
+  useEffect(() => {
+    if (passed && !isComplete(lessonSlug)) {
+      setComplete(lessonSlug, true);
+    }
+  }, [passed, lessonSlug, isComplete, setComplete]);
+
+  const lessonSlugLocal = lessonSlug;
+  const done = isComplete(lessonSlugLocal);
+
+  return (
+    <div className="not-prose my-8 space-y-6">
+      {questions.map((question) => {
+        const isAnswered = submitted[question.id];
+        const selectedOptionId = answers[question.id];
+        const isCorrect = selectedOptionId === question.correctOptionId;
+
+        return (
+          <div key={question.id} className="border border-border bg-card rounded-sm overflow-hidden">
+            <div className="p-5 border-b border-border">
+              <p className="font-semibold">{question.prompt}</p>
+            </div>
+            <div className="p-5 space-y-3">
+              {question.options.map((option) => {
+                const isSelected = selectedOptionId === option.id;
+                let borderClass = "border-border";
+                let bgClass = "";
+                if (isAnswered) {
+                  if (isSelected && isCorrect) {
+                    borderClass = "border-mint";
+                    bgClass = "bg-mint/10";
+                  } else if (isSelected && !isCorrect) {
+                    borderClass = "border-orange";
+                    bgClass = "bg-orange/10";
+                  } else if (option.id === question.correctOptionId) {
+                    borderClass = "border-mint";
+                    bgClass = "bg-mint/10";
+                  }
+                }
+
+                return (
+                  <button
+                    key={option.id}
+                    onClick={() => selectAnswer(question.id, option.id)}
+                    disabled={isAnswered}
+                    className={`w-full text-left px-4 py-3 border transition ${borderClass} ${bgClass} ${
+                      isAnswered ? "cursor-default" : "hover:border-foreground/40 cursor-pointer"
+                    } font-mono text-sm`}
+                  >
+                    {option.text}
+                  </button>
+                );
+              })}
+
+              {isAnswered && question.explanation && (
+                <div className="mt-3 px-3 py-2 bg-background border border-border text-xs text-muted-foreground font-mono">
+                  {question.explanation}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {allAnswered && (
+        <div className={`mt-6 font-mono text-xs uppercase tracking-widest ${
+          passed ? "text-mint" : "text-orange"
+        }`}>
+          {correctCount}/{questions.length} correct — {passed ? "PASSED" : `NEED ${Math.ceil(questions.length * passThreshold)}/${questions.length}`}
+        </div>
+      )}
+
+      {!passed && allAnswered && (
+        <button
+          onClick={handleRetry}
+          className="inline-block px-4 py-2 border border-border font-mono text-xs uppercase tracking-widest hover:border-foreground transition"
+        >
+          Retry quiz
+        </button>
+      )}
+
+      {passed && done && (
+        <div className="mt-6 inline-flex items-center gap-3 px-5 py-3 border border-mint text-mint font-mono text-xs uppercase tracking-widest">
+          <span className="inline-flex h-4 w-4 items-center justify-center">✓</span>
+          Quiz complete
+        </div>
+      )}
     </div>
   );
 }

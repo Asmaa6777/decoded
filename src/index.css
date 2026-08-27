@@ -43,12 +43,12 @@
 
     --radius: 0.25rem;
 
-    /* Brand accents (consistent across modes) */
-    --neon: 67 100% 64%;               /* #e8ff47 */
-    --orange: 14 100% 60%;             /* #ff6b35 */
-    --sky: 213 100% 75%;               /* #7eb8ff */
-    --violet: 263 100% 75%;            /* #b47fff */
-    --mint: 165 100% 64%;              /* #47ffcc */
+    /* Brand accents (light mode — darker for readability) */
+    --neon: 67 100% 42%;               /* #6b8c00 darker yellow for light bg */
+    --orange: 14 100% 48%;             /* #c64500 darker orange for light bg */
+    --sky: 213 100% 52%;               /* #0066ff darker sky for light bg */
+    --violet: 263 100% 52%;            /* #6600ff darker violet for light bg */
+    --mint: 165 100% 42%;              /* #009966 darker mint for light bg */
 
     /* Typography */
     --font-display: 'Syne', system-ui, sans-serif;
@@ -91,6 +91,13 @@
     --border: 240 18% 14%;             /* #1e1e2e */
     --input: 240 18% 14%;
     --ring: 67 100% 64%;
+
+    /* Brand accents (bright for dark mode) */
+    --neon: 67 100% 64%;               /* #e8ff47 bright yellow */
+    --orange: 14 100% 60%;             /* #ff6b35 bright orange */
+    --sky: 213 100% 75%;               /* #7eb8ff bright sky */
+    --violet: 263 100% 75%;            /* #b47fff bright violet */
+    --mint: 165 100% 64%;              /* #47ffcc bright mint */
 
     /* Reading surface tokens (flip with the theme) */
     --reading-bg: 240 24% 5%;

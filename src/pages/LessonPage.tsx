@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { MDXProvider } from "@mdx-js/react";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
-import { getLesson, lessonNeighbors } from "@/content/registry";
+import { getLesson, lessonNeighbors, lessonKind } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
 
 const accentBg: Record<string, string> = {
@@ -41,6 +41,7 @@ export default function LessonPage() {
   const Lesson = lesson.Component;
   const { prev, next } = lessonNeighbors(courseSlug, lessonSlug);
   const done = isComplete(lessonSlug);
+  const kind = lessonKind(lesson);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -79,22 +80,35 @@ export default function LessonPage() {
 
           {/* Mark complete */}
           <div className="mt-12 pt-8 border-t border-border">
-            <button
-              onClick={() => setComplete(lessonSlug, !done)}
-              className={`group inline-flex items-center gap-3 px-5 py-3 border transition font-mono text-xs uppercase tracking-widest
-                ${done
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border hover:border-foreground"}`}
-            >
-              <span
-                className={`inline-flex h-4 w-4 items-center justify-center border ${
-                  done ? "bg-background border-background text-foreground" : "border-foreground/40"
-                }`}
+            {kind === "quiz" ? (
+              done ? (
+                <div className="inline-flex items-center gap-3 px-5 py-3 border border-foreground bg-foreground text-background font-mono text-xs uppercase tracking-widest">
+                  <span className="inline-flex h-4 w-4 items-center justify-center border border-background bg-background text-foreground">✓</span>
+                  Quiz passed — lesson complete
+                </div>
+              ) : (
+                <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                  Pass the quiz above to mark this lesson complete.
+                </p>
+              )
+            ) : (
+              <button
+                onClick={() => setComplete(lessonSlug, !done)}
+                className={`group inline-flex items-center gap-3 px-5 py-3 border transition font-mono text-xs uppercase tracking-widest
+                  ${done
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border hover:border-foreground"}`}
               >
-                {done ? "✓" : ""}
-              </span>
-              {done ? "Lesson complete" : "Mark as complete"}
-            </button>
+                <span
+                  className={`inline-flex h-4 w-4 items-center justify-center border ${
+                    done ? "bg-background border-background text-foreground" : "border-foreground/40"
+                  }`}
+                >
+                  {done ? "✓" : ""}
+                </span>
+                {done ? "Lesson complete" : "Mark as complete"}
+              </button>
+            )}
           </div>
 
           {/* Prev / Next */}
