@@ -812,33 +812,6 @@ export function runRegexTestCases(
   }
 }
 
-const regexWorkerCode = `
-self.onmessage = (e) => {
-  const { id, pattern, flags, strings } = e.data;
-  try {
-    const re = new RegExp(pattern, flags);
-    const results = strings.map((s) => re.test(s));
-    self.postMessage({ id, ok: true, results });
-  } catch (err) {
-    self.postMessage({ id, ok: false, error: (err).message });
-  }
-};
-`;
-
-let regexWorker: Worker | null = null;
-let regexWorkerUrl: string | null = null;
-
-function getRegexWorker(): Worker {
-  if (!regexWorker) {
-    if (!regexWorkerUrl) {
-      const blob = new Blob([regexWorkerCode], { type: "application/javascript" });
-      regexWorkerUrl = URL.createObjectURL(blob);
-    }
-    regexWorker = new Worker(regexWorkerUrl);
-  }
-  return regexWorker;
-}
-
 export function RegexPlayground(props: RegexPlaygroundProps) {
   const { prompt, testCases, flags = "", placeholder, solutionHint } = props;
   const [pattern, setPattern] = useState("");
@@ -846,82 +819,40 @@ export function RegexPlayground(props: RegexPlaygroundProps) {
   const [results, setResults] = useState<
     Array<{ str: string; matched: boolean | null; expected: boolean }>
   >(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
-  const [timedOut, setTimedOut] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const workerTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const requestIdRef = useRef(0);
 
-  const testPattern = useCallback(
-    (p: string) => {
-      setCompileError(null);
-      setTimedOut(false);
+  const handlePatternChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPattern = e.currentTarget.value;
+    setPattern(newPattern);
+    setCompileError(null);
 
-      if (!p.trim()) {
-        setResults(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
-        return;
-      }
+    if (!newPattern.trim()) {
+      setResults(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
+      return;
+    }
 
-      // Cheap compile check on main thread
-      try {
-        new RegExp(p, flags);
-      } catch (err) {
-        setCompileError((err as Error).message);
-        setResults(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
-        return;
-      }
+    try {
+      new RegExp(newPattern, flags);
+    } catch (err) {
+      setCompileError((err as Error).message);
+      setResults(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
+      return;
+    }
 
-      const currentRequestId = ++requestIdRef.current;
-      const strings = testCases.map((tc) => tc.string);
-
-      // Dispatch to worker with timeout
-      const worker = getRegexWorker();
-      worker.postMessage({ id: currentRequestId, pattern: p, flags, strings });
-
-      if (workerTimeoutRef.current) clearTimeout(workerTimeoutRef.current);
-
-      workerTimeoutRef.current = setTimeout(() => {
-        setTimedOut(true);
-        setResults(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
-      }, 500);
-
-      const handleMessage = (e: MessageEvent) => {
-        const { id, ok, results: res, error } = e.data;
-        if (id !== currentRequestId) return; // Stale response
-        if (workerTimeoutRef.current) clearTimeout(workerTimeoutRef.current);
-        worker.removeEventListener("message", handleMessage);
-
-        if (ok) {
-          setResults(
-            res.map((matched: boolean, idx: number) => ({
-              str: testCases[idx].string,
-              matched,
-              expected: testCases[idx].shouldMatch,
-            }))
-          );
-        } else {
-          setCompileError(error);
-          setResults(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
-        }
-      };
-
-      worker.addEventListener("message", handleMessage);
-    },
-    [testCases, flags]
-  );
-
-  const handlePatternChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newPattern = e.currentTarget.value;
-      setPattern(newPattern);
-
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        testPattern(newPattern);
-      }, 250);
-    },
-    [testPattern]
-  );
+    const testResult = runRegexTestCases(newPattern, flags, testCases.map((tc) => tc.string));
+    if (testResult === "error") {
+      setCompileError("Failed to test pattern");
+      setResults(testCases.map((tc) => ({ str: tc.string, matched: null, expected: tc.shouldMatch })));
+    } else {
+      setResults(
+        testResult.map((matched: boolean, idx: number) => ({
+          str: testCases[idx].string,
+          matched,
+          expected: testCases[idx].shouldMatch,
+        }))
+      );
+    }
+  };
 
   const passCount = results.filter((r) => r.matched === r.expected && r.matched !== null).length;
   const totalCount = testCases.length;
@@ -944,14 +875,6 @@ export function RegexPlayground(props: RegexPlaygroundProps) {
 
         {compileError && (
           <div className="text-orange font-mono text-xs leading-relaxed">{compileError}</div>
-        )}
-
-        {timedOut && (
-          <Callout tone="orange">
-            <strong>Timed out:</strong> This pattern likely causes catastrophic backtracking (ReDoS).
-            The regex engine is trying exponentially many combinations and got stuck. Try a simpler
-            pattern or one that narrows the backtracking possibilities.
-          </Callout>
         )}
 
         <div className="overflow-x-auto">
