@@ -9,7 +9,7 @@ import rehypeKatex from "rehype-katex";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "/csdecoded/",
+  base: "/",
   server: {
     host: "::",
     port: 8080,
