@@ -1,0 +1,171 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { KnapsackTable, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+
+# Dynamic Programming: The 0/1 Knapsack
+
+Greedy makes one choice and never looks back. Sometimes that's exactly right, and sometimes, as the coin example showed, it walks you straight past the best answer. The alternative sounds expensive: consider *every* option. **Dynamic programming** is how you consider every option without paying for it.
+
+## The problem with plain recursion
+
+Fibonacci numbers: $F(0) = 0$, $F(1) = 1$, and every number after that is the sum of the two before it: $F(n) = F(n-1) + F(n-2)$. The definition translates straight into Java:
+
+```java
+static long fib(int n) {
+    if (n < 2) return n;
+    return fib(n - 1) + fib(n - 2);
+}
+```
+
+It's correct, and it's catastrophically slow. To compute `fib(5)` it computes `fib(3)` twice, `fib(2)` three times, `fib(1)` five times... The same small problems get solved over and over. The number of calls roughly doubles with each $n$: **$O(2^n)$**. `fib(50)` makes billions of calls.
+
+Those repeated pieces are called **overlapping subproblems**. Dynamic programming is the technique for problems that have them:
+
+> Solve each smaller subproblem **only once**, record its answer in a **table**, and look it up whenever it's needed again.
+
+```java
+static long fib(int n) {
+    long[] F = new long[n + 2];
+    F[0] = 0; F[1] = 1;
+    for (int i = 2; i <= n; i++)
+        F[i] = F[i - 1] + F[i - 2];     // each entry computed once
+    return F[n];
+}
+```
+
+Same recurrence, now $O(n)$. That's the whole idea. Everything else is figuring out *what goes in the table*.
+
+## The 0/1 knapsack problem
+
+You have a knapsack that can carry a total weight of at most $W$. There are $n$ items, each with a weight $w_i$ and a value $v_i$. Find the **most valuable subset of items that fits**. Each item is all or nothing — you take it (1) or you leave it (0). That's where the "0/1" comes from.
+
+This is one of the hard problems from lesson 1. Trying every subset means $2^n$ subsets: fine for 4 items, hopeless for 60.
+
+Greedy fails too. Take capacity 50 and three items: weight 10 worth 60, weight 20 worth 100, weight 30 worth 120. The greedy rule "best value per kilo first" takes the first two (worth 160) and then the third doesn't fit. The real best is the second and third: **220**.
+
+## Breaking it into subproblems
+
+Define a table where each cell answers a smaller version of the question:
+
+> $V[i, w]$ = the best value you can get using **only the first $i$ items**, with **capacity $w$**.
+
+The answer to the whole problem is $V[n, W]$. Now ask the one question that drives the whole method: **what happens with item $i$?**
+
+- **It doesn't fit** ($w_i \gt w$). You can't take it, so the best is whatever the first $i - 1$ items could do: $V[i, w] = V[i-1, w]$.
+- **It fits.** You have two options, and you take the better one:
+  - **Skip it:** $V[i-1, w]$.
+  - **Take it:** you get $v_i$, and the remaining capacity $w - w_i$ goes to the first $i - 1$ items: $v_i + V[i-1, w - w_i]$.
+
+$$
+V[i, w] = \max\big(V[i-1, w],\ \ v_i + V[i-1, w - w_i]\big)
+$$
+
+And the starting point: row 0 (no items) and column 0 (no capacity) are all **zero**. Nothing to take, or no room to take it.
+
+Every cell depends only on cells in the row **above** it. So fill the table top to bottom, left to right, and every value you need is already there when you need it.
+
+## Watch the table fill
+
+Four items, capacity 5:
+
+| Item | Weight | Value |
+| --- | --- | --- |
+| item 1 | 2 | 12 |
+| item 2 | 1 | 10 |
+| item 3 | 3 | 20 |
+| item 4 | 2 | 15 |
+
+<KnapsackTable />
+
+Each step highlights the cell being filled in neon and the one or two cells it reads from in sky — directly above ("skip"), and above and to the left by the item's weight ("take"). The answer appears in the bottom-right corner: **37**.
+
+## Which items were taken?
+
+The table holds the best *value*, not the items. To recover them, **backtrack** from the corner, $V[n, W]$:
+
+- If $V[i, w] = V[i-1, w]$, item $i$ didn't change anything — it was **skipped**. Move up one row.
+- Otherwise item $i$ was **taken**. Move up one row *and* left by $w_i$ (the capacity it used).
+
+Keep the visualizer stepping after the table is full and you'll see the violet cell walk back up. The knapsack holds items 1, 2 and 4: weight $2 + 1 + 2 = 5$, value $12 + 10 + 15 = 37$.
+
+## Analysis
+
+The table has $(n + 1) \times (W + 1)$ cells, and each one takes $O(1)$ to fill. **Time and space: $O(nW)$.**
+
+Compare that with $O(2^n)$. For 100 items and capacity 1,000 that's 100,000 cell updates instead of $2^{100}$ subsets.
+
+<Callout tone="violet" label="The fine print">
+$O(nW)$ looks polynomial, but $W$ is a *value*, not a count of items. Double the number of digits in $W$ and the table gets ten or a hundred times wider. That's why knapsack is still classed as NP-complete: DP makes it fast when the capacity is reasonably small, not in general.
+</Callout>
+
+## DP vs. greedy vs. divide and conquer
+
+| | Divide and conquer | Greedy | Dynamic programming |
+| --- | --- | --- | --- |
+| Subproblems | Independent | One choice at a time | Overlapping |
+| Looks at alternatives? | — | No, commits immediately | Yes, all of them, once each |
+| Always optimal? | — | Only if you can prove it | Yes |
+| Examples | Merge sort, quick sort | Prim, Kruskal | Fibonacci table, knapsack |
+
+## Where this shows up today
+
+<ApplicationsGrid>
+  <PracticalApplication title="Diff and version control" tool="EDIT DISTANCE">
+    `git diff` finds the smallest set of changes between two files with a DP over their lines — the same "skip or take" table, applied to text.
+  </PracticalApplication>
+  <PracticalApplication title="Spell checkers" tool="AUTOCORRECT">
+    "Did you mean...?" ranks words by edit distance: a DP table counting the fewest insertions, deletions and substitutions.
+  </PracticalApplication>
+  <PracticalApplication title="Budget and resource allocation" tool="OPERATIONS">
+    Picking projects under a budget, loading cargo, choosing ads under a spend limit: knapsack wearing a business suit.
+  </PracticalApplication>
+  <PracticalApplication title="Genome alignment" tool="BIOINFORMATICS">
+    Comparing DNA sequences is a DP over two strings — the problem that made dynamic programming famous outside computer science.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+## The Java
+
+```java
+public class Knapsack {
+
+    static int knapsack(int[] wt, int[] val, int W) {
+        int n = wt.length;
+        int[][] V = new int[n + 1][W + 1];          // Java fills it with 0s
+
+        for (int i = 1; i <= n; i++)
+            for (int w = 1; w <= W; w++)
+                if (wt[i - 1] > w)
+                    V[i][w] = V[i - 1][w];
+                else
+                    V[i][w] = Math.max(V[i - 1][w],
+                                       val[i - 1] + V[i - 1][w - wt[i - 1]]);
+
+        // backtrack to find the items
+        int w = W;
+        for (int i = n; i >= 1; i--)
+            if (V[i][w] != V[i - 1][w]) {
+                System.out.println("take item " + i);
+                w -= wt[i - 1];
+            }
+        return V[n][W];
+    }
+
+    public static void main(String[] args) {
+        int[] wt = {2, 1, 3, 2};
+        int[] val = {12, 10, 20, 15};
+        System.out.println("best value = " + knapsack(wt, val, 5));   // 37
+    }
+}
+```
+
+Note the off-by-one: the table's row `i` is about item `i`, but Java arrays start at 0, so item `i`'s weight is `wt[i - 1]`.
+
+<LeetCodeProblems
+  problems={[
+    { id: 509, title: "Fibonacci Number", slug: "fibonacci-number", why: "Write the slow recursive version, then the table version. Same answer, very different running time." },
+    { id: 70, title: "Climbing Stairs", slug: "climbing-stairs", why: "The ways to reach step n = ways to reach n−1 + ways to reach n−2. Fibonacci in disguise." },
+    { id: 746, title: "Min Cost Climbing Stairs", slug: "min-cost-climbing-stairs", why: "The same table, but each cell takes a min over two choices — a one-row version of the knapsack decision." },
+    { id: 118, title: "Pascal's Triangle", slug: "pascals-triangle", why: "Fill a 2D table where each cell is computed from the row above. Exactly how the knapsack table fills." },
+    { id: 416, title: "Partition Equal Subset Sum", slug: "partition-equal-subset-sum", difficulty: "Medium", why: "The stretch problem: a 0/1 knapsack where the question is 'can I hit exactly sum/2?'" },
+  ]}
+/>

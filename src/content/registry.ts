@@ -11,6 +11,20 @@ import TocFiniteAutomataQuiz from "@/content/theory-of-computation/m1-04-finite-
 import LitTyping from "@/content/computer-literacy/01-physical-layer.mdx";
 import LitLanguage from "@/content/computer-literacy/02-language-layer.mdx";
 import LitSystems from "@/content/computer-literacy/03-systems-layer.mdx";
+import AdaWhatIsAnAlgorithm from "@/content/algorithm-design-and-analysis/m0-01-what-is-an-algorithm.mdx";
+import AdaCountingSteps from "@/content/algorithm-design-and-analysis/m0-02-counting-steps.mdx";
+import AdaJavaLabToolkit from "@/content/algorithm-design-and-analysis/m0-03-java-lab-toolkit.mdx";
+import AdaSelectionBubble from "@/content/algorithm-design-and-analysis/m1-01-selection-and-bubble-sort.mdx";
+import AdaInsertionSort from "@/content/algorithm-design-and-analysis/m1-02-insertion-sort.mdx";
+import AdaMergeSort from "@/content/algorithm-design-and-analysis/m1-03-merge-sort.mdx";
+import AdaQuickSort from "@/content/algorithm-design-and-analysis/m1-04-quick-sort.mdx";
+import AdaSortingQuiz from "@/content/algorithm-design-and-analysis/m1-05-sorting-quiz.mdx";
+import AdaSearch from "@/content/algorithm-design-and-analysis/m2-01-linear-and-binary-search.mdx";
+import AdaEuclid from "@/content/algorithm-design-and-analysis/m2-02-euclid-gcd.mdx";
+import AdaBfsDfs from "@/content/algorithm-design-and-analysis/m3-01-bfs-and-dfs.mdx";
+import AdaGreedy from "@/content/algorithm-design-and-analysis/m4-01-greedy-and-mst.mdx";
+import AdaDynamic from "@/content/algorithm-design-and-analysis/m4-02-dynamic-programming.mdx";
+import AdaFinalQuiz from "@/content/algorithm-design-and-analysis/m4-03-final-quiz.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -102,15 +116,60 @@ export const courses: Course[] = [
     ],
   },
   {
-    slug: "algorithms-complexity",
-    title: "Algorithms & Complexity",
-    tagline: "The math behind efficiency — and the hard limits of what can be solved.",
+    slug: "algorithm-design-and-analysis",
+    title: "Algorithm Design & Analysis",
+    tagline: "Why two programs that give the same answer can be a million times apart.",
     description:
-      "Sorting and searching are just the surface. This course dives into Big O, P vs NP, and the algorithms that power everything from routing to genome sequencing. Decoded into the logic that helps you write code that scales.",
+      "Sorting, searching, graphs, greedy choices and dynamic programming. The classic university algorithms course, decoded: every algorithm is animated step by step next to its Java code, every lesson explains why it works and what it costs, and each one ends with easy LeetCode problems to lock it in.",
     accent: "sky",
-    status: "coming-soon",
+    status: "available",
     number: "03",
-    modules: [],
+    modules: [
+      {
+        title: "Foundations",
+        blurb: "What an algorithm is, how we measure one, and the Java toolkit every lab uses.",
+        lessons: [
+          { slug: "what-is-an-algorithm", title: "Recipes, Programs, and Proof", duration: "9 min", Component: AdaWhatIsAnAlgorithm },
+          { slug: "counting-steps", title: "Counting Steps: Big-O, Omega and Theta", duration: "13 min", Component: AdaCountingSteps },
+          { slug: "java-lab-toolkit", title: "Practical: Arrays, Swaps and a Stopwatch", duration: "10 min", kind: "practical", Component: AdaJavaLabToolkit },
+        ],
+      },
+      {
+        title: "Sorting",
+        blurb: "Four ways to put things in order, and why the fastest on paper isn't always the one you want.",
+        lessons: [
+          { slug: "selection-and-bubble-sort", title: "Selection Sort and Bubble Sort", duration: "12 min", Component: AdaSelectionBubble },
+          { slug: "insertion-sort", title: "Insertion Sort: Sorting Like a Card Player", duration: "9 min", Component: AdaInsertionSort },
+          { slug: "merge-sort", title: "Divide and Conquer: Merge Sort", duration: "13 min", Component: AdaMergeSort },
+          { slug: "quick-sort", title: "Quick Sort: Pick a Pivot", duration: "12 min", Component: AdaQuickSort },
+          { slug: "sorting-quiz", title: "Quiz: Analysis & Sorting", duration: "7 min", kind: "quiz", Component: AdaSortingQuiz },
+        ],
+      },
+      {
+        title: "Searching & Numbers",
+        blurb: "Finding things fast, and the oldest algorithm still running in your phone.",
+        lessons: [
+          { slug: "linear-and-binary-search", title: "Linear vs Binary Search", duration: "11 min", Component: AdaSearch },
+          { slug: "euclid-gcd", title: "Euclid's GCD: A 2,300-Year-Old Algorithm", duration: "8 min", Component: AdaEuclid },
+        ],
+      },
+      {
+        title: "Graphs",
+        blurb: "Maps, networks and friendships — and the two ways to walk through all of them.",
+        lessons: [
+          { slug: "bfs-and-dfs", title: "Graphs: BFS and DFS", duration: "14 min", Component: AdaBfsDfs },
+        ],
+      },
+      {
+        title: "Design Strategies",
+        blurb: "Two big ideas for designing your own algorithms: grab the best thing now, or remember everything.",
+        lessons: [
+          { slug: "greedy-and-mst", title: "Greedy Algorithms: Prim and Kruskal", duration: "13 min", Component: AdaGreedy },
+          { slug: "dynamic-programming", title: "Dynamic Programming: The 0/1 Knapsack", duration: "14 min", Component: AdaDynamic },
+          { slug: "final-quiz", title: "Quiz: Searching, Graphs, Greedy & DP", duration: "8 min", kind: "quiz", Component: AdaFinalQuiz },
+        ],
+      },
+    ],
   },
   {
     slug: "operating-systems",

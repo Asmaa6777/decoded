@@ -1,0 +1,143 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { MstVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+
+# Greedy Algorithms: Prim and Kruskal
+
+You've learned algorithms. Now you'll learn *strategies for inventing them*. The first one is the strategy most people use without thinking about it: **always grab the best option available right now.**
+
+## The greedy approach
+
+A greedy algorithm builds a solution **one step at a time**. At each step it extends the partial solution it has so far, and the choice it makes must be:
+
+1. **Feasible** — it doesn't break the problem's rules.
+2. **Locally optimal** — it's the best choice available *at this step*.
+3. **Irrevocable** — once made, it's never undone.
+
+That third rule is what makes greedy algorithms fast and simple: no going back, no reconsidering, no trying alternatives. It's also what makes them dangerous.
+
+## When greedy fails
+
+Make change for 6 using as few coins as possible. Coins come in values 1, 3 and 4.
+
+The greedy cashier always picks the biggest coin that fits: **4**, leaving 2. Then **1**, then **1**. Three coins: 4 + 1 + 1.
+
+But **3 + 3** is two coins. Grabbing the 4 looked best at that moment and turned out to be a mistake, and greedy never takes a choice back.
+
+(With real coin systems — 1, 5, 10, 25 — greedy happens to always be optimal. That's not luck: those coin values were designed so it would be.)
+
+So the honest scorecard for greedy:
+
+- **Advantages:** easy to describe, easy to code, and usually very fast.
+- **Drawback:** it **doesn't always produce the optimal solution**. For each problem, you have to *prove* that the local choices lead to the global best — or accept a good-enough answer.
+
+The rest of this lesson is about a problem where greedy provably works perfectly.
+
+## Minimum spanning trees
+
+You're laying cable to connect six buildings. Some pairs of buildings can be connected, each at a known cost. You need every building connected — directly or indirectly — and you want to spend as little as possible.
+
+In graph terms: a connected, weighted, undirected graph. A **spanning tree** is a subset of edges that connects **every** vertex with **no cycles** (a cycle would mean paying for a cable you don't need). With $n$ vertices, every spanning tree has exactly $n - 1$ edges. The **minimum spanning tree (MST)** is the spanning tree with the smallest total weight.
+
+There are two classic greedy algorithms for it. Both always find the true minimum.
+
+## Prim's algorithm: grow one tree
+
+1. Start the tree with any single vertex.
+2. Look at every edge that connects a vertex **in** the tree to a vertex **not yet** in it.
+3. Add the **cheapest** of those edges (and its new vertex) to the tree.
+4. Repeat until every vertex is in.
+
+<MstVisualizer algorithm="prim" />
+
+The dotted neon edges are the candidates at each step — the edges that cross from the tree to the outside. Prim always takes the cheapest crossing edge. The tree grows outward like a crystal from its seed.
+
+## Kruskal's algorithm: join the forest
+
+Kruskal thinks about it differently. Instead of growing one tree, it starts with every vertex as its own tiny tree — a forest — and joins them up.
+
+1. **Sort** all edges from lowest weight to highest.
+2. Take the cheapest remaining edge. If it connects two **different** trees, add it. If both ends are **already in the same tree**, adding it would create a cycle — **reject** it.
+3. Repeat until you have $n - 1$ edges.
+
+<MstVisualizer algorithm="kruskal" />
+
+Watch for the orange dashed edges: those were cheap, but their two ends were already connected, so they'd only have closed a loop. Kruskal skips them and moves on.
+
+Both algorithms reach a total of **13** on this graph. They may pick different edges when there are ties, but the minimum total weight is always the same.
+
+## Why does greedy work here?
+
+The key fact, called the **cut property**: split the vertices into any two groups. The cheapest edge crossing between the groups is always safe to include in some minimum spanning tree. Prim applies this to "tree vs. everything else." Kruskal applies it to "this edge's tree vs. everything else." So every greedy choice is one an optimal solution would also make — which is exactly what greedy needs to be correct.
+
+## Analysis
+
+- **Prim**, simple version (matrix, scan for the cheapest crossing edge each time): $O(V^2)$. With a priority queue: $O(E \log V)$.
+- **Kruskal**: sorting the edges dominates, $O(E \log E)$. The "same tree?" check uses a **union–find** structure, which is nearly $O(1)$ per check with the standard optimizations.
+
+Rule of thumb: Prim for dense graphs (lots of edges), Kruskal for sparse ones.
+
+## Where this shows up today
+
+<ApplicationsGrid>
+  <PracticalApplication title="Network design" tool="INFRASTRUCTURE">
+    Laying fibre, power lines, water pipes or roads between sites at minimum total cost is literally the MST problem.
+  </PracticalApplication>
+  <PracticalApplication title="Clustering" tool="MACHINE LEARNING">
+    Build the MST of a set of data points and remove the most expensive edges: what's left falls apart into natural clusters.
+  </PracticalApplication>
+  <PracticalApplication title="Huffman coding" tool="COMPRESSION">
+    ZIP and JPEG compress data with Huffman codes, built by a greedy algorithm that repeatedly merges the two rarest symbols.
+  </PracticalApplication>
+  <PracticalApplication title="Dijkstra's shortest paths" tool="MAPS">
+    The algorithm behind route planning is greedy too: always settle the closest unsettled place next. It looks a lot like Prim.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+## The Java
+
+The visualizer shows the simple matrix version of Prim. Here's Kruskal in full, with a minimal union–find:
+
+```java
+import java.util.Arrays;
+
+public class Kruskal {
+
+    static int find(int[] parent, int x) {
+        while (parent[x] != x) x = parent[x];
+        return x;
+    }
+
+    static int kruskal(int n, int[][] edges) {        // each edge: {u, v, weight}
+        Arrays.sort(edges, (a, b) -> a[2] - b[2]);    // greedy order: cheapest first
+        int[] parent = new int[n];
+        for (int i = 0; i < n; i++) parent[i] = i;
+
+        int total = 0, used = 0;
+        for (int[] e : edges) {
+            int ru = find(parent, e[0]), rv = find(parent, e[1]);
+            if (ru == rv) continue;                   // same tree: would make a cycle
+            parent[ru] = rv;                          // join the two trees
+            total += e[2];
+            if (++used == n - 1) break;               // tree complete
+        }
+        return total;
+    }
+
+    public static void main(String[] args) {
+        int[][] edges = {
+            {0,1,4}, {0,2,3}, {1,2,1}, {1,3,2}, {2,3,4},
+            {3,4,2}, {4,5,6}, {3,5,5}, {2,5,7}
+        };
+        System.out.println(kruskal(6, edges));        // 13
+    }
+}
+```
+
+<LeetCodeProblems
+  problems={[
+    { id: 455, title: "Assign Cookies", slug: "assign-cookies", why: "Sort both arrays, then give each child the smallest cookie that satisfies them. A greedy choice you can prove is safe." },
+    { id: 860, title: "Lemonade Change", slug: "lemonade-change", why: "The coin-change idea with real bills. When giving change for 20, use a 10 first if you have one — why is that the greedy-safe choice?" },
+    { id: 1710, title: "Maximum Units on a Truck", slug: "maximum-units-on-a-truck", why: "A knapsack you can solve greedily (take the most units per box first). Compare it with the next lesson, where greedy fails." },
+    { id: 1584, title: "Min Cost to Connect All Points", slug: "min-cost-to-connect-all-points", difficulty: "Medium", why: "The one stretch problem: a real MST. Every point connects to every other, so Prim's O(V²) version fits perfectly." },
+  ]}
+/>

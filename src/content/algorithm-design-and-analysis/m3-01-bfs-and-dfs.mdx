@@ -1,0 +1,171 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { GraphTraversal, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+
+# Graphs: BFS and DFS
+
+So far everything has lived in an array: a straight line of values with a first and a last. A lot of the world isn't shaped like that. Cities connected by roads. People connected by friendships. Web pages connected by links. Courses connected by prerequisites. The shape that captures all of these is a **graph**.
+
+## What a graph is
+
+A graph $G = (V, E)$ is two sets:
+
+- $V$ — the **vertices** (also called nodes): the things. Usually $n = |V|$.
+- $E$ — the **edges** (also called arcs): the connections between pairs of vertices. Usually $m = |E|$.
+
+Edges come in a few flavours:
+
+- **Undirected** — the connection goes both ways. A friendship, a two-way street.
+- **Directed** — one way only. A follow on social media, a one-way street. Drawn with an arrow.
+- **Weighted** — each edge carries a number: a distance, a cost, a time. A weighted graph is also called a **network**.
+
+Some vocabulary you'll need:
+
+- Two vertices are **adjacent** if an edge connects them.
+- A **path** is a sequence of vertices where each one is adjacent to the next. Its **length** is the number of edges in it.
+- A **cycle** is a path that starts and ends at the same vertex. A graph with no cycles is **acyclic**.
+
+## Storing a graph in Java
+
+The most common way is an **adjacency list**: for every vertex, a list of its neighbours. With vertices numbered `0` to `n - 1`:
+
+```java
+int n = 7;
+List<List<Integer>> adj = new ArrayList<>();
+for (int i = 0; i < n; i++) adj.add(new ArrayList<>());
+
+// undirected edge between u and v: add it in both directions
+static void addEdge(List<List<Integer>> adj, int u, int v) {
+    adj.get(u).add(v);
+    adj.get(v).add(u);
+}
+```
+
+The alternative is an **adjacency matrix**: an `n × n` grid of booleans where `matrix[u][v]` says whether the edge exists. It answers "are u and v connected?" in $O(1)$, but it uses $O(n^2)$ memory even when the graph has hardly any edges. Adjacency lists use $O(n + m)$.
+
+## Traversal: visit everything, once
+
+**Traversing** a graph means visiting every vertex reachable from a starting point, **each exactly once**. The "once" is the hard part: unlike an array, a graph can have cycles, and a naive walk would go round and round forever. The fix is always the same — keep a `visited` array and never enter a vertex twice.
+
+There are two fundamental orders to visit things in, and the only real difference between them is the data structure that holds the vertices waiting to be explored.
+
+## Breadth-first search: ripples in a pond
+
+**BFS** explores in **layers**. First the start vertex. Then everything one edge away. Then everything two edges away. Like a ripple spreading outward from a stone dropped in water.
+
+It does this with a **queue** — first in, first out. When you visit a vertex, every unvisited neighbour joins the *back* of the line, so vertices are explored in exactly the order they were discovered.
+
+<GraphTraversal algorithm="bfs" />
+
+Watch the queue at the bottom. Vertex 0's neighbours (1 and 2) are all handled before any of *their* neighbours. The mint edges form the **BFS tree** — the route by which each vertex was first reached.
+
+That gives BFS a powerful property: in an unweighted graph, the path it finds to each vertex is a **shortest path** (fewest edges). The first time a ripple reaches a vertex is the earliest it could.
+
+## Depth-first search: the maze explorer
+
+**DFS** does the opposite. It picks a direction and goes as **deep** as it can. When it hits a dead end — a vertex with no unvisited neighbours — it **backtracks** to the last vertex that still has an unexplored path, and goes deep again from there. It's how you'd explore a maze with a piece of chalk.
+
+It uses a **stack** — last in, first out. The most recently discovered vertex is explored first. The simplest way to write DFS uses recursion, and then the stack is Java's own **call stack**: each recursive call is pushed when you go deeper, and popped when you backtrack.
+
+<GraphTraversal algorithm="dfs" />
+
+Same graph, same start, very different order. DFS dives 0 → 1 → 3 → 6 → 4 → 2 → 5, one long path, before it ever comes back. Use the toggle under the controls to switch between BFS and DFS on the same picture.
+
+## Analysis
+
+Both algorithms do the same amount of work, just in a different order:
+
+- Every vertex is marked visited and processed **once**: $O(V)$.
+- Every edge is looked at a constant number of times — once from each end in an undirected graph — when scanning neighbour lists: $O(E)$.
+
+Total: **$O(V + E)$** for both, with an adjacency list. Space is $O(V)$ for the `visited` array plus the queue or stack.
+
+(With an adjacency matrix, finding a vertex's neighbours means scanning a whole row, so both become $O(V^2)$.)
+
+| | BFS | DFS |
+| --- | --- | --- |
+| Data structure | Queue (FIFO) | Stack (LIFO) / recursion |
+| Explores | Level by level | One path as deep as possible, then backtracks |
+| Shortest paths (unweighted) | Yes | No |
+| Time | $O(V + E)$ | $O(V + E)$ |
+
+<Callout tone="orange" label="Mark when you add, not when you leave">
+In BFS, mark a vertex visited the moment you **add it to the queue**, not when you take it out. Otherwise the same vertex can be added several times by different neighbours before it's processed — still correct, but wasted work, and a classic source of "time limit exceeded."
+</Callout>
+
+## Where this shows up today
+
+<ApplicationsGrid>
+  <PracticalApplication title="Social networks" tool="BFS">
+    "People you may know" and "3rd-degree connection" are BFS layers. Your friends are layer 1, their friends layer 2.
+  </PracticalApplication>
+  <PracticalApplication title="Web crawlers" tool="BFS">
+    Search engines discover pages by BFS over links: visit a page, queue up every link on it, never fetch the same URL twice.
+  </PracticalApplication>
+  <PracticalApplication title="Build tools and package managers" tool="DFS">
+    Maven, Gradle and npm order dependencies with a DFS-based topological sort, and detect circular dependencies when DFS finds a cycle.
+  </PracticalApplication>
+  <PracticalApplication title="Flood fill and garbage collection" tool="DFS">
+    The paint-bucket tool in an image editor is DFS over neighbouring pixels. Java's garbage collector traverses the graph of objects reachable from your variables; whatever it doesn't reach is freed.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+## The full Java
+
+```java
+import java.util.*;
+
+public class GraphTraversal {
+
+    static void bfs(List<List<Integer>> adj, int start) {
+        boolean[] visited = new boolean[adj.size()];
+        Queue<Integer> queue = new ArrayDeque<>();
+        visited[start] = true;
+        queue.add(start);
+        while (!queue.isEmpty()) {
+            int v = queue.poll();
+            System.out.print(v + " ");
+            for (int w : adj.get(v)) {
+                if (!visited[w]) {
+                    visited[w] = true;
+                    queue.add(w);
+                }
+            }
+        }
+        System.out.println();
+    }
+
+    static void dfs(List<List<Integer>> adj, int v, boolean[] visited) {
+        visited[v] = true;
+        System.out.print(v + " ");
+        for (int w : adj.get(v))
+            if (!visited[w])
+                dfs(adj, w, visited);
+    }
+
+    public static void main(String[] args) {
+        int n = 7;
+        List<List<Integer>> adj = new ArrayList<>();
+        for (int i = 0; i < n; i++) adj.add(new ArrayList<>());
+        int[][] edges = { {0,1}, {0,2}, {1,3}, {1,4}, {2,4}, {2,5}, {3,6}, {4,6} };
+        for (int[] e : edges) {
+            adj.get(e[0]).add(e[1]);
+            adj.get(e[1]).add(e[0]);
+        }
+        for (List<Integer> list : adj) Collections.sort(list);
+
+        bfs(adj, 0);                          // 0 1 2 3 4 5 6
+        dfs(adj, 0, new boolean[n]);          // 0 1 3 6 4 2 5
+    }
+}
+```
+
+That's exactly the graph in the visualizers above, so you can check your output against them.
+
+<LeetCodeProblems
+  problems={[
+    { id: 1971, title: "Find if Path Exists in Graph", slug: "find-if-path-exists-in-graph", why: "Build the adjacency list from an edge list, then run BFS or DFS from the source. The purest graph-traversal problem there is." },
+    { id: 733, title: "Flood Fill", slug: "flood-fill", why: "The paint-bucket tool. A grid is a graph where each cell's neighbours are up, down, left and right." },
+    { id: 104, title: "Maximum Depth of Binary Tree", slug: "maximum-depth-of-binary-tree", why: "A tree is a graph with no cycles. Solve it with recursive DFS, then again with BFS counting layers." },
+    { id: 637, title: "Average of Levels in Binary Tree", slug: "average-of-levels-in-binary-tree", why: "BFS one layer at a time: process exactly queue.size() nodes per round." },
+  ]}
+/>

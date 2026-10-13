@@ -1,0 +1,103 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SearchVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+
+# Linear vs Binary Search
+
+**Searching** means finding a particular element among many. Either you find it — a *successful* search, usually returning its position — or you've proven it isn't there — an *unsuccessful* search, conventionally returning `-1`.
+
+There are two basic ways to do it, and the gap between them is one of the most dramatic in all of computer science.
+
+## Linear search: check everything
+
+Start at the beginning. Compare each element with the one you want. Stop when you find it or run out of array.
+
+<SearchVisualizer algorithm="linear" array={[34, 7, 23, 32, 5, 62, 14, 48, 19]} target={14} />
+
+It's hard to make an algorithm simpler, and that simplicity is its strength. Linear search:
+
+- works on **any** array — sorted or not,
+- needs **no** preparation,
+- is the right call when the list is **small**, or when you'll only search it once.
+
+### Analysis
+
+- **Best case:** the target is first. **$O(1)$.**
+- **Worst case:** the target is last, or missing — you check all $n$ elements. **$O(n)$.**
+- **Average case:** about $n/2$ comparisons. **$O(n)$.**
+
+## Binary search: throw away half
+
+Now suppose the array is **sorted**. That changes everything.
+
+Look at the **middle** element. If it's the target, you're done. If it's smaller than the target, the target can't be anywhere on the left — everything there is even smaller. Throw away the entire left half. If it's bigger, throw away the right half. Repeat on what's left.
+
+Each comparison cuts the search space in half. That's divide and conquer again — but with only one half to recurse into.
+
+<SearchVisualizer algorithm="binary" target={58} />
+
+Try a target that isn't in the array, like `30`. Watch `low` and `high` squeeze together until `low` passes `high` — that's the moment binary search *knows* the target is missing, without having looked at most of the array.
+
+### Analysis
+
+How many times can you halve $n$ before only one element is left? About $\log_2 n$ times.
+
+| Array size $n$ | Linear search (worst) | Binary search (worst) |
+| --- | --- | --- |
+| 1,000 | 1,000 | 10 |
+| 1,000,000 | 1,000,000 | 20 |
+| 1,000,000,000 | 1,000,000,000 | 30 |
+
+A billion elements, found in thirty comparisons. Best case **$O(1)$** (the middle is the target), average and worst **$O(\log n)$**.
+
+<Callout tone="orange" label="The catch">
+Binary search **only works on sorted data**, in ascending numeric or dictionary order. If the array isn't sorted, you have to sort it first — $O(n \log n)$ — which is worth it only if you'll search it many times. For a single search on unsorted data, linear search wins.
+</Callout>
+
+## The Java
+
+```java
+static int binarySearch(int[] a, int x) {
+    int low = 0, high = a.length - 1;
+    while (low <= high) {
+        int mid = low + (high - low) / 2;
+        if (a[mid] == x) return mid;
+        else if (a[mid] < x) low = mid + 1;
+        else high = mid - 1;
+    }
+    return -1;
+}
+```
+
+Binary search is famous for being easy to describe and easy to get *slightly* wrong. Three details to check every time:
+
+1. **`low <= high`, not `low < high`.** With `<`, a one-element range is never checked, and you'll miss targets sitting at the edges.
+2. **`low = mid + 1` and `high = mid - 1`.** You already know `a[mid]` isn't the target, so exclude it. Write `low = mid` and the loop can get stuck forever.
+3. **`low + (high - low) / 2` instead of `(low + high) / 2`.** On a huge array, `low + high` can be bigger than the largest `int` and overflow into a negative number. This exact bug lived in Java's own `Arrays.binarySearch` for about nine years before it was found in 2006.
+
+A quick lab test: fill an array with even numbers using `array[i] = i * 2`, so it's sorted by construction, then search for `8` (it should return index `4`) and for `7` (it should return `-1`).
+
+## Where this shows up today
+
+<ApplicationsGrid>
+  <PracticalApplication title="Database indexes" tool="B-TREES">
+    An index on a database column keeps the values sorted so lookups don't scan every row. A B-tree is binary search generalised to "many-way" search, built for disks.
+  </PracticalApplication>
+  <PracticalApplication title="git bisect" tool="DEBUGGING">
+    Somewhere in your last 1,000 commits a bug appeared. `git bisect` checks the middle commit, you say "good" or "bad," and it halves the range. About 10 tests to find the culprit.
+  </PracticalApplication>
+  <PracticalApplication title="Java standard library" tool="JDK">
+    `Arrays.binarySearch` and `Collections.binarySearch` — and a `TreeMap` lookup is binary search over a balanced tree.
+  </PracticalApplication>
+  <PracticalApplication title="Binary search on the answer" tool="INTERVIEWS">
+    "What's the smallest speed that finishes in time?" If you can check a guess, and bigger guesses are always better, you can binary search the answer itself — a favourite interview technique.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  problems={[
+    { id: 704, title: "Binary Search", slug: "binary-search", why: "The algorithm exactly as written above. Get it right first try, with all three details." },
+    { id: 374, title: "Guess Number Higher or Lower", slug: "guess-number-higher-or-lower", why: "Binary search when the 'array' is just the numbers 1 to n and an oracle tells you which way to go." },
+    { id: 278, title: "First Bad Version", slug: "first-bad-version", why: "git bisect as a LeetCode problem. Find the first true, not just any match — and watch for overflow." },
+    { id: 69, title: "Sqrt(x)", slug: "sqrtx", why: "Binary search on the answer: the biggest m with m × m ≤ x. Use long to avoid overflow." },
+  ]}
+/>

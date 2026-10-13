@@ -1,0 +1,145 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { GrowthTable, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+
+# Counting Steps: Big-O, Omega and Theta
+
+Two programs give exactly the same answer. One finishes in a blink, the other takes an afternoon. Neither has a bug. The difference is the *algorithm* — and the tool for seeing that difference before you run anything is called **analysis**.
+
+## Why not just time it?
+
+You could run both programs with a stopwatch. (You'll do exactly that in the next lesson.) But a stopwatch measures your laptop, your JVM, whatever else is running, and the one input you happened to try. Run it on a faster machine and the numbers change, but the *algorithm* didn't.
+
+So instead of seconds, we count **steps**. Specifically:
+
+- **Input size, $n$.** How big is the problem? For an array, its length. For a graph, the number of vertices and edges. For a number, sometimes how many digits it has.
+- **The basic operation.** The one step that does the real work and runs most often — usually a comparison (`a[j] < a[min]`) or an assignment inside the innermost loop.
+- **Count how many times the basic operation runs, as a function of $n$.**
+
+That function — call it $T(n)$ — is the algorithm's **time complexity**. It doesn't depend on hardware, it doesn't depend on the language. It's a property of the algorithm itself.
+
+## Space is a cost too
+
+**Space complexity** is how much memory the algorithm needs, also as a function of $n$. It has two parts:
+
+- A **fixed part**, independent of the input: the code itself, a few simple variables like `i`, `max`, `temp`.
+- A **variable part** that grows with the input: extra arrays you allocate, and — easy to forget — the **recursion stack**. Every recursive call that hasn't returned yet takes up memory.
+
+Most of this course focuses on time, but keep an eye out: merge sort, coming up in module 1, buys its speed with extra memory.
+
+## Best, worst and average case
+
+Take linear search: walk through an array looking for a value `x`.
+
+```java
+static int linearSearch(int[] a, int x) {
+    for (int i = 0; i < a.length; i++) {
+        if (a[i] == x) return i;
+    }
+    return -1;
+}
+```
+
+How many comparisons? *It depends on the input*, even for a fixed size $n$:
+
+- **Best case:** `x` is the very first element. **1** comparison.
+- **Worst case:** `x` is last, or not there at all. **$n$** comparisons.
+- **Average case:** if `x` is equally likely to be anywhere, you check about half the array: roughly **$n/2$** comparisons.
+
+The **worst case** is the one we usually report, because it's a *guarantee*: "no matter what you give me, it won't be slower than this." The best case is nice to know but you can't count on it. The average case is often the most realistic, but it needs assumptions about what inputs look like.
+
+## Growth is what matters
+
+Here's the key insight of the whole lesson. Suppose one algorithm does $T(n) = 3n + 10$ steps and another does $T(n) = n^2$ steps. For $n = 5$, the first does 25 and the second does 25. Tie. For $n = 1000$: 3,010 vs 1,000,000.
+
+When $n$ is small, everything is fast and the details don't matter. When $n$ is large, **only the fastest-growing term matters**. Constants and smaller terms fade into noise. Drag the slider and watch it happen:
+
+<GrowthTable initialN={30} />
+
+That table is the reason analysis exists. An $O(n^2)$ algorithm isn't "a bit slower" than an $O(n \log n)$ one — at a million items it's the difference between a fraction of a second and hours.
+
+## The three notations
+
+We need a language for "grows like." There are three, and an exam will ask you for all of them.
+
+**Big-O — an upper bound.** $T(n) = O(g(n))$ means that, for large enough $n$, $T(n)$ is at most some constant times $g(n)$:
+
+$$
+T(n) \le c \cdot g(n) \quad \text{for all } n \ge n_0
+$$
+
+Read it as: *"it grows no faster than $g$."* Big-O is what people use for the **worst case**.
+
+**Omega (Ω) — a lower bound.** $T(n) = \Omega(g(n))$ means $T(n)$ is at least $c \cdot g(n)$ for large $n$. *"It grows at least as fast as $g$."* Often used to talk about the **best case**.
+
+**Theta (Θ) — a tight bound.** $T(n) = \Theta(g(n))$ means it's *both*: squeezed between two constant multiples of $g(n)$.
+
+$$
+c_1 \cdot g(n) \le T(n) \le c_2 \cdot g(n) \quad \text{for all } n \ge n_0
+$$
+
+*"It grows exactly like $g$."*
+
+<Callout tone="violet" label="The everyday version">
+In practice, people say "Big-O" for everything and mean "how it grows in the worst case." That's fine for conversation. On an exam, be precise: O is ≤, Ω is ≥, Θ is both.
+</Callout>
+
+## Getting the Big-O without the algebra
+
+You rarely need the formal definition to find the answer. Three rules cover almost everything:
+
+1. **Drop the constants.** $5n$ and $n/2$ are both $O(n)$.
+2. **Keep only the biggest term.** $n^2 + 100n + 7$ is $O(n^2)$.
+3. **Loops multiply, sequences add.** A loop of $n$ inside a loop of $n$ is $n \times n = O(n^2)$. One loop of $n$ followed by another loop of $n$ is $n + n = O(n)$.
+
+The common classes, from fastest to slowest:
+
+| Class | Name | Typical example |
+| --- | --- | --- |
+| $O(1)$ | constant | read `a[i]`, swap two elements |
+| $O(\log n)$ | logarithmic | binary search |
+| $O(n)$ | linear | linear search, find the max |
+| $O(n \log n)$ | linearithmic | merge sort, quick sort (average) |
+| $O(n^2)$ | quadratic | selection sort, bubble sort |
+| $O(2^n)$ | exponential | trying every subset (brute-force knapsack) |
+
+"Linear" means exactly what it sounds like: the running time grows **in direct proportion** to the input. Double the input, double the time.
+
+## A worked example
+
+Here's an algorithm in the step-by-step style exams love. What does it output, and what's its Big-O?
+
+```text
+Step 1: Declare N and F as integers.
+Step 2: Set F = 1. Read N.
+Step 3: If N > 0, repeat: F = F * N, then N = N - 1, until N = 0.
+Step 4: Print F.
+```
+
+Trace it with $N = 4$: F becomes $1 \cdot 4 = 4$, then $4 \cdot 3 = 12$, then $12 \cdot 2 = 24$, then $24 \cdot 1 = 24$. It prints **24**. That's $4!$ — the algorithm computes the **factorial**.
+
+Cost: the loop body runs once per value of N, from N down to 1. That's $N$ multiplications: **$O(n)$, linear**.
+
+In Java:
+
+```java
+static long factorial(int n) {
+    long f = 1;
+    while (n > 0) {
+        f = f * n;   // basic operation: runs n times
+        n--;
+    }
+    return f;
+}
+```
+
+<Callout tone="orange" label="A classic mistake">
+Nested loops aren't always $O(n^2)$. If the inner loop runs a fixed number of times — say, always 3 — the total is $3n = O(n)$. Count how many times the inner loop *actually* runs, don't just count the brackets.
+</Callout>
+
+<LeetCodeProblems
+  problems={[
+    { id: 1, title: "Two Sum", slug: "two-sum", why: "Solve it with two nested loops first — that's O(n²). Then use a HashMap to get O(n). Feel the difference on the big test cases." },
+    { id: 217, title: "Contains Duplicate", slug: "contains-duplicate", why: "Three solutions with three complexities: compare all pairs O(n²), sort first O(n log n), use a HashSet O(n)." },
+    { id: 1365, title: "How Many Numbers Are Smaller Than the Current Number", slug: "how-many-numbers-are-smaller-than-the-current-number", why: "The brute-force O(n²) passes. Then notice values are at most 100 and find the O(n) counting trick." },
+  ]}
+/>

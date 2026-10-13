@@ -1,0 +1,120 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+
+# Quick Sort: Pick a Pivot
+
+Merge sort does the easy part first (split blindly down the middle) and the hard part last (merge carefully). Quick sort flips that around. It does the careful work **up front**, so that afterwards there is nothing left to combine.
+
+## The idea
+
+1. Pick one element: the **pivot**.
+2. **Partition** the array: move everything smaller than the pivot to its left and everything bigger to its right. The pivot is now in its **final position** — it will never move again.
+3. Quick sort the left part. Quick sort the right part. Done.
+
+There's no combine step. Once both sides are sorted, the whole array is sorted, because the left part is all smaller than the pivot and the right part is all bigger. All the work is in partitioning.
+
+It's still divide and conquer — divide is "partition," conquer is "recurse," combine is "nothing."
+
+## Partitioning with two pointers
+
+There are several ways to partition. This one uses the **last element as the pivot** and two pointers walking towards each other:
+
+- `left` starts at the beginning and moves right **while** the element it's on is ≤ the pivot (that element is already on the correct side).
+- `right` starts at the end and moves left **while** the element it's on is ≥ the pivot.
+- When both have stopped, `left` is on something too big for the left side, and `right` is on something too small for the right side. **Swap them** — now both are on the correct side. Keep going.
+- When the pointers meet, swap the pivot into the meeting point.
+
+<SortVisualizer algorithm="quick" initial={[24, 9, 29, 14, 19, 27, 5, 21]} />
+
+The purple bar is the pivot. Watch each partition finish with one bar turning mint — that's a pivot locked into its final spot. Then the window shrinks to one side, and the same thing happens again on a smaller piece.
+
+## Analysis: it depends on the pivot
+
+Partitioning a piece of size $n$ takes $O(n)$ — each pointer step does one comparison, and together the pointers cross the piece once. What matters is *how evenly* the pivot splits the array.
+
+**Good case: the pivot lands near the middle.** Each partition cuts the problem roughly in half. Just like merge sort, that gives about $\log_2 n$ levels of $O(n)$ work each: **$O(n \log n)$**. On random data, this is what usually happens, so the **average case is $O(n \log n)$**.
+
+**Bad case: the pivot is always the smallest or biggest element.** Then one side is empty and the other has $n - 1$ elements. You've done $O(n)$ work to make the problem one element smaller. Do that $n$ times:
+
+$$
+n + (n-1) + (n-2) + \dots + 1 = O(n^2)
+$$
+
+When does that happen with a last-element pivot? On data that's **already sorted** (or reverse sorted) — every pivot is the largest remaining element. Try `1, 2, 3, 4, 5, 6, 7, 8` in the visualizer and watch every partition peel off just one element.
+
+That's the irony of quick sort: the input that's best for insertion sort is the worst for naive quick sort.
+
+### Picking a better pivot
+
+The fix is to choose the pivot more carefully. Common choices:
+
+- **First** or **last** element — simple, but bad on sorted input.
+- **Middle** element — handles sorted input well.
+- **Random** element — makes the worst case extremely unlikely on *any* input.
+- **Median of three** — the median of the first, middle and last elements. A cheap way to avoid bad pivots.
+
+<Callout tone="violet" label="Quick sort vs merge sort">
+Merge sort: always $O(n \log n)$, stable, but needs $O(n)$ extra memory. Quick sort: $O(n \log n)$ on average, $O(n^2)$ worst case, not stable, but sorts **in place** and is usually faster in practice because it moves less data around and uses the CPU cache well.
+</Callout>
+
+## The scorecard
+
+**Advantages**
+
+- Fast in practice — often the fastest general-purpose sort.
+- In place: only $O(\log n)$ extra space on average, for the recursion stack.
+- Easy to parallelize: after partitioning, the two sides are completely independent.
+
+**Disadvantages**
+
+- $O(n^2)$ worst case.
+- Not stable: the long-distance swaps can reorder equal elements.
+
+## Where this shows up today
+
+<ApplicationsGrid>
+  <PracticalApplication title="Sorting primitives in Java" tool="JDK">
+    `Arrays.sort(int[])` uses **dual-pivot quick sort**: two pivots, three partitions. For primitive numbers stability doesn't matter (two equal 7s are indistinguishable), so the speed wins.
+  </PracticalApplication>
+  <PracticalApplication title="Finding the median fast" tool="QUICKSELECT">
+    Partition once, then recurse into only the side that contains position $k$. That finds the $k$-th smallest element in $O(n)$ on average, without sorting everything.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+## The lab version
+
+```java
+public static void quickSort(int[] array, int lowIndex, int highIndex) {
+    if (lowIndex >= highIndex) return;
+
+    int pivotIndex = partition(array, lowIndex, highIndex);
+    quickSort(array, lowIndex, pivotIndex - 1);
+    quickSort(array, pivotIndex + 1, highIndex);
+}
+
+private static int partition(int[] array, int lowIndex, int highIndex) {
+    int pivot = array[highIndex];
+    int leftPointer = lowIndex;
+    int rightPointer = highIndex;
+
+    while (leftPointer < rightPointer) {
+        while (array[leftPointer] <= pivot && leftPointer < rightPointer)
+            leftPointer++;
+        while (array[rightPointer] >= pivot && leftPointer < rightPointer)
+            rightPointer--;
+        swap(array, leftPointer, rightPointer);
+    }
+    swap(array, leftPointer, highIndex);
+    return leftPointer;
+}
+```
+
+Call it as `quickSort(array, 0, array.length - 1)`. Then run the experiment that makes the worst case real: time it on 50,000 random numbers, then on 50,000 numbers that are already sorted. (If the sorted run crashes with a `StackOverflowError`, that *is* the worst case — $n$ levels of recursion instead of $\log n$.)
+
+<LeetCodeProblems
+  problems={[
+    { id: 905, title: "Sort Array By Parity", slug: "sort-array-by-parity", why: "A partition with no pivot value: evens to the left, odds to the right, two pointers, in place." },
+    { id: 922, title: "Sort Array By Parity II", slug: "sort-array-by-parity-ii", why: "Partition again, this time into alternating positions. Practise moving two pointers independently." },
+    { id: 976, title: "Largest Perimeter Triangle", slug: "largest-perimeter-triangle", why: "Sort (try your own quick sort), then a single greedy scan from the largest sides." },
+  ]}
+/>
