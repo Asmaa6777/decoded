@@ -1,12 +1,12 @@
 # Decoded — Brand Guide
 
-A reference for keeping the look, voice, and feel of CSDecoded consistent across new lessons, marketing copy, social posts, and AI-generated content. Hand this file to any LLM (or human) producing content for the site and tell them to match it.
+A reference for keeping the look, voice, and feel of Decoded consistent across new lessons, marketing copy, social posts, and AI-generated content. Hand this file to any LLM (or human) producing content for the site and tell them to match it.
 
 ---
 
 ## 1. Brand essence
 
-CSDecoded is a **magazine-meets-terminal** for computer science. It treats CS theory the way a serious editorial publication treats a long-form essay — clean typography, generous space, confident voice — but borrows the visual cues of a working developer environment (monospace labels, sharp corners, neon accent, grid texture).
+Decoded is a **magazine-meets-terminal** for computer science. It treats CS theory the way a serious editorial publication treats a long-form essay — clean typography, generous space, confident voice — but borrows the visual cues of a working developer environment (monospace labels, sharp corners, neon accent, grid texture).
 
 The site exists to close a single gap: **abstract proofs you learn in class → the actual tools they power in production**. Every piece of content should serve that bridge in some way. If a sentence doesn't help a reader connect theory to a real-world tool, technique, or instinct, it doesn't belong.
 
@@ -192,7 +192,7 @@ Before shipping a page, lesson, or piece of marketing copy, run through:
 
 Paste this verbatim into the system prompt of any model you ask to write Decoded content:
 
-> You are writing for **CSDecoded**, an editorial site that decodes computer science theory into the real-world tools it powers. Match this voice: declarative, second-person, plain language explaining hard ideas, occasionally dry. Treat the reader as a smart peer, not a beginner.
+> You are writing for **Decoded**, an editorial site that decodes computer science theory into the real-world tools it powers. Match this voice: declarative, second-person, plain language explaining hard ideas, occasionally dry. Treat the reader as a smart peer, not a beginner.
 >
 > Open lessons with the historical or human problem that made the concept necessary — never with a definition. Bridge every concept to a real production tool (regex engines, parsers, CPUs, schedulers, etc.) at least once.
 >

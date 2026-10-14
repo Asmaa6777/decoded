@@ -1,6 +1,6 @@
-# CSDecoded 
+# Decoded 
 
-CSDecoded is a website designed in light of bridging the gap between computer science theory and real world application. most CS curricula teach abstract concepts without showing how they power the tools and how they are invloved in the the technologies we use every day. CSDecoded makes those connections more explicit, helping. you see the practical skills out of coures and industry relevance behind it.
+Decoded is a website designed in light of bridging the gap between computer science theory and real world application. most CS curricula teach abstract concepts without showing how they power the tools and how they are invloved in the the technologies we use every day. Decoded makes those connections more explicit, helping. you see the practical skills out of coures and industry relevance behind it.
 
 ## Problem Statement: The Abstraction Gap in CS Education
 

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-CSDecoded is a client-side educational site that maps abstract CS theory to the real tools it powers (e.g. finite automata → regex engines). It is content-first: courses and lessons are authored as MDX and rendered by a small React/Vite app. There is no backend.
+Decoded is a client-side educational site that maps abstract CS theory to the real tools it powers (e.g. finite automata → regex engines). It is content-first: courses and lessons are authored as MDX and rendered by a small React/Vite app. There is no backend.
 
 ## Commands
 
@@ -52,7 +52,7 @@ Five brand accent colors — `neon`, `orange`, `sky`, `violet`, `mint` — are t
 
 ## Conventions and gotchas
 
-- **Deployment:** GitHub Pages at the root domain `https://csdecoded.stack42.tech` (`base: "/"` in `vite.config.ts`, no `basename` on `BrowserRouter`). The site's brand name is **Decoded**; "csdecoded" is only the domain/repo.
+- **Deployment:** GitHub Pages (repo `STACK-42/decoded`) at the root domain `https://decoded.stack42.tech` (`base: "/"` in `vite.config.ts`, no `basename` on `BrowserRouter`). The custom domain is set in the repo's Pages settings, not by a `CNAME` file. The site URL is also hardcoded as `SITE` in `scripts/og/generate.mjs` and in the SEO block of `index.html`.
 - **Social previews are generated at build time.** `npm run build` runs `vite build` then `scripts/og/generate.mjs`, which loads the registry via esbuild (MDX stubbed out) and writes `dist/og/<course>.png` (plus `home.png`, `courses.png`) with satori + resvg, and a `dist/<route>/index.html` for home, `/courses`, every course and every lesson with that page's title/description/OG tags. It rewrites the block between the `<!-- seo:start -->` / `<!-- seo:end -->` markers in `index.html`, so keep those markers. New courses and lessons get previews automatically.
 - Brand assets: `BrandMark`/`BrandLockup` (`src/components/brand/BrandMark.tsx`), course and lesson-kind icons (`src/components/brand/Glyphs.tsx`, keyed by course slug), favicons in `public/`.
 - Import from `src/` via the `@/*` alias (configured in both `vite.config.ts` and `vitest.config.ts`).
