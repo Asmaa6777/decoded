@@ -52,7 +52,9 @@ Five brand accent colors — `neon`, `orange`, `sky`, `violet`, `mint` — are t
 
 ## Conventions and gotchas
 
-- **Subpath deployment:** the app is served under `/csdecoded`. This is hardcoded in two places that must stay in sync — `base: "/csdecoded/"` in `vite.config.ts` and `basename="/csdecoded"` on `BrowserRouter` in `App.tsx`.
+- **Deployment:** GitHub Pages at the root domain `https://csdecoded.stack42.tech` (`base: "/"` in `vite.config.ts`, no `basename` on `BrowserRouter`). The site's brand name is **Decoded**; "csdecoded" is only the domain/repo.
+- **Social previews are generated at build time.** `npm run build` runs `vite build` then `scripts/og/generate.mjs`, which loads the registry via esbuild (MDX stubbed out) and writes `dist/og/<course>.png` (plus `home.png`, `courses.png`) with satori + resvg, and a `dist/<route>/index.html` for home, `/courses`, every course and every lesson with that page's title/description/OG tags. It rewrites the block between the `<!-- seo:start -->` / `<!-- seo:end -->` markers in `index.html`, so keep those markers. New courses and lessons get previews automatically.
+- Brand assets: `BrandMark`/`BrandLockup` (`src/components/brand/BrandMark.tsx`), course and lesson-kind icons (`src/components/brand/Glyphs.tsx`, keyed by course slug), favicons in `public/`.
 - Import from `src/` via the `@/*` alias (configured in both `vite.config.ts` and `vitest.config.ts`).
 - `src/components/ui/**` is shadcn/ui (config in `components.json`, base color slate, no prefix). Treat these as generated primitives; project-specific UI lives in `src/components/` and `src/components/layout/`.
 - TypeScript runs in loose mode (`tsconfig.app.json`) — `noImplicitAny`, `strictNullChecks`, and unused-var checks are off.

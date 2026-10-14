@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { courses, flattenLessons } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
+import { CourseGlyph } from "@/components/brand/Glyphs";
 
 const accentText: Record<string, string> = {
   neon: "text-neon",
@@ -39,9 +40,12 @@ export default function CourseCard({ slug }: { slug: string }) {
       <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentBg[course.accent]}`} aria-hidden />
 
       <div className="p-6 md:p-7">
-        <div className="flex items-baseline justify-between gap-3 mb-3">
-          <span className="font-mono text-[11px] tracking-[0.2em] text-muted-foreground">
-            {course.number}
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <span className="flex items-center gap-3">
+            <CourseGlyph slug={course.slug} className={`h-7 w-7 ${accentText[course.accent]}`} />
+            <span className="font-mono text-[11px] tracking-[0.2em] text-muted-foreground">
+              {course.number}
+            </span>
           </span>
           <span className={`font-mono text-[10px] tracking-[0.15em] uppercase ${accentText[course.accent]}`}>
             {course.status === "coming-soon" ? "Coming soon" : `${total} lesson${total !== 1 ? "s" : ""}`}

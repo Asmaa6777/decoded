@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { BrandLockup, BrandMark } from "@/components/brand/BrandMark";
 
 export function SiteHeader() {
   const { pathname } = useLocation();
@@ -6,11 +7,8 @@ export function SiteHeader() {
   return (
     <header className="relative z-10 bg-background text-foreground border-b border-border">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-baseline gap-2">
-          <span className="font-display text-xl font-extrabold tracking-tight">Decoded</span>
-          <span className="font-mono text-[10px] text-muted-foreground tracking-[0.2em] uppercase hidden sm:inline">
-            cs → real world
-          </span>
+        <Link to="/" aria-label="Decoded home">
+          <BrandLockup />
         </Link>
         <nav className="flex items-center gap-6 font-mono text-xs uppercase tracking-widest">
           <Link
@@ -35,7 +33,10 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border">
       <div className="container py-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 font-mono text-[11px] tracking-widest text-muted-foreground uppercase">
-        <span>Decoded — built for bridging the abstraction gap</span>
+        <span className="flex items-center gap-2">
+          <BrandMark compact className="h-4 w-4 text-foreground" />
+          Decoded. Built for bridging the abstraction gap
+        </span>
         <nav className="flex items-center gap-6">
           <Link to="/courses" className="hover:text-foreground transition-colors">Courses</Link>
           <Link to="/team" className="hover:text-foreground transition-colors">Team</Link>

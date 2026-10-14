@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
-import { getCourse, flattenLessons } from "@/content/registry";
+import { getCourse, flattenLessons, lessonKind } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
+import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 
 const accentBg: Record<string, string> = {
   neon: "bg-neon", orange: "bg-orange", sky: "bg-sky", violet: "bg-violet", mint: "bg-mint",
@@ -40,6 +41,7 @@ export default function CoursePage() {
               <span className={accentText[course.accent]}>{course.number}</span>
             </div>
 
+            <CourseGlyph slug={course.slug} className={`h-10 w-10 mb-5 ${accentText[course.accent]}`} />
             <h1 className="font-display text-4xl md:text-6xl font-extrabold leading-[1.02] tracking-tight mb-4">
               {course.title}
             </h1>
@@ -113,7 +115,7 @@ export default function CoursePage() {
                           <li key={lesson.slug} className="border-b border-border">
                             <Link
                               to={`/courses/${course.slug}/${lesson.slug}`}
-                              className="group grid grid-cols-[auto_1fr_auto] items-center gap-4 py-4 hover:bg-secondary/40 transition px-1"
+                              className="group grid grid-cols-[auto_auto_1fr_auto] items-center gap-4 py-4 hover:bg-secondary/40 transition px-1"
                             >
                               <span
                                 className={`font-mono text-[11px] tracking-widest w-10
@@ -121,6 +123,7 @@ export default function CoursePage() {
                               >
                                 {complete ? "✓" : num}
                               </span>
+                              <LessonKindIcon kind={lessonKind(lesson)} className="h-4 w-4 text-muted-foreground" />
                               <span className="font-display text-base md:text-lg font-semibold group-hover:translate-x-0.5 transition-transform">
                                 {lesson.title}
                               </span>

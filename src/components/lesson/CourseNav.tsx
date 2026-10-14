@@ -3,9 +3,13 @@ import { Link } from "react-router-dom";
 import { ChevronDown, ChevronLeft } from "lucide-react";
 import { flattenLessons, lessonKind, type Course } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
+import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 
 const accentBg: Record<Course["accent"], string> = {
   neon: "bg-neon", orange: "bg-orange", sky: "bg-sky", violet: "bg-violet", mint: "bg-mint",
+};
+const accentText: Record<Course["accent"], string> = {
+  neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
 };
 const accentBorder: Record<Course["accent"], string> = {
   neon: "border-neon", orange: "border-orange", sky: "border-sky", violet: "border-violet", mint: "border-mint",
@@ -55,7 +59,10 @@ export function CourseNav({
           <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Back to course
         </Link>
-        <div className="font-display text-xl font-bold leading-tight">{course.title}</div>
+        <div className="flex items-center gap-3">
+          <CourseGlyph slug={course.slug} className={`h-6 w-6 shrink-0 ${accentText[course.accent]}`} />
+          <div className="font-display text-xl font-bold leading-tight">{course.title}</div>
+        </div>
         <div className="flex flex-col gap-1.5">
           <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
             <div className={`h-full ${accentBg[course.accent]} transition-[width]`} style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
@@ -117,11 +124,7 @@ export function CourseNav({
                             {complete ? "✓" : ""}
                           </span>
                           <span className="flex-1 min-w-0">{l.title}</span>
-                          {kind !== "theory" && (
-                            <span className="mt-0.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground font-normal">
-                              {kind}
-                            </span>
-                          )}
+                          <LessonKindIcon kind={kind} className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                         </Link>
                       </li>
                     );

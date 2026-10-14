@@ -3,6 +3,11 @@ import { Link } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import CourseCard from "@/components/CourseCard";
 import { courses } from "@/content/registry";
+import { CourseGlyph } from "@/components/brand/Glyphs";
+
+const accentText: Record<string, string> = {
+  neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
+};
 
 export default function Index() {
   useEffect(() => {
@@ -48,14 +53,16 @@ export default function Index() {
             </Link>
           </div>
 
-          {/* Legend */}
-          <div className="mt-14 flex flex-wrap gap-x-6 gap-y-3 font-mono text-[11px] text-muted-foreground tracking-widest">
-            <Legend dot="bg-neon" label="Available" />
-            <Legend dot="bg-orange" label="Available" />
-            <Legend dot="bg-sky/60" label="Coming soon" />
-            <Legend dot="bg-violet/60" label="Coming soon" />
-            <Legend dot="bg-mint/60" label="Coming soon" />
-          </div>
+          {/* Track legend: one glyph and colour per course */}
+          <ul className="mt-14 flex flex-wrap gap-x-6 gap-y-3 font-mono text-[11px] text-muted-foreground tracking-widest uppercase">
+            {courses.map((c) => (
+              <li key={c.slug} className={`inline-flex items-center gap-2 ${c.status === "coming-soon" ? "opacity-50" : ""}`}>
+                <CourseGlyph slug={c.slug} className={`h-4 w-4 ${accentText[c.accent]}`} />
+                {c.title}
+                {c.status === "coming-soon" && <span className="normal-case tracking-normal">(soon)</span>}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -137,14 +144,5 @@ export default function Index() {
 
       <SiteFooter />
     </div>
-  );
-}
-
-function Legend({ dot, label }: { dot: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-2">
-      <span className={`h-2 w-2 rounded-full ${dot}`} aria-hidden />
-      {label}
-    </span>
   );
 }
