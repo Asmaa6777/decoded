@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_KEY = "decoded:progress:v1";
 
-type ProgressMap = Record<string, string[]>; // courseSlug -> completed lesson slugs
+import type { ProgressMap } from "@/lib/progressBackup";
 
 function read(): ProgressMap {
   if (typeof window === "undefined") return {};
@@ -21,6 +21,16 @@ function write(map: ProgressMap) {
   } catch {
     /* ignore quota errors */
   }
+}
+
+/** Every course's completed lessons, straight from storage (for backups). */
+export function readAllProgress(): ProgressMap {
+  return read();
+}
+
+/** Replace all stored progress and notify every mounted useProgress. */
+export function saveAllProgress(map: ProgressMap) {
+  write(map);
 }
 
 export function useProgress(courseSlug?: string) {

@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { BrandLockup, BrandMark } from "@/components/brand/BrandMark";
+import { ProgressBackup } from "@/components/ProgressBackup";
 
 export function SiteHeader() {
   const { pathname } = useLocation();
@@ -41,7 +42,10 @@ export function SiteFooter() {
           <Link to="/courses" className="hover:text-foreground transition-colors">Courses</Link>
           <Link to="/team" className="hover:text-foreground transition-colors">Team</Link>
         </nav>
-        <span>v0.1 · Progress saved on this device</span>
+        <span className="flex flex-col gap-2 md:items-end">
+          <span>v0.1 · Progress saved on this device</span>
+          <ProgressBackup />
+        </span>
       </div>
     </footer>
   );

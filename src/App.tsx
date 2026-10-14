@@ -10,6 +10,7 @@ import CoursePage from "./pages/CoursePage.tsx";
 import LessonPage from "./pages/LessonPage.tsx";
 import Team from "./pages/Team.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter basename="/">
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/courses" element={<Courses />} />

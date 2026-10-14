@@ -23,14 +23,15 @@ export default function Index() {
 
       {/* HERO */}
       <section className="relative z-10 border-b border-border">
-        <div className="container py-20 md:py-28 max-w-4xl">
+        <div className="container py-20 md:py-28 max-w-6xl">
           <div className="eyebrow text-neon mb-5">CS Theory · Real-world skills maped</div>
-          <h1 className="font-display font-extrabold leading-[0.95] tracking-tight text-5xl sm:text-6xl md:text-7xl lg:text-[80px]">
-            Computer science Proofs,
-            <br />
-            <span className="text-neon">decoded</span> to
-            <br />
-            production tools
+          {/* Syne is very wide: three fixed lines, sized to the viewport so each fits on one line from md up */}
+          <h1 className="font-display font-extrabold leading-[0.95] tracking-tight text-[clamp(2.5rem,5.4vw,4.5rem)]">
+            <span className="block md:whitespace-nowrap">Computer science</span>
+            <span className="block md:whitespace-nowrap">
+              proofs, <span className="text-neon">decoded</span> to
+            </span>
+            <span className="block md:whitespace-nowrap">production tools</span>
           </h1>
           <p className="mt-8 max-w-2xl text-lg md:text-xl text-muted-foreground italic font-body leading-relaxed">
             Every Course in a CS curriculum maps to something more practical, used daily, with application everyhwere, it was just have to map that.

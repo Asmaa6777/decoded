@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getCourse, flattenLessons, lessonKind } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
+import { ProgressBackup } from "@/components/ProgressBackup";
 import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 
 const accentBg: Record<string, string> = {
@@ -66,16 +67,19 @@ export default function CoursePage() {
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                {done > 0 && (
-                  <button
-                    onClick={() => {
-                      if (confirm("Reset progress for this course?")) reset();
-                    }}
-                    className="mt-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition"
-                  >
-                    Reset progress
-                  </button>
-                )}
+                <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+                  <ProgressBackup />
+                  {done > 0 && (
+                    <button
+                      onClick={() => {
+                        if (confirm("Reset progress for this course?")) reset();
+                      }}
+                      className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition"
+                    >
+                      Reset progress
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
