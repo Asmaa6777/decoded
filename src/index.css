@@ -166,6 +166,7 @@
     font-size: 20px;
     margin: 2rem 0 .75rem;
   }
+  .prose-reading h2, .prose-reading h3 { scroll-margin-top: 1.5rem; }
   .prose-reading p { margin: 0 0 1.25rem; }
   /* :where() keeps specificity low; widgets marked not-prose (cards,
      visualizers) style their own links. */
