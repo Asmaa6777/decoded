@@ -3,9 +3,9 @@ import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Practical: Arrays, Swaps and a Stopwatch
 
-Almost every algorithms lab follows the same shape: make an array of random numbers, print it, run an algorithm on it, print it again, and time how long it took. The algorithm changes every week. The scaffolding around it doesn't.
+Almost every algorithms lab has the same shape: make an array of random numbers, print it, run an algorithm on it, print it again, and time how long it took. The algorithm changes every week, but the code around it stays the same.
 
-So let's build that scaffolding once, properly, and understand every line of it. You'll reuse it in every sorting and searching lesson after this one.
+So we'll write that code once and go through every line. You'll reuse it in every sorting and searching lesson after this one.
 
 ## Arrays in Java, quickly
 
@@ -19,11 +19,11 @@ int[] c = new int[10]; // declare and allocate 10 slots, all 0
 
 A few facts that matter for algorithms:
 
-- An array has a **fixed size**, set when you create it. `c.length` gives it (no parentheses — it's a field, not a method).
+- An array has a **fixed size**, set when you create it. `c.length` gives it, with no parentheses, because it's a field and not a method.
 - Indexes go from `0` to `length - 1`. Reading `c[10]` above throws `ArrayIndexOutOfBoundsException`.
-- Reading or writing `a[i]` is **$O(1)$** — instant, no matter how big the array is. That's what makes arrays the natural home for sorting algorithms.
+- Reading or writing `a[i]` is **$O(1)$**: instant, however big the array is. That's why sorting algorithms work on arrays.
 
-Two-dimensional arrays work the same way — an array of arrays:
+Two-dimensional arrays work the same way, as an array of arrays:
 
 ```java
 int[][] grid = new int[3][4];   // 3 rows, 4 columns
@@ -31,7 +31,7 @@ grid[1][2] = 7;
 int rows = grid.length, cols = grid[0].length;
 ```
 
-Printing in reverse is just a loop that counts down:
+Printing in reverse is a loop that counts down:
 
 ```java
 for (int i = a.length - 1; i >= 0; i--)
@@ -40,7 +40,7 @@ for (int i = a.length - 1; i >= 0; i--)
 
 ## The toolkit
 
-Here are the three helper methods every lab uses. Put them in one class and keep it.
+These are the three helper methods every lab uses. Put them in one class and keep it.
 
 ```java
 public class AlgoLab {
@@ -66,17 +66,17 @@ public class AlgoLab {
 }
 ```
 
-`Math.random()` returns a `double` in $[0, 1)$. Multiply by `dataRange` and cast to `int` and you get a whole number from `0` up to `dataRange - 1`.
+`Math.random()` returns a `double` in $[0, 1)$. Multiply by `dataRange`, cast to `int`, and you get a whole number from `0` up to `dataRange - 1`.
 
 <Callout tone="violet" label="Why swap needs the array">
-A beginner's version is `swap(int x, int y)` that swaps two ints. It compiles, runs, and does nothing — Java passes primitive values by **copy**, so the method swaps its own private copies. Passing the array works because the method receives a reference to the *same* array, and changes it in place.
+A beginner's version is `swap(int x, int y)`, which swaps two ints. It compiles and runs, and does nothing, because Java passes primitive values by **copy** and the method swaps its own private copies. Passing the array works because the method gets a reference to the *same* array and changes it in place.
 </Callout>
 
-You'll see some labs write the parameters in a different order, like `swap(x, y, array)`. That's fine — it's the same three lines inside. Pick one order and stick to it.
+Some labs put the parameters in a different order, like `swap(x, y, array)`. The three lines inside are the same. Pick one order and stick to it.
 
 ## The trap: copying an array
 
-This is the bug that ruins more sorting experiments than anything else:
+This bug ruins more sorting experiments than anything else:
 
 ```java
 int[] original = new int[10];
@@ -87,13 +87,13 @@ selectionSort(copy);
 printArray(original);         // ...it's sorted too.
 ```
 
-`copy = original` copies the **reference**, not the data. Both names now point at the same array. To make a real, independent copy:
+`copy = original` copies the **reference**, so both names point at the same array. To make a real, independent copy:
 
 ```java
 int[] copy = original.clone();          // or: Arrays.copyOf(original, original.length)
 ```
 
-You need this whenever you want to run two algorithms on *the same* random input for a fair race.
+You need this whenever you want a fair race between two algorithms on *the same* random input.
 
 ## The stopwatch
 
@@ -104,10 +104,10 @@ long end = System.currentTimeMillis();
 System.out.println("Took " + (end - start) + " ms");
 ```
 
-`currentTimeMillis()` counts milliseconds. For small arrays, everything takes "0 ms" — the work finishes before the clock ticks. Two fixes:
+`currentTimeMillis()` counts milliseconds. For small arrays everything takes "0 ms" because the work finishes before the clock ticks. There are two fixes:
 
-- Use `System.nanoTime()` instead, which counts nanoseconds and is meant for measuring durations.
-- Make the array bigger. That's the honest fix: analysis is about *large* $n$ anyway.
+- Use `System.nanoTime()` instead. It counts nanoseconds and is meant for measuring durations.
+- Make the array bigger. Analysis is about *large* $n$ anyway.
 
 ## Putting it together
 
@@ -132,9 +132,9 @@ public static void main(String[] args) {
 
 ## Your turn: two warm-up exercises
 
-These are the classic first-lab exercises. Write them yourself before peeking.
+These are the usual first-lab exercises. Write them yourself before peeking.
 
-**1. Print the largest number in a random array.** (You already saw the idea in lesson 1.)
+**1. Print the largest number in a random array.** (You saw the idea in lesson 1.)
 
 **2. Print the sum of all the items in a random array.**
 
@@ -151,18 +151,18 @@ Both are $O(n)$: one pass, constant work per element.
 
 ## The real experiment
 
-Here's where the stopwatch becomes useful. Once you have selection sort (next lesson), run it at sizes 1,000, 2,000, 4,000 and 8,000 and write the times down.
+This is where the stopwatch earns its place. Once you have selection sort (next lesson), run it at sizes 1,000, 2,000, 4,000 and 8,000 and write the times down.
 
-If an algorithm is $O(n^2)$, doubling $n$ should roughly **quadruple** the time. If it's $O(n)$, doubling $n$ should roughly double it. Watching your own measurements line up with the math is the moment Big-O stops being notation and starts being a prediction.
+If an algorithm is $O(n^2)$, doubling $n$ should roughly **quadruple** the time. If it's $O(n)$, doubling $n$ should roughly double it. When your own measurements match the math, Big-O becomes a prediction you can check.
 
 <Callout tone="sky" label="Make it fair">
-Use `.clone()` so every algorithm sorts the same input. Run each size a few times and take the middle value — the first run is often slow while the JVM warms up.
+Use `.clone()` so every algorithm sorts the same input. Run each size a few times and take the middle value, since the first run is often slow while the JVM warms up.
 </Callout>
 
 <LeetCodeProblems
   problems={[
-    { id: 344, title: "Reverse String", slug: "reverse-string", why: "Two pointers walking inward and your swap method. In place, O(n), O(1) extra space." },
-    { id: 283, title: "Move Zeroes", slug: "move-zeroes", why: "In-place array editing with swaps — the exact muscle sorting algorithms use." },
+    { id: 344, title: "Reverse String", slug: "reverse-string", why: "Two pointers walking inward, plus your swap method. In place, O(n), O(1) extra space." },
+    { id: 283, title: "Move Zeroes", slug: "move-zeroes", why: "In-place array editing with swaps, which is what sorting algorithms do all day." },
     { id: 1929, title: "Concatenation of Array", slug: "concatenation-of-array", why: "Allocate a new array of size 2n and fill it with index arithmetic. Practice with lengths and bounds." },
     { id: 1480, title: "Running Sum of 1d Array", slug: "running-sum-of-1d-array", why: "The sum exercise, one step further: keep every partial sum as you go." },
   ]}

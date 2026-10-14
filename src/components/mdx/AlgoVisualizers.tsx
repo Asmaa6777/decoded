@@ -736,7 +736,7 @@ export function KnapsackTable({ items = DEFAULT_ITEMS, capacity = 5 }: { items?:
   const eq = (a?: [number, number], i?: number, w?: number) => !!a && a[0] === i && a[1] === w;
   return (
     <Stepper
-      title="0/1 knapsack — filling the table"
+      title="0/1 knapsack: filling the table"
       frames={frames}
       code={JAVA_KNAPSACK}
       legend={[
@@ -829,7 +829,7 @@ export function GrowthTable({ initialN = 100 }: { initialN?: number }) {
           </table>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Drag the slider. Up to n = 30 every row looks harmless. Push it to a million and the gap between the rows is the whole point of this course.
+          Drag the slider. Up to n = 30 every row looks harmless. At a million, the slow rows take hours or longer, and avoiding them is what this course is about.
         </p>
       </div>
     </div>
@@ -881,5 +881,107 @@ export function LeetCodeProblems({ problems }: { problems: LeetCodeProblem[] }) 
         })}
       </ul>
     </section>
+  );
+}
+
+/* -------------------------- merge sort tree -------------------------- */
+
+type Piece = { lo: number; hi: number; carried: boolean };
+
+/** Pieces at every depth of the recursion, using the same mid as the Java code. */
+function splitLevels(n: number) {
+  const levels: Piece[][] = [[{ lo: 0, hi: n - 1, carried: false }]];
+  while (levels[levels.length - 1].some((p) => p.hi > p.lo)) {
+    const next: Piece[] = [];
+    for (const p of levels[levels.length - 1]) {
+      if (p.hi === p.lo) {
+        next.push({ ...p, carried: true });
+      } else {
+        const mid = Math.floor((p.lo + p.hi) / 2);
+        next.push({ lo: p.lo, hi: mid, carried: false }, { lo: mid + 1, hi: p.hi, carried: false });
+      }
+    }
+    levels.push(next);
+  }
+  return levels;
+}
+
+export function MergeSortTree({ input = [38, 27, 43, 3, 9, 82, 10] }: { input?: number[] }) {
+  const n = input.length;
+  const levels = useMemo(() => splitLevels(n), [n]);
+  const depth = levels.length - 1;
+
+  // Split rows go down to single elements; merge rows replay the same ranges back up, sorted.
+  const rows = [
+    ...levels.map((pieces, d) => ({
+      pieces,
+      sorted: d === depth,
+      label: d === 0 ? "input" : d === depth ? "size 1" : "split",
+      kind: d === 0 ? "input" : d === depth ? "base" : "split",
+    })),
+    ...levels
+      .slice(0, depth)
+      .reverse()
+      .map((pieces, i) => ({
+        pieces: pieces.map((p) => ({ ...p, carried: p.carried || p.hi === p.lo })),
+        sorted: true,
+        label: i === depth - 1 ? "sorted" : "merge",
+        kind: i === depth - 1 ? "output" : "merge",
+      })),
+  ];
+
+  const boxTone: Record<string, string> = {
+    input: "border-neon bg-neon/10",
+    split: "border-foreground/30",
+    base: "border-sky/70 bg-sky/10",
+    merge: "border-orange/70 bg-orange/10",
+    output: "border-mint bg-mint/15",
+  };
+
+  return (
+    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+        <div className="eyebrow text-sky">Merge sort, level by level</div>
+        <Legend items={[["bg-sky", "base case"], ["bg-orange", "merged"], ["bg-mint", "done"]]} />
+      </div>
+      <div className="p-5 overflow-x-auto">
+        <div className="grid gap-y-2 gap-x-3 min-w-fit" style={{ gridTemplateColumns: "auto 1fr" }}>
+          {rows.map((row, r) => (
+            <div key={r} className="contents">
+              <div
+                className={`font-mono text-[10px] uppercase tracking-widest self-center text-right ${
+                  r === depth ? "text-sky" : r > depth ? "text-orange" : "text-muted-foreground"
+                } ${row.kind === "output" ? "!text-mint" : ""}`}
+              >
+                {row.label}
+              </div>
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${n}, minmax(34px, 1fr))` }}>
+                {row.pieces.map((p) => {
+                  const vals = input.slice(p.lo, p.hi + 1);
+                  if (row.sorted) vals.sort((a, b) => a - b);
+                  const dim = p.carried && row.kind !== "base";
+                  return (
+                    <div
+                      key={`${p.lo}-${p.hi}`}
+                      style={{ gridColumn: `${p.lo + 1} / ${p.hi + 2}` }}
+                      className={`h-9 flex items-center justify-around px-1 font-mono text-[13px] border rounded-sm transition-opacity ${
+                        dim ? "border-dashed border-border text-muted-foreground opacity-60" : boxTone[row.kind]
+                      }`}
+                    >
+                      {vals.map((v, i) => (
+                        <span key={i}>{v}</span>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground leading-relaxed">
+          Each box sits under the slice of the array it came from. Dashed boxes are pieces that were already size 1 and are just waiting for the others.
+        </p>
+      </div>
+    </div>
   );
 }

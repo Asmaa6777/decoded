@@ -167,7 +167,9 @@
     margin: 2rem 0 .75rem;
   }
   .prose-reading p { margin: 0 0 1.25rem; }
-  .prose-reading a {
+  /* :where() keeps specificity low; widgets marked not-prose (cards,
+     visualizers) style their own links. */
+  .prose-reading a:not(:where(.not-prose, .not-prose *)) {
     color: hsl(var(--reading-fg));
     text-decoration: underline;
     text-decoration-color: hsl(var(--orange));
@@ -195,6 +197,10 @@
     line-height: 1.6;
   }
   .prose-reading pre code { background: transparent; padding: 0; color: inherit; }
+  .prose-reading figure[data-rehype-pretty-code-figure] { margin: 1.5rem 0; }
+  .prose-reading figure[data-rehype-pretty-code-figure] pre { margin: 0; }
+  .prose-reading .code-block { position: relative; }
+  .prose-reading .code-block pre { padding-right: 4.5rem; }
   /* Lift code blocks off the page background in dark mode */
   .dark .prose-reading pre { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); }
   .prose-reading ul, .prose-reading ol { margin: 0 0 1.25rem 1.5rem; }
@@ -286,6 +292,8 @@
   overflow: visible;
 }
 .react-flow__edge { pointer-events: none; }
+/* xyflow renders one <svg> per edge with no size; let paths draw outside it. */
+.react-flow__edges svg { position: absolute; overflow: visible; pointer-events: none; }
 .react-flow__edge-path {
   fill: none;
   stroke: currentColor;

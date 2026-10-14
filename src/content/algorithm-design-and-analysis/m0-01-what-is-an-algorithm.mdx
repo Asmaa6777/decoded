@@ -3,52 +3,52 @@ import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Recipes, Programs, and Proof
 
-Every course on algorithms opens with a definition that sounds obvious and then moves on too fast. Here it is:
+Most algorithms courses open with a definition that sounds obvious and then move on too fast. Here it is:
 
 > An **algorithm** is a well-defined procedure that takes some input and turns it into some output in a finite number of steps.
 
-That's a recipe. "Take flour, eggs and milk, whisk, pour, flip when bubbles appear, stop after five pancakes." Input, steps, output, an end. What makes it an *algorithm* and not just a recipe is how strict we are about each of those words. That strictness is what this whole course is built on, so it's worth slowing down here for a minute.
+That describes a recipe too. "Take flour, eggs and milk, whisk, pour, flip when bubbles appear, stop after five pancakes" has input, steps, output and an end. What makes something an *algorithm* is how strictly we read each of those words, and the rest of the course depends on that strictness, so it's worth a few minutes here.
 
-## What "well-defined" actually demands
+## What "well-defined" demands
 
-A procedure only counts as an algorithm if it has all of these:
+A procedure counts as an algorithm only if it has all of these:
 
 - **Input.** Zero or more values it starts from. (Zero is allowed: "print the first 10 primes" needs no input.)
 - **Output.** At least one result. A procedure that produces nothing has done nothing.
 - **Definiteness.** Every step is precise. "Whisk until it looks right" isn't. "Whisk for 60 seconds" is.
-- **Finiteness.** It *must* stop. A loop that runs forever on some input is a bug, not an algorithm.
-- **Effectiveness.** Each step is basic enough to actually do — with a pencil, or by a CPU.
+- **Finiteness.** It *must* stop. A loop that runs forever on some input is a bug.
+- **Effectiveness.** Each step is basic enough to carry out with a pencil or on a CPU.
 
-On top of those, we want it to be *efficient* (not waste time or memory) and *understandable* (someone else can read it and trust it). Those two are where design and analysis come in.
+We also want it to be *efficient* (it doesn't waste time or memory) and *understandable* (someone else can read it and trust it). Those two are where design and analysis come in.
 
-## Correctness: the part people skip
+## Correctness
 
 An algorithm is **correct** if, for *every* valid input, it stops and gives the right output.
 
-Every. Not "for the three examples I tried." A sorting algorithm that works on 99.9% of arrays and silently scrambles the rest is not "mostly correct" — it's wrong. That's why algorithm courses spend time on traces and proofs: testing can show a bug exists, but only reasoning can show one doesn't.
+That means every input, not just the three examples you tried. A sorting algorithm that works on 99.9% of arrays and silently scrambles the rest is wrong. This is why algorithm courses spend time on traces and proofs: testing can show that a bug exists, but only reasoning can show that one doesn't.
 
 <Callout tone="orange" label="Why this matters at work">
-Most production incidents aren't "the algorithm was slow." They're "the algorithm was wrong on an input nobody thought about" — an empty list, a duplicate, a negative number, a value at the very edge. Thinking about correctness as *every input* is the habit that catches those before users do.
+Most production incidents aren't caused by a slow algorithm. They come from an algorithm that was wrong on an input nobody thought about: an empty list, a duplicate, a negative number, a value right at the edge. Asking "does this work for *every* input?" catches those before users do.
 </Callout>
 
 ## Algorithm vs. program
 
-People use the words interchangeably. They aren't the same thing.
+People use the two words interchangeably, but they mean different things.
 
 | Algorithm | Program |
 | --- | --- |
 | Abstract and general | Concrete and specific |
-| Written in pseudocode, a diagram, or plain English | Written in a real language — Java, Python, C |
+| Written in pseudocode, a diagram, or plain English | Written in a real language (Java, Python, C) |
 | Describes *how* to solve the problem | *Implements* that description so a machine can run it |
 | Can't be executed directly | Runs on a computer |
 
-One algorithm can become a thousand programs. Binary search is one idea; there's a version of it in the Java standard library (`Arrays.binarySearch`), in every database index, and in the `git bisect` command. Same algorithm, different programs.
+One algorithm can become a thousand programs. Binary search is one idea, and there's a version of it in the Java standard library (`Arrays.binarySearch`), in every database index, and in the `git bisect` command.
 
-This course writes everything in **Java**, because that's what most university labs use. But keep the distinction in your head: when an exam asks you to "write the algorithm," it usually wants the idea — clear steps or pseudocode — not a compiling class.
+This course writes everything in **Java**, because that's what most university labs use. Keep the distinction in mind, though. When an exam asks you to "write the algorithm," it usually wants the idea as clear steps or pseudocode, not a class that compiles.
 
-## How an algorithm actually gets made
+## How an algorithm gets made
 
-Designing an algorithm isn't "think, then type." It's a loop:
+Designing an algorithm is a loop, and typing comes at the end of it:
 
 <Diagram
   direction="TB"
@@ -70,44 +70,44 @@ Designing an algorithm isn't "think, then type." It's a loop:
 />
 
 1. **Understand the problem.** What exactly is the input? What counts as a right answer? What are the weird cases?
-2. **Choose your tools.** Exact answer or a good-enough one? Which data structures? Which strategy — brute force, divide and conquer, greedy, dynamic programming? (You'll learn all four here.)
+2. **Choose your tools.** Do you need the exact answer or a good-enough one? Which data structures? Which strategy: brute force, divide and conquer, greedy, or dynamic programming? (You'll learn all four here.)
 3. **Design** the steps.
-4. **Prove** it's correct — at least convince yourself carefully.
+4. **Prove** it's correct, or at least convince yourself carefully.
 5. **Analyze** how much time and memory it needs. If it's too slow, go back to step 3.
 6. **Code** it.
 
-Notice coding is *last*. If you jump straight to step 6, you end up doing steps 3–5 by trial and error, in a debugger, at 2 a.m.
+Coding is *last*. If you jump straight to step 6, you end up doing steps 3 to 5 by trial and error in a debugger at 2 a.m.
 
 <Callout tone="sky" label="Exam tip">
-"Draw the flowchart of the algorithm design and analysis process" is a common exam question. The six boxes above, in order, with an arrow back from "analyze" to "design," is the answer.
+"Draw the flowchart of the algorithm design and analysis process" is a common exam question. The answer is the six boxes above, in order, with an arrow back from "analyze" to "design."
 </Callout>
 
 ## The kinds of problems algorithms solve
 
-Most problems you'll meet fall into a handful of families. You'll study most of these in this course:
+Most problems you'll meet fall into a few families, and this course covers most of them:
 
-- **Sorting** — put things in order (module 1).
-- **Searching** — find one thing among many (module 2).
-- **Numerical** — GCD, primes, powers (module 2).
-- **Graph problems** — routes, networks, connections (module 3).
-- **Optimization** — the best choice under constraints (module 4: greedy and dynamic programming).
+- **Sorting:** put things in order (module 1).
+- **Searching:** find one thing among many (module 2).
+- **Numerical:** GCD, primes, powers (module 2).
+- **Graph problems:** routes, networks, connections (module 3).
+- **Optimization:** the best choice under constraints (module 4, greedy and dynamic programming).
 
-And then there are the **hard problems**: the Traveling Salesman Problem (shortest route through every city), the Knapsack Problem (most value that fits in a bag), Graph Coloring. Nobody knows a fast algorithm for any of them — these belong to the famous *NP-complete* class. You'll meet a small, solvable version of knapsack at the end of the course and see exactly where the difficulty comes from.
+Then there are the **hard problems**: the Traveling Salesman Problem (shortest route through every city), the Knapsack Problem (most value that fits in a bag), and Graph Coloring. Nobody knows a fast algorithm for any of them; they belong to the *NP-complete* class. At the end of the course you'll solve a small version of knapsack and see where the difficulty comes from.
 
 ## Where this shows up today
 
 <ApplicationsGrid>
   <PracticalApplication title="Coding interviews" tool="CAREER">
-    Every big-tech interview is, at its core, steps 1–5 above done out loud in 45 minutes. Interviewers care more about how you reason about correctness and cost than about syntax.
+    A big-tech interview is mostly steps 1 to 5 above, done out loud in 45 minutes. Interviewers care more about how you reason about correctness and cost than about syntax.
   </PracticalApplication>
   <PracticalApplication title="Code review" tool="TEAMWORK">
     "What happens if this list is empty?" is a correctness question. "What happens when we have 10 million users?" is an analysis question. Senior engineers ask both by reflex.
   </PracticalApplication>
   <PracticalApplication title="Libraries you already use" tool="JAVA">
-    `Arrays.sort`, `Collections.sort`, `HashMap`, `TreeMap` — each one is a carefully chosen algorithm. Knowing which one is behind the method tells you when it will be fast and when it won't.
+    `Arrays.sort`, `Collections.sort`, `HashMap` and `TreeMap` are each built on a carefully chosen algorithm. If you know which one is behind a method, you know when it will be fast and when it won't.
   </PracticalApplication>
   <PracticalApplication title="Maps and delivery apps" tool="GRAPHS">
-    Route planning is graph search plus optimization — the same ideas from modules 3 and 4, scaled up to millions of roads.
+    Route planning is graph search plus optimization, the same ideas as modules 3 and 4, scaled up to millions of roads.
   </PracticalApplication>
 </ApplicationsGrid>
 
@@ -141,12 +141,12 @@ static int findMax(int[] a) {
 }
 ```
 
-Now check it against the definition. Input: an array. Output: one number. Definite: every step is exact. Finite: the loop runs exactly $n - 1$ times. Correct? Almost. What happens if the array is **empty**? `a[0]` throws an exception. Either the problem says "the array has at least one element," or the algorithm has to handle that case. That one question — *what about the empty input?* — is correctness thinking in action.
+Now check it against the definition. Input: an array. Output: one number. Definite: every step is exact. Finite: the loop runs exactly $n - 1$ times. Correct? Almost. If the array is **empty**, `a[0]` throws an exception. Either the problem promises at least one element, or the algorithm has to handle that case. Asking "what about the empty input?" is what correctness thinking looks like in practice.
 
 <LeetCodeProblems
   problems={[
-    { id: 1672, title: "Richest Customer Wealth", slug: "richest-customer-wealth", why: "Find the maximum again, but of row sums in a 2D array — the findMax pattern one level up." },
-    { id: 485, title: "Max Consecutive Ones", slug: "max-consecutive-ones", why: "One pass, two variables (current streak, best streak). A clean exercise in definite, finite steps." },
+    { id: 1672, title: "Richest Customer Wealth", slug: "richest-customer-wealth", why: "Find the maximum again, this time of row sums in a 2D array. It's the findMax pattern one level up." },
+    { id: 485, title: "Max Consecutive Ones", slug: "max-consecutive-ones", why: "One pass with two variables: the current streak and the best streak." },
     { id: 1295, title: "Find Numbers with Even Number of Digits", slug: "find-numbers-with-even-number-of-digits", why: "Turn a vague idea (\"count digits\") into an exact procedure. Try it without converting to a String." },
   ]}
 />

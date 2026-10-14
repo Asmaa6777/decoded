@@ -3,18 +3,18 @@ import { EuclidVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisuali
 
 # Euclid's GCD: A 2,300-Year-Old Algorithm
 
-Around 300 BC, Euclid wrote down a method for finding the greatest common divisor of two numbers. It's one of the oldest algorithms we know of, it's still the one everyone uses, and there's a version of it running inside the encryption that protects your phone's connections right now.
+Around 300 BC, Euclid wrote down a method for finding the greatest common divisor of two numbers. It's one of the oldest known algorithms and still the one everyone uses. A version of it runs inside the encryption that protects your phone's connections.
 
 ## The problem
 
-The **greatest common divisor** of two non-negative integers $m$ and $n$ (not both zero), written $\gcd(m, n)$, is the largest integer that divides both of them **evenly** — with remainder zero.
+The **greatest common divisor** of two non-negative integers $m$ and $n$ (not both zero), written $\gcd(m, n)$, is the largest integer that divides both of them **evenly**, with remainder zero.
 
 Some examples you can check by hand:
 
 - $\gcd(24, 54) = 6$
 - $\gcd(18, 42) = 6$
 - $\gcd(45, 210) = 15$
-- $\gcd(97, 20) = 1$ — numbers like these, with no common divisor except 1, are called *coprime*.
+- $\gcd(97, 20) = 1$. Numbers like these, with no common divisor except 1, are called *coprime*.
 
 ## The obvious way
 
@@ -28,11 +28,11 @@ static int gcdBruteForce(int m, int n) {
 }
 ```
 
-Correct, but in the worst case — coprime numbers — it tries every value down to 1. That's $O(\min(m, n))$. For two 10-digit numbers, that's billions of divisions.
+It's correct, but in the worst case (coprime numbers) it tries every value down to 1. That's $O(\min(m, n))$. For two 10-digit numbers, that's billions of divisions.
 
 ## Euclid's idea
 
-Euclid noticed one equality, and the whole algorithm falls out of it:
+Euclid's whole algorithm follows from one equality:
 
 $$
 \gcd(m, n) = \gcd(n,\ m \bmod n)
@@ -40,15 +40,15 @@ $$
 
 where $m \bmod n$ is the remainder when you divide $m$ by $n$ (`m % n` in Java).
 
-**Why is that true?** Write $m = q \cdot n + r$, where $r$ is the remainder. Any number that divides both $m$ and $n$ also divides $r = m - q \cdot n$. And any number that divides both $n$ and $r$ also divides $m = q \cdot n + r$. So the pairs $(m, n)$ and $(n, r)$ have exactly the same common divisors — which means the same *greatest* one.
+**Why is that true?** Write $m = q \cdot n + r$, where $r$ is the remainder. Any number that divides both $m$ and $n$ also divides $r = m - q \cdot n$. And any number that divides both $n$ and $r$ also divides $m = q \cdot n + r$. So the pairs $(m, n)$ and $(n, r)$ have exactly the same common divisors, and therefore the same *greatest* one.
 
-But $(n, r)$ is a smaller problem: $r$ is always less than $n$. Keep applying the rule, and the numbers keep shrinking, until the second one becomes **0**. And $\gcd(m, 0) = m$, because every number divides 0. That's the answer.
+$(n, r)$ is also a smaller problem, because $r$ is always less than $n$. Keep applying the rule and the numbers keep shrinking until the second one becomes **0**. Since every number divides 0, $\gcd(m, 0) = m$, and that's the answer.
 
 ## Watch it run
 
 <EuclidVisualizer m={210} n={45} />
 
-The table is exactly how you'd write it on an exam: one row per division, with $m$ and $n$ sliding one column left each time. Try your own numbers. Try two consecutive Fibonacci numbers like $89$ and $55$ — they're famous for being the slowest possible input for Euclid.
+The table is how you'd write it on an exam: one row per division, with $m$ and $n$ sliding one column left each time. Try your own numbers, including two consecutive Fibonacci numbers like $89$ and $55$, which are the slowest possible input for Euclid.
 
 As steps:
 
@@ -77,9 +77,9 @@ static int gcd(int m, int n) {
 
 ## Analysis
 
-Here's the surprise. Look at what happens every two steps: the remainder always drops to **less than half** of what it was. (If $n \le m/2$, then $m \bmod n \lt n \le m/2$. If $n \gt m/2$, then $m \bmod n = m - n \lt m/2$.)
+Every two steps, the remainder drops to **less than half** of what it was. (If $n \le m/2$, then $m \bmod n \lt n \le m/2$. If $n \gt m/2$, then $m \bmod n = m - n \lt m/2$.)
 
-Halving every two steps means the number of steps is at most about $2 \log_2 n$. Euclid's algorithm is **$O(\log n)$** — the same growth as binary search. For two 10-digit numbers, that's a few dozen divisions instead of billions.
+Halving every two steps means the number of steps is at most about $2 \log_2 n$. Euclid's algorithm is **$O(\log n)$**, the same growth as binary search. For two 10-digit numbers, that's a few dozen divisions instead of billions.
 
 <Callout tone="sky" label="Order doesn't matter">
 What if $m \lt n$, like $\gcd(45, 210)$? The first step computes $45 \bmod 210 = 45$, so the pair becomes $(210, 45)$. Euclid swaps them for you, for the price of one division.
@@ -89,7 +89,7 @@ What if $m \lt n$, like $\gcd(45, 210)$? The first step computes $45 \bmod 210 =
 
 <ApplicationsGrid>
   <PracticalApplication title="RSA encryption" tool="CRYPTOGRAPHY">
-    Generating an RSA key needs numbers that are coprime, and computing the private key uses the *extended* Euclidean algorithm. Euclid, on numbers hundreds of digits long — only practical because it's $O(\log n)$.
+    Generating an RSA key needs numbers that are coprime, and computing the private key uses the *extended* Euclidean algorithm. That's Euclid running on numbers hundreds of digits long, which is only practical because it's $O(\log n)$.
   </PracticalApplication>
   <PracticalApplication title="Simplifying fractions" tool="MATH LIBRARIES">
     $\frac{210}{45}$ becomes $\frac{14}{3}$ by dividing both by their gcd, 15. Every exact-fraction library does this after each operation.
@@ -98,18 +98,18 @@ What if $m \lt n$, like $\gcd(45, 210)$? The first step computes $45 \bmod 210 =
     1920 × 1080 → divide both by $\gcd = 120$ → 16:9.
   </PracticalApplication>
   <PracticalApplication title="Java's BigInteger" tool="JDK">
-    `BigInteger.gcd()` exists for numbers too big for a `long` — and it's built on the same idea.
+    `BigInteger.gcd()` handles numbers too big for a `long`, using the same idea.
   </PracticalApplication>
 </ApplicationsGrid>
 
 <Callout tone="violet" label="LCM for free">
-The least common multiple comes straight from the gcd: $\operatorname{lcm}(m, n) = \dfrac{m \cdot n}{\gcd(m, n)}$. In Java, write it as `m / gcd(m, n) * n` — divide first, so the multiplication doesn't overflow.
+The least common multiple comes straight from the gcd: $\operatorname{lcm}(m, n) = \dfrac{m \cdot n}{\gcd(m, n)}$. In Java, write it as `m / gcd(m, n) * n`, dividing first so the multiplication doesn't overflow.
 </Callout>
 
 <LeetCodeProblems
   problems={[
     { id: 1979, title: "Find Greatest Common Divisor of Array", slug: "find-greatest-common-divisor-of-array", why: "Find the min and the max with one linear scan, then run Euclid on them." },
-    { id: 1071, title: "Greatest Common Divisor of Strings", slug: "greatest-common-divisor-of-strings", why: "A clever twist: the answer's length is gcd(len1, len2). Euclid in disguise." },
+    { id: 1071, title: "Greatest Common Divisor of Strings", slug: "greatest-common-divisor-of-strings", why: "The answer's length is gcd(len1, len2), so it's Euclid in disguise." },
     { id: 914, title: "X of a Kind in a Deck of Cards", slug: "x-of-a-kind-in-a-deck-of-cards", why: "Count each card, then take the gcd of all the counts. A group size works only if it divides every count." },
     { id: 2413, title: "Smallest Even Multiple", slug: "smallest-even-multiple", why: "lcm(2, n) using the formula above." },
   ]}

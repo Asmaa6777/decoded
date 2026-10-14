@@ -3,11 +3,9 @@ import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualize
 
 # Insertion Sort: Sorting Like a Card Player
 
-You already know insertion sort. You've done it every time you picked up a hand of playing cards.
+If you've ever picked up a hand of playing cards and put it in order, you've done insertion sort.
 
-You hold the cards you've sorted so far in your left hand. You pick up the next card with your right hand, slide it along the hand until it's in the right spot — sliding the bigger cards over to make room — and drop it in. Repeat until the table is empty.
-
-That's the whole algorithm.
+The cards you've sorted so far are in your left hand. You pick up the next card with your right hand, slide it along until it's in the right spot (pushing the bigger cards over to make room), and drop it in. You repeat until the table is empty, and that's the whole algorithm.
 
 ## The idea
 
@@ -16,41 +14,41 @@ At any moment the array has two parts:
 - **Left side:** already sorted among themselves (your hand).
 - **Right side:** not looked at yet (the cards on the table).
 
-Each step takes the first element of the right side — the **key** — and inserts it into the correct place on the left. To make room, every element on the left that's bigger than the key gets **shifted one position right**.
+Each step takes the first element of the right side, the **key**, and inserts it in the correct place on the left. To make room, every element on the left that's bigger than the key **shifts one position right**.
 
 <SortVisualizer algorithm="insertion" initial={[12, 11, 13, 5, 6, 3, 9]} />
 
-Watch the purple **key** chip. While it's "in your hand," the bars bigger than it slide right one by one, leaving a gap. When the loop finds an element that isn't bigger — or runs off the left end — the key drops into the gap.
+Watch the purple **key** chip. While it's "in your hand," the bars bigger than it slide right one by one and leave a gap. When the loop finds an element that isn't bigger, or runs off the left end, the key drops into the gap.
 
-Notice it **shifts**, it doesn't swap. One assignment per move instead of three. That's a small detail that makes insertion sort quicker in practice than bubble sort, even though they have the same Big-O.
+Insertion sort **shifts** where bubble sort swaps, so each move costs one assignment instead of three. That small detail makes it quicker than bubble sort in practice, even though both have the same Big-O.
 
 ## Analysis
 
 The basic operation is the comparison `a[j] > key` in the `while` condition.
 
-**Worst case: reverse-sorted input.** Every new key is smaller than everything in your hand, so it has to travel all the way to the front. The $i$-th key does $i$ comparisons:
+**Worst case: reverse-sorted input.** Every new key is smaller than everything in your hand, so it travels all the way to the front. The $i$-th key does $i$ comparisons:
 
 $$
 1 + 2 + \dots + (n-1) = \frac{n(n-1)}{2} = O(n^2)
 $$
 
-**Best case: already sorted input.** Every key is already bigger than the last card in your hand. The `while` loop checks once, fails immediately, and the key stays put. One comparison per element: **$O(n)$**.
+**Best case: already sorted input.** Every key is bigger than the last card in your hand. The `while` loop checks once, fails, and the key stays put. That's one comparison per element: **$O(n)$**.
 
-**Average case:** each key travels about halfway: roughly $n^2/4$ comparisons, still $O(n^2)$.
+**Average case:** each key travels about halfway, roughly $n^2/4$ comparisons, which is still $O(n^2)$.
 
 Try it: type `1, 2, 3, 4, 5, 6, 7` into the visualizer and count the steps. Then try `7, 6, 5, 4, 3, 2, 1`.
 
 ## Why it's the best of the simple sorts
 
-Insertion sort's running time depends on **how unsorted** the input is. If every element is only a few positions away from where it belongs — a *nearly sorted* array — each key only shifts a few places, and the whole sort runs in close to linear time.
+Insertion sort's running time depends on **how unsorted** the input is. If every element is only a few positions from where it belongs (a *nearly sorted* array), each key shifts only a few places and the whole sort runs in close to linear time.
 
-That's genuinely useful, because real data is often nearly sorted: a list of transactions that's sorted by time except for a few late arrivals, a leaderboard where only a couple of scores changed.
+Real data is often nearly sorted: a list of transactions ordered by time except for a few late arrivals, or a leaderboard where only a couple of scores changed.
 
 Other properties:
 
-- **In place:** only the `key` and `j` variables. $O(1)$ extra space.
-- **Stable:** it only shifts elements that are *strictly* bigger (`a[j] > key`), so equal values never pass each other. (Change `>` to `>=` and it stops being stable — a nice exam trap.)
-- **Online:** it can sort data *as it arrives*. You don't need the whole array up front — each new element is just the next card.
+- **In place:** it only needs the `key` and `j` variables, so $O(1)$ extra space.
+- **Stable:** it only shifts elements that are *strictly* bigger (`a[j] > key`), so equal values never pass each other. Change `>` to `>=` and it stops being stable, which is a common exam trap.
+- **Online:** it can sort data *as it arrives*. You don't need the whole array up front, because each new element is just the next card.
 
 <Callout tone="sky" label="The headline facts">
 Insertion sort: $O(n^2)$ average and worst, $O(n)$ best, in place, stable. Great on small or nearly sorted input.
@@ -60,7 +58,7 @@ Insertion sort: $O(n^2)$ average and worst, $O(n)$ best, in place, stable. Great
 
 <ApplicationsGrid>
   <PracticalApplication title="Java's own sort" tool="JDK">
-    The sorting algorithms inside the JDK hand very small subarrays (a few dozen elements) to insertion sort, because on tiny inputs its low overhead beats the clever $O(n \log n)$ algorithms.
+    The sorting algorithms inside the JDK hand very small subarrays (a few dozen elements) to insertion sort, because on tiny inputs its low overhead beats the $O(n \log n)$ algorithms.
   </PracticalApplication>
   <PracticalApplication title="Live leaderboards" tool="GAMES">
     When one score changes, the list is almost sorted. One insertion step moves that player to their new rank without re-sorting everyone.
@@ -83,9 +81,9 @@ public static void insertionSort(int[] array) {
 }
 ```
 
-One subtle line: `j >= 0` must come **before** `array[j] > key` in the condition. Java's `&&` stops at the first false, so when `j` hits `-1` it never tries to read `array[-1]`. Swap the order and the program crashes on the first key that belongs at the very front.
+Watch the order in the `while` condition: `j >= 0` must come **before** `array[j] > key`. Java's `&&` stops at the first false, so when `j` reaches `-1` it never tries to read `array[-1]`. Swap the order and the program crashes on the first key that belongs at the very front.
 
-Time it against selection sort on a random array of 5,000 numbers. Then sort the array first and time both again. Selection sort's time barely changes. Insertion sort's collapses.
+Time it against selection sort on a random array of 5,000 numbers. Then sort the array first and time both again. Selection sort's time barely changes, while insertion sort's drops to almost nothing.
 
 <LeetCodeProblems
   problems={[

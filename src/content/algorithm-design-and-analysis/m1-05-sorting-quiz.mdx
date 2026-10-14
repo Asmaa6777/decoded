@@ -2,7 +2,7 @@ import { Quiz } from "@/components/mdx/MdxComponents";
 
 # Quiz: Analysis & Sorting
 
-Eight questions on everything so far: what an algorithm is, Big-O, and the four sorts. Get 6 right to pass. Each answer locks in when you click it, and comes with an explanation, so read those even when you're right.
+Eight questions on everything so far: what an algorithm is, Big-O, and the four sorts. Get 6 right to pass. Each answer locks in when you click it and shows an explanation, which is worth reading even when you're right.
 
 <Quiz
   courseSlug="algorithm-design-and-analysis"
@@ -19,7 +19,7 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the four 
         { id: "d", text: "When it compiles without warnings" },
       ],
       correctOptionId: "b",
-      explanation: "Correctness is about every input, not the ones you tried. Tests can reveal bugs; they can't prove there are none.",
+      explanation: "Correctness covers every valid input, including the ones you never tried. Tests can reveal bugs, but they can't prove there are none.",
     },
     {
       id: "q2",
@@ -35,7 +35,7 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the four 
     },
     {
       id: "q3",
-      prompt: "Which notation gives a tight bound — both an upper and a lower bound?",
+      prompt: "Which notation gives a tight bound, meaning both an upper and a lower bound?",
       options: [
         { id: "a", text: "Big-O (O)" },
         { id: "b", text: "Omega (Ω)" },
@@ -100,7 +100,7 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the four 
         { id: "a", text: "Partitioning a sorted array takes O(n²) time" },
         { id: "b", text: "The pivot is always the largest element, so each split leaves n − 1 elements on one side" },
         { id: "c", text: "Quick sort has to un-sort the array first" },
-        { id: "d", text: "It isn't — quick sort is always O(n log n)" },
+        { id: "d", text: "It isn't; quick sort is always O(n log n)" },
       ],
       correctOptionId: "b",
       explanation: "Each partition costs O(n) but only removes one element from the problem. n + (n−1) + … + 1 = O(n²). A middle, random or median-of-three pivot avoids this.",

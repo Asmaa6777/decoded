@@ -3,19 +3,19 @@ import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualize
 
 # Selection Sort and Bubble Sort
 
-A **sorting algorithm** puts the elements of a list in order — numerical order for numbers, lexical (dictionary) order for strings, ascending or descending. It sounds like a small problem. It isn't. Sorted data is what makes fast searching possible (module 2), it's the first step of countless data-analysis and machine-learning pipelines, and it's been studied so thoroughly that it's become the standard way to *teach* algorithm analysis.
+A **sorting algorithm** puts the elements of a list in order: numerical order for numbers, lexical (dictionary) order for strings, ascending or descending. The problem looks small, but sorted data is what makes fast searching possible (module 2), sorting is the first step of many data-analysis and machine-learning pipelines, and it has been studied so thoroughly that it's the standard way to *teach* algorithm analysis.
 
-We start with the two simplest sorts. Both are slow. That's the point: they're slow in a way you can see and count, which makes them the perfect place to practise analysis.
+We start with the two simplest sorts. Both are slow, and you can see and count exactly where the time goes, which makes them good practice for analysis.
 
 ## Selection sort: find the smallest, put it first
 
-The idea fits in one sentence: **find the smallest element, swap it into position 0; find the smallest of what's left, swap it into position 1; repeat.**
+The idea fits in one sentence: **find the smallest element and swap it into position 0, find the smallest of what's left and swap it into position 1, and repeat.**
 
-The array is split in two: a sorted part on the left that grows by one each pass, and an unsorted part on the right that shrinks. Press **Play** — or **Step** through it one comparison at a time and watch the highlighted line of Java underneath move with you.
+The array is split in two: a sorted part on the left that grows by one each pass, and an unsorted part on the right that shrinks. Press **Play**, or **Step** through it one comparison at a time and watch the highlighted line of Java underneath move with you.
 
 <SortVisualizer algorithm="selection" initial={[3, 7, 8, 5, 2, 1, 9, 5, 4]} />
 
-That input isn't random — it's the kind of list exam questions ask you to sort "in steps." Here's what the answer looks like, one line per pass:
+That input is the kind of list exam questions ask you to sort "in steps." The answer looks like this, one line per pass:
 
 | Pass | Smallest of the rest | Array after the swap |
 | --- | --- | --- |
@@ -29,7 +29,7 @@ That input isn't random — it's the kind of list exam questions ask you to sort
 | 7 | 7 | **1 2 3 4 5 5 7** 9 8 |
 | 8 | 8 | **1 2 3 4 5 5 7 8 9** |
 
-Nine elements, eight passes. After pass 8 the last element is automatically in place — there's nothing left to compare it with.
+Nine elements take eight passes. After pass 8 the last element is already in place, since there's nothing left to compare it with.
 
 ### Analysis
 
@@ -39,19 +39,19 @@ $$
 (n-1) + (n-2) + \dots + 1 = \frac{n(n-1)}{2}
 $$
 
-That's $\Theta(n^2)$ — and notice it's the same number **no matter what the input looks like**. Already sorted? Still $n(n-1)/2$ comparisons, because selection sort never checks whether it could stop early. Best, average and worst case are all $O(n^2)$. (Step through the visualizer with the array `1, 2, 3, 4, 5` to see it doing all that useless work.)
+That's $\Theta(n^2)$, and it's the same number **whatever the input looks like**. An already sorted array still costs $n(n-1)/2$ comparisons, because selection sort never checks whether it could stop early. Best, average and worst case are all $O(n^2)$. (Step through the visualizer with `1, 2, 3, 4, 5` to watch it do all that useless work.)
 
-What selection sort *is* good at is **swaps**: at most $n - 1$ of them, one per pass. If writing to memory is expensive — think flash storage that wears out — that's a real advantage.
+Where selection sort does well is **swaps**: at most $n - 1$ of them, one per pass. If writing to memory is expensive, as on flash storage that wears out, that's a real advantage.
 
-It's also **in place**: it needs no extra array, just a couple of index variables. Space complexity $O(1)$.
+It's also **in place**. It needs no extra array, only a couple of index variables, so its space complexity is $O(1)$.
 
 ## Bubble sort: fix the neighbours
 
-Bubble sort only ever looks at **two neighbours at a time**. If they're in the wrong order, swap them. Walk across the whole array doing that, and the biggest element gets carried all the way to the end — it "bubbles up." Then do it again for the next biggest, and so on.
+Bubble sort only ever looks at **two neighbours at a time**. If they're in the wrong order, it swaps them. One walk across the array carries the biggest element all the way to the end (it "bubbles up"). Then it does the same for the next biggest, and so on.
 
 <SortVisualizer algorithm="bubble" initial={[5, 1, 4, 2, 8, 3]} />
 
-The version above has one important improvement: a `swapped` flag. If a full pass makes **no swaps at all**, every neighbour is already in order — so the whole array is sorted, and we can stop. Try it with `1, 2, 3, 4, 5, 6` and watch it quit after a single pass.
+The version above adds a `swapped` flag. If a full pass makes **no swaps at all**, every neighbour is in order, so the whole array is sorted and we can stop. Try it with `1, 2, 3, 4, 5, 6` and watch it quit after one pass.
 
 ### Analysis
 
@@ -59,17 +59,17 @@ The version above has one important improvement: a `swapped` flag. If a full pas
 - **Best case** (already sorted, with the `swapped` flag): one pass of $n - 1$ comparisons, zero swaps, stop. **$O(n)$.**
 - **Average case:** $O(n^2)$.
 
-Without the flag, bubble sort is $O(n^2)$ even in the best case. That flag is the difference between a correct answer and a full-marks answer on "what is the best case of bubble sort?"
+Without the flag, bubble sort is $O(n^2)$ even in the best case. On "what is the best case of bubble sort?", mentioning the flag is what gets full marks.
 
 <Callout tone="orange" label="Which one is better?">
-Neither, really — both are $O(n^2)$ on typical input. Selection sort does far fewer swaps. Bubble sort can stop early on nearly sorted data. In real code you'd use neither; you'd use `Arrays.sort`. You learn them because they make the cost of an algorithm *visible*.
+Neither, really, since both are $O(n^2)$ on typical input. Selection sort does far fewer swaps, and bubble sort can stop early on nearly sorted data. Real code uses `Arrays.sort` instead of either. You learn them because they make the cost of an algorithm easy to see.
 </Callout>
 
 ## Stability
 
-A sort is **stable** if equal elements stay in the same relative order they started in. Bubble sort is stable: it only swaps neighbours that are *strictly* out of order, so two equal values never jump over each other. Selection sort is **not** stable: its long-distance swap can fling an element past an equal one.
+A sort is **stable** if equal elements keep the relative order they started in. Bubble sort is stable: it only swaps neighbours that are *strictly* out of order, so two equal values never jump over each other. Selection sort is **not** stable, because its long-distance swap can move an element past an equal one.
 
-Why care? Sort a list of students by name, then sort it again by grade with a stable sort: students with the same grade are still in alphabetical order. With an unstable sort, that first ordering gets scrambled.
+Here's why that matters. Sort a list of students by name, then sort it again by grade with a stable sort, and students with the same grade stay in alphabetical order. An unstable sort can scramble that first ordering.
 
 ## Side by side
 
@@ -86,16 +86,16 @@ Why care? Sort a list of students by name, then sort it again by grade with a st
 
 <ApplicationsGrid>
   <PracticalApplication title="Tiny arrays inside fast sorts" tool="LIBRARIES">
-    Industrial-strength sorts switch to a simple quadratic sort for very small pieces, where the low overhead beats clever algorithms. (They usually pick insertion sort — next lesson.)
+    Production sorting routines switch to a simple quadratic sort for very small pieces, where low overhead beats a clever algorithm. They usually pick insertion sort, which is the next lesson.
   </PracticalApplication>
   <PracticalApplication title="Top-k selection" tool="DATA">
-    "Give me the 3 cheapest flights" doesn't need a full sort. Running just 3 passes of selection sort finds them in $O(kn)$.
+    "Give me the 3 cheapest flights" doesn't need a full sort. Three passes of selection sort find them in $O(kn)$.
   </PracticalApplication>
 </ApplicationsGrid>
 
 ## The lab version
 
-Drop these into your `AlgoLab` class from the previous lesson, then sort a random array of 1,000 numbers and time it.
+Add these to your `AlgoLab` class from the previous lesson, then sort a random array of 1,000 numbers and time it.
 
 ```java
 public static void selectionSort(int[] array) {
@@ -127,6 +127,6 @@ Then run the experiment: time both at 2,000 and 4,000 elements. Doubling $n$ sho
   problems={[
     { id: 1051, title: "Height Checker", slug: "height-checker", why: "Sort a copy (with your own selection or bubble sort), then compare it to the original. Remember .clone()." },
     { id: 2089, title: "Find Target Indices After Sorting Array", slug: "find-target-indices-after-sorting-array", why: "Sort, then scan. Bonus: find the answer without sorting at all by counting." },
-    { id: 1913, title: "Maximum Product Difference Between Two Pairs", slug: "maximum-product-difference-between-two-pairs", why: "Sorting solves it in O(n log n) — but two passes of selection sort's 'find the min' idea solve it in O(n)." },
+    { id: 1913, title: "Maximum Product Difference Between Two Pairs", slug: "maximum-product-difference-between-two-pairs", why: "Sorting solves it in O(n log n), but two passes of selection sort's 'find the min' idea solve it in O(n)." },
   ]}
 />

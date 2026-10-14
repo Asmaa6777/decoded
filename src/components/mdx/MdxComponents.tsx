@@ -19,6 +19,42 @@ const toneMap: Record<Tone, { bar: string; text: string; bg: string }> = {
   mint:   { bar: "bg-mint",   text: "text-mint",   bg: "bg-mint/10" },
 };
 
+/* ============================================================
+   CodeBlock — replaces every fenced <pre> in lessons (wired via
+   MDXProvider in LessonPage). Adds a copy button; colouring is
+   done at build time by rehype-pretty-code.
+   ============================================================ */
+
+export function CodeBlock(props: React.ComponentPropsWithoutRef<"pre">) {
+  const ref = useRef<HTMLPreElement>(null);
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    const text = ref.current?.innerText ?? "";
+    try {
+      await navigator.clipboard.writeText(text.replace(/\n$/, ""));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard blocked (insecure context); nothing useful to do */
+    }
+  };
+
+  return (
+    <div className="code-block group">
+      <pre ref={ref} {...props} />
+      <button
+        type="button"
+        onClick={copy}
+        aria-label={copied ? "Copied" : "Copy code"}
+        className="absolute top-2.5 right-2.5 font-mono text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm border border-white/15 text-white/60 bg-white/5 hover:text-white hover:border-white/40 transition opacity-70 group-hover:opacity-100 focus-visible:opacity-100"
+      >
+        {copied ? "Copied" : "Copy"}
+      </button>
+    </div>
+  );
+}
+
 export function Callout({
   tone = "orange",
   label,
@@ -665,7 +701,7 @@ type DiagramProps = {
   direction?: "LR" | "TB";
 };
 
-const DIAGRAM_NODE_W = 180;
+const DIAGRAM_NODE_W = 220;
 const DIAGRAM_NODE_H = 52;
 
 function DiagramBaseNode({
@@ -685,6 +721,7 @@ function DiagramBaseNode({
 
   return (
     <div
+      style={{ width: DIAGRAM_NODE_W, height: DIAGRAM_NODE_H }}
       className={`flex items-center justify-center border ${tintClass} bg-card rounded-sm px-4 py-2 font-mono text-sm text-foreground tracking-wide whitespace-nowrap`}
     >
       <Handle type="target" position={target} />
@@ -773,7 +810,7 @@ export function Diagram({ nodes, edges, direction = "LR" }: DiagramProps) {
           proOptions={{ hideAttribution: true }}
           fitView
           fitViewOptions={{ padding: 0.15 }}
-          minZoom={1}
+          minZoom={0.4}
           maxZoom={1}
         />
       </div>

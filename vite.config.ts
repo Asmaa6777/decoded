@@ -6,6 +6,7 @@ import mdx from "@mdx-js/rollup";
 import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
+import rehypePrettyCode from "rehype-pretty-code";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -23,7 +24,12 @@ export default defineConfig(({ mode }) => ({
       ...mdx({
         providerImportSource: "@mdx-js/react",
         remarkPlugins: [remarkGfm, remarkMath],
-        rehypePlugins: [rehypeKatex],
+        rehypePlugins: [
+          rehypeKatex,
+          // Shiki highlighting at build time. Only fences with a language
+          // (```java, ```ts) get colours; bare fences stay plain for pseudocode.
+          [rehypePrettyCode, { theme: "github-dark-dimmed", keepBackground: false }],
+        ],
       }),
     },
     react(),

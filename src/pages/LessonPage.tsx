@@ -4,6 +4,9 @@ import { MDXProvider } from "@mdx-js/react";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getLesson, lessonNeighbors, lessonKind } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
+import { CodeBlock } from "@/components/mdx/MdxComponents";
+
+const mdxComponents = { pre: CodeBlock };
 
 const accentBg: Record<string, string> = {
   neon: "bg-neon", orange: "bg-orange", sky: "bg-sky", violet: "bg-violet", mint: "bg-mint",
@@ -72,7 +75,7 @@ export default function LessonPage() {
             <span>{lesson.duration} read</span>
           </div>
 
-          <MDXProvider>
+          <MDXProvider components={mdxComponents}>
             <div className="prose-reading">
               <Lesson />
             </div>

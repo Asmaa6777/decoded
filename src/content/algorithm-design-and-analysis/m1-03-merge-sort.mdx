@@ -1,73 +1,39 @@
-import { Callout, PracticalApplication, ApplicationsGrid, Diagram } from "@/components/mdx/MdxComponents";
-import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SortVisualizer, LeetCodeProblems, MergeSortTree } from "@/components/mdx/AlgoVisualizers";
 
 # Divide and Conquer: Merge Sort
 
-Selection, bubble and insertion sort all work the same basic way: fix one element at a time, and to fix each one, look at (almost) everything else. That's where the $n^2$ comes from — $n$ elements, $n$ work each.
+Selection, bubble and insertion sort all work the same basic way: fix one element at a time, and to fix each one, look at (almost) everything else. That's where the $n^2$ comes from: $n$ elements, $n$ work each.
 
-To beat $n^2$ you need a different *strategy*, not a cleverer loop. The first one we'll study is the most important design idea in this course.
+A cleverer loop won't beat $n^2$. You need a different *strategy*, and the first one we'll study is the most important design idea in this course.
 
 ## Divide and conquer
 
 Three steps:
 
 1. **Divide** the problem into smaller subproblems of the same kind.
-2. **Conquer** each subproblem by solving it recursively. Once a subproblem is small enough, solve it directly — that's the **base case**.
+2. **Conquer** each subproblem by solving it recursively. Once a subproblem is small enough, solve it directly. That's the **base case**.
 3. **Combine** the sub-solutions into a solution for the whole problem.
 
-If that sounds like recursion, it is. Divide and conquer is recursion with a plan: make the problem smaller *in a way that makes combining cheap*.
+If that sounds like recursion, it is. Divide and conquer is recursion where you make the problem smaller *in a way that makes combining cheap*.
 
 ## Merge sort in one paragraph
 
-To sort an array: split it in half, sort the left half, sort the right half, then **merge** the two sorted halves into one sorted array. How do you sort each half? The same way — split it, sort the halves, merge. Keep splitting until the pieces have one element each, and a one-element array is already sorted. That's the base case. Everything else is merging.
+To sort an array: split it in half, sort the left half, sort the right half, then **merge** the two sorted halves into one sorted array. How do you sort each half? The same way: split it, sort the halves, merge. Keep splitting until the pieces have one element each. A one-element array is already sorted, so that's the base case, and everything else is merging.
 
 Here's what that looks like for `38, 27, 43, 3, 9, 82, 10`:
 
-<Diagram
-  direction="TB"
-  nodes={[
-    { id: "r", label: "38 27 43 3 9 82 10", type: "source" },
-    { id: "l", label: "38 27 43 3" },
-    { id: "rr", label: "9 82 10" },
-    { id: "l1", label: "38 27" },
-    { id: "l2", label: "43 3" },
-    { id: "r1", label: "9 82" },
-    { id: "r2", label: "10" },
-    { id: "m1", label: "27 38" },
-    { id: "m2", label: "3 43" },
-    { id: "m3", label: "9 82" },
-    { id: "ml", label: "3 27 38 43" },
-    { id: "mr", label: "9 10 82" },
-    { id: "out", label: "3 9 10 27 38 43 82", type: "sink" },
-  ]}
-  edges={[
-    { from: "r", to: "l", label: "split" },
-    { from: "r", to: "rr", label: "split" },
-    { from: "l", to: "l1" },
-    { from: "l", to: "l2" },
-    { from: "rr", to: "r1" },
-    { from: "rr", to: "r2" },
-    { from: "l1", to: "m1", label: "merge" },
-    { from: "l2", to: "m2", label: "merge" },
-    { from: "r1", to: "m3", label: "merge" },
-    { from: "m1", to: "ml" },
-    { from: "m2", to: "ml" },
-    { from: "m3", to: "mr" },
-    { from: "r2", to: "mr" },
-    { from: "ml", to: "out" },
-    { from: "mr", to: "out" },
-  ]}
-/>
+<MergeSortTree input={[38, 27, 43, 3, 9, 82, 10]} />
 
 The top half of the picture is *divide*. The bottom half is *combine*. All the actual sorting happens on the way back up.
 
 ## The merge step
 
-Merging two sorted lists is easy, and it's the heart of the algorithm. Think of two sorted piles of exam papers, smallest on top. Look at the top paper of each pile, take the smaller one, put it on the output pile. Repeat. When one pile runs out, put the rest of the other pile on top — it's already sorted.
+Merging two sorted lists is easy, and it's where merge sort does its work. Think of two sorted piles of exam papers, smallest on top. Look at the top paper of each pile, take the smaller one, and put it on the output pile. Repeat. When one pile runs out, put the rest of the other pile on top, since it's already sorted.
 
 Each comparison places exactly one element, so merging two halves with $n$ elements in total takes **$O(n)$** time.
 
-Watch it work. The sky-coloured window is the piece currently being worked on; the orange buffer below the bars is `tmp`, filling up as the two fronts are compared.
+The sky-coloured window below is the piece being worked on, and the orange buffer under the bars is `tmp`, which fills up as the two fronts are compared.
 
 <SortVisualizer algorithm="merge" />
 
@@ -82,12 +48,12 @@ $$
 \underbrace{\log_2 n}_{\text{layers}} \times \underbrace{n}_{\text{work per layer}} = O(n \log n)
 $$
 
-And here's the best part: merge sort *always* splits exactly in half, no matter what the data looks like. So best, average and worst case are all **$O(n \log n)$**. There's no bad input.
+Merge sort *always* splits exactly in half, whatever the data looks like, so best, average and worst case are all **$O(n \log n)$**. No input makes it slow.
 
-Go back to the [growth table](/courses/algorithm-design-and-analysis/counting-steps) and compare $n^2$ with $n \log n$ at a million: the difference between hours and a fraction of a second. That's what changing strategy buys you.
+Go back to the [growth table](/courses/algorithm-design-and-analysis/counting-steps) and compare $n^2$ with $n \log n$ at a million. One takes hours and the other a fraction of a second.
 
 <Callout tone="orange" label="The price">
-Merge sort is **not in place**. The merge step needs a temporary array as big as the piece being merged — $O(n)$ extra memory. When memory is tight, that matters. (Quick sort, next lesson, avoids it.)
+Merge sort is **not in place**. The merge step needs a temporary array as big as the piece being merged, which is $O(n)$ extra memory. When memory is tight, that matters. (Quick sort, next lesson, avoids it.)
 </Callout>
 
 Two more properties:
@@ -99,10 +65,10 @@ Two more properties:
 
 <ApplicationsGrid>
   <PracticalApplication title="Sorting objects in Java" tool="JDK">
-    `Collections.sort` and `Arrays.sort` on objects use **TimSort**, a refined merge sort. It's stable, which is why sorting a list of people by age keeps same-age people in their previous order.
+    `Collections.sort` and `Arrays.sort` on objects use **TimSort**, a refined merge sort. It's stable, so sorting a list of people by age keeps same-age people in their previous order.
   </PracticalApplication>
   <PracticalApplication title="Databases and big data" tool="EXTERNAL SORT">
-    When a database sorts more rows than fit in RAM, it sorts chunks that do fit, writes them to disk, then merges the sorted chunks. That's merge sort's combine step at gigabyte scale.
+    When a database sorts more rows than fit in RAM, it sorts chunks that do fit, writes them to disk, then merges the sorted chunks: merge sort's combine step at gigabyte scale.
   </PracticalApplication>
   <PracticalApplication title="Git and diff tools" tool="MERGING">
     Combining two sorted streams of changes is the same "compare the fronts, take the smaller" loop.
@@ -111,7 +77,7 @@ Two more properties:
 
 ## The lab version
 
-Labs often write merge sort slightly differently: instead of index ranges, each call copies its halves into **new** arrays. It's the same algorithm, and a bit easier to read:
+Labs often write merge sort slightly differently. Instead of passing index ranges, each call copies its halves into **new** arrays. It's the same algorithm and a bit easier to read:
 
 ```java
 public static void mergeSort(int[] input) {
@@ -140,7 +106,7 @@ private static void merge(int[] input, int[] left, int[] right) {
 }
 ```
 
-Run it on 100,000 random numbers and time it. Then try insertion sort on the same 100,000 — and go make a cup of tea.
+Run it on 100,000 random numbers and time it. Then try insertion sort on the same 100,000, and go make a cup of tea while it runs.
 
 <LeetCodeProblems
   problems={[
