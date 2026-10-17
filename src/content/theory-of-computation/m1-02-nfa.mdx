@@ -1,35 +1,36 @@
 import { Callout, ApplicationsGrid, AutomatonDiagram, Diagram, PracticalApplication } from "@/components/mdx/MdxComponents";
 
-# NFA — Unpredictable Automata
+# NFA: Nondeterministic Automata
 
-You have seen a DFA. At every state, for every symbol, there is exactly one arrow out. One input, one output, it is deterministic.
+In a DFA, every state has exactly one arrow out for every symbol: one input, one output.
 
-Now remove that constraint. What if a state could have two arrows for the same symbol, and the machine takes both paths at once? What if an arrow could start without consuming any symbol at all? What if some states had no arrow for a given symbol, and the machine just terminated there?
+Now remove that constraint. What if a state could have two arrows for the same symbol, and the machine took both paths at once? What if an arrow could fire without consuming any symbol? What if some states had no arrow for a given symbol, and the machine simply stopped there?
 
-That is an **NFA** — a nondeterministic finite automaton. It looks like a DFA, just Unpredictable. And yet Rabin and Scott proved in 1959 that an NFA recognizes exactly the same class of languages as a DFA. They just look completely different.
+That is an **NFA**, a nondeterministic finite automaton. It looks like a DFA with the rules loosened. Even so, Rabin and Scott proved in 1959 that NFAs recognize exactly the same class of languages as DFAs, even though the two can look completely different.
 
 ## What Changes
 
-The formal definition of an NFA is almost identical to a DFA. what changes is the transition function δ:
+The formal definition of an NFA is almost identical to a DFA's. Only the transition function δ changes:
 
 **DFA:** $\delta : Q \times \Sigma \rightarrow Q$
 
 **NFA:** $\delta : Q \times \Sigma_\varepsilon \rightarrow \mathcal{P}(Q)$
 
-Two differences in this signature. First, $\Sigma_\varepsilon = \Sigma \cup \{\varepsilon\}$ — the machine can now transition on the empty string, moving to a new state without consuming any symbol at all. it might feel confusing but we will explain in example shortly.
- Second, $\mathcal{P}(Q)$ is the **power set** of $Q$ — the set of all subsets of states. So δ no longer returns a single next state. It returns a *set* of possible next states — including possibly $\emptyset$, meaning no transition exists at all. 
+The signature has two differences. First, $\Sigma_\varepsilon = \Sigma \cup \{\varepsilon\}$: the machine can transition on the empty string, moving to a new state without consuming any symbol. That can feel strange at first, and an example below makes it concrete.
 
-Everything else — $Q$, $\Sigma$, $q_0$, $F$ — means exactly what it meant in the DFA.
+Second, $\mathcal{P}(Q)$ is the **power set** of $Q$, the set of all subsets of states. So δ no longer returns a single next state. It returns a *set* of possible next states, which may be $\emptyset$, meaning there's no transition at all.
+
+Everything else ($Q$, $\Sigma$, $q_0$, $F$) means exactly what it meant for a DFA.
 
 <Callout tone="violet" label="The one change summarized">
-  A DFA's δ returns one state. An NFA's δ returns a set of states. That single difference — a set instead of a value — is the entire definition of nondeterminism.
+  A DFA's δ returns one state, and an NFA's δ returns a set of states. Returning a set instead of a single value is the whole definition of nondeterminism.
 </Callout>
 
 ## How to Read an NFA
 
-When an NFA is in state $q$ and reads symbol $a$, it does not pick one next state. It **splits into copies** — one copy per state in $\delta(q, a)$ — and all copies run simultaneously. If *any* copy ends in an accept state when the input runs out, the string is accepted.
+When an NFA is in state $q$ and reads symbol $a$, it does not pick one next state. It **splits into copies**, one per state in $\delta(q, a)$, and all the copies run simultaneously. If *any* copy ends in an accept state when the input runs out, the string is accepted.
 
-so NFA can be thought of the machine always guessing optimally. If there is any path through the machine that leads to acceptance, the NFA finds it.
+Another way to think about an NFA is as a machine that always guesses right: if any path through it leads to acceptance, the NFA finds that path.
 
 Here is a small NFA over $\Sigma = \{a, b\}$ that accepts strings ending in $ab$:
 
@@ -46,45 +47,45 @@ Here is a small NFA over $\Sigma = \{a, b\}$ that accepts strings ending in $ab$
   accepting={["q2"]}
 />
 
-Notice what is wrong with this from a DFA perspective: $q_0$ has *two* arrows labeled $a$ — one looping back, one going to $q_1$. A DFA cannot have that. An NFA handles it by splitting: when you read $a$ from $q_0$, the machine simultaneously stays at $q_0$ and moves to $q_1$.
+From a DFA's point of view, something is wrong here: $q_0$ has *two* arrows labeled $a$, one looping back and one going to $q_1$. A DFA can't have that. An NFA handles it by splitting: when you read $a$ from $q_0$, the machine simultaneously stays at $q_0$ and moves to $q_1$.
 
-Also notice: $q_1$ has no $a$-arrow, and $q_2$ has no arrows at all. In a DFA those are illegal. In an NFA a missing transition means that copy dies — the others keep going.
+Also, $q_1$ has no $a$-arrow and $q_2$ has no arrows at all. Both are illegal in a DFA. In an NFA, a missing transition means that copy dies while the others keep going.
 
 Let's trace the string $aab$:
 
 | Step | Read | Active states |
 | --- | --- | --- |
-| start | — | $\{q_0\}$ |
+| start | | $\{q_0\}$ |
 | 1 | $a$ | $q_0$ splits → $\{q_0, q_1\}$ |
 | 2 | $a$ | $q_0$ splits again → $\{q_0, q_1\}$. $q_1$ has no $a$-arrow, that copy dies |
 | 3 | $b$ | $q_0$ on $b$ → $q_0$. $q_1$ on $b$ → $q_2$ → $\{q_0, q_2\}$ |
-| end | — | $q_2 \in F$ → **Accepted** |
+| end | | $q_2 \in F$ → **Accepted** |
 
 Now trace $ba$:
 
 | Step | Read | Active states |
 | --- | --- | --- |
-| start | — | $\{q_0\}$ |
+| start | | $\{q_0\}$ |
 | 1 | $b$ | $q_0$ on $b$ → $\{q_0\}$ |
 | 2 | $a$ | $q_0$ splits → $\{q_0, q_1\}$ |
-| end | — | neither $q_0$ nor $q_1$ is in $F$ → **Rejected** |
+| end | | neither $q_0$ nor $q_1$ is in $F$ → **Rejected** |
 
-The machine accepts exactly strings ending in $ab$ — anything can come before, as long as the last two symbols are $a$ then $b$.
+The machine accepts exactly the strings ending in $ab$: anything can come before, as long as the last two symbols are $a$ then $b$.
 
-Try building the equivalent DFA for this in your head. You would need states tracking "did I just see an $a$" and "did I just see $ab$" alongside "neither." Three states, all transitions filled. The NFA got there in three states too, but the design was effortless: say what you want to match and the nondeterminism can handle the prefix.
+Try building the equivalent DFA in your head. You'd need states for "I just saw an $a$", "I just saw $ab$" and "neither", with every transition filled in. The NFA also has three states, but it was much easier to design: you describe the ending you want and let nondeterminism handle whatever comes before it.
 
 ## ε-Transitions
 
-NFAs have one more distinction: the **ε-transition**. An arrow labeled ε represents a transition that happens without consuming any symbol. The machine can make this transition freely at any point.
+NFAs have one more feature: the **ε-transition**. An arrow labeled ε is a transition that happens without consuming any symbol, and the machine can take it freely at any point.
 
-This is a design convenience rather than adding new functionality. It allows you to connect machines together without needing to redesign either one. For example, if you have a machine that accepts $a^*$ connected by an ε-transition to another machine that accepts $b^*$, you get the combined behavior of $a^*b^*$ with no extra work.
+It's a design convenience and adds no new power. It lets you connect machines together without redesigning either one. For example, if you have a machine that accepts $a^*$ connected by an ε-transition to another machine that accepts $b^*$, you get the combined behavior of $a^*b^*$ with no extra work.
 
 
 <Callout tone="orange" label="ε-transitions do not add power">
-  Every NFA with ε-transitions can be converted to an equivalent NFA without them. These ε-transitions are just a convenience for the designer and don't give the machine any new capabilities. You'll understand this better in the subset construction below.
+  Every NFA with ε-transitions can be converted to an equivalent NFA without them. They're a convenience for the designer and give the machine no new capabilities. The subset construction below shows why.
 </Callout>
 
-## The Theorem — NFA = DFA
+## The Theorem: NFA = DFA
 
 Here is what Rabin and Scott proved in 1959:
 
@@ -92,8 +93,9 @@ Here is what Rabin and Scott proved in 1959:
 
 The proof is constructive and gives you a mechanical procedure called the **subset construction** for building the DFA directly from the NFA.
 
-The insight is simple: if an NFA can be in multiple states simultaneously, build a DFA where each state represents a set of those NFA states. In other words, each state in the DFA corresponds to all the states the NFA could currently occupy.
-For an NFA with $n$ states, the DFA has at most $2^n$ states — one per subset of $Q$. In practice most subsets are unreachable and the DFA ends up much smaller. But worst case it is exponential.
+The idea: if an NFA can be in several states at once, build a DFA where each state stands for a set of NFA states, namely all the states the NFA could currently be in.
+
+For an NFA with $n$ states, the DFA has at most $2^n$ states, one per subset of $Q$. In practice most subsets are unreachable and the DFA ends up much smaller, but the worst case is exponential.
 
 Let's convert the NFA above to a DFA.
 
@@ -111,7 +113,7 @@ From $\{q_0, q_2\}$:
 - on $a$: $q_0$ → $\{q_0, q_1\}$, $q_2$ has no $a$-arrow → $\{q_0, q_1\}$
 - on $b$: $q_0$ → $\{q_0\}$, $q_2$ has no $b$-arrow → $\{q_0\}$
 
-Three reachable states out of $2^3 = 8$ possible subsets. Accept states: any DFA state containing $q_2$ — so $\{q_0, q_2\}$.
+That's three reachable states out of $2^3 = 8$ possible subsets. The accept states are the DFA states containing $q_2$, which here is just $\{q_0, q_2\}$.
 
 $$
 \begin{array}{c|cc}
@@ -123,24 +125,22 @@ $$
 \end{array}
 $$
 
-Same language, now a complete DFA. Every cell filled.
+It's the same language, now as a complete DFA with every cell filled.
 
 <Callout tone="sky" label="Why this matters in tools you already use">
-  This matters because regex engines convert your pattern into an NFA first. NFAs naturally match the syntax of regex patterns one step at a time. Then, they either simulate the NFA by tracking active states or convert it to a DFA for faster repeated matching. Both methods are direct applications of Rabin and Scott's proof, running in tools you use every day, like your terminal.
+  Regex engines convert your pattern into an NFA first, because NFAs map onto regex syntax one piece at a time. Then they either simulate the NFA by tracking the set of active states, or convert it to a DFA for faster repeated matching. Both are direct applications of Rabin and Scott's result, running in tools you use every day, like your terminal.
 </Callout>
 
-## NFA vs DFA — Which One to Use When
+## NFA vs DFA: Which One to Use When
 
-Sure! Here is a simpler and clearer version:
-
-The equivalence theorem means you can use whichever representation is more convenient. In practice, the choice often depends on the specific task:
+Because of the equivalence theorem, you can use whichever representation is more convenient. In practice it depends on the task:
 
 **Design in NFA:**
 - When describing patterns like "strings containing `aba` as a substring," an NFA is natural. You guess when the pattern starts and verify the rest.
 - Building the equivalent DFA directly forces you to track multiple conditions in one state, which can be harder to reason about from scratch.
 
 **Execute as DFA:**
-- A DFA processes input in exactly \( n \) steps for a string of length \( n \), with one state transition per symbol and no branching.
+- A DFA processes input in exactly $n$ steps for a string of length $n$, with one state transition per symbol and no branching.
 - An NFA simulation must maintain a set of active states at each step. For regex engines processing millions of strings, the DFA is faster.
 
 The standard pipeline followed by most serious regex engines:
@@ -151,19 +151,19 @@ The standard pipeline followed by most serious regex engines:
 4. Minimize the DFA
 5. Simulate
 
-This is exactly what tools like `lex`, `flex`, and `ripgrep`'s regex engine do. You are learning both theory and practical implementation in your toolchain. what `lex`, `flex`, and `ripgrep`'s regex engine do. You are not just learning theory — you are learning the pipeline inside your toolchain.
+This is what tools like `lex`, `flex` and `ripgrep`'s regex engine do, so the theory here is also the pipeline inside your toolchain.
 
 <Callout tone="mint" label="Where you stand">
-  NFAs and DFAs are two faces of the same model. The NFA is the design tool — compact, readable, maps directly to regex syntax. The DFA is the execution tool — deterministic, fast, implementable as a lookup table. The subset construction is the mechanical bridge between them. Next lesson closes the loop and shows exactly how regex syntax maps to NFA construction, operator by operator.
+  NFAs and DFAs are two faces of the same model. The NFA is the design tool: compact, readable, and close to regex syntax. The DFA is the execution tool: deterministic, fast, and implementable as a lookup table. The subset construction converts one into the other mechanically. The next lesson shows how regex syntax maps onto NFA construction, operator by operator.
 </Callout>
 
 ## Optional Further Reading
 
 <ApplicationsGrid>
   <PracticalApplication title="Rabin-Scott 1959 original paper" tool="Read →">
-    "Finite Automata and Their Decision Problems" — the paper that introduced nondeterminism as a formal concept and proved NFA = DFA. Search "Rabin Scott 1959 finite automata decision problems."
+    "Finite Automata and Their Decision Problems", the paper that introduced nondeterminism as a formal concept and proved NFA = DFA. Search "Rabin Scott 1959 finite automata decision problems."
   </PracticalApplication>
   <PracticalApplication title="Subset construction animated" tool="Watch →">
-    Search "subset construction NFA to DFA" on YouTube. Seeing the active state sets evolve step by step makes the construction click faster than any table.
+    Search "subset construction NFA to DFA" on YouTube. Watching the active state sets change step by step makes the construction easier to follow than a table does.
   </PracticalApplication>
 </ApplicationsGrid>

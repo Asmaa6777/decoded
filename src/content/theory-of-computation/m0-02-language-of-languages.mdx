@@ -2,16 +2,15 @@ import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication } fro
 
 # The Language of Languages
 
-Before any GPU or CPU was built, before any automaton, before any algorithm, mathematicians needed to agree on what they were even talking about. they kept running into the same problem: how do you precisely describe an infinite collection of strings using a finite set of rules?
+Before any CPU or GPU was built, and before any automaton or algorithm, mathematicians needed to agree on what they were talking about. They kept running into the same problem: how do you precisely describe an infinite collection of strings with a finite set of rules?
 
-if we used natural language here, it fails. Saying "all strings that start with *a* and end with *b*" which is a description of a language, can work for a human, but a machine needs something it can mechanically verify. The notation you are about to learn is important, Every symbol exists because vagueness was the enemy. all is there
-is that we want language to describe the language.
+Natural language fails here. "All strings that start with *a* and end with *b*" describes a language well enough for a person, but a machine needs something it can check mechanically. Every symbol in the notation you're about to learn exists to remove that vagueness. In short, we need a precise language for describing languages.
 
 ## The Three-Level Hierarchy
 
-Everything in [formal language theory](https://en.wikipedia.org/wiki/Formal_language) is built on three concepts, and they are linked! understanding these will lay the foundation for the rest of the course.
+Everything in [formal language theory](https://en.wikipedia.org/wiki/Formal_language) is built on three linked concepts, and the rest of the course rests on them.
 
-### Alphabet — $\Sigma$
+### Alphabet: $\Sigma$
 
 An alphabet is a **finite, non-empty set of symbols**. 
 
@@ -27,8 +26,7 @@ $$
 \Sigma = \{x\}
 $$
 
-The symbol $\Sigma$ (sigma) is just the conventional name mathematicians chose. The alphabet is the raw material, the only symbols your machine is allowed to see. 
-Think of an alphabet as the keys on a keyboard.If your keyboard only has two keys, those are the only characters you can type.
+The symbol $\Sigma$ (sigma) is just the conventional name. The alphabet is the raw material: the only symbols your machine is allowed to see. Think of it as the keys on a keyboard. If your keyboard only has two keys, those are the only characters you can type.
 
 ### String (Word)
 
@@ -38,23 +36,21 @@ $$
 \Sigma = \{a, b\} \implies ab,\ bba,\ aaab\ \text{ are all valid strings}
 $$
 
-Two things worth knowing in your mental model right now:
+Two things to know right away. The length of a string $w$ is written $|w|$, so $|abb| = 3$ and $|a| = 1$.
 
-**First** — the length of a string $w$ is written $|w|$. So $|abb| = 3$ and $|a| = 1$.
-
-**Second** — there is one string that connfuses everyone, and it is the **empty string** $\varepsilon$ (epsilon). It is a string of zero symbols. but be careful, It is not the same as nothing, it exists, it has length zero, and it will appear constantly.
+The other is the string that confuses everyone: the **empty string** $\varepsilon$ (epsilon), a string of zero symbols. Be careful, because it isn't "nothing". It exists, it has length zero, and it will show up constantly.
 
 $$
 |\varepsilon| = 0
 $$
 
 <Callout tone="orange" label="The ε mistake">
-  The empty string $\varepsilon$ is not the empty set $\emptyset$. The empty set contains nothing. The empty string is a real string — it just contains no symbols. A language that contains $\varepsilon$ is different from a language that does not. This distinction will matter in every module that follows.
+  The empty string $\varepsilon$ is not the empty set $\emptyset$. The empty set contains nothing. The empty string is a real string that happens to contain no symbols. A language that contains $\varepsilon$ is different from a language that does not. This distinction will matter in every module that follows.
 </Callout>
 
-### Language — $L$
+### Language: $L$
 
-A language is simply a **set of strings** over some alphabet. That's it.
+A language is a **set of strings** over some alphabet.
 
 $$
 L = \{ab,\ ba,\ aba\}
@@ -64,7 +60,7 @@ $$
 L = \{w \in \Sigma^* \mid w \text{ starts with } a\}
 $$
 
-Both of those are valid languages. One is finite and listed explicitly. The other is infinite and described by a rule. Formal language theory is almost entirely about finding compact, mechanical rules to describe infinite languages — because you cannot list them explicitly.
+Both of those are valid languages. One is finite and listed explicitly. The other is infinite and described by a rule. Since you can't list an infinite language, formal language theory is almost entirely about finding compact, mechanical rules that describe one.
 
 <table>
   <thead>
@@ -77,7 +73,7 @@ Both of those are valid languages. One is finite and listed explicitly. The othe
   <tbody>
     <tr>
       <td>**Alphabet** $\Sigma$</td>
-      <td>The allowed symbols — finite, fixed</td>
+      <td>The allowed symbols: finite, fixed</td>
       <td>$\{a, b\}$</td>
     </tr>
     <tr>
@@ -87,17 +83,17 @@ Both of those are valid languages. One is finite and listed explicitly. The othe
     </tr>
     <tr>
       <td>**Language** $L$</td>
-      <td>A set of strings — can be infinite</td>
+      <td>A set of strings, possibly infinite</td>
       <td>$\{ab,\ ba,\ aba\}$</td>
     </tr>
   </tbody>
 </table>
 
-## Kleene Star — $\Sigma^*$
+## Kleene Star: $\Sigma^*$
 
-This is the most important operator in the course. You will see it everywhere.
+You'll see this operator more than any other in the course.
 
-$\Sigma^*$ means **all possible strings over $\Sigma$, including the empty string**. Every string of every length, formed from any combination of symbols in the alphabet.
+$\Sigma^*$ means **all possible strings over $\Sigma$, including the empty string**: every string of every length, made from any combination of the alphabet's symbols.
 
 $$
 \Sigma = \{a, b\} \implies \Sigma^* = \{\varepsilon,\ a,\ b,\ aa,\ ab,\ ba,\ bb,\ aaa,\ aab,\ \ldots\}
@@ -105,7 +101,7 @@ $$
 
 $\Sigma^*$ is always infinite (unless $\Sigma$ itself is empty). It is the universe of all strings your alphabet can produce.
 
-The $+$ variant — $\Sigma^+$ — is the same thing but **excluding** $\varepsilon$:
+The $+$ variant, $\Sigma^+$, is the same thing **without** $\varepsilon$:
 
 $$
 \Sigma^+ = \Sigma^* - \{\varepsilon\}
@@ -117,7 +113,7 @@ $$
 L \subseteq \Sigma^*
 $$
 
-And that sums the essence of the whole hierarchy. A language is just a subset of the universe of possible strings.
+That sums up the whole hierarchy: a language is a subset of the universe of possible strings.
 
 <Callout tone="violet" label="Why Σ* exists">
   Think of $\Sigma^*$ as your entire string universe. Without it, you would have to define what a valid string is every single time you create a language. With it, you just write $L \subseteq \Sigma^*$, and everyone instantly knows your language is a piece of that universe.
@@ -150,29 +146,29 @@ $$
 a^3 = aaa \qquad \Sigma^2 = \{aa,\ ab,\ ba,\ bb\}
 $$
 
-And $w^0 = \varepsilon$ for any string $w$ — concatenating zero times gives you the empty string.
+And $w^0 = \varepsilon$ for any string $w$, since concatenating zero times gives you the empty string.
 
-## Regular Expressions — The First Compact Notation
+## Regular Expressions: The First Compact Notation
 
-You may have heared Regular expressions, probably from `grep`. but they are not just that, They are a formal mathematical notation for describing [regular languages](https://en.wikipedia.org/wiki/Regular_language), invented by [Stephen Kleene](https://en.wikipedia.org/wiki/Stephen_Cole_Kleene) in 1951, and based on exactly the three operations you just learned.
+You've probably met regular expressions through `grep`. They are also a formal mathematical notation for describing [regular languages](https://en.wikipedia.org/wiki/Regular_language), invented by [Stephen Kleene](https://en.wikipedia.org/wiki/Stephen_Cole_Kleene) in 1951, and based on exactly the three operations you just learned.
 
 A regular expression over $\Sigma$ is defined by three rules:
 
-**Basis** — these are the atoms:
+**Basis.** These are the atoms:
 - $\varepsilon$ is a regular expression, describing the language $\{\varepsilon\}$
 - $\emptyset$ is a regular expression, describing the empty language $\{\}$
 - Any single symbol $a \in \Sigma$ is a regular expression, describing $\{a\}$
 
-**Recursion** — if $r_1$ and $r_2$ are regular expressions, so are:
-- $r_1 r_2$ — concatenation
-- $r_1 + r_2$ — union (either $r_1$ or $r_2$)
-- $r_1^*$ — Kleene star (zero or more repetitions of $r_1$)
+**Recursion.** If $r_1$ and $r_2$ are regular expressions, so are:
+- $r_1 r_2$: concatenation
+- $r_1 + r_2$: union (either $r_1$ or $r_2$)
+- $r_1^*$: Kleene star (zero or more repetitions of $r_1$)
 
-**Closure** — nothing else is a regular expression.
+**Closure.** Nothing else is a regular expression.
 
-Those three rules generate every regular expression that has ever been written. The regex in your editor, the pattern in your validation code, the search in your terminal — all of it is an instance of this recursive definition.
+Those three rules generate every regular expression ever written. The regex in your editor, the pattern in your validation code and the search in your terminal are all instances of this recursive definition.
 
-A worked example to make this concrete. Given $\Sigma = \{a, b\}$:
+Here's a worked example. Given $\Sigma = \{a, b\}$:
 
 $$
 L = \text{language}(a^*b^*) = \{\varepsilon,\ a,\ b,\ aa,\ ab,\ bb,\ aaa,\ aab,\ abb,\ bbb,\ \ldots\}
@@ -184,9 +180,9 @@ $$
 L = \text{language}((a+b)^*) = \Sigma^*
 $$
 
-Every possible string over $\{a, b\}$. The $(a+b)^*$ pattern — which you might have seen in real regex — is just the formal way of writing the entire universe of strings.
+That's every possible string over $\{a, b\}$. The $(a+b)^*$ pattern, which you may have seen in real regex, is the formal way of writing the entire universe of strings.
 
-> **Note:** Throughout this course, $\Sigma = \{a, b\}$ and $\Sigma = \{0, 1\}$ are interchangeable examples — both are just two-symbol alphabets. Do not read meaning into the symbols themselves. $a$ and $b$ are placeholders, exactly like $0$ and $1$.
+> **Note:** Throughout this course, $\Sigma = \{a, b\}$ and $\Sigma = \{0, 1\}$ are interchangeable examples, since both are just two-symbol alphabets. Do not read meaning into the symbols themselves. $a$ and $b$ are placeholders, exactly like $0$ and $1$.
 
 ## Quick Reference
 
@@ -201,16 +197,16 @@ Every possible string over $\{a, b\}$. The $(a+b)^*$ pattern — which you might
 | $XY$           | Concatenation     | $\{uv \mid u \in X,\ v \in Y\}$                          |
 
 <Callout tone="mint" label="What you just built">
-  You now have the three primitives that everything else in this course rests on: an alphabet defines the symbols, strings are finite sequences of those symbols, and languages are sets of strings. Regular expressions are the first tool for describing those sets compactly. Every machine you study from here — finite automata, pushdown automata, Turing machines — is just a different mechanism for recognizing which strings belong to a language and which do not.
+  You now have the three primitives that everything else in this course rests on: an alphabet defines the symbols, strings are finite sequences of those symbols, and languages are sets of strings. Regular expressions are the first tool for describing those sets compactly. Every machine you study from here (finite automata, pushdown automata, Turing machines) is a different mechanism for deciding which strings belong to a language and which don't.
 </Callout>
 
 ## Optional Further Reading
 
 <ApplicationsGrid>
   <PracticalApplication title="Why does the empty string exist?" tool="Search →">
-    Search "why does the empty string exist in formal languages" — understanding the motivation behind $\varepsilon$ will sharpen every definition that follows.
+    Search "why does the empty string exist in formal languages". Knowing why $\varepsilon$ exists makes every definition that follows clearer.
   </PracticalApplication>
   <PracticalApplication title="Regular Expressions" tool="Watch Video →">
-    Chris Marriott's video on regular expressions — a clean visual walkthrough that maps well to what you just read. [Watch on YouTube](https://youtu.be/h___LthS3QQ?si=rTELcV9rGt8ZN3ij).
+    Chris Marriott's video on regular expressions is a clear visual walkthrough that lines up well with what you just read. [Watch on YouTube](https://youtu.be/h___LthS3QQ?si=rTELcV9rGt8ZN3ij).
   </PracticalApplication>
 </ApplicationsGrid>

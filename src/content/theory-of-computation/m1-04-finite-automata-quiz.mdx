@@ -39,11 +39,11 @@ Test your understanding of DFAs, NFAs, and how they power regex engines.
       options: [
         { id: "a", text: "The next symbol" },
         { id: "b", text: "One epsilon character" },
-        { id: "c", text: "Nothing — it's a free move" },
+        { id: "c", text: "Nothing, it's a free move" },
         { id: "d", text: "A special marker symbol" },
       ],
       correctOptionId: "c",
-      explanation: "ε-transitions cost nothing and move the machine without consuming input. This makes NFAs flexible to design but doesn't add computational power — ε-NFAs = DFAs = NFAs.",
+      explanation: "ε-transitions cost nothing and move the machine without consuming input. This makes NFAs flexible to design but adds no computational power: ε-NFAs = DFAs = NFAs.",
     },
     {
       id: "q4",

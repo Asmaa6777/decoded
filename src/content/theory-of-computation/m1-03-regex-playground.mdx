@@ -2,18 +2,18 @@ import { Callout, PracticalApplication, ApplicationsGrid, RegexPlayground } from
 
 # Practical: Building Regex from Automata
 
-A **regular expression** is just a human-readable notation for a finite automaton. When you write `\d{3}-\d{4}`, the engine compiles that pattern into a state machine, then walks it across your input one character at a time. The "regex" feels magical because the underlying math is exactly powerful enough to do this — and exactly weak enough to do it in linear time.
+A **regular expression** is a human-readable way of writing down a finite automaton. When you write something like `\d{3}-\d{4}`, the computer turns it into a set of instructions it can follow, then goes through your input one character at a time to check whether it matches. Regular expressions can seem magical because they do this so efficiently.
 
-In this practical, you'll write regex patterns that match the same languages as the automata you just learned to trace.
+In this practical lesson, you'll write regex patterns that match the same languages as the automata you just learned to trace.
 
 ## Where this shows up today
 
 <ApplicationsGrid>
   <PracticalApplication title="grep, ripgrep, sed, awk" tool="UNIX">
-    Every command-line text tool. ripgrep is fast specifically because it compiles patterns to highly optimized DFAs.
+    These are the standard command-line text tools. ripgrep is fast largely because it compiles patterns to highly optimized DFAs.
   </PracticalApplication>
   <PracticalApplication title="Lexers in every compiler" tool="COMPILERS">
-    The first phase of every compiler — turning characters into tokens — is a finite automaton.
+    The first phase of every compiler, turning characters into tokens, is a finite automaton.
   </PracticalApplication>
   <PracticalApplication title="Form validation" tool="WEB">
     Email, phone, postal code patterns in your sign-up forms.
@@ -25,7 +25,7 @@ In this practical, you'll write regex patterns that match the same languages as 
 
 ## Exercise A: Match an NFA language
 
-Below is the same NFA you traced in the previous lesson — the one that accepts strings ending in `ab` over the alphabet `{a, b}`. Write a regex pattern that matches exactly this language.
+In the previous lesson you traced an NFA that accepts strings ending in `ab` over the alphabet `{a, b}`. Write a regex that matches exactly this language.
 
 <RegexPlayground
   prompt="Write a regex that matches strings ending in 'ab' (over the alphabet {a, b}). Same language as the NFA you just traced."
@@ -61,7 +61,7 @@ Phone extensions in your company's system follow the format `DDD-DDDD` (three di
 
 ## Exercise C: The ReDoS trap
 
-This exercise teaches catastrophic backtracking (ReDoS) by example. The pattern `(a+)+$` is intentionally pathological — try it against a long string of `a`'s followed by a single non-matching character (e.g., `"aaaaaaaaaaaaaaaaaaaaaaaaa!"`). Watch what happens: the regex engine will try exponentially many ways to match the nested `+` quantifiers before finally giving up. In real code, this can hang your application.
+This exercise shows catastrophic backtracking (ReDoS) by example. The pattern `(a+)+$` is deliberately pathological. Try it against a long string of `a`'s followed by one non-matching character (e.g., `"aaaaaaaaaaaaaaaaaaaaaaaaa!"`). The regex engine tries exponentially many ways to match the nested `+` quantifiers before it gives up, and in real code that can hang your application.
 
 <RegexPlayground
   prompt="Try the ReDoS trap: (a+)+$ with overlapping quantifiers. Type a pattern, then test it against long strings of 'a' followed by a non-matching character to see catastrophic backtracking."
@@ -76,5 +76,5 @@ This exercise teaches catastrophic backtracking (ReDoS) by example. The pattern 
 />
 
 <Callout tone="sky">
-<strong>The senior-engineer move:</strong> Knowing automata changes how you read regex. When catastrophic backtracking blows up production (the classic ReDoS attack), you can explain *why*: someone wrote a pattern that the engine had to simulate as an NFA with exponential paths. The fix isn't guessing — it's rewriting toward a pattern the engine can compile to a deterministic DFA. That's the difference between using a tool and understanding one.
+<strong>The senior-engineer move:</strong> Knowing automata changes how you read regex. When catastrophic backtracking takes down production (the classic ReDoS attack), you can explain *why*: someone wrote a pattern the engine had to explore as an NFA with exponentially many paths. Instead of guessing at a fix, you rewrite it into a pattern the engine can compile to a deterministic DFA.
 </Callout>
