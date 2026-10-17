@@ -846,7 +846,7 @@ export type LeetCodeProblem = {
   title: string;
   slug: string;
   why: string;
-  difficulty?: "Easy" | "Medium";
+  difficulty?: "Easy" | "Medium" | "Hard";
 };
 
 export function LeetCodeProblems({ problems, note = "solve them in Java" }: { problems: LeetCodeProblem[]; note?: string }) {
@@ -872,7 +872,7 @@ export function LeetCodeProblems({ problems, note = "solve them in Java" }: { pr
                   <span className="flex items-baseline gap-2 flex-wrap">
                     <span className="font-display font-semibold group-hover:underline underline-offset-4">{p.title}</span>
                     <span className={`font-mono text-[10px] uppercase tracking-widest ${diff === "Easy" ? "text-mint" : "text-orange"}`}>
-                      {diff === "Easy" ? "easy" : "stretch · medium"}
+                      {diff === "Easy" ? "easy" : `stretch · ${diff.toLowerCase()}`}
                     </span>
                   </span>
                   <span className="block text-sm text-muted-foreground leading-relaxed mt-0.5">{p.why}</span>
