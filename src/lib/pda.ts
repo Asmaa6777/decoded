@@ -19,8 +19,8 @@ export type PdaConfig = {
   node: string;
   /** letters of the input already read */
   pos: number;
-  /** bottom of the stack first */
-  stack: string;
+  /** bottom of the stack first; symbols may be longer than one character (T1, V2) */
+  stack: string[];
   /** what the last move did, for captions */
   did: string;
 };
@@ -36,8 +36,8 @@ export function runPda(pda: Pda, word: string, { maxConfigs = 50_000, maxStack =
   if (!start) throw new Error("A PDA needs a START node.");
 
   type Node = PdaConfig & { parent: Node | null };
-  const key = (c: PdaConfig) => `${c.node}|${c.pos}|${c.stack}`;
-  const queue: Node[] = [{ node: start.id, pos: 0, stack: "", did: "start", parent: null }];
+  const key = (c: PdaConfig) => `${c.node}|${c.pos}|${c.stack.join(" ")}`;
+  const queue: Node[] = [{ node: start.id, pos: 0, stack: [], did: "start", parent: null }];
   const seen = new Set([key(queue[0])]);
 
   for (let head = 0; head < queue.length && head < maxConfigs; head++) {
@@ -60,7 +60,7 @@ export function runPda(pda: Pda, word: string, { maxConfigs = 50_000, maxStack =
       const top = c.stack.length ? c.stack[c.stack.length - 1] : BLANK;
       for (const e of out(n.id, top)) next.push({ node: e.to, pos: c.pos, stack: c.stack.slice(0, -1), did: `pop ${top}` });
     } else if (n.kind === "push") {
-      if (c.stack.length < maxStack) for (const e of out(n.id)) next.push({ node: e.to, pos: c.pos, stack: c.stack + (n.push ?? ""), did: `push ${n.push}` });
+      if (c.stack.length < maxStack) for (const e of out(n.id)) next.push({ node: e.to, pos: c.pos, stack: [...c.stack, n.push ?? ""], did: `push ${n.push}` });
     }
     for (const x of next) {
       if (seen.has(key(x))) continue;
@@ -98,7 +98,7 @@ export function pdaFrames(pda: Pda, word: string): Frame<PdaState>[] {
   if (!path) {
     return [
       {
-        state: { config: { node: pda.nodes.find((n) => n.kind === "start")!.id, pos: 0, stack: "", did: "start" }, word, accepted: false },
+        state: { config: { node: pda.nodes.find((n) => n.kind === "start")!.id, pos: 0, stack: [], did: "start" }, word, accepted: false },
         line: -1,
         message: `No path reaches ACCEPT for "${word || "Λ"}": every possible run crashes on a missing edge or reaches REJECT. The word is rejected.`,
         stats: { steps: 0 },

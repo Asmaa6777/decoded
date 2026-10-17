@@ -72,8 +72,8 @@ describe("runPda", () => {
     const run = runPda(anbn, "aabb")!;
     expect(run[0].did).toBe("start");
     expect(run.at(-1)!.node).toBe("accept");
-    expect(run.map((c) => c.stack)).toContain("aa");
-    expect(run.at(-1)!.stack).toBe("");
+    expect(run.map((c) => c.stack.join(""))).toContain("aa");
+    expect(run.at(-1)!.stack).toEqual([]);
   });
 });
 

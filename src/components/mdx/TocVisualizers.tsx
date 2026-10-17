@@ -919,7 +919,7 @@ function PdaSvg({ pda, layout, current }: { pda: Pda; layout: PdaLayout; current
               <g>
                 <rect x={(sx + ex) / 2 - uy * bend * 0.5 - 9} y={(sy + ey) / 2 + ux * bend * 0.5 - 9} width={18} height={18} rx={3} className="fill-card" />
                 <text x={(sx + ex) / 2 - uy * bend * 0.5} y={(sy + ey) / 2 + ux * bend * 0.5} textAnchor="middle" dominantBaseline="central" fontSize={12} className="font-mono fill-current font-bold">
-                  {e.label}
+                  {showSym(e.label)}
                 </text>
               </g>
             )}
@@ -931,7 +931,7 @@ function PdaSvg({ pda, layout, current }: { pda: Pda; layout: PdaLayout; current
         if (!p) return null;
         const hot = n.id === current;
         const tone = hot ? "fill-neon/30 stroke-neon" : n.kind === "accept" ? "fill-mint/15 stroke-mint" : n.kind === "reject" ? "fill-orange/15 stroke-orange" : "fill-card stroke-current";
-        const label = n.kind === "push" ? `PUSH ${n.push}` : n.kind.toUpperCase();
+        const label = n.kind === "push" ? `PUSH ${showSym(n.push ?? "")}` : n.kind.toUpperCase();
         return (
           <g key={n.id}>
             {n.kind === "read" || n.kind === "pop" ? (
@@ -975,9 +975,9 @@ function TapeAndStack({ s }: { s: PdaState }) {
           {s.config.stack.length === 0 ? (
             <div className="w-10 h-8 flex items-center justify-center font-mono text-xs text-muted-foreground border border-dashed border-border">Δ</div>
           ) : (
-            [...s.config.stack].map((c, i) => (
+            s.config.stack.map((c, i) => (
               <div key={i} className={`w-10 h-8 flex items-center justify-center font-mono text-sm border border-sky ${i === s.config.stack.length - 1 ? "bg-sky/25 font-bold" : "bg-sky/10"}`}>
-                {c}
+                {showSym(c)}
               </div>
             ))
           )}
