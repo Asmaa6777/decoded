@@ -4,8 +4,9 @@ import { derivationFrames, findDerivation, isVariable, leftmostDerivations, pars
 import { alphabetOf, firstDifference, firstWords, matcher, parseRe, ReError } from "@/lib/regular";
 import { eliminationFrames, ELIMINATION_STEPS, FINAL, START, tgAccepts, type Tg } from "@/lib/transitionGraph";
 import { kleeneBuild, KLEENE_RULES, type Dfa, type KleeneOp, type KleeneState } from "@/lib/kleene";
-import { cnfFrames, CNF_STEPS, cyk, fromGrammar, showSym, type CnfState } from "@/lib/normalForms";
+import { cnfFrames, CNF_STEPS, cyk, fromGrammar, showRule as cnfRule, showSym, type CnfState } from "@/lib/normalForms";
 import { BLANK, pdaFrames, type Pda, type PdaState } from "@/lib/pda";
+import { cfgToPda } from "@/lib/cfgPda";
 import { AutomatonDiagram } from "@/components/mdx/MdxComponents";
 
 /* ============================================================
@@ -949,7 +950,7 @@ function PdaSvg({ pda, layout, current }: { pda: Pda; layout: PdaLayout; current
   );
 }
 
-function TapeAndStack({ s }: { s: PdaState }) {
+function TapeAndStack({ s, showForm = false }: { s: PdaState; showForm?: boolean }) {
   const cells = [...s.word, BLANK, BLANK];
   return (
     <div className="flex flex-wrap items-end gap-8">
@@ -984,12 +985,38 @@ function TapeAndStack({ s }: { s: PdaState }) {
         </div>
         <div className="font-mono text-[10px] text-muted-foreground">top ↑</div>
       </div>
+      {showForm && (
+        <div className={`flex flex-col gap-1 transition-opacity ${s.config.node === "pop" ? "" : "opacity-35"}`}>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">read so far + stack, top first</div>
+          <div className="font-mono text-lg">
+            <span className="text-mint">{s.word.slice(0, s.config.pos)}</span>
+            <span className="text-sky font-bold">{[...s.config.stack].reverse().map(showSym).join("")}</span>
+            {s.config.pos === 0 && s.config.stack.length === 0 && <span className="text-muted-foreground">Λ</span>}
+          </div>
+          <div className="font-mono text-[10px] text-muted-foreground">
+            {s.config.node === "pop" ? "at the POP: one step of the leftmost derivation" : "mid-rule: complete again at the next POP"}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 /** Run a word through a flowchart-style PDA and watch the tape and stack. */
-export function PdaRunner({ pda, layout, initial = "aabb", title = "Pushdown automaton" }: { pda: Pda; layout: PdaLayout; initial?: string; title?: string }) {
+export function PdaRunner({
+  pda,
+  layout,
+  initial = "aabb",
+  title = "Pushdown automaton",
+  showForm = false,
+}: {
+  pda: Pda;
+  layout: PdaLayout;
+  initial?: string;
+  title?: string;
+  /** show read-so-far + stack as a sentential form (for PDAs built from a grammar) */
+  showForm?: boolean;
+}) {
   const [text, setText] = useState(initial);
   const word = text.replace(/\s+/g, "").replace(/[ΛλεΔ]/g, "");
   const frames = useMemo(() => {
@@ -1010,7 +1037,7 @@ export function PdaRunner({ pda, layout, initial = "aabb", title = "Pushdown aut
       render={(s) => (
         <div className="flex flex-col gap-5">
           <PdaSvg pda={pda} layout={layout} current={s.config.node} />
-          <TapeAndStack s={s} />
+          <TapeAndStack s={s} showForm={showForm} />
         </div>
       )}
       inputs={
@@ -1022,5 +1049,52 @@ export function PdaRunner({ pda, layout, initial = "aabb", title = "Pushdown aut
         </div>
       }
     />
+  );
+}
+
+/* ------------------------------- CFG = PDA ------------------------------- */
+
+/**
+ * Type a grammar; it is converted to Chomsky Normal Form and turned into
+ * the course's PDA (push S, loop on POP), which can then run words.
+ */
+export function GrammarToPda({ grammar, initial }: { grammar: string; initial: string }) {
+  const [text, setText] = useState(grammar);
+  const [applied, setApplied] = useState(grammar);
+  const built = useMemo(() => {
+    try {
+      return { ...cfgToPda(parseGrammar(applied)), error: null as string | null };
+    } catch (e) {
+      return { error: (e as Error).message, pda: null, layout: null, cnf: null };
+    }
+  }, [applied]);
+
+  return (
+    <div className="not-prose my-8 flex flex-col gap-4">
+      <div className="border border-border bg-card rounded-sm p-5 flex flex-col gap-3 text-foreground">
+        <div className="eyebrow text-sky">Grammar → PDA</div>
+        <div className="flex flex-wrap items-stretch gap-2">
+          <textarea aria-label="Grammar rules" className={`${inputCls} flex-1 min-w-[200px] min-h-[64px] resize-y`} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
+          <button type="button" className={btn} onClick={() => setApplied(text)}>
+            Build PDA
+          </button>
+        </div>
+        {built.error ? (
+          <p className="text-sm text-orange">{built.error}</p>
+        ) : (
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono text-xs">
+            <span className="uppercase tracking-widest text-[10px] text-muted-foreground">in CNF:</span>
+            {built.cnf!.rules.map((r, i) => (
+              <span key={i}>{cnfRule(r)}</span>
+            ))}
+          </div>
+        )}
+      </div>
+      {built.pda && (
+        <div className="[&>div]:my-0">
+          <PdaRunner key={applied} pda={built.pda} layout={built.layout!} initial={initial} title="PDA built from the grammar" showForm />
+        </div>
+      )}
+    </div>
   );
 }

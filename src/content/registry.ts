@@ -16,6 +16,7 @@ import TocLimitsOfFiniteMemory from "@/content/theory-of-computation/m2-01-limit
 import TocContextFreeGrammars from "@/content/theory-of-computation/m2-02-context-free-grammars.mdx";
 import TocNormalForms from "@/content/theory-of-computation/m2-03-normal-forms.mdx";
 import TocPushdownAutomata from "@/content/theory-of-computation/m2-04-pushdown-automata.mdx";
+import TocCfgEqualsPda from "@/content/theory-of-computation/m2-05-cfg-equals-pda.mdx";
 import LitTyping from "@/content/computer-literacy/01-physical-layer.mdx";
 import LitLanguage from "@/content/computer-literacy/02-language-layer.mdx";
 import LitSystems from "@/content/computer-literacy/03-systems-layer.mdx";
@@ -112,6 +113,7 @@ export const courses: Course[] = [
           { slug: "context-free-grammars", title: "Context-Free Grammars", duration: "16 min", Component: TocContextFreeGrammars },
           { slug: "normal-forms", title: "Simplifying Grammars and Normal Forms", duration: "16 min", Component: TocNormalForms },
           { slug: "pushdown-automata", title: "Pushdown Automata", duration: "15 min", Component: TocPushdownAutomata },
+          { slug: "cfg-equals-pda", title: "CFG = PDA", duration: "12 min", Component: TocCfgEqualsPda },
         ],
       },
     ],
