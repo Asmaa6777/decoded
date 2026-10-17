@@ -3,6 +3,8 @@ import { Stepper } from "@/components/mdx/AlgoVisualizers";
 import { derivationFrames, isVariable, parseGrammar, shortestStrings, showRule, EPSILON, type DerivationState } from "@/lib/grammar";
 import { alphabetOf, firstDifference, firstWords, matcher, parseRe, ReError } from "@/lib/regular";
 import { eliminationFrames, ELIMINATION_STEPS, FINAL, START, tgAccepts, type Tg } from "@/lib/transitionGraph";
+import { kleeneBuild, KLEENE_RULES, type Dfa, type KleeneOp, type KleeneState } from "@/lib/kleene";
+import { AutomatonDiagram } from "@/components/mdx/MdxComponents";
 
 /* ============================================================
    Theory of Computation visualizers. Same pattern as the
@@ -517,5 +519,132 @@ export function StateEliminator({ tg, layout, order }: { tg: Tg; layout: TgNode[
         </div>
       )}
     />
+  );
+}
+
+/* ------------------------- Kleene's theorem builder ------------------------- */
+
+function DfaTable({ name, dfa }: { name: string; dfa: Dfa }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{name}</div>
+      <table className="font-mono text-xs border-collapse">
+        <thead>
+          <tr className="text-muted-foreground">
+            <th className="px-2 py-1 text-left font-normal" />
+            {dfa.alphabet.map((c) => (
+              <th key={c} className="px-2 py-1 font-normal">
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {dfa.states.map((q) => (
+            <tr key={q} className="border-t border-border/60">
+              <td className={`px-2 py-1 ${dfa.finals.includes(q) ? "text-mint font-bold" : ""}`}>
+                {q === dfa.start ? "−" : ""}
+                {q}
+                {dfa.finals.includes(q) ? "+" : ""}
+              </td>
+              {dfa.alphabet.map((c) => (
+                <td key={c} className="px-2 py-1 text-center">
+                  {dfa.delta[q][c]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function KleeneTable({ s, alphabet }: { s: KleeneState; alphabet: string[] }) {
+  return (
+    <table className="font-mono text-xs border-collapse min-w-[320px]">
+      <thead>
+        <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">
+          <th className="px-2 py-1.5 text-left font-normal">new state</th>
+          <th className="px-2 py-1.5 text-left font-normal">stands for</th>
+          {alphabet.map((c) => (
+            <th key={c} className="px-2 py-1.5 font-normal">
+              on {c}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {s.rows.map((r, i) => (
+          <tr key={r.name} className={`border-b border-border/50 ${i === s.current ? "bg-neon/15" : ""}`}>
+            <td className={`px-2 py-1.5 font-bold ${r.final ? "text-mint" : ""}`}>
+              {r.start ? "−" : ""}
+              {r.name}
+              {r.final ? "+" : ""}
+            </td>
+            <td className="px-2 py-1.5 text-muted-foreground">{r.meaning}</td>
+            {alphabet.map((c) => (
+              <td key={c} className="px-2 py-1.5 text-center">
+                {r.next[c] ?? ""}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+const OP_LABEL: Record<KleeneOp, string> = { union: "r1 + r2", concat: "r1 r2", star: "r1*" };
+
+/**
+ * Build a DFA for r1 + r2, r1r2 or r1* from DFAs for r1 and r2, one table
+ * row at a time, then run words on the result.
+ */
+export function KleeneBuilder({ fa1, fa2, r1, r2, initial = "union" }: { fa1: Dfa; fa2: Dfa; r1: string; r2: string; initial?: KleeneOp }) {
+  const [op, setOp] = useState<KleeneOp>(initial);
+  const { dfa, frames } = useMemo(() => kleeneBuild(op, fa1, op === "star" ? undefined : fa2), [op, fa1, fa2]);
+  const transitions = dfa.states.flatMap((q) => dfa.alphabet.map((c) => ({ from: q, to: dfa.delta[q][c], label: c })));
+
+  return (
+    <div className="not-prose my-8 flex flex-col gap-4">
+      <div className="border border-border bg-card rounded-sm p-5 flex flex-wrap gap-8 text-foreground">
+        <DfaTable name={`FA1 · r1 = ${r1}`} dfa={fa1} />
+        <DfaTable name={`FA2 · r2 = ${r2}`} dfa={fa2} />
+        <div className="flex flex-col gap-2">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">build a DFA for</div>
+          <div className="inline-flex border border-border rounded-sm overflow-hidden">
+            {(["union", "concat", "star"] as KleeneOp[]).map((o) => (
+              <button
+                key={o}
+                type="button"
+                onClick={() => setOp(o)}
+                aria-pressed={op === o}
+                className={`font-mono text-[12px] px-3 py-2 transition-colors ${op === o ? "bg-foreground text-background" : "hover:bg-foreground/10"}`}
+              >
+                {OP_LABEL[o]}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground max-w-[220px] leading-relaxed">− marks the start state and + marks final states, as in the course notes.</p>
+        </div>
+      </div>
+      <div className="[&>div]:my-0">
+        <Stepper
+          title={`Kleene: DFA for ${OP_LABEL[op]}`}
+          frames={frames}
+          code={KLEENE_RULES[op]}
+          codeLabel="Rules"
+          legend={[
+            ["bg-neon", "row being filled"],
+            ["bg-mint", "final state"],
+          ]}
+          render={(s) => <KleeneTable s={s} alphabet={dfa.alphabet} />}
+        />
+      </div>
+      <div className="[&>div]:my-0">
+        <AutomatonDiagram key={op} states={dfa.states} alphabet={dfa.alphabet} transitions={transitions} initial={dfa.start} accepting={dfa.finals} />
+      </div>
+    </div>
   );
 }
