@@ -8,6 +8,7 @@ import TocGrammars from "@/content/theory-of-computation/m0-04-grammars.mdx";
 import TocStatesSymbols from "@/content/theory-of-computation/m1-01-states-symbols.mdx";
 import TocNfa from "@/content/theory-of-computation/m1-02-nfa.mdx";
 import TocRegularExpressions from "@/content/theory-of-computation/m1-03-regular-expressions.mdx";
+import TocTransitionGraphs from "@/content/theory-of-computation/m1-04-transition-graphs.mdx";
 import TocRegexPlayground from "@/content/theory-of-computation/m1-06-regex-playground.mdx";
 import TocFiniteAutomataQuiz from "@/content/theory-of-computation/m1-07-finite-automata-quiz.mdx";
 import TocLimitsOfFiniteMemory from "@/content/theory-of-computation/m2-01-limits-of-finite-memory.mdx";
@@ -93,6 +94,7 @@ export const courses: Course[] = [
           { slug: "states-symbols-and-transitions", title: "States, Symbols, and Transitions", duration: "10 min", Component: TocStatesSymbols },
           { slug: "nfa", title: "NFA — The Machine That Guesses Right", duration: "12 min", Component: TocNfa },
           { slug: "regular-expressions", title: "Reading and Writing Regular Expressions", duration: "15 min", kind: "practical", Component: TocRegularExpressions },
+          { slug: "transition-graphs", title: "Transition Graphs", duration: "14 min", Component: TocTransitionGraphs },
           { slug: "regex-playground", title: "Practical: Building Regex from Automata", duration: "10 min", kind: "practical", Component: TocRegexPlayground },
           { slug: "finite-automata-quiz", title: "Quiz: Finite Automata & Regex", duration: "6 min", kind: "quiz", Component: TocFiniteAutomataQuiz },
         ],
