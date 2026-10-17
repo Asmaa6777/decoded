@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allStrings, firstDifference, firstWords, parseRe, ReError, showRe, wordsUpTo } from "@/lib/regular";
+import { allStrings, firstDifference, firstWords, matcher, parseRe, ReError, showRe, wordsUpTo } from "@/lib/regular";
 
 const ab = ["a", "b"];
 
@@ -39,6 +39,25 @@ describe("firstWords", () => {
 
   it("stops at the length limit for finite languages", () => {
     expect(firstWords(parseRe("a+b"), 10)).toEqual(["a", "b"]);
+  });
+});
+
+describe("matcher", () => {
+  it("agrees with the enumerated language on every short word", () => {
+    for (const src of ["(ab+ba)*aa", "a*+b*", "(ε+b)(ab)*(ε+a)", "(a+b)*ba(a+b)*"]) {
+      const re = parseRe(src);
+      const words = wordsUpTo(re, 7);
+      const m = matcher(re);
+      for (const w of allStrings(ab, 7)) expect(m(w)).toBe(words.has(w));
+    }
+  });
+
+  it("checks three-letter alphabets quickly", () => {
+    const abc = ["a", "b", "c"];
+    const t = Date.now();
+    const re = parseRe("(a+b+c)*(aa+bb+cc)(a+b+c)*");
+    expect(firstDifference(re, re, abc)).toBeNull();
+    expect(Date.now() - t).toBeLessThan(1000);
   });
 });
 

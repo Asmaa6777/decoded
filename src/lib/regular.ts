@@ -136,16 +136,37 @@ export function allStrings(sigma: string[], maxLen: number): string[] {
   return out;
 }
 
+/** A membership test, compiled to a JavaScript RegExp (no backreferences, so it stays fast). */
+export function matcher(re: Re): (w: string) => boolean {
+  const esc = (c: string) => c.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const js = (r: Re): string => {
+    switch (r.t) {
+      case "eps":
+        return "";
+      case "sym":
+        return esc(r.c);
+      case "union":
+        return `(?:${js(r.a)}|${js(r.b)})`;
+      case "concat":
+        return js(r.a) + js(r.b);
+      case "star":
+        return `(?:${js(r.a)})*`;
+    }
+  };
+  const rx = new RegExp(`^(?:${js(re)})$`);
+  return (w) => rx.test(w);
+}
+
 /**
  * Compares two expressions on every string over `sigma` up to `maxLen` and
  * returns the shortest string they disagree on, or null if none does. With
  * maxLen around 8 this catches the mistakes students actually make.
  */
 export function firstDifference(answer: Re, reference: Re, sigma: string[], maxLen = 8): { word: string; inAnswer: boolean } | null {
-  const a = wordsUpTo(answer, maxLen);
-  const r = wordsUpTo(reference, maxLen);
+  const a = matcher(answer);
+  const r = matcher(reference);
   for (const w of allStrings(sigma, maxLen)) {
-    if (a.has(w) !== r.has(w)) return { word: w, inAnswer: a.has(w) };
+    if (a(w) !== r(w)) return { word: w, inAnswer: a(w) };
   }
   return null;
 }
