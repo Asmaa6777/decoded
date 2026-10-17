@@ -849,12 +849,12 @@ export type LeetCodeProblem = {
   difficulty?: "Easy" | "Medium";
 };
 
-export function LeetCodeProblems({ problems }: { problems: LeetCodeProblem[] }) {
+export function LeetCodeProblems({ problems, note = "solve them in Java" }: { problems: LeetCodeProblem[]; note?: string }) {
   return (
     <section className="not-prose my-10 border border-border bg-card rounded-sm overflow-hidden">
       <div className="px-5 pt-4 pb-2 flex items-baseline justify-between gap-3 flex-wrap">
         <div className="eyebrow text-orange">Practice on LeetCode</div>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">solve them in Java</span>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{note}</span>
       </div>
       <ul className="divide-y divide-border">
         {problems.map((p) => {

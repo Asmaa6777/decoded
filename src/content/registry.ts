@@ -4,6 +4,7 @@ import type { ComponentType } from "react";
 import TocIntro from "@/content/theory-of-computation/m0-01-intro.mdx";
 import TocLanguageOfLanguages from "@/content/theory-of-computation/m0-02-language-of-languages.mdx";
 import TocHowToReadAMachine from "@/content/theory-of-computation/m0-03-how-to-read-a-machine.mdx";
+import TocGrammars from "@/content/theory-of-computation/m0-04-grammars.mdx";
 import TocStatesSymbols from "@/content/theory-of-computation/m1-01-states-symbols.mdx";
 import TocNfa from "@/content/theory-of-computation/m1-02-nfa.mdx";
 import TocRegexPlayground from "@/content/theory-of-computation/m1-03-regex-playground.mdx";
@@ -80,6 +81,7 @@ export const courses: Course[] = [
         lessons: [
           { slug: "intro", title: "The Abstraction Gap", duration: "5 min", Component: TocIntro },
           { slug: "language-of-languages", title: "The Language of Languages", duration: "12 min", Component: TocLanguageOfLanguages },
+          { slug: "grammars", title: "Grammars: Rules That Generate a Language", duration: "14 min", Component: TocGrammars },
           { slug: "how-to-read-a-machine", title: "How to Read a Machine", duration: "9 min", Component: TocHowToReadAMachine },
         ],
       },
