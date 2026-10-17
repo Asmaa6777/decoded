@@ -7,8 +7,8 @@ import TocHowToReadAMachine from "@/content/theory-of-computation/m0-03-how-to-r
 import TocGrammars from "@/content/theory-of-computation/m0-04-grammars.mdx";
 import TocStatesSymbols from "@/content/theory-of-computation/m1-01-states-symbols.mdx";
 import TocNfa from "@/content/theory-of-computation/m1-02-nfa.mdx";
-import TocRegexPlayground from "@/content/theory-of-computation/m1-03-regex-playground.mdx";
-import TocFiniteAutomataQuiz from "@/content/theory-of-computation/m1-04-finite-automata-quiz.mdx";
+import TocRegexPlayground from "@/content/theory-of-computation/m1-06-regex-playground.mdx";
+import TocFiniteAutomataQuiz from "@/content/theory-of-computation/m1-07-finite-automata-quiz.mdx";
 import TocLimitsOfFiniteMemory from "@/content/theory-of-computation/m2-01-limits-of-finite-memory.mdx";
 import LitTyping from "@/content/computer-literacy/01-physical-layer.mdx";
 import LitLanguage from "@/content/computer-literacy/02-language-layer.mdx";
