@@ -1,0 +1,124 @@
+import { Callout, ApplicationsGrid, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { CnfConverter } from "@/components/mdx/TocVisualizers";
+
+# Simplifying Grammars and Normal Forms
+
+People write grammars to be readable, so real grammars are full of rules that make algorithms awkward: rules that produce nothing ($M \rightarrow \Lambda$), rules that just rename a variable ($A \rightarrow B$), and variables that never contribute to any word. A **normal form** is a fixed shape that every rule must have. Any context-free grammar can be rewritten into one without changing the language (apart from $\Lambda$, as you'll see), and once every rule has the same shape, proofs and parsing algorithms get much simpler.
+
+This lesson follows the order of the course notes: clean the grammar up, then convert it to **Chomsky Normal Form**, then meet **Greibach Normal Form**.
+
+## Removing Λ-productions
+
+A **Λ-production** is a rule $X \rightarrow \Lambda$. A variable is **nullable** if it can derive $\Lambda$, either directly or through other nullable variables. To remove the $\Lambda$-productions:
+
+1. Find every nullable variable.
+2. Delete the $\Lambda$-rules.
+3. Wherever a nullable variable appears on a right-hand side, add a copy of that rule with the variable left out (one copy for each way of leaving nullable variables out).
+
+The example from the notes:
+
+$$
+S \rightarrow aMb \qquad M \rightarrow aMb \mid \Lambda
+$$
+
+$M$ is nullable. Dropping it from $aMb$ gives $ab$, so the grammar becomes
+
+$$
+S \rightarrow aMb \mid ab \qquad M \rightarrow aMb \mid ab
+$$
+
+Every word is still there: anything that used $M \rightarrow \Lambda$ now uses one of the new $ab$ rules instead. The one exception is $\Lambda$ itself. If the start variable is nullable, the language contains $\Lambda$, and a grammar with no $\Lambda$-rules can't produce it. The normal forms below describe $L - \{\Lambda\}$, and $\Lambda$ is handled separately when it's needed.
+
+## Removing unit productions
+
+A **unit production** has a single variable on each side, like $A \rightarrow B$. It doesn't produce anything; it just renames. To remove them, give $A$ every non-unit rule of every variable it can reach through unit rules, then delete the unit rules. From the notes:
+
+$$
+S \rightarrow aA \qquad A \rightarrow a \mid B \qquad B \rightarrow A \mid bb
+$$
+
+$A$ reaches $B$ and $B$ reaches $A$, so each inherits the other's real rules:
+
+$$
+S \rightarrow aA \qquad A \rightarrow a \mid bb \qquad B \rightarrow bb \mid a
+$$
+
+(Now $B$ is unreachable from $S$, which is the next kind of clean-up.)
+
+## Removing useless variables
+
+A variable is **useless** if it can't produce any string of terminals, or if the start variable can never reach it. Removing useless variables and every rule that mentions them doesn't change the language. The notes treat this step as optional for CNF, but it keeps the result small.
+
+## Chomsky Normal Form
+
+A grammar is in **Chomsky Normal Form** (CNF) if every rule has one of two shapes:
+
+$$
+A \rightarrow BC \qquad \text{or} \qquad A \rightarrow a
+$$
+
+two variables, or one terminal. So $S \rightarrow AS \mid a$, $A \rightarrow SA \mid b$ is in CNF, but $S \rightarrow AAS$ (three variables) and $A \rightarrow aa$ (two terminals) are not.
+
+After the three clean-ups, two more steps finish the conversion:
+
+4. In every rule with two or more symbols, replace each terminal $a$ by a new variable $T$, and add $T \rightarrow a$.
+5. Split every rule $A \rightarrow B_1 B_2 \cdots B_k$ with $k > 2$ into $A \rightarrow B_1 V$ and $V \rightarrow B_2 \cdots B_k$, with a new variable $V$, and repeat until every right-hand side has exactly two variables.
+
+Here is the example from the notes. Step through it and compare each frame with the slides, then convert your own grammars: try `S -> aSb | ε` (watch the note about $\Lambda$) and the expression grammar `E -> E+E | E*E | (E) | a`.
+
+<CnfConverter grammar={"S -> ABa\nA -> aab\nB -> Ac"} />
+
+The result is
+
+$$
+\begin{aligned}
+&S \rightarrow AV_1 \qquad V_1 \rightarrow BT_1 \qquad A \rightarrow T_1V_2 \qquad V_2 \rightarrow T_1T_2 \qquad B \rightarrow AT_3 \\
+&T_1 \rightarrow a \qquad T_2 \rightarrow b \qquad T_3 \rightarrow c
+\end{aligned}
+$$
+
+which matches the notes. The "test a word" box checks a word against the original grammar and against the CNF grammar; the two answers should always agree (for non-empty words).
+
+### Why bother?
+
+In CNF, every parse tree is binary. A word of length $n$ needs exactly $n$ rules of the form $A \rightarrow a$ and $n - 1$ of the form $A \rightarrow BC$, so every derivation takes exactly $2n - 1$ steps. That fixed structure makes CNF the starting point for proofs about context-free languages, and for the **CYK algorithm**, which the box above uses. CYK decides whether a CNF grammar generates a word by filling a table of which variables derive each substring, shortest substrings first. It runs in $O(n^3)$ time for a word of length $n$.
+
+<Callout tone="orange" label="Order matters">
+  Remove Λ-productions before unit productions. Removing Λ-rules can create new unit rules (dropping $M$ from $A \rightarrow aM$ is fine, but dropping it from $A \rightarrow BM$ leaves $A \rightarrow B$), so doing it the other way round can leave unit rules behind.
+</Callout>
+
+## Greibach Normal Form
+
+A grammar is in **Greibach Normal Form** (GNF) if every rule is a terminal followed by zero or more variables:
+
+$$
+A \rightarrow a V_1 V_2 \cdots V_k \qquad (k \ge 0)
+$$
+
+So $S \rightarrow cAB$, $A \rightarrow aA \mid bB \mid b$, $B \rightarrow b$ is in GNF, but $S \rightarrow abSb \mid aa$ is not, because a terminal appears after the first symbol. The notes fix that example with one new variable per terminal:
+
+$$
+S \rightarrow aT_bST_b \mid aT_a \qquad T_a \rightarrow a \qquad T_b \rightarrow b
+$$
+
+In GNF, every derivation step produces exactly one terminal, so a word of length $n$ takes exactly $n$ steps, and a parser always knows which letter the next rule must start with. That makes GNF very good for parsing, better than CNF, as the notes say. The catch is that converting a general grammar to GNF is hard: it requires removing left recursion such as $E \rightarrow E + T$, which takes far more work than the CNF steps above.
+
+## Where this shows up today
+
+<ApplicationsGrid>
+  <PracticalApplication title="Parsing natural language" tool="NLP">
+    Statistical parsers for English and other languages use a probabilistic version of CYK (often called CKY) on grammars in Chomsky Normal Form, filling the same table of substrings but keeping the most likely tree for each cell.
+  </PracticalApplication>
+  <PracticalApplication title="Left recursion and top-down parsers" tool="COMPILERS">
+    Hand-written recursive-descent parsers can't use a rule like E → E + T directly, because the function for E would call itself forever. Rewriting the grammar to remove left recursion, the hard part of reaching GNF, is a standard step before writing such a parser.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="any language you like"
+  problems={[
+    { id: 516, title: "Longest Palindromic Subsequence", slug: "longest-palindromic-subsequence", difficulty: "Medium", why: "Fill a table over substrings, shortest first, combining answers for shorter pieces. That's the same table order CYK uses." },
+    { id: 87, title: "Scramble String", slug: "scramble-string", difficulty: "Hard", why: "Try every split point of every substring, exactly like CYK tries every split for A → BC." },
+  ]}
+/>

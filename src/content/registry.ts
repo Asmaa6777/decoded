@@ -14,6 +14,7 @@ import TocRegexPlayground from "@/content/theory-of-computation/m1-06-regex-play
 import TocFiniteAutomataQuiz from "@/content/theory-of-computation/m1-07-finite-automata-quiz.mdx";
 import TocLimitsOfFiniteMemory from "@/content/theory-of-computation/m2-01-limits-of-finite-memory.mdx";
 import TocContextFreeGrammars from "@/content/theory-of-computation/m2-02-context-free-grammars.mdx";
+import TocNormalForms from "@/content/theory-of-computation/m2-03-normal-forms.mdx";
 import LitTyping from "@/content/computer-literacy/01-physical-layer.mdx";
 import LitLanguage from "@/content/computer-literacy/02-language-layer.mdx";
 import LitSystems from "@/content/computer-literacy/03-systems-layer.mdx";
@@ -108,6 +109,7 @@ export const courses: Course[] = [
         lessons: [
           { slug: "limits-of-finite-memory", title: "The Limits of Finite Memory", duration: "12 min", Component: TocLimitsOfFiniteMemory },
           { slug: "context-free-grammars", title: "Context-Free Grammars", duration: "16 min", Component: TocContextFreeGrammars },
+          { slug: "normal-forms", title: "Simplifying Grammars and Normal Forms", duration: "16 min", Component: TocNormalForms },
         ],
       },
     ],

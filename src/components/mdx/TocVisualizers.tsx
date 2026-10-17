@@ -1,9 +1,10 @@
 import { useId, useMemo, useState } from "react";
 import { Stepper } from "@/components/mdx/AlgoVisualizers";
-import { derivationFrames, isVariable, leftmostDerivations, parseGrammar, parseTree, shortestStrings, showRule, EPSILON, type DerivationState, type Side, type TreeNode } from "@/lib/grammar";
+import { derivationFrames, findDerivation, isVariable, leftmostDerivations, parseGrammar, parseTree, shortestStrings, showRule, EPSILON, type DerivationState, type Side, type TreeNode } from "@/lib/grammar";
 import { alphabetOf, firstDifference, firstWords, matcher, parseRe, ReError } from "@/lib/regular";
 import { eliminationFrames, ELIMINATION_STEPS, FINAL, START, tgAccepts, type Tg } from "@/lib/transitionGraph";
 import { kleeneBuild, KLEENE_RULES, type Dfa, type KleeneOp, type KleeneState } from "@/lib/kleene";
+import { cnfFrames, CNF_STEPS, cyk, fromGrammar, showSym, type CnfState } from "@/lib/normalForms";
 import { AutomatonDiagram } from "@/components/mdx/MdxComponents";
 
 /* ============================================================
@@ -760,5 +761,106 @@ export function ParseTreeExplorer({ grammar, target }: { grammar: string; target
         </p>
       </div>
     </div>
+  );
+}
+
+/* --------------------------- normal forms (CNF) --------------------------- */
+
+function RuleList({ s }: { s: CnfState }) {
+  // Group rules by left-hand side, like A → x | y in the notes.
+  const groups = new Map<string, { text: string; hot: boolean }[]>();
+  for (const r of s.rules) {
+    const k = `${r.lhs}→${r.rhs.join(" ")}`;
+    groups.set(r.lhs, [...(groups.get(r.lhs) ?? []), { text: r.rhs.length ? r.rhs.map(showSym).join("") : "Λ", hot: s.changed.includes(k) }]);
+  }
+  return (
+    <div className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-1 font-mono text-sm">
+        {[...groups].map(([lhs, alts]) => (
+          <li key={lhs} className="flex flex-wrap items-baseline gap-x-2">
+            <span className="text-sky font-bold w-8">{showSym(lhs)}</span>
+            <span className="text-muted-foreground">→</span>
+            {alts.map((a, i) => (
+              <span key={i} className="inline-flex items-baseline gap-2">
+                {i > 0 && <span className="text-muted-foreground">|</span>}
+                <span className={a.hot ? "bg-neon/25 rounded-[2px] px-1 font-semibold" : ""}>{a.text}</span>
+              </span>
+            ))}
+          </li>
+        ))}
+      </ul>
+      {s.note && <p className="text-xs text-orange leading-relaxed">{s.note}</p>}
+    </div>
+  );
+}
+
+/**
+ * Convert an editable grammar to Chomsky Normal Form step by step, then
+ * check words against both the original grammar and the CNF one (via CYK).
+ */
+export function CnfConverter({ grammar }: { grammar: string }) {
+  const [text, setText] = useState(grammar);
+  const [applied, setApplied] = useState(grammar);
+  const [word, setWord] = useState("");
+
+  const parsed = useMemo(() => {
+    try {
+      const g = parseGrammar(applied);
+      return { g, frames: cnfFrames(fromGrammar(g)), error: null as string | null };
+    } catch (e) {
+      return { g: null, frames: [], error: (e as Error).message };
+    }
+  }, [applied]);
+
+  const check = useMemo(() => {
+    if (!parsed.g || !word.trim()) return null;
+    const w = word.replace(/\s+/g, "");
+    const cnf = { start: parsed.g.start, rules: parsed.frames.at(-1)!.state.rules };
+    return { w, original: findDerivation(parsed.g, w) !== null, cnf: cyk(cnf, w) };
+  }, [parsed, word]);
+
+  const inputs = (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-stretch gap-2">
+        <textarea aria-label="Grammar rules" className={`${inputCls} flex-1 min-w-[200px] min-h-[72px] resize-y`} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
+        <button type="button" className={btn} onClick={() => setApplied(text)}>
+          Convert
+        </button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground" htmlFor="cnf-word">
+          test a word
+        </label>
+        <input id="cnf-word" className={`${inputCls} w-40`} value={word} onChange={(e) => setWord(e.target.value)} spellCheck={false} />
+        {check && (
+          <span className="font-mono text-xs">
+            original: <span className={check.original ? "text-mint" : "text-orange"}>{check.original ? "yes" : "no"}</span> · CNF (CYK):{" "}
+            <span className={check.cnf ? "text-mint" : "text-orange"}>{check.cnf ? "yes" : "no"}</span>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+
+  if (!parsed.g) {
+    return (
+      <div className="not-prose my-8 border border-border bg-card rounded-sm p-5 flex flex-col gap-3 text-foreground">
+        <div className="eyebrow text-sky">Chomsky Normal Form</div>
+        <p className="text-sm text-orange">{parsed.error}</p>
+        {inputs}
+      </div>
+    );
+  }
+
+  return (
+    <Stepper
+      title="Convert to Chomsky Normal Form"
+      frames={parsed.frames}
+      code={CNF_STEPS}
+      codeLabel="Steps"
+      legend={[["bg-neon", "added or changed this step"]]}
+      render={(s) => <RuleList s={s} />}
+      inputs={inputs}
+    />
   );
 }
