@@ -62,30 +62,31 @@ export function minYield(g: Grammar): Record<string, number> {
   return min;
 }
 
-/**
- * Breadth-first search over leftmost derivations, so the first hit is a
- * shortest one. A form is pruned when its terminal prefix can't lead to the
- * target, or when its terminals plus the least its variables must still
- * produce already exceed the target's length. `slack` caps how many
- * variables that could vanish may pile up. Returns null if the target
- * isn't derivable within the search budget.
- */
-export function leftmostDerivation(
-  g: Grammar,
-  target: string,
-  { maxForms = 40_000, slack = 4 } = {},
-): DerivationStep[] | null {
-  const min = minYield(g);
-  type Node = { form: string; rule: number; at: number; parent: Node | null };
-  const root: Node = { form: g.start, rule: -1, at: 0, parent: null };
-  const seen = new Set([g.start]);
-  const queue: Node[] = [root];
+export type Side = "leftmost" | "rightmost";
 
-  const viable = (form: string) => {
+/** Index of the variable a leftmost (or rightmost) derivation replaces next, or -1. */
+function nextVariable(form: string, side: Side) {
+  if (side === "leftmost") return [...form].findIndex(isVariable);
+  for (let i = form.length - 1; i >= 0; i--) if (isVariable(form[i])) return i;
+  return -1;
+}
+
+/**
+ * True if `form` could still derive `target`: its terminal prefix (and, for
+ * rightmost derivations, its terminal suffix) must match, and its terminals
+ * plus the least its variables must still produce can't exceed the target.
+ * `slack` caps how many variables that could vanish may pile up.
+ */
+function viableFor(g: Grammar, target: string, slack: number) {
+  const min = minYield(g);
+  return (form: string) => {
     let i = 0;
     while (i < form.length && !isVariable(form[i])) {
       if (form[i] !== target[i]) return false;
       i++;
+    }
+    for (let j = 1; j <= form.length && !isVariable(form[form.length - j]); j++) {
+      if (form[form.length - j] !== target[target.length - j]) return false;
     }
     let least = 0;
     let variables = 0;
@@ -97,6 +98,23 @@ export function leftmostDerivation(
     }
     return least <= target.length && variables <= target.length + slack;
   };
+}
+
+/**
+ * Breadth-first search over leftmost (or rightmost) derivations, so the
+ * first hit is a shortest one. Returns null if the target isn't derivable
+ * within the search budget.
+ */
+export function findDerivation(
+  g: Grammar,
+  target: string,
+  side: Side = "leftmost",
+  { maxForms = 40_000, slack = 4 } = {},
+): DerivationStep[] | null {
+  const viable = viableFor(g, target, slack);
+  type Node = { form: string; rule: number; at: number; parent: Node | null };
+  const seen = new Set([g.start]);
+  const queue: Node[] = [{ form: g.start, rule: -1, at: 0, parent: null }];
 
   for (let head = 0; head < queue.length && head < maxForms; head++) {
     const node = queue[head];
@@ -105,7 +123,7 @@ export function leftmostDerivation(
       for (let n: Node | null = node; n; n = n.parent) steps.unshift({ form: n.form, rule: n.rule, at: n.at });
       return steps;
     }
-    const at = [...node.form].findIndex(isVariable);
+    const at = nextVariable(node.form, side);
     if (at < 0) continue;
     g.productions.forEach((p, rule) => {
       if (p.lhs !== node.form[at]) return;
@@ -118,6 +136,58 @@ export function leftmostDerivation(
   return null;
 }
 
+/** A shortest leftmost derivation of `target`, or null. */
+export function leftmostDerivation(g: Grammar, target: string, opts?: { maxForms?: number; slack?: number }) {
+  return findDerivation(g, target, "leftmost", opts);
+}
+
+/**
+ * Up to `limit` different leftmost derivations of `target`. Each one
+ * corresponds to a different parse tree, so finding two proves the
+ * grammar is ambiguous for this word.
+ */
+export function leftmostDerivations(g: Grammar, target: string, limit = 2, { maxVisits = 50_000, slack = 2 } = {}): DerivationStep[][] {
+  const viable = viableFor(g, target, slack);
+  const found: DerivationStep[][] = [];
+  const path: DerivationStep[] = [{ form: g.start, rule: -1, at: 0 }];
+  let visits = 0;
+  const dfs = (form: string) => {
+    if (found.length >= limit || ++visits > maxVisits) return;
+    if (form === target) {
+      found.push(path.map((s) => ({ ...s })));
+      return;
+    }
+    const at = nextVariable(form, "leftmost");
+    if (at < 0) return;
+    g.productions.forEach((p, rule) => {
+      if (p.lhs !== form[at] || found.length >= limit) return;
+      const next = form.slice(0, at) + p.rhs + form.slice(at + 1);
+      if (!viable(next)) return;
+      path.push({ form: next, rule, at });
+      dfs(next);
+      path.pop();
+    });
+  };
+  dfs(g.start);
+  return found;
+}
+
+export type TreeNode = { label: string; children: TreeNode[] };
+
+/** Rebuilds the parse tree from a leftmost derivation. Λ leaves stand for empty right-hand sides. */
+export function parseTree(g: Grammar, steps: DerivationStep[]): TreeNode {
+  const root: TreeNode = { label: g.start, children: [] };
+  // Unexpanded variables in left-to-right order; a leftmost step always expands the first.
+  const open: TreeNode[] = [root];
+  for (const step of steps.slice(1)) {
+    const node = open.shift()!;
+    const p = g.productions[step.rule];
+    node.children = p.rhs === "" ? [{ label: EPSILON, children: [] }] : [...p.rhs].map((c) => ({ label: c, children: [] }));
+    open.unshift(...node.children.filter((c) => isVariable(c.label)));
+  }
+  return root;
+}
+
 export type DerivationState = {
   /** every sentential form so far, oldest first */
   forms: string[];
@@ -128,8 +198,8 @@ export type DerivationState = {
 };
 
 /** Stepper frames for deriving `target`; `line` indexes grammar.productions. */
-export function derivationFrames(g: Grammar, target: string): Frame<DerivationState>[] {
-  const steps = leftmostDerivation(g, target);
+export function derivationFrames(g: Grammar, target: string, side: Side = "leftmost"): Frame<DerivationState>[] {
+  const steps = findDerivation(g, target, side);
   const shown = target === "" ? EPSILON : target;
   if (!steps) {
     return [
@@ -148,7 +218,7 @@ export function derivationFrames(g: Grammar, target: string): Frame<DerivationSt
       return {
         state: { forms, inserted: null, done: last, failed: false },
         line: -1,
-        message: `Start from the start variable ${g.start}. Each step replaces the leftmost variable using one rule.`,
+        message: `Start from the start variable ${g.start}. Each step replaces the ${side} variable using one rule.`,
         stats: { steps: 0 },
       };
     }

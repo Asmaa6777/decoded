@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { derivationFrames, leftmostDerivation, parseGrammar, shortestStrings, showRule } from "@/lib/grammar";
+import { derivationFrames, findDerivation, leftmostDerivation, leftmostDerivations, parseGrammar, parseTree, shortestStrings, showRule } from "@/lib/grammar";
 
 const anbn = parseGrammar("S -> aSb | ε");
 const balanced = parseGrammar("S -> (S)S | ε");
@@ -86,5 +86,48 @@ describe("shortestStrings", () => {
   it("lists a language's first members in length order", () => {
     expect(shortestStrings(anbn, 4)).toEqual(["", "ab", "aabb", "aaabbb"]);
     expect(shortestStrings(astarb, 3)).toEqual(["b", "ab", "aab"]);
+  });
+});
+
+describe("rightmost derivations, parse trees and ambiguity", () => {
+  // Exercise sheet: S → AbA | BaB, A → aA | a, B → bB | b, word "aaaabaaa"
+  const sheet = parseGrammar("S -> AbA | BaB\nA -> aA | a\nB -> bB | b");
+  const expr = parseGrammar("E -> E+E | E*E | (E) | a");
+
+  const yieldOf = (t: ReturnType<typeof parseTree>): string =>
+    t.children.length === 0 ? (t.label === "ε" ? "" : t.label) : t.children.map(yieldOf).join("");
+
+  it("finds a rightmost derivation that always replaces the last variable", () => {
+    const steps = findDerivation(sheet, "aaaabaaa", "rightmost")!;
+    expect(steps.at(-1)!.form).toBe("aaaabaaa");
+    for (let i = 1; i < steps.length; i++) {
+      const prev = steps[i - 1].form;
+      const last = Math.max(...[...prev].map((c, j) => (c >= "A" && c <= "Z" ? j : -1)));
+      expect(steps[i].at).toBe(last);
+    }
+    expect(steps[1].form).toBe("AbA");
+    expect(steps[2].form).toMatch(/^AbaA$/);
+  });
+
+  it("builds a parse tree whose leaves spell the word", () => {
+    const steps = findDerivation(sheet, "aaaabaaa", "leftmost")!;
+    const tree = parseTree(sheet, steps);
+    expect(tree.label).toBe("S");
+    expect(yieldOf(tree)).toBe("aaaabaaa");
+    expect(yieldOf(parseTree(anbn, findDerivation(anbn, "ab")!))).toBe("ab");
+  });
+
+  it("finds two parse trees for a+a*a, so the expression grammar is ambiguous", () => {
+    const two = leftmostDerivations(expr, "a+a*a", 2);
+    expect(two).toHaveLength(2);
+    const [t1, t2] = two.map((d) => parseTree(expr, d));
+    expect(JSON.stringify(t1)).not.toBe(JSON.stringify(t2));
+    expect(two.map((d) => d[1].form).sort()).toEqual(["E*E", "E+E"]);
+    for (const t of [t1, t2]) expect(yieldOf(t)).toBe("a+a*a");
+  });
+
+  it("finds only one parse tree for an unambiguous grammar", () => {
+    expect(leftmostDerivations(anbn, "aaabbb", 2)).toHaveLength(1);
+    expect(leftmostDerivations(expr, "a+a", 2)).toHaveLength(1);
   });
 });
