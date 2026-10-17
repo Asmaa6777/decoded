@@ -1,0 +1,151 @@
+import { Callout, ApplicationsGrid, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { PdaRunner } from "@/components/mdx/TocVisualizers";
+
+# Pushdown Automata
+
+The Limits of Finite Memory ended with an idea: a finite automaton fails on $a^nb^n$ because it can't count without limit, and adding one stack fixes that. A **pushdown automaton** (PDA) is exactly that machine: a finite control plus a stack that can grow as large as the input needs, where only the top is ever visible.
+
+## The pieces
+
+The course textbook draws a PDA as a flowchart. A run starts at START and moves from box to box:
+
+- **START** is where every run begins.
+- **READ** takes the next letter from the input tape and follows the edge labelled with that letter. The tape is padded with blanks, $\Delta$, so once the word is used up READ finds $\Delta$.
+- **POP** removes the top symbol from the stack and follows the edge labelled with it. If the stack is empty, POP finds $\Delta$.
+- **PUSH x** puts $x$ on top of the stack.
+- **ACCEPT** and **REJECT** end the run.
+
+If a READ or POP finds a symbol with no matching edge, the machine **crashes**, which counts as rejecting. Leaving edges out is the normal way to say "this can't happen in a good word".
+
+## A PDA for $a^nb^n$
+
+Read the $a$'s and push one $a$ for each. When the first $b$ arrives, switch to popping: every $b$ must pop one $a$. At the end, the input must be finished ($\Delta$ on the tape) at the same moment the stack is empty ($\Delta$ on the stack).
+
+<PdaRunner
+  title="PDA for aⁿbⁿ"
+  initial="aaabbb"
+  pda={{
+    nodes: [
+      { id: "start", kind: "start" },
+      { id: "read1", kind: "read" },
+      { id: "pushA", kind: "push", push: "a" },
+      { id: "pop1", kind: "pop" },
+      { id: "read2", kind: "read" },
+      { id: "pop2", kind: "pop" },
+      { id: "accept", kind: "accept" },
+    ],
+    edges: [
+      { from: "start", to: "read1" },
+      { from: "read1", to: "pushA", label: "a" },
+      { from: "pushA", to: "read1" },
+      { from: "read1", to: "pop1", label: "b" },
+      { from: "read1", to: "pop2", label: "Δ" },
+      { from: "pop1", to: "read2", label: "a" },
+      { from: "read2", to: "pop1", label: "b" },
+      { from: "read2", to: "pop2", label: "Δ" },
+      { from: "pop2", to: "accept", label: "Δ" },
+    ],
+  }}
+  layout={[
+    { id: "start", x: 0, y: 0 },
+    { id: "read1", x: 0, y: 100 },
+    { id: "pushA", x: -150, y: 100 },
+    { id: "pop1", x: 160, y: 100 },
+    { id: "read2", x: 320, y: 100 },
+    { id: "pop2", x: 160, y: 215 },
+    { id: "accept", x: 160, y: 310 },
+  ]}
+/>
+
+Step through `aaabbb` and watch the stack fill to three $a$'s and drain back to $\Delta$. Then try words that should fail, and find where each one crashes:
+
+- `aab`: the input ends with an $a$ still on the stack, so the last POP finds $a$ and there's no $a$-edge out of it.
+- `abb`: the second $b$ tries to pop from an empty stack, finds $\Delta$, and has nowhere to go.
+- `ba`: a $b$ before any $a$ pops from the empty stack straight away.
+
+The stack is the counter that a finite automaton was missing. A DFA would need a different state for each possible count of $a$'s; this machine needs only one stack symbol, pushed as many times as the input demands.
+
+## Nondeterminism
+
+Like an NFA, a PDA may have several edges with the same label out of one READ or POP box. Then it accepts a word if **some** path reaches ACCEPT. The runner searches all the paths and shows one that works.
+
+Here is a PDA for **even-length palindromes**, words like $abba$ that read the same backwards. The first half is pushed onto the stack; the second half must match it, popped in reverse. The machine has no way to know where the middle is, so after every letter it nondeterministically guesses between "keep pushing" and "the middle was here, start matching".
+
+<PdaRunner
+  title="PDA for even palindromes"
+  initial="abba"
+  pda={{
+    nodes: [
+      { id: "start", kind: "start" },
+      { id: "read1", kind: "read" },
+      { id: "pushA", kind: "push", push: "a" },
+      { id: "pushB", kind: "push", push: "b" },
+      { id: "popA", kind: "pop" },
+      { id: "popB", kind: "pop" },
+      { id: "read2", kind: "read" },
+      { id: "popEnd", kind: "pop" },
+      { id: "accept", kind: "accept" },
+    ],
+    edges: [
+      { from: "start", to: "read1" },
+      { from: "read1", to: "pushA", label: "a" },
+      { from: "read1", to: "pushB", label: "b" },
+      { from: "pushA", to: "read1" },
+      { from: "pushB", to: "read1" },
+      { from: "read1", to: "popA", label: "a" },
+      { from: "read1", to: "popB", label: "b" },
+      { from: "read1", to: "popEnd", label: "Δ" },
+      { from: "popA", to: "read2", label: "a" },
+      { from: "popB", to: "read2", label: "b" },
+      { from: "read2", to: "popA", label: "a" },
+      { from: "read2", to: "popB", label: "b" },
+      { from: "read2", to: "popEnd", label: "Δ" },
+      { from: "popEnd", to: "accept", label: "Δ" },
+    ],
+  }}
+  layout={[
+    { id: "start", x: 0, y: 0 },
+    { id: "read1", x: 0, y: 110 },
+    { id: "pushA", x: -160, y: 55 },
+    { id: "pushB", x: -160, y: 165 },
+    { id: "popA", x: 160, y: 55 },
+    { id: "popB", x: 160, y: 165 },
+    { id: "read2", x: 320, y: 110 },
+    { id: "popEnd", x: 160, y: 270 },
+    { id: "accept", x: 160, y: 360 },
+  ]}
+/>
+
+In `abba`, the successful run pushes $a$ and $b$, guesses the middle on the third letter, pops $b$ to match it and $a$ to match the last letter, then finds $\Delta$ on both the tape and the stack. Try `abab` or `aba`: every guess fails somewhere.
+
+<Callout tone="violet" label="Here nondeterminism adds power">
+  For finite automata, NFAs and DFAs recognize the same languages. For pushdown automata that's no longer true: some context-free languages, including the even palindromes, can only be recognized by a nondeterministic PDA. A deterministic PDA reading $abba$ left to right can't know where the first half ends.
+</Callout>
+
+## The formal definition
+
+Other textbooks define a PDA as a 7-tuple $(Q, \Sigma, \Gamma, \delta, q_0, Z_0, F)$: states, input alphabet, stack alphabet, transition function, start state, initial stack symbol and final states. Each transition reads an input letter (or $\varepsilon$), looks at the top of the stack, and replaces it with a string of stack symbols. The flowchart and the 7-tuple describe the same machines; the flowchart just splits each transition into separate READ, POP and PUSH steps.
+
+## Where this shows up today
+
+<ApplicationsGrid>
+  <PracticalApplication title="HTML parsing" tool="BROWSERS">
+    The HTML standard describes a parser with a "stack of open elements": an opening tag pushes, a closing tag pops back to the matching element. That stack is how a browser knows which element a closing tag ends.
+  </PracticalApplication>
+  <PracticalApplication title="Parser generators" tool="YACC / BISON">
+    The parsers that yacc and Bison generate are pushdown automata: a finite table of states plus a stack of grammar symbols, shifting input onto the stack and reducing the top of it with grammar rules.
+  </PracticalApplication>
+  <PracticalApplication title="The call stack" tool="EVERY PROGRAM">
+    Every function call pushes a frame and every return pops one. That's why recursion handles nested structures (JSON, folders, expressions) that a loop with a fixed number of variables can't.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="any language you like"
+  problems={[
+    { id: 20, title: "Valid Parentheses", slug: "valid-parentheses", why: "A PDA with three kinds of bracket: push on open, pop and compare on close, accept if the stack ends empty." },
+    { id: 1047, title: "Remove All Adjacent Duplicates In String", slug: "remove-all-adjacent-duplicates-in-string", why: "Read each letter and pop if it matches the top, otherwise push. The stack holds the answer." },
+    { id: 32, title: "Longest Valid Parentheses", slug: "longest-valid-parentheses", difficulty: "Hard", why: "The bracket PDA again, but now you track where each balanced run starts by keeping positions on the stack." },
+  ]}
+/>

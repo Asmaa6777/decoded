@@ -5,6 +5,7 @@ import { alphabetOf, firstDifference, firstWords, matcher, parseRe, ReError } fr
 import { eliminationFrames, ELIMINATION_STEPS, FINAL, START, tgAccepts, type Tg } from "@/lib/transitionGraph";
 import { kleeneBuild, KLEENE_RULES, type Dfa, type KleeneOp, type KleeneState } from "@/lib/kleene";
 import { cnfFrames, CNF_STEPS, cyk, fromGrammar, showSym, type CnfState } from "@/lib/normalForms";
+import { BLANK, pdaFrames, type Pda, type PdaState } from "@/lib/pda";
 import { AutomatonDiagram } from "@/components/mdx/MdxComponents";
 
 /* ============================================================
@@ -861,6 +862,165 @@ export function CnfConverter({ grammar }: { grammar: string }) {
       legend={[["bg-neon", "added or changed this step"]]}
       render={(s) => <RuleList s={s} />}
       inputs={inputs}
+    />
+  );
+}
+
+/* ---------------------------- pushdown automata ---------------------------- */
+
+export type PdaLayout = { id: string; x: number; y: number }[];
+
+const PDA_LEGEND = [
+  "START: where every run begins",
+  "READ: take the next letter (Δ once the input is used up)",
+  "POP: take the top of the stack (Δ if the stack is empty)",
+  "PUSH x: put x on top of the stack",
+  "ACCEPT: the word is accepted",
+];
+const kindLine: Record<string, number> = { start: 0, read: 1, pop: 2, push: 3, accept: 4, reject: 4 };
+
+function PdaSvg({ pda, layout, current }: { pda: Pda; layout: PdaLayout; current: string }) {
+  const reactId = useId().replace(/:/g, "");
+  const pos = new Map(layout.map((n) => [n.id, n]));
+  const xs = layout.map((n) => n.x);
+  const ys = layout.map((n) => n.y);
+  const minX = Math.min(...xs) - 60;
+  const minY = Math.min(...ys) - 40;
+  const w = Math.max(...xs) - minX + 60;
+  const h = Math.max(...ys) - minY + 40;
+  const pairs = new Set(pda.edges.map((e) => `${e.from}>${e.to}`));
+  return (
+    <svg viewBox={`${minX} ${minY} ${w} ${h}`} width={w} height={h} className="block mx-auto max-w-full h-auto text-foreground" role="img" aria-label="Pushdown automaton">
+      <defs>
+        <marker id={`${reactId}-arr`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" className="fill-muted-foreground" />
+        </marker>
+      </defs>
+      {pda.edges.map((e, i) => {
+        const a = pos.get(e.from);
+        const b = pos.get(e.to);
+        if (!a || !b) return null;
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len;
+        const uy = dy / len;
+        const bend = pairs.has(`${e.to}>${e.from}`) ? 22 : 0;
+        const sx = a.x + ux * 30;
+        const sy = a.y + uy * 24;
+        const ex = b.x - ux * 34;
+        const ey = b.y - uy * 26;
+        const cx = (sx + ex) / 2 - uy * bend;
+        const cy = (sy + ey) / 2 + ux * bend;
+        return (
+          <g key={i}>
+            <path d={`M ${sx} ${sy} Q ${cx} ${cy} ${ex} ${ey}`} fill="none" className="stroke-muted-foreground" strokeWidth={1.4} markerEnd={`url(#${reactId}-arr)`} />
+            {e.label && (
+              <g>
+                <rect x={(sx + ex) / 2 - uy * bend * 0.5 - 9} y={(sy + ey) / 2 + ux * bend * 0.5 - 9} width={18} height={18} rx={3} className="fill-card" />
+                <text x={(sx + ex) / 2 - uy * bend * 0.5} y={(sy + ey) / 2 + ux * bend * 0.5} textAnchor="middle" dominantBaseline="central" fontSize={12} className="font-mono fill-current font-bold">
+                  {e.label}
+                </text>
+              </g>
+            )}
+          </g>
+        );
+      })}
+      {pda.nodes.map((n) => {
+        const p = pos.get(n.id);
+        if (!p) return null;
+        const hot = n.id === current;
+        const tone = hot ? "fill-neon/30 stroke-neon" : n.kind === "accept" ? "fill-mint/15 stroke-mint" : n.kind === "reject" ? "fill-orange/15 stroke-orange" : "fill-card stroke-current";
+        const label = n.kind === "push" ? `PUSH ${n.push}` : n.kind.toUpperCase();
+        return (
+          <g key={n.id}>
+            {n.kind === "read" || n.kind === "pop" ? (
+              <polygon points={`${p.x},${p.y - 24} ${p.x + 34},${p.y} ${p.x},${p.y + 24} ${p.x - 34},${p.y}`} strokeWidth={hot ? 2.5 : 1.5} className={tone} />
+            ) : (
+              <rect x={p.x - 36} y={p.y - 15} width={72} height={30} rx={n.kind === "push" ? 2 : 15} strokeWidth={hot ? 2.5 : 1.5} className={tone} />
+            )}
+            <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={10} className="font-mono fill-current font-bold">
+              {label}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function TapeAndStack({ s }: { s: PdaState }) {
+  const cells = [...s.word, BLANK, BLANK];
+  return (
+    <div className="flex flex-wrap items-end gap-8">
+      <div className="flex flex-col gap-1">
+        <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">input tape</div>
+        <div className="flex">
+          {cells.map((c, i) => (
+            <div
+              key={i}
+              className={`w-8 h-9 flex items-center justify-center font-mono text-sm border-y border-r first:border-l ${
+                i === s.config.pos ? "border-neon bg-neon/20 font-bold" : i < s.config.pos ? "border-border text-muted-foreground/50" : "border-border"
+              }`}
+            >
+              {c}
+            </div>
+          ))}
+        </div>
+        <div className="font-mono text-[10px] text-muted-foreground">read so far: {s.word.slice(0, s.config.pos) || "nothing"}</div>
+      </div>
+      <div className="flex flex-col gap-1 items-center">
+        <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">stack</div>
+        <div className="flex flex-col-reverse min-h-[40px] justify-start">
+          {s.config.stack.length === 0 ? (
+            <div className="w-10 h-8 flex items-center justify-center font-mono text-xs text-muted-foreground border border-dashed border-border">Δ</div>
+          ) : (
+            [...s.config.stack].map((c, i) => (
+              <div key={i} className={`w-10 h-8 flex items-center justify-center font-mono text-sm border border-sky ${i === s.config.stack.length - 1 ? "bg-sky/25 font-bold" : "bg-sky/10"}`}>
+                {c}
+              </div>
+            ))
+          )}
+        </div>
+        <div className="font-mono text-[10px] text-muted-foreground">top ↑</div>
+      </div>
+    </div>
+  );
+}
+
+/** Run a word through a flowchart-style PDA and watch the tape and stack. */
+export function PdaRunner({ pda, layout, initial = "aabb", title = "Pushdown automaton" }: { pda: Pda; layout: PdaLayout; initial?: string; title?: string }) {
+  const [text, setText] = useState(initial);
+  const word = text.replace(/\s+/g, "").replace(/[ΛλεΔ]/g, "");
+  const frames = useMemo(() => {
+    const kinds = new Map(pda.nodes.map((n) => [n.id, n.kind]));
+    return pdaFrames(pda, word).map((f) => ({ ...f, line: kindLine[kinds.get(f.state.config.node) ?? "start"] }));
+  }, [pda, word]);
+
+  return (
+    <Stepper
+      title={title}
+      frames={frames}
+      code={PDA_LEGEND}
+      codeLabel="Boxes"
+      legend={[
+        ["bg-neon", "current box / head"],
+        ["bg-sky", "stack"],
+      ]}
+      render={(s) => (
+        <div className="flex flex-col gap-5">
+          <PdaSvg pda={pda} layout={layout} current={s.config.node} />
+          <TapeAndStack s={s} />
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground" htmlFor={`pda-word-${title}`}>
+            word
+          </label>
+          <input id={`pda-word-${title}`} className={`${inputCls} w-48`} value={text} placeholder="Λ" onChange={(e) => setText(e.target.value)} spellCheck={false} />
+        </div>
+      }
     />
   );
 }
