@@ -218,7 +218,8 @@
     border-top: 1px solid hsl(var(--reading-rule));
     margin: 3rem 0;
   }
-  .prose-reading table {
+  /* Markdown tables only; widgets marked not-prose style their own tables. */
+  .prose-reading table:not(:where(.not-prose, .not-prose *)) {
     width: 100%;
     margin: 1.75rem 0;
     border-collapse: collapse;
@@ -227,8 +228,8 @@
     display: block;
     overflow-x: auto;
   }
-  .prose-reading thead { background: hsl(var(--secondary)); }
-  .prose-reading th {
+  .prose-reading thead:not(:where(.not-prose, .not-prose *)) { background: hsl(var(--secondary)); }
+  .prose-reading th:not(:where(.not-prose, .not-prose *)) {
     font-family: var(--font-display);
     font-weight: 600;
     text-align: left;
@@ -236,13 +237,13 @@
     border: 1px solid hsl(var(--reading-rule));
     color: hsl(var(--reading-fg));
   }
-  .prose-reading td {
+  .prose-reading td:not(:where(.not-prose, .not-prose *)) {
     padding: 0.6rem 0.85rem;
     border: 1px solid hsl(var(--reading-rule));
     vertical-align: top;
   }
-  .prose-reading tbody tr:nth-child(even) td { background: hsl(var(--secondary) / 0.4); }
-  .prose-reading table code { font-size: 0.9em; }
+  .prose-reading tbody tr:nth-child(even) td:not(:where(.not-prose, .not-prose *)) { background: hsl(var(--secondary) / 0.4); }
+  .prose-reading table:not(:where(.not-prose, .not-prose *)) code { font-size: 0.9em; }
 }
 
 /* ----------------------------------------------------------------
