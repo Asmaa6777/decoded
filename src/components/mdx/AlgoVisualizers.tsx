@@ -56,12 +56,12 @@ function Legend({ items }: { items: [string, string][] }) {
   );
 }
 
-function CodePanel({ code, line }: { code: string[]; line: number }) {
+function CodePanel({ code, line, label }: { code: string[]; line: number; label: string }) {
   return (
     <div className="border-t border-border bg-background/40">
-      <div className="px-5 pt-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Java</div>
+      <div className="px-5 pt-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
       {/* a div, not a <pre>: .prose-reading styles every pre as a dark code block */}
-      <div className="overflow-x-auto py-3 text-[12px] leading-[1.6] font-mono" role="region" aria-label="Java source">
+      <div className="overflow-x-auto py-3 text-[12px] leading-[1.6] font-mono" role="region" aria-label={label}>
         {code.map((l, i) => (
           <div
             key={i}
@@ -78,10 +78,11 @@ function CodePanel({ code, line }: { code: string[]; line: number }) {
   );
 }
 
-function Stepper<S>({
+export function Stepper<S>({
   title,
   frames,
   code,
+  codeLabel = "Java",
   render,
   legend,
   inputs,
@@ -89,6 +90,8 @@ function Stepper<S>({
   title: string;
   frames: Frame<S>[];
   code: string[];
+  /** heading for the source panel; the highlighted row is frame.line */
+  codeLabel?: string;
   render: (state: S) => ReactNode;
   legend?: [string, string][];
   inputs?: ReactNode;
@@ -171,7 +174,7 @@ function Stepper<S>({
         {inputs}
       </div>
 
-      <CodePanel code={code} line={frame.line} />
+      <CodePanel code={code} line={frame.line} label={codeLabel} />
     </div>
   );
 }
