@@ -2,12 +2,12 @@ import { Quiz } from "@/components/mdx/MdxComponents";
 
 # Quiz: Finite Automata & Regex
 
-Test your understanding of DFAs, NFAs, and how they power regex engines.
+Fourteen questions on Module 1: DFAs and NFAs, reading and writing regular expressions, transition graphs, and Kleene's theorem. Get 10 right to pass. Each answer locks in when you click it and shows an explanation.
 
 <Quiz
   courseSlug="theory-of-computation"
   lessonSlug="finite-automata-quiz"
-  passThreshold={5/7}
+  passThreshold={10/14}
   questions={[
     {
       id: "q1",
@@ -55,7 +55,7 @@ Test your understanding of DFAs, NFAs, and how they power regex engines.
         { id: "d", text: "Only if we minimize first" },
       ],
       correctOptionId: "a",
-      explanation: "'bab' ends in 'ab', so it matches. Tracing: start → (b) → → (a) → → (b) → accepting state. The 'b' at the beginning doesn't matter; we only care about the suffix.",
+      explanation: "'bab' ends in 'ab', so it's accepted. The first b keeps the machine in q0, the a splits it into q0 and q1, and the last b takes the q1 copy to the accept state q2. Only the last two symbols matter.",
     },
     {
       id: "q5",
@@ -92,6 +92,90 @@ Test your understanding of DFAs, NFAs, and how they power regex engines.
       ],
       correctOptionId: "b",
       explanation: "This is a classic ReDoS (Regular Expression Denial of Service) attack. Patterns like (a+)+$ force the engine to explore exponentially many NFA paths. The fix is rewriting to patterns the engine can compile to a deterministic DFA, or using possessive quantifiers/atomic groups in engines that support them.",
+    },
+    {
+      id: "q8",
+      prompt: "Which word is NOT in the language of the regular expression a* + b*?",
+      options: [
+        { id: "a", text: "Λ (the empty word)" },
+        { id: "b", text: "aaa" },
+        { id: "c", text: "ab" },
+        { id: "d", text: "bbbb" },
+      ],
+      correctOptionId: "c",
+      explanation: "a* + b* means 'only a's, or only b's'. The word ab mixes them, so it's not in the language. Λ is in it because both a* and b* contain the empty word. Don't confuse a* + b* with (a + b)*, which allows any mix.",
+    },
+    {
+      id: "q9",
+      prompt: "What are the first three words of the language of ab*ab*a, listed shortest first and then alphabetically?",
+      options: [
+        { id: "a", text: "aaa, aaba, abaa" },
+        { id: "b", text: "aba, abba, abbba" },
+        { id: "c", text: "a, aa, aaa" },
+        { id: "d", text: "aaa, abaa, aaba" },
+      ],
+      correctOptionId: "a",
+      explanation: "Every word has exactly three a's with b's allowed only in the two gaps. The shortest is aaa (no b's). The two words of length 4 put one b in the first or second gap: abaa and aaba, and alphabetically aaba comes first.",
+    },
+    {
+      id: "q10",
+      prompt: "Over Σ = {a, b}, which regular expression describes the words with exactly two a's?",
+      options: [
+        { id: "a", text: "(a + b)*a(a + b)*a(a + b)*" },
+        { id: "b", text: "b*ab*ab*" },
+        { id: "c", text: "b*aab*" },
+        { id: "d", text: "(ab*a)*" },
+      ],
+      correctOptionId: "b",
+      explanation: "Place the two a's and allow any number of b's before, between and after them. Option a allows extra a's (it means 'at least two'), option c forces the a's to be next to each other, and option d allows zero, four, six... a's.",
+    },
+    {
+      id: "q11",
+      prompt: "In textbook notation, what language does a + bc describe?",
+      options: [
+        { id: "a", text: "{ac, bc}" },
+        { id: "b", text: "{a, bc}" },
+        { id: "c", text: "{abc}" },
+        { id: "d", text: "All words that start with a or b and end with c" },
+      ],
+      correctOptionId: "b",
+      explanation: "Concatenation binds tighter than union, so a + bc is a + (bc): either the word a or the word bc. To get {ac, bc} you need brackets: (a + b)c.",
+    },
+    {
+      id: "q12",
+      prompt: "Which of these is allowed in a transition graph but not in a DFA?",
+      options: [
+        { id: "a", text: "A state that is both a start state and a final state" },
+        { id: "b", text: "A loop from a state back to itself" },
+        { id: "c", text: "An edge labelled with the whole word bb" },
+        { id: "d", text: "A state with more incoming edges than outgoing ones" },
+      ],
+      correctOptionId: "c",
+      explanation: "A DFA edge reads exactly one letter. A TG edge can read a whole word (or Λ). TGs can also have several start states and missing edges. The other options are all fine in a DFA too.",
+    },
+    {
+      id: "q13",
+      prompt: "During state elimination you remove state q. There's an edge p → q labelled r1, a loop on q labelled r2, and an edge q → s labelled r3. What label does the new edge p → s get?",
+      options: [
+        { id: "a", text: "r1 + r2 + r3" },
+        { id: "b", text: "r1 r2 r3" },
+        { id: "c", text: "r1 r2* r3" },
+        { id: "d", text: "(r1 r2 r3)*" },
+      ],
+      correctOptionId: "c",
+      explanation: "Going from p to s through q means: take r1 into q, go around the loop any number of times (r2*), then leave on r3. If p → s already had an edge, the two labels are joined with +.",
+    },
+    {
+      id: "q14",
+      prompt: "When building a DFA for r1 + r2 from FA1 and FA2, each new state stands for a pair 'x or y'. When is that new state final?",
+      options: [
+        { id: "a", text: "When x is final in FA1 or y is final in FA2" },
+        { id: "b", text: "When x is final in FA1 and y is final in FA2" },
+        { id: "c", text: "Only when it's the first new state, z1" },
+        { id: "d", text: "When x and y have the same name" },
+      ],
+      correctOptionId: "a",
+      explanation: "A word is in r1 + r2 if either machine accepts it, so a pair is final if either half is final. Requiring both halves to be final builds the intersection of the two languages instead, which is a different (and also regular) language.",
     },
   ]}
 />

@@ -98,7 +98,7 @@ export const courses: Course[] = [
           { slug: "transition-graphs", title: "Transition Graphs", duration: "14 min", Component: TocTransitionGraphs },
           { slug: "kleenes-theorem", title: "Kleene's Theorem", duration: "15 min", Component: TocKleenesTheorem },
           { slug: "regex-playground", title: "Practical: Building Regex from Automata", duration: "10 min", kind: "practical", Component: TocRegexPlayground },
-          { slug: "finite-automata-quiz", title: "Quiz: Finite Automata & Regex", duration: "6 min", kind: "quiz", Component: TocFiniteAutomataQuiz },
+          { slug: "finite-automata-quiz", title: "Quiz: Finite Automata & Regex", duration: "10 min", kind: "quiz", Component: TocFiniteAutomataQuiz },
         ],
       },
       {
