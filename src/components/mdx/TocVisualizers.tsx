@@ -1,6 +1,6 @@
 import { useId, useMemo, useState } from "react";
 import { Stepper } from "@/components/mdx/AlgoVisualizers";
-import { derivationFrames, isVariable, parseGrammar, shortestStrings, showRule, EPSILON, type DerivationState } from "@/lib/grammar";
+import { derivationFrames, isVariable, leftmostDerivations, parseGrammar, parseTree, shortestStrings, showRule, EPSILON, type DerivationState, type Side, type TreeNode } from "@/lib/grammar";
 import { alphabetOf, firstDifference, firstWords, matcher, parseRe, ReError } from "@/lib/regular";
 import { eliminationFrames, ELIMINATION_STEPS, FINAL, START, tgAccepts, type Tg } from "@/lib/transitionGraph";
 import { kleeneBuild, KLEENE_RULES, type Dfa, type KleeneOp, type KleeneState } from "@/lib/kleene";
@@ -61,7 +61,17 @@ function DerivationView({ s }: { s: DerivationState }) {
  * target can be edited; the language's shortest strings are offered as
  * one-click targets.
  */
-export function DerivationStepper({ grammar = "S -> aSb | ε", target = "aabb" }: { grammar?: string; target?: string }) {
+export function DerivationStepper({
+  grammar = "S -> aSb | ε",
+  target = "aabb",
+  showSide = false,
+}: {
+  grammar?: string;
+  target?: string;
+  /** offer a leftmost / rightmost toggle */
+  showSide?: boolean;
+}) {
+  const [side, setSide] = useState<Side>("leftmost");
   const [rulesText, setRulesText] = useState(grammar);
   const [applied, setApplied] = useState({ rules: grammar, target });
   const [targetText, setTargetText] = useState(target);
@@ -74,7 +84,7 @@ export function DerivationStepper({ grammar = "S -> aSb | ε", target = "aabb" }
     }
   }, [applied.rules]);
 
-  const frames = useMemo(() => (parsed.g ? derivationFrames(parsed.g, applied.target) : []), [parsed.g, applied.target]);
+  const frames = useMemo(() => (parsed.g ? derivationFrames(parsed.g, applied.target, side) : []), [parsed.g, applied.target, side]);
   const examples = useMemo(() => (parsed.g ? shortestStrings(parsed.g, 6) : []), [parsed.g]);
 
   const apply = (t = targetText) => {
@@ -85,6 +95,21 @@ export function DerivationStepper({ grammar = "S -> aSb | ε", target = "aabb" }
 
   const inputs = (
     <div className="flex flex-col gap-3">
+      {showSide && (
+        <div className="inline-flex self-start border border-border rounded-sm overflow-hidden">
+          {(["leftmost", "rightmost"] as Side[]).map((x) => (
+            <button
+              key={x}
+              type="button"
+              aria-pressed={side === x}
+              onClick={() => setSide(x)}
+              className={`font-mono text-[11px] uppercase tracking-widest px-3 py-2 transition-colors ${side === x ? "bg-foreground text-background" : "hover:bg-foreground/10"}`}
+            >
+              {x}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex flex-wrap items-stretch gap-2">
         <textarea
           aria-label="Grammar rules"
@@ -136,7 +161,7 @@ export function DerivationStepper({ grammar = "S -> aSb | ε", target = "aabb" }
 
   return (
     <Stepper
-      title="Leftmost derivation"
+      title={side === "leftmost" ? "Leftmost derivation" : "Rightmost derivation"}
       frames={frames}
       code={parsed.g.productions.map(showRule)}
       codeLabel="Rules"
@@ -644,6 +669,95 @@ export function KleeneBuilder({ fa1, fa2, r1, r2, initial = "union" }: { fa1: Df
       </div>
       <div className="[&>div]:my-0">
         <AutomatonDiagram key={op} states={dfa.states} alphabet={dfa.alphabet} transitions={transitions} initial={dfa.start} accepting={dfa.finals} />
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------ parse trees ------------------------------ */
+
+type Placed = { label: string; x: number; y: number; children: Placed[] };
+
+/** Leaves get consecutive columns; each parent sits centered above its children. */
+function placeTree(t: TreeNode, depth = 0, next = { col: 0 }): Placed {
+  if (t.children.length === 0) return { label: t.label, x: next.col++, y: depth, children: [] };
+  const children = t.children.map((c) => placeTree(c, depth + 1, next));
+  return { label: t.label, x: (children[0].x + children[children.length - 1].x) / 2, y: depth, children };
+}
+
+function TreeSvg({ tree }: { tree: TreeNode }) {
+  const placed = placeTree(tree);
+  const all: Placed[] = [];
+  const walk = (n: Placed) => {
+    all.push(n);
+    n.children.forEach(walk);
+  };
+  walk(placed);
+  const dx = 34;
+  const dy = 52;
+  const w = (Math.max(...all.map((n) => n.x)) + 1) * dx + 20;
+  const h = (Math.max(...all.map((n) => n.y)) + 1) * dy;
+  const X = (n: Placed) => n.x * dx + dx / 2 + 10;
+  const Y = (n: Placed) => n.y * dy + 22;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} className="block max-w-full h-auto text-foreground" role="img" aria-label="Parse tree">
+      {all.flatMap((n) => n.children.map((c, i) => <line key={`${X(n)}-${Y(n)}-${i}`} x1={X(n)} y1={Y(n) + 11} x2={X(c)} y2={Y(c) - 11} className="stroke-muted-foreground" strokeWidth={1.2} />))}
+      {all.map((n, i) => {
+        const variable = isVariable(n.label);
+        return (
+          <g key={i}>
+            {variable && <circle cx={X(n)} cy={Y(n)} r={12} className="fill-sky/15 stroke-sky" strokeWidth={1.5} />}
+            <text x={X(n)} y={Y(n)} textAnchor="middle" dominantBaseline="central" fontSize={13} className={`font-mono ${variable ? "fill-sky font-bold" : n.label === EPSILON ? "fill-muted-foreground" : "fill-mint font-bold"}`}>
+              {n.label}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/**
+ * Draws the parse tree for a word, and a second one if the grammar allows
+ * it. Two different trees for the same word prove the grammar is ambiguous.
+ */
+export function ParseTreeExplorer({ grammar, target }: { grammar: string; target: string }) {
+  const g = useMemo(() => parseGrammar(grammar), [grammar]);
+  const [word, setWord] = useState(target);
+  const clean = word.replace(/\s+/g, "");
+  const derivations = useMemo(() => leftmostDerivations(g, clean, 2), [g, clean]);
+  const trees = derivations.map((d) => parseTree(g, d));
+
+  return (
+    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+        <div className="eyebrow text-sky">Parse trees</div>
+        <div className="font-mono text-xs text-muted-foreground">{g.productions.map(showRule).join("   ")}</div>
+      </div>
+      <div className="p-5 flex flex-wrap gap-8 overflow-x-auto">
+        {trees.map((t, i) => (
+          <div key={i} className="flex flex-col gap-2">
+            {trees.length > 1 && <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">tree {i + 1} · first rule {showRule(g.productions[derivations[i][1].rule])}</div>}
+            <TreeSvg tree={t} />
+          </div>
+        ))}
+      </div>
+      <div className="px-5 pb-5 flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground" htmlFor="parse-tree-word">
+            word
+          </label>
+          <input id="parse-tree-word" className={`${inputCls} w-48`} value={word} onChange={(e) => setWord(e.target.value)} spellCheck={false} />
+        </div>
+        <p aria-live="polite" className="text-sm leading-relaxed">
+          {trees.length === 0 && <span className="text-orange">This grammar doesn't generate "{clean || EPSILON}".</span>}
+          {trees.length === 1 && <>One parse tree found. Its leaves, read left to right, spell <span className="font-mono">{clean || EPSILON}</span>.</>}
+          {trees.length === 2 && (
+            <>
+              <span className="text-orange font-semibold">Ambiguous for this word.</span> Two different parse trees produce the same <span className="font-mono">{clean}</span>, so the grammar is ambiguous.
+            </>
+          )}
+        </p>
       </div>
     </div>
   );

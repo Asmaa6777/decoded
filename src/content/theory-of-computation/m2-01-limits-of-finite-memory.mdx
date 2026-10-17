@@ -159,7 +159,7 @@ Paste it into your browser console and try any depth you like. It never breaks.
 
 Compare it with the DFA. The loop reads one symbol at a time, just like $\delta$. It moves left to right and never goes back. The **only** new thing is the `stack`: memory that can grow as large as the input needs, but that you can only touch at the top.
 
-Add that one stack to a finite automaton and you get a new machine: the **pushdown automaton**, or **PDA**. It recognizes exactly the **context-free languages**, the class that contains $a^nb^n$, balanced brackets, arithmetic expressions, and the grammar of almost every programming language. That's the next lesson.
+Add that one stack to a finite automaton and you get a new machine: the **pushdown automaton**, or **PDA**. It recognizes exactly the **context-free languages**, the class that contains $a^nb^n$, balanced brackets, arithmetic expressions, and the grammar of almost every programming language. The next lesson starts with the grammars for these languages; the machine comes later in this module.
 
 <Callout tone="violet" label="Why only one stack">
   The stack is a limited kind of memory: last in, first out, and you can only see the top. The limit matters, because a finite automaton with two stacks is as powerful as a Turing machine, which is where Module 3 ends up. One stack is exactly the extra memory that nesting needs.
@@ -183,5 +183,5 @@ Add that one stack to a finite automaton and you get a new machine: the **pushdo
 </ApplicationsGrid>
 
 <Callout tone="mint" label="Where you stand">
-  Finite automata have finite memory, and that's a hard limit of the model rather than a design flaw. The pigeonhole principle forces every long accepted string to contain a loop, and the pumping lemma turns that loop into a tool for proving a language is not regular. a^n b^n and balanced brackets fail that test. The fix is one stack, and a finite automaton with one stack is the pushdown automaton you'll define formally in the next lesson.
+  Finite automata have finite memory, and that's a hard limit of the model rather than a design flaw. The pigeonhole principle forces every long accepted string to contain a loop, and the pumping lemma turns that loop into a tool for proving a language is not regular. a^n b^n and balanced brackets fail that test. The fix is one stack, and a finite automaton with one stack is the pushdown automaton you'll define formally later in this module, after the grammars that describe the same languages.
 </Callout>

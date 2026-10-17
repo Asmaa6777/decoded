@@ -13,6 +13,7 @@ import TocKleenesTheorem from "@/content/theory-of-computation/m1-05-kleenes-the
 import TocRegexPlayground from "@/content/theory-of-computation/m1-06-regex-playground.mdx";
 import TocFiniteAutomataQuiz from "@/content/theory-of-computation/m1-07-finite-automata-quiz.mdx";
 import TocLimitsOfFiniteMemory from "@/content/theory-of-computation/m2-01-limits-of-finite-memory.mdx";
+import TocContextFreeGrammars from "@/content/theory-of-computation/m2-02-context-free-grammars.mdx";
 import LitTyping from "@/content/computer-literacy/01-physical-layer.mdx";
 import LitLanguage from "@/content/computer-literacy/02-language-layer.mdx";
 import LitSystems from "@/content/computer-literacy/03-systems-layer.mdx";
@@ -102,10 +103,11 @@ export const courses: Course[] = [
         ],
       },
       {
-        title: "Pushdown Automata",
-        blurb: "Where finite memory runs out — and the one stack that fixes nesting.",
+        title: "Context-Free Languages",
+        blurb: "Where finite memory runs out: grammars that nest, and the stack that recognizes them.",
         lessons: [
           { slug: "limits-of-finite-memory", title: "The Limits of Finite Memory", duration: "12 min", Component: TocLimitsOfFiniteMemory },
+          { slug: "context-free-grammars", title: "Context-Free Grammars", duration: "16 min", Component: TocContextFreeGrammars },
         ],
       },
     ],

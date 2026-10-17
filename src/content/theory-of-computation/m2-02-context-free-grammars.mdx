@@ -1,0 +1,96 @@
+import { Callout, ApplicationsGrid, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { DerivationStepper, ParseTreeExplorer } from "@/components/mdx/TocVisualizers";
+
+# Context-Free Grammars
+
+The last lesson proved that no finite automaton can recognize $a^nb^n$ or balanced brackets. A grammar describes both in one line each:
+
+$$
+S \rightarrow aSb \mid \Lambda \qquad\qquad S \rightarrow (S)S \mid \Lambda
+$$
+
+These are **context-free grammars** (CFGs): every rule has a single variable on its left-hand side, so a variable can be replaced wherever it appears, whatever is around it. The languages they generate are the **context-free languages**, one level up from the regular languages in the Chomsky hierarchy. This lesson covers what exams ask about them: what language a grammar generates, leftmost and rightmost derivations, parse trees, and ambiguity.
+
+## What language does this grammar generate?
+
+The method from the Grammars lesson still works: derive the shortest words, spot the pattern, then check that every rule keeps it. Two grammars from past exercise sheets:
+
+$$
+S \rightarrow XaXaX \qquad X \rightarrow aX \mid bX \mid \Lambda
+$$
+
+$X$ generates any word at all over $\{a, b\}$, including $\Lambda$, because it can add $a$'s and $b$'s in any order and stop. So $S$ is "anything, $a$, anything, $a$, anything": the words with **at least two** $a$'s. As a regular expression, $(a + b)^*a(a + b)^*a(a + b)^*$.
+
+$$
+S \rightarrow AbA \mid BaB \qquad A \rightarrow aA \mid a \qquad B \rightarrow bB \mid b
+$$
+
+$A$ generates one or more $a$'s and $B$ one or more $b$'s. So the language is the words made of $a$'s with one $b$ somewhere in the middle, or $b$'s with one $a$ in the middle: $aba$, $bab$, $aaba$, $abaa$, and so on. Neither the first nor the last letter can be the odd one out.
+
+Both of these happen to be regular. A CFG can describe regular languages too; it's languages like $a^nb^n$ that need one.
+
+## Leftmost and rightmost derivations
+
+When a sentential form has more than one variable, you choose which to replace. A **leftmost derivation** always replaces the leftmost variable; a **rightmost derivation** always replaces the rightmost one. Exams often ask for both for the same word. Here is $aaaabaaa$ in the second grammar above. Switch between the two and compare the sentential forms.
+
+<DerivationStepper grammar={"S -> AbA | BaB\nA -> aA | a\nB -> bB | b"} target="aaaabaaa" showSide />
+
+Both derivations apply the same rules to the same variables. Only the order differs. The leftmost one finishes the first $A$ (all four $a$'s) before touching the second; the rightmost one builds the trailing $aaa$ first.
+
+## Parse trees
+
+A **parse tree** records which rule rewrote each variable, without the order. The root is the start variable, every inner node is a variable whose children are the right-hand side of the rule used on it, and the leaves, read left to right, spell the word (a $\Lambda$ leaf contributes nothing). Every parse tree corresponds to exactly one leftmost derivation and one rightmost derivation, which is why exams can ask for "the leftmost derivation, the rightmost derivation and the tree" for the same word: all three describe the same structure.
+
+<ParseTreeExplorer grammar={"S -> AbA | BaB\nA -> aA | a\nB -> bB | b"} target="aaaabaaa" />
+
+## Ambiguity
+
+A grammar is **ambiguous** if some word has two different parse trees. The textbook example is arithmetic:
+
+$$
+E \rightarrow E + E \mid E * E \mid (E) \mid a
+$$
+
+<ParseTreeExplorer grammar="E -> E+E | E*E | (E) | a" target="a+a*a" />
+
+Tree 1 starts with $E \rightarrow E + E$ and puts $a * a$ under the right-hand $E$: it reads as $a + (a * a)$. Tree 2 starts with $E \rightarrow E * E$ and puts $a + a$ under the left $E$: it reads as $(a + a) * a$. With $a = 2$, the first is $6$ and the second is $8$. A compiler that builds the tree from this grammar could compute either, which is why ambiguity matters in practice and not just on paper.
+
+To show a grammar is ambiguous, you only need **one** word with two parse trees (or two leftmost derivations). To show it isn't, you have to argue about every word, which is much harder, so exams almost always ask for the first.
+
+Ambiguity is usually fixed by rewriting the grammar so that precedence is built in. Each level handles one operator, and lower levels bind tighter:
+
+$$
+E \rightarrow E + T \mid T \qquad T \rightarrow T * F \mid F \qquad F \rightarrow (E) \mid a
+$$
+
+<ParseTreeExplorer grammar={"E -> E+T | T\nT -> T*F | F\nF -> (E) | a"} target="a+a*a" />
+
+There is now only one tree for $a + a * a$, and it groups $a * a$ first, the way arithmetic does. Try `(a+a)*a`: the brackets are the only way to make the addition happen first.
+
+<Callout tone="orange" label="Ambiguous grammar, not ambiguous language">
+  Ambiguity is a property of a grammar. The two expression grammars above generate exactly the same language; one is ambiguous and the other isn't. (Some context-free languages have no unambiguous grammar at all, but that's beyond this course.)
+</Callout>
+
+## Where this shows up today
+
+<ApplicationsGrid>
+  <PracticalApplication title="Operator precedence" tool="LANGUAGES">
+    Language grammars encode precedence with exactly the layering above: a rule for sums, one for products, one for atoms. That's why `1 + 2 * 3` is 7 in nearly every programming language.
+  </PracticalApplication>
+  <PracticalApplication title="The dangling else" tool="C / JAVA">
+    In `if (a) if (b) x(); else y();`, the grammar allows the `else` to belong to either `if`. The grammar is ambiguous, and C and Java settle it with a rule: the `else` goes with the nearest `if`.
+  </PracticalApplication>
+  <PracticalApplication title="Parsers build the tree" tool="COMPILERS">
+    A compiler's parser turns source text into a parse tree (usually simplified into an abstract syntax tree). Type checking, optimization and code generation all work on that tree, not on the text.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<LeetCodeProblems
+  note="any language you like"
+  problems={[
+    { id: 394, title: "Decode String", slug: "decode-string", difficulty: "Medium", why: "Strings like 3[a2[c]] follow a recursive grammar. Write one function per variable and the nesting takes care of itself." },
+    { id: 227, title: "Basic Calculator II", slug: "basic-calculator-ii", difficulty: "Medium", why: "Evaluate + - * / with the right precedence. The layered E/T/F grammar from this lesson tells you how." },
+    { id: 224, title: "Basic Calculator", slug: "basic-calculator", difficulty: "Hard", why: "Add brackets to the previous problem: the F → (E) rule. A recursive-descent parser follows the grammar directly." },
+  ]}
+/>
