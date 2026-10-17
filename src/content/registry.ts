@@ -8,6 +8,7 @@ import TocStatesSymbols from "@/content/theory-of-computation/m1-01-states-symbo
 import TocNfa from "@/content/theory-of-computation/m1-02-nfa.mdx";
 import TocRegexPlayground from "@/content/theory-of-computation/m1-03-regex-playground.mdx";
 import TocFiniteAutomataQuiz from "@/content/theory-of-computation/m1-04-finite-automata-quiz.mdx";
+import TocLimitsOfFiniteMemory from "@/content/theory-of-computation/m2-01-limits-of-finite-memory.mdx";
 import LitTyping from "@/content/computer-literacy/01-physical-layer.mdx";
 import LitLanguage from "@/content/computer-literacy/02-language-layer.mdx";
 import LitSystems from "@/content/computer-literacy/03-systems-layer.mdx";
@@ -90,6 +91,13 @@ export const courses: Course[] = [
           { slug: "nfa", title: "NFA — The Machine That Guesses Right", duration: "12 min", Component: TocNfa },
           { slug: "regex-playground", title: "Practical: Building Regex from Automata", duration: "10 min", kind: "practical", Component: TocRegexPlayground },
           { slug: "finite-automata-quiz", title: "Quiz: Finite Automata & Regex", duration: "6 min", kind: "quiz", Component: TocFiniteAutomataQuiz },
+        ],
+      },
+      {
+        title: "Pushdown Automata",
+        blurb: "Where finite memory runs out — and the one stack that fixes nesting.",
+        lessons: [
+          { slug: "limits-of-finite-memory", title: "The Limits of Finite Memory", duration: "12 min", Component: TocLimitsOfFiniteMemory },
         ],
       },
     ],

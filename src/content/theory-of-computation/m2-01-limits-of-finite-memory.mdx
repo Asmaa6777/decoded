@@ -1,0 +1,187 @@
+import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication, RegexPlayground } from "@/components/mdx/MdxComponents";
+
+# The Limits of Finite Memory
+
+Module 1 showed that DFAs, NFAs and regex are three ways of writing the same thing, and that the pipeline between them runs inside tools you use every day.
+
+So here is a fair question. If regex is that powerful, why does every senior engineer tell you not to parse HTML with it? Why can't a regex check that the brackets in your code are balanced?
+
+No amount of effort will produce such a regex, because the task is **impossible**, and the reason fits in one word: *finite*.
+
+## What a DFA Can Remember
+
+Look again at the five-tuple. $Q$ is a **finite** set of states. That is the machine's entire memory. It has no variables, no counter, no scratch paper. The only thing it knows about everything it has read so far is *which state it is in right now*.
+
+A DFA with 5 states can tell apart at most 5 different situations. That is enough for "did I just see an $a$", or "is the number of $1$s even". Those questions have a fixed number of answers, no matter how long the input gets.
+
+Now try this question: *have I seen more opening brackets than closing ones, and by how much?* The answer can be 0, 1, 2, 3, ... with no upper limit. A machine with a fixed number of states cannot keep an answer that keeps growing.
+
+The rest of this lesson makes that idea precise.
+
+## Try It: A Bracket Checker With 3 Levels of Memory
+
+Here is a DFA over $\Sigma = \{(, )\}$. Each state means "how many brackets are currently open". $d_0$ means none, $d_1$ means one, $d_2$ means two. $x$ is a dead state: once you fall in, you never leave.
+
+<AutomatonDiagram
+  states={["d0", "d1", "d2", "x"]}
+  alphabet={["(", ")"]}
+  transitions={[
+    { from: "d0", to: "d1", label: "(" },
+    { from: "d1", to: "d2", label: "(" },
+    { from: "d2", to: "x", label: "(" },
+    { from: "d1", to: "d0", label: ")" },
+    { from: "d2", to: "d1", label: ")" },
+    { from: "d0", to: "x", label: ")" },
+    { from: "x", to: "x", label: "(" },
+    { from: "x", to: "x", label: ")" },
+  ]}
+  initial="d0"
+  accepting={["d0"]}
+/>
+
+Run these through it: `()`, `(())`, `()()`, `)(`. All correct.
+
+Now run `((()))`. It is perfectly balanced, and the machine rejects it. On the third `(` there is no state that means "three open", so it falls into $x$.
+
+You can fix that by adding $d_3$. Then `(((())))` breaks it. Add $d_4$, and depth 5 breaks it. Whatever number of states you pick, someone can write a string that nests one level deeper. The machine always runs out of memory before the input runs out of brackets.
+
+<Callout tone="violet" label="The key observation">
+  This DFA does not fail because it was designed badly. Any DFA for this language fails the same way. A machine with n states can only count up to about n, and balanced brackets need a count with no limit.
+</Callout>
+
+## Same Wall, Now in Regex
+
+Regex is a DFA in a different notation, so it must hit the same wall. Try it yourself. Write a pattern that matches only balanced brackets.
+
+<RegexPlayground
+  prompt="Write a regex that matches strings of balanced brackets, and nothing else. The empty string counts as balanced."
+  testCases={[
+    { string: "", shouldMatch: true, note: "zero brackets is balanced" },
+    { string: "()", shouldMatch: true },
+    { string: "()()", shouldMatch: true },
+    { string: "(())", shouldMatch: true, note: "depth 2" },
+    { string: "(()())", shouldMatch: true, note: "depth 2, two children" },
+    { string: "((()))", shouldMatch: true, note: "depth 3" },
+    { string: "(((())))", shouldMatch: true, note: "depth 4" },
+    { string: "(()", shouldMatch: false, note: "one bracket never closed" },
+    { string: ")(", shouldMatch: false, note: "closes before it opens" },
+    { string: "())(()", shouldMatch: false, note: "goes negative in the middle" },
+  ]}
+  placeholder="^(\((\(\))*\))*$"
+  solutionHint="The placeholder handles depth 2. Wrap the inner group again for each extra level. You can reach 10/10 with a depth-4 pattern. But notice what you did: you wrote one layer per level. A depth-5 test case breaks it again, and no finite pattern covers every depth."
+/>
+
+If you got 10/10, look at your pattern. It grew by one layer for every level of nesting, so it solves *these ten test cases* and not the general problem, exactly like a DFA with states $d_0$ to $d_4$.
+
+## Proving It: The Pumping Lemma
+
+"I tried and failed" is not a proof, since someone smarter might still find a clever regex. To rule that out we need a mathematical tool, and the standard one is the **pumping lemma for regular languages**.
+
+### The intuition first
+
+Take a DFA with $p$ states. Feed it a string of length $p$ or more. Reading $p$ symbols means the machine passes through $p + 1$ states (the start state, plus one after each symbol). But there are only $p$ different states. So at least one state appears twice.
+
+This is the **pigeonhole principle**: put $p + 1$ pigeons into $p$ holes, and some hole gets two pigeons.
+
+A repeated state means the machine walked a **loop**, and a loop can be walked again, or skipped entirely. The DFA can't tell the difference, because it remembers only the state and not how many times it went around.
+
+### The formal statement
+
+If $L$ is a regular language, then there is a number $p \geq 1$ (the **pumping length**) such that every string $w \in L$ with $|w| \geq p$ can be split into three parts, $w = xyz$, where:
+
+1. $|y| \geq 1$: the loop part is not empty
+2. $|xy| \leq p$: the loop happens within the first $p$ symbols
+3. $xy^iz \in L$ for every $i \geq 0$: you can repeat the loop any number of times, including zero, and stay in the language
+
+Map it back to the picture. $x$ is the path to the repeated state. $y$ is the loop. $z$ is the rest of the path to the accept state. Condition 2 holds because the pigeonhole argument already forces a repeat inside the first $p$ symbols.
+
+### Using it on $a^nb^n$
+
+Balanced brackets are messy to write, so take the cleanest version of the same problem:
+
+$$
+L = \{a^nb^n \mid n \geq 0\}
+$$
+
+Some number of $a$s, then exactly the same number of $b$s. Replace $a$ with `(` and $b$ with `)`, and this is a slice of the bracket language.
+
+The proof is by contradiction. Assume $L$ is regular, then break it.
+
+**Step 1.** If $L$ is regular, the lemma gives us some pumping length $p$. We do not know its value, so the argument must work for any $p$.
+
+**Step 2.** We choose the string. Pick $w = a^pb^p$. It is in $L$ and its length is $2p \geq p$, so the lemma applies.
+
+**Step 3.** The lemma says $w = xyz$ with $|xy| \leq p$. The first $p$ symbols of $w$ are all $a$s. So $x$ and $y$ are made only of $a$s. Write $y = a^k$ with $k \geq 1$.
+
+**Step 4.** Pump once: $i = 2$. Then
+
+$$
+xy^2z = a^{p+k}b^p
+$$
+
+That string has $k$ more $a$s than $b$s. Since $k \geq 1$, it is **not** in $L$.
+
+**Step 5.** The lemma promised $xy^2z \in L$. We just showed it is not. So the assumption was wrong. $L$ is **not regular**.
+
+No DFA, NFA or regex in the strict sense can recognize it, however clever or large.
+
+<Callout tone="orange" label="The common mistake">
+  The pumping lemma only works in one direction. If a language is regular, it pumps. But a language that pumps is not automatically regular, because some non-regular languages pass the pumping test. So you use the lemma to prove a language is NOT regular. You never use it to prove that a language IS regular. For that, you build the DFA.
+</Callout>
+
+<Callout tone="sky" label="Who you are arguing against">
+  A helpful way to read the proof is as a game. The opponent picks p. You pick the string w. The opponent picks how to split it into x, y, z, following the rules. You pick i. If you can always win, by finding an i that leaves the language, then the language is not regular. In Step 3 you won because the rule |xy| ≤ p trapped y inside the a's, whatever split the opponent chose.
+</Callout>
+
+## What Is Missing Is a Stack
+
+Now look at how you would check brackets in ordinary code:
+
+```ts
+function isBalanced(s: string): boolean {
+  const stack: string[] = [];
+  for (const ch of s) {
+    if (ch === "(") stack.push(ch);
+    else if (ch === ")") {
+      if (stack.length === 0) return false; // closed before it opened
+      stack.pop();
+    }
+  }
+  return stack.length === 0; // everything that opened, closed
+}
+
+console.log(isBalanced("((()))"));  // true
+console.log(isBalanced("())(()"));  // false
+console.log(isBalanced("(((((((((())))))))))")); // true, at any depth
+```
+
+Paste it into your browser console and try any depth you like. It never breaks.
+
+Compare it with the DFA. The loop reads one symbol at a time, just like $\delta$. It moves left to right and never goes back. The **only** new thing is the `stack`: memory that can grow as large as the input needs, but that you can only touch at the top.
+
+Add that one stack to a finite automaton and you get a new machine: the **pushdown automaton**, or **PDA**. It recognizes exactly the **context-free languages**, the class that contains $a^nb^n$, balanced brackets, arithmetic expressions, and the grammar of almost every programming language. That's the next lesson.
+
+<Callout tone="violet" label="Why only one stack">
+  The stack is a limited kind of memory: last in, first out, and you can only see the top. The limit matters, because a finite automaton with two stacks is as powerful as a Turing machine, which is where Module 3 ends up. One stack is exactly the extra memory that nesting needs.
+</Callout>
+
+## Where This Shows Up Today
+
+<ApplicationsGrid>
+  <PracticalApplication title="Why compilers have two phases" tool="COMPILERS">
+    The lexer turns characters into tokens with a finite automaton. The parser checks nesting (brackets, blocks, expressions) with a stack-based machine. The split exists because of this lesson: tokens are regular, nesting is not.
+  </PracticalApplication>
+  <PracticalApplication title="Do not parse HTML with regex" tool="WEB">
+    HTML elements nest inside each other with no depth limit. That is a context-free structure. A regex can find a single tag, but it cannot correctly match an opening tag with its closing tag in nested markup. Use a real parser such as the DOM parser built into your browser.
+  </PracticalApplication>
+  <PracticalApplication title="Regex that is not regular" tool="PCRE">
+    Some engines (PCRE, Perl, .NET) add recursion or balancing groups, which can match balanced brackets. That works because those features go beyond finite automata. Such patterns are no longer "regular expressions" in the theory sense, and they lose the linear-time guarantee. JavaScript's RegExp has no recursion, which is why the exercise above could not be solved in general.
+  </PracticalApplication>
+  <PracticalApplication title="Bracket matching in your editor" tool="TOOLS">
+    When your editor highlights the matching bracket, or a linter reports an unclosed block, a stack is doing the work. It's the same push-on-open, pop-on-close loop as the code above.
+  </PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="Where you stand">
+  Finite automata have finite memory, and that's a hard limit of the model rather than a design flaw. The pigeonhole principle forces every long accepted string to contain a loop, and the pumping lemma turns that loop into a tool for proving a language is not regular. a^n b^n and balanced brackets fail that test. The fix is one stack, and a finite automaton with one stack is the pushdown automaton you'll define formally in the next lesson.
+</Callout>
