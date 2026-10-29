@@ -27,6 +27,12 @@ export default function Team() {
               bio="I love when I finally understand what a theoratical CS course talks about"
               image="https://github.com/a7med7x7.png"
             />
+            <CreatorCard
+              name="Asmaa Farouq"
+              role="Course Author"
+              image="https://github.com/Asmaa6777.png"
+              href="https://github.com/Asmaa6777"
+            />
             <div className="flex flex-col items-center justify-center border border-dashed border-border p-8 text-center bg-muted/5">
               <div className="h-16 w-16 rounded-full bg-border/20 mb-4 animate-pulse" />
               <div className="font-display font-bold text-muted-foreground">Join the Team</div>
@@ -41,23 +47,27 @@ export default function Team() {
   );
 }
 
-function CreatorCard({ name, role, bio, image }: { name: string; role: string; bio: string; image: string }) {
+function CreatorCard({ name, role, bio, image, href }: { name: string; role: string; bio?: string; image: string; href?: string }) {
+  const Wrapper: React.ElementType = href ? "a" : "div";
+  const linkProps = href ? { href, target: "_blank", rel: "noopener noreferrer" } : {};
   return (
-    <div className="group border border-border bg-muted/5 p-6 hover:border-neon/40 transition-colors">
+    <Wrapper {...linkProps} className="group block border border-border bg-muted/5 p-6 hover:border-neon/40 transition-colors">
       <div className="flex items-center gap-4 mb-4">
         <img
           src={image}
           alt={name}
-          className="h-14 w-14 rounded-full border border-border grayscale group-hover:grayscale-0 transition-all"
+          className="h-14 w-14 rounded-full border border-border object-cover grayscale group-hover:grayscale-0 transition-all"
         />
         <div>
           <div className="font-display font-bold text-lg">{name}</div>
           <div className="font-mono text-[10px] text-neon uppercase tracking-widest">{role}</div>
         </div>
       </div>
-      <p className="text-sm text-muted-foreground leading-relaxed font-body italic">
-        "{bio}"
-      </p>
-    </div>
+      {bio && (
+        <p className="text-sm text-muted-foreground leading-relaxed font-body italic">
+          "{bio}"
+        </p>
+      )}
+    </Wrapper>
   );
 }
