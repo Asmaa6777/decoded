@@ -17,6 +17,28 @@ export function fibCalls(n: number): number {
   return b;
 }
 
+/* ---------------------- asymptotic notation ---------------------- */
+
+/** Share of each term in a sum of terms, as fractions that add up to 1. */
+export function termShares(values: number[]): number[] {
+  const total = values.reduce((s, v) => s + v, 0);
+  return values.map((v) => (total === 0 ? 0 : v / total));
+}
+
+export type BoundKind = "O" | "Ω";
+
+/**
+ * Does c·g(n) bound f(n) from above (O) or below (Ω) for every integer n from n0 up to `upTo`?
+ * Returns the first n that breaks it, or null when the bound holds on the whole range.
+ */
+export function firstViolation(f: (n: number) => number, g: (n: number) => number, c: number, n0: number, kind: BoundKind, upTo = 10_000): number | null {
+  for (let n = Math.max(1, Math.ceil(n0)); n <= upTo; n++) {
+    const ok = kind === "O" ? f(n) <= c * g(n) + 1e-9 : f(n) >= c * g(n) - 1e-9;
+    if (!ok) return n;
+  }
+  return null;
+}
+
 /* ------------------------- Master method ------------------------- */
 
 export type MasterCase = 1 | 2 | 3 | "gap";

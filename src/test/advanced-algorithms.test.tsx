@@ -3,8 +3,8 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN } from "@/lib/advancedAlgorithms";
-import { FibonacciCalls, RecurrenceExplorer } from "@/components/mdx/AdvancedVisualizers";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares } from "@/lib/advancedAlgorithms";
+import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -68,7 +68,20 @@ describe("analysis helpers", () => {
     expect(powN(3)).toBe("n³");
   });
 
+  it("checks Big-O witnesses the way the slides prove them", () => {
+    const f = (n: number) => 3 * n * n + 20;
+    const g = (n: number) => n * n;
+    expect(firstViolation(f, g, 4, 5, "O")).toBeNull();
+    expect(firstViolation(f, g, 4, 1, "O")).toBe(1);
+    expect(firstViolation((n) => n * n, (n) => n, 1, 1, "Ω")).toBeNull();
+    expect(termShares([300, 80, 10]).map((x) => +(x * 100).toFixed(2))).toEqual([76.92, 20.51, 2.56]);
+  });
+
   it("renders the analysis widgets", () => {
+    render(<TermContribution initialN={100} />);
+    expect(screen.getByText("97.37%")).toBeDefined();
+    render(<BigOWitness />);
+    expect(screen.getByText(/It holds/)).toBeDefined();
     render(<FibonacciCalls initialN={6} />);
     expect(screen.getByText("25 calls")).toBeDefined();
     render(<RecurrenceExplorer />);
