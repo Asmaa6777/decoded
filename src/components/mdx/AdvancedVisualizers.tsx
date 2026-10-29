@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -921,6 +921,130 @@ export function DPVisualizer({
           </div>
         ) : undefined
       }
+    />
+  );
+}
+
+/* ---------------------------- shortest paths ---------------------------- */
+
+const DIJKSTRA_GRAPHS = {
+  // the lecture's directed example
+  lecture: {
+    names: ["A", "B", "C", "D", "E"],
+    pos: [[40, 110], [170, 40], [170, 180], [320, 40], [320, 180]] as [number, number][],
+    directed: true,
+    edges: [
+      { from: 0, to: 1, w: 10 }, { from: 0, to: 2, w: 3 }, { from: 1, to: 2, w: 1 }, { from: 2, to: 1, w: 4 }, { from: 1, to: 3, w: 2 },
+      { from: 2, to: 3, w: 8 }, { from: 2, to: 4, w: 2 }, { from: 3, to: 4, w: 7 }, { from: 4, to: 3, w: 9 },
+    ] as WEdge[],
+  },
+  // the worked table from the lab sheet
+  table: {
+    names: ["A", "B", "C", "D", "E", "F", "G"],
+    pos: [[40, 110], [150, 40], [150, 190], [400, 190], [290, 120], [400, 60], [290, 30]] as [number, number][],
+    directed: false,
+    edges: [
+      { from: 0, to: 1, w: 5 }, { from: 0, to: 2, w: 3 }, { from: 2, to: 3, w: 7 }, { from: 2, to: 4, w: 7 }, { from: 1, to: 6, w: 1 },
+      { from: 1, to: 4, w: 3 }, { from: 6, to: 4, w: 1 }, { from: 4, to: 3, w: 2 }, { from: 4, to: 5, w: 1 },
+    ] as WEdge[],
+  },
+};
+
+export function DijkstraVisualizer({ graph = "lecture" }: { graph?: keyof typeof DIJKSTRA_GRAPHS }) {
+  const G = DIJKSTRA_GRAPHS[graph];
+  const frames = useMemo(() => dijkstraFrames(G.names.length, G.edges, G.directed, 0, G.names), [G]);
+  const W = Math.max(...G.pos.map((p) => p[0])) + 50;
+  const H = Math.max(...G.pos.map((p) => p[1])) + 40;
+  const hasReverse = (e: WEdge) => G.directed && G.edges.some((f) => f.from === e.to && f.to === e.from);
+  return (
+    <Stepper
+      title={`Dijkstra's algorithm from ${G.names[0]}`}
+      frames={frames}
+      code={DIJKSTRA_CODE}
+      codeLabel="Pseudocode"
+      legend={[["bg-mint", "in S (final)"], ["bg-neon", "just extracted / relaxing"], ["bg-violet", "shortest-path tree (π)"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-4">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[520px] h-auto mx-auto" role="img" aria-label="Weighted graph">
+            <defs>
+              <marker id={`arrow-${graph}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" className="fill-muted-foreground" />
+              </marker>
+            </defs>
+            {G.edges.map((e, i) => {
+              const [x1, y1] = G.pos[e.from];
+              const [x2, y2] = G.pos[e.to];
+              const len = Math.hypot(x2 - x1, y2 - y1);
+              const [ux, uy] = [(x2 - x1) / len, (y2 - y1) / len];
+              const bend = hasReverse(e) ? 16 : 0;
+              const [mx, my] = [(x1 + x2) / 2 - uy * bend, (y1 + y2) / 2 + ux * bend];
+              const [sx, sy] = [x1 + ux * 20, y1 + uy * 20];
+              const [tx, ty] = [x2 - ux * 22, y2 - uy * 22];
+              const relax = s.relaxing && ((s.relaxing[0] === e.from && s.relaxing[1] === e.to) || (!G.directed && s.relaxing[0] === e.to && s.relaxing[1] === e.from));
+              const tree = s.pi[e.to] === e.from || (!G.directed && s.pi[e.from] === e.to);
+              const cls = relax ? (s.improved ? "stroke-neon" : "stroke-orange") : tree ? "stroke-violet" : "stroke-border";
+              return (
+                <g key={i}>
+                  <path d={`M${sx},${sy} Q${mx},${my} ${tx},${ty}`} fill="none" className={`${cls} transition-colors`} strokeWidth={relax || tree ? 3.5 : 1.8} markerEnd={G.directed ? `url(#arrow-${graph})` : undefined} />
+                  <rect x={mx - 10 - uy * (bend ? 4 : 0)} y={my - 9 + ux * (bend ? 4 : 0)} width={20} height={18} rx={2} className="fill-card" />
+                  <text x={mx - uy * (bend ? 4 : 0)} y={my + ux * (bend ? 4 : 0)} textAnchor="middle" dominantBaseline="central" fontSize={11} className="font-mono fill-current">
+                    {e.w}
+                  </text>
+                </g>
+              );
+            })}
+            {G.names.map((nm, v) => {
+              const [x, y] = G.pos[v];
+              const cls = v === s.u ? "fill-neon/40 stroke-neon" : s.S.includes(v) ? "fill-mint/25 stroke-mint" : "fill-card stroke-current";
+              return (
+                <g key={v}>
+                  <circle cx={x} cy={y} r={19} strokeWidth={2} className={`${cls} transition-colors`} />
+                  <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={13} className="font-mono font-bold fill-current">
+                    {nm}
+                  </text>
+                  <text x={x} y={y - 27} textAnchor="middle" fontSize={11} className={`font-mono ${s.S.includes(v) ? "fill-mint" : "fill-muted-foreground"}`}>
+                    {isFinite(s.d[v]) ? s.d[v] : "∞"}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+          <div className="overflow-x-auto">
+            <table className="font-mono text-xs border-collapse">
+              <thead>
+                <tr className="text-muted-foreground">
+                  <th className="px-2 py-1 text-left font-normal">π</th>
+                  {G.names.map((nm, v) => (
+                    <th key={v} className="px-2 py-1 w-10 font-normal">
+                      {s.pi[v] !== null ? G.names[s.pi[v]!] : v === 0 ? "–" : ""}
+                    </th>
+                  ))}
+                </tr>
+                <tr className="border-b border-border">
+                  <th className="px-2 py-1 text-left">round</th>
+                  {G.names.map((nm) => (
+                    <th key={nm} className="px-2 py-1 w-10">
+                      {nm}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {s.rows.map((r, i) => (
+                  <tr key={i} className="border-b border-border/40">
+                    <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                    {r.map((x, v) => (
+                      <td key={v} className="px-2 py-1 text-center">
+                        {x === null ? "" : isFinite(x) ? x : "–"}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     />
   );
 }

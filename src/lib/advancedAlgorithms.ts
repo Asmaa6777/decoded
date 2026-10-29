@@ -765,6 +765,73 @@ export function lcsFrames(A: string, B: string): Frame<DPState>[] {
   return frames;
 }
 
+/* ---------------------------- shortest paths ---------------------------- */
+
+export type WEdge = { from: number; to: number; w: number };
+export type DijkstraState = {
+  d: number[];
+  pi: (number | null)[];
+  S: number[];
+  u?: number;
+  relaxing?: [number, number];
+  improved?: boolean;
+  rows: (number | null)[][]; // d after each extraction, for the table (null = already in S)
+};
+
+export const DIJKSTRA_CODE = [
+  "d[s] ← 0",
+  "for each v ∈ V − {s} do d[v] ← ∞",
+  "S ← ∅",
+  "Q ← V                      ⊳ Q is a priority queue maintaining V − S",
+  "while Q ≠ ∅",
+  "    do u ← EXTRACT-MIN(Q)",
+  "       S ← S ∪ {u}",
+  "       for each v ∈ Adj[u]",
+  "           do if d[v] > d[u] + w(u, v)",
+  "               then d[v] ← d[u] + w(u, v)      ⊳ relaxation step (implicit DECREASE-KEY)",
+  "                    π[v] ← u",
+];
+
+export function dijkstraFrames(n: number, edges: WEdge[], directed: boolean, s: number, names: string[]): Frame<DijkstraState>[] {
+  const adj: [number, number][][] = Array.from({ length: n }, () => []);
+  for (const e of edges) {
+    adj[e.from].push([e.to, e.w]);
+    if (!directed) adj[e.to].push([e.from, e.w]);
+  }
+  const d = Array<number>(n).fill(Infinity);
+  const pi: (number | null)[] = Array(n).fill(null);
+  const S: number[] = [];
+  const rows: (number | null)[][] = [];
+  const frames: Frame<DijkstraState>[] = [];
+  let relaxations = 0;
+  const push = (s2: Partial<DijkstraState>, line: number, message: string) =>
+    frames.push({ state: { d: [...d], pi: [...pi], S: [...S], rows: rows.map((r) => [...r]), ...s2 }, line, message, stats: { "in S": S.length, relaxations } });
+  d[s] = 0;
+  push({}, 1, `Initialize: d[${names[s]}] = 0 and every other d = ∞. S is empty and Q holds every vertex.`);
+  const nm = (v: number) => names[v];
+  while (S.length < n) {
+    let u = -1;
+    for (let v = 0; v < n; v++) if (!S.includes(v) && (u < 0 || d[v] < d[u])) u = v;
+    if (!isFinite(d[u])) break;
+    S.push(u);
+    push({ u }, 6, `"${nm(u)}" ← EXTRACT-MIN(Q): it has the smallest estimate, d = ${d[u]}, so that is its true distance. S = {${S.map(nm).join(", ")}}.`);
+    for (const [v, w] of adj[u]) {
+      if (S.includes(v)) continue;
+      relaxations++;
+      const better = d[u] + w < d[v];
+      const old = d[v];
+      if (better) {
+        d[v] = d[u] + w;
+        pi[v] = u;
+      }
+      push({ u, relaxing: [u, v], improved: better }, better ? 9 : 8, `Relax (${nm(u)}, ${nm(v)}): d[${nm(u)}] + ${w} = ${d[u] + w} ${better ? `< ${old === Infinity ? "∞" : old}, so d[${nm(v)}] becomes ${d[v]} and π[${nm(v)}] = ${nm(u)}` : `≥ ${old}, so nothing changes`}.`);
+    }
+    rows.push(d.map((x, v) => (S.includes(v) && v !== u ? null : x)));
+  }
+  push({}, 4, `Q is empty. Shortest distances from ${nm(s)}: ${names.map((x, v) => `${x} = ${d[v]}`).join(", ")}. Following π backwards gives each shortest path.`);
+  return frames;
+}
+
 /* --------------------------- greedy algorithms --------------------------- */
 
 /** Largest coin that doesn't overshoot, again and again. Returns how many of each coin (largest first). */

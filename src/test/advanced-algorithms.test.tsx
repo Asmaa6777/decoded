@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES, dijkstraFrames } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -251,6 +251,21 @@ describe("analysis helpers", () => {
     expect(codes).toEqual({ A: "00", B: "100", C: "01", D: "1010", E: "11", F: "1011" });
     const act = activityFrames(CLRS_ACTIVITIES).at(-1)!.state.chosen.map((i) => i + 1);
     expect(act).toEqual([1, 4, 8, 11]);
+  });
+
+  it("Dijkstra reproduces the lecture example and the worked table", () => {
+    const lec = dijkstraFrames(5, [
+      { from: 0, to: 1, w: 10 }, { from: 0, to: 2, w: 3 }, { from: 1, to: 2, w: 1 }, { from: 2, to: 1, w: 4 }, { from: 1, to: 3, w: 2 },
+      { from: 2, to: 3, w: 8 }, { from: 2, to: 4, w: 2 }, { from: 3, to: 4, w: 7 }, { from: 4, to: 3, w: 9 },
+    ], true, 0, ["A", "B", "C", "D", "E"]).at(-1)!.state;
+    expect(lec.d).toEqual([0, 7, 3, 9, 5]);
+    expect(lec.S).toEqual([0, 2, 4, 1, 3]); // A, C, E, B, D
+    const tab = dijkstraFrames(7, [
+      { from: 0, to: 1, w: 5 }, { from: 0, to: 2, w: 3 }, { from: 2, to: 3, w: 7 }, { from: 2, to: 4, w: 7 }, { from: 1, to: 6, w: 1 },
+      { from: 1, to: 4, w: 3 }, { from: 6, to: 4, w: 1 }, { from: 4, to: 3, w: 2 }, { from: 4, to: 5, w: 1 },
+    ], false, 0, ["A", "B", "C", "D", "E", "F", "G"]).at(-1)!.state;
+    expect(tab.d).toEqual([0, 5, 3, 9, 7, 8, 6]);
+    expect(tab.pi).toEqual([null, 0, 0, 4, 6, 4, 1]); // parents A A E G E B, as in the table
   });
 
   it("renders the analysis widgets", () => {
