@@ -580,6 +580,191 @@ export function rbFrames(start: number[], ops: RBOp[]): Frame<RBState>[] {
   return t.frames;
 }
 
+/* -------------------------- dynamic programming -------------------------- */
+
+export type Cell = [number, number];
+export type DPState = {
+  table: (number | null)[][];
+  rowLabels: string[];
+  colLabels: string[];
+  cell?: Cell;
+  deps?: Cell[];
+  trace?: Cell[];
+  marks?: Cell[]; // e.g. coins on the robot board
+  answer?: string;
+};
+
+const blank = (r: number, c: number) => Array.from({ length: r }, () => Array<number | null>(c).fill(null));
+const copyT = (t: (number | null)[][]) => t.map((r) => [...r]);
+
+export const DP_CODE: Record<"coins" | "binomial" | "robot" | "lcs", string[]> = {
+  coins: [
+    "F[0] = 0;  F[1] = c[1];",
+    "for (i = 2; i <= n; i++)",
+    "    F[i] = max(c[i] + F[i-2], F[i-1]);   // take coin i, or leave it",
+    "return F[n];",
+  ],
+  binomial: [
+    "for (i = 0; i <= n; i++)",
+    "    for (j = 0; j <= min(i, k); j++)",
+    "        if (j == 0 || j == i) C[i][j] = 1;",
+    "        else C[i][j] = C[i-1][j-1] + C[i-1][j];",
+    "return C[n][k];",
+  ],
+  robot: [
+    "F[1][1] = c[1][1];",
+    "for (j = 2; j <= m; j++) F[1][j] = F[1][j-1] + c[1][j];",
+    "for (i = 2; i <= n; i++) {",
+    "    F[i][1] = F[i-1][1] + c[i][1];",
+    "    for (j = 2; j <= m; j++)",
+    "        F[i][j] = max(F[i-1][j], F[i][j-1]) + c[i][j];",
+    "}",
+    "return F[n][m];",
+  ],
+  lcs: [
+    "for (i = 0..m) len[i][0] = 0;  for (j = 0..n) len[0][j] = 0;",
+    "for (i = 1; i <= m; i++)",
+    "    for (j = 1; j <= n; j++)",
+    "        if (A[i] == B[j]) len[i][j] = len[i-1][j-1] + 1;",
+    "        else len[i][j] = max(len[i-1][j], len[i][j-1]);",
+    "// backtrace from len[m][n] to recover the subsequence",
+  ],
+};
+
+/** Coin-row: F(i) = max(c_i + F(i-2), F(i-1)). One row of the table, then a backtrace. */
+export function coinRowFrames(c: number[]): Frame<DPState>[] {
+  const n = c.length;
+  const F: (number | null)[][] = blank(2, n + 1);
+  c.forEach((v, i) => (F[0][i + 1] = v));
+  const frames: Frame<DPState>[] = [];
+  const labels = { rowLabels: ["c", "F"], colLabels: Array.from({ length: n + 1 }, (_, i) => String(i)) };
+  const push = (s: Partial<DPState>, line: number, message: string) => frames.push({ state: { table: copyT(F), ...labels, ...s }, line, message, stats: { filled: F[1].filter((x) => x !== null).length } });
+  F[1][0] = 0;
+  push({ cell: [1, 0] }, 0, `F(0) = 0: no coins, no money.`);
+  F[1][1] = c[0];
+  push({ cell: [1, 1] }, 0, `F(1) = c₁ = ${c[0]}: with one coin, take it.`);
+  for (let i = 2; i <= n; i++) {
+    const take = c[i - 1] + (F[1][i - 2] as number);
+    const leave = F[1][i - 1] as number;
+    F[1][i] = Math.max(take, leave);
+    push({ cell: [1, i], deps: [[1, i - 2], [1, i - 1], [0, i]] }, 2, `F(${i}) = max(c${i} + F(${i - 2}), F(${i - 1})) = max(${c[i - 1]} + ${F[1][i - 2]}, ${leave}) = ${F[1][i]}. ${take >= leave ? `Taking coin ${i} is better.` : `Leaving coin ${i} is better.`}`);
+  }
+  const picked: number[] = [];
+  const trace: Cell[] = [];
+  for (let i = n; i >= 1; ) {
+    trace.push([1, i]);
+    if (i === 1 || c[i - 1] + (F[1][i - 2] as number) >= (F[1][i - 1] as number)) {
+      picked.unshift(i);
+      i -= 2;
+    } else i -= 1;
+  }
+  push({ trace, marks: picked.map((i) => [0, i] as Cell), answer: `${F[1][n]}` }, 3, `Max amount F(${n}) = ${F[1][n]}. Walking back: take coins ${picked.map((i) => `c${i} = ${c[i - 1]}`).join(", ")}. Θ(n) time and space.`);
+  return frames;
+}
+
+/** C(n, k) by Pascal's rule, filling the triangle row by row. */
+export function binomialFrames(n: number, k: number): Frame<DPState>[] {
+  const C = blank(n + 1, k + 1);
+  const frames: Frame<DPState>[] = [];
+  const labels = { rowLabels: Array.from({ length: n + 1 }, (_, i) => String(i)), colLabels: Array.from({ length: k + 1 }, (_, j) => String(j)) };
+  let adds = 0;
+  for (let i = 0; i <= n; i++)
+    for (let j = 0; j <= Math.min(i, k); j++) {
+      if (j === 0 || j === i) {
+        C[i][j] = 1;
+        frames.push({ state: { table: copyT(C), ...labels, cell: [i, j] }, line: 2, message: `C(${i}, ${j}) = 1 (${j === 0 ? "choose nothing" : "choose everything"}).`, stats: { additions: adds } });
+      } else {
+        C[i][j] = (C[i - 1][j - 1] as number) + (C[i - 1][j] as number);
+        adds++;
+        frames.push({ state: { table: copyT(C), ...labels, cell: [i, j], deps: [[i - 1, j - 1], [i - 1, j]] }, line: 3, message: `C(${i}, ${j}) = C(${i - 1}, ${j - 1}) + C(${i - 1}, ${j}) = ${C[i - 1][j - 1]} + ${C[i - 1][j]} = ${C[i][j]}: sets with element ${i}, plus sets without it.`, stats: { additions: adds } });
+      }
+    }
+  frames.push({ state: { table: copyT(C), ...labels, trace: [[n, k]], answer: `${C[n][k]}` }, line: 4, message: `C(${n}, ${k}) = ${C[n][k]}. Θ(nk) time and space.`, stats: { additions: adds } });
+  return frames;
+}
+
+/** The lecture's robot board (coins marked 1), 5 rows × 6 columns. */
+export const ROBOT_BOARD = [
+  [0, 0, 0, 0, 1, 0],
+  [0, 1, 0, 1, 0, 0],
+  [0, 0, 0, 1, 0, 1],
+  [0, 0, 1, 0, 0, 1],
+  [1, 0, 0, 0, 1, 0],
+];
+
+export function robotFrames(board: number[][] = ROBOT_BOARD): Frame<DPState>[] {
+  const n = board.length;
+  const m = board[0].length;
+  const F = blank(n, m);
+  const frames: Frame<DPState>[] = [];
+  const marks: Cell[] = [];
+  board.forEach((r, i) => r.forEach((v, j) => v && marks.push([i, j])));
+  const labels = { rowLabels: Array.from({ length: n }, (_, i) => String(i + 1)), colLabels: Array.from({ length: m }, (_, j) => String(j + 1)) };
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < m; j++) {
+      const up = i > 0 ? (F[i - 1][j] as number) : null;
+      const left = j > 0 ? (F[i][j - 1] as number) : null;
+      F[i][j] = Math.max(up ?? 0, left ?? 0) + board[i][j];
+      const deps: Cell[] = [...(up !== null ? [[i - 1, j] as Cell] : []), ...(left !== null ? [[i, j - 1] as Cell] : [])];
+      const coin = board[i][j] ? " + 1 coin here" : "";
+      frames.push({
+        state: { table: copyT(F), ...labels, cell: [i, j], deps, marks },
+        line: i === 0 ? (j === 0 ? 0 : 1) : j === 0 ? 3 : 5,
+        message: up === null && left === null ? `Start cell: F(1,1) = ${F[i][j]}.` : `F(${i + 1},${j + 1}) = ${deps.length === 2 ? `max(from above ${up}, from the left ${left})` : up !== null ? `from above ${up}` : `from the left ${left}`}${coin} = ${F[i][j]}.`,
+        stats: {},
+      });
+    }
+  const trace: Cell[] = [];
+  let i = n - 1;
+  let j = m - 1;
+  trace.push([i, j]);
+  while (i > 0 || j > 0) {
+    if (i > 0 && (j === 0 || (F[i - 1][j] as number) >= (F[i][j - 1] as number))) i--;
+    else j--;
+    trace.unshift([i, j]);
+  }
+  frames.push({ state: { table: copyT(F), ...labels, trace, marks, answer: `${F[n - 1][m - 1]}` }, line: 7, message: `The robot can collect F(${n},${m}) = ${F[n - 1][m - 1]} coins. Tracing back from the corner gives one best path. Θ(nm) time.`, stats: {} });
+  return frames;
+}
+
+export function lcsFrames(A: string, B: string): Frame<DPState>[] {
+  const m = A.length;
+  const n = B.length;
+  const L = blank(m + 1, n + 1);
+  for (let i = 0; i <= m; i++) L[i][0] = 0;
+  for (let j = 0; j <= n; j++) L[0][j] = 0;
+  const frames: Frame<DPState>[] = [];
+  const labels = { rowLabels: ["", ...A.split("")], colLabels: ["", ...B.split("")] };
+  frames.push({ state: { table: copyT(L), ...labels }, line: 0, message: `len(i, j) = length of an LCS of the first i letters of "${A}" and the first j letters of "${B}". Row 0 and column 0 are 0.`, stats: {} });
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++) {
+      if (A[i - 1] === B[j - 1]) {
+        L[i][j] = (L[i - 1][j - 1] as number) + 1;
+        frames.push({ state: { table: copyT(L), ...labels, cell: [i, j], deps: [[i - 1, j - 1]] }, line: 3, message: `'${A[i - 1]}' = '${B[j - 1]}': extend the diagonal. len(${i},${j}) = ${L[i - 1][j - 1]} + 1 = ${L[i][j]}.`, stats: {} });
+      } else {
+        L[i][j] = Math.max(L[i - 1][j] as number, L[i][j - 1] as number);
+        frames.push({ state: { table: copyT(L), ...labels, cell: [i, j], deps: [[i - 1, j], [i, j - 1]] }, line: 4, message: `'${A[i - 1]}' ≠ '${B[j - 1]}': take the better of dropping a letter from either word. len(${i},${j}) = max(${L[i - 1][j]}, ${L[i][j - 1]}) = ${L[i][j]}.`, stats: {} });
+      }
+    }
+  const trace: Cell[] = [];
+  const marks: Cell[] = [];
+  let out = "";
+  let i = m;
+  let j = n;
+  while (i > 0 && j > 0) {
+    trace.push([i, j]);
+    if (A[i - 1] === B[j - 1]) {
+      out = A[i - 1] + out;
+      marks.push([i, j]);
+      i--;
+      j--;
+    } else if ((L[i - 1][j] as number) >= (L[i][j - 1] as number)) i--;
+    else j--;
+  }
+  frames.push({ state: { table: copyT(L), ...labels, trace, marks, answer: out }, line: 5, message: `LCS length ${L[m][n]}. Backtracing from the corner (diagonal on a match, otherwise towards the larger neighbour) spells "${out}". O(mn) time and memory.`, stats: {} });
+  return frames;
+}
+
 /* ------------------------------ skip lists ------------------------------ */
 
 export type Tower = { key: number; height: number };

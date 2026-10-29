@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -225,6 +225,17 @@ describe("analysis helpers", () => {
     expect(f.some((x) => /50 is not in the skip list/.test(x.message))).toBe(true);
     expect(f.some((x) => /Level \d: 87 = 87\. Found it!/.test(x.message))).toBe(true);
     expect(f.at(-1)!.state.towers.map((t) => t.key)).toEqual(keys);
+  });
+
+  it("dynamic programming tables give the lecture's answers", () => {
+    const cr = coinRowFrames([5, 1, 2, 10, 6, 2]).at(-1)!.state;
+    expect(cr.answer).toBe("17");
+    expect(cr.table[1]).toEqual([0, 5, 5, 7, 15, 15, 17]);
+    expect(binomialFrames(6, 3).at(-1)!.state.answer).toBe("20");
+    expect(robotFrames().at(-1)!.state.answer).toBe("5");
+    const lcs = lcsFrames("president", "providence").at(-1)!.state;
+    expect(lcs.answer).toBe("priden");
+    expect(lcsFrames("algorithm", "alignment").at(-1)!.state.answer).toBe("algt"); // same length as the slide's "algm"
   });
 
   it("renders the analysis widgets", () => {

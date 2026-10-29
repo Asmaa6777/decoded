@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -829,6 +829,99 @@ export function RotationDemo() {
         <span className="font-mono text-xs text-muted-foreground">in-order is always α, A, β, B, γ</span>
       </div>
     </Panel>
+  );
+}
+
+/* -------------------------- dynamic programming -------------------------- */
+
+const DEFAULT_COINS = [5, 1, 2, 10, 6, 2];
+const DP_TITLES = { coins: "Coin-row problem", binomial: "Binomial coefficient C(n, k)", robot: "Robot coin collection", lcs: "Longest common subsequence" };
+
+/** Fill a DP table step by step for one of the lecture's problems. */
+export function DPVisualizer({
+  problem,
+  coins = DEFAULT_COINS,
+  n = 6,
+  k = 3,
+  a = "president",
+  b = "providence",
+}: {
+  problem: "coins" | "binomial" | "robot" | "lcs";
+  coins?: number[];
+  n?: number;
+  k?: number;
+  a?: string;
+  b?: string;
+}) {
+  const [words, setWords] = useState({ a, b });
+  const frames = useMemo(
+    () => (problem === "coins" ? coinRowFrames(coins) : problem === "binomial" ? binomialFrames(n, k) : problem === "robot" ? robotFrames() : lcsFrames(words.a, words.b)),
+    [problem, coins, n, k, words],
+  );
+  const has = (list: Cell[] | undefined, r: number, c: number) => !!list?.some(([x, y]) => x === r && y === c);
+  return (
+    <Stepper
+      title={DP_TITLES[problem]}
+      frames={frames}
+      code={DP_CODE[problem]}
+      codeLabel="C++"
+      legend={[["bg-neon", "cell being filled"], ["bg-sky", "cells it reads"], ["bg-violet", "backtrace"], ["bg-mint", problem === "robot" ? "coin" : problem === "lcs" ? "matched letter" : "chosen"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-3">
+          <div className="overflow-x-auto">
+            <table className="font-mono text-xs border-collapse">
+              <thead>
+                <tr>
+                  <th className="w-8" />
+                  {s.colLabels.map((c, j) => (
+                    <th key={j} className="w-9 h-6 text-center font-normal text-muted-foreground">
+                      {c}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {s.table.map((row, r) => (
+                  <tr key={r}>
+                    <td className="pr-2 text-right text-muted-foreground">{s.rowLabels[r]}</td>
+                    {row.map((v, c) => {
+                      const cls = has([s.cell!].filter(Boolean), r, c)
+                        ? "bg-neon/30 border-neon"
+                        : has(s.deps, r, c)
+                          ? "bg-sky/20 border-sky"
+                          : has(s.trace, r, c)
+                            ? "bg-violet/25 border-violet"
+                            : "border-border";
+                      const mark = has(s.marks, r, c);
+                      return (
+                        <td key={c} className={`relative w-9 h-9 text-center border transition-colors ${cls} ${mark && problem !== "robot" ? "!bg-mint/30 !border-mint font-bold" : ""}`}>
+                          {v ?? ""}
+                          {mark && problem === "robot" && <span className="absolute top-0.5 right-1 text-[9px] text-mint">●</span>}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {s.answer !== undefined && (
+            <div className="font-display text-lg font-bold">
+              answer: <span className="text-mint">{s.answer}</span>
+            </div>
+          )}
+        </div>
+      )}
+      inputs={
+        problem === "lcs" ? (
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+            <input aria-label="first word" className={`${inputCls} w-32`} defaultValue={a} onBlur={(e) => setWords((w) => ({ ...w, a: e.target.value.slice(0, 12) || a }))} />
+            <input aria-label="second word" className={`${inputCls} w-32`} defaultValue={b} onBlur={(e) => setWords((w) => ({ ...w, b: e.target.value.slice(0, 12) || b }))} />
+            <span className="text-muted-foreground">edit, then click away</span>
+          </div>
+        ) : undefined
+      }
+    />
   );
 }
 
