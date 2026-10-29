@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, CPP_COUNT_ONES, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, fibByMatrix, strassen, CPP_COUNT_ONES, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -199,6 +199,8 @@ const PRESETS: { label: string; a: number; b: number; k: number; p?: number }[] 
   { label: "2T(n/2) + √n", a: 2, b: 2, k: 0.5 },
   { label: "3T(n/4) + n²", a: 3, b: 4, k: 2 },
   { label: "Gauss multiply", a: 3, b: 2, k: 1 },
+  { label: "matrix D&C", a: 8, b: 2, k: 2 },
+  { label: "Strassen", a: 7, b: 2, k: 2 },
   { label: "2T(n/2) + n log n", a: 2, b: 2, k: 1, p: 1 },
 ];
 
@@ -496,5 +498,107 @@ export function MinMaxVisualizer({ input = [11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 1
         </div>
       )}
     />
+  );
+}
+
+/* ---------------------------- Strassen ---------------------------- */
+
+function MatrixBox({ m, label, tone = "border-border" }: { m: (number | string)[][]; label: string; tone?: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
+      <div className={`grid grid-cols-2 gap-1 p-1.5 border-x-2 rounded-sm ${tone}`}>
+        {m.flat().map((v, i) => (
+          <span key={i} className="min-w-[44px] text-center font-mono text-sm px-1">
+            {v}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const STRASSEN_P = ["a·(f − h)", "(a + b)·h", "(c + d)·e", "d·(g − e)", "(a + d)·(e + h)", "(b − d)·(g + h)", "(a − c)·(e + f)"];
+
+/** Edit two 2×2 matrices and check that Strassen's 7 products give the same answer as the usual 8. */
+export function StrassenCalculator() {
+  const [v, setV] = useState({ a: 1, b: 3, c: 7, d: 5, e: 6, f: 8, g: 4, h: 2 });
+  const res = strassen(v.a, v.b, v.c, v.d, v.e, v.f, v.g, v.h);
+  const same = res.r === res.standard.r && res.s === res.standard.s && res.t === res.standard.t && res.u === res.standard.u;
+  const cell = (k: keyof typeof v) => (
+    <input
+      key={k}
+      aria-label={k}
+      className={`${inputCls} !px-1 !py-1 w-12 text-center`}
+      value={v[k]}
+      inputMode="numeric"
+      onChange={(e) => setV((o) => ({ ...o, [k]: Math.max(-99, Math.min(99, Number(e.target.value) || 0)) }))}
+    />
+  );
+  return (
+    <Panel title="Strassen: 7 multiplications instead of 8" legend={[["bg-violet", "the 7 products"], ["bg-mint", "matches the usual way"]]}>
+      <div className="flex flex-wrap items-center gap-4 font-mono text-xs">
+        <div className="flex flex-col items-center gap-1">
+          <span className="uppercase tracking-widest text-muted-foreground text-[10px]">A = [a b; c d]</span>
+          <div className="grid grid-cols-2 gap-1">{(["a", "b", "c", "d"] as const).map(cell)}</div>
+        </div>
+        <span className="text-lg">·</span>
+        <div className="flex flex-col items-center gap-1">
+          <span className="uppercase tracking-widest text-muted-foreground text-[10px]">B = [e f; g h]</span>
+          <div className="grid grid-cols-2 gap-1">{(["e", "f", "g", "h"] as const).map(cell)}</div>
+        </div>
+        <span className="text-lg">=</span>
+        <MatrixBox label="C (Strassen)" m={[[res.r, res.s], [res.t, res.u]]} tone={same ? "border-mint" : "border-orange"} />
+        <MatrixBox label="C (usual, 8 mults)" m={[[res.standard.r, res.standard.s], [res.standard.t, res.standard.u]]} />
+      </div>
+      <div className="grid gap-1 sm:grid-cols-2 font-mono text-xs">
+        {res.P.map((p, i) => (
+          <div key={i} className="flex justify-between gap-3 border border-violet/40 bg-violet/10 rounded-sm px-2.5 py-1.5">
+            <span>
+              P{i + 1} = {STRASSEN_P[i]}
+            </span>
+            <span className="font-bold">{p}</span>
+          </div>
+        ))}
+      </div>
+      <div className="font-mono text-xs leading-relaxed text-muted-foreground">
+        r = P5 + P4 − P2 + P6 = <b className="text-foreground">{res.r}</b> · s = P1 + P2 = <b className="text-foreground">{res.s}</b> · t = P3 + P4 ={" "}
+        <b className="text-foreground">{res.t}</b> · u = P5 + P1 − P3 − P7 = <b className="text-foreground">{res.u}</b>
+      </div>
+      <p className={`text-sm font-semibold ${same ? "text-mint" : "text-orange"}`}>{same ? "Same answer, one multiplication fewer." : "These should always match."}</p>
+    </Panel>
+  );
+}
+
+/** F(n) from powers of [[1 1] [1 0]], using only about 2 lg n matrix multiplications. */
+export function FibonacciMatrix({ initialN = 13 }: { initialN?: number }) {
+  const [n, setN] = useState(initialN);
+  const { steps, result, multiplications } = useMemo(() => fibByMatrix(n), [n]);
+  const short = (x: bigint) => {
+    const t = x.toString();
+    return t.length > 10 ? `${t.slice(0, 4)}…(${t.length} digits)` : t;
+  };
+  return (
+    <Panel title="Fibonacci by repeated squaring" legend={[["bg-mint", "used for n"], ["bg-violet", "computed"]]}>
+      <label className="flex flex-wrap items-center gap-4 font-mono text-xs">
+        <span className="uppercase tracking-widest text-muted-foreground">n</span>
+        <input type="range" min={1} max={200} value={n} onChange={(e) => setN(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="n" />
+        <span className="font-display text-xl font-bold w-24">n = {n}</span>
+      </label>
+      <div className="font-mono text-xs text-muted-foreground">
+        n = {n} = ({n.toString(2)})₂ = {steps.filter((s) => s.used).map((s) => s.power).join(" + ")}, so multiply together the mint matrices.
+      </div>
+      <div className="flex flex-wrap gap-3">
+        {steps.map((s) => (
+          <MatrixBox key={s.power} label={`M^${s.power}`} m={s.matrix.map((r) => r.map(short))} tone={s.used ? "border-mint" : "border-violet/50"} />
+        ))}
+      </div>
+      <div className="font-display text-lg font-bold break-all">
+        F({n}) = <span className="text-mint">{result[0][1].toString()}</span>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        {multiplications} matrix multiplications. Each 2×2 multiplication is a fixed 8 number multiplications, so this is Θ(lg n), against Θ(n) for the bottom-up loop.
+      </p>
+    </Panel>
   );
 }

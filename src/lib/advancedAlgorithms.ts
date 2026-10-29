@@ -234,6 +234,58 @@ export function firstViolation(f: (n: number) => number, g: (n: number) => numbe
   return null;
 }
 
+/* ---------------------- matrices and Strassen ---------------------- */
+
+export type M2 = [[bigint, bigint], [bigint, bigint]];
+
+export function mul2(x: M2, y: M2): M2 {
+  return [
+    [x[0][0] * y[0][0] + x[0][1] * y[1][0], x[0][0] * y[0][1] + x[0][1] * y[1][1]],
+    [x[1][0] * y[0][0] + x[1][1] * y[1][0], x[1][0] * y[0][1] + x[1][1] * y[1][1]],
+  ];
+}
+
+/** Strassen's seven products for [[a b] [c d]] · [[e f] [g h]], named as in the lecture. */
+export function strassen(a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) {
+  const P = [a * (f - h), (a + b) * h, (c + d) * e, d * (g - e), (a + d) * (e + h), (b - d) * (g + h), (a - c) * (e + f)];
+  const [p1, p2, p3, p4, p5, p6, p7] = P;
+  return {
+    P,
+    r: p5 + p4 - p2 + p6,
+    s: p1 + p2,
+    t: p3 + p4,
+    u: p5 + p1 - p3 - p7,
+    standard: { r: a * e + b * g, s: a * f + b * h, t: c * e + d * g, u: c * f + d * h },
+  };
+}
+
+export type FibSquareStep = { power: number; matrix: M2; used: boolean };
+
+/** [[1 1] [1 0]]^n by repeated squaring: the matrices for powers 1, 2, 4, 8, … and which ones n uses. */
+export function fibByMatrix(n: number): { steps: FibSquareStep[]; result: M2; multiplications: number } {
+  let base: M2 = [[1n, 1n], [1n, 0n]];
+  let result: M2 = [[1n, 0n], [0n, 1n]];
+  let k = n;
+  let power = 1;
+  let mults = 0;
+  const steps: FibSquareStep[] = [];
+  while (k > 0) {
+    const used = (k & 1) === 1;
+    steps.push({ power, matrix: base, used });
+    if (used) {
+      result = mul2(result, base);
+      mults++;
+    }
+    k >>= 1;
+    if (k > 0) {
+      base = mul2(base, base);
+      mults++;
+      power *= 2;
+    }
+  }
+  return { steps, result, multiplications: mults };
+}
+
 /* ------------------------- Master method ------------------------- */
 
 export type MasterCase = 1 | 2 | 3 | "gap";

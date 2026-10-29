@@ -41,6 +41,7 @@ import AaAsymptotic from "@/content/advanced-algorithms/m0-03-asymptotic-notatio
 import AaRecurrences from "@/content/advanced-algorithms/m0-04-solving-recurrences.mdx";
 import AaLabBits from "@/content/advanced-algorithms/m0-05-lab-bit-manipulation.mdx";
 import AaLabAnalysis from "@/content/advanced-algorithms/m0-06-lab-algorithm-analysis.mdx";
+import AaDivideConquer from "@/content/advanced-algorithms/m1-01-divide-and-conquer.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -223,6 +224,13 @@ export const courses: Course[] = [
           { slug: "solving-recurrences", title: "Solving Recurrences", duration: "18 min", Component: AaRecurrences },
           { slug: "lab-bit-manipulation", title: "Lab: Bit Manipulation and Binary Files", duration: "16 min", kind: "practical", Component: AaLabBits },
           { slug: "lab-algorithm-analysis", title: "Lab: Analyzing Algorithms with Recurrences", duration: "18 min", kind: "practical", Component: AaLabAnalysis },
+        ],
+      },
+      {
+        title: "Divide and Conquer",
+        blurb: "Split, solve, combine: from binary search to Strassen, and the sorting algorithms built on it.",
+        lessons: [
+          { slug: "divide-and-conquer", title: "Divide and Conquer", duration: "20 min", Component: AaDivideConquer },
         ],
       },
     ],

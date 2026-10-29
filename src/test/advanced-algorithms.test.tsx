@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -99,6 +99,19 @@ describe("analysis helpers", () => {
     const last = minMaxFrames([11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1]).at(-1)!;
     expect([last.state.min, last.state.max]).toEqual([0, 21]);
     expect(last.stats.comparisons).toBe(22);
+  });
+
+  it("Strassen's 7 products match the usual 8", () => {
+    for (const m of [[1, 3, 7, 5, 6, 8, 4, 2], [2, -1, 0, 4, -3, 5, 7, 1]]) {
+      const r = strassen(...(m as [number, number, number, number, number, number, number, number]));
+      expect({ r: r.r, s: r.s, t: r.t, u: r.u }).toEqual(r.standard);
+    }
+  });
+
+  it("computes Fibonacci exactly by matrix squaring", () => {
+    expect(fibByMatrix(13).result[0][1]).toBe(233n);
+    expect(fibByMatrix(100).result[0][1]).toBe(354224848179261915075n);
+    expect(fibByMatrix(1).result[0][1]).toBe(1n);
   });
 
   it("renders the analysis widgets", () => {
