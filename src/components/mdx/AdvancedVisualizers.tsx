@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, CPP_COUNT_ONES, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
+import { bitOp, CPP_COUNT_ONES, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -413,6 +413,88 @@ export function CountOnes({ n = 13 }: { n?: number }) {
           </button>
         </div>
       }
+    />
+  );
+}
+
+/* --------------------------- fast power --------------------------- */
+
+export function FastPowerVisualizer({ a: a0 = 3, b: b0 = 13 }: { a?: number; b?: number }) {
+  const [v, setV] = useState({ a: a0, b: b0 });
+  const [text, setText] = useState({ a: String(a0), b: String(b0) });
+  const frames = useMemo(() => fastPowerFrames(v.a, v.b), [v]);
+  const apply = () => {
+    const a = Number(text.a);
+    const b = Number(text.b);
+    if (Number.isInteger(a) && a >= 1 && a <= 99 && Number.isInteger(b) && b >= 1 && b <= 1000) setV({ a, b });
+  };
+  return (
+    <Stepper
+      title="FastPower: square the base, halve the exponent"
+      frames={frames}
+      code={CPP_FAST_POWER}
+      codeLabel="C++"
+      legend={[["bg-sky", "running now"], ["bg-mint", "returned"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-1.5 font-mono text-sm">
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">call stack (outermost first)</span>
+          {s.calls.map((c, i) => (
+            <div
+              key={i}
+              className={`flex flex-wrap items-baseline gap-x-3 px-3 py-1.5 border rounded-sm transition-colors ${
+                i === s.active ? "border-sky bg-sky/15" : c.result !== undefined ? "border-mint/60 bg-mint/10" : "border-border"
+              }`}
+              style={{ marginLeft: Math.min(i, 8) * 14 }}
+            >
+              <span>
+                fastPower({c.a.toString().length > 18 ? `${c.a.toString().slice(0, 8)}…` : c.a.toString()}, {c.b})
+              </span>
+              {c.result !== undefined && (
+                <span className="text-mint break-all">→ {c.result.toString().length > 24 ? `${c.result.toString().slice(0, 12)}… (${c.result.toString().length} digits)` : c.result.toString()}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+          a <input aria-label="a" className={`${inputCls} w-20`} value={text.a} inputMode="numeric" onChange={(e) => setText((t) => ({ ...t, a: e.target.value }))} onKeyDown={(e) => e.key === "Enter" && apply()} />
+          b <input aria-label="b" className={`${inputCls} w-20`} value={text.b} inputMode="numeric" onChange={(e) => setText((t) => ({ ...t, b: e.target.value }))} onKeyDown={(e) => e.key === "Enter" && apply()} />
+          <button type="button" className={btn} onClick={apply}>
+            Compute aᵇ
+          </button>
+        </div>
+      }
+    />
+  );
+}
+
+/* ------------------------- min and max ------------------------- */
+
+export function MinMaxVisualizer({ input = [11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1] }: { input?: number[] }) {
+  const frames = useMemo(() => minMaxFrames(input), [input]);
+  return (
+    <Stepper
+      title="Min and max in 1.5n − 2 comparisons"
+      frames={frames}
+      code={CPP_MIN_MAX}
+      codeLabel="C++"
+      legend={[["bg-neon", "comparing"], ["bg-orange", "swapped"], ["bg-mint", "min / max"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-3">
+          <ArrayCells s={s} />
+          {s.phase !== "pairs" && (
+            <div className="flex flex-wrap gap-6 font-display text-xl font-bold">
+              <span>
+                min = <span className="text-mint">{s.min}</span>
+              </span>
+              <span>
+                max = <span className="text-mint">{s.max}</span>
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     />
   );
 }

@@ -6,7 +6,7 @@
    and the components in AdvancedVisualizers.tsx only draw it.
    ============================================================ */
 
-import type { Frame } from "@/lib/algorithms";
+import type { ArrayState, Frame } from "@/lib/algorithms";
 
 /* ------------------------ bit manipulation ------------------------ */
 
@@ -76,6 +76,128 @@ export function popcountFrames(start: number): Frame<PopState>[] {
     frames.push({ state: { n, count }, line: 4, message: `One bit removed, so count = ${count}.`, stats: { count } });
   }
   frames.push({ state: { n, count }, line: 6, message: `n is 0. ${start} has ${count} one-bit${count === 1 ? "" : "s"}. The loop ran once per 1-bit, not once per bit.`, stats: { count } });
+  return frames;
+}
+
+/* --------------------------- fast power --------------------------- */
+
+export type PowerCall = { a: bigint; b: number; result?: bigint };
+export type PowerState = { calls: PowerCall[]; active: number };
+
+export const CPP_FAST_POWER = [
+  "long long fastPower(long long a, int b) {",
+  "    if (b == 1)",
+  "        return a;",
+  "    long long c = a * a;",
+  "    long long ans = fastPower(c, b / 2);",
+  "    if (b % 2 == 1)",
+  "        return a * ans;           // odd b: one extra a",
+  "    return ans;",
+  "}",
+];
+
+/** FastPower(a, b) from the lab: square the base, halve the exponent. */
+export function fastPowerFrames(a0: number, b0: number): Frame<PowerState>[] {
+  const frames: Frame<PowerState>[] = [];
+  const calls: PowerCall[] = [];
+  let mults = 0;
+  const snap = (active: number, line: number, message: string) =>
+    frames.push({ state: { calls: calls.map((c) => ({ ...c })), active }, line, message, stats: { calls: calls.length, multiplications: mults } });
+
+  const go = (a: bigint, b: number): bigint => {
+    calls.push({ a, b });
+    const me = calls.length - 1;
+    snap(me, 0, `fastPower(${a}, ${b}) is called.`);
+    if (b === 1) {
+      calls[me].result = a;
+      snap(me, 2, `b = 1, so the answer is just a = ${a}. This is the base case.`);
+      return a;
+    }
+    const c = a * a;
+    mults++;
+    snap(me, 3, `Square the base: c = ${a} × ${a} = ${c}. Now the exponent can be halved.`);
+    const ans = go(c, Math.floor(b / 2));
+    let r = ans;
+    if (b % 2 === 1) {
+      r = a * ans;
+      mults++;
+      calls[me].result = r;
+      snap(me, 6, `b = ${b} is odd, so halving lost one factor of a. Multiply it back: ${a} × ${ans} = ${r}.`);
+    } else {
+      calls[me].result = r;
+      snap(me, 7, `b = ${b} is even, so (a²)^(b/2) is already the answer: ${r}.`);
+    }
+    return r;
+  };
+
+  const r = go(BigInt(a0), b0);
+  frames.push({
+    state: { calls: calls.map((c) => ({ ...c })), active: -1 },
+    line: 8,
+    message: `${a0}^${b0} = ${r}. That took ${mults} multiplications; the simple a · power(a, b − 1) needs ${b0 - 1}.`,
+    stats: { calls: calls.length, multiplications: mults },
+  });
+  return frames;
+}
+
+/* ------------------------- min and max ------------------------- */
+
+export type MinMaxState = ArrayState & { min?: number; max?: number; phase: string };
+
+export const CPP_MIN_MAX = [
+  "void minMax(int x[], int n, int& lo, int& hi) {",
+  "    for (int i = 0; i + 1 < n; i += 2)   // n/2 comparisons",
+  "        if (x[i] > x[i + 1]) swap(x[i], x[i + 1]);",
+  "    lo = x[0]; hi = x[1];",
+  "    for (int i = 2; i < n; i += 2) {",
+  "        if (x[i] < lo) lo = x[i];          // smaller of each pair",
+  "        if (x[i + 1] > hi) hi = x[i + 1];  // larger of each pair",
+  "    }",
+  "}",
+];
+
+/** The lab's 1.5n − 2 min-and-max: order each pair, then race the small ones and the big ones separately. n must be even. */
+export function minMaxFrames(input: number[]): Frame<MinMaxState>[] {
+  const x = input.length % 2 === 0 ? [...input] : [...input, input[input.length - 1]];
+  const n = x.length;
+  const frames: Frame<MinMaxState>[] = [];
+  let comparisons = 0;
+  const push = (s: Partial<MinMaxState>, line: number, message: string) =>
+    frames.push({ state: { array: [...x], phase: "pairs", ...s }, line, message, stats: { comparisons, "naive 2n": 2 * n } });
+
+  push({}, 0, `Find the smallest and the largest of ${n} numbers. Comparing each number with both the current min and max would take about 2n = ${2 * n} comparisons.`);
+  for (let i = 0; i + 1 < n; i += 2) {
+    comparisons++;
+    const swap = x[i] > x[i + 1];
+    push({ compare: [i, i + 1] }, 2, `Pair (${x[i]}, ${x[i + 1]}): ${swap ? "out of order, swap them" : "already small-then-big"}.`);
+    if (swap) {
+      [x[i], x[i + 1]] = [x[i + 1], x[i]];
+      push({ write: [i, i + 1] }, 2, `Now ${x[i]} is the small one and ${x[i + 1]} the big one.`);
+    }
+  }
+  let lo = x[0];
+  let hi = x[1];
+  let loAt = 0;
+  let hiAt = 1;
+  const marks = () => ({ pointers: { min: loAt, max: hiAt } });
+  push({ phase: "race", min: lo, max: hi, ...marks() }, 3, `After ${n / 2} comparisons every pair is ordered. The min must be a small (even) slot and the max a big (odd) slot. Start with the first pair.`);
+  for (let i = 2; i < n; i += 2) {
+    comparisons++;
+    const newLo = x[i] < lo;
+    if (newLo) {
+      lo = x[i];
+      loAt = i;
+    }
+    push({ phase: "race", compare: [i], min: lo, max: hi, ...marks() }, 5, `Small side: ${x[i]} vs min. ${newLo ? `New min ${lo}.` : `Min stays ${lo}.`}`);
+    comparisons++;
+    const newHi = x[i + 1] > hi;
+    if (newHi) {
+      hi = x[i + 1];
+      hiAt = i + 1;
+    }
+    push({ phase: "race", compare: [i + 1], min: lo, max: hi, ...marks() }, 6, `Big side: ${x[i + 1]} vs max. ${newHi ? `New max ${hi}.` : `Max stays ${hi}.`}`);
+  }
+  push({ phase: "done", found: loAt, sorted: [hiAt], min: lo, max: hi, ...marks() }, 8, `min = ${lo}, max = ${hi} after ${comparisons} comparisons. That's 1.5n − 2 = ${1.5 * n - 2}, instead of about 2n = ${2 * n}.`);
   return frames;
 }
 

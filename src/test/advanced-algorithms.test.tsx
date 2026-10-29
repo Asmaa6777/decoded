@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -86,6 +86,19 @@ describe("analysis helpers", () => {
     expect([0, 6, 12].some(isPowerOfTwo)).toBe(false);
     expect(popcountFrames(13).at(-1)!.state.count).toBe(3);
     expect(popcountFrames(0).at(-1)!.state.count).toBe(0);
+  });
+
+  it("fast power gets the right answer in about log b multiplications", () => {
+    const last = fastPowerFrames(3, 13).at(-1)!;
+    expect(last.state.calls[0].result).toBe(1594323n);
+    expect(last.stats.multiplications).toBe(5); // 13 → 6 → 3 → 1: three squarings, two odd steps
+    expect(fastPowerFrames(2, 1).at(-1)!.state.calls[0].result).toBe(2n);
+  });
+
+  it("finds min and max in 1.5n - 2 comparisons", () => {
+    const last = minMaxFrames([11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1]).at(-1)!;
+    expect([last.state.min, last.state.max]).toEqual([0, 21]);
+    expect(last.stats.comparisons).toBe(22);
   });
 
   it("renders the analysis widgets", () => {
