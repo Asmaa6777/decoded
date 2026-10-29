@@ -309,6 +309,116 @@ export function quicksortFrames(input: number[], randomized = false, seed = 7): 
   return frames;
 }
 
+/* --------------------------- decision tree --------------------------- */
+
+/** Node of the lecture's decision tree for sorting ⟨a1, a2, a3⟩: an i:j comparison, or a leaf permutation. */
+export type DNode = { id: string; cmp?: [number, number]; leaf?: [number, number, number]; left?: DNode; right?: DNode };
+
+export const DECISION_TREE_3: DNode = {
+  id: "r", cmp: [1, 2],
+  left: { id: "l", cmp: [2, 3], left: { id: "ll", leaf: [1, 2, 3] }, right: { id: "lr", cmp: [1, 3], left: { id: "lrl", leaf: [1, 3, 2] }, right: { id: "lrr", leaf: [3, 1, 2] } } },
+  right: { id: "R", cmp: [1, 3], left: { id: "Rl", leaf: [2, 1, 3] }, right: { id: "Rr", cmp: [2, 3], left: { id: "Rrl", leaf: [2, 3, 1] }, right: { id: "Rrr", leaf: [3, 2, 1] } } },
+};
+
+/** The ids on the path the input takes: left when a_i ≤ a_j, right otherwise. */
+export function decisionPath(a: [number, number, number], node: DNode = DECISION_TREE_3): string[] {
+  const path = [node.id];
+  let cur = node;
+  while (cur.cmp) {
+    const [i, j] = cur.cmp;
+    cur = a[i - 1] <= a[j - 1] ? cur.left! : cur.right!;
+    path.push(cur.id);
+  }
+  return path;
+}
+
+/** ⌈lg(n!)⌉: the fewest comparisons any comparison sort needs in the worst case. */
+export function minComparisons(n: number): number {
+  let lg = 0;
+  for (let i = 2; i <= n; i++) lg += Math.log2(i);
+  return Math.ceil(lg - 1e-9);
+}
+
+/* --------------------------- counting sort --------------------------- */
+
+export type CountState = { A: number[]; C: number[]; B: (number | null)[]; loop: number; aAt?: number; cAt?: number; bAt?: number };
+
+export const CPP_COUNTING_SORT = [
+  "void countingSort(int A[], int B[], int n, int k) {  // keys 1..k",
+  "    int C[k + 1];",
+  "    for (int i = 1; i <= k; i++) C[i] = 0;              // loop 1",
+  "    for (int j = 1; j <= n; j++) C[A[j]]++;             // loop 2: C[i] = |{key = i}|",
+  "    for (int i = 2; i <= k; i++) C[i] += C[i - 1];      // loop 3: C[i] = |{key ≤ i}|",
+  "    for (int j = n; j >= 1; j--) {                      // loop 4",
+  "        B[C[A[j]]] = A[j];",
+  "        C[A[j]]--;",
+  "    }",
+  "}",
+];
+
+/** Counting sort exactly as in the lecture, with 1-based A, B and C shown as 0-based arrays. */
+export function countingSortFrames(A: number[], k: number): Frame<CountState>[] {
+  const n = A.length;
+  const C = Array<number>(k).fill(0); // C[v - 1] holds the lecture's C[v]
+  const B: (number | null)[] = Array(n).fill(null);
+  const frames: Frame<CountState>[] = [];
+  const push = (s: Partial<CountState>, line: number, message: string) =>
+    frames.push({ state: { A: [...A], C: [...C], B: [...B], loop: 0, ...s }, line, message, stats: { comparisons: 0 } });
+
+  push({ loop: 1 }, 2, `Loop 1: clear the k = ${k} counters. That's Θ(k).`);
+  for (let j = 0; j < n; j++) {
+    C[A[j] - 1]++;
+    push({ loop: 2, aAt: j, cAt: A[j] - 1 }, 3, `Loop 2: A[${j + 1}] = ${A[j]}, so C[${A[j]}] becomes ${C[A[j] - 1]}. C[i] counts the keys equal to i.`);
+  }
+  for (let i = 1; i < k; i++) {
+    C[i] += C[i - 1];
+    push({ loop: 3, cAt: i }, 4, `Loop 3: C[${i + 1}] += C[${i}], giving ${C[i]}. Now C[i] counts the keys ≤ i, which is the last slot an i can go in.`);
+  }
+  for (let j = n - 1; j >= 0; j--) {
+    const v = A[j];
+    const pos = C[v - 1];
+    B[pos - 1] = v;
+    push({ loop: 4, aAt: j, cAt: v - 1, bAt: pos - 1 }, 6, `Loop 4: A[${j + 1}] = ${v} goes to B[C[${v}]] = B[${pos}].`);
+    C[v - 1]--;
+    push({ loop: 4, aAt: j, cAt: v - 1, bAt: pos - 1 }, 7, `Decrement C[${v}] to ${C[v - 1]}, so the next ${v} lands one slot to the left. Going right to left keeps equal keys in order: the sort is stable.`);
+  }
+  push({ loop: 5 }, 9, `Sorted, and not a single comparison between elements. Θ(n + k) time.`);
+  return frames;
+}
+
+/* ----------------------------- radix sort ----------------------------- */
+
+export type RadixState = { rows: number[]; digit: number; width: number; prev: number[] };
+
+export const CPP_RADIX = [
+  "void radixSort(int A[], int n, int digits) {",
+  "    for (int d = 0, exp = 1; d < digits; d++, exp *= 10)",
+  "        countingSortByDigit(A, n, exp);   // stable sort on (A[i] / exp) % 10",
+  "}",
+];
+
+/** LSD radix sort: one stable pass per digit, least significant first. */
+export function radixSortFrames(input: number[], base = 10): Frame<RadixState>[] {
+  const width = Math.max(1, ...input.map((x) => String(x).length));
+  let rows = [...input];
+  const frames: Frame<RadixState>[] = [];
+  frames.push({ state: { rows, digit: -1, width, prev: rows }, line: 0, message: `${input.length} numbers with ${width} digits each. Sort on the last digit first, using a stable sort for each digit.`, stats: { passes: 0 } });
+  for (let d = 0; d < width; d++) {
+    const prev = rows;
+    const key = (x: number) => Math.floor(x / Math.pow(base, d)) % base;
+    rows = [...rows].sort((x, y) => key(x) - key(y)); // Array.prototype.sort is stable
+    const place = d === 0 ? "ones" : d === 1 ? "tens" : d === 2 ? "hundreds" : `10^${d}`;
+    frames.push({
+      state: { rows, digit: d, width, prev },
+      line: 2,
+      message: `Pass ${d + 1}: stable sort on the ${place} digit. Numbers with the same ${place} digit keep the order the last pass gave them.`,
+      stats: { passes: d + 1 },
+    });
+  }
+  frames.push({ state: { rows, digit: width, width, prev: rows }, line: 3, message: `Sorted after ${width} passes. Each pass is a counting sort, Θ(n + 10).`, stats: { passes: width } });
+  return frames;
+}
+
 /* --------------------------- Fibonacci --------------------------- */
 
 /** Calls the naive recursive fib(n) makes: T(n) = T(n-1) + T(n-2) + 1, T(0) = T(1) = 1. */

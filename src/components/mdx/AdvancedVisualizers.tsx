@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -663,6 +663,187 @@ export function QuicksortVisualizer({ initial = [6, 10, 13, 5, 8, 3, 2, 11], ran
           )}
         </div>
       }
+    />
+  );
+}
+
+/* --------------------------- decision tree --------------------------- */
+
+type Placed = { node: DNode; x: number; y: number; parent?: Placed; side?: "≤" | "≥" };
+
+function placeTree(root: DNode): Placed[] {
+  const out: Placed[] = [];
+  let slot = 0;
+  const walk = (n: DNode, depth: number, parent?: Placed, side?: "≤" | "≥"): Placed => {
+    const me: Placed = { node: n, x: 0, y: 30 + depth * 72, parent, side };
+    if (n.leaf) me.x = 50 + slot++ * 92;
+    else {
+      const l = walk(n.left!, depth + 1, me, "≤");
+      const r = walk(n.right!, depth + 1, me, "≥");
+      me.x = (l.x + r.x) / 2;
+    }
+    out.push(me);
+    return me;
+  };
+  walk(root, 0);
+  return out;
+}
+
+/** The lecture's decision tree for sorting three numbers; type three values and watch their path light up. */
+export function DecisionTree({ initial = [9, 4, 6] }: { initial?: [number, number, number] }) {
+  const [a, setA] = useState<[number, number, number]>(initial);
+  const placed = useMemo(() => placeTree(DECISION_TREE_3), []);
+  const path = new Set(decisionPath(a));
+  const leaf = placed.find((p) => p.node.leaf && path.has(p.node.id))!.node.leaf!;
+  return (
+    <Panel title="Decision tree for sorting ⟨a₁, a₂, a₃⟩" legend={[["bg-neon", "path taken"], ["bg-mint", "result"]]}>
+      <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+        {[0, 1, 2].map((i) => (
+          <label key={i} className="inline-flex items-center gap-1.5">
+            a{i + 1}
+            <input
+              aria-label={`a${i + 1}`}
+              className={`${inputCls} w-16`}
+              value={a[i]}
+              inputMode="numeric"
+              onChange={(e) => setA((o) => o.map((v, j) => (j === i ? Number(e.target.value) || 0 : v)) as [number, number, number])}
+            />
+          </label>
+        ))}
+      </div>
+      <svg viewBox="0 0 560 270" className="w-full h-auto max-w-[620px] mx-auto" role="img" aria-label="Decision tree">
+        {placed.filter((p) => p.parent).map((p) => {
+          const on = path.has(p.node.id) && path.has(p.parent!.node.id);
+          return (
+            <g key={`e-${p.node.id}`}>
+              <line x1={p.parent!.x} y1={p.parent!.y} x2={p.x} y2={p.y} className={on ? "stroke-neon" : "stroke-border"} strokeWidth={on ? 3.5 : 1.5} />
+              <text x={(p.parent!.x + p.x) / 2 + (p.side === "≤" ? -10 : 10)} y={(p.parent!.y + p.y) / 2} fontSize={11} textAnchor="middle" className="fill-muted-foreground font-mono">
+                {p.side}
+              </text>
+            </g>
+          );
+        })}
+        {placed.map((p) => {
+          const on = path.has(p.node.id);
+          if (p.node.leaf)
+            return (
+              <g key={p.node.id}>
+                <rect x={p.x - 38} y={p.y - 14} width={76} height={28} rx={3} strokeWidth={2} className={on ? "fill-mint/25 stroke-mint" : "fill-card stroke-border"} />
+                <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={12} className="fill-current font-mono">
+                  ⟨{p.node.leaf.join(",")}⟩
+                </text>
+              </g>
+            );
+          const [i, j] = p.node.cmp!;
+          return (
+            <g key={p.node.id}>
+              <circle cx={p.x} cy={p.y} r={20} strokeWidth={2} className={on ? "fill-neon/30 stroke-neon" : "fill-card stroke-current"} />
+              <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={13} className="fill-current font-mono font-bold">
+                {i}:{j}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <p className="font-mono text-sm">
+        Leaf ⟨{leaf.join(", ")}⟩ means a{leaf[0]} ≤ a{leaf[1]} ≤ a{leaf[2]}, which is{" "}
+        <span className="text-mint font-bold">{leaf.map((i) => a[i - 1]).join(" ≤ ")}</span>. That took {path.size - 1} comparisons.
+      </p>
+    </Panel>
+  );
+}
+
+/* --------------------------- counting sort --------------------------- */
+
+function Row({ label, values, hi, tone, base = 1 }: { label: string; values: (number | null)[]; hi?: number; tone: string; base?: number }) {
+  return (
+    <div className="flex items-start gap-3 font-mono">
+      <span className="w-6 pt-2 text-sm font-bold">{label}</span>
+      <div className="flex flex-col">
+        <div className="flex gap-1">
+          {values.map((v, i) => (
+            <span key={i} className={`w-10 h-10 flex items-center justify-center text-sm border rounded-sm transition-colors ${i === hi ? tone : v === null ? "border-dashed border-border text-muted-foreground" : "border-border"}`}>
+              {v ?? "·"}
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-1">
+          {values.map((_, i) => (
+            <span key={i} className="w-10 text-center text-[10px] text-muted-foreground">
+              {i + base}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function CountingSortVisualizer({ A = [4, 1, 3, 4, 3], k = 4 }: { A?: number[]; k?: number }) {
+  const frames = useMemo(() => countingSortFrames(A, k), [A, k]);
+  return (
+    <Stepper
+      title="Counting sort"
+      frames={frames}
+      code={CPP_COUNTING_SORT}
+      codeLabel="C++"
+      legend={[["bg-sky", "reading A"], ["bg-violet", "counter C"], ["bg-mint", "writing B"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-3">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{s.loop >= 1 && s.loop <= 4 ? `loop ${s.loop}` : s.loop === 5 ? "done" : ""}</div>
+          <Row label="A" values={s.A} hi={s.aAt} tone="border-sky bg-sky/20" />
+          <Row label="C" values={s.C} hi={s.cAt} tone="border-violet bg-violet/20" />
+          <Row label="B" values={s.B} hi={s.bAt} tone="border-mint bg-mint/25" />
+        </div>
+      )}
+    />
+  );
+}
+
+/* ----------------------------- radix sort ----------------------------- */
+
+export function RadixSortVisualizer({ input = [329, 457, 657, 839, 436, 720, 355] }: { input?: number[] }) {
+  const frames = useMemo(() => radixSortFrames(input), [input]);
+  return (
+    <Stepper
+      title="Radix sort, least significant digit first"
+      frames={frames}
+      code={CPP_RADIX}
+      codeLabel="C++"
+      legend={[["bg-neon", "digit sorted on"], ["bg-mint", "digits already in order"]]}
+      render={(s) => (
+        <div className="flex flex-wrap items-start gap-8">
+          {s.digit >= 0 && s.digit < s.width && (
+            <div className="flex flex-col gap-1">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">before</span>
+              {s.prev.map((x, i) => (
+                <span key={i} className="font-mono text-base tracking-[0.3em] text-muted-foreground">
+                  {String(x).padStart(s.width, "0")}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-col gap-1">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{s.digit < 0 ? "input" : s.digit >= s.width ? "sorted" : "after"}</span>
+            {s.rows.map((x, i) => {
+              const digits = String(x).padStart(s.width, "0").split("");
+              return (
+                <span key={i} className="font-mono text-base tracking-[0.3em]">
+                  {digits.map((c, p) => {
+                    const fromRight = s.width - 1 - p;
+                    const cls = fromRight === s.digit ? "text-neon font-bold bg-neon/15" : fromRight < s.digit || s.digit >= s.width ? "text-mint" : "";
+                    return (
+                      <span key={p} className={cls}>
+                        {c}
+                      </span>
+                    );
+                  })}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
     />
   );
 }

@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -138,6 +138,20 @@ describe("analysis helpers", () => {
     expect(worst.stats.comparisons).toBe((30 * 29) / 2);
     expect(rand.state.array).toEqual(sorted);
     expect(rand.stats["max depth"]).toBeLessThan(worst.stats["max depth"]);
+  });
+
+  it("decision tree, counting sort and radix sort follow the lecture", () => {
+    expect(decisionPath([9, 4, 6])).toEqual(["r", "R", "Rr", "Rrl"]); // leaf ⟨2,3,1⟩
+    for (const p of [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]] as [number, number, number][]) {
+      expect(decisionPath(p).length).toBeLessThanOrEqual(4);
+    }
+    expect([minComparisons(3), minComparisons(10)]).toEqual([3, 22]);
+    const cs = countingSortFrames([4, 1, 3, 4, 3], 4);
+    expect(cs.at(-1)!.state.B).toEqual([1, 3, 3, 4, 4]);
+    expect(cs.find((f) => f.state.loop === 3 && f.state.cAt === 3)!.state.C).toEqual([1, 1, 3, 5]);
+    const rs = radixSortFrames([329, 457, 657, 839, 436, 720, 355]);
+    expect(rs[1].state.rows).toEqual([720, 355, 436, 457, 657, 329, 839]);
+    expect(rs.at(-1)!.state.rows).toEqual([329, 355, 436, 457, 657, 720, 839]);
   });
 
   it("renders the analysis widgets", () => {
