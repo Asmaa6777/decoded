@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -922,6 +922,143 @@ export function DPVisualizer({
         ) : undefined
       }
     />
+  );
+}
+
+/* ------------------------------ P and NP ------------------------------ */
+
+const T = (b: boolean) => (b ? "T" : "F");
+
+/** Type a CNF formula; see every assignment and which ones satisfy it. */
+export function SatExplorer({ formula = "(a ∨ b) ∧ (a ∨ ¬b)" }: { formula?: string }) {
+  const [text, setText] = useState(formula);
+  const f = useMemo(() => parseCNF(text), [text]);
+  const vars = f ? cnfVars(f) : [];
+  const rows = useMemo(() => (f && cnfVars(f).length <= 6 ? truthTable(f) : null), [f]);
+  const sat = rows?.filter((r) => r.sat).length ?? 0;
+  return (
+    <Panel title="Is this formula satisfiable?" legend={[["bg-mint", "satisfying assignment"]]}>
+      <input aria-label="CNF formula" className={`${inputCls} w-full`} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
+      <div className="flex flex-wrap gap-1.5">
+        {["(a ∨ b) ∧ (a ∨ ¬b)", "(a ∨ b) ∧ (b ∨ ¬c)", "(a) ∧ (¬a)", "(a ∨ b) ∧ (¬a ∨ b) ∧ (a ∨ ¬b) ∧ (¬a ∨ ¬b)"].map((p) => (
+          <button key={p} type="button" className={`${btn} !px-2 !py-1 !normal-case !tracking-normal`} onClick={() => setText(p)}>
+            {p}
+          </button>
+        ))}
+      </div>
+      {!f && <p className="text-sm text-orange">Write clauses in brackets joined by ∧ (or ^), literals joined by ∨ (or |), and ¬ (or !) for "not".</p>}
+      {f && !rows && <p className="text-sm text-muted-foreground">{vars.length} variables means {2 ** vars.length} rows: too many to show. That's the point!</p>}
+      {f && rows && (
+        <div className="overflow-x-auto">
+          <table className="font-mono text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-border text-muted-foreground">
+                {vars.map((v) => (
+                  <th key={v} className="px-2 py-1 font-normal">
+                    {v}
+                  </th>
+                ))}
+                {f.map((c, i) => (
+                  <th key={i} className="px-2 py-1 font-normal whitespace-nowrap">
+                    ({c.map(litText).join(" ∨ ")})
+                  </th>
+                ))}
+                <th className="px-2 py-1">SAT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i} className={`border-b border-border/40 ${r.sat ? "bg-mint/15" : ""}`}>
+                  {vars.map((v) => (
+                    <td key={v} className="px-2 py-1 text-center">
+                      {T(r.a[v])}
+                    </td>
+                  ))}
+                  {r.clauses.map((c, j) => (
+                    <td key={j} className={`px-2 py-1 text-center ${c ? "" : "text-orange"}`}>
+                      {T(c)}
+                    </td>
+                  ))}
+                  <td className={`px-2 py-1 text-center font-bold ${r.sat ? "text-mint" : "text-muted-foreground"}`}>{T(r.sat)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {f && rows && (
+        <p className={`text-sm font-semibold ${sat ? "text-mint" : "text-orange"}`}>
+          {sat ? `Satisfiable: ${sat} of ${rows.length} assignments work.` : `Unsatisfiable: none of the ${rows.length} assignments work.`} Checking one row is fast. There are 2^{vars.length} rows.
+        </p>
+      )}
+    </Panel>
+  );
+}
+
+/** The reduction from 3-CNF SAT to CLIQUE: build the graph, find a k-clique, read off the assignment. */
+export function SatToClique({ formula = "(x1 ∨ ¬x2 ∨ x3) ∧ (¬x1 ∨ x2) ∧ (¬x2 ∨ x3)" }: { formula?: string }) {
+  const [text, setText] = useState(formula);
+  const [show, setShow] = useState(false);
+  const f = useMemo(() => parseCNF(text), [text]);
+  const g = useMemo(() => (f ? cliqueGraph(f) : null), [f]);
+  const clique = useMemo(() => (f && f.length <= 6 && f.flat().length <= 18 ? findClique(f) : null), [f]);
+  if (!f || !g) {
+    return (
+      <Panel title="3-CNF SAT → CLIQUE">
+        <input aria-label="CNF formula" className={`${inputCls} w-full`} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
+        <p className="text-sm text-orange">Couldn't read that formula.</p>
+      </Panel>
+    );
+  }
+  // clauses side by side; each clause's literals in a column
+  const colW = 150;
+  const pos = g.vs.map((v) => {
+    const inClause = g.vs.filter((u) => u.clause === v.clause);
+    const k = inClause.indexOf(v);
+    return { x: 70 + v.clause * colW, y: 40 + k * 70 + (3 - inClause.length) * 35 };
+  });
+  const W = 70 * 2 + (f.length - 1) * colW;
+  const inC = new Set(show && clique ? clique : []);
+  const assignment: Record<string, boolean> = {};
+  if (show && clique) clique.forEach((id) => (assignment[g.vs[id].lit.v] = !g.vs[id].lit.neg));
+  return (
+    <Panel title="3-CNF SAT → CLIQUE" legend={[["bg-violet", "one vertex per literal"], ["bg-mint", "a clique of size k"]]}>
+      <input aria-label="CNF formula" className={`${inputCls} w-full`} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
+      <svg viewBox={`0 0 ${W} 260`} className="w-full max-w-[560px] h-auto mx-auto" role="img" aria-label="Clique graph">
+        {g.edges.map(([a, b]) => {
+          const on = inC.has(a) && inC.has(b);
+          return <line key={`${a}-${b}`} x1={pos[a].x} y1={pos[a].y} x2={pos[b].x} y2={pos[b].y} className={on ? "stroke-mint" : "stroke-border"} strokeWidth={on ? 3.5 : 1} />;
+        })}
+        {f.map((_, ci) => (
+          <text key={ci} x={70 + ci * colW} y={252} textAnchor="middle" fontSize={11} className="fill-muted-foreground font-mono">
+            clause {ci + 1}
+          </text>
+        ))}
+        {g.vs.map((v, i) => (
+          <g key={v.id}>
+            <circle cx={pos[i].x} cy={pos[i].y} r={20} strokeWidth={2} className={inC.has(v.id) ? "fill-mint/30 stroke-mint" : "fill-card stroke-violet"} />
+            <text x={pos[i].x} y={pos[i].y} textAnchor="middle" dominantBaseline="central" fontSize={12} className="fill-current font-mono font-bold">
+              {litText(v.lit)}
+            </text>
+          </g>
+        ))}
+      </svg>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className={btn} onClick={() => setShow((s) => !s)}>
+          {show ? "Hide" : "Find"} a {f.length}-clique
+        </button>
+        <span className="font-mono text-xs text-muted-foreground">
+          {g.vs.length} vertices, {g.edges.length} edges, k = {f.length} clauses
+        </span>
+      </div>
+      {show && (
+        <p className={`text-sm font-semibold ${clique ? "text-mint" : "text-orange"}`}>
+          {clique
+            ? `Clique {${clique.map((id) => litText(g.vs[id].lit)).join(", ")}}: make each of those literals true (${Object.entries(assignment).map(([v, b]) => `${v} = ${T(b)}`).join(", ")}), and every clause is satisfied. Any variable not mentioned can be either.`
+            : `No ${f.length}-clique, so the formula is unsatisfiable.`}
+        </p>
+      )}
+    </Panel>
   );
 }
 

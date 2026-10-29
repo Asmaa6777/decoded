@@ -58,6 +58,7 @@ import AaGreedy from "@/content/advanced-algorithms/m3-02-greedy-algorithms.mdx"
 import AaMst from "@/content/advanced-algorithms/m3-03-minimum-spanning-trees.mdx";
 import AaHuffman from "@/content/advanced-algorithms/m3-04-huffman-and-activity-selection.mdx";
 import AaShortestPaths from "@/content/advanced-algorithms/m3-05-shortest-paths.mdx";
+import AaPNP from "@/content/advanced-algorithms/m4-01-p-and-np.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -275,6 +276,13 @@ export const courses: Course[] = [
           { slug: "minimum-spanning-trees", title: "Minimum Spanning Trees: Prim and Kruskal", duration: "20 min", Component: AaMst },
           { slug: "huffman-and-activity-selection", title: "Greedy Choice: Huffman Codes and Activity Selection", duration: "22 min", Component: AaHuffman },
           { slug: "shortest-paths", title: "Shortest Paths: Dijkstra's Algorithm", duration: "22 min", Component: AaShortestPaths },
+        ],
+      },
+      {
+        title: "Hard Problems",
+        blurb: "Problems that are easy to check but seem impossible to solve quickly, and the million-dollar question behind them.",
+        lessons: [
+          { slug: "p-and-np", title: "P, NP, NP-Hard and NP-Complete", duration: "20 min", Component: AaPNP },
         ],
       },
     ],

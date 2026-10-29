@@ -576,7 +576,10 @@ export type RBOp = { op: "insert" | "delete"; key: number };
 export function rbFrames(start: number[], ops: RBOp[]): Frame<RBState>[] {
   const t = new RBTree(start);
   t.frames.push({ state: { ...t.snap(), focus: [] }, line: 0, message: start.length ? `A red-black tree with ${start.length} keys.` : "An empty red-black tree.", stats: { nodes: t.nodes.size, rotations: 0, height: t.height() } });
-  for (const o of ops) (o.op === "insert" ? t.insert(o.key) : t.delete(o.key));
+  for (const o of ops) {
+    if (o.op === "insert") t.insert(o.key);
+    else t.delete(o.key);
+  }
   return t.frames;
 }
 
@@ -763,6 +766,77 @@ export function lcsFrames(A: string, B: string): Frame<DPState>[] {
   }
   frames.push({ state: { table: copyT(L), ...labels, trace, marks, answer: out }, line: 5, message: `LCS length ${L[m][n]}. Backtracing from the corner (diagonal on a match, otherwise towards the larger neighbour) spells "${out}". O(mn) time and memory.`, stats: {} });
   return frames;
+}
+
+/* ------------------------------ P and NP ------------------------------ */
+
+export type Literal = { v: string; neg: boolean };
+export type CNF = Literal[][];
+
+/** Parse "(a ∨ ¬b) ∧ (b ∨ c)". AND: ∧ ^ &; OR: ∨ | or a spaced "v"; NOT: ¬ ! ~. */
+export function parseCNF(text: string): CNF | null {
+  const clauses = text.split(/[∧^&]/).map((c) => c.replace(/[()]/g, "").trim());
+  if (!clauses.length || clauses.some((c) => !c)) return null; // a dangling ∧
+  const out: CNF = [];
+  for (const c of clauses) {
+    const lits = c.split(/\s*(?:∨|\||\s+v\s+)\s*/);
+    const clause: Literal[] = [];
+    for (const l of lits) {
+      if (!l.trim()) return null; // a dangling ∨
+      const m = l.trim().match(/^([¬!~]*)\s*([A-Za-z][A-Za-z0-9_]*)$/);
+      if (!m) return null;
+      clause.push({ v: m[2], neg: m[1].length % 2 === 1 });
+    }
+    if (!clause.length) return null;
+    out.push(clause);
+  }
+  return out;
+}
+
+export const cnfVars = (f: CNF) => [...new Set(f.flat().map((l) => l.v))].sort();
+export const litText = (l: Literal) => `${l.neg ? "¬" : ""}${l.v}`;
+export const clauseValue = (c: Literal[], a: Record<string, boolean>) => c.some((l) => a[l.v] !== l.neg);
+
+/** Every assignment, with each clause's value: the brute-force search through 2^n possibilities. */
+export function truthTable(f: CNF) {
+  const vars = cnfVars(f);
+  return Array.from({ length: 1 << vars.length }, (_, r) => {
+    const a: Record<string, boolean> = {};
+    vars.forEach((v, i) => (a[v] = !((r >> (vars.length - 1 - i)) & 1))); // T before F, like the slides
+    const clauses = f.map((c) => clauseValue(c, a));
+    return { a, clauses, sat: clauses.every(Boolean) };
+  });
+}
+
+export type CliqueVertex = { id: number; clause: number; lit: Literal };
+
+/** The 3-CNF → CLIQUE reduction: a vertex per literal, edges between compatible literals of different clauses. */
+export function cliqueGraph(f: CNF) {
+  const vs: CliqueVertex[] = [];
+  f.forEach((c, ci) => c.forEach((lit) => vs.push({ id: vs.length, clause: ci, lit })));
+  const edges: [number, number][] = [];
+  for (const a of vs) for (const b of vs) if (a.id < b.id && a.clause !== b.clause && !(a.lit.v === b.lit.v && a.lit.neg !== b.lit.neg)) edges.push([a.id, b.id]);
+  return { vs, edges };
+}
+
+/** Pick one vertex per clause so that all of them are pairwise connected (a k-clique), if there is one. */
+export function findClique(f: CNF): number[] | null {
+  const { vs, edges } = cliqueGraph(f);
+  const adj = new Set(edges.map(([a, b]) => `${a}-${b}`));
+  const ok = (a: number, b: number) => adj.has(`${Math.min(a, b)}-${Math.max(a, b)}`);
+  const byClause = f.map((_, ci) => vs.filter((v) => v.clause === ci).map((v) => v.id));
+  const pick: number[] = [];
+  const go = (ci: number): boolean => {
+    if (ci === f.length) return true;
+    for (const v of byClause[ci])
+      if (pick.every((p) => ok(p, v))) {
+        pick.push(v);
+        if (go(ci + 1)) return true;
+        pick.pop();
+      }
+    return false;
+  };
+  return go(0) ? pick : null;
 }
 
 /* ---------------------------- shortest paths ---------------------------- */

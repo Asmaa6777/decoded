@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES, dijkstraFrames } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES, dijkstraFrames, parseCNF, truthTable, findClique, cliqueGraph } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -266,6 +266,20 @@ describe("analysis helpers", () => {
     ], false, 0, ["A", "B", "C", "D", "E", "F", "G"]).at(-1)!.state;
     expect(tab.d).toEqual([0, 5, 3, 9, 7, 8, 6]);
     expect(tab.pi).toEqual([null, 0, 0, 4, 6, 4, 1]); // parents A A E G E B, as in the table
+  });
+
+  it("SAT tables and the CLIQUE reduction agree", () => {
+    const f = parseCNF("(a ∨ b) ∧ (a ∨ ¬b)")!;
+    expect(truthTable(f).map((r) => r.sat)).toEqual([true, true, false, false]); // the slide's table
+    expect(parseCNF("(a | !b) ^ (b)")).toEqual([[{ v: "a", neg: false }, { v: "b", neg: true }], [{ v: "b", neg: false }]]);
+    expect(parseCNF("(a ∨ )) ∧")).toBeNull();
+    const lec = parseCNF("(x1 ∨ ¬x2 ∨ x3) ∧ (¬x1 ∨ x2) ∧ (¬x2 ∨ x3)")!;
+    expect(cliqueGraph(lec).vs).toHaveLength(7);
+    expect(findClique(lec)).toHaveLength(3);
+    for (const text of ["(a) ∧ (¬a)", "(a ∨ b) ∧ (¬a ∨ b) ∧ (a ∨ ¬b) ∧ (¬a ∨ ¬b)", "(a ∨ b) ∧ (b ∨ ¬c)", "(x1 ∨ x2) ∧ (¬x1) ∧ (¬x2 ∨ x3)"]) {
+      const g = parseCNF(text)!;
+      expect(findClique(g) !== null).toBe(truthTable(g).some((r) => r.sat));
+    }
   });
 
   it("renders the analysis widgets", () => {
