@@ -286,6 +286,97 @@ export function fibByMatrix(n: number): { steps: FibSquareStep[]; result: M2; mu
   return { steps, result, multiplications: mults };
 }
 
+/* --------------------- Gauss (Karatsuba) multiply --------------------- */
+
+export type GaussCall = { a: bigint; b: bigint; depth: number; parts?: { aL: bigint; aR: bigint; bL: bigint; bR: bigint; half: number }; result?: bigint };
+export type GaussState = { calls: GaussCall[]; active: number };
+
+export const CPP_GAUSS = [
+  "long long gauss(long long a, long long b) {",
+  "    if (a < 10 || b < 10) return a * b;          // one digit: multiply directly",
+  "    int half = digits(max(a, b)) / 2;",
+  "    long long p = powerOf10(half);",
+  "    long long aL = a / p, aR = a % p;           // split each number in two",
+  "    long long bL = b / p, bR = b % p;",
+  "    long long x1 = gauss(aL, bL);",
+  "    long long x2 = gauss(aR, bR);",
+  "    long long x3 = gauss(aL + aR, bL + bR);",
+  "    return x1 * p * p + (x3 - x1 - x2) * p + x2;",
+  "}",
+];
+
+const digitCount = (x: bigint) => (x < 0n ? -x : x).toString().length;
+
+/** Gauss's three-multiplication trick, recursing until one of the numbers has a single digit. */
+export function gaussFrames(a0: bigint, b0: bigint): Frame<GaussState>[] {
+  const frames: Frame<GaussState>[] = [];
+  const calls: GaussCall[] = [];
+  let base = 0;
+  const snap = (active: number, line: number, message: string) =>
+    frames.push({ state: { calls: calls.map((c) => ({ ...c, parts: c.parts && { ...c.parts } })), active }, line, message, stats: { calls: calls.length, "1-digit mults": base } });
+
+  const go = (a: bigint, b: bigint, depth: number): bigint => {
+    calls.push({ a, b, depth });
+    const me = calls.length - 1;
+    if (a < 10n || b < 10n) {
+      base++;
+      calls[me].result = a * b;
+      snap(me, 1, `${a} × ${b}: a one-digit number, so multiply directly. = ${a * b}.`);
+      return a * b;
+    }
+    const half = Math.floor(Math.max(digitCount(a), digitCount(b)) / 2);
+    const p = 10n ** BigInt(half);
+    const parts = { aL: a / p, aR: a % p, bL: b / p, bR: b % p, half };
+    calls[me].parts = parts;
+    snap(me, 4, `Split at ${half} digit${half === 1 ? "" : "s"}: ${a} → ${parts.aL} | ${parts.aR}, and ${b} → ${parts.bL} | ${parts.bR}.`);
+    const x1 = go(parts.aL, parts.bL, depth + 1);
+    snap(me, 6, `x1 = aL·bL = ${x1}.`);
+    const x2 = go(parts.aR, parts.bR, depth + 1);
+    snap(me, 7, `x2 = aR·bR = ${x2}.`);
+    const x3 = go(parts.aL + parts.aR, parts.bL + parts.bR, depth + 1);
+    snap(me, 8, `x3 = (aL + aR)(bL + bR) = ${parts.aL + parts.aR} × ${parts.bL + parts.bR} = ${x3}. That's the only other multiplication we need.`);
+    const r = x1 * p * p + (x3 - x1 - x2) * p + x2;
+    calls[me].result = r;
+    snap(me, 9, `Combine: x1·10^${2 * half} + (x3 − x1 − x2)·10^${half} + x2 = ${x1}·10^${2 * half} + ${x3 - x1 - x2}·10^${half} + ${x2} = ${r}.`);
+    return r;
+  };
+
+  const r = go(a0, b0, 0);
+  const n = Math.max(digitCount(a0), digitCount(b0));
+  frames.push({
+    state: { calls: calls.map((c) => ({ ...c })), active: -1 },
+    line: 10,
+    message: `${a0} × ${b0} = ${r}, using ${base} one-digit multiplications. Grade-school multiplication of two ${n}-digit numbers needs ${n * n}.`,
+    stats: { calls: calls.length, "1-digit mults": base },
+  });
+  return frames;
+}
+
+export type Frac = [number, number]; // numerator, denominator
+
+const gcd = (x: number, y: number): number => (y === 0 ? x : gcd(y, x % y));
+
+/** "n", "n/3", "2n/9" */
+export function fracLabel([p, q]: Frac): string {
+  const g = gcd(p, q);
+  const [a, b] = [p / g, q / g];
+  return `${a === 1 ? "" : a}n${b === 1 ? "" : `/${b}`}`;
+}
+
+/**
+ * Recursion tree for T(n) = Σ T(fᵢ·n) + n^k: the subproblem sizes on each level, and each level's
+ * total cost as a multiple of n^k.
+ */
+export function unevenLevels(fracs: Frac[], k: number, depth: number): { sizes: Frac[]; cost: number }[] {
+  let level: Frac[] = [[1, 1]];
+  const out: { sizes: Frac[]; cost: number }[] = [];
+  for (let d = 0; d <= depth; d++) {
+    out.push({ sizes: level, cost: level.reduce((s, [p, q]) => s + Math.pow(p / q, k), 0) });
+    level = level.flatMap(([p, q]) => fracs.map(([fp, fq]) => [p * fp, q * fq] as Frac));
+  }
+  return out;
+}
+
 /* ------------------------- Master method ------------------------- */
 
 export type MasterCase = 1 | 2 | 3 | "gap";

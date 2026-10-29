@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, fibByMatrix, strassen, CPP_COUNT_ONES, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -497,6 +497,98 @@ export function MinMaxVisualizer({ input = [11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 1
           )}
         </div>
       )}
+    />
+  );
+}
+
+/* ------------------------ uneven recursion tree ------------------------ */
+
+/** Recursion tree for T(n) = Σ T(fᵢ·n) + n^k, with every node labelled by its cost. */
+export function RecursionTreeDiagram({ fracs, k = 1, depth = 3, title }: { fracs: Frac[]; k?: number; depth?: number; title?: string }) {
+  const levels = useMemo(() => unevenLevels(fracs, k, depth), [fracs, k, depth]);
+  const cost = (f: Frac) => (k === 0 ? "c" : k === 1 ? `c·${fracLabel(f)}` : `c(${fracLabel(f)})${k === 2 ? "²" : `^${k}`}`);
+  const rec = `T(n) = ${fracs.map((f) => `T(${fracLabel(f)})`).join(" + ")} + c${k === 0 ? "" : k === 1 ? "n" : k === 2 ? "n²" : `n^${k}`}`;
+  return (
+    <Panel title={title ?? `Recursion tree: ${rec}`} legend={[["bg-violet", "level total"]]}>
+      <div className="overflow-x-auto">
+        <div className="flex flex-col gap-3 min-w-fit">
+          {levels.map((l, d) => (
+            <div key={d} className="flex items-center gap-4">
+              <span className="w-14 shrink-0 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">level {d}</span>
+              <div className="flex-1 flex justify-center gap-1.5 flex-wrap">
+                {l.sizes.length <= 16 ? (
+                  l.sizes.map((f, i) => (
+                    <span key={i} className="px-1.5 py-1 border border-border rounded-sm font-mono text-[11px] whitespace-nowrap">
+                      {cost(f)}
+                    </span>
+                  ))
+                ) : (
+                  <span className="font-mono text-xs text-muted-foreground">{l.sizes.length} nodes …</span>
+                )}
+              </div>
+              <span className="w-32 shrink-0 text-right font-mono text-xs">
+                = <span className="text-violet font-bold">{fmtExp(l.cost)}</span> · c{k === 0 ? "" : k === 1 ? "n" : k === 2 ? "n²" : `n^${k}`}
+              </span>
+            </div>
+          ))}
+          <div className="text-center font-mono text-xs text-muted-foreground">⋮</div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/* ---------------------- Gauss multiplication ---------------------- */
+
+export function GaussMultiply({ a: a0 = 1234, b: b0 = 5678 }: { a?: number; b?: number }) {
+  const [v, setV] = useState({ a: a0, b: b0 });
+  const [text, setText] = useState({ a: String(a0), b: String(b0) });
+  const frames = useMemo(() => gaussFrames(BigInt(v.a), BigInt(v.b)), [v]);
+  const apply = () => {
+    const a = Number(text.a);
+    const b = Number(text.b);
+    if (Number.isInteger(a) && Number.isInteger(b) && a >= 0 && b >= 0 && a < 1e8 && b < 1e8) setV({ a, b });
+  };
+  return (
+    <Stepper
+      title="Gauss's trick: 3 multiplications instead of 4"
+      frames={frames}
+      code={CPP_GAUSS}
+      codeLabel="C++"
+      legend={[["bg-sky", "running now"], ["bg-mint", "returned"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-1 font-mono text-xs max-h-[340px] overflow-y-auto">
+          {s.calls.map((c, i) => (
+            <div
+              key={i}
+              className={`flex flex-wrap items-baseline gap-x-3 px-2.5 py-1 border rounded-sm transition-colors ${
+                i === s.active ? "border-sky bg-sky/15" : c.result !== undefined ? "border-mint/50 bg-mint/5" : "border-border"
+              }`}
+              style={{ marginLeft: c.depth * 18 }}
+            >
+              <span className="font-semibold">
+                {c.a.toString()} × {c.b.toString()}
+              </span>
+              {c.parts && (
+                <span className="text-muted-foreground">
+                  split {c.parts.aL.toString()}|{c.parts.aR.toString()} · {c.parts.bL.toString()}|{c.parts.bR.toString()}
+                </span>
+              )}
+              {c.result !== undefined && <span className="text-mint">= {c.result.toString()}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+          <input aria-label="a" className={`${inputCls} w-28`} value={text.a} inputMode="numeric" onChange={(e) => setText((t) => ({ ...t, a: e.target.value }))} onKeyDown={(e) => e.key === "Enter" && apply()} />
+          ×
+          <input aria-label="b" className={`${inputCls} w-28`} value={text.b} inputMode="numeric" onChange={(e) => setText((t) => ({ ...t, b: e.target.value }))} onKeyDown={(e) => e.key === "Enter" && apply()} />
+          <button type="button" className={btn} onClick={apply}>
+            Multiply
+          </button>
+        </div>
+      }
     />
   );
 }

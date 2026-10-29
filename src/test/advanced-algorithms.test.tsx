@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -27,6 +27,8 @@ describe("Advanced Algorithms & Analysis course", () => {
       const Lesson = lesson.Component;
       const { container, unmount } = render(<Lesson />);
       expect(container.querySelector("h1")?.textContent).toBe(lesson.title);
+      const bad = [...container.querySelectorAll(".katex-error")].map((e) => e.getAttribute("title") ?? e.textContent);
+      expect(bad, "math that KaTeX could not render").toEqual([]);
       unmount();
     });
   }
@@ -112,6 +114,16 @@ describe("analysis helpers", () => {
     expect(fibByMatrix(13).result[0][1]).toBe(233n);
     expect(fibByMatrix(100).result[0][1]).toBe(354224848179261915075n);
     expect(fibByMatrix(1).result[0][1]).toBe(1n);
+  });
+
+  it("multiplies with Gauss's trick and builds uneven recursion trees", () => {
+    const last = gaussFrames(1234n, 5678n).at(-1)!;
+    expect(last.state.calls[0].result).toBe(7006652n);
+    expect(gaussFrames(99999999n, 99999999n).at(-1)!.state.calls[0].result).toBe(99999999n * 99999999n);
+    const lv = unevenLevels([[1, 3], [2, 3]], 1, 2);
+    expect(lv.map((l) => l.cost)).toEqual([1, 1, 1]);
+    expect(lv[2].sizes.map(fracLabel)).toEqual(["n/9", "2n/9", "2n/9", "4n/9"]);
+    expect(unevenLevels([[1, 4], [1, 2]], 2, 1)[1].cost).toBeCloseTo(5 / 16);
   });
 
   it("renders the analysis widgets", () => {

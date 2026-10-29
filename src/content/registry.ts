@@ -42,6 +42,7 @@ import AaRecurrences from "@/content/advanced-algorithms/m0-04-solving-recurrenc
 import AaLabBits from "@/content/advanced-algorithms/m0-05-lab-bit-manipulation.mdx";
 import AaLabAnalysis from "@/content/advanced-algorithms/m0-06-lab-algorithm-analysis.mdx";
 import AaDivideConquer from "@/content/advanced-algorithms/m1-01-divide-and-conquer.mdx";
+import AaLabDivideConquer from "@/content/advanced-algorithms/m1-02-lab-divide-and-conquer.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -231,6 +232,7 @@ export const courses: Course[] = [
         blurb: "Split, solve, combine: from binary search to Strassen, and the sorting algorithms built on it.",
         lessons: [
           { slug: "divide-and-conquer", title: "Divide and Conquer", duration: "20 min", Component: AaDivideConquer },
+          { slug: "lab-divide-and-conquer", title: "Lab: Recursion Trees and Gauss Multiplication", duration: "18 min", kind: "practical", Component: AaLabDivideConquer },
         ],
       },
     ],
