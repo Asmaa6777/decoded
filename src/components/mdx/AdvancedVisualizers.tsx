@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -829,6 +829,114 @@ export function RotationDemo() {
         <span className="font-mono text-xs text-muted-foreground">in-order is always α, A, β, B, γ</span>
       </div>
     </Panel>
+  );
+}
+
+/* ------------------------------ skip lists ------------------------------ */
+
+const SKIP_KEYS = [2, 10, 15, 16, 31, 71, 86, 91, 96];
+const SKIP_RANDOM_HEIGHTS = [1, 2, 3, 1, 4, 1, 2, 1, 3];
+const SKIP_DEFAULT_OPS: SkipOp[] = [{ op: "search", key: 71 }, { op: "search", key: 96 }, { op: "insert", key: 87 }, { op: "delete", key: 87 }];
+
+/** Search, insert (with coin flips) and delete in a skip list, level by level. */
+export function SkipListVisualizer({ ops: ops0 = SKIP_DEFAULT_OPS, layout: layout0 = "random" }: { ops?: SkipOp[]; layout?: "perfect" | "random" }) {
+  const [layout, setLayout] = useState(layout0);
+  const [ops, setOps] = useState(ops0);
+  const [text, setText] = useState("");
+  const [seed, setSeed] = useState(11);
+  const [startAt, setStartAt] = useState(0);
+  const heights = useMemo(() => (layout === "perfect" ? perfectHeights(SKIP_KEYS.length) : SKIP_RANDOM_HEIGHTS), [layout]);
+  const frames = useMemo(() => skipFrames(SKIP_KEYS, heights, ops, seed), [heights, ops, seed]);
+  const add = (op: SkipOp["op"]) => {
+    const key = Number(text);
+    if (text.trim() === "" || !Number.isInteger(key)) return;
+    setStartAt(frames.length);
+    setOps((o) => [...o, { op, key }]);
+    setText("");
+  };
+  return (
+    <Stepper
+      title={layout === "perfect" ? "Perfect skip list" : "Randomized skip list"}
+      frames={frames}
+      startAt={startAt}
+      code={SKIP_CODE}
+      codeLabel="Pseudocode"
+      legend={[["bg-neon", "search path"], ["bg-sky", "current"], ["bg-mint", "found / inserted"]]}
+      render={(s) => {
+        const levels = Math.max(1, ...s.towers.map((t) => t.height));
+        const cols = s.towers.length + 2; // header + keys + sentinel
+        const onPath = (c: number, lv: number) => s.path.some(([pc, pl]) => pc === c && pl === lv);
+        return (
+          <div className="overflow-x-auto">
+            <div className="inline-grid gap-x-1 gap-y-1.5 font-mono text-xs" style={{ gridTemplateColumns: `auto repeat(${cols}, 38px)` }}>
+              {Array.from({ length: levels }, (_, r) => levels - 1 - r).map((lv) => (
+                <div key={lv} className="contents">
+                  <span className="pr-2 self-center text-right text-[10px] uppercase tracking-widest text-muted-foreground">L{lv}</span>
+                  {Array.from({ length: cols }, (_, c) => {
+                    const col = c - 1; // -1 header, towers.length sentinel
+                    const isHeader = col === -1;
+                    const isSentinel = col === s.towers.length;
+                    const t = !isHeader && !isSentinel ? s.towers[col] : null;
+                    const present = isHeader || isSentinel || (t && t.height > lv);
+                    if (!present) return <span key={c} className="h-8 flex items-center justify-center text-border">─</span>;
+                    const current = s.at === col && s.level === lv;
+                    const cls =
+                      s.found === col
+                        ? "border-mint bg-mint/25 font-bold"
+                        : current
+                          ? "border-sky bg-sky/25 font-bold"
+                          : onPath(col, lv)
+                            ? "border-neon bg-neon/15"
+                            : "border-border";
+                    return (
+                      <span key={c} className={`h-8 flex items-center justify-center border rounded-sm transition-colors ${cls} ${isHeader || isSentinel ? "text-muted-foreground" : ""}`}>
+                        {isHeader ? "H" : isSentinel ? "∞" : t!.key}
+                      </span>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+            {s.flips && <div className="mt-3 font-mono text-xs">coin flips: <span className="text-violet font-bold tracking-widest">{s.flips}</span></div>}
+          </div>
+        );
+      }}
+      inputs={
+        <div className="flex flex-wrap items-center gap-2">
+          <Toggle<"perfect" | "random">
+            value={layout}
+            onChange={(v) => {
+              setStartAt(0);
+              setLayout(v);
+            }}
+            options={[
+              ["perfect", "Perfect"],
+              ["random", "Randomized"],
+            ]}
+          />
+          <input aria-label="key" className={`${inputCls} w-20`} value={text} inputMode="numeric" placeholder="key" onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add("search")} />
+          <button type="button" className={btn} onClick={() => add("search")}>
+            Search
+          </button>
+          <button type="button" className={btn} onClick={() => add("insert")}>
+            Insert
+          </button>
+          <button type="button" className={btn} onClick={() => add("delete")}>
+            Delete
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => {
+              setStartAt(0);
+              setSeed((x) => x + 1);
+            }}
+          >
+            New coin flips
+          </button>
+        </div>
+      }
+    />
   );
 }
 

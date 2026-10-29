@@ -52,6 +52,7 @@ import AaLabHashing from "@/content/advanced-algorithms/m2-03-lab-hashing.mdx";
 import AaBalancedTrees from "@/content/advanced-algorithms/m2-04-balanced-search-trees.mdx";
 import AaRedBlackOps from "@/content/advanced-algorithms/m2-05-red-black-insert-delete.mdx";
 import AaAugmenting from "@/content/advanced-algorithms/m2-06-augmenting-data-structures.mdx";
+import AaSkipLists from "@/content/advanced-algorithms/m2-07-skip-lists.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -257,6 +258,7 @@ export const courses: Course[] = [
           { slug: "balanced-search-trees", title: "Balanced Search Trees and Red-Black Trees", duration: "16 min", Component: AaBalancedTrees },
           { slug: "red-black-insert-delete", title: "Red-Black Trees: Insertion and Deletion", duration: "20 min", Component: AaRedBlackOps },
           { slug: "augmenting-data-structures", title: "Augmenting Data Structures", duration: "18 min", Component: AaAugmenting },
+          { slug: "skip-lists", title: "Skip Lists", duration: "16 min", Component: AaSkipLists },
         ],
       },
     ],

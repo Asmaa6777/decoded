@@ -580,6 +580,116 @@ export function rbFrames(start: number[], ops: RBOp[]): Frame<RBState>[] {
   return t.frames;
 }
 
+/* ------------------------------ skip lists ------------------------------ */
+
+export type Tower = { key: number; height: number };
+/** `at` is the column being looked at (-1 = header), on `level`; `path` is every [column, level] visited. */
+export type SkipState = { towers: Tower[]; level?: number; at?: number; path: [number, number][]; found?: number; flips?: string };
+export type SkipOp = { op: "search" | "insert" | "delete"; key: number };
+
+export const SKIP_CODE = [
+  "find(k):",
+  "  start at the header, on the top level",
+  "  if k = key: done!",
+  "  if k < next key (or next is the sentinel ∞): go down a level",
+  "  if k ≥ next key: go right",
+  "",
+  "insert(k):",
+  "  find k; insert the node into level 0",
+  "  i = 1",
+  "  while FLIP() == \"heads\": insert the node into level i; i++",
+  "",
+  "delete(k):",
+  "  find k; unlink it from every level it is on",
+];
+
+/** Heights of a perfect skip list: the i-th key (1-based) reaches 1 + (trailing zeros of i) levels. */
+export function perfectHeights(n: number): number[] {
+  return Array.from({ length: n }, (_, i) => {
+    let h = 1;
+    let v = i + 1;
+    while (v % 2 === 0) {
+      h++;
+      v /= 2;
+    }
+    return h;
+  });
+}
+
+export function skipFrames(keys: number[], heights: number[], ops: SkipOp[], seed = 11): Frame<SkipState>[] {
+  let towers: Tower[] = keys.map((key, i) => ({ key, height: heights[i] ?? 1 })).sort((a, b) => a.key - b.key);
+  const frames: Frame<SkipState>[] = [];
+  const flip = rng(seed);
+  let comparisons = 0;
+  const top = () => Math.max(1, ...towers.map((t) => t.height));
+  const push = (s: Partial<SkipState>, line: number, message: string) =>
+    frames.push({ state: { towers: towers.map((t) => ({ ...t })), path: [], ...s }, line, message, stats: { comparisons, levels: top() } });
+
+  push({}, 1, `${towers.length} keys on ${top()} levels. The header and the ∞ sentinel are on every level.`);
+
+  /** Walk down to level 0, returning the last column (< k) on each level; records frames when `msg`. */
+  const walk = (k: number, label: string, path: [number, number][]) => {
+    const preds: number[] = [];
+    let col = -1;
+    for (let lv = top() - 1; lv >= 0; lv--) {
+      for (;;) {
+        let nxt = col + 1;
+        while (nxt < towers.length && towers[nxt].height <= lv) nxt++;
+        comparisons++;
+        const nk = nxt < towers.length ? towers[nxt].key : Infinity;
+        path.push([col, lv]);
+        if (nk === k && label === "search") {
+          path.push([nxt, lv]);
+          push({ level: lv, at: nxt, path: [...path], found: nxt }, 2, `Level ${lv}: ${k} = ${nk}. Found it!`);
+          return { preds, foundAt: nxt };
+        }
+        if (k < nk || (label !== "search" && k === nk)) {
+          const why = k === nk ? `the next key is ${k} itself; stop just before it, since we need its predecessor on every level` : `${k} < next key ${nk === Infinity ? "∞" : nk}`;
+          push({ level: lv, at: col, path: [...path] }, 3, `Level ${lv}: ${why}, so go down a level.`);
+          break;
+        }
+        col = nxt;
+        push({ level: lv, at: col, path: [...path] }, 4, `Level ${lv}: ${k} ≥ next key ${nk}, so go right to ${nk}.`);
+      }
+      preds[lv] = col;
+    }
+    return { preds, foundAt: -1 };
+  };
+
+  for (const o of ops) {
+    const path: [number, number][] = [];
+    if (o.op === "search") {
+      const r = walk(o.key, "search", path);
+      if (r.foundAt < 0) push({ path }, 3, `Fell off the bottom level: ${o.key} is not in the skip list.`);
+    } else if (o.op === "insert") {
+      if (towers.some((t) => t.key === o.key)) continue;
+      walk(o.key, "insert", path);
+      let h = 1;
+      let flips = "";
+      while (h < 8) {
+        const heads = flip() < 0.5;
+        flips += heads ? "H" : "T";
+        if (!heads) break;
+        h++;
+      }
+      towers = [...towers, { key: o.key, height: h }].sort((a, b) => a.key - b.key);
+      const at = towers.findIndex((t) => t.key === o.key);
+      push({ at, path, found: at, flips }, 9, `Insert ${o.key} into level 0 after the last node we visited. Coin flips: ${flips.split("").join(", ")}, so it is promoted ${h - 1} time${h === 2 ? "" : "s"} and stands on ${h} level${h === 1 ? "" : "s"}.`);
+    } else {
+      const idx = towers.findIndex((t) => t.key === o.key);
+      walk(o.key, "delete", path);
+      if (idx < 0) {
+        push({ path }, 12, `${o.key} is not in the skip list.`);
+        continue;
+      }
+      push({ at: idx, path, found: idx }, 12, `Found ${o.key}. Unlink it from all ${towers[idx].height} of its levels, like deleting from ${towers[idx].height} linked lists.`);
+      towers = towers.filter((_, i) => i !== idx);
+      push({ path: [] }, 12, `${o.key} is gone. Nothing else moves.`);
+    }
+  }
+  return frames;
+}
+
 /* ---------------------- augmented data structures ---------------------- */
 
 /** A small fixed tree for the augmentation examples. `lo`/`hi` make it an interval tree. */

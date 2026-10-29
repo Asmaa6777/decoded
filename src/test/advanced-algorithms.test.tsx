@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -40,7 +40,7 @@ describe("Advanced Algorithms & Analysis course", () => {
     expect(files.length).toBe(flattenLessons(course).length);
     for (const banned of [
       "cairo", "university", "faculty", "lecturer", "instructor", "basheer", "youssef", "kamal", "ramly",
-      "leiserson", "demaine", "luebke", "copyright", "©", "cs214", "fall 2026", "dr.", "prof.", "phd",
+      "leiserson", "demaine", "luebke", "cmsc", "copyright", "©", "cs214", "fall 2026", "dr.", "prof.", "phd",
     ]) {
       expect(all, `found "${banned}"`).not.toContain(banned);
     }
@@ -213,6 +213,18 @@ describe("analysis helpers", () => {
     expect(none.none).toBe(true);
     expect(none.path).toEqual(["17,19", "5,11", "15,18"]);
     expect(layoutAug(INTERVAL_TREE).find((n) => n.id === "5,11")!.extra).toBe("m=18");
+  });
+
+  it("skip lists search, insert and delete", () => {
+    const keys = [2, 10, 15, 16, 31, 71, 86, 91, 96];
+    expect(perfectHeights(8)).toEqual([1, 2, 1, 3, 1, 2, 1, 4]);
+    const f = skipFrames(keys, perfectHeights(keys.length), [
+      { op: "search", key: 71 }, { op: "search", key: 50 }, { op: "insert", key: 87 }, { op: "search", key: 87 }, { op: "delete", key: 87 },
+    ]);
+    expect(f.some((x) => /Found it!/.test(x.message) && x.state.towers[x.state.found!].key === 71)).toBe(true);
+    expect(f.some((x) => /50 is not in the skip list/.test(x.message))).toBe(true);
+    expect(f.some((x) => /Level \d: 87 = 87\. Found it!/.test(x.message))).toBe(true);
+    expect(f.at(-1)!.state.towers.map((t) => t.key)).toEqual(keys);
   });
 
   it("renders the analysis widgets", () => {
