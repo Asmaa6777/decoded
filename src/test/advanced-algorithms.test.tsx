@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -152,6 +152,21 @@ describe("analysis helpers", () => {
     const rs = radixSortFrames([329, 457, 657, 839, 436, 720, 355]);
     expect(rs[1].state.rows).toEqual([720, 355, 436, 457, 657, 329, 839]);
     expect(rs.at(-1)!.state.rows).toEqual([329, 355, 436, 457, 657, 720, 839]);
+  });
+
+  it("selects every rank correctly, and the median of medians splits well", () => {
+    const a = [6, 10, 13, 5, 8, 3, 2, 11];
+    const sorted = [...a].sort((x, y) => x - y);
+    for (let i = 1; i <= a.length; i++) {
+      for (const r of [false, true]) {
+        const last = selectFrames(a, i, r).at(-1)!;
+        expect(last.state.array[last.state.found!]).toBe(sorted[i - 1]);
+      }
+    }
+    const nums = Array.from({ length: 35 }, (_, i) => (i * 17) % 101);
+    const { x, guaranteedEach } = medianOfMedians(nums);
+    expect(nums.filter((v) => v <= x).length).toBeGreaterThanOrEqual(guaranteedEach);
+    expect(nums.filter((v) => v >= x).length).toBeGreaterThanOrEqual(guaranteedEach);
   });
 
   it("renders the analysis widgets", () => {

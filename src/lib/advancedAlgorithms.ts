@@ -309,6 +309,90 @@ export function quicksortFrames(input: number[], randomized = false, seed = 7): 
   return frames;
 }
 
+/* ------------------------- order statistics ------------------------- */
+
+export type SelectState = ArrayState & { want: number; low?: [number, number]; high?: [number, number] };
+
+export const CPP_SELECT = [
+  "int randSelect(int A[], int p, int q, int i) {  // i-th smallest of A[p..q]",
+  "    if (p == q) return A[p];",
+  "    int r = randPartition(A, p, q);",
+  "    int k = r - p + 1;                         // k = rank of A[r]",
+  "    if (i == k) return A[r];",
+  "    if (i < k)",
+  "        return randSelect(A, p, r - 1, i);",
+  "    else",
+  "        return randSelect(A, r + 1, q, i - k);",
+  "}",
+];
+
+/** RAND-SELECT from the lecture: partition, then recurse into the one side that holds the answer. */
+export function selectFrames(input: number[], want: number, randomized = false, seed = 3): Frame<SelectState>[] {
+  const A = [...input];
+  const frames: Frame<SelectState>[] = [];
+  const rand = rng(seed);
+  let comparisons = 0;
+  const push = (s: Partial<SelectState>, line: number, message: string, i: number) =>
+    frames.push({ state: { array: [...A], want: i, ...s }, line, message, stats: { comparisons } });
+
+  let p = 0;
+  let q = A.length - 1;
+  let i = want;
+  push({ range: [p, q] }, 0, `Find the ${want}${ord(want)} smallest of ${A.length} numbers, without sorting all of them.`, i);
+  for (;;) {
+    if (p === q) {
+      push({ range: [p, q], found: p }, 1, `Only one element left, so it's the answer: ${A[p]}.`, i);
+      break;
+    }
+    if (randomized) {
+      const k = p + Math.floor(rand() * (q - p + 1));
+      [A[p], A[k]] = [A[k], A[p]];
+    }
+    const x = A[p];
+    let m = p;
+    for (let j = p + 1; j <= q; j++) {
+      comparisons++;
+      if (A[j] <= x) {
+        m++;
+        [A[m], A[j]] = [A[j], A[m]];
+      }
+    }
+    [A[p], A[m]] = [A[m], A[p]];
+    const r = m;
+    const k = r - p + 1;
+    push({ range: [p, q], pivot: r, low: [p, r - 1], high: [r + 1, q] }, 3, `Partition A[${p}..${q}] around ${x}. It lands at index ${r}, so it is the ${k}${ord(k)} smallest of this piece.`, i);
+    if (i === k) {
+      push({ range: [p, q], found: r }, 4, `We wanted rank ${i}, and the pivot has rank ${k}. Found it: ${A[r]}.`, i);
+      break;
+    }
+    if (i < k) {
+      push({ range: [p, r - 1], low: [p, r - 1] }, 6, `${i} < ${k}: the answer is in the lower part. Keep looking for the ${i}${ord(i)} smallest there, and throw the rest away.`, i);
+      q = r - 1;
+    } else {
+      push({ range: [r + 1, q], high: [r + 1, q] }, 8, `${i} > ${k}: the answer is in the upper part. The ${k} elements up to the pivot are all smaller, so look for the ${i} − ${k} = ${i - k}${ord(i - k)} smallest there.`, i);
+      p = r + 1;
+      i -= k;
+    }
+  }
+  return frames;
+}
+
+function ord(n: number) {
+  const t = n % 100;
+  if (t >= 11 && t <= 13) return "th";
+  return ["th", "st", "nd", "rd"][n % 10] ?? "th";
+}
+
+/** Groups of 5, each sorted, with the groups ordered by their medians: the picture from the lecture. */
+export function medianOfMedians(nums: number[]) {
+  const groups: number[][] = [];
+  for (let g = 0; g + 5 <= nums.length; g += 5) groups.push(nums.slice(g, g + 5).sort((a, b) => a - b));
+  groups.sort((a, b) => a[2] - b[2]);
+  const x = groups[Math.floor((groups.length - 1) / 2)][2];
+  const pivotCol = Math.floor((groups.length - 1) / 2);
+  return { groups, x, pivotCol, guaranteedEach: 3 * Math.floor(nums.length / 10) };
+}
+
 /* --------------------------- decision tree --------------------------- */
 
 /** Node of the lecture's decision tree for sorting ⟨a1, a2, a3⟩: an i:j comparison, or a leaf permutation. */

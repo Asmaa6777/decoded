@@ -45,6 +45,7 @@ import AaDivideConquer from "@/content/advanced-algorithms/m1-01-divide-and-conq
 import AaLabDivideConquer from "@/content/advanced-algorithms/m1-02-lab-divide-and-conquer.mdx";
 import AaQuicksort from "@/content/advanced-algorithms/m1-03-quicksort.mdx";
 import AaLowerBounds from "@/content/advanced-algorithms/m1-04-sorting-lower-bounds.mdx";
+import AaOrderStatistics from "@/content/advanced-algorithms/m1-05-order-statistics.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -237,6 +238,7 @@ export const courses: Course[] = [
           { slug: "lab-divide-and-conquer", title: "Lab: Recursion Trees and Gauss Multiplication", duration: "18 min", kind: "practical", Component: AaLabDivideConquer },
           { slug: "quicksort", title: "Quicksort and Randomized Quicksort", duration: "20 min", Component: AaQuicksort },
           { slug: "sorting-lower-bounds", title: "Sorting Lower Bounds and Linear-Time Sorting", duration: "20 min", Component: AaLowerBounds },
+          { slug: "order-statistics", title: "Order Statistics: Finding the i-th Smallest", duration: "18 min", Component: AaOrderStatistics },
         ],
       },
     ],

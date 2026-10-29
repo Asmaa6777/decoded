@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -664,6 +664,100 @@ export function QuicksortVisualizer({ initial = [6, 10, 13, 5, 8, 3, 2, 11], ran
         </div>
       }
     />
+  );
+}
+
+/* ------------------------- order statistics ------------------------- */
+
+export function SelectVisualizer({ initial = [6, 10, 13, 5, 8, 3, 2, 11], want = 7 }: { initial?: number[]; want?: number }) {
+  const [i, setI] = useState(want);
+  const [mode, setMode] = useState<"first" | "random">("first");
+  const frames = useMemo(() => selectFrames(initial, i, mode === "random"), [initial, i, mode]);
+  return (
+    <Stepper
+      title={`Select the ${i}${i === 1 ? "st" : i === 2 ? "nd" : i === 3 ? "rd" : "th"} smallest`}
+      frames={frames}
+      code={CPP_SELECT}
+      codeLabel="C++"
+      legend={[["bg-violet", "pivot"], ["bg-mint", "answer"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-3">
+          <ArrayCells s={s} />
+          <div className="grid gap-1 font-mono text-[10px]" style={{ gridTemplateColumns: `repeat(${s.array.length}, minmax(34px, 1fr))` }}>
+            {s.array.map((_, j) => {
+              const lo = s.low && j >= s.low[0] && j <= s.low[1];
+              const hi = s.high && j >= s.high[0] && j <= s.high[1];
+              return (
+                <div key={j} className={`text-center border-t-2 pt-0.5 ${s.pivot === j ? "border-violet text-violet" : lo ? "border-sky text-sky" : hi ? "border-orange text-orange" : "border-transparent"}`}>
+                  {s.pivot === j ? "pivot" : lo ? "≤" : hi ? "≥" : ""}
+                </div>
+              );
+            })}
+          </div>
+          <div className="font-mono text-xs text-muted-foreground">
+            looking for rank <span className="text-foreground font-bold">{s.want}</span> inside the bright part
+          </div>
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+          <label className="inline-flex items-center gap-2">
+            i =
+            <select value={i} onChange={(e) => setI(Number(e.target.value))} className="bg-transparent border border-border rounded-sm px-2 py-1.5 text-foreground">
+              {initial.map((_, k) => (
+                <option key={k} value={k + 1}>
+                  {k + 1}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Toggle<"first" | "random">
+            value={mode}
+            onChange={setMode}
+            options={[
+              ["first", "Pivot = A[p]"],
+              ["random", "Random pivot"],
+            ]}
+          />
+        </div>
+      }
+    />
+  );
+}
+
+/** The groups-of-5 picture: columns are sorted groups, ordered by their medians; x is the median of medians. */
+export function MedianOfMediansGrid({ input }: { input?: number[] }) {
+  const nums = useMemo(
+    () => input ?? [12, 47, 3, 88, 25, 61, 9, 34, 70, 18, 53, 1, 95, 40, 27, 66, 14, 81, 5, 58, 30, 76, 22, 49, 91, 37, 7, 63, 84, 16, 44, 99, 28, 72, 11],
+    [input],
+  );
+  const { groups, x, pivotCol, guaranteedEach } = useMemo(() => medianOfMedians(nums), [nums]);
+  const cls = (c: number, r: number) => {
+    if (c === pivotCol && r === 2) return "border-violet bg-violet/30 font-bold";
+    if (c <= pivotCol && r <= 2) return "border-sky bg-sky/15";
+    if (c >= pivotCol && r >= 2) return "border-orange bg-orange/15";
+    return "border-border text-muted-foreground";
+  };
+  return (
+    <Panel title="Choosing the pivot: the median of medians" legend={[["bg-violet", "x"], ["bg-sky", "surely ≤ x"], ["bg-orange", "surely ≥ x"]]}>
+      <div className="overflow-x-auto">
+        <div className="inline-grid gap-1" style={{ gridTemplateColumns: `auto repeat(${groups.length}, 40px)` }}>
+          {[0, 1, 2, 3, 4].map((r) => (
+            <div key={r} className="contents">
+              <span className="pr-2 self-center text-right font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{r === 0 ? "lesser" : r === 2 ? "median" : r === 4 ? "greater" : ""}</span>
+              {groups.map((g, c) => (
+                <span key={c} className={`h-9 flex items-center justify-center font-mono text-sm border rounded-sm ${cls(c, r)}`}>
+                  {g[r]}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        Each column is a group of 5, sorted from top to bottom. The columns are arranged by their medians. x = <b className="text-violet">{x}</b> is the median of the {groups.length} medians. Everything in the sky corner is ≤ x, because it's ≤ a median that is ≤ x. That's at least 3⌊n/10⌋ = {guaranteedEach} elements, and the same number are surely ≥ x.
+      </p>
+    </Panel>
   );
 }
 
