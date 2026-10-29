@@ -38,6 +38,7 @@ import AdaFinalQuiz from "@/content/algorithm-design-and-analysis/m4-03-final-qu
 import AaAnalysis from "@/content/advanced-algorithms/m0-01-analysis-of-algorithms.mdx";
 import AaCountingOperations from "@/content/advanced-algorithms/m0-02-every-worst-average-best.mdx";
 import AaAsymptotic from "@/content/advanced-algorithms/m0-03-asymptotic-notation.mdx";
+import AaRecurrences from "@/content/advanced-algorithms/m0-04-solving-recurrences.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -217,6 +218,7 @@ export const courses: Course[] = [
           { slug: "analysis-of-algorithms", title: "What Is Analysis of Algorithms?", duration: "14 min", Component: AaAnalysis },
           { slug: "counting-the-basic-operation", title: "Counting the Basic Operation", duration: "14 min", Component: AaCountingOperations },
           { slug: "asymptotic-notation", title: "Complexity and Asymptotic Notation", duration: "18 min", Component: AaAsymptotic },
+          { slug: "solving-recurrences", title: "Solving Recurrences", duration: "18 min", Component: AaRecurrences },
         ],
       },
     ],
