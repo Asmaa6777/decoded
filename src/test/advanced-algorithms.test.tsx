@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -200,6 +200,19 @@ describe("analysis helpers", () => {
     const c = doublingCosts(10).map((x) => x.cost);
     expect(c).toEqual([1, 2, 3, 1, 5, 1, 1, 1, 9, 1]);
     for (const n of [1, 5, 17, 64, 1000]) expect(doublingCosts(n).reduce((t, x) => t + x.cost, 0)).toBeLessThanOrEqual(3 * n);
+  });
+
+  it("OS-SELECT and INTERVAL-SEARCH follow the lecture's paths", () => {
+    const sel = osSelectFrames(OS_TREE, 5).at(-1)!.state;
+    expect(sel.path).toEqual(["M", "C", "F", "H"]);
+    expect(sel.found).toBe("H");
+    const keys = layoutAug(OS_TREE).map((n) => n.id); // in-order
+    keys.forEach((k, i) => expect(osSelectFrames(OS_TREE, i + 1).at(-1)!.state.found).toBe(k));
+    expect(intervalSearchFrames(INTERVAL_TREE, 14, 16).at(-1)!.state.found).toBe("15,18");
+    const none = intervalSearchFrames(INTERVAL_TREE, 12, 14).at(-1)!.state;
+    expect(none.none).toBe(true);
+    expect(none.path).toEqual(["17,19", "5,11", "15,18"]);
+    expect(layoutAug(INTERVAL_TREE).find((n) => n.id === "5,11")!.extra).toBe("m=18");
   });
 
   it("renders the analysis widgets", () => {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -829,6 +829,85 @@ export function RotationDemo() {
         <span className="font-mono text-xs text-muted-foreground">in-order is always α, A, β, B, γ</span>
       </div>
     </Panel>
+  );
+}
+
+/* ---------------------- augmented data structures ---------------------- */
+
+function AugTreeView({ nodes, s }: { nodes: AugNode[]; s: PathState }) {
+  const pos = new Map(nodes.map((n) => [n.id, n]));
+  const w = Math.max(...nodes.map((n) => n.x)) + 48;
+  const h = Math.max(...nodes.map((n) => n.y)) + 46;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} className="block mx-auto max-w-full h-auto" role="img" aria-label="Augmented tree">
+      {nodes.filter((n) => n.parent).map((n) => {
+        const p = pos.get(n.parent!)!;
+        const on = s.path.includes(n.id) && s.path.includes(p.id);
+        return <line key={n.id} x1={p.x} y1={p.y} x2={n.x} y2={n.y} className={on ? "stroke-neon" : "stroke-border"} strokeWidth={on ? 3 : 1.5} />;
+      })}
+      {nodes.map((n) => {
+        const cls = n.id === s.found ? "fill-mint/30 stroke-mint" : n.id === s.at ? "fill-neon/30 stroke-neon" : s.path.includes(n.id) ? "fill-sky/15 stroke-sky" : "fill-card stroke-current";
+        const wide = n.label.length > 2;
+        return (
+          <g key={n.id}>
+            {wide ? <rect x={n.x - 28} y={n.y - 14} width={56} height={28} rx={4} strokeWidth={2} className={cls} /> : <circle cx={n.x} cy={n.y} r={16} strokeWidth={2} className={cls} />}
+            <text x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" fontSize={wide ? 11 : 13} className="font-mono font-bold fill-current">
+              {n.label}
+            </text>
+            <text x={n.x} y={n.y + (wide ? 25 : 28)} textAnchor="middle" fontSize={10} className="font-mono fill-violet">
+              {n.extra}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/** OS-SELECT on a size-augmented tree, or INTERVAL-SEARCH on an interval tree. */
+export function AugmentedTreeSearch({ kind = "select", i: i0 = 5, query = [14, 16] }: { kind?: "select" | "interval"; i?: number; query?: [number, number] }) {
+  const tree = kind === "select" ? OS_TREE : INTERVAL_TREE;
+  const nodes = useMemo(() => layoutAug(tree), [tree]);
+  const [i, setI] = useState(i0);
+  const [q, setQ] = useState<[number, number]>(query);
+  const frames = useMemo(() => (kind === "select" ? osSelectFrames(tree, i) : intervalSearchFrames(tree, q[0], q[1])), [kind, tree, i, q]);
+  return (
+    <Stepper
+      title={kind === "select" ? `OS-SELECT(root, ${i})` : `INTERVAL-SEARCH([${q[0]},${q[1]}])`}
+      frames={frames}
+      code={kind === "select" ? OS_SELECT_CODE : INTERVAL_SEARCH_CODE}
+      codeLabel="Pseudocode"
+      legend={[["bg-violet", kind === "select" ? "subtree size" : "m = max high in subtree"], ["bg-neon", "current node"], ["bg-mint", "answer"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-2">
+          <AugTreeView nodes={nodes} s={s} />
+          {s.none && <p className="text-center font-mono text-sm text-orange">no overlapping interval</p>}
+        </div>
+      )}
+      inputs={
+        kind === "select" ? (
+          <label className="inline-flex items-center gap-2 font-mono text-xs">
+            i =
+            <select value={i} onChange={(e) => setI(Number(e.target.value))} className="bg-transparent border border-border rounded-sm px-2 py-1.5 text-foreground">
+              {Array.from({ length: nodes.length }, (_, k) => (
+                <option key={k} value={k + 1}>
+                  {k + 1}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+            query [
+            <input aria-label="low" className={`${inputCls} w-16`} value={q[0]} inputMode="numeric" onChange={(e) => setQ([Number(e.target.value) || 0, q[1]])} />,
+            <input aria-label="high" className={`${inputCls} w-16`} value={q[1]} inputMode="numeric" onChange={(e) => setQ([q[0], Number(e.target.value) || 0])} />]
+            <button type="button" className={btn} onClick={() => setQ([12, 14])}>
+              Try [12,14]
+            </button>
+          </div>
+        )
+      }
+    />
   );
 }
 

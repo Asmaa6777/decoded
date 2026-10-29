@@ -580,6 +580,114 @@ export function rbFrames(start: number[], ops: RBOp[]): Frame<RBState>[] {
   return t.frames;
 }
 
+/* ---------------------- augmented data structures ---------------------- */
+
+/** A small fixed tree for the augmentation examples. `lo`/`hi` make it an interval tree. */
+export type ATree = { key: string; lo?: number; hi?: number; left?: ATree; right?: ATree };
+export type AugNode = { id: string; label: string; extra: string; x: number; y: number; parent?: string };
+export type PathState = { path: string[]; at?: string; found?: string; none?: boolean };
+
+/** The lecture's OS-tree: subtree sizes in every node. */
+export const OS_TREE: ATree = {
+  key: "M",
+  left: { key: "C", left: { key: "A" }, right: { key: "F", left: { key: "D" }, right: { key: "H" } } },
+  right: { key: "P", left: { key: "N" }, right: { key: "Q" } },
+};
+
+/** The lecture's interval tree, keyed on low endpoints. */
+export const INTERVAL_TREE: ATree = {
+  key: "17,19", lo: 17, hi: 19,
+  left: { key: "5,11", lo: 5, hi: 11, left: { key: "4,8", lo: 4, hi: 8 }, right: { key: "15,18", lo: 15, hi: 18, left: { key: "7,10", lo: 7, hi: 10 } } },
+  right: { key: "22,23", lo: 22, hi: 23 },
+};
+
+export const size = (t?: ATree): number => (t ? 1 + size(t.left) + size(t.right) : 0);
+export const maxHigh = (t?: ATree): number => (t ? Math.max(t.hi ?? -Infinity, maxHigh(t.left), maxHigh(t.right)) : -Infinity);
+
+/** Lay the tree out (in-order rank → x) with each node's augmented field: size, or m for interval trees. */
+export function layoutAug(t: ATree): AugNode[] {
+  const out: AugNode[] = [];
+  let rank = 0;
+  const walk = (n: ATree | undefined, d: number, parent?: string) => {
+    if (!n) return;
+    walk(n.left, d + 1, n.key);
+    out.push({ id: n.key, label: n.lo !== undefined ? `[${n.lo},${n.hi}]` : n.key, extra: n.lo !== undefined ? `m=${maxHigh(n)}` : `${size(n)}`, x: 40 + rank++ * 62, y: 30 + d * 68, parent });
+    walk(n.right, d + 1, n.key);
+  };
+  walk(t, 0);
+  return out;
+}
+
+export const OS_SELECT_CODE = [
+  "OS-SELECT(x, i)        ⊳ i-th smallest element in the subtree rooted at x",
+  "  k ← size[left[x]] + 1      ⊳ k = rank(x)",
+  "  if i = k then return x",
+  "  if i < k",
+  "    then return OS-SELECT(left[x], i)",
+  "    else return OS-SELECT(right[x], i − k)",
+];
+
+export function osSelectFrames(t: ATree, i0: number): Frame<PathState>[] {
+  const frames: Frame<PathState>[] = [];
+  const path: string[] = [];
+  let x: ATree | undefined = t;
+  let i = i0;
+  frames.push({ state: { path: [] }, line: 0, message: `OS-SELECT(root, ${i0}): find the ${i0}${ord(i0)} smallest key using only the subtree sizes.`, stats: { i } });
+  while (x) {
+    path.push(x.key);
+    const k = size(x.left) + 1;
+    if (i === k) {
+      frames.push({ state: { path: [...path], at: x.key, found: x.key }, line: 2, message: `At ${x.key}: k = size(left) + 1 = ${k} = i. Return ${x.key}.`, stats: { i, k } });
+      break;
+    }
+    if (i < k) {
+      frames.push({ state: { path: [...path], at: x.key }, line: 4, message: `At ${x.key}: k = size(left) + 1 = ${k}. i = ${i} < ${k}, so the answer is in the left subtree. Keep i = ${i}.`, stats: { i, k } });
+      x = x.left;
+    } else {
+      frames.push({ state: { path: [...path], at: x.key }, line: 5, message: `At ${x.key}: k = ${k}. i = ${i} > ${k}, so go right and skip the ${k} smaller keys: i = ${i} − ${k} = ${i - k}.`, stats: { i, k } });
+      i -= k;
+      x = x.right;
+    }
+  }
+  return frames;
+}
+
+export const INTERVAL_SEARCH_CODE = [
+  "INTERVAL-SEARCH(i)",
+  "  x ← root",
+  "  while x ≠ NIL and (low[i] > high[int[x]] or low[int[x]] > high[i])",
+  "    do ⊳ i and int[x] don't overlap",
+  "      if left[x] ≠ NIL and low[i] ≤ m[left[x]]",
+  "        then x ← left[x]",
+  "        else x ← right[x]",
+  "  return x",
+];
+
+export function intervalSearchFrames(t: ATree, lo: number, hi: number): Frame<PathState>[] {
+  const frames: Frame<PathState>[] = [];
+  const path: string[] = [];
+  let x: ATree | undefined = t;
+  frames.push({ state: { path: [] }, line: 1, message: `INTERVAL-SEARCH([${lo},${hi}]): find any stored interval that overlaps it.`, stats: {} });
+  while (x) {
+    path.push(x.key);
+    const overlap = !(lo > x.hi! || x.lo! > hi);
+    if (overlap) {
+      frames.push({ state: { path: [...path], at: x.key, found: x.key }, line: 7, message: `[${lo},${hi}] and [${x.lo},${x.hi}] overlap. Return [${x.lo},${x.hi}].`, stats: {} });
+      return frames;
+    }
+    const goLeft = !!x.left && lo <= maxHigh(x.left);
+    frames.push({
+      state: { path: [...path], at: x.key },
+      line: goLeft ? 5 : 6,
+      message: `[${lo},${hi}] and [${x.lo},${x.hi}] don't overlap. ${x.left ? `${lo} ${goLeft ? "≤" : ">"} m[left] = ${maxHigh(x.left)}` : "There is no left child"}, so go ${goLeft ? "left" : "right"}.`,
+      stats: {},
+    });
+    x = goLeft ? x.left : x.right;
+  }
+  frames.push({ state: { path: [...path], none: true }, line: 7, message: `x = NIL, so no interval that overlaps [${lo},${hi}] exists.`, stats: {} });
+  return frames;
+}
+
 /* ------------------------------ hashing ------------------------------ */
 
 export type HashMode = "chaining" | "linear" | "quadratic" | "double";
