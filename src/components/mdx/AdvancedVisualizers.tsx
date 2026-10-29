@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -587,6 +587,80 @@ export function GaussMultiply({ a: a0 = 1234, b: b0 = 5678 }: { a?: number; b?: 
           <button type="button" className={btn} onClick={apply}>
             Multiply
           </button>
+        </div>
+      }
+    />
+  );
+}
+
+/* ---------------------------- quicksort ---------------------------- */
+
+function regionOf(i: number, s: QuickState) {
+  if (s.pivot === i) return { label: "x", cls: "text-violet border-violet" };
+  if (s.low && i >= s.low[0] && i <= s.low[1]) return { label: "≤x", cls: "text-sky border-sky" };
+  if (s.high && i >= s.high[0] && i <= s.high[1]) return { label: "≥x", cls: "text-orange border-orange" };
+  if (s.range && i >= s.range[0] && i <= s.range[1] && s.low) return { label: "?", cls: "text-muted-foreground border-border" };
+  return null;
+}
+
+export function QuicksortVisualizer({ initial = [6, 10, 13, 5, 8, 3, 2, 11], randomized: r0 = false }: { initial?: number[]; randomized?: boolean }) {
+  const [data, setData] = useState(initial);
+  const [mode, setMode] = useState<"first" | "random">(r0 ? "random" : "first");
+  const [seed, setSeed] = useState(7);
+  const frames = useMemo(() => quicksortFrames(data, mode === "random", seed), [data, mode, seed]);
+  const n = data.length;
+  return (
+    <Stepper
+      title={mode === "random" ? "Randomized quicksort" : "Quicksort (pivot = first element)"}
+      frames={frames}
+      code={CPP_QUICKSORT}
+      codeLabel="C++"
+      legend={[["bg-violet", "pivot x"], ["bg-neon", "A[j]"], ["bg-orange", "swap"], ["bg-mint", "final place"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] min-h-[24px]">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">call stack</span>
+            {s.calls.length === 0 && <span className="text-muted-foreground">(empty)</span>}
+            {s.calls.map(([p, r], d) => (
+              <span key={d} className={`px-1.5 py-0.5 rounded-sm border ${d === s.calls.length - 1 ? "border-sky bg-sky/15" : "border-border text-muted-foreground"}`}>
+                qs({p}, {r})
+              </span>
+            ))}
+          </div>
+          <ArrayCells s={s} />
+          <div className="grid gap-1 font-mono text-[10px]" style={{ gridTemplateColumns: `repeat(${n}, minmax(34px, 1fr))` }}>
+            {s.array.map((_, i) => {
+              const reg = regionOf(i, s);
+              return (
+                <div key={i} className={`text-center border-t-2 pt-0.5 ${reg ? reg.cls : "border-transparent"}`}>
+                  {reg?.label ?? ""}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center gap-2">
+          <Toggle<"first" | "random">
+            value={mode}
+            onChange={setMode}
+            options={[
+              ["first", "Pivot = A[p]"],
+              ["random", "Random pivot"],
+            ]}
+          />
+          <button type="button" className={btn} onClick={() => setData(Array.from({ length: n }, (_, i) => (i + 1) * 3))}>
+            Sorted input
+          </button>
+          <button type="button" className={btn} onClick={() => setData(Array.from({ length: n }, () => 1 + Math.floor(Math.random() * 40)))}>
+            Shuffle
+          </button>
+          {mode === "random" && (
+            <button type="button" className={btn} onClick={() => setSeed((x) => x + 1)}>
+              New coin flips
+            </button>
+          )}
         </div>
       }
     />

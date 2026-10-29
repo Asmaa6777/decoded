@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -124,6 +124,20 @@ describe("analysis helpers", () => {
     expect(lv.map((l) => l.cost)).toEqual([1, 1, 1]);
     expect(lv[2].sizes.map(fracLabel)).toEqual(["n/9", "2n/9", "2n/9", "4n/9"]);
     expect(unevenLevels([[1, 4], [1, 2]], 2, 1)[1].cost).toBeCloseTo(5 / 16);
+  });
+
+  it("quicksort partitions like the lecture and randomization flattens the worst case", () => {
+    const ex = quicksortFrames([6, 10, 13, 5, 8, 3, 2, 11]);
+    expect(ex.at(-1)!.state.array).toEqual([2, 3, 5, 6, 8, 10, 11, 13]);
+    // the first PARTITION around 6 leaves 2 5 3 | 6 | 8 13 10 11, as on the slide
+    const firstDone = ex.find((f) => f.line === 8)!;
+    expect(firstDone.state.array).toEqual([2, 5, 3, 6, 8, 13, 10, 11]);
+    const sorted = Array.from({ length: 30 }, (_, i) => i);
+    const worst = quicksortFrames(sorted).at(-1)!;
+    const rand = quicksortFrames(sorted, true).at(-1)!;
+    expect(worst.stats.comparisons).toBe((30 * 29) / 2);
+    expect(rand.state.array).toEqual(sorted);
+    expect(rand.stats["max depth"]).toBeLessThan(worst.stats["max depth"]);
   });
 
   it("renders the analysis widgets", () => {

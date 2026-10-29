@@ -201,6 +201,114 @@ export function minMaxFrames(input: number[]): Frame<MinMaxState>[] {
   return frames;
 }
 
+/* ---------------------------- quicksort ---------------------------- */
+
+/** Small seeded RNG (mulberry32), so a "random" run replays the same way every time. */
+export function rng(seed: number) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export type QuickState = ArrayState & { calls: [number, number][]; low?: [number, number]; high?: [number, number] };
+
+export const CPP_QUICKSORT = [
+  "int partition(int A[], int p, int q) {   // A[p..q]",
+  "    int x = A[p];                         // pivot = first element",
+  "    int i = p;",
+  "    for (int j = p + 1; j <= q; j++)",
+  "        if (A[j] <= x) {",
+  "            i++;",
+  "            swap(A[i], A[j]);",
+  "        }",
+  "    swap(A[p], A[i]);                     // pivot between the two parts",
+  "    return i;",
+  "}",
+  "",
+  "void quicksort(int A[], int p, int r) {",
+  "    if (p < r) {",
+  "        // randomized: swap(A[p], A[random(p, r)]);",
+  "        int q = partition(A, p, r);",
+  "        quicksort(A, p, q - 1);",
+  "        quicksort(A, q + 1, r);",
+  "    }",
+  "}",
+];
+
+/** The lecture's quicksort: PARTITION around A[p], optionally after swapping a random element into A[p]. */
+export function quicksortFrames(input: number[], randomized = false, seed = 7): Frame<QuickState>[] {
+  const A = [...input];
+  const frames: Frame<QuickState>[] = [];
+  const done = new Set<number>();
+  const calls: [number, number][] = [];
+  const rand = rng(seed);
+  let comparisons = 0;
+  let swaps = 0;
+  let maxDepth = 0;
+  const push = (s: Partial<QuickState>, line: number, message: string) =>
+    frames.push({
+      state: { array: [...A], sorted: [...done], calls: calls.map((c) => [...c] as [number, number]), ...s },
+      line,
+      message,
+      stats: { comparisons, swaps, "max depth": maxDepth },
+    });
+
+  const partition = (p: number, q: number) => {
+    const x = A[p];
+    let i = p;
+    const regions = (j: number) => ({ low: [p + 1, i] as [number, number], high: [i + 1, j - 1] as [number, number] });
+    push({ range: [p, q], pivot: p, pointers: { i, j: p + 1 }, ...regions(p + 1) }, 1, `PARTITION(A, ${p}, ${q}): the pivot is x = A[${p}] = ${x}. Grow a "≤ x" part and a "≥ x" part to its right.`);
+    for (let j = p + 1; j <= q; j++) {
+      comparisons++;
+      const small = A[j] <= x;
+      push({ range: [p, q], pivot: p, compare: [j], pointers: { i, j }, ...regions(j) }, 4, `Is A[${j}] = ${A[j]} ≤ ${x}? ${small ? "Yes, so it belongs in the ≤ x part." : "No, so it stays in the ≥ x part."}`);
+      if (small) {
+        i++;
+        if (i !== j) swaps++;
+        [A[i], A[j]] = [A[j], A[i]];
+        push({ range: [p, q], pivot: p, write: [i, j], pointers: { i, j }, ...regions(j + 1) }, 6, `i moves to ${i}, and A[${i}] ↔ A[${j}]. The ≤ x part grows by one.`);
+      }
+    }
+    if (i !== p) swaps++;
+    [A[p], A[i]] = [A[i], A[p]];
+    done.add(i);
+    push({ range: [p, q], write: [p, i], pointers: { i }, low: [p, i - 1], high: [i + 1, q] }, 8, `Swap the pivot into A[${i}]. Everything left of it is ≤ ${x} and everything right is ≥ ${x}: ${x} is now in its final place.`);
+    return i;
+  };
+
+  const sort = (p: number, r: number) => {
+    calls.push([p, r]);
+    maxDepth = Math.max(maxDepth, calls.length);
+    if (p < r) {
+      if (randomized) {
+        const k = p + Math.floor(rand() * (r - p + 1));
+        if (k !== p) {
+          [A[p], A[k]] = [A[k], A[p]];
+          swaps++;
+        }
+        push({ range: [p, r], pivot: p, write: k !== p ? [p, k] : undefined }, 14, `Randomized: picked A[${k}] at random and swapped it to the front, so ${A[p]} is the pivot.`);
+      }
+      const q = partition(p, r);
+      sort(p, q - 1);
+      sort(q + 1, r);
+    } else if (p === r) {
+      done.add(p);
+      push({ range: [p, r] }, 13, `quicksort(A, ${p}, ${r}): one element, already sorted.`);
+    }
+    calls.pop();
+  };
+
+  push({}, 12, `Quicksort ${A.length} numbers${randomized ? ", picking each pivot at random" : ", always using the first element as the pivot"}.`);
+  sort(0, A.length - 1);
+  push({ sorted: A.map((_, i) => i) }, 19, `Sorted. ${comparisons} comparisons, recursion ${maxDepth} calls deep.`);
+  return frames;
+}
+
 /* --------------------------- Fibonacci --------------------------- */
 
 /** Calls the naive recursive fib(n) makes: T(n) = T(n-1) + T(n-2) + 1, T(0) = T(1) = 1. */
