@@ -35,6 +35,8 @@ import AdaBfsDfs from "@/content/algorithm-design-and-analysis/m3-01-bfs-and-dfs
 import AdaGreedy from "@/content/algorithm-design-and-analysis/m4-01-greedy-and-mst.mdx";
 import AdaDynamic from "@/content/algorithm-design-and-analysis/m4-02-dynamic-programming.mdx";
 import AdaFinalQuiz from "@/content/algorithm-design-and-analysis/m4-03-final-quiz.mdx";
+import AaAnalysis from "@/content/advanced-algorithms/m0-01-analysis-of-algorithms.mdx";
+import AaCountingOperations from "@/content/advanced-algorithms/m0-02-every-worst-average-best.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -198,6 +200,26 @@ export const courses: Course[] = [
     ],
   },
   {
+    slug: "advanced-algorithms",
+    title: "Advanced Algorithms & Analysis",
+    tagline: "Proving how fast an algorithm is, then building ones that are faster.",
+    description:
+      "The second algorithms course, decoded. Asymptotic notation and recurrences, divide and conquer, randomized quicksort and linear-time sorting, hashing, balanced and red-black trees, skip lists, dynamic programming, greedy algorithms, shortest paths, and the P vs NP question. Every lesson follows the lectures and labs, in plain language, with step-through animations.",
+    accent: "violet",
+    status: "available",
+    number: "04",
+    modules: [
+      {
+        title: "Foundations of Analysis",
+        blurb: "How to measure an algorithm without a stopwatch, and how to prove what you measured.",
+        lessons: [
+          { slug: "analysis-of-algorithms", title: "What Is Analysis of Algorithms?", duration: "14 min", Component: AaAnalysis },
+          { slug: "counting-the-basic-operation", title: "Counting the Basic Operation", duration: "14 min", Component: AaCountingOperations },
+        ],
+      },
+    ],
+  },
+  {
     slug: "operating-systems",
     title: "Operating Systems",
     tagline: "The invisible layer that makes everything work.",
@@ -205,7 +227,7 @@ export const courses: Course[] = [
       "Processes, memory, file systems, schedulers — and where each shows up the moment something goes wrong. Coming soon.",
     accent: "violet",
     status: "coming-soon",
-    number: "04",
+    number: "05",
     modules: [],
   },
   {
@@ -216,7 +238,7 @@ export const courses: Course[] = [
       "Consistency, availability, and the CAP theorem. This course decodes how massive systems stay synchronized across the globe, from Paxos to Raft and the tradeoffs of microservices.",
     accent: "mint",
     status: "coming-soon",
-    number: "05",
+    number: "06",
     modules: [],
   },
   {
@@ -227,7 +249,7 @@ export const courses: Course[] = [
       "Exams are as much about mental endurance and strategy as they are about knowledge. This course decodes the psychology of performance, memory optimization, and the tactical frameworks used by top performers to excel under pressure.",
     accent: "sky",
     status: "available",
-    number: "06",
+    number: "07",
     modules: [
       {
         title: "The Strategy",
