@@ -312,16 +312,16 @@ export const courses: Course[] = [
   {
     slug: "the-exam-mind",
     title: "The Exam Mind",
-    tagline: "Mental mastery for high-pressure moments..",
+    tagline: "How to think clearly when the pressure is on.",
     description:
-      "Exams are as much about mental endurance and strategy as they are about knowledge. This course decodes the psychology of performance, memory optimization, and the tactical frameworks used by top performers to excel under pressure.",
+      "Exams test mental endurance and strategy as much as knowledge. This course covers how memory works, how to plan the week before, and how to handle stress in the exam room and on the day itself.",
     accent: "sky",
     status: "available",
     number: "07",
     modules: [
       {
         title: "The Strategy",
-        blurb: "Breaking old habits and building a framework that actually works for memory and recall.",
+        blurb: "Why the usual way of studying fails, and a week-long plan built on how memory works.",
         lessons: [
           { slug: "the-problem-with-how-you-study", title: "The Problem with How You Study", duration: "10 min", Component: ExamMindLesson01 },
           { slug: "the-one-week-plan", title: "The One-Week Plan", duration: "12 min", Component: ExamMindLesson02 },
@@ -329,7 +329,7 @@ export const courses: Course[] = [
       },
       {
         title: "The Execution",
-        blurb: "Mastering the mental game and navigating the high-pressure reality of exam day.",
+        blurb: "What stress does to recall, and how to get through exam day.",
         lessons: [
           { slug: "stress-and-anxiety", title: "Stress & Anxiety", duration: "8 min", Component: ExamMindLesson03 },
           { slug: "exam-day", title: "Exam Day", duration: "7 min", Component: ExamMindLesson04 },
