@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -921,6 +921,241 @@ export function DPVisualizer({
           </div>
         ) : undefined
       }
+    />
+  );
+}
+
+/* --------------------------- greedy algorithms --------------------------- */
+
+const COIN_SYSTEMS = {
+  us: { label: "US money (cents)", coins: [1, 5, 10, 25, 100, 500], amount: 639, fmt: (c: number) => (c >= 100 ? `$${c / 100}` : `${c}¢`) },
+  kron: { label: "Krons (1, 7, 10)", coins: [1, 7, 10], amount: 15, fmt: (c: number) => `${c} kron` },
+};
+
+/** Greedy change-making against the true minimum, for a coin system that works and one that doesn't. */
+export function CoinChangeGreedy({ system: sys0 = "us" }: { system?: keyof typeof COIN_SYSTEMS }) {
+  const [sys, setSys] = useState<keyof typeof COIN_SYSTEMS>(sys0);
+  const S = COIN_SYSTEMS[sys];
+  const [amount, setAmount] = useState(S.amount);
+  const g = greedyChange(amount, S.coins);
+  const o = optimalChange(amount, S.coins);
+  const show = (m: Map<number, number>) => [...m].map(([c, k]) => `${k} × ${S.fmt(c)}`).join(" + ") || "nothing";
+  const ok = countCoins(g) === countCoins(o);
+  return (
+    <Panel title="Counting out money greedily" legend={[["bg-sky", "greedy"], ["bg-mint", "fewest possible"]]}>
+      <div className="flex flex-wrap items-center gap-3">
+        <Toggle<keyof typeof COIN_SYSTEMS>
+          value={sys}
+          onChange={(v) => {
+            setSys(v);
+            setAmount(COIN_SYSTEMS[v].amount);
+          }}
+          options={[
+            ["us", "US money"],
+            ["kron", "Krons"],
+          ]}
+        />
+        <label className="inline-flex items-center gap-2 font-mono text-xs">
+          amount
+          <input aria-label="amount" className={`${inputCls} w-24`} value={amount} inputMode="numeric" onChange={(e) => setAmount(Math.max(0, Math.min(5000, Number(e.target.value) || 0)))} />
+          {sys === "us" && <span className="text-muted-foreground">= ${(amount / 100).toFixed(2)}</span>}
+        </label>
+      </div>
+      <div className="grid gap-2 font-mono text-sm">
+        <div className="border border-sky/60 bg-sky/10 rounded-sm px-3 py-2">
+          <span className="text-[10px] uppercase tracking-widest text-sky mr-2">greedy</span>
+          {show(g)} = <b>{countCoins(g)} pieces</b>
+        </div>
+        <div className="border border-mint/60 bg-mint/10 rounded-sm px-3 py-2">
+          <span className="text-[10px] uppercase tracking-widest text-mint mr-2">best</span>
+          {show(o)} = <b>{countCoins(o)} pieces</b>
+        </div>
+      </div>
+      <p className={`text-sm font-semibold ${ok ? "text-mint" : "text-orange"}`}>
+        {ok ? "Greedy found an optimal answer." : `Greedy found an answer, but not an optimal one: ${countCoins(g) - countCoins(o)} extra piece${countCoins(g) - countCoins(o) === 1 ? "" : "s"}.`}
+      </p>
+    </Panel>
+  );
+}
+
+const JOBS = [3, 5, 6, 10, 11, 14, 15, 18, 20];
+
+/** The lecture's nine jobs on three processors: longest first, shortest first, and the best possible. */
+export function JobScheduling({ jobs = JOBS, processors = 3 }: { jobs?: number[]; processors?: number }) {
+  const [rule, setRule] = useState<"longest" | "shortest" | "optimal">("longest");
+  const lanes = useMemo(
+    () =>
+      rule === "longest" ? scheduleInOrder([...jobs].sort((a, b) => b - a), processors) : rule === "shortest" ? scheduleInOrder([...jobs].sort((a, b) => a - b), processors) : scheduleOptimal(jobs, processors),
+    [rule, jobs, processors],
+  );
+  const loads = lanes.map((l) => l.reduce((s, j) => s + j, 0));
+  const span = Math.max(...loads);
+  const scale = Math.max(span, 40);
+  const tones = ["bg-sky/60", "bg-violet/60", "bg-orange/60", "bg-mint/60", "bg-neon/60"];
+  return (
+    <Panel title={`${jobs.length} jobs on ${processors} processors`}>
+      <Toggle<"longest" | "shortest" | "optimal">
+        value={rule}
+        onChange={setRule}
+        options={[
+          ["longest", "Longest job first"],
+          ["shortest", "Shortest job first"],
+          ["optimal", "Best possible"],
+        ]}
+      />
+      <div className="flex flex-col gap-2">
+        {lanes.map((l, p) => (
+          <div key={p} className="flex items-center gap-2">
+            <span className="w-8 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">P{p + 1}</span>
+            <div className="relative flex-1 h-8 border border-border rounded-sm overflow-hidden flex">
+              {l.map((j, k) => (
+                <div key={k} className={`${tones[k % tones.length]} border-r border-background h-full flex items-center justify-center font-mono text-[11px]`} style={{ width: `${(j / scale) * 100}%` }}>
+                  {j}
+                </div>
+              ))}
+            </div>
+            <span className={`w-10 text-right font-mono text-xs ${loads[p] === span ? "font-bold" : "text-muted-foreground"}`}>{loads[p]}</span>
+          </div>
+        ))}
+      </div>
+      <p className="font-mono text-sm">
+        time to completion = <b className={rule === "optimal" ? "text-mint" : ""}>{span} minutes</b>
+        {rule !== "optimal" && <span className="text-muted-foreground"> ({lanes.map((l) => l.join(" + ")).join(" | ")})</span>}
+      </p>
+    </Panel>
+  );
+}
+
+function HuffTree({ root, highlight }: { root: HuffNode; highlight?: number[] }) {
+  const pos = new Map<number, { x: number; y: number }>();
+  let leaf = 0;
+  let depth = 0;
+  const place = (n: HuffNode, d: number): number => {
+    depth = Math.max(depth, d);
+    let x: number;
+    if (!n.left) x = 24 + leaf++ * 46;
+    else x = (place(n.left, d + 1) + place(n.right!, d + 1)) / 2;
+    pos.set(n.id, { x, y: 22 + d * 50 });
+    return x;
+  };
+  place(root, 0);
+  const w = Math.max(48, leaf * 46);
+  const h = 44 + depth * 50;
+  const nodes: HuffNode[] = [];
+  const collect = (n: HuffNode) => {
+    nodes.push(n);
+    if (n.left) {
+      collect(n.left);
+      collect(n.right!);
+    }
+  };
+  collect(root);
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} className="h-auto max-w-full">
+      {nodes.filter((n) => n.left).flatMap((n) =>
+        [n.left!, n.right!].map((c, k) => {
+          const a = pos.get(n.id)!;
+          const b = pos.get(c.id)!;
+          return (
+            <g key={`${n.id}-${c.id}`}>
+              <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="stroke-border" strokeWidth={1.5} />
+              <text x={(a.x + b.x) / 2 + (k ? 6 : -10)} y={(a.y + b.y) / 2} fontSize={10} className="fill-violet font-mono">
+                {k}
+              </text>
+            </g>
+          );
+        }),
+      )}
+      {nodes.map((n) => {
+        const p = pos.get(n.id)!;
+        const on = highlight?.includes(n.id);
+        return (
+          <g key={n.id}>
+            <circle cx={p.x} cy={p.y} r={15} strokeWidth={2} className={on ? "fill-neon/30 stroke-neon" : n.left ? "fill-card stroke-muted-foreground" : "fill-sky/15 stroke-sky"} />
+            <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={10} className="font-mono fill-current">
+              {n.left ? n.freq : `${n.label}:${n.freq}`}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+export function HuffmanVisualizer({ chars = ["A", "B", "C", "D", "E", "F"], freqs = [22, 12, 24, 6, 27, 9] }: { chars?: string[]; freqs?: number[] }) {
+  const frames = useMemo(() => huffmanFrames(chars, freqs), [chars, freqs]);
+  return (
+    <Stepper
+      title="Building a Huffman code"
+      frames={frames}
+      code={HUFFMAN_CODE}
+      codeLabel="Pseudocode"
+      legend={[["bg-sky", "character"], ["bg-neon", "the two smallest / just merged"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-end gap-4">
+            {[...s.forest].sort((a, b) => a.freq - b.freq).map((t) => (
+              <HuffTree key={t.id} root={t} highlight={[...(s.picked ?? []), ...(s.merged !== undefined ? [s.merged] : [])]} />
+            ))}
+          </div>
+          {s.codes && (
+            <table className="font-mono text-xs border-collapse self-start">
+              <tbody>
+                {chars.map((c, i) => (
+                  <tr key={c} className="border-b border-border/50">
+                    <td className="py-1 pr-4 font-bold">{c}</td>
+                    <td className="py-1 pr-4 text-muted-foreground">{freqs[i]}</td>
+                    <td className="py-1 text-mint">{s.codes![c]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    />
+  );
+}
+
+export function ActivitySelector({ acts = CLRS_ACTIVITIES }: { acts?: Activity[] }) {
+  const frames = useMemo(() => activityFrames(acts), [acts]);
+  const end = Math.max(...acts.map((a) => a.f));
+  return (
+    <Stepper
+      title="Greedy activity selection"
+      frames={frames}
+      code={ACTIVITY_CODE}
+      codeLabel="Pseudocode"
+      legend={[["bg-mint", "chosen"], ["bg-neon", "considering"], ["bg-orange", "clashes, skipped"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-1 font-mono text-[11px] min-w-[420px]">
+          {s.acts.map((a, i) => {
+            const cls = s.chosen.includes(i) ? "bg-mint/50 border-mint" : i === s.rejected ? "bg-orange/30 border-orange" : i === s.at ? "bg-neon/30 border-neon" : "bg-foreground/10 border-border";
+            return (
+              <div key={i} className="flex items-center gap-2">
+                <span className="w-8 text-right text-muted-foreground">a{i + 1}</span>
+                <div className="relative flex-1 h-5">
+                  <div className={`absolute h-full border rounded-sm transition-colors ${cls}`} style={{ left: `${(a.s / end) * 100}%`, width: `${((a.f - a.s) / end) * 100}%` }}>
+                    <span className="px-1">
+                      [{a.s},{a.f})
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div className="flex items-center gap-2">
+            <span className="w-8" />
+            <div className="relative flex-1 h-4 text-muted-foreground">
+              {Array.from({ length: end + 1 }, (_, t) => t).filter((t) => t % 2 === 0).map((t) => (
+                <span key={t} className="absolute -translate-x-1/2" style={{ left: `${(t / end) * 100}%` }}>
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     />
   );
 }

@@ -765,6 +765,164 @@ export function lcsFrames(A: string, B: string): Frame<DPState>[] {
   return frames;
 }
 
+/* --------------------------- greedy algorithms --------------------------- */
+
+/** Largest coin that doesn't overshoot, again and again. Returns how many of each coin (largest first). */
+export function greedyChange(amount: number, coins: number[]): Map<number, number> {
+  const out = new Map<number, number>();
+  let left = amount;
+  for (const c of [...coins].sort((a, b) => b - a)) {
+    const k = Math.floor(left / c);
+    if (k) out.set(c, k);
+    left -= k * c;
+  }
+  return out;
+}
+
+/** Fewest coins by dynamic programming, to show when greedy isn't optimal. */
+export function optimalChange(amount: number, coins: number[]): Map<number, number> {
+  const best = Array<number>(amount + 1).fill(Infinity);
+  const last = Array<number>(amount + 1).fill(0);
+  best[0] = 0;
+  for (let a = 1; a <= amount; a++)
+    for (const c of coins)
+      if (c <= a && best[a - c] + 1 < best[a]) {
+        best[a] = best[a - c] + 1;
+        last[a] = c;
+      }
+  const out = new Map<number, number>();
+  for (let a = amount; a > 0 && isFinite(best[a]); a -= last[a]) out.set(last[a], (out.get(last[a]) ?? 0) + 1);
+  return new Map([...out].sort((x, y) => y[0] - x[0]));
+}
+
+export const countCoins = (m: Map<number, number>) => [...m.values()].reduce((s, k) => s + k, 0);
+
+/** Assign each job, in the given order, to whichever processor is free first. */
+export function scheduleInOrder(jobs: number[], p: number): number[][] {
+  const lanes: number[][] = Array.from({ length: p }, () => []);
+  const load = Array<number>(p).fill(0);
+  for (const j of jobs) {
+    const i = load.indexOf(Math.min(...load));
+    lanes[i].push(j);
+    load[i] += j;
+  }
+  return lanes;
+}
+
+/** Best possible finishing time by trying every assignment (fine for the lecture's 9 jobs on 3 processors). */
+export function scheduleOptimal(jobs: number[], p: number): number[][] {
+  const sorted = [...jobs].sort((a, b) => b - a);
+  let best = Infinity;
+  let bestLanes: number[][] = [];
+  const lanes: number[][] = Array.from({ length: p }, () => []);
+  const load = Array<number>(p).fill(0);
+  const go = (i: number) => {
+    if (Math.max(...load) >= best) return;
+    if (i === sorted.length) {
+      best = Math.max(...load);
+      bestLanes = lanes.map((l) => [...l]);
+      return;
+    }
+    const seen = new Set<number>();
+    for (let k = 0; k < p; k++) {
+      if (seen.has(load[k])) continue; // processors with equal load are interchangeable
+      seen.add(load[k]);
+      lanes[k].push(sorted[i]);
+      load[k] += sorted[i];
+      go(i + 1);
+      load[k] -= sorted[i];
+      lanes[k].pop();
+    }
+  };
+  go(0);
+  return bestLanes;
+}
+
+export type HuffNode = { id: number; label: string; freq: number; left?: HuffNode; right?: HuffNode };
+export type HuffState = { forest: HuffNode[]; merged?: number; picked?: number[]; codes?: Record<string, string> };
+
+export const HUFFMAN_CODE = [
+  "HUFFMAN(C)",
+  "  n = |C|;  Q = C            ⊳ a min-priority queue keyed on frequency",
+  "  for i = 1 to n − 1",
+  "      allocate a new node z",
+  "      z.left = x = EXTRACT-MIN(Q)",
+  "      z.right = y = EXTRACT-MIN(Q)",
+  "      z.f = x.f + y.f",
+  "      INSERT(Q, z)",
+  "  return EXTRACT-MIN(Q)       ⊳ the root of the tree",
+];
+
+export function huffmanCodes(root: HuffNode): Record<string, string> {
+  const out: Record<string, string> = {};
+  const walk = (n: HuffNode, code: string) => {
+    if (!n.left) out[n.label] = code || "0";
+    else {
+      walk(n.left, code + "0");
+      walk(n.right!, code + "1");
+    }
+  };
+  walk(root, "");
+  return out;
+}
+
+/** Repeatedly merge the two least frequent trees. Ties go to the tree that was merged first. */
+export function huffmanFrames(chars: string[], freqs: number[]): Frame<HuffState>[] {
+  let forest: HuffNode[] = chars.map((c, i) => ({ id: i, label: c, freq: freqs[i] }));
+  let next = chars.length;
+  const frames: Frame<HuffState>[] = [];
+  const order = (a: HuffNode, b: HuffNode) => a.freq - b.freq || (b.left ? 1 : 0) - (a.left ? 1 : 0) || a.id - b.id;
+  frames.push({ state: { forest: [...forest] }, line: 1, message: `Start with one single-node tree per character, keyed on its frequency.`, stats: { trees: forest.length } });
+  while (forest.length > 1) {
+    const [x, y] = [...forest].sort(order);
+    frames.push({ state: { forest: [...forest], picked: [x.id, y.id] }, line: 4, message: `The two smallest are ${x.label} (${x.freq}) and ${y.label} (${y.freq}).`, stats: { trees: forest.length } });
+    const z: HuffNode = { id: next++, label: x.label + y.label, freq: x.freq + y.freq, left: x, right: y };
+    forest = [...forest.filter((t) => t !== x && t !== y), z];
+    frames.push({ state: { forest: [...forest], merged: z.id }, line: 7, message: `Merge them under a new node with frequency ${x.freq} + ${y.freq} = ${z.freq}. ${x.label} is on the 0 side and ${y.label} on the 1 side.`, stats: { trees: forest.length } });
+  }
+  const codes = huffmanCodes(forest[0]);
+  const total = freqs.reduce((s, f) => s + f, 0);
+  const avg = chars.reduce((s, c, i) => s + freqs[i] * codes[c].length, 0) / total;
+  frames.push({ state: { forest, codes }, line: 8, message: `One tree left. Reading 0 for left and 1 for right gives the codes: ${chars.map((c) => `${c}=${codes[c]}`).join(", ")}. Average ${avg.toFixed(2)} bits per character.`, stats: { trees: 1 } });
+  return frames;
+}
+
+export type Activity = { s: number; f: number };
+export type ActivityState = { acts: Activity[]; chosen: number[]; at?: number; last?: number; rejected?: number };
+
+export const ACTIVITY_CODE = [
+  "GREEDY-ACTIVITY-SELECTOR(s, f)   ⊳ activities sorted by finish time",
+  "  n = length[s]",
+  "  A = {a1};  i = 1",
+  "  for m = 2 to n",
+  "      if s[m] ≥ f[i]             ⊳ starts after the last chosen one ends",
+  "          A = A ∪ {am};  i = m",
+  "  return A",
+];
+
+export const CLRS_ACTIVITIES: Activity[] = [
+  { s: 1, f: 4 }, { s: 3, f: 5 }, { s: 0, f: 6 }, { s: 5, f: 7 }, { s: 3, f: 9 }, { s: 5, f: 9 },
+  { s: 6, f: 10 }, { s: 8, f: 11 }, { s: 8, f: 12 }, { s: 2, f: 14 }, { s: 12, f: 16 },
+];
+
+export function activityFrames(acts: Activity[]): Frame<ActivityState>[] {
+  const a = [...acts].sort((x, y) => x.f - y.f);
+  const frames: Frame<ActivityState>[] = [];
+  const chosen = [0];
+  let i = 0;
+  frames.push({ state: { acts: a, chosen: [...chosen], last: 0 }, line: 2, message: `Sort by finish time. Greedy choice: take a1 = [${a[0].s}, ${a[0].f}), the activity that finishes first. It leaves the most room for the rest.`, stats: { chosen: 1 } });
+  for (let m = 1; m < a.length; m++) {
+    if (a[m].s >= a[i].f) {
+      chosen.push(m);
+      i = m;
+      frames.push({ state: { acts: a, chosen: [...chosen], at: m, last: i }, line: 5, message: `a${m + 1} = [${a[m].s}, ${a[m].f}) starts at ${a[m].s} ≥ ${a[chosen[chosen.length - 2]].f}, when the last chosen activity ends. Take it.`, stats: { chosen: chosen.length } });
+    } else
+      frames.push({ state: { acts: a, chosen: [...chosen], at: m, last: i, rejected: m }, line: 4, message: `a${m + 1} = [${a[m].s}, ${a[m].f}) starts at ${a[m].s} < ${a[i].f}: it clashes with a${i + 1}. Skip it.`, stats: { chosen: chosen.length } });
+  }
+  frames.push({ state: { acts: a, chosen, last: i }, line: 6, message: `Done: {${chosen.map((c) => `a${c + 1}`).join(", ")}}, ${chosen.length} compatible activities. One pass, so Θ(n) after sorting.`, stats: { chosen: chosen.length } });
+  return frames;
+}
+
 /* ------------------------------ skip lists ------------------------------ */
 
 export type Tower = { key: number; height: number };

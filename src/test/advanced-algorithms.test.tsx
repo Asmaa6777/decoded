@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -40,7 +40,7 @@ describe("Advanced Algorithms & Analysis course", () => {
     expect(files.length).toBe(flattenLessons(course).length);
     for (const banned of [
       "cairo", "university", "faculty", "lecturer", "instructor", "basheer", "youssef", "kamal", "ramly",
-      "leiserson", "demaine", "luebke", "cmsc", "copyright", "©", "cs214", "fall 2026", "dr.", "prof.", "phd",
+      "leiserson", "demaine", "luebke", "cmsc", "chongstitvatana", "jaruloj", "copyright", "©", "cs214", "fall 2026", "dr.", "prof.", "phd",
     ]) {
       expect(all, `found "${banned}"`).not.toContain(banned);
     }
@@ -236,6 +236,21 @@ describe("analysis helpers", () => {
     const lcs = lcsFrames("president", "providence").at(-1)!.state;
     expect(lcs.answer).toBe("priden");
     expect(lcsFrames("algorithm", "alignment").at(-1)!.state.answer).toBe("algt"); // same length as the slide's "algm"
+  });
+
+  it("greedy examples match the lecture", () => {
+    expect([...greedyChange(639, [1, 5, 10, 25, 100, 500])]).toEqual([[500, 1], [100, 1], [25, 1], [10, 1], [1, 4]]);
+    expect(countCoins(greedyChange(15, [1, 7, 10]))).toBe(6);
+    expect(countCoins(optimalChange(15, [1, 7, 10]))).toBe(3);
+    const jobs = [3, 5, 6, 10, 11, 14, 15, 18, 20];
+    const span = (l: number[][]) => Math.max(...l.map((x) => x.reduce((a, b) => a + b, 0)));
+    expect(span(scheduleInOrder([...jobs].sort((a, b) => b - a), 3))).toBe(35);
+    expect(span(scheduleInOrder([...jobs].sort((a, b) => a - b), 3))).toBe(40);
+    expect(span(scheduleOptimal(jobs, 3))).toBe(34);
+    const codes = huffmanFrames(["A", "B", "C", "D", "E", "F"], [22, 12, 24, 6, 27, 9]).at(-1)!.state.codes;
+    expect(codes).toEqual({ A: "00", B: "100", C: "01", D: "1010", E: "11", F: "1011" });
+    const act = activityFrames(CLRS_ACTIVITIES).at(-1)!.state.chosen.map((i) => i + 1);
+    expect(act).toEqual([1, 4, 8, 11]);
   });
 
   it("renders the analysis widgets", () => {

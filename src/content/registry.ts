@@ -54,6 +54,9 @@ import AaRedBlackOps from "@/content/advanced-algorithms/m2-05-red-black-insert-
 import AaAugmenting from "@/content/advanced-algorithms/m2-06-augmenting-data-structures.mdx";
 import AaSkipLists from "@/content/advanced-algorithms/m2-07-skip-lists.mdx";
 import AaDynamic from "@/content/advanced-algorithms/m3-01-dynamic-programming.mdx";
+import AaGreedy from "@/content/advanced-algorithms/m3-02-greedy-algorithms.mdx";
+import AaMst from "@/content/advanced-algorithms/m3-03-minimum-spanning-trees.mdx";
+import AaHuffman from "@/content/advanced-algorithms/m3-04-huffman-and-activity-selection.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -267,6 +270,9 @@ export const courses: Course[] = [
         blurb: "Remember every answer, or grab the best option now: dynamic programming, greedy algorithms and shortest paths.",
         lessons: [
           { slug: "dynamic-programming", title: "Dynamic Programming", duration: "22 min", Component: AaDynamic },
+          { slug: "greedy-algorithms", title: "Greedy Algorithms", duration: "16 min", Component: AaGreedy },
+          { slug: "minimum-spanning-trees", title: "Minimum Spanning Trees: Prim and Kruskal", duration: "20 min", Component: AaMst },
+          { slug: "huffman-and-activity-selection", title: "Greedy Choice: Huffman Codes and Activity Selection", duration: "22 min", Component: AaHuffman },
         ],
       },
     ],
