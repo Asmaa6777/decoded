@@ -46,6 +46,9 @@ import AaLabDivideConquer from "@/content/advanced-algorithms/m1-02-lab-divide-a
 import AaQuicksort from "@/content/advanced-algorithms/m1-03-quicksort.mdx";
 import AaLowerBounds from "@/content/advanced-algorithms/m1-04-sorting-lower-bounds.mdx";
 import AaOrderStatistics from "@/content/advanced-algorithms/m1-05-order-statistics.mdx";
+import AaHashing from "@/content/advanced-algorithms/m2-01-hashing.mdx";
+import AaCollisions from "@/content/advanced-algorithms/m2-02-collision-resolution.mdx";
+import AaLabHashing from "@/content/advanced-algorithms/m2-03-lab-hashing.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -239,6 +242,15 @@ export const courses: Course[] = [
           { slug: "quicksort", title: "Quicksort and Randomized Quicksort", duration: "20 min", Component: AaQuicksort },
           { slug: "sorting-lower-bounds", title: "Sorting Lower Bounds and Linear-Time Sorting", duration: "20 min", Component: AaLowerBounds },
           { slug: "order-statistics", title: "Order Statistics: Finding the i-th Smallest", duration: "18 min", Component: AaOrderStatistics },
+        ],
+      },
+      {
+        title: "Hashing and Search Trees",
+        blurb: "Constant-time lookups with hashing, then trees that stay balanced no matter what you insert.",
+        lessons: [
+          { slug: "hashing", title: "Hashing and Amortized Analysis", duration: "18 min", Component: AaHashing },
+          { slug: "collision-resolution", title: "Collisions: Chaining and Open Addressing", duration: "22 min", Component: AaCollisions },
+          { slug: "lab-hashing", title: "Lab: Hash Tables in Practice", duration: "18 min", kind: "practical", Component: AaLabHashing },
         ],
       },
     ],

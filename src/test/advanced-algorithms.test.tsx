@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -167,6 +167,39 @@ describe("analysis helpers", () => {
     const { x, guaranteedEach } = medianOfMedians(nums);
     expect(nums.filter((v) => v <= x).length).toBeGreaterThanOrEqual(guaranteedEach);
     expect(nums.filter((v) => v >= x).length).toBeGreaterThanOrEqual(guaranteedEach);
+  });
+
+  it("hash tables reproduce the lecture and lab examples", () => {
+    const keys = [10, 22, 31, 4, 15, 28, 17, 88, 59].map((key) => ({ op: "insert" as const, key }));
+    const final = (cfg: HashConfig, ops = keys, init?: Record<number, number>) => hashFrames(cfg, ops, init).at(-1)!.state.slots;
+    expect(final({ m: 11, mode: "linear" })).toEqual([22, 88, null, null, 4, 15, 28, 17, 59, 31, 10]);
+    expect(final({ m: 11, mode: "quadratic", c1: 1, c2: 3 })).toEqual([22, null, 88, 17, 4, null, 28, 59, 15, 31, 10]);
+    expect(final({ m: 11, mode: "double", second: { kind: "mod", mp: 10 } })).toEqual([22, null, 59, 17, 4, 15, 28, 88, null, 31, 10]);
+    // lab 5.1 example 2 and its task
+    const t = final({ m: 13, mode: "double", second: { kind: "mod", mp: 11 } }, [14, 22, 27].map((key) => ({ op: "insert", key })), { 1: 79, 4: 69, 5: 98, 7: 72, 11: 50 });
+    expect([t[9], t[10], t[0]]).toEqual([14, 22, 27]);
+    // lecture: deleting 18 leaves a marker, so 62 is still found and 51 reuses the slot
+    const lin = hashFrames({ m: 11, mode: "linear" }, [
+      ...[7, 36, 18, 62].map((key) => ({ op: "insert" as const, key })),
+      { op: "delete", key: 18 }, { op: "search", key: 62 },
+    ]);
+    expect(lin.at(-2)!.state.hit).toBe(9);
+    expect(lin.at(-1)!.state.slots[8]).toBe(DELETED);
+    // quadratic with mod 10 gets stuck on 62
+    const stuck = hashFrames({ m: 10, mode: "quadratic" }, [2, 12, 22, 32, 42, 52, 62].map((key) => ({ op: "insert", key })));
+    expect(stuck.some((f) => /Unable to insert 62/.test(f.message))).toBe(true);
+    const dbl = final({ m: 10, mode: "double", second: { kind: "prime", R: 7 } }, [37, 90, 45, 22, 17, 49, 55].map((key) => ({ op: "insert", key })));
+    expect([dbl[1], dbl[6]]).toEqual([17, 55]);
+  });
+
+  it("hash functions and doubling costs match the slides", () => {
+    expect([hashMultiplication(123, 100), hashMultiplication(150, 100)]).toEqual([1, 70]);
+    const f = hashFolding(12345678, 2);
+    expect([f.shiftHash, f.boundaryHash]).toEqual([80, 98]);
+    expect(hashMidSquare(1234, 2).digits).toBe("22"); // 1522756
+    const c = doublingCosts(10).map((x) => x.cost);
+    expect(c).toEqual([1, 2, 3, 1, 5, 1, 1, 1, 9, 1]);
+    for (const n of [1, 5, 17, 64, 1000]) expect(doublingCosts(n).reduce((t, x) => t + x.cost, 0)).toBeLessThanOrEqual(3 * n);
   });
 
   it("renders the analysis widgets", () => {

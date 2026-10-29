@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -664,6 +664,158 @@ export function QuicksortVisualizer({ initial = [6, 10, 13, 5, 8, 3, 2, 11], ran
         </div>
       }
     />
+  );
+}
+
+/* ------------------------------ hashing ------------------------------ */
+
+const HASH_TITLES: Record<HashMode, string> = {
+  chaining: "Separate chaining",
+  linear: "Linear probing",
+  quadratic: "Quadratic probing",
+  double: "Double hashing",
+};
+
+const DEFAULT_HASH_OPS: HashOp[] = [7, 36, 18, 62].map((key) => ({ op: "insert", key }));
+
+/** Insert / search / delete keys in a hash table and see every probe. */
+export function HashTableVisualizer({
+  m = 11,
+  mode = "linear",
+  c1,
+  c2,
+  second,
+  h1Mod,
+  ops = DEFAULT_HASH_OPS,
+  initial,
+  title,
+}: {
+  m?: number;
+  mode?: HashMode;
+  c1?: number;
+  c2?: number;
+  second?: Second;
+  h1Mod?: number;
+  ops?: HashOp[];
+  initial?: Record<number, number>;
+  title?: string;
+}) {
+  const cfg = useMemo<HashConfig>(() => ({ m, mode, c1, c2, second, h1Mod }), [m, mode, c1, c2, second, h1Mod]);
+  const frames = useMemo(() => hashFrames(cfg, ops, initial), [cfg, ops, initial]);
+  const formula =
+    mode === "chaining" || mode === "linear"
+      ? `h(k, i) = (k + i) mod ${m}`
+      : mode === "quadratic"
+        ? `h(k, i) = (k${c1 ? ` + ${c1 === 1 ? "" : c1}i` : ""} + ${c2 && c2 !== 1 ? c2 : ""}i²) mod ${m}`
+        : `h(k, i) = (k mod ${m} + i·h₂(k)) mod ${m}, h₂(k) = ${second?.kind === "prime" ? `${second.R} − (k mod ${second.R})` : `1 + (k mod ${second?.kind === "mod" ? second.mp : m - 1})`}`;
+  return (
+    <Stepper
+      title={title ?? HASH_TITLES[mode]}
+      frames={frames}
+      code={mode === "chaining" ? CHAIN_PSEUDO : HASH_PSEUDO}
+      codeLabel="Pseudocode"
+      legend={[["bg-neon", "probe path"], ["bg-orange", "collision / miss"], ["bg-mint", "placed / found"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-3">
+          <div className="font-mono text-xs text-muted-foreground">{mode === "chaining" ? `h(k) = k mod ${m}` : formula}</div>
+          {s.op && (
+            <div className="font-display text-lg font-bold">
+              {s.op.op} <span className="text-violet">{s.op.key}</span>
+            </div>
+          )}
+          <div className="flex flex-col gap-1 font-mono text-sm">
+            {s.slots.map((v, i) => {
+              const on = i === s.hit ? "border-mint bg-mint/20" : i === s.bad ? "border-orange bg-orange/15" : s.path.includes(i) ? "border-neon bg-neon/10" : "border-border";
+              const order = s.path.indexOf(i);
+              return (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="w-6 text-right text-[11px] text-muted-foreground">{i}</span>
+                  <span className={`w-16 h-8 flex items-center justify-center border rounded-sm transition-colors ${on}`}>
+                    {mode === "chaining" ? (s.chains[i].length ? "•" : "") : v === DELETED ? <span className="text-[10px] text-orange">deleted</span> : v ?? ""}
+                  </span>
+                  {mode === "chaining" && s.chains[i].map((k, c) => (
+                    <span key={c} className="inline-flex items-center gap-1">
+                      <span className="text-muted-foreground">→</span>
+                      <span className="px-2 py-0.5 border border-sky/60 bg-sky/10 rounded-sm">{k}</span>
+                    </span>
+                  ))}
+                  {order >= 0 && mode !== "chaining" && <span className="text-[10px] text-neon">probe {order}</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    />
+  );
+}
+
+/** One key through every hash function from the lecture. */
+export function HashFunctions({ initial = 12345678 }: { initial?: number }) {
+  const [k, setK] = useState(initial);
+  const mid = hashMidSquare(k, 2);
+  const fold = hashFolding(k, 2);
+  const row = (name: string, how: React.ReactNode, value: React.ReactNode) => (
+    <tr className="border-b border-border/50 align-top">
+      <td className="py-2 pr-4 font-semibold whitespace-nowrap">{name}</td>
+      <td className="py-2 pr-4 text-muted-foreground">{how}</td>
+      <td className="py-2 text-right font-bold text-mint">{value}</td>
+    </tr>
+  );
+  return (
+    <Panel title="Hash functions side by side">
+      <label className="flex flex-wrap items-center gap-3 font-mono text-xs">
+        key k =
+        <input aria-label="key" className={`${inputCls} w-36`} value={k} inputMode="numeric" onChange={(e) => setK(Math.max(0, Math.min(99_999_999, Number(e.target.value) || 0)))} />
+        <span className="text-muted-foreground">table size n = 100</span>
+      </label>
+      <div className="overflow-x-auto">
+        <table className="w-full font-mono text-xs border-collapse min-w-[480px]">
+          <tbody>
+            {row("Division", `${k} mod 97 (a prime near 100)`, hashDivision(k, 97))}
+            {row("Multiplication", `⌊100 · (${k} × 0.618033 mod 1)⌋`, hashMultiplication(k, 100))}
+            {row("Mid-square", <>{k}² = {mid.square.slice(0, mid.start)}<b className="text-foreground">{mid.digits}</b>{mid.square.slice(mid.start + 2)} → middle 2 digits</>, mid.digits)}
+            {row("Fold-shifting", `${fold.parts.join(" + ")} = ${fold.shift}, mod 100`, fold.shiftHash)}
+            {row("Fold-boundary", `${fold.boundaryParts.join(" + ")} = ${fold.boundary}, mod 100 (outer parts reversed)`, fold.boundaryHash)}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
+  );
+}
+
+/** Cost of n appends to a doubling array, with the 3-per-append budget from the accounting method. */
+export function DoublingCostChart({ initialN = 17 }: { initialN?: number }) {
+  const [n, setN] = useState(initialN);
+  const costs = useMemo(() => doublingCosts(n), [n]);
+  const total = costs.reduce((t, c) => t + c.cost, 0);
+  const max = Math.max(...costs.map((c) => c.cost));
+  let bank = 0;
+  const balances = costs.map((c) => (bank += 3 - c.cost));
+  return (
+    <Panel title="Appending to a table that doubles when full" legend={[["bg-sky", "write the new item"], ["bg-orange", "copy everything over"], ["bg-mint", "bank balance at $3 per append"]]}>
+      <label className="flex flex-wrap items-center gap-4 font-mono text-xs">
+        <span className="uppercase tracking-widest text-muted-foreground">appends</span>
+        <input type="range" min={1} max={64} value={n} onChange={(e) => setN(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="number of appends" />
+        <span className="font-display text-xl font-bold w-24">n = {n}</span>
+      </label>
+      <div className="flex items-end gap-[2px] h-36 overflow-x-auto">
+        {costs.map((c, i) => (
+          <div key={i} className="flex flex-col justify-end h-full min-w-[6px] flex-1" title={`append ${i + 1}: cost ${c.cost}`}>
+            {c.copied > 0 && <div className="bg-orange rounded-t-[1px]" style={{ height: `${(c.copied / max) * 100}%` }} />}
+            <div className="bg-sky" style={{ height: `${(1 / max) * 100}%`, minHeight: 2 }} />
+          </div>
+        ))}
+      </div>
+      <div className="flex items-end gap-[2px] h-10">
+        {balances.map((b, i) => (
+          <div key={i} className="flex-1 min-w-[6px] bg-mint/70" style={{ height: `${(b / Math.max(...balances)) * 100}%` }} title={`balance after append ${i + 1}: $${b}`} />
+        ))}
+      </div>
+      <p className="font-mono text-xs">
+        total cost = <b>{total}</b> ≤ 3n = <b>{3 * n}</b>, so the amortized cost is <b className="text-mint">{(total / n).toFixed(2)}</b> per append. The bank never goes below 0 (lowest: ${Math.min(...balances)}).
+      </p>
+    </Panel>
   );
 }
 

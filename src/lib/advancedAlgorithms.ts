@@ -309,6 +309,198 @@ export function quicksortFrames(input: number[], randomized = false, seed = 7): 
   return frames;
 }
 
+/* ------------------------------ hashing ------------------------------ */
+
+export type HashMode = "chaining" | "linear" | "quadratic" | "double";
+export type Second = { kind: "prime"; R: number } | { kind: "mod"; mp: number };
+export type HashConfig = { m: number; mode: HashMode; c1?: number; c2?: number; second?: Second; h1Mod?: number };
+export type HashOp = { op: "insert" | "search" | "delete"; key: number };
+export const DELETED = "DEL" as const;
+export type Slot = number | null | typeof DELETED;
+export type HashState = { slots: Slot[]; chains: number[][]; probe?: number; path: number[]; hit?: number; bad?: number; op?: HashOp };
+
+export const HASH_PSEUDO = [
+  "HASH-INSERT(T, k)",
+  "  i = 0",
+  "  repeat j = h(k, i)",
+  "    if T[j] == NIL or T[j] == DELETED",
+  "      T[j] = k; return j",
+  "    else i = i + 1",
+  "  until i == m",
+  "  error \"hash table overflow\"",
+  "",
+  "HASH-SEARCH(T, k)          ⊳ delete = search, then mark DELETED",
+  "  i = 0",
+  "  repeat j = h(k, i)",
+  "    if T[j] == k return j",
+  "    i = i + 1",
+  "  until T[j] == NIL or i == m",
+  "  return NIL",
+];
+
+export const CHAIN_PSEUDO = [
+  "CHAINED-INSERT(T, x)",
+  "  insert x at the head of list T[h(x.key)]",
+  "",
+  "CHAINED-SEARCH(T, k)",
+  "  search for k in list T[h(k)]",
+  "",
+  "CHAINED-DELETE(T, x)",
+  "  delete x from list T[h(x.key)]",
+];
+
+export function h1(k: number, cfg: HashConfig) {
+  return k % (cfg.h1Mod ?? cfg.m);
+}
+
+export function h2(k: number, s: Second) {
+  return s.kind === "prime" ? s.R - (k % s.R) : 1 + (k % s.mp);
+}
+
+/** The i-th slot in k's probe sequence. */
+export function probeAt(k: number, i: number, cfg: HashConfig): number {
+  const base = h1(k, cfg);
+  switch (cfg.mode) {
+    case "chaining":
+    case "linear":
+      return (base + i) % cfg.m;
+    case "quadratic":
+      return (base + (cfg.c1 ?? 0) * i + (cfg.c2 ?? 1) * i * i) % cfg.m;
+    case "double":
+      return (base + i * h2(k, cfg.second ?? { kind: "mod", mp: cfg.m - 1 })) % cfg.m;
+  }
+}
+
+/** Human-readable formula for one probe, e.g. "(62 + 2·2) mod 11 = 0". */
+export function probeText(k: number, i: number, cfg: HashConfig): string {
+  const base = h1(k, cfg);
+  const pre = cfg.h1Mod && cfg.h1Mod !== cfg.m ? `${base}` : `${k}`;
+  const v = probeAt(k, i, cfg);
+  switch (cfg.mode) {
+    case "chaining":
+      return `${k} mod ${cfg.m} = ${v}`;
+    case "linear":
+      return `(${pre} + ${i}) mod ${cfg.m} = ${v}`;
+    case "quadratic": {
+      const c1 = cfg.c1 ?? 0;
+      const c2 = cfg.c2 ?? 1;
+      const lin = c1 ? ` + ${c1 === 1 ? "" : `${c1}·`}${i}` : "";
+      return `(${pre}${lin} + ${c2 === 1 ? "" : `${c2}·`}${i}²) mod ${cfg.m} = ${v}`;
+    }
+    case "double": {
+      const d = h2(k, cfg.second ?? { kind: "mod", mp: cfg.m - 1 });
+      return `(${pre} + ${i}·${d}) mod ${cfg.m} = ${v}`;
+    }
+  }
+}
+
+/** Run a list of insert / search / delete operations on a hash table and record every probe. */
+export function hashFrames(cfg: HashConfig, ops: HashOp[], initial: Record<number, number> = {}): Frame<HashState>[] {
+  const slots: Slot[] = Array(cfg.m).fill(null);
+  const chains: number[][] = Array.from({ length: cfg.m }, () => []);
+  Object.entries(initial).forEach(([i, k]) => (slots[Number(i)] = k));
+  const frames: Frame<HashState>[] = [];
+  let probes = 0;
+  let collisions = 0;
+  const push = (s: Partial<HashState>, message: string, line = 0) =>
+    frames.push({ state: { slots: [...slots], chains: chains.map((c) => [...c]), path: [], ...s }, line, message, stats: { probes, collisions } });
+
+  const kind = cfg.mode === "chaining" ? "separate chaining" : cfg.mode === "double" ? "double hashing" : `${cfg.mode} probing`;
+  push({}, `Table of size m = ${cfg.m}, using ${kind}.`);
+
+  for (const op of ops) {
+    const { key } = op;
+    if (cfg.mode === "chaining") {
+      const j = h1(key, cfg);
+      probes++;
+      const chain = chains[j];
+      if (op.op === "insert") {
+        if (chain.length) collisions++;
+        chain.unshift(key);
+        push({ probe: j, path: [j], hit: j, op }, `Insert ${key}: h(${key}) = ${probeText(key, 0, cfg)}. ${chain.length > 1 ? `Collision, so add it to the front of the chain at slot ${j}.` : `Slot ${j} starts a chain.`}`, 1);
+      } else {
+        const at = chain.indexOf(key);
+        if (op.op === "delete" && at >= 0) chain.splice(at, 1);
+        push({ probe: j, path: [j], hit: at >= 0 ? j : undefined, bad: at < 0 ? j : undefined, op }, `${op.op === "search" ? "Search" : "Delete"} ${key}: walk the chain at slot ${j}. ${at >= 0 ? (op.op === "search" ? `Found it after ${at + 1} comparison${at ? "s" : ""}.` : "Found it and unlinked it.") : "It's not there."}`, op.op === "search" ? 4 : 7);
+      }
+      continue;
+    }
+
+    const path: number[] = [];
+    let done = false;
+    for (let i = 0; i < cfg.m && !done; i++) {
+      const j = probeAt(key, i, cfg);
+      path.push(j);
+      probes++;
+      const s = slots[j];
+      const f = `h(${key}, ${i}) = ${probeText(key, i, cfg)}`;
+      if (op.op === "insert") {
+        if (s === null || s === DELETED) {
+          slots[j] = key;
+          push({ probe: j, path: [...path], hit: j, op }, `Insert ${key}: ${f}. ${s === DELETED ? "A \"deleted\" slot counts as free" : "Empty"}, so put ${key} here.`, 4);
+          done = true;
+        } else {
+          collisions++;
+          push({ probe: j, path: [...path], bad: j, op }, `Insert ${key}: ${f}. Occupied by ${s}: collision, so try the next probe.`, 5);
+        }
+      } else if (s === key) {
+        if (op.op === "delete") slots[j] = DELETED;
+        push({ probe: j, path: [...path], hit: j, op }, `${op.op === "search" ? "Search" : "Delete"} ${key}: ${f}. Found it${op.op === "delete" ? `, and marked the slot "deleted" instead of emptying it, so later searches don't stop here` : ""}.`, 12);
+        done = true;
+      } else if (s === null) {
+        push({ probe: j, path: [...path], bad: j, op }, `${op.op === "search" ? "Search" : "Delete"} ${key}: ${f}. An empty slot ends the search: ${key} is not in the table.`, 15);
+        done = true;
+      } else {
+        push({ probe: j, path: [...path], bad: j, op }, `${op.op === "search" ? "Search" : "Delete"} ${key}: ${f}. ${s === DELETED ? `A "deleted" marker: keep going, ${key} might be further along.` : `Holds ${s}, not ${key}: keep probing.`}`, 13);
+      }
+    }
+    if (!done) push({ path, op }, `${op.op === "insert" ? `Unable to insert ${key}` : `${key} not found`}: all ${cfg.m} probes tried${op.op === "insert" ? " and none hit a free slot. Hash table overflow." : "."}`, op.op === "insert" ? 7 : 15);
+  }
+  push({}, `Done. ${probes} probes in total, ${collisions} collisions.`);
+  return frames;
+}
+
+/* --------------------------- hash functions --------------------------- */
+
+export const hashDivision = (k: number, m: number) => k % m;
+export const hashMultiplication = (k: number, m: number, A = 0.618033) => Math.floor(m * ((k * A) % 1));
+
+/** Square the key and take the middle r digits. */
+export function hashMidSquare(k: number, r: number) {
+  const sq = String(k * k);
+  const start = Math.max(0, Math.floor((sq.length - r) / 2));
+  return { square: sq, digits: sq.slice(start, start + r), start };
+}
+
+/** Fold-shifting and fold-boundary into parts of `size` digits, then mod 10^size. */
+export function hashFolding(k: number, size: number) {
+  const s = String(k);
+  const parts: string[] = [];
+  for (let i = 0; i < s.length; i += size) parts.push(s.slice(i, i + size));
+  const mod = Math.pow(10, size);
+  const shift = parts.reduce((t, p) => t + Number(p), 0);
+  const boundaryParts = parts.map((p, i) => (i === 0 || i === parts.length - 1 ? p.split("").reverse().join("") : p));
+  const boundary = boundaryParts.reduce((t, p) => t + Number(p), 0);
+  return { parts, shift, shiftHash: shift % mod, boundaryParts, boundary, boundaryHash: boundary % mod };
+}
+
+/* ------------------------- amortized analysis ------------------------- */
+
+/** Cost of each append to a doubling dynamic array that starts with capacity 1: 1 for the write, plus the copy when full. */
+export function doublingCosts(n: number): { cost: number; size: number; copied: number }[] {
+  const out: { cost: number; size: number; copied: number }[] = [];
+  let cap = 1;
+  for (let i = 1; i <= n; i++) {
+    let copied = 0;
+    if (i - 1 === cap) {
+      copied = cap;
+      cap *= 2;
+    }
+    out.push({ cost: 1 + copied, size: cap, copied });
+  }
+  return out;
+}
+
 /* ------------------------- order statistics ------------------------- */
 
 export type SelectState = ArrayState & { want: number; low?: [number, number]; high?: [number, number] };
