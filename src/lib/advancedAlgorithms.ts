@@ -309,6 +309,277 @@ export function quicksortFrames(input: number[], randomized = false, seed = 7): 
   return frames;
 }
 
+/* --------------------------- red-black trees --------------------------- */
+
+export type Color = "R" | "B";
+export type RBNode = { id: number; key: number; color: Color; left: number | null; right: number | null; parent: number | null };
+export type RBSnapshot = { nodes: RBNode[]; root: number | null };
+export type RBState = RBSnapshot & { focus?: number[]; note?: string; caseLabel?: string };
+
+export const CPP_RB = [
+  "void rbInsert(T, x) {",
+  "    treeInsert(T, x);  x->color = RED;   // only property 3 can break",
+  "    while (x != root && x->p->color == RED) {",
+  "        y = uncle(x);",
+  "        if (y->color == RED) {            // Case 1: recolor, move up",
+  "            x->p->color = y->color = BLACK; x->p->p->color = RED;",
+  "            x = x->p->p;",
+  "        } else {",
+  "            if (x is an inner child) {    // Case 2: rotate into Case 3",
+  "                x = x->p;  rotate(x);",
+  "            }",
+  "            x->p->color = BLACK; x->p->p->color = RED;   // Case 3",
+  "            rotate(x->p->p);              // done",
+  "        }",
+  "    }",
+  "    root->color = BLACK;",
+  "}",
+  "",
+  "void rbDelete(T, z) {",
+  "    y = (z has 2 children) ? predecessor(z) : z;  // copy y's key into z",
+  "    x = y's only child (maybe NIL);  splice y out;",
+  "    if (y->color == BLACK) rbTreeFix(T, x);      // x carries an extra black",
+  "}",
+  "void rbTreeFix(T, x) {",
+  "    while (x != root && x->color == BLACK) {",
+  "        w = sibling(x);",
+  "        if (w->color == RED)                      // sibling red: rotate",
+  "        else if (both of w's children are BLACK)  // pass the token up",
+  "        else                                      // a red nephew: rotate, done",
+  "    }",
+  "    x->color = BLACK;                             // x red: just color it black",
+  "}",
+];
+
+/** A red-black tree that records a frame at every recolor and rotation (insertion as in CLRS, deletion with the predecessor). */
+export class RBTree {
+  nodes = new Map<number, RBNode>();
+  root: number | null = null;
+  private next = 1;
+  frames: Frame<RBState>[] = [];
+  rotations = 0;
+
+  constructor(keys: number[] = []) {
+    for (const k of keys) this.insert(k, false);
+    this.frames = [];
+  }
+
+  snap(): RBSnapshot {
+    return { nodes: [...this.nodes.values()].map((n) => ({ ...n })), root: this.root };
+  }
+
+  private push(line: number, message: string, focus: number[] = [], caseLabel?: string) {
+    this.frames.push({ state: { ...this.snap(), focus, caseLabel }, line, message, stats: { nodes: this.nodes.size, rotations: this.rotations, height: this.height() } });
+  }
+
+  height(id = this.root): number {
+    if (id === null) return 0;
+    const n = this.nodes.get(id)!;
+    return 1 + Math.max(this.height(n.left), this.height(n.right));
+  }
+
+  private n(id: number | null) {
+    return id === null ? null : this.nodes.get(id)!;
+  }
+  private color(id: number | null): Color {
+    return id === null ? "B" : this.nodes.get(id)!.color;
+  }
+  private key(id: number | null) {
+    return id === null ? "NIL" : String(this.nodes.get(id)!.key);
+  }
+
+  private rotate(xId: number, dir: "left" | "right", record: boolean) {
+    const x = this.nodes.get(xId)!;
+    const yId = dir === "left" ? x.right! : x.left!;
+    const y = this.nodes.get(yId)!;
+    const inner = dir === "left" ? y.left : y.right;
+    if (dir === "left") x.right = inner;
+    else x.left = inner;
+    if (inner !== null) this.nodes.get(inner)!.parent = xId;
+    y.parent = x.parent;
+    if (x.parent === null) this.root = yId;
+    else {
+      const p = this.nodes.get(x.parent)!;
+      if (p.left === xId) p.left = yId;
+      else p.right = yId;
+    }
+    if (dir === "left") y.left = xId;
+    else y.right = xId;
+    x.parent = yId;
+    this.rotations++;
+    if (record) this.push(dir === "left" ? 9 : 12, `${dir === "left" ? "Left" : "Right"}-rotate at ${x.key}: ${y.key} moves up and ${x.key} becomes its ${dir} child. The in-order order of the keys doesn't change.`, [xId, yId]);
+  }
+
+  insert(key: number, record = true) {
+    let p: number | null = null;
+    let cur = this.root;
+    while (cur !== null) {
+      p = cur;
+      cur = key < this.nodes.get(cur)!.key ? this.nodes.get(cur)!.left : this.nodes.get(cur)!.right;
+    }
+    const id = this.next++;
+    this.nodes.set(id, { id, key, color: "R", left: null, right: null, parent: p });
+    if (p === null) this.root = id;
+    else if (key < this.nodes.get(p)!.key) this.nodes.get(p)!.left = id;
+    else this.nodes.get(p)!.right = id;
+    if (record) this.push(1, `Insert ${key} as in an ordinary BST and color it red. That keeps every black-height the same, so only property 3 (no red node with a red parent) can break.`, [id]);
+
+    let x = id;
+    while (x !== this.root && this.color(this.n(x)!.parent) === "R") {
+      const pId = this.n(x)!.parent!;
+      const gId = this.n(pId)!.parent!;
+      const g = this.n(gId)!;
+      const parentIsLeft = g.left === pId;
+      const yId = parentIsLeft ? g.right : g.left;
+      if (record) this.push(2, `${this.key(x)} and its parent ${this.key(pId)} are both red. Look at the uncle ${this.key(yId)}: it is ${this.color(yId) === "R" ? "red" : "black"}.`, [x, pId, ...(yId ? [yId] : [])]);
+      if (this.color(yId) === "R") {
+        this.n(pId)!.color = "B";
+        this.n(yId)!.color = "B";
+        g.color = "R";
+        x = gId;
+        if (record) this.push(5, `Case 1 (red uncle): recolor. Parent and uncle become black and the grandparent ${g.key} becomes red. ${g.key} might now clash with its own parent, so continue from there.`, [pId, yId!, gId], "Case 1");
+      } else {
+        const xIsRight = this.n(pId)!.right === x;
+        if (xIsRight === parentIsLeft) {
+          if (record) this.push(8, `Case 2 (black uncle, and ${this.key(x)} is an inner child, bent towards the middle): rotate at the parent ${this.key(pId)} to straighten it into Case 3.`, [x, pId], "Case 2");
+          x = pId;
+          this.rotate(x, parentIsLeft ? "left" : "right", record);
+        }
+        const p2 = this.n(x)!.parent!;
+        const g2 = this.n(p2)!.parent!;
+        this.n(p2)!.color = "B";
+        this.n(g2)!.color = "R";
+        if (record) this.push(11, `Case 3 (black uncle, on the outside): color the parent ${this.key(p2)} black and the grandparent ${this.key(g2)} red …`, [p2, g2], "Case 3");
+        this.rotate(g2, parentIsLeft ? "right" : "left", record);
+        if (record) this.push(12, `… and rotate at the grandparent. Done: no more property 3 violations are possible.`, [p2], "Case 3");
+      }
+    }
+    if (this.color(this.root) === "R") {
+      this.n(this.root)!.color = "B";
+      if (record) this.push(15, `Color the root black (property 2).`, [this.root!]);
+    } else if (record) this.push(15, `The tree satisfies all red-black properties again.`, []);
+  }
+
+  private find(key: number) {
+    let cur = this.root;
+    while (cur !== null && this.nodes.get(cur)!.key !== key) cur = key < this.nodes.get(cur)!.key ? this.nodes.get(cur)!.left : this.nodes.get(cur)!.right;
+    return cur;
+  }
+
+  delete(key: number, record = true) {
+    const zId = this.find(key);
+    if (zId === null) {
+      if (record) this.push(18, `${key} is not in the tree.`, []);
+      return;
+    }
+    const z = this.n(zId)!;
+    let yId = zId;
+    if (z.left !== null && z.right !== null) {
+      yId = z.left;
+      while (this.n(yId)!.right !== null) yId = this.n(yId)!.right!;
+      if (record) this.push(19, `${key} has two children. Replace its key with its predecessor ${this.n(yId)!.key} (the largest key in its left subtree), then remove the predecessor's node instead.`, [zId, yId]);
+      z.key = this.n(yId)!.key;
+    }
+    const y = this.n(yId)!;
+    const xId = y.left ?? y.right;
+    const xParent = y.parent;
+    if (xId !== null) this.n(xId)!.parent = xParent;
+    if (xParent === null) this.root = xId;
+    else if (this.n(xParent)!.left === yId) this.n(xParent)!.left = xId;
+    else this.n(xParent)!.right = xId;
+    this.nodes.delete(yId);
+    const removedBlack = y.color === "B";
+    if (record)
+      this.push(20, `Remove the node that held ${y.key}; ${xId === null ? "a NIL leaf" : `its child ${this.key(xId)}`} takes its place. ${removedBlack ? "It was black, so paths through here lost a black node: give x an extra black token." : "It was red, so no property can break."}`, xId ? [xId] : xParent ? [xParent] : []);
+    if (removedBlack) this.fix(xId, xParent, record);
+  }
+
+  private fix(xId0: number | null, parent0: number | null, record: boolean) {
+    let xId = xId0;
+    let pId = parent0;
+    while (xId !== this.root && this.color(xId) === "B" && pId !== null) {
+      const p = this.n(pId)!;
+      const isLeft = p.left === xId;
+      let wId = isLeft ? p.right : p.left;
+      if (this.color(wId) === "R") {
+        this.n(wId)!.color = "B";
+        p.color = "R";
+        if (record) this.push(26, `x = ${this.key(xId)} is doubly black and its sibling ${this.key(wId)} is red: swap the colors of the sibling and the parent …`, [wId!, pId], "Sibling red");
+        this.rotate(pId, isLeft ? "left" : "right", record);
+        wId = isLeft ? p.right : p.left;
+      }
+      const w = this.n(wId);
+      const near = w ? (isLeft ? w.left : w.right) : null;
+      const far = w ? (isLeft ? w.right : w.left) : null;
+      if (this.color(near) === "B" && this.color(far) === "B") {
+        if (w) w.color = "R";
+        if (record) this.push(27, `The sibling ${this.key(wId)} is black and both nephews are black: color the sibling red and pass the black token up to the parent ${p.key}.`, [...(wId ? [wId] : []), pId], "Both nephews black");
+        xId = pId;
+        pId = p.parent;
+      } else {
+        if (this.color(far) === "B") {
+          this.n(near)!.color = "B";
+          w!.color = "R";
+          if (record) this.push(28, `Only the near nephew ${this.key(near)} is red: recolor and rotate at the sibling so the red nephew is on the far side …`, [near!, wId!], "Red nephew");
+          this.rotate(wId!, isLeft ? "right" : "left", record);
+          wId = isLeft ? p.right : p.left;
+        }
+        const w2 = this.n(wId)!;
+        w2.color = p.color;
+        p.color = "B";
+        const far2 = isLeft ? w2.right : w2.left;
+        if (far2 !== null) this.n(far2)!.color = "B";
+        if (record) this.push(28, `The far nephew is red: the sibling takes the parent's color, the parent and the far nephew become black …`, [wId!, pId], "Red nephew");
+        this.rotate(pId, isLeft ? "left" : "right", record);
+        if (record) this.push(28, `… and rotate at the parent. The extra black is absorbed: done.`, [wId!], "Red nephew");
+        xId = this.root;
+        pId = null;
+      }
+    }
+    if (xId !== null && this.color(xId) === "R") {
+      this.n(xId)!.color = "B";
+      if (record) this.push(30, `x = ${this.key(xId)} is red: just color it black. That restores the lost black.`, [xId], "x red");
+    } else if (record) this.push(30, `All red-black properties hold again.`, []);
+  }
+
+  /** Checks properties 2–4; returns the black-height, or throws on a violation. */
+  check(): number {
+    if (this.color(this.root) !== "B") throw new Error("root is red");
+    const walk = (id: number | null): number => {
+      if (id === null) return 1;
+      const n = this.n(id)!;
+      if (n.color === "R" && (this.color(n.left) === "R" || this.color(n.right) === "R")) throw new Error(`red ${n.key} has a red child`);
+      const l = walk(n.left);
+      const r = walk(n.right);
+      if (l !== r) throw new Error(`black-heights differ under ${n.key}`);
+      return l + (n.color === "B" ? 1 : 0);
+    };
+    return walk(this.root);
+  }
+
+  inorder(): number[] {
+    const out: number[] = [];
+    const walk = (id: number | null) => {
+      if (id === null) return;
+      walk(this.n(id)!.left);
+      out.push(this.n(id)!.key);
+      walk(this.n(id)!.right);
+    };
+    walk(this.root);
+    return out;
+  }
+}
+
+export type RBOp = { op: "insert" | "delete"; key: number };
+
+/** Frames for a list of operations, starting from a tree built silently from `start`. */
+export function rbFrames(start: number[], ops: RBOp[]): Frame<RBState>[] {
+  const t = new RBTree(start);
+  t.frames.push({ state: { ...t.snap(), focus: [] }, line: 0, message: start.length ? `A red-black tree with ${start.length} keys.` : "An empty red-black tree.", stats: { nodes: t.nodes.size, rotations: 0, height: t.height() } });
+  for (const o of ops) (o.op === "insert" ? t.insert(o.key) : t.delete(o.key));
+  return t.frames;
+}
+
 /* ------------------------------ hashing ------------------------------ */
 
 export type HashMode = "chaining" | "linear" | "quadratic" | "double";

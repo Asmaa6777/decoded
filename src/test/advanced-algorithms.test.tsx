@@ -40,7 +40,7 @@ describe("Advanced Algorithms & Analysis course", () => {
     expect(files.length).toBe(flattenLessons(course).length);
     for (const banned of [
       "cairo", "university", "faculty", "lecturer", "instructor", "basheer", "youssef", "kamal", "ramly",
-      "leiserson", "demaine", "copyright", "©", "cs214", "fall 2026", "dr.", "prof.", "phd",
+      "leiserson", "demaine", "luebke", "copyright", "©", "cs214", "fall 2026", "dr.", "prof.", "phd",
     ]) {
       expect(all, `found "${banned}"`).not.toContain(banned);
     }

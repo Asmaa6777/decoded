@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -664,6 +664,171 @@ export function QuicksortVisualizer({ initial = [6, 10, 13, 5, 8, 3, 2, 11], ran
         </div>
       }
     />
+  );
+}
+
+/* --------------------------- red-black trees --------------------------- */
+
+const RB_DX = 46;
+const RB_DY = 60;
+
+/** Draw a red-black tree: in-order rank gives x, depth gives y. Nodes are keyed by id so rotations slide. */
+export function RBTreeView({ snap, focus = [], showNil = false }: { snap: RBSnapshot; focus?: number[]; showNil?: boolean }) {
+  const byId = new Map(snap.nodes.map((n) => [n.id, n]));
+  const pos = new Map<number, { x: number; y: number }>();
+  const nils: { x: number; y: number; px: number; py: number }[] = [];
+  let rank = 0;
+  let maxDepth = 0;
+  const walk = (id: number | null, d: number) => {
+    if (id === null) return;
+    const n = byId.get(id)!;
+    walk(n.left, d + 1);
+    pos.set(id, { x: 28 + rank++ * RB_DX, y: 26 + d * RB_DY });
+    maxDepth = Math.max(maxDepth, d);
+    walk(n.right, d + 1);
+  };
+  walk(snap.root, 0);
+  if (showNil)
+    snap.nodes.forEach((n) => {
+      const p = pos.get(n.id)!;
+      if (n.left === null) nils.push({ x: p.x - 14, y: p.y + 36, px: p.x, py: p.y });
+      if (n.right === null) nils.push({ x: p.x + 14, y: p.y + 36, px: p.x, py: p.y });
+    });
+  const w = Math.max(120, 28 * 2 + Math.max(0, rank - 1) * RB_DX);
+  const h = 26 * 2 + maxDepth * RB_DY + (showNil ? 30 : 0);
+  if (snap.root === null) return <div className="font-mono text-sm text-muted-foreground py-6">(empty tree)</div>;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} className="block mx-auto max-w-full h-auto" role="img" aria-label="Red-black tree">
+      {snap.nodes.map((n) =>
+        [n.left, n.right].filter((c): c is number => c !== null).map((c) => {
+          const a = pos.get(n.id)!;
+          const b = pos.get(c)!;
+          return <line key={`${n.id}-${c}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="stroke-border" strokeWidth={2} />;
+        }),
+      )}
+      {nils.map((p, i) => (
+        <g key={`nil-${i}`}>
+          <line x1={p.px} y1={p.py} x2={p.x} y2={p.y} className="stroke-border" strokeWidth={1} />
+          <rect x={p.x - 7} y={p.y - 5} width={14} height={10} className="fill-zinc-900 stroke-foreground/40" strokeWidth={1} />
+        </g>
+      ))}
+      {snap.nodes.map((n) => {
+        const p = pos.get(n.id)!;
+        const on = focus.includes(n.id);
+        return (
+          <g key={n.id} style={{ transform: `translate(${p.x}px, ${p.y}px)` }} className="transition-transform duration-500 ease-out motion-reduce:transition-none">
+            {on && <circle r={22} className="fill-none stroke-neon" strokeWidth={3} />}
+            <circle r={17} strokeWidth={2} className={`transition-colors duration-300 ${n.color === "R" ? "fill-orange stroke-orange" : "fill-zinc-900 stroke-foreground/50"}`} />
+            <text textAnchor="middle" dominantBaseline="central" fontSize={12} className="font-mono font-bold fill-white">
+              {n.key}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/** Insert and delete keys in a red-black tree, one recolor or rotation per step. */
+const NO_KEYS: number[] = [];
+const NO_OPS: RBOp[] = [];
+
+export function RBTreeVisualizer({ start = NO_KEYS, ops: ops0 = NO_OPS }: { start?: number[]; ops?: RBOp[] }) {
+  const [ops, setOps] = useState<RBOp[]>(ops0);
+  const [text, setText] = useState("");
+  const [showNil, setShowNil] = useState(false);
+  const frames = useMemo(() => rbFrames(start, ops), [start, ops]);
+  const [startAt, setStartAt] = useState(0);
+  const add = (op: RBOp["op"]) => {
+    const key = Number(text);
+    if (!Number.isInteger(key) || text.trim() === "") return;
+    setStartAt(frames.length);
+    setOps((o) => [...o, { op, key }]);
+    setText("");
+  };
+  return (
+    <Stepper
+      title="Red-black tree"
+      frames={frames}
+      startAt={startAt}
+      code={CPP_RB}
+      codeLabel="C++ (outline)"
+      legend={[["bg-orange", "red node"], ["bg-zinc-900", "black node"], ["bg-neon", "involved in this step"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-2">
+          {s.caseLabel && <span className="self-start font-mono text-[11px] uppercase tracking-widest px-2 py-0.5 border border-violet text-violet rounded-sm">{s.caseLabel}</span>}
+          <RBTreeView snap={s} focus={s.focus} showNil={showNil} />
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center gap-2">
+          <input aria-label="key" className={`${inputCls} w-24`} value={text} inputMode="numeric" onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add("insert")} placeholder="key" />
+          <button type="button" className={btn} onClick={() => add("insert")}>
+            Insert
+          </button>
+          <button type="button" className={btn} onClick={() => add("delete")}>
+            Delete
+          </button>
+          <button type="button" className={btn} onClick={() => setShowNil((v) => !v)} aria-pressed={showNil}>
+            {showNil ? "Hide" : "Show"} NIL leaves
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => {
+              setStartAt(0);
+              setOps(ops0);
+            }}
+          >
+            Reset
+          </button>
+        </div>
+      }
+    />
+  );
+}
+
+/** Left and right rotation on the lecture's picture: A, B and the subtrees α, β, γ. */
+export function RotationDemo() {
+  const [right, setRight] = useState(true); // true: B is the root (before RIGHT-ROTATE(B))
+  const P = right
+    ? { B: [150, 30], A: [90, 100], a: [55, 170], b: [125, 170], c: [210, 100] }
+    : { A: [150, 30], B: [210, 100], a: [90, 100], b: [175, 170], c: [245, 170] };
+  const edges: [keyof typeof P, keyof typeof P][] = right
+    ? [["B", "A"], ["B", "c"], ["A", "a"], ["A", "b"]]
+    : [["A", "a"], ["A", "B"], ["B", "b"], ["B", "c"]];
+  const label: Record<string, string> = { a: "α", b: "β", c: "γ" };
+  const move = "transition-transform duration-500 ease-out motion-reduce:transition-none";
+  return (
+    <Panel title={right ? "RIGHT-ROTATE(B)" : "LEFT-ROTATE(A)"} legend={[["bg-violet", "the moving subtree β"]]}>
+      <svg viewBox="0 0 300 200" className="w-full max-w-[420px] h-auto mx-auto" role="img" aria-label="Rotation">
+        {edges.map(([u, v]) => (
+          <line key={`${u}${v}`} x1={P[u][0]} y1={P[u][1]} x2={P[v][0]} y2={P[v][1]} className="stroke-border" strokeWidth={2} />
+        ))}
+        {(["A", "B"] as const).map((k) => (
+          <g key={k} style={{ transform: `translate(${P[k][0]}px, ${P[k][1]}px)` }} className={move}>
+            <circle r={18} className="fill-card stroke-current" strokeWidth={2} />
+            <text textAnchor="middle" dominantBaseline="central" fontSize={14} className="font-mono font-bold fill-current">
+              {k}
+            </text>
+          </g>
+        ))}
+        {(["a", "b", "c"] as const).map((k) => (
+          <g key={k} style={{ transform: `translate(${P[k][0]}px, ${P[k][1]}px)` }} className={move}>
+            <path d="M0,-14 L18,16 L-18,16 Z" className={k === "b" ? "fill-violet/25 stroke-violet" : "fill-card stroke-muted-foreground"} strokeWidth={2} />
+            <text y={6} textAnchor="middle" fontSize={13} className="font-mono fill-current">
+              {label[k]}
+            </text>
+          </g>
+        ))}
+      </svg>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className={btn} onClick={() => setRight((r) => !r)}>
+          {right ? "RIGHT-ROTATE(B) →" : "← LEFT-ROTATE(A)"}
+        </button>
+        <span className="font-mono text-xs text-muted-foreground">in-order is always α, A, β, B, γ</span>
+      </div>
+    </Panel>
   );
 }
 

@@ -89,6 +89,7 @@ export function Stepper<S>({
   render,
   legend,
   inputs,
+  startAt = 0,
 }: {
   title: string;
   frames: Frame<S>[];
@@ -98,6 +99,8 @@ export function Stepper<S>({
   render: (state: S) => ReactNode;
   legend?: [string, string][];
   inputs?: ReactNode;
+  /** frame to show when `frames` changes, e.g. the first step of a newly added operation */
+  startAt?: number;
 }) {
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -120,8 +123,10 @@ export function Stepper<S>({
   }, []);
 
   useEffect(() => {
-    setIdx(0);
+    setIdx(Math.min(startAt, Math.max(0, frames.length - 1)));
     setPlaying(false);
+    // startAt is read when frames change, not tracked on its own
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frames]);
 
   useEffect(() => {
