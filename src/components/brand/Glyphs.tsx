@@ -35,6 +35,15 @@ const COURSE_GLYPHS: Record<string, (p: IconProps) => JSX.Element> = {
       <path d="M5 20v-6M12 20V9M19 20V4" />
     </svg>
   ),
+  // balanced tree: a root and two children
+  "advanced-algorithms": ({ className }) => (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="5" r="2.5" />
+      <circle cx="6" cy="18" r="2.5" />
+      <circle cx="18" cy="18" r="2.5" fill="currentColor" />
+      <path d="M10.6 7.1L7.2 15.8M13.4 7.1l3.4 8.7" />
+    </svg>
+  ),
   // chip
   "operating-systems": ({ className }) => (
     <svg {...base} className={className}>

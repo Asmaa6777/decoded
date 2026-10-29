@@ -35,6 +35,30 @@ import AdaBfsDfs from "@/content/algorithm-design-and-analysis/m3-01-bfs-and-dfs
 import AdaGreedy from "@/content/algorithm-design-and-analysis/m4-01-greedy-and-mst.mdx";
 import AdaDynamic from "@/content/algorithm-design-and-analysis/m4-02-dynamic-programming.mdx";
 import AdaFinalQuiz from "@/content/algorithm-design-and-analysis/m4-03-final-quiz.mdx";
+import AaAnalysis from "@/content/advanced-algorithms/m0-01-analysis-of-algorithms.mdx";
+import AaCountingOperations from "@/content/advanced-algorithms/m0-02-every-worst-average-best.mdx";
+import AaAsymptotic from "@/content/advanced-algorithms/m0-03-asymptotic-notation.mdx";
+import AaRecurrences from "@/content/advanced-algorithms/m0-04-solving-recurrences.mdx";
+import AaLabBits from "@/content/advanced-algorithms/m0-05-lab-bit-manipulation.mdx";
+import AaLabAnalysis from "@/content/advanced-algorithms/m0-06-lab-algorithm-analysis.mdx";
+import AaDivideConquer from "@/content/advanced-algorithms/m1-01-divide-and-conquer.mdx";
+import AaLabDivideConquer from "@/content/advanced-algorithms/m1-02-lab-divide-and-conquer.mdx";
+import AaQuicksort from "@/content/advanced-algorithms/m1-03-quicksort.mdx";
+import AaLowerBounds from "@/content/advanced-algorithms/m1-04-sorting-lower-bounds.mdx";
+import AaOrderStatistics from "@/content/advanced-algorithms/m1-05-order-statistics.mdx";
+import AaHashing from "@/content/advanced-algorithms/m2-01-hashing.mdx";
+import AaCollisions from "@/content/advanced-algorithms/m2-02-collision-resolution.mdx";
+import AaLabHashing from "@/content/advanced-algorithms/m2-03-lab-hashing.mdx";
+import AaBalancedTrees from "@/content/advanced-algorithms/m2-04-balanced-search-trees.mdx";
+import AaRedBlackOps from "@/content/advanced-algorithms/m2-05-red-black-insert-delete.mdx";
+import AaAugmenting from "@/content/advanced-algorithms/m2-06-augmenting-data-structures.mdx";
+import AaSkipLists from "@/content/advanced-algorithms/m2-07-skip-lists.mdx";
+import AaDynamic from "@/content/advanced-algorithms/m3-01-dynamic-programming.mdx";
+import AaGreedy from "@/content/advanced-algorithms/m3-02-greedy-algorithms.mdx";
+import AaMst from "@/content/advanced-algorithms/m3-03-minimum-spanning-trees.mdx";
+import AaHuffman from "@/content/advanced-algorithms/m3-04-huffman-and-activity-selection.mdx";
+import AaShortestPaths from "@/content/advanced-algorithms/m3-05-shortest-paths.mdx";
+import AaPNP from "@/content/advanced-algorithms/m4-01-p-and-np.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -198,6 +222,72 @@ export const courses: Course[] = [
     ],
   },
   {
+    slug: "advanced-algorithms",
+    title: "Advanced Algorithms & Analysis",
+    tagline: "Proving how fast an algorithm is, then building ones that are faster.",
+    description:
+      "The second algorithms course, decoded. Asymptotic notation and recurrences, divide and conquer, randomized quicksort and linear-time sorting, hashing, balanced and red-black trees, skip lists, dynamic programming, greedy algorithms, shortest paths, and the P vs NP question. Every lesson follows the lectures and labs, in plain language, with step-through animations.",
+    accent: "violet",
+    status: "available",
+    number: "04",
+    modules: [
+      {
+        title: "Foundations of Analysis",
+        blurb: "How to measure an algorithm without a stopwatch, and how to prove what you measured.",
+        lessons: [
+          { slug: "analysis-of-algorithms", title: "What Is Analysis of Algorithms?", duration: "14 min", Component: AaAnalysis },
+          { slug: "counting-the-basic-operation", title: "Counting the Basic Operation", duration: "14 min", Component: AaCountingOperations },
+          { slug: "asymptotic-notation", title: "Complexity and Asymptotic Notation", duration: "18 min", Component: AaAsymptotic },
+          { slug: "solving-recurrences", title: "Solving Recurrences", duration: "18 min", Component: AaRecurrences },
+          { slug: "lab-bit-manipulation", title: "Lab: Bit Manipulation and Binary Files", duration: "16 min", kind: "practical", Component: AaLabBits },
+          { slug: "lab-algorithm-analysis", title: "Lab: Analyzing Algorithms with Recurrences", duration: "18 min", kind: "practical", Component: AaLabAnalysis },
+        ],
+      },
+      {
+        title: "Divide and Conquer",
+        blurb: "Split, solve, combine: from binary search to Strassen, and the sorting algorithms built on it.",
+        lessons: [
+          { slug: "divide-and-conquer", title: "Divide and Conquer", duration: "20 min", Component: AaDivideConquer },
+          { slug: "lab-divide-and-conquer", title: "Lab: Recursion Trees and Gauss Multiplication", duration: "18 min", kind: "practical", Component: AaLabDivideConquer },
+          { slug: "quicksort", title: "Quicksort and Randomized Quicksort", duration: "20 min", Component: AaQuicksort },
+          { slug: "sorting-lower-bounds", title: "Sorting Lower Bounds and Linear-Time Sorting", duration: "20 min", Component: AaLowerBounds },
+          { slug: "order-statistics", title: "Order Statistics: Finding the i-th Smallest", duration: "18 min", Component: AaOrderStatistics },
+        ],
+      },
+      {
+        title: "Hashing and Search Trees",
+        blurb: "Constant-time lookups with hashing, then trees that stay balanced no matter what you insert.",
+        lessons: [
+          { slug: "hashing", title: "Hashing and Amortized Analysis", duration: "18 min", Component: AaHashing },
+          { slug: "collision-resolution", title: "Collisions: Chaining and Open Addressing", duration: "22 min", Component: AaCollisions },
+          { slug: "lab-hashing", title: "Lab: Hash Tables in Practice", duration: "18 min", kind: "practical", Component: AaLabHashing },
+          { slug: "balanced-search-trees", title: "Balanced Search Trees and Red-Black Trees", duration: "16 min", Component: AaBalancedTrees },
+          { slug: "red-black-insert-delete", title: "Red-Black Trees: Insertion and Deletion", duration: "20 min", Component: AaRedBlackOps },
+          { slug: "augmenting-data-structures", title: "Augmenting Data Structures", duration: "18 min", Component: AaAugmenting },
+          { slug: "skip-lists", title: "Skip Lists", duration: "16 min", Component: AaSkipLists },
+        ],
+      },
+      {
+        title: "Design Strategies",
+        blurb: "Remember every answer, or grab the best option now: dynamic programming, greedy algorithms and shortest paths.",
+        lessons: [
+          { slug: "dynamic-programming", title: "Dynamic Programming", duration: "22 min", Component: AaDynamic },
+          { slug: "greedy-algorithms", title: "Greedy Algorithms", duration: "16 min", Component: AaGreedy },
+          { slug: "minimum-spanning-trees", title: "Minimum Spanning Trees: Prim and Kruskal", duration: "20 min", Component: AaMst },
+          { slug: "huffman-and-activity-selection", title: "Greedy Choice: Huffman Codes and Activity Selection", duration: "22 min", Component: AaHuffman },
+          { slug: "shortest-paths", title: "Shortest Paths: Dijkstra's Algorithm", duration: "22 min", Component: AaShortestPaths },
+        ],
+      },
+      {
+        title: "Hard Problems",
+        blurb: "Problems that are easy to check but seem impossible to solve quickly, and the million-dollar question behind them.",
+        lessons: [
+          { slug: "p-and-np", title: "P, NP, NP-Hard and NP-Complete", duration: "20 min", Component: AaPNP },
+        ],
+      },
+    ],
+  },
+  {
     slug: "operating-systems",
     title: "Operating Systems",
     tagline: "The invisible layer that makes everything work.",
@@ -205,7 +295,7 @@ export const courses: Course[] = [
       "Processes, memory, file systems, schedulers — and where each shows up the moment something goes wrong. Coming soon.",
     accent: "violet",
     status: "coming-soon",
-    number: "04",
+    number: "05",
     modules: [],
   },
   {
@@ -216,7 +306,7 @@ export const courses: Course[] = [
       "Consistency, availability, and the CAP theorem. This course decodes how massive systems stay synchronized across the globe, from Paxos to Raft and the tradeoffs of microservices.",
     accent: "mint",
     status: "coming-soon",
-    number: "05",
+    number: "06",
     modules: [],
   },
   {
@@ -227,7 +317,7 @@ export const courses: Course[] = [
       "Exams are as much about mental endurance and strategy as they are about knowledge. This course decodes the psychology of performance, memory optimization, and the tactical frameworks used by top performers to excel under pressure.",
     accent: "sky",
     status: "available",
-    number: "06",
+    number: "07",
     modules: [
       {
         title: "The Strategy",
