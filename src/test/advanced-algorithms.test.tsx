@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -75,6 +75,17 @@ describe("analysis helpers", () => {
     expect(firstViolation(f, g, 4, 1, "O")).toBe(1);
     expect(firstViolation((n) => n * n, (n) => n, 1, 1, "Ω")).toBeNull();
     expect(termShares([300, 80, 10]).map((x) => +(x * 100).toFixed(2))).toEqual([76.92, 20.51, 2.56]);
+  });
+
+  it("does the lab's bit tricks", () => {
+    expect([bitOp("and", 5, 3), bitOp("or", 5, 3), bitOp("xor", 5, 3)]).toEqual([1, 7, 6]);
+    expect(toBits(bitOp("rotr", 0b101001, 2, 6), 6)).toBe("011010");
+    expect(toBits(bitOp("rotl", 0b101001, 2, 6), 6)).toBe("100110");
+    expect(bitOp("not", 5, 0, 3)).toBe(2);
+    expect([1, 2, 4, 64].every(isPowerOfTwo)).toBe(true);
+    expect([0, 6, 12].some(isPowerOfTwo)).toBe(false);
+    expect(popcountFrames(13).at(-1)!.state.count).toBe(3);
+    expect(popcountFrames(0).at(-1)!.state.count).toBe(0);
   });
 
   it("renders the analysis widgets", () => {

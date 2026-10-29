@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { btn, inputCls, Legend, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { fibCalls, firstViolation, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
+import { bitOp, CPP_COUNT_ONES, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -302,5 +302,117 @@ export function RecurrenceExplorer({ a: a0 = 2, b: b0 = 2, k: k0 = 1, p: p0 = 0 
         <p className="text-sm text-muted-foreground leading-relaxed">{res.why}</p>
       </div>
     </Panel>
+  );
+}
+
+/* ------------------------ bit manipulation ------------------------ */
+
+const BIT_OPS: { op: BitOp; label: string; symbol: string; unary?: boolean; shift?: boolean }[] = [
+  { op: "and", label: "AND", symbol: "&" },
+  { op: "or", label: "OR", symbol: "|" },
+  { op: "xor", label: "XOR", symbol: "^" },
+  { op: "not", label: "NOT", symbol: "~", unary: true },
+  { op: "shl", label: "<<", symbol: "<<", shift: true },
+  { op: "shr", label: ">>", symbol: ">>", shift: true },
+  { op: "rotl", label: "rotate left", symbol: "rotl", shift: true },
+  { op: "rotr", label: "rotate right", symbol: "rotr", shift: true },
+];
+
+function BitRow({ label, value, width, tone, changed }: { label: string; value: number; width: number; tone: string; changed?: Set<number> }) {
+  const bits = toBits(value, width);
+  return (
+    <div className="flex items-center gap-3 font-mono">
+      <span className="w-24 text-right text-[11px] text-muted-foreground">{label}</span>
+      <span className="flex gap-1">
+        {bits.split("").map((b, i) => {
+          const pos = width - 1 - i;
+          return (
+            <span
+              key={i}
+              className={`w-7 h-8 flex items-center justify-center text-sm border rounded-sm transition-colors ${
+                b === "1" ? tone : "border-border text-muted-foreground"
+              } ${changed?.has(pos) ? "ring-2 ring-orange" : ""}`}
+            >
+              {b}
+            </span>
+          );
+        })}
+      </span>
+      <span className="w-12 text-sm">= {value}</span>
+    </div>
+  );
+}
+
+/** Try every bitwise operator on two small numbers and see the bits line up. */
+export function BitPlayground({ a: a0 = 5, b: b0 = 3, width = 8, op: op0 = "and" }: { a?: number; b?: number; width?: number; op?: BitOp }) {
+  const [a, setA] = useState(a0);
+  const [b, setB] = useState(b0);
+  const [op, setOp] = useState<BitOp>(op0);
+  const meta = BIT_OPS.find((o) => o.op === op)!;
+  const max = (1 << width) - 1;
+  const bVal = meta.shift ? Math.min(b, width - 1) : b;
+  const result = bitOp(op, a, bVal, width);
+  const clamp = (v: string, hi: number) => Math.max(0, Math.min(hi, Number(v) || 0));
+  return (
+    <Panel title={`Bitwise operators on ${width}-bit numbers`} legend={[["bg-sky", "A"], ["bg-violet", "B"], ["bg-mint", "result"]]}>
+      <div className="flex flex-wrap gap-1.5">
+        {BIT_OPS.map((o) => (
+          <button key={o.op} type="button" className={`${btn} !px-2 !py-1 ${o.op === op ? "bg-foreground text-background" : ""}`} onClick={() => setOp(o.op)}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
+        <label className="inline-flex items-center gap-2">
+          A <input aria-label="A" className={`${inputCls} w-20`} value={a} inputMode="numeric" onChange={(e) => setA(clamp(e.target.value, max))} />
+        </label>
+        {!meta.unary && (
+          <label className="inline-flex items-center gap-2">
+            {meta.shift ? "by k =" : "B"}
+            <input aria-label={meta.shift ? "k" : "B"} className={`${inputCls} w-20`} value={b} inputMode="numeric" onChange={(e) => setB(clamp(e.target.value, meta.shift ? width - 1 : max))} />
+          </label>
+        )}
+      </div>
+      <div className="flex flex-col gap-1.5 overflow-x-auto">
+        <BitRow label="A" value={a} width={width} tone="border-sky bg-sky/15" />
+        {!meta.unary && !meta.shift && <BitRow label="B" value={b} width={width} tone="border-violet bg-violet/15" />}
+        <div className="ml-[108px] h-px bg-border" style={{ width: width * 32 }} />
+        <BitRow label={meta.unary ? "~A" : meta.shift ? `A ${meta.symbol} ${bVal}` : `A ${meta.symbol} B`} value={result} width={width} tone="border-mint bg-mint/20" />
+      </div>
+      <div className="font-mono text-xs text-muted-foreground">
+        A = {a} is {isPowerOfTwo(a) ? <span className="text-mint">a power of two</span> : "not a power of two"}, because A &amp; (A − 1) = {a} &amp; {Math.max(0, a - 1)} = {a > 0 ? a & (a - 1) : "—"}.
+      </div>
+    </Panel>
+  );
+}
+
+export function CountOnes({ n = 13 }: { n?: number }) {
+  const [value, setValue] = useState(n);
+  const [text, setText] = useState(String(n));
+  const frames = useMemo(() => popcountFrames(value), [value]);
+  return (
+    <Stepper
+      title="Counting 1-bits with n & (n − 1)"
+      frames={frames}
+      code={CPP_COUNT_ONES}
+      codeLabel="C++"
+      legend={[["bg-mint", "1-bit"], ["bg-orange", "just cleared"]]}
+      render={(s) => (
+        <div className="flex flex-col gap-2">
+          {s.prev !== undefined && <BitRow label="before" value={s.prev} width={8} tone="border-mint bg-mint/15" />}
+          {s.prev !== undefined && <BitRow label="n − 1" value={s.prev - 1} width={8} tone="border-sky bg-sky/15" />}
+          <BitRow label="n" value={s.n} width={8} tone="border-mint bg-mint/15" changed={s.cleared !== undefined ? new Set([s.cleared]) : undefined} />
+          <div className="font-display text-2xl font-bold mt-2">count = {s.count}</div>
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center gap-2">
+          <input aria-label="n" className={`${inputCls} w-24`} value={text} inputMode="numeric" onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setValue(Math.max(0, Math.min(255, Number(text) || 0)))} />
+          <button type="button" className={btn} onClick={() => setValue(Math.max(0, Math.min(255, Number(text) || 0)))}>
+            Count
+          </button>
+        </div>
+      }
+    />
   );
 }

@@ -6,6 +6,79 @@
    and the components in AdvancedVisualizers.tsx only draw it.
    ============================================================ */
 
+import type { Frame } from "@/lib/algorithms";
+
+/* ------------------------ bit manipulation ------------------------ */
+
+export type BitOp = "and" | "or" | "xor" | "not" | "shl" | "shr" | "rotr" | "rotl";
+
+/** n as a string of `width` binary digits, most significant first. */
+export function toBits(n: number, width = 8): string {
+  const mask = width >= 32 ? 0xffffffff : (1 << width) - 1;
+  return ((n & mask) >>> 0).toString(2).padStart(width, "0");
+}
+
+/** Apply a bitwise operation, keeping only the low `width` bits (like a fixed-size register). */
+export function bitOp(op: BitOp, a: number, b: number, width = 8): number {
+  const mask = (1 << width) - 1;
+  const x = a & mask;
+  switch (op) {
+    case "and": return x & b & mask;
+    case "or": return (x | b) & mask;
+    case "xor": return (x ^ b) & mask;
+    case "not": return ~x & mask;
+    case "shl": return (x << b) & mask;
+    case "shr": return x >>> b;
+    case "rotr": {
+      const d = ((b % width) + width) % width;
+      return ((x >>> d) | (x << (width - d))) & mask;
+    }
+    case "rotl": {
+      const d = ((b % width) + width) % width;
+      return ((x << d) | (x >>> (width - d))) & mask;
+    }
+  }
+}
+
+export const isPowerOfTwo = (x: number) => x > 0 && (x & (x - 1)) === 0;
+
+export type PopState = { n: number; prev?: number; count: number; cleared?: number };
+
+export const CPP_COUNT_ONES = [
+  "int count_one(int n) {",
+  "    int count = 0;",
+  "    while (n) {",
+  "        n = n & (n - 1);   // clears the rightmost 1",
+  "        count++;",
+  "    }",
+  "    return count;",
+  "}",
+];
+
+/** Brian Kernighan's trick: each n & (n-1) removes exactly one 1-bit. */
+export function popcountFrames(start: number): Frame<PopState>[] {
+  const frames: Frame<PopState>[] = [];
+  let n = start;
+  let count = 0;
+  frames.push({ state: { n, count }, line: 1, message: `Start with n = ${n}. Count how many 1-bits it has.`, stats: { count } });
+  while (n) {
+    frames.push({ state: { n, count }, line: 2, message: `n = ${n} is not 0, so there is at least one 1-bit left.`, stats: { count } });
+    const prev = n;
+    n = n & (n - 1);
+    const cleared = Math.log2(prev ^ n);
+    frames.push({
+      state: { n, prev, count, cleared },
+      line: 3,
+      message: `n − 1 = ${prev - 1} flips the rightmost 1 (bit ${cleared}) and every 0 to its right. ANDing with n clears that bit: n is now ${n}.`,
+      stats: { count },
+    });
+    count++;
+    frames.push({ state: { n, count }, line: 4, message: `One bit removed, so count = ${count}.`, stats: { count } });
+  }
+  frames.push({ state: { n, count }, line: 6, message: `n is 0. ${start} has ${count} one-bit${count === 1 ? "" : "s"}. The loop ran once per 1-bit, not once per bit.`, stats: { count } });
+  return frames;
+}
+
 /* --------------------------- Fibonacci --------------------------- */
 
 /** Calls the naive recursive fib(n) makes: T(n) = T(n-1) + T(n-2) + 1, T(0) = T(1) = 1. */
