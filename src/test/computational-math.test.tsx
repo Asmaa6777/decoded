@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
+import { euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
 import { conv, convFrames, coverUpFrames, deconv, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
 import { adjoint, cofactors, det, fraction, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
@@ -195,5 +196,35 @@ describe("polynomials", () => {
     expect(polyText(p)).toBe("x³ - 2x² - x + 2");
     expect(polyText([4, 13, 28, 27, 18], "s")).toBe("4s⁴ + 13s³ + 28s² + 27s + 18");
     expect(polyText([0, 1, 0, 1])).toBe("x² + 1");
+  });
+});
+
+describe("Euclid and modular arithmetic", () => {
+  it("follows the worked gcds", () => {
+    expect(gcd(60, 24)).toBe(12);
+    expect(gcd(60, -24)).toBe(12);
+    expect(gcd(8, 15)).toBe(1);
+    expect(gcd(65, 70)).toBe(5);
+    expect(gcd(247, 143)).toBe(13);
+    expect(euclidSteps(1281, 243).map((s) => [s.q, s.r])).toEqual([[5, 66], [3, 45], [1, 21], [2, 3], [7, 0]]);
+    expect(tileFrames(1281, 243).at(-1)!.stats.gcd).toBe(3);
+  });
+
+  it.each([[60, 24], [247, 143], [1281, 243]])("tiles %i by %i exactly with squares", (a, b) => {
+    const tiles = euclidTiles(a, b);
+    expect(tiles.reduce((s, t) => s + t.size ** 2, 0)).toBe(a * b);
+    expect(tiles.every((t) => t.x + t.size <= a && t.y + t.size <= b)).toBe(true);
+    expect(tiles.at(-1)!.size).toBe(gcd(a, b));
+  });
+
+  it("keeps mod non-negative and matches the worked values", () => {
+    expect(mod(-11, 7)).toBe(3);
+    expect(mod(-28, 81)).toBe(53);
+    expect(mod(7653, 915)).toBe(333);
+    expect([-4, -1, 7, 9].map((x) => mod(x, 3))).toEqual([2, 2, 1, 0]);
+    expect(mod(73 - 4, 23)).toBe(0);
+    expect(mod(21 + 9, 10)).toBe(0);
+    expect(mod(10 * 15 * 4, 17)).toBe(5);
+    expect(mod(10 ** 7, 17)).toBe(5);
   });
 });
