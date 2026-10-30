@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
+import { factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
 import { conv, convFrames, coverUpFrames, deconv, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
 import { adjoint, cofactors, det, fraction, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
@@ -226,5 +226,43 @@ describe("Euclid and modular arithmetic", () => {
     expect(mod(21 + 9, 10)).toBe(0);
     expect(mod(10 * 15 * 4, 17)).toBe(5);
     expect(mod(10 ** 7, 17)).toBe(5);
+  });
+});
+
+describe("primes and primality", () => {
+  it("factorizes the worked examples", () => {
+    expect(factorize(91)).toEqual([[7, 1], [13, 1]]);
+    expect(factorize(3600)).toEqual([[2, 4], [3, 2], [5, 2]]);
+    expect(factorize(11011)).toEqual([[7, 1], [11, 2], [13, 1]]);
+    expect(isPrime(3457)).toBe(true);
+    expect(isPrime(3453)).toBe(false);
+  });
+
+  it("finds the 25 primes up to 100", () => {
+    const last = sieveFrames(100).at(-1)!;
+    const left = Array.from({ length: 99 }, (_, i) => i + 2).filter((v) => !last.state.crossed[v]);
+    expect(left).toHaveLength(25);
+    expect(left.every(isPrime)).toBe(true);
+    expect(last.stats.primes).toBe(25);
+  });
+
+  it("computes the totients in the lesson", () => {
+    expect([37, 35, 23, 81, 100, 1000, 10, 11].map(phi)).toEqual([36, 24, 22, 54, 40, 400, 4, 10]);
+  });
+
+  it("checks the divisibility tests and Fermat examples", () => {
+    expect(17865843 % 3).toBe(0);
+    expect(8132619 % 11).toBe(0);
+    expect(7 ** 18 % 19).toBe(1);
+    expect((5 ** 8) % 11).toBe(4);
+    expect(2 ** 10 % 11).toBe(1);
+    expect(3 ** 4 % 10).toBe(1);
+  });
+
+  it("pairs inverses for Wilson's theorem", () => {
+    const f = wilsonFrames(13);
+    expect(f.at(-1)!.state.pairs).toEqual([[2, 7], [3, 9], [4, 10], [5, 8], [6, 11]]);
+    expect(f.at(-1)!.state.pairs.every(([a, b]) => (a * b) % 13 === 1)).toBe(true);
+    expect(inverseMod(2, 4)).toBeNull();
   });
 });

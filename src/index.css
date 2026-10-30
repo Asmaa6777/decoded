@@ -322,3 +322,13 @@
 .react-flow__controls,
 .react-flow__minimap,
 .react-flow__background { display: none; }
+
+/* A line or chord drawing itself in. Give it pathLength={1} and strokeDasharray={1}. */
+@keyframes cm-draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+.cm-draw { animation: cm-draw 500ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .cm-draw { animation: none; }
+}
