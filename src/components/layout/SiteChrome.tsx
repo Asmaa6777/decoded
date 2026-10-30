@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { BrandLockup, BrandMark } from "@/components/brand/BrandMark";
 import { AccountButton } from "@/components/AccountButton";
+import { SearchButton } from "@/components/SearchDialog";
 import { ProgressBackup } from "@/components/ProgressBackup";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 
@@ -26,6 +27,7 @@ export function SiteHeader() {
           >
             Courses
           </Link>
+          <SearchButton />
           <AccountButton />
         </nav>
       </div>

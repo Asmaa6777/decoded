@@ -54,6 +54,9 @@ For signed-in users, `src/lib/progressSync.ts` keeps that copy in step with the 
 
 Registering for a course (`src/hooks/useRegistration.ts`) is what shows the progress bar and details. Lessons stay readable without it. Someone counts as registered if the account has an enrollment or they've completed a lesson in that course, so older local progress keeps its bar; if the API is unreachable everyone counts as registered, which falls back to device-only progress. Leaving a course removes the enrollment and its progress.
 
+### Search
+`src/components/SearchDialog.tsx` (header icon or Cmd/Ctrl+K) searches in the browser. Lesson titles come from the registry; headings and body text come from `dist/search-index.json`, which `scripts/og/generate.mjs` writes and the dialog fetches on first open. In `npm run dev` that file doesn't exist, so only titles match.
+
 ### API Worker
 `worker/` is a separate npm project (Cloudflare Worker + D1) deployed to `https://decoded-api.stack42.tech` with `npx wrangler deploy`; pushing to GitHub doesn't deploy it. Schema changes go in `worker/migrations/` and are applied with `npm run migrate`. It has its own tests (`npm test` in `worker/`), which CI runs. OAuth credentials are Worker secrets (`wrangler secret put`), never committed. Accounts hold only the sign-in provider's user ID, username and avatar URL, and session tokens are stored hashed. Google sign-in is tracked in #27.
 

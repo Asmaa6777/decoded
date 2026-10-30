@@ -324,6 +324,42 @@ for (const course of mod.courses) {
   }
 }
 
+/* ---------- search index, fetched by the search dialog when it first opens ---------- */
+
+const SEARCH_TEXT_LIMIT = 6000;
+
+/** course/lesson -> MDX file, read from registry.ts because the build stubs lessons out. */
+async function lessonFiles() {
+  const source = await readFile(path.join(ROOT, "src/content/registry.ts"), "utf8");
+  const imports = new Map([...source.matchAll(/const (\w+) = lesson\(\(\) => import\("@\/([^"]+\.mdx)"\)\)/g)].map((m) => [m[1], m[2]]));
+  return [...source.matchAll(/slug: "([a-z0-9-]+)"[^{}]*?Component: (\w+)/g)].map((m) => ({ slug: m[1], file: imports.get(m[2]) }));
+}
+
+function plainText(mdx) {
+  return mdx
+    .replace(/^(import|export) .*$/gm, " ")
+    .replace(/^# .*$/gm, " ")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[#*_`|>{}]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const files = await lessonFiles();
+const searchIndex = [];
+for (const course of mod.courses) {
+  for (const lesson of mod.flattenLessons(course)) {
+    const match = files.find((f) => f.slug === lesson.slug && f.file?.includes(`/${course.slug}/`)) ?? files.find((f) => f.slug === lesson.slug && f.file);
+    if (!match) throw new Error(`no MDX file found for ${course.slug}/${lesson.slug}`);
+    const mdx = await readFile(path.join(ROOT, "src", match.file), "utf8");
+    const headings = [...mdx.matchAll(/^#{2,3} (.+)$/gm)].map((m) => plainText(m[1]));
+    searchIndex.push({ course: course.slug, lesson: lesson.slug, headings, text: plainText(mdx).slice(0, SEARCH_TEXT_LIMIT) });
+  }
+}
+await writeFile(path.join(DIST, "search-index.json"), JSON.stringify(searchIndex));
+
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${routes.map((url) => `  <url><loc>${esc(url)}</loc></url>`).join("\n")}
