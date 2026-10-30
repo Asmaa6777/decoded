@@ -154,7 +154,7 @@
   .prose-reading h1 {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: clamp(32px, 5vw, 52px);
+    font-size: clamp(30px, 3.6vw, 44px);
     line-height: 1.05;
     margin: 2.5rem 0 1.25rem;
     letter-spacing: -0.01em;
