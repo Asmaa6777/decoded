@@ -78,6 +78,29 @@ import CmPrimes from "@/content/computational-mathematics/m2-03-primes-and-the-s
 import CmTotient from "@/content/computational-mathematics/m2-04-primality-and-the-totient.mdx";
 import CmOrder from "@/content/computational-mathematics/m2-05-order-and-primitive-roots.mdx";
 import CmInverses from "@/content/computational-mathematics/m2-06-modular-inverses.mdx";
+import LdSignals from "@/content/logic-design/m0-01-signals.mdx";
+import LdNumbers from "@/content/logic-design/m1-01-number-systems.mdx";
+import LdArithmetic from "@/content/logic-design/m1-02-binary-arithmetic.mdx";
+import LdCodes from "@/content/logic-design/m1-03-codes-and-floating-point.mdx";
+import LdNumbersQuiz from "@/content/logic-design/m1-04-numbers-quiz.mdx";
+import LdGates from "@/content/logic-design/m2-01-logic-gates.mdx";
+import LdBoolean from "@/content/logic-design/m2-02-boolean-algebra.mdx";
+import LdSop from "@/content/logic-design/m2-03-sop-and-pos.mdx";
+import LdKmap from "@/content/logic-design/m2-04-karnaugh-maps.mdx";
+import LdUniversal from "@/content/logic-design/m2-05-universal-gates.mdx";
+import LdGatesQuiz from "@/content/logic-design/m2-06-gates-quiz.mdx";
+import LdAdders from "@/content/logic-design/m3-01-adders.mdx";
+import LdCarries from "@/content/logic-design/m3-02-fast-carries.mdx";
+import LdDecoders from "@/content/logic-design/m3-03-comparators-decoders-encoders.mdx";
+import LdMux from "@/content/logic-design/m3-04-multiplexers.mdx";
+import LdBlocksQuiz from "@/content/logic-design/m3-05-building-blocks-quiz.mdx";
+import LdSr from "@/content/logic-design/m4-01-sr-latch.mdx";
+import LdDLatch from "@/content/logic-design/m4-02-d-latch-and-clock.mdx";
+import LdFlipFlops from "@/content/logic-design/m4-03-flip-flops.mdx";
+import LdRegisters from "@/content/logic-design/m4-04-registers.mdx";
+import LdCounters from "@/content/logic-design/m4-05-counters.mdx";
+import LdMemory from "@/content/logic-design/m4-06-memory-unit.mdx";
+import LdSeqQuiz from "@/content/logic-design/m4-07-sequential-quiz.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -363,6 +386,71 @@ export const courses: Course[] = [
     ],
   },
   {
+    slug: "logic-design",
+    title: "Logic Design",
+    tagline: "From a single switch to working memory, one live circuit at a time.",
+    description:
+      "Build a computer's parts from the bottom up. Flip inputs and watch signals move through real gates, simplify circuits with Karnaugh maps, add numbers with nothing but XOR and AND, and see how a loop of two gates can remember a bit.",
+    accent: "neon",
+    status: "available",
+    number: "07",
+    modules: [
+      {
+        title: "Signals",
+        blurb: "Why digital hardware settles for two values, and what a clock does.",
+        lessons: [
+          { slug: "signals", title: "Signals: Why Computers Use Only Two Values", duration: "9 min", Component: LdSignals },
+        ],
+      },
+      {
+        title: "Numbers and Codes",
+        blurb: "Binary, hex, negative numbers, and agreeing on what a pattern of bits means.",
+        lessons: [
+          { slug: "number-systems", title: "Number Systems", duration: "12 min", Component: LdNumbers },
+          { slug: "binary-arithmetic", title: "Binary Arithmetic and Negative Numbers", duration: "12 min", Component: LdArithmetic },
+          { slug: "codes-and-floating-point", title: "Codes and Floating Point", duration: "13 min", Component: LdCodes },
+          { slug: "numbers-quiz", title: "Quiz: Numbers and Codes", duration: "8 min", kind: "quiz", Component: LdNumbersQuiz },
+        ],
+      },
+      {
+        title: "Gates and Boolean Algebra",
+        blurb: "The eight gates, the algebra that describes them, and how to make circuits smaller.",
+        lessons: [
+          { slug: "logic-gates", title: "Logic Gates", duration: "10 min", Component: LdGates },
+          { slug: "boolean-algebra", title: "Boolean Algebra", duration: "14 min", Component: LdBoolean },
+          { slug: "sop-and-pos", title: "Truth Tables to Circuits: SOP and POS", duration: "11 min", Component: LdSop },
+          { slug: "karnaugh-maps", title: "Karnaugh Maps", duration: "14 min", Component: LdKmap },
+          { slug: "universal-gates", title: "Universal Gates: Everything from NAND", duration: "9 min", Component: LdUniversal },
+          { slug: "gates-quiz", title: "Quiz: Gates and Boolean Algebra", duration: "8 min", kind: "quiz", Component: LdGatesQuiz },
+        ],
+      },
+      {
+        title: "Combinational Building Blocks",
+        blurb: "Adders, comparators, decoders, encoders and multiplexers: the parts a CPU is made of.",
+        lessons: [
+          { slug: "adders", title: "Adders: Teaching Gates to Count", duration: "11 min", Component: LdAdders },
+          { slug: "fast-carries", title: "Ripple Carry and Look-Ahead", duration: "9 min", Component: LdCarries },
+          { slug: "comparators-decoders-encoders", title: "Comparators, Decoders and Encoders", duration: "13 min", Component: LdDecoders },
+          { slug: "multiplexers", title: "Multiplexers and Demultiplexers", duration: "9 min", Component: LdMux },
+          { slug: "building-blocks-quiz", title: "Quiz: Combinational Building Blocks", duration: "7 min", kind: "quiz", Component: LdBlocksQuiz },
+        ],
+      },
+      {
+        title: "Sequential Logic",
+        blurb: "Feedback gives circuits memory: latches, flip-flops, registers, counters and RAM.",
+        lessons: [
+          { slug: "sr-latch", title: "The SR Latch: How a Circuit Remembers", duration: "15 min", Component: LdSr },
+          { slug: "d-latch-and-clock", title: "Control Inputs and the D Latch", duration: "11 min", Component: LdDLatch },
+          { slug: "flip-flops", title: "Flip-Flops: Changing Only on the Edge", duration: "13 min", Component: LdFlipFlops },
+          { slug: "registers", title: "Registers and Shift Registers", duration: "10 min", Component: LdRegisters },
+          { slug: "counters", title: "Binary Counters", duration: "8 min", Component: LdCounters },
+          { slug: "memory-unit", title: "The Memory Unit: Putting It All Together", duration: "10 min", Component: LdMemory },
+          { slug: "sequential-quiz", title: "Quiz: Sequential Logic", duration: "10 min", kind: "quiz", Component: LdSeqQuiz },
+        ],
+      },
+    ],
+  },
+  {
     slug: "operating-systems",
     title: "Operating Systems",
     tagline: "The invisible layer that makes everything work.",
@@ -370,7 +458,7 @@ export const courses: Course[] = [
       "Processes, memory, file systems, schedulers — and where each shows up the moment something goes wrong. Coming soon.",
     accent: "violet",
     status: "coming-soon",
-    number: "06",
+    number: "10",
     modules: [],
   },
   {
@@ -381,7 +469,7 @@ export const courses: Course[] = [
       "Consistency, availability, and the CAP theorem. This course decodes how massive systems stay synchronized across the globe, from Paxos to Raft and the tradeoffs of microservices.",
     accent: "mint",
     status: "coming-soon",
-    number: "07",
+    number: "11",
     modules: [],
   },
   {
@@ -392,7 +480,7 @@ export const courses: Course[] = [
       "Exams test mental endurance and strategy as much as knowledge. This course covers how memory works, how to plan the week before, and how to handle stress in the exam room and on the day itself.",
     accent: "sky",
     status: "available",
-    number: "08",
+    number: "12",
     authors: [ahmedAlghali],
     modules: [
       {

@@ -46,7 +46,7 @@ function GateShape({ type, x, y, h, on, changed }: { type: GateType; x: number; 
   const stroke = changed ? "stroke-neon" : on ? "stroke-mint" : "stroke-foreground/60";
   return (
     <g transform={`translate(${x},${y})`} className="transition-colors">
-      <path d={`M${triangle ? 44 : 50},${m}H${GATE_W}`} className={`${on ? "stroke-mint" : "stroke-border"}`} strokeWidth={2.2} />
+      <path d={`M${triangle ? 44 : 50},${m}H${GATE_W}`} className={on ? "stroke-mint" : "stroke-muted-foreground/45"} strokeWidth={2.2} />
       <path d={body} className={`fill-card ${stroke}`} strokeWidth={2} strokeLinejoin="round" />
       {(type === "XOR" || type === "XNOR") && <path d={`M-7,0 Q9,${m} -7,${h}`} fill="none" className={stroke} strokeWidth={2} />}
       {inverting && <circle cx={triangle ? 48 : 54} cy={m} r={4.2} className={`fill-card ${stroke}`} strokeWidth={2} />}
@@ -54,7 +54,7 @@ function GateShape({ type, x, y, h, on, changed }: { type: GateType; x: number; 
   );
 }
 
-export const wireClass = (on: boolean, changed: boolean) => (changed ? "stroke-neon" : on ? "stroke-mint" : "stroke-border");
+export const wireClass = (on: boolean, changed: boolean) => (changed ? "stroke-neon" : on ? "stroke-mint" : "stroke-muted-foreground/45");
 
 /** Draws a laid-out circuit at a given set of signal values. */
 export function CircuitDrawing({ layout, values, changed, onToggle }: { layout: CircuitLayout; values: Signals; changed?: Set<string>; onToggle?: (id: string) => void }) {
@@ -99,7 +99,7 @@ export function CircuitDrawing({ layout, values, changed, onToggle }: { layout: 
         .map((w) => (
           <path key={w.key} d={w.d} fill="none" strokeWidth={values[w.src] ? 2.6 : 2} strokeLinejoin="round" className={`transition-colors duration-150 motion-reduce:transition-none ${wireClass(!!values[w.src], !!changed?.has(w.src))}`} />
         ))}
-      {wires.map((w) => w.dot && <circle key={`dot-${w.key}`} cx={w.dot[0]} cy={w.dot[1]} r={3} className={values[w.src] ? "fill-mint" : "fill-border"} />)}
+      {wires.map((w) => w.dot && <circle key={`dot-${w.key}`} cx={w.dot[0]} cy={w.dot[1]} r={3} className={values[w.src] ? "fill-mint" : "fill-muted-foreground/45"} />)}
       {layout.gates.map((g) => (
         <GateShape key={g.id} type={g.type} x={g.x} y={g.y} h={gateHeight(g.in.length)} on={!!values[g.id]} changed={!!changed?.has(g.id)} />
       ))}
@@ -138,7 +138,7 @@ export function CircuitDrawing({ layout, values, changed, onToggle }: { layout: 
 
 export type CircuitAction = { label: string; steps: Record<string, Bit>[] };
 
-const LEGEND: [string, string][] = [["bg-mint", "HIGH (1)"], ["bg-border", "LOW (0)"], ["bg-neon", "just changed"]];
+const LEGEND: [string, string][] = [["bg-mint", "HIGH (1)"], ["bg-muted-foreground/45", "LOW (0)"], ["bg-neon", "just changed"]];
 
 function nameOf(layout: CircuitLayout, id: string) {
   const g = layout.gates.find((x) => x.id === id);

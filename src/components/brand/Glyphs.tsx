@@ -51,6 +51,14 @@ const COURSE_GLYPHS: Record<string, (p: IconProps) => JSX.Element> = {
       <path d="M9 9h.01M15 9h.01M9 15h.01M15 15h.01" strokeWidth={2.6} strokeLinecap="round" />
     </svg>
   ),
+  // a NAND gate
+  "logic-design": ({ className }) => (
+    <svg {...base} className={className}>
+      <path d="M5 5h6a7 7 0 010 14H5z" />
+      <circle cx="19.5" cy="12" r="1.8" />
+      <path d="M1 9h4M1 15h4M21.3 12H23" />
+    </svg>
+  ),
   // chip
   "operating-systems": ({ className }) => (
     <svg {...base} className={className}>
