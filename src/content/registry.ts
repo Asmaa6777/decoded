@@ -70,6 +70,8 @@ import OsLabThreads from "@/content/operating-systems/m2-03-lab-java-threads.mdx
 import OsCriticalSection from "@/content/operating-systems/m3-01-critical-section-problem.mdx";
 import OsSemaphores from "@/content/operating-systems/m3-02-semaphores-and-classic-problems.mdx";
 import OsLabSync from "@/content/operating-systems/m3-03-lab-java-synchronization.mdx";
+import OsSchedulingBasics from "@/content/operating-systems/m4-01-cpu-scheduling-basics.mdx";
+import OsRoundRobin from "@/content/operating-systems/m4-02-round-robin-and-beyond.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -335,6 +337,14 @@ export const courses: Course[] = [
           { slug: "critical-section-problem", title: "Race Conditions and the Critical-Section Problem", duration: "24 min", Component: OsCriticalSection },
           { slug: "semaphores-and-classic-problems", title: "Semaphores and the Classic Synchronization Problems", duration: "26 min", Component: OsSemaphores },
           { slug: "lab-java-synchronization", title: "Lab: Synchronization in Java", duration: "25 min", kind: "practical", Component: OsLabSync },
+        ],
+      },
+      {
+        title: "CPU Scheduling",
+        blurb: "Who runs next? FCFS, SJF, priority, round robin and multilevel queues, and how to judge them.",
+        lessons: [
+          { slug: "cpu-scheduling-basics", title: "CPU Scheduling: FCFS, SJF and Priority", duration: "26 min", Component: OsSchedulingBasics },
+          { slug: "round-robin-and-beyond", title: "Round Robin, Multilevel Queues and Choosing a Scheduler", duration: "24 min", Component: OsRoundRobin },
         ],
       },
     ],
