@@ -25,7 +25,7 @@ export default function Team() {
             <CreatorCard
               name={ahmedAlghali.name}
               role="Architect & Lead"
-              bio="I love when I finally understand what a theoratical CS course talks about"
+              bio="I love when I finally understand what a theoretical CS course talks about"
               image={ahmedAlghali.image}
             />
             <CreatorCard

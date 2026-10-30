@@ -24,7 +24,7 @@ export default function Index() {
       {/* HERO */}
       <section className="relative z-10 border-b border-border">
         <div className="container py-20 md:py-28 max-w-6xl">
-          <div className="eyebrow text-neon mb-5">CS Theory · Real-world skills maped</div>
+          <div className="eyebrow text-neon mb-5">CS Theory · Real-world skills mapped</div>
           {/* Syne is very wide: three fixed lines, sized to the viewport so each fits on one line from md up */}
           <h1 className="font-display font-extrabold leading-[0.95] tracking-tight text-[clamp(2.5rem,5.4vw,4.5rem)]">
             <span className="block md:whitespace-nowrap">Computer science</span>
@@ -34,8 +34,8 @@ export default function Index() {
             <span className="block md:whitespace-nowrap">production tools</span>
           </h1>
           <p className="mt-8 max-w-2xl text-lg md:text-xl text-muted-foreground italic font-body leading-relaxed">
-            Every Course in a CS curriculum maps to something more practical, used daily, with application everyhwere, it was just have to map that.
-            This is the layer that connects the thoery with whats out there.
+            Every course in a CS curriculum maps to something practical, used daily, with applications everywhere. It just has to be mapped.
+            This is the layer that connects the theory with what's out there.
           </p>
 
           <div className="mt-10 flex flex-wrap gap-3">
@@ -76,9 +76,9 @@ export default function Index() {
           <div className="font-body text-lg leading-relaxed text-foreground/80 space-y-5">
             <p>
               University courses hide enterprise-grade engineering tools behind layers of dense,
-              abstract proofs. complex notations and theorms, You shouldn't have to decode your own syllabus 
-              just to figure out what it talks about fundamentally or how it applies to production, 
-              we help extracting the the exact real-world utility hidden inside your current coursework.
+              abstract proofs, complex notations and theorems. You shouldn't have to decode your own syllabus 
+              just to figure out what it talks about fundamentally or how it applies to production. 
+              We help extract the exact real-world utility hidden inside your current coursework.
             </p>
             <p className="text-neon">
               Decoded does that. One topic at a time.
@@ -120,9 +120,9 @@ export default function Index() {
               <div className="font-body text-lg text-foreground/70 space-y-4">
                 <p>
                   Stop guessing the application.
-                  Computer Science education is good at what it supposed to do, 
-                  but the student puts so much effort on mapping a course into practical 
-                  laps and linking thoery to practice, memorizing abstract proofs without 
+                  Computer Science education is good at what it's supposed to do, 
+                  but the student puts so much effort into mapping a course into practical 
+                  labs and linking theory to practice, memorizing abstract proofs without 
                   ever seeing the enterprise tools they built based on this.
                 </p>
                 <p>

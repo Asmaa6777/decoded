@@ -25,7 +25,7 @@ export default function Courses() {
             Every CS course,<br />decoded.
           </h1>
           <p className="font-body text-lg text-muted-foreground italic max-w-2xl mb-12">
-            Each track pairs the formal theoratical ideas with the modern tools and practices, the job, and the failure mode you've already seen.
+            Each track pairs the formal theoretical ideas with the modern tools and practices, the job, and the failure mode you've already seen.
           </p>
 
           {mine.length > 0 && (

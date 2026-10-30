@@ -71,3 +71,5 @@ Lessons are MDX files under `src/content/<course-slug>/`. [`src/content/registry
 ## Deployment
 
 Every push to `main` builds the site and publishes it to GitHub Pages at [decoded.stack42.tech](https://decoded.stack42.tech). The [CI workflow](.github/workflows/ci.yml) runs lint, typecheck, tests and a build on each push and pull request.
+
+Sign-in and saved progress run on a Cloudflare Worker in [`worker/`](worker), which pushing doesn't deploy. Run `npm run migrate` (if there's a new migration) and then `npx wrangler deploy` from that folder, before pushing any site change that depends on it.
