@@ -61,6 +61,8 @@ import AaShortestPaths from "@/content/advanced-algorithms/m3-05-shortest-paths.
 import AaPNP from "@/content/advanced-algorithms/m4-01-p-and-np.mdx";
 import OsWhatAnOsDoes from "@/content/operating-systems/m1-01-what-an-os-does.mdx";
 import OsArchitecture from "@/content/operating-systems/m1-02-os-architecture-and-operations.mdx";
+import OsServicesSyscalls from "@/content/operating-systems/m1-03-services-and-system-calls.mdx";
+import OsDesignStructure from "@/content/operating-systems/m1-04-os-design-and-structure.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -305,6 +307,8 @@ export const courses: Course[] = [
         lessons: [
           { slug: "what-an-os-does", title: "What an Operating System Does", duration: "18 min", Component: OsWhatAnOsDoes },
           { slug: "os-architecture-and-operations", title: "Inside the OS: Architecture, Operations and Environments", duration: "22 min", Component: OsArchitecture },
+          { slug: "services-and-system-calls", title: "OS Services, Interfaces and System Calls", duration: "18 min", Component: OsServicesSyscalls },
+          { slug: "os-design-and-structure", title: "System Programs, OS Design and Structure", duration: "20 min", Component: OsDesignStructure },
         ],
       },
     ],
