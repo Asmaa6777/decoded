@@ -244,8 +244,8 @@ export async function leaveCourse(course: string) {
   listeners.forEach((listener) => listener());
 }
 
-export function signInWithGithub(returnTo = window.location.pathname + window.location.search) {
-  window.location.href = `${API_URL}/auth/github/start?return=${encodeURIComponent(returnTo)}`;
+export function signIn(provider: "github" | "google", returnTo = window.location.pathname + window.location.search) {
+  window.location.href = `${API_URL}/auth/${provider}/start?return=${encodeURIComponent(returnTo)}`;
 }
 
 /** Signs out and clears this browser's copy, so the next person's sign-in can't absorb it. */

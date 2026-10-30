@@ -40,7 +40,7 @@ Decoded tries to draw that map. Every lesson answers one question:
 | Operating Systems | Coming soon | |
 | Distributed Systems | Coming soon | |
 
-Lessons mix reading with step-through visualizers, practicals and end-of-module quizzes. Progress is saved in your browser, and signing in with GitHub is optional if you want it to follow you between devices.
+Lessons mix reading with step-through visualizers, practicals and end-of-module quizzes. Progress is saved in your browser, and signing in with GitHub or Google is optional if you want it to follow you between devices.
 
 ## Running it locally
 

@@ -14,9 +14,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAccountProfile, useAccountStatus } from "@/hooks/useAccountStatus";
-import { signInWithGithub, signOut } from "@/lib/progressSync";
+import { signIn, signOut } from "@/lib/progressSync";
 
-/** `returnTo` is where GitHub sends people back to; defaults to the current page. */
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+      <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.58-5.17 3.58-8.81z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.9l-3.88-3.02c-1.07.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.73-4.95H1.26v3.11A12 12 0 0 0 12 24z" />
+      <path fill="#FBBC05" d="M5.27 14.28a7.2 7.2 0 0 1 0-4.56V6.61H1.26a12 12 0 0 0 0 10.78l4.01-3.11z" />
+      <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.61 4.59 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.26 6.61l4.01 3.11C6.22 6.88 8.87 4.77 12 4.77z" />
+    </svg>
+  );
+}
+
+/** `returnTo` is where the sign-in provider sends people back to; defaults to the current page. */
 export function SignInDialog({ trigger, title = "Keep your progress", returnTo }: { trigger: ReactNode; title?: string; returnTo?: string }) {
   return (
     <Dialog>
@@ -31,14 +42,22 @@ export function SignInDialog({ trigger, title = "Keep your progress", returnTo }
         </DialogHeader>
         <button
           type="button"
-          onClick={() => signInWithGithub(returnTo)}
+          onClick={() => signIn("github", returnTo)}
           className="mt-2 flex w-full items-center justify-center gap-2.5 rounded-sm bg-foreground px-4 py-3 font-mono text-sm text-background transition-opacity hover:opacity-85"
         >
           <Github className="h-4 w-4" aria-hidden />
           Continue with GitHub
         </button>
+        <button
+          type="button"
+          onClick={() => signIn("google", returnTo)}
+          className="flex w-full items-center justify-center gap-2.5 rounded-sm border border-border px-4 py-3 font-mono text-sm text-foreground transition-colors hover:border-foreground"
+        >
+          <GoogleIcon />
+          Continue with Google
+        </button>
         <p className="text-center font-mono text-[11px] leading-relaxed text-muted-foreground">
-          Decoded only keeps your GitHub ID, username and picture.{" "}
+          Decoded keeps your Google ID, or your GitHub ID, username and picture.{" "}
           <Link to="/privacy" className="underline hover:text-foreground">
             Privacy
           </Link>

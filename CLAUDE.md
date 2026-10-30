@@ -61,7 +61,7 @@ Registering for a course (`src/hooks/useRegistration.ts`) is what shows the prog
 `src/components/SearchDialog.tsx` (header icon or Cmd/Ctrl+K) searches in the browser. Lesson titles come from the registry; headings and body text come from `dist/search-index.json`, which `scripts/og/generate.mjs` writes and the dialog fetches on first open. In `npm run dev` that file doesn't exist, so only titles match.
 
 ### API Worker
-`worker/` is a separate npm project (Cloudflare Worker + D1) deployed to `https://decoded-api.stack42.tech` with `npx wrangler deploy`; pushing to GitHub doesn't deploy it. Schema changes go in `worker/migrations/` and are applied with `npm run migrate`. It has its own tests (`npm test` in `worker/`), which CI runs. OAuth credentials are Worker secrets (`wrangler secret put`), never committed. Accounts hold only the sign-in provider's user ID, username and avatar URL, and session tokens are stored hashed. Google sign-in is tracked in #27.
+`worker/` is a separate npm project (Cloudflare Worker + D1) deployed to `https://decoded-api.stack42.tech` with `npx wrangler deploy`; pushing to GitHub doesn't deploy it. Schema changes go in `worker/migrations/` and are applied with `npm run migrate`. It has its own tests (`npm test` in `worker/`), which CI runs. OAuth credentials are Worker secrets (`wrangler secret put`), never committed. Accounts hold only the sign-in provider's user ID, plus the username and avatar URL for GitHub (Google sign-in asks for `openid` alone, so it has neither), and session tokens are stored hashed. Accounts aren't linked across providers.
 
 ## Conventions and gotchas
 

@@ -31,10 +31,11 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("AccountButton", () => {
-  it("offers GitHub sign-in in a dialog to signed-out visitors", async () => {
+  it("offers GitHub and Google sign-in in a dialog to signed-out visitors", async () => {
     await renderAfterSync({ signedIn: false });
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect(screen.getByRole("button", { name: "Continue with GitHub" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Continue with Google" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Privacy" }).getAttribute("href")).toBe("/privacy");
   });
 
