@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Github, LogOut, ShieldCheck } from "lucide-react";
+import { Github, LayoutDashboard, LogOut, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -71,6 +71,12 @@ function AccountMenu() {
           <div className="font-mono text-[11px] normal-case tracking-normal text-muted-foreground">Progress saved to your account</div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className="cursor-pointer font-mono text-xs normal-case tracking-normal">
+          <Link to="/dashboard">
+            <LayoutDashboard className="mr-2 h-4 w-4" aria-hidden />
+            Dashboard
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild className="cursor-pointer font-mono text-xs normal-case tracking-normal">
           <Link to="/privacy">
             <ShieldCheck className="mr-2 h-4 w-4" aria-hidden />

@@ -10,6 +10,7 @@ import Courses from "./pages/Courses.tsx";
 import CoursePage from "./pages/CoursePage.tsx";
 import Team from "./pages/Team.tsx";
 import Privacy from "./pages/Privacy.tsx";
+import Dashboard from "./pages/Dashboard.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
@@ -38,6 +39,7 @@ const App = () => (
                   </Suspense>
                 </ChunkErrorBoundary>
               } />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/team" element={<Team />} />
             <Route path="/privacy" element={<Privacy />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
