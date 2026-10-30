@@ -16,7 +16,7 @@ static long fib(int n) {
 }
 ```
 
-It's correct, and extremely slow. To compute `fib(5)` it computes `fib(3)` twice, `fib(2)` three times, `fib(1)` five times... The same small problems get solved over and over. The number of calls roughly doubles with each $n$: **$O(2^n)$**. `fib(50)` makes billions of calls.
+It's correct, and extremely slow. To compute `fib(5)` it computes `fib(3)` twice, `fib(2)` three times, `fib(1)` five times... The same small problems get solved over and over. The number of calls grows exponentially, by about 1.6 times with each $n$, so **$O(2^n)$** is an upper bound. `fib(50)` makes billions of calls.
 
 Those repeated pieces are called **overlapping subproblems**. Dynamic programming is the technique for problems that have them:
 
@@ -94,7 +94,7 @@ The table has $(n + 1) \times (W + 1)$ cells, and each one takes $O(1)$ to fill.
 Compare that with $O(2^n)$. For 100 items and capacity 1,000 that's 100,000 cell updates instead of $2^{100}$ subsets.
 
 <Callout tone="violet" label="The fine print">
-$O(nW)$ looks polynomial, but $W$ is a *value*, not a count of items. Double the number of digits in $W$ and the table gets ten or a hundred times wider. That's why knapsack is still classed as NP-complete: DP makes it fast when the capacity is reasonably small, not in general.
+$O(nW)$ looks polynomial, but $W$ is a *value*, not a count of items. Add one digit to $W$ and the table gets about ten times wider, so the cost is exponential in the length of the input. That's why knapsack is still classed as NP-complete: DP makes it fast when the capacity is reasonably small, not in general.
 </Callout>
 
 ## DP vs. greedy vs. divide and conquer
