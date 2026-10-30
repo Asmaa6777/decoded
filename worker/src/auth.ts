@@ -169,3 +169,11 @@ export async function signOut(request: Request, env: Env): Promise<Response> {
   }
   return new Response(null, { status: 204, headers: { "Set-Cookie": setCookie(SESSION_COOKIE, "", 0) } });
 }
+
+/** Removes the account; its identities, sessions and progress go with it by cascade. */
+export async function deleteAccount(request: Request, env: Env): Promise<Response> {
+  const userId = await currentUserId(request, env);
+  if (!userId) return Response.json({ error: "signed_out" }, { status: 401 });
+  await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(userId).run();
+  return new Response(null, { status: 204, headers: { "Set-Cookie": setCookie(SESSION_COOKIE, "", 0) } });
+}

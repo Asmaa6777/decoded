@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readProgress, writeProgress } from "@/lib/progressStore";
-import { diffProgress, getAccountStatus, queueProgressChange, resetProgressSyncForTests, signOut, syncProgress } from "@/lib/progressSync";
+import { deleteAccount, diffProgress, getAccountStatus, queueProgressChange, resetProgressSyncForTests, signOut, syncProgress } from "@/lib/progressSync";
 
 /** A tiny stand-in for the API, holding one account's progress. */
 function fakeApi(account: Record<string, string[]> | null) {
@@ -10,7 +10,7 @@ function fakeApi(account: Record<string, string[]> | null) {
     "fetch",
     vi.fn(async (url: string, init?: RequestInit) => {
       if (!state.online) throw new TypeError("offline");
-      if (url.endsWith("/auth/sign-out")) return new Response(null, { status: 204 });
+      if (url.endsWith("/auth/sign-out") || url.endsWith("/account/delete")) return new Response(null, { status: 204 });
       if (init?.method === "POST") {
         const body = JSON.parse(String(init.body));
         posts.push(body);
@@ -158,5 +158,24 @@ describe("signing out", () => {
     await expect(signOut()).rejects.toThrow();
     expect(readProgress()).toEqual({ toc: ["intro", "dfa"] });
     expect(getAccountStatus()).toBe("signed-in");
+  });
+});
+
+describe("deleting the account", () => {
+  it("clears this browser's copy and returns to signed out", async () => {
+    fakeApi({ toc: ["intro"] });
+    await syncProgress();
+    await deleteAccount();
+    expect(getAccountStatus()).toBe("signed-out");
+    expect(readProgress()).toEqual({});
+  });
+
+  it("keeps everything when the request fails", async () => {
+    const api = fakeApi({ toc: ["intro"] });
+    await syncProgress();
+    api.state.online = false;
+    await expect(deleteAccount()).rejects.toThrow();
+    expect(getAccountStatus()).toBe("signed-in");
+    expect(readProgress()).toEqual({ toc: ["intro"] });
   });
 });

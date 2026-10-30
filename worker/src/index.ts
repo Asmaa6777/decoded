@@ -1,4 +1,4 @@
-import { currentUserId, finishGithub, signOut, startGithub } from "./auth";
+import { currentUserId, deleteAccount, finishGithub, signOut, startGithub } from "./auth";
 import { changeProgress, getProgress } from "./progress";
 
 export interface Env {
@@ -29,6 +29,8 @@ async function route(request: Request, env: Env): Promise<Response> {
       return Response.json({ signedIn: (await currentUserId(request, env)) !== null });
     case "POST /auth/sign-out":
       return signOut(request, env);
+    case "POST /account/delete":
+      return deleteAccount(request, env);
     case "GET /progress":
       return getProgress(request, env);
     case "POST /progress":

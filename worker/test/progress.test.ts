@@ -128,3 +128,36 @@ describe("progress", () => {
     expect((await post(session, { add: [["toc", "one-more"]] })).status).toBe(413);
   });
 });
+
+describe("deleting an account", () => {
+  const count = (table: string) => env.DB.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first<number>("n");
+
+  it("removes every row for that user and leaves others alone", async () => {
+    const alice = await signIn(1);
+    const bob = await signIn(2);
+    await post(alice, { add: [["toc", "intro"]] });
+    await post(bob, { add: [["toc", "intro"]] });
+
+    const response = await call("/account/delete", {
+      method: "POST",
+      headers: { Origin: SITE, Cookie: `__Host-decoded_session=${alice}` },
+    });
+    expect(response.status).toBe(204);
+
+    for (const table of ["users", "identities", "sessions", "progress"]) expect(await count(table)).toBe(1);
+    expect((await read(alice)).signedIn).toBe(false);
+    expect((await read(bob)).progress).toEqual({ toc: ["intro"] });
+  });
+
+  it("needs a session and the site's own origin", async () => {
+    const alice = await signIn(1);
+    const foreign = await call("/account/delete", {
+      method: "POST",
+      headers: { Origin: "https://evil.example", Cookie: `__Host-decoded_session=${alice}` },
+    });
+    expect(foreign.status).toBe(403);
+    const anonymous = await call("/account/delete", { method: "POST", headers: { Origin: SITE } });
+    expect(anonymous.status).toBe(401);
+    expect(await count("users")).toBe(1);
+  });
+});

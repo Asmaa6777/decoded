@@ -46,6 +46,7 @@ export function SiteFooter() {
         <nav className="flex items-center gap-6">
           <Link to="/courses" className="hover:text-foreground transition-colors">Courses</Link>
           <Link to="/team" className="hover:text-foreground transition-colors">Team</Link>
+          <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
         </nav>
         <span className="flex flex-col gap-2 md:items-end">
           <span>v0.1 · Progress saved {status === "signed-in" ? "to your account" : "on this device"}</span>

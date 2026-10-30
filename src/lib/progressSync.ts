@@ -166,6 +166,15 @@ export async function signOut() {
   setStatus("signed-out");
 }
 
+/** Deletes the account and everything saved with it. */
+export async function deleteAccount() {
+  const response = await fetch(`${API_URL}/account/delete`, { method: "POST", credentials: "include" });
+  if (!response.ok) throw new Error(String(response.status));
+  forgetAccount();
+  writeProgress({});
+  setStatus("signed-out");
+}
+
 let started = false;
 
 export function startProgressSync() {
