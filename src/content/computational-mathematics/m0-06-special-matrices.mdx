@@ -1,0 +1,59 @@
+import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SpecialMatrixExplorer } from "@/components/mdx/MatrixVisualizers";
+
+# Some Special Matrices
+
+Most zeros in a matrix mean less work. A matrix with a known pattern of zeros can be stored in less memory and solved with fewer steps, so these patterns have names and MATLAB has commands for them.
+
+## Filled matrices
+
+```matlab
+ones(2)         % 2-by-2 of all ones
+ones(3, 5)      % 3-by-5 of all ones
+zeros(3, 2)     % 3-by-2 of all zeros
+eye(3)          % 3-by-3 identity
+eye(3, 2)       % 3-by-2 with ones on the main diagonal
+```
+
+## Triangular and diagonal matrices
+
+A square matrix is **upper triangular** if everything below the main diagonal is zero, so $a_{ij} = 0$ for $i > j$. It's **lower triangular** if everything above is zero, so $a_{ij} = 0$ for $i < j$. A **diagonal** matrix is both at once.
+
+`triu` and `tril` take a matrix and keep one triangle. An optional second argument $k$ shifts the boundary: $k = 0$ is the main diagonal, positive values move up and to the right, and negative values move down and to the left.
+
+Slide $k$ and switch between the commands:
+
+<SpecialMatrixExplorer />
+
+For example, `triu(ones(4), -1)` keeps the main diagonal and one diagonal below it:
+
+```matlab
+triu(ones(4), -1)
+
+  1  1  1  1
+  1  1  1  1
+  0  1  1  1
+  0  0  1  1
+```
+
+## `diag` does two jobs
+
+`diag` depends on what you give it. A matrix returns its diagonal as a vector, and a vector builds a diagonal matrix. Calling it twice therefore wipes out everything off the diagonal:
+
+```matlab
+A = magic(4);
+diag(A)         % [16; 11; 6; 1]
+diag(A, -1)     % the diagonal just below the main one
+diag(diag(A))   % a 4-by-4 diagonal matrix
+```
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Solving linear systems" tool="LAPACK, numpy.linalg">
+Solvers factor a matrix into triangular pieces first, because a triangular system can be solved one unknown at a time by substitution.
+</PracticalApplication>
+<PracticalApplication title="Hiding future words" tool="Transformers">
+GPT-style models apply a triangular mask during training, so each word can only attend to the words before it. PyTorch builds one with `torch.tril`.
+</PracticalApplication>
+</ApplicationsGrid>

@@ -1,0 +1,50 @@
+import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { KroneckerVisualizer } from "@/components/mdx/MatrixVisualizers";
+
+# The Kronecker Product
+
+The ordinary matrix product needs sizes that fit together. The **Kronecker product** works with any two matrices and always grows the result, so it's the standard way to build a big structured matrix out of small ones.
+
+## The definition
+
+If $A$ is $m$-by-$n$ and $B$ is $p$-by-$q$, then $A \otimes B$ is $mp$-by-$nq$. Each entry of $A$ scales one whole copy of $B$:
+
+$$
+A \otimes B =
+\begin{bmatrix}
+a_{11}B & a_{12}B & \cdots & a_{1n}B \\
+a_{21}B & a_{22}B & \cdots & a_{2n}B \\
+\vdots & \vdots & & \vdots \\
+a_{m1}B & a_{m2}B & \cdots & a_{mn}B
+\end{bmatrix}
+$$
+
+Watch the blocks appear one at a time:
+
+<KroneckerVisualizer />
+
+## Order changes the pattern
+
+`kron(X, Y)` and `kron(Y, X)` have the same size and the same entries in a different arrangement. Using the identity makes this easy to see. With $X = \begin{bmatrix}1 & 2\\3 & 4\end{bmatrix}$ and `I = eye(2)`:
+
+```matlab
+kron(X, I)             kron(I, X)
+
+  1  0  2  0             1  2  0  0
+  0  1  0  2             3  4  0  0
+  3  0  4  0             0  0  1  2
+  0  3  0  4             0  0  3  4
+```
+
+`kron(I, X)` repeats $X$ down the diagonal. `kron(X, I)` spreads the entries of $X$ apart. Matrices made of zeros and ones are the usual way to stamp out repeated copies like this.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Simulating quantum computers" tool="Qiskit">
+The combined state of several qubits is the Kronecker product of their individual states. Each added qubit doubles the size, which is why simulating many qubits gets expensive so quickly.
+</PracticalApplication>
+<PracticalApplication title="Solving equations on a grid" tool="Scientific computing">
+The matrix for a 2D heat or Laplace problem can be assembled from 1D matrices using `kron`, which saves writing out a huge sparse matrix by hand.
+</PracticalApplication>
+</ApplicationsGrid>

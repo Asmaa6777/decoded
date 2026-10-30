@@ -178,3 +178,83 @@ export type Map2 = [number, number, number, number];
 
 export const det2 = ([a, b, c, d]: Map2) => a * d - b * c;
 export const apply2 = ([a, b, c, d]: Map2, x: number, y: number): [number, number] => [a * x + b * y, c * x + d * y];
+
+/* -------------------------- Kronecker product -------------------------- */
+
+export function kron(a: Mat, b: Mat): Mat {
+  const [m, n] = shape(a);
+  const [p, q] = shape(b);
+  const out = zeros(m * p, n * q);
+  for (let i = 0; i < m; i++) for (let j = 0; j < n; j++) for (let k = 0; k < p; k++) for (let l = 0; l < q; l++) out[i * p + k][j * q + l] = a[i][j] * b[k][l] + 0;
+  return out;
+}
+
+export type KronState = { a: Mat; b: Mat; block: [number, number] | null; done: number };
+
+export const MATLAB_KRON = ["A = [1 -2; -1 0];", "B = [4 -3; 2 3];", "X = kron(A, B)"];
+
+export function kronFrames(a: Mat, b: Mat): Frame<KronState>[] {
+  const [m, n] = shape(a);
+  const [p, q] = shape(b);
+  const frames: Frame<KronState>[] = [
+    { state: { a, b, block: null, done: 0 }, line: 2, message: `A is ${m}-by-${n} and B is ${p}-by-${q}, so the result is ${m * p}-by-${n * q}: one copy of B for every entry of A.`, stats: {} },
+  ];
+  let done = 0;
+  for (let i = 0; i < m; i++)
+    for (let j = 0; j < n; j++) {
+      done++;
+      frames.push({ state: { a, b, block: [i, j], done }, line: 2, message: `Entry A(${i + 1}, ${j + 1}) is ${a[i][j]}, so this block is ${a[i][j]} × B.`, stats: {} });
+    }
+  frames.push({ state: { a, b, block: null, done }, line: 2, message: "Done. The result is a grid of scaled copies of B." , stats: {} });
+  return frames;
+}
+
+/* -------------------------------- norms -------------------------------- */
+
+export type NormKind = "one" | "inf" | "fro";
+
+export const norm1 = (a: Mat) => Math.max(...transpose(a).map((c) => c.reduce((s, x) => s + Math.abs(x), 0)));
+export const normInf = (a: Mat) => Math.max(...a.map((r) => r.reduce((s, x) => s + Math.abs(x), 0)));
+export const normFro = (a: Mat) => Math.sqrt(a.flat().reduce((s, x) => s + x * x, 0));
+export const trace = (a: Mat) => a.reduce((s, r, i) => s + r[i], 0);
+
+export type NormState = { kind: NormKind; a: Mat; line: number | null; sums: (number | null)[]; best: number | null; total: number | null };
+
+export const MATLAB_NORM: Record<NormKind, string[]> = {
+  one: ["B = [5 -4 2; -1 2 3; -2 1 0];", "norm(B, 1)      % largest column sum"],
+  inf: ["B = [5 -4 2; -1 2 3; -2 1 0];", "norm(B, inf)    % largest row sum"],
+  fro: ["B = [5 -4 2; -1 2 3; -2 1 0];", "norm(B, 'fro')  % root of all the squares"],
+};
+
+export function normFrames(kind: NormKind, a: Mat): Frame<NormState>[] {
+  const frames: Frame<NormState>[] = [];
+  if (kind === "fro") {
+    let total = 0;
+    frames.push({ state: { kind, a, line: null, sums: [], best: null, total: 0 }, line: 1, message: "Square every entry, add them all up, then take the square root.", stats: {} });
+    a.flat().forEach((x, idx) => {
+      total += x * x;
+      frames.push({ state: { kind, a, line: idx, sums: [], best: null, total }, line: 1, message: `(${x})² = ${x * x}, so the running total is ${total}.`, stats: { total } });
+    });
+    frames.push({ state: { kind, a, line: null, sums: [], best: null, total }, line: 1, message: `The square root of ${total} is ${Number(Math.sqrt(total).toFixed(3))}.`, stats: { total } });
+    return frames;
+  }
+  const groups = kind === "one" ? transpose(a) : a;
+  const word = kind === "one" ? "column" : "row";
+  const sums: (number | null)[] = groups.map(() => null);
+  frames.push({ state: { kind, a, line: null, sums: [...sums], best: null, total: null }, line: 1, message: `Add up the absolute values along each ${word}.`, stats: {} });
+  groups.forEach((g, i) => {
+    const sum = g.reduce((s, x) => s + Math.abs(x), 0);
+    sums[i] = sum;
+    frames.push({ state: { kind, a, line: i, sums: [...sums], best: null, total: null }, line: 1, message: `${word[0].toUpperCase()}${word.slice(1)} ${i + 1}: ${g.map((x) => `|${x}|`).join(" + ")} = ${sum}.`, stats: {} });
+  });
+  const max = Math.max(...(sums as number[]));
+  frames.push({ state: { kind, a, line: sums.indexOf(max), sums: [...sums], best: sums.indexOf(max), total: null }, line: 1, message: `The largest sum wins, so the norm is ${max}.`, stats: {} });
+  return frames;
+}
+
+/* --------------------------- special matrices --------------------------- */
+
+export const triu = (a: Mat, k = 0): Mat => a.map((r, i) => r.map((v, j) => (j - i >= k ? v : 0)));
+export const tril = (a: Mat, k = 0): Mat => a.map((r, i) => r.map((v, j) => (j - i <= k ? v : 0)));
+export const diagOnly = (a: Mat, k = 0): Mat => a.map((r, i) => r.map((v, j) => (j - i === k ? v : 0)));
+export const diagOf = (a: Mat, k = 0): number[] => a.flatMap((r, i) => r.filter((_, j) => j - i === k));

@@ -62,6 +62,9 @@ import AaPNP from "@/content/advanced-algorithms/m4-01-p-and-np.mdx";
 import CmMatrices from "@/content/computational-mathematics/m0-01-matrices-and-matlab.mdx";
 import CmTranspose from "@/content/computational-mathematics/m0-02-transpose-and-products.mdx";
 import CmMultiply from "@/content/computational-mathematics/m0-03-multiplying-matrices.mdx";
+import CmKronecker from "@/content/computational-mathematics/m0-04-kronecker-product.mdx";
+import CmNorms from "@/content/computational-mathematics/m0-05-norms-and-trace.mdx";
+import CmSpecial from "@/content/computational-mathematics/m0-06-special-matrices.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -307,6 +310,9 @@ export const courses: Course[] = [
           { slug: "matrices-and-matlab", title: "Matrices and MATLAB", duration: "10 min", Component: CmMatrices },
           { slug: "transpose-and-products", title: "Transpose and Vector Products", duration: "10 min", Component: CmTranspose },
           { slug: "multiplying-matrices", title: "Multiplying Matrices", duration: "14 min", Component: CmMultiply },
+          { slug: "kronecker-product", title: "The Kronecker Product", duration: "8 min", Component: CmKronecker },
+          { slug: "norms-and-trace", title: "Matrix Norms and the Trace", duration: "11 min", Component: CmNorms },
+          { slug: "special-matrices", title: "Some Special Matrices", duration: "8 min", Component: CmSpecial },
         ],
       },
     ],
