@@ -59,6 +59,8 @@ import AaMst from "@/content/advanced-algorithms/m3-03-minimum-spanning-trees.md
 import AaHuffman from "@/content/advanced-algorithms/m3-04-huffman-and-activity-selection.mdx";
 import AaShortestPaths from "@/content/advanced-algorithms/m3-05-shortest-paths.mdx";
 import AaPNP from "@/content/advanced-algorithms/m4-01-p-and-np.mdx";
+import CmMatrices from "@/content/computational-mathematics/m0-01-matrices-and-matlab.mdx";
+import CmTranspose from "@/content/computational-mathematics/m0-02-transpose-and-products.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -288,6 +290,26 @@ export const courses: Course[] = [
     ],
   },
   {
+    slug: "computational-mathematics",
+    title: "Computational Mathematics",
+    tagline: "The maths your computer does for you, animated until it makes sense.",
+    description:
+      "Matrices, polynomials, number theory and the first ciphers, worked in MATLAB. Watch matrix entries slide into place, space bend under a linear map and a cipher wheel turn, then see where each idea runs in today's tools.",
+    accent: "mint",
+    status: "available",
+    number: "05",
+    modules: [
+      {
+        title: "Matrices",
+        blurb: "Creating and combining matrices, what they do to space, and how to undo them.",
+        lessons: [
+          { slug: "matrices-and-matlab", title: "Matrices and MATLAB", duration: "10 min", Component: CmMatrices },
+          { slug: "transpose-and-products", title: "Transpose and Vector Products", duration: "10 min", Component: CmTranspose },
+        ],
+      },
+    ],
+  },
+  {
     slug: "operating-systems",
     title: "Operating Systems",
     tagline: "The invisible layer that makes everything work.",
@@ -295,7 +317,7 @@ export const courses: Course[] = [
       "Processes, memory, file systems, schedulers — and where each shows up the moment something goes wrong. Coming soon.",
     accent: "violet",
     status: "coming-soon",
-    number: "05",
+    number: "06",
     modules: [],
   },
   {
@@ -306,7 +328,7 @@ export const courses: Course[] = [
       "Consistency, availability, and the CAP theorem. This course decodes how massive systems stay synchronized across the globe, from Paxos to Raft and the tradeoffs of microservices.",
     accent: "mint",
     status: "coming-soon",
-    number: "06",
+    number: "07",
     modules: [],
   },
   {
@@ -317,7 +339,7 @@ export const courses: Course[] = [
       "Exams test mental endurance and strategy as much as knowledge. This course covers how memory works, how to plan the week before, and how to handle stress in the exam room and on the day itself.",
     accent: "sky",
     status: "available",
-    number: "07",
+    number: "08",
     modules: [
       {
         title: "The Strategy",

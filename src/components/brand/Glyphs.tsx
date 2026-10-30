@@ -44,6 +44,13 @@ const COURSE_GLYPHS: Record<string, (p: IconProps) => JSX.Element> = {
       <path d="M10.6 7.1L7.2 15.8M13.4 7.1l3.4 8.7" />
     </svg>
   ),
+  // bracketed matrix
+  "computational-mathematics": ({ className }) => (
+    <svg {...base} className={className}>
+      <path d="M7 4H4v16h3M17 4h3v16h-3" />
+      <path d="M9 9h.01M15 9h.01M9 15h.01M15 15h.01" strokeWidth={2.6} strokeLinecap="round" />
+    </svg>
+  ),
   // chip
   "operating-systems": ({ className }) => (
     <svg {...base} className={className}>
