@@ -2,6 +2,7 @@ import type { ProgressMap } from "@/lib/progressBackup";
 
 const STORAGE_KEY = "decoded:progress:v1";
 const LAST_LESSON_KEY = "decoded:last-lesson:v1";
+const QUIZ_SCORES_KEY = "decoded:quiz-scores:v1";
 
 export function readProgress(): ProgressMap {
   if (typeof window === "undefined") return {};
@@ -48,4 +49,30 @@ export function clearLastLesson() {
   } catch {
     /* storage unavailable */
   }
+}
+
+export type QuizScore = { best: number; total: number };
+/** "course/lesson" -> the best attempt at that quiz */
+export type QuizScores = Record<string, QuizScore>;
+
+export function readQuizScores(): QuizScores {
+  try {
+    const raw = localStorage.getItem(QUIZ_SCORES_KEY);
+    return raw ? (JSON.parse(raw) as QuizScores) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function writeQuizScores(scores: QuizScores) {
+  try {
+    localStorage.setItem(QUIZ_SCORES_KEY, JSON.stringify(scores));
+    window.dispatchEvent(new CustomEvent("decoded:progress"));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+export function isBetterScore(next: QuizScore, current: QuizScore | undefined) {
+  return !current || next.best * current.total > current.best * next.total;
 }

@@ -238,6 +238,67 @@ describe("registering for a course", () => {
   });
 });
 
+describe("quiz scores", () => {
+  function save(session: string | null, body: unknown, origin = SITE): Promise<Response> {
+    return call("/quiz-scores", {
+      method: "POST",
+      headers: { Origin: origin, ...(session ? { Cookie: `__Host-decoded_session=${session}` } : {}) },
+      body: JSON.stringify(body),
+    });
+  }
+  const scoresOf = async (session: string) =>
+    ((await read(session)) as unknown as { quizScores: Record<string, { best: number; total: number }> }).quizScores;
+
+  it("keeps the best attempt only", async () => {
+    const session = await signIn(1);
+    await save(session, { course: "toc", lesson: "quiz", best: 6, total: 10 });
+    await save(session, { course: "toc", lesson: "quiz", best: 3, total: 10 });
+    expect(await scoresOf(session)).toEqual({ "toc/quiz": { best: 6, total: 10 } });
+    await save(session, { course: "toc", lesson: "quiz", best: 9, total: 10 });
+    expect(await scoresOf(session)).toEqual({ "toc/quiz": { best: 9, total: 10 } });
+  });
+
+  it("keeps each user's scores separate", async () => {
+    const alice = await signIn(1);
+    const bob = await signIn(2);
+    await save(alice, { course: "toc", lesson: "quiz", best: 6, total: 10 });
+    expect(await scoresOf(bob)).toEqual({});
+  });
+
+  it("needs a session, the site's origin and sensible numbers", async () => {
+    const session = await signIn(1);
+    const good = { course: "toc", lesson: "quiz", best: 1, total: 2 };
+    expect((await save(null, good)).status).toBe(401);
+    expect((await save(session, good, "https://evil.example")).status).toBe(403);
+    for (const bad of [
+      { ...good, best: 3 },
+      { ...good, best: -1 },
+      { ...good, total: 0, best: 0 },
+      { ...good, best: 0.5 },
+      { ...good, best: "1" },
+      { ...good, lesson: "<b>" },
+      { ...good, course: undefined },
+    ]) {
+      expect((await save(session, bad)).status).toBe(400);
+    }
+    expect(await scoresOf(session)).toEqual({});
+  });
+
+  it("is cleared by leaving the course and by deleting the account", async () => {
+    const session = await signIn(1);
+    await save(session, { course: "toc", lesson: "quiz", best: 1, total: 2 });
+    await save(session, { course: "os", lesson: "quiz", best: 1, total: 2 });
+    await call("/enrollments/remove", {
+      method: "POST",
+      headers: { Origin: SITE, Cookie: `__Host-decoded_session=${session}` },
+      body: JSON.stringify({ course: "toc" }),
+    });
+    expect(Object.keys(await scoresOf(session))).toEqual(["os/quiz"]);
+    await call("/account/delete", { method: "POST", headers: { Origin: SITE, Cookie: `__Host-decoded_session=${session}` } });
+    expect(await env.DB.prepare("SELECT COUNT(*) AS n FROM quiz_scores").first<number>("n")).toBe(0);
+  });
+});
+
 describe("deleting an account", () => {
   const count = (table: string) => env.DB.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first<number>("n");
 

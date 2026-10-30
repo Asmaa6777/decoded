@@ -1,5 +1,5 @@
 import { currentUserId, deleteAccount, finishGithub, signOut, startGithub } from "./auth";
-import { changeProgress, enroll, getProgress, unenroll } from "./progress";
+import { changeProgress, enroll, getProgress, saveQuizScore, unenroll } from "./progress";
 
 export interface Env {
   DB: D1Database;
@@ -35,6 +35,8 @@ async function route(request: Request, env: Env): Promise<Response> {
       return getProgress(request, env);
     case "POST /progress":
       return changeProgress(request, env);
+    case "POST /quiz-scores":
+      return saveQuizScore(request, env);
     case "POST /enrollments":
       return enroll(request, env);
     case "POST /enrollments/remove":

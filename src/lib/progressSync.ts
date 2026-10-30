@@ -5,7 +5,17 @@
    until the API has accepted them, so being offline loses nothing. */
 
 import type { ProgressMap } from "@/lib/progressBackup";
-import { clearLastLesson, readLastLesson, readProgress, writeProgress } from "@/lib/progressStore";
+import {
+  clearLastLesson,
+  isBetterScore,
+  readLastLesson,
+  readProgress,
+  readQuizScores,
+  writeProgress,
+  writeQuizScores,
+  type QuizScore,
+  type QuizScores,
+} from "@/lib/progressStore";
 
 export const API_URL = import.meta.env.VITE_API_URL ?? "https://decoded-api.stack42.tech";
 
@@ -139,7 +149,7 @@ export function queueProgressChange(before: ProgressMap, after: ProgressMap) {
 }
 
 export async function syncProgress() {
-  let body: { signedIn: boolean; user?: AccountProfile; progress?: ProgressMap; enrollments?: Record<string, number> };
+  let body: { signedIn: boolean; user?: AccountProfile; progress?: ProgressMap; enrollments?: Record<string, number>; quizScores?: QuizScores };
   try {
     const response = await fetch(`${API_URL}/progress`, { credentials: "include" });
     if (!response.ok) throw new Error(String(response.status));
@@ -162,8 +172,41 @@ export async function syncProgress() {
   enrollments = body.enrollments ?? {};
   setStatus("signed-in");
 
+  await mergeQuizScores(body.quizScores ?? {});
+
   if (Object.keys(pending).length > 0) await flush();
   else writeProgress(body.progress ?? {});
+}
+
+function postQuizScore(key: string, score: QuizScore) {
+  const [course, lesson] = key.split("/");
+  return fetch(`${API_URL}/quiz-scores`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ course, lesson, ...score }),
+  });
+}
+
+/** Keeps the better of each score from this browser and the account, on both sides. */
+async function mergeQuizScores(server: QuizScores) {
+  const local = readQuizScores();
+  const merged: QuizScores = { ...server };
+  for (const [key, score] of Object.entries(local)) {
+    if (!isBetterScore(score, server[key])) continue;
+    merged[key] = score;
+    await postQuizScore(key, score).catch(() => undefined);
+  }
+  writeQuizScores(merged);
+}
+
+/** Saves a finished quiz if it beats the best so far. Offline attempts reach the account on the next load. */
+export function recordQuizScore(course: string, lesson: string, score: QuizScore) {
+  const key = `${course}/${lesson}`;
+  const scores = readQuizScores();
+  if (!isBetterScore(score, scores[key])) return;
+  writeQuizScores({ ...scores, [key]: score });
+  if (status === "signed-in") void postQuizScore(key, score).catch(() => undefined);
 }
 
 export async function registerForCourse(course: string) {
@@ -195,6 +238,7 @@ export async function leaveCourse(course: string) {
     savePending(pending);
   }
   if (readLastLesson()?.course === course) clearLastLesson();
+  writeQuizScores(Object.fromEntries(Object.entries(readQuizScores()).filter(([key]) => !key.startsWith(`${course}/`))));
   const { [course]: _left, ...rest } = readProgress();
   writeProgress(rest);
   listeners.forEach((listener) => listener());
@@ -212,6 +256,7 @@ export async function signOut() {
   if (!response.ok) throw new Error(String(response.status));
   forgetAccount();
   clearLastLesson();
+  writeQuizScores({});
   writeProgress({});
   setStatus("signed-out");
 }
@@ -222,6 +267,7 @@ export async function deleteAccount() {
   if (!response.ok) throw new Error(String(response.status));
   forgetAccount();
   clearLastLesson();
+  writeQuizScores({});
   writeProgress({});
   setStatus("signed-out");
 }

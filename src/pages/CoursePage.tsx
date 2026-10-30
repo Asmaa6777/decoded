@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getCourse, flattenLessons, lessonKind } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
+import { useQuizScores } from "@/hooks/useQuizScores";
 import { CourseRegistration } from "@/components/CourseRegistration";
 import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 import { CourseAuthors } from "@/components/CourseAuthors";
@@ -15,6 +16,7 @@ export default function CoursePage() {
   const { courseSlug } = useParams<{ courseSlug: string }>();
   const course = courseSlug ? getCourse(courseSlug) : undefined;
   const { isComplete } = useProgress(courseSlug);
+  const scores = useQuizScores();
 
   useEffect(() => {
     if (course) document.title = `${course.title} — Decoded`;
@@ -102,6 +104,11 @@ export default function CoursePage() {
                                 {lesson.title}
                               </span>
                               <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                                {scores[`${course.slug}/${lesson.slug}`] && (
+                                  <span className={`mr-3 ${accentText[course.accent]}`}>
+                                    Best {scores[`${course.slug}/${lesson.slug}`].best}/{scores[`${course.slug}/${lesson.slug}`].total}
+                                  </span>
+                                )}
                                 {lesson.duration}
                               </span>
                             </Link>
