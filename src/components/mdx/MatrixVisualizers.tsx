@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { btn, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { apply2, det2, diagOf, diagOnly, kron, kronFrames, MAGIC4, MATLAB_KRON, MATLAB_NORM, normFrames, tril, triu, type NormKind, elementwiseFrames, MAGIC3, MATLAB_ELEMENTWISE, MATLAB_MATMUL, matMulFrames, type Map2, MATLAB_VECTOR_PRODUCT, pascal, transpose, vectorProductFrames, type ElementwiseOp, type Mat, type VectorProductKind } from "@/lib/matrix";
+import { inverseFrames, MATLAB_INVERSE, apply2, det2, diagOf, diagOnly, kron, kronFrames, MAGIC4, MATLAB_KRON, MATLAB_NORM, normFrames, tril, triu, type NormKind, elementwiseFrames, MAGIC3, MATLAB_ELEMENTWISE, MATLAB_MATMUL, matMulFrames, type Map2, MATLAB_VECTOR_PRODUCT, pascal, transpose, vectorProductFrames, type ElementwiseOp, type Mat, type VectorProductKind } from "@/lib/matrix";
 
 /* ============================================================
    Visualizers for the Computational Mathematics course. Matrix
@@ -506,5 +506,57 @@ export function SpecialMatrixExplorer() {
       </div>
       <Toggle<SpecialKind> value={kind} onChange={setKind} options={[["triu", "Upper triangular"], ["tril", "Lower triangular"], ["diag", "Diagonal"]]} />
     </Panel>
+  );
+}
+
+/* ------------------------- inverse by cofactors ------------------------ */
+
+const INVERSE_PRESETS: Record<string, Mat> = {
+  neat: [[1, 2, 3], [0, 1, 4], [5, 6, 0]],
+  fractions: [[2, 0, 1], [1, 3, 0], [0, 1, 2]],
+  singular: [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+};
+
+const STAGE_LABEL: Record<string, string> = { start: "", minors: "minors", cofactors: "cofactors", adjoint: "adjoint (cofactors transposed)", inverse: "A⁻¹", singular: "no inverse" };
+
+export function InverseVisualizer() {
+  const [preset, setPreset] = useState("neat");
+  const a = INVERSE_PRESETS[preset];
+  const frames = useMemo(() => inverseFrames(a), [a]);
+  return (
+    <Stepper
+      title="Building an inverse"
+      frames={frames}
+      code={MATLAB_INVERSE}
+      codeLabel="MATLAB"
+      legend={[["bg-orange", "crossed out"], ["bg-neon", "this entry"], ["bg-violet", "sign flipped"], ["bg-mint", "result"]]}
+      inputs={<Toggle<string> value={preset} onChange={setPreset} options={[["neat", "Whole-number answer"], ["fractions", "Fractions"], ["singular", "Singular"]]} />}
+      render={(s) => {
+        const n = s.a.length;
+        const left = matCells(s.a, "l", (i, j) => {
+          if (!s.at) return undefined;
+          if (i === s.at[0] && j === s.at[1]) return "neon";
+          return i === s.at[0] || j === s.at[1] ? "orange" : "sky";
+        });
+        const right: StageCell[] = s.shown.flatMap((r, i) =>
+          r.map((v, j) => ({
+            id: `r${i}-${j}`,
+            row: s.flipped ? j : i,
+            col: s.flipped ? i : j,
+            text: v === null ? "" : String(v),
+            hidden: v === null,
+            tone: (s.at?.[0] === i && s.at?.[1] === j ? "orange" : s.stage === "cofactors" && (i + j) % 2 ? "violet" : s.stage === "inverse" ? "mint" : undefined) as CellTone | undefined,
+          })),
+        );
+        return (
+          <div className="flex flex-wrap items-center gap-5">
+            <MatrixStage rows={n} cols={n} cells={left} size={46} label="A" />
+            <Op>→</Op>
+            <MatrixStage rows={n} cols={n} cells={right} size={52} label={STAGE_LABEL[s.stage] || " "} />
+            <div className="font-mono text-sm pb-5">det(A) = <span className={s.det === 0 ? "text-orange" : "text-mint"}>{s.det}</span></div>
+          </div>
+        );
+      }}
+    />
   );
 }

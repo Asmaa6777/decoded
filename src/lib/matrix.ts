@@ -258,3 +258,67 @@ export const triu = (a: Mat, k = 0): Mat => a.map((r, i) => r.map((v, j) => (j -
 export const tril = (a: Mat, k = 0): Mat => a.map((r, i) => r.map((v, j) => (j - i <= k ? v : 0)));
 export const diagOnly = (a: Mat, k = 0): Mat => a.map((r, i) => r.map((v, j) => (j - i === k ? v : 0)));
 export const diagOf = (a: Mat, k = 0): number[] => a.flatMap((r, i) => r.filter((_, j) => j - i === k));
+
+/* ------------------------ determinants and inverses ------------------------ */
+
+export const minorMatrix = (a: Mat, r: number, c: number): Mat => a.filter((_, i) => i !== r).map((row) => row.filter((_, j) => j !== c));
+
+/** Determinant by cofactor expansion along the first row. Fine for the small matrices here. */
+export function det(a: Mat): number {
+  if (a.length === 1) return a[0][0];
+  return a[0].reduce((s, v, j) => s + (j % 2 ? -1 : 1) * v * det(minorMatrix(a, 0, j)), 0) + 0;
+}
+
+export const minors = (a: Mat): Mat => a.map((r, i) => r.map((_, j) => det(minorMatrix(a, i, j))));
+export const cofactors = (a: Mat): Mat => minors(a).map((r, i) => r.map((v, j) => ((i + j) % 2 ? -v : v) + 0));
+export const adjoint = (a: Mat): Mat => transpose(cofactors(a));
+
+const gcdInt = (x: number, y: number): number => (y === 0 ? Math.abs(x) : gcdInt(y, x % y));
+
+/** An exact fraction as text: 6 over -4 reads -3/2. */
+export function fraction(n: number, d: number): string {
+  if (n === 0) return "0";
+  const g = gcdInt(n, d) * (d < 0 ? -1 : 1);
+  return d / g === 1 ? String(n / g) : `${n / g}/${d / g}`;
+}
+
+export const inverseText = (a: Mat): string[][] => {
+  const D = det(a);
+  return adjoint(a).map((r) => r.map((v) => fraction(v, D)));
+};
+
+export type InverseStage = "start" | "minors" | "cofactors" | "adjoint" | "inverse" | "singular";
+
+export type InverseState = { a: Mat; stage: InverseStage; at: [number, number] | null; shown: (number | string | null)[][]; flipped: boolean; det: number };
+
+export const MATLAB_INVERSE = ["A = [1 2 3; 0 1 4; 5 6 0];", "D = det(A);", "% C = the cofactor matrix: minors with signs", "% adjA = C'", "B = inv(A)    % equals adjA / D"];
+
+export function inverseFrames(a: Mat): Frame<InverseState>[] {
+  const n = a.length;
+  const D = det(a);
+  const frames: Frame<InverseState>[] = [];
+  const push = (stage: InverseStage, at: [number, number] | null, shown: (number | string | null)[][], flipped: boolean, line: number, message: string) =>
+    frames.push({ state: { a, stage, at, shown: shown.map((r) => [...r]), flipped, det: D }, line, message, stats: { det: D } });
+  const empty = (): (number | string | null)[][] => a.map((r) => r.map(() => null));
+  const m = minors(a);
+  const c = cofactors(a);
+  const adj = adjoint(a);
+  const expansion = a[0].map((v, j) => `${j % 2 ? "−" : j ? "+" : ""} ${v < 0 ? `(${v})` : v}×${m[0][j] < 0 ? `(${m[0][j]})` : m[0][j]}`).join(" ");
+  push("start", null, empty(), false, 1, `Expand along the first row: det(A) = ${expansion} = ${D}.`);
+  if (D === 0) {
+    push("singular", null, empty(), false, 1, "The determinant is 0, so A is singular and has no inverse. MATLAB warns you, and the result can't be trusted.");
+    return frames;
+  }
+  const shown = empty();
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < n; j++) {
+      shown[i][j] = m[i][j];
+      const sub = minorMatrix(a, i, j).flat();
+      push("minors", [i, j], shown, false, 2, `Minor M(${i + 1},${j + 1}): cross out row ${i + 1} and column ${j + 1}. The rest gives ${sub[0]}×${sub[3]} − ${sub[1]}×${sub[2]} = ${m[i][j]}.`);
+    }
+  push("cofactors", null, c, false, 2, "Cofactors: flip the sign wherever i + j is odd, which makes a checkerboard.");
+  push("adjoint", null, c, true, 3, "Adjoint: transpose the cofactor matrix. Watch each entry cross the diagonal.");
+  const txt = inverseText(a);
+  push("inverse", null, c.map((r, i) => r.map((_, j) => txt[j][i])), true, 4, `Divide every entry by det(A) = ${D}. That is the inverse, and A times it gives the identity.`);
+  return frames;
+}

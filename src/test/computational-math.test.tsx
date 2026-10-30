@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
+import { adjoint, cofactors, det, fraction, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -113,5 +113,39 @@ describe("Kronecker products, norms and special matrices", () => {
     expect(diagOf(MAGIC4)).toEqual([16, 11, 6, 1]);
     expect(triu([[1, 1], [1, 1]])).toEqual([[1, 1], [0, 1]]);
     expect(tril([[1, 1, 1], [1, 1, 1], [1, 1, 1]], -1)).toEqual([[0, 0, 0], [1, 0, 0], [1, 1, 0]]);
+  });
+});
+
+describe("determinants and inverses", () => {
+  const A = [[1, 2, 3], [0, 1, 4], [5, 6, 0]];
+  it("computes determinants, including the 3-by-3 examples", () => {
+    expect(det([[3, 4], [1, 2]])).toBe(2);
+    expect(det(A)).toBe(1);
+    expect(det(pascal(3))).toBe(1);
+    expect(det(MAGIC3)).toBe(-360);
+    expect(det(MAGIC4)).toBe(0);
+    expect(det([[1, 2, 3], [4, 5, 6], [7, 8, 9]])).toBe(0);
+  });
+
+  it("finds the minor and cofactor from the lesson", () => {
+    const B = [[-2, 4, 1], [4, 5, 7], [-6, 1, 0]];
+    expect(minorMatrix(B, 1, 2)).toEqual([[-2, 4], [-6, 1]]);
+    expect(minors(B)[1][2]).toBe(22);
+    expect(cofactors(B)[1][2]).toBe(-22);
+  });
+
+  it("gets a true inverse from the adjoint", () => {
+    expect(adjoint(A)).toEqual([[-24, 18, 5], [20, -15, -4], [-5, 4, 1]]);
+    expect(mul(A, adjoint(A))).toEqual(identity(3));
+    expect(fraction(6, -4)).toBe("-3/2");
+    const F = [[2, 0, 1], [1, 3, 0], [0, 1, 2]];
+    expect(det(F)).toBe(13);
+    expect(inverseText(F)[0][0]).toBe("6/13");
+  });
+
+  it("stops early on a singular matrix", () => {
+    const f = inverseFrames([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
+    expect(f.at(-1)!.state.stage).toBe("singular");
+    expect(inverseFrames(A).at(-1)!.state.stage).toBe("inverse");
   });
 });
