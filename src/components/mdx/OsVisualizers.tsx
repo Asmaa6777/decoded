@@ -97,6 +97,24 @@ import {
   switchesFor,
   type Algo,
   type Proc,
+  allocate,
+  baseLimitCheck,
+  compact,
+  eat,
+  FIT_REQUESTS,
+  fitExerciseMemory,
+  internalFrag,
+  PAGE_EXAMPLE,
+  pageTranslate,
+  relocate,
+  release,
+  SEGMENT_TABLE,
+  segTranslate,
+  splitAddress,
+  swapTime,
+  tlbRun,
+  type Block,
+  type Fit,
 } from "@/lib/operatingSystems";
 import { exists, initialShell, promptPath, readFile, run, type ShellState } from "@/lib/miniShell";
 
@@ -2757,6 +2775,486 @@ export function LittlesLaw() {
           <span key={i} className="h-3 w-3 rounded-[2px] bg-sky animate-in zoom-in-50 duration-200" />
         ))}
       </div>
+    </Panel>
+  );
+}
+
+/* ------------------------------ main memory ------------------------------ */
+
+/** The MMU in two flavours: base/limit protection, and the relocation register. */
+export function MmuDemo() {
+  const [mode, setMode] = useState<"protect" | "relocate">("protect");
+  const [addr, setAddr] = useState(300100);
+  const [logical, setLogical] = useState(346);
+  const base = 300040;
+  const limit = 120900;
+  const reloc = 14000;
+  const check = baseLimitCheck(addr, base, limit);
+  const r = relocate(logical, reloc);
+  const stage = (label: string, body: React.ReactNode, tone: string, k: string) => (
+    <div key={k} className={`rounded-sm border-2 px-3 py-2 text-center animate-in fade-in zoom-in-95 duration-300 ${tone}`}>
+      <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="font-mono text-sm font-bold">{body}</div>
+    </div>
+  );
+  return (
+    <Panel title="The memory-management unit">
+      <Toggle<"protect" | "relocate">
+        value={mode}
+        onChange={setMode}
+        options={[
+          ["protect", "Base + limit protection"],
+          ["relocate", "Relocation register"],
+        ]}
+      />
+      {mode === "protect" ? (
+        <>
+          <label className="flex flex-wrap items-center gap-3 font-mono text-xs">
+            <span className="uppercase tracking-widest text-muted-foreground">CPU address</span>
+            <input type="range" min={250000} max={460000} step={20} value={addr} onChange={(e) => setAddr(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="address" />
+            <input type="number" value={addr} onChange={(e) => setAddr(Number(e.target.value) || 0)} className="w-24 bg-transparent border border-border rounded-sm px-1 py-0.5 text-right" aria-label="address value" />
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            {stage("CPU", addr, "border-sky", `a${addr}`)}
+            <span>→</span>
+            {stage(`≥ base (${base})?`, addr >= base ? "yes" : "no", addr >= base ? "border-mint" : "border-orange bg-orange/15", `b${addr >= base}`)}
+            <span>→</span>
+            {stage(`< base + limit (${base + limit})?`, addr < base + limit ? "yes" : "no", addr >= base && addr < base + limit ? "border-mint" : addr >= base ? "border-orange bg-orange/15" : "border-border opacity-40", `c${addr < base + limit}`)}
+            <span>→</span>
+            {check.ok ? stage("memory", "access OK ✓", "border-mint bg-mint/20", "ok") : stage("trap to OS", "addressing error ✗", "border-orange bg-orange/25", "trap")}
+          </div>
+          <div className="relative h-8 rounded-sm bg-muted/40 border border-border overflow-hidden">
+            <div className="absolute top-0 bottom-0 bg-mint/30 border-x-2 border-mint" style={{ left: `${((base - 250000) / 210000) * 100}%`, width: `${(limit / 210000) * 100}%` }} />
+            <div className="absolute top-0 bottom-0 w-0.5 bg-foreground transition-all duration-150" style={{ left: `${((addr - 250000) / 210000) * 100}%` }} />
+            <span className="absolute left-1 top-1.5 font-mono text-[10px] text-muted-foreground">other processes / OS</span>
+          </div>
+        </>
+      ) : (
+        <>
+          <label className="flex flex-wrap items-center gap-3 font-mono text-xs">
+            <span className="uppercase tracking-widest text-muted-foreground">logical address</span>
+            <input type="range" min={0} max={2000} value={logical} onChange={(e) => setLogical(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="logical address" />
+            <span className="w-14 font-bold">{logical}</span>
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            {stage("CPU: logical", logical, "border-sky", `l${logical}`)}
+            <span>→</span>
+            {stage("relocation register", `+ ${reloc}`, "border-violet", "r")}
+            <span>→</span>
+            {stage("memory: physical", r.physical, "border-mint bg-mint/20", `p${logical}`)}
+          </div>
+          <p className="text-xs text-muted-foreground">The program only ever sees addresses 0, 1, 2… The MMU adds {reloc} on the way to memory, so the process can live anywhere, and the OS can move it by changing one register.</p>
+        </>
+      )}
+    </Panel>
+  );
+}
+
+/** How long does it take to swap a process out and back in? */
+export function SwapTimeCalc() {
+  const [size, setSize] = useState(100);
+  const [rate, setRate] = useState(50);
+  const t = swapTime(size, rate);
+  return (
+    <Panel title="Context switch time with swapping">
+      <div className="grid sm:grid-cols-2 gap-4 font-mono text-xs">
+        <label className="flex flex-col gap-1">
+          <span className="uppercase tracking-widest text-muted-foreground">process size: {size} MB</span>
+          <input type="range" min={10} max={1000} step={10} value={size} onChange={(e) => setSize(Number(e.target.value))} aria-label="process size" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="uppercase tracking-widest text-muted-foreground">disk transfer rate: {rate} MB/s</span>
+          <input type="range" min={10} max={2000} step={10} value={rate} onChange={(e) => setRate(Number(e.target.value))} aria-label="transfer rate" />
+        </label>
+      </div>
+      <div className="flex h-8 rounded-sm overflow-hidden border border-border">
+        <div className="bg-orange flex items-center justify-center font-mono text-[11px] text-background font-bold w-1/2">swap out {fmt(t.out)} ms</div>
+        <div className="bg-sky flex items-center justify-center font-mono text-[11px] text-background font-bold w-1/2">swap in {fmt(t.out)} ms</div>
+      </div>
+      <div className="font-display text-xl">
+        total ≈ <b>{t.total >= 1000 ? `${fmt(t.total / 1000)} seconds` : `${fmt(t.total)} ms`}</b> <span className="text-sm text-muted-foreground font-mono">for one context switch</span>
+      </div>
+    </Panel>
+  );
+}
+
+const OWNER_TONE: Record<string, string> = { OS: "bg-muted-foreground/60", used: "bg-muted-foreground/30", P1: "bg-sky", P2: "bg-violet", P3: "bg-orange", P4: "bg-mint" };
+
+/** First, best and worst fit on the textbook's holes, with release and compaction. */
+export function MemoryAllocator() {
+  const [fit, setFit] = useState<Fit>("first");
+  const [mem, setMem] = useState<Block[]>(fitExerciseMemory);
+  const [next, setNext] = useState(0);
+  const [msg, setMsg] = useState("Holes of 100K, 500K, 200K, 300K and 600K (grey blocks are already in use). Place the requests one by one.");
+  const total = mem.reduce((a, b) => a + b.size, 0);
+  const free = mem.filter((b) => b.owner === null);
+  const freeTotal = free.reduce((a, b) => a + b.size, 0);
+  const biggest = Math.max(0, ...free.map((b) => b.size));
+  const reset = (f: Fit = fit) => {
+    setFit(f);
+    setMem(fitExerciseMemory());
+    setNext(0);
+    setMsg("Fresh memory. Place the requests one by one.");
+  };
+  const place = () => {
+    const size = FIT_REQUESTS[next];
+    const name = `P${next + 1}`;
+    const r = allocate(mem, size, name, fit);
+    if (r.at < 0) {
+      setMsg(`${name} needs ${size}K. There's ${freeTotal}K free in total, but the biggest hole is only ${biggest}K. It must wait. That's external fragmentation!`);
+    } else {
+      setMsg(`${name} (${size}K) goes into the ${mem[r.at].size}K hole${mem[r.at].size > size ? `, leaving a ${mem[r.at].size - size}K hole` : ""}.`);
+      setMem(r.mem);
+    }
+    setNext((n) => n + 1);
+  };
+  return (
+    <Panel title="Dynamic storage allocation" legend={[["bg-sky", "P1 212K"], ["bg-violet", "P2 417K"], ["bg-orange", "P3 112K"], ["bg-mint", "P4 426K"]]}>
+      <Toggle<Fit>
+        value={fit}
+        onChange={(f) => reset(f)}
+        options={[
+          ["first", "First fit"],
+          ["best", "Best fit"],
+          ["worst", "Worst fit"],
+        ]}
+      />
+      <div className="flex h-14 rounded-sm overflow-hidden border border-border">
+        {mem.map((b) => (
+          <div
+            key={`${b.start}-${b.owner}`}
+            className={`relative flex items-center justify-center border-r border-background transition-all duration-500 animate-in fade-in ${b.owner === null ? "bg-[repeating-linear-gradient(45deg,transparent,transparent_5px,hsl(var(--border))_5px,hsl(var(--border))_6px)]" : OWNER_TONE[b.owner] ?? "bg-muted"}`}
+            style={{ width: `${(b.size / total) * 100}%` }}
+            title={`${b.owner ?? "hole"}: ${b.size}K`}
+          >
+            {b.size >= 80 && <span className={`font-mono text-[10px] font-bold ${b.owner && b.owner.startsWith("P") ? "text-background" : "text-foreground"}`}>{b.owner && b.owner !== "used" ? `${b.owner} ` : ""}{b.size}K</span>}
+          </div>
+        ))}
+      </div>
+      <p aria-live="polite" className="text-sm min-h-[2.5em]">
+        {msg}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={btn} disabled={next >= FIT_REQUESTS.length} onClick={place}>
+          {next < FIT_REQUESTS.length ? `place P${next + 1} (${FIT_REQUESTS[next]}K)` : "all requests placed"}
+        </button>
+        <button type="button" className={btn} disabled={!mem.some((b) => b.owner === "P1")} onClick={() => { setMem(release(mem, "P1")); setMsg("P1 exits. Its partition becomes a hole and merges with any free neighbours."); }}>
+          P1 exits
+        </button>
+        <button type="button" className={btn} onClick={() => { setMem(compact(mem)); setMsg("Compaction: every block slides down, and all the free memory becomes one big hole. Only possible with dynamic relocation at execution time."); }}>
+          compact
+        </button>
+        <button type="button" className={btn} onClick={() => reset()}>
+          ⟲
+        </button>
+      </div>
+      <div className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        free <span className="text-foreground">{freeTotal}K</span> in <span className="text-foreground">{free.length}</span> holes · largest hole <span className="text-foreground">{biggest}K</span>
+      </div>
+    </Panel>
+  );
+}
+
+/** Translate <segment, offset> with the textbook's segment table. */
+export function SegmentTranslator() {
+  const [s, setS] = useState(2);
+  const [d, setD] = useState(53);
+  const r = segTranslate(s, d);
+  return (
+    <Panel title="Segmentation hardware">
+      <div className="grid md:grid-cols-[1fr_260px] gap-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
+            <label className="inline-flex items-center gap-2">
+              segment s
+              <select value={s} onChange={(e) => setS(Number(e.target.value))} className="bg-transparent border border-border rounded-sm px-2 py-1" aria-label="segment">
+                {SEGMENT_TABLE.map((seg, i) => (
+                  <option key={i} value={i}>
+                    {i}: {seg.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="inline-flex items-center gap-2">
+              offset d
+              <input type="number" min={0} value={d} onChange={(e) => setD(Math.max(0, Number(e.target.value) || 0))} className="w-20 bg-transparent border border-border rounded-sm px-1 py-0.5 text-right" aria-label="offset" />
+            </label>
+          </div>
+          <div key={`${s}-${d}`} className="flex flex-wrap items-center gap-2 font-mono text-sm animate-in fade-in duration-300">
+            <span className="px-2 py-1 rounded-sm border-2 border-sky">&lt;{s}, {d}&gt;</span>
+            <span>→</span>
+            <span className={`px-2 py-1 rounded-sm border-2 ${r.ok ? "border-mint" : "border-orange bg-orange/15"}`}>
+              {d} &lt; limit {SEGMENT_TABLE[s].limit}? {r.ok ? "yes" : "no"}
+            </span>
+            <span>→</span>
+            {r.ok ? (
+              <span className="px-2 py-1 rounded-sm border-2 border-mint bg-mint/20 font-bold">
+                {SEGMENT_TABLE[s].base} + {d} = {r.physical}
+              </span>
+            ) : (
+              <span className="px-2 py-1 rounded-sm border-2 border-orange bg-orange/25 font-bold">trap: addressing error</span>
+            )}
+          </div>
+          <table className="font-mono text-xs border-collapse w-full max-w-[360px]">
+            <thead>
+              <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">
+                <th className="text-left py-1 font-normal">s</th>
+                <th className="text-right py-1 font-normal">limit</th>
+                <th className="text-right py-1 font-normal">base</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SEGMENT_TABLE.map((seg, i) => (
+                <tr key={i} className={`border-b border-border/50 transition-colors ${i === s ? "bg-sky/20 font-bold" : ""}`}>
+                  <td className="py-1">{i}</td>
+                  <td className="py-1 text-right">{seg.limit}</td>
+                  <td className="py-1 text-right">{seg.base}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="relative h-[260px] rounded-sm border border-border bg-muted/20">
+          {SEGMENT_TABLE.map((seg, i) => (
+            <div key={i} className={`absolute left-2 right-2 rounded-sm border flex items-center justify-center font-mono text-[10px] transition-all duration-300 ${i === s ? "bg-sky/40 border-sky font-bold" : "bg-card border-border"}`} style={{ top: `${(seg.base / 7000) * 100}%`, height: `${(seg.limit / 7000) * 100}%` }}>
+              seg {i} · {seg.base}
+            </div>
+          ))}
+          {r.ok && <div className="absolute left-0 right-0 h-0.5 bg-mint animate-in fade-in" style={{ top: `${(r.physical! / 7000) * 100}%` }} />}
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** The textbook's 32-byte memory with 4-byte pages: pick a logical address and follow it through the page table. */
+export function PagingTranslator() {
+  const { pageSize, frames, table, data } = PAGE_EXAMPLE;
+  const [addr, setAddr] = useState(13);
+  const r = pageTranslate(addr, pageSize, table);
+  const physicalOf = (frame: number, off: number) => {
+    const page = table.indexOf(frame);
+    return page < 0 ? "" : data[page * pageSize + off];
+  };
+  const bits = (v: number, w: number) => v.toString(2).padStart(w, "0");
+  return (
+    <Panel title="Paging example: 32-byte memory, 4-byte pages" legend={[["bg-sky", "page number p"], ["bg-orange", "offset d"], ["bg-mint", "frame f"]]}>
+      <div className="flex flex-wrap items-center gap-3 font-mono text-sm">
+        <span className="text-xs uppercase tracking-widest text-muted-foreground">logical address</span>
+        <span className="font-bold text-lg">{addr}</span>
+        <span>=</span>
+        <span className="px-2 py-0.5 rounded-sm bg-sky/30">{bits(r.p, 2)}</span>
+        <span className="px-2 py-0.5 rounded-sm bg-orange/30">{bits(r.d, 2)}</span>
+        <span className="text-xs text-muted-foreground">(p = {r.p}, d = {r.d})</span>
+        <span>→</span>
+        <span className="px-2 py-0.5 rounded-sm bg-mint/30">f = {r.f}</span>
+        <span>→</span>
+        <span className="font-bold">
+          {r.f} × {pageSize} + {r.d} = {r.physical}
+        </span>
+      </div>
+      <div className="grid grid-cols-[auto_auto_1fr] gap-4 items-start overflow-x-auto">
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">logical memory</div>
+          <div className="grid grid-cols-1 gap-0.5">
+            {data.split("").map((ch, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setAddr(i)}
+                className={`flex items-center gap-2 px-2 py-0.5 font-mono text-xs rounded-sm transition-colors ${i === addr ? "bg-sky text-background font-bold" : Math.floor(i / pageSize) === r.p ? "bg-sky/20" : "hover:bg-muted"} ${i % pageSize === 0 ? "mt-1" : ""}`}
+              >
+                <span className="w-4 text-right opacity-60">{i}</span>
+                {ch}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">page table</div>
+          {table.map((f, p) => (
+            <div key={p} className={`flex gap-3 px-2 py-1 font-mono text-xs border border-border -mt-px transition-colors duration-300 ${p === r.p ? "bg-mint/30 font-bold" : ""}`}>
+              <span className="opacity-60">{p}</span>
+              <span>{f}</span>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">physical memory (frames)</div>
+          <div className="grid grid-cols-1 gap-1">
+            {Array.from({ length: frames }, (_, f) => (
+              <div key={f} className={`flex items-center gap-2 rounded-sm border px-2 py-1 transition-all duration-300 ${f === r.f ? "border-mint bg-mint/15" : "border-border"}`}>
+                <span className="font-mono text-[10px] w-14 opacity-60">frame {f}</span>
+                {Array.from({ length: pageSize }, (_, o) => {
+                  const phys = f * pageSize + o;
+                  const hot = phys === r.physical;
+                  return (
+                    <span key={o} className={`w-6 h-6 flex items-center justify-center font-mono text-xs rounded-sm ${hot ? "bg-mint text-background font-bold animate-in zoom-in-50" : "bg-muted/40"}`} title={`physical ${phys}`}>
+                      {physicalOf(f, o)}
+                    </span>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">Click a letter in logical memory. Here the logical address space is 2⁴ = 16 bytes (m = 4) and a page is 2² = 4 bytes (n = 2), so the top m − n = 2 bits are the page number and the bottom 2 bits are the offset.</p>
+    </Panel>
+  );
+}
+
+/** Internal fragmentation for a process split into pages. */
+export function FragmentationCalc() {
+  const [size, setSize] = useState(72766);
+  const [page, setPage] = useState(2048);
+  const r = internalFrag(size, page);
+  return (
+    <Panel title="Calculating internal fragmentation">
+      <div className="flex flex-wrap items-center gap-4 font-mono text-xs">
+        <label className="inline-flex items-center gap-2">
+          process size
+          <input type="number" min={1} value={size} onChange={(e) => setSize(Math.max(1, Number(e.target.value) || 1))} className="w-24 bg-transparent border border-border rounded-sm px-1 py-0.5 text-right" aria-label="process size in bytes" />
+          bytes
+        </label>
+        <label className="inline-flex items-center gap-2">
+          page size
+          <select value={page} onChange={(e) => setPage(Number(e.target.value))} className="bg-transparent border border-border rounded-sm px-2 py-1" aria-label="page size">
+            {[512, 1024, 2048, 4096, 8192].map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          bytes
+        </label>
+      </div>
+      <div className="font-mono text-sm leading-relaxed">
+        {size} = {r.full} pages × {page} + {r.rest} bytes → needs <b>{r.pages} frames</b>
+        <br />
+        last frame wastes {page} − {r.rest} = <b className="text-orange">{r.waste} bytes</b> of internal fragmentation
+      </div>
+      <div className="flex gap-0.5 flex-wrap">
+        {Array.from({ length: Math.min(r.pages, 60) }, (_, i) => {
+          const last = i === r.pages - 1 && r.rest > 0;
+          return (
+            <span key={i} className="relative h-5 w-4 rounded-[2px] bg-muted overflow-hidden">
+              <span className="absolute inset-x-0 bottom-0 bg-sky" style={{ height: last ? `${(r.rest / page) * 100}%` : "100%" }} />
+            </span>
+          );
+        })}
+      </div>
+    </Panel>
+  );
+}
+
+const TLB_REFS = [0, 1, 0, 2, 0, 1, 3, 0, 4, 1, 0, 2];
+
+/** TLB hits, misses and the effective access time. */
+export function TlbDemo() {
+  const [alpha, setAlpha] = useState(0.8);
+  const eps = 20;
+  const m = 100;
+  const run = useMemo(() => tlbRun(TLB_REFS, 3), []);
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (i >= run.length) return;
+    const t = setTimeout(() => setI((x) => x + 1), 650);
+    return () => clearTimeout(t);
+  }, [i, run.length]);
+  const shown = run.slice(0, i);
+  const hits = shown.filter((x) => x.hit).length;
+  const cur = shown[shown.length - 1];
+  return (
+    <Panel title="Translation look-aside buffer" legend={[["bg-mint", "TLB hit"], ["bg-orange", "TLB miss"]]}>
+      <div className="flex flex-wrap items-center gap-4">
+        <div>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">TLB (3 entries)</div>
+          <div className="flex gap-1 mt-1">
+            {Array.from({ length: 3 }, (_, k) => {
+              const p = cur?.tlb[k];
+              return (
+                <span key={k} className={`h-10 w-14 rounded-sm border-2 flex items-center justify-center font-mono text-xs transition-all duration-300 ${p === undefined ? "border-dashed border-border" : p === cur.page ? (cur.hit ? "border-mint bg-mint/25" : "border-orange bg-orange/20") : "border-border"}`}>
+                  {p !== undefined ? `p${p}` : ""}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {run.map((x, k) => (
+            <span key={k} className={`h-8 w-8 rounded-sm flex items-center justify-center font-mono text-xs transition-all duration-300 ${k >= i ? "bg-muted/40 text-muted-foreground" : x.hit ? "bg-mint text-background font-bold" : "bg-orange text-background font-bold"} ${k === i - 1 ? "scale-110" : ""}`}>
+              {x.page}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        hits <span className="text-foreground">{hits}</span>/{shown.length} {cur && <span>· {cur.hit ? `p${cur.page} found in the TLB` : `p${cur.page} missed: read the page table in memory, then add it to the TLB${cur.evicted !== null ? ` (evicting p${cur.evicted})` : ""}`}</span>}
+      </div>
+      <button type="button" className={`${btn} self-start`} onClick={() => setI(0)}>
+        ⟲ replay
+      </button>
+      <div className="border-t border-border pt-4 flex flex-col gap-2">
+        <label className="flex flex-wrap items-center gap-3 font-mono text-xs">
+          <span className="uppercase tracking-widest text-muted-foreground">hit ratio α</span>
+          <input type="range" min={0} max={1} step={0.01} value={alpha} onChange={(e) => setAlpha(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="hit ratio" />
+          <span className="w-12 font-bold">{Math.round(alpha * 100)}%</span>
+        </label>
+        <div className="font-mono text-sm">
+          EAT = ({m} + {eps}) × {alpha.toFixed(2)} + (2 × {m} + {eps}) × {(1 - alpha).toFixed(2)} = <b className="font-display text-xl">{fmt(eat(alpha, eps, m))} ns</b>
+        </div>
+        <p className="text-xs text-muted-foreground">ε = {eps} ns to search the TLB, m = {m} ns per memory access. A hit costs one memory access; a miss costs two (page table, then the data).</p>
+      </div>
+    </Panel>
+  );
+}
+
+/** Split a 32-bit logical address into a one-level or two-level page number and an offset. */
+export function AddressSplit() {
+  const [mode, setMode] = useState<"one" | "two">("two");
+  const [addr, setAddr] = useState(0x12345678);
+  const widths = mode === "one" ? [22, 10] : [12, 10, 10];
+  const names = mode === "one" ? ["page number p", "offset d"] : ["outer p₁", "inner p₂", "offset d"];
+  const tones = mode === "one" ? ["bg-sky/30", "bg-orange/30"] : ["bg-violet/30", "bg-sky/30", "bg-orange/30"];
+  const parts = splitAddress(addr, widths);
+  const bin = addr.toString(2).padStart(32, "0");
+  let pos = 0;
+  return (
+    <Panel title="A 32-bit logical address with 1 KB pages">
+      <div className="flex flex-wrap items-center gap-3">
+        <Toggle<"one" | "two">
+          value={mode}
+          onChange={setMode}
+          options={[
+            ["one", "one-level"],
+            ["two", "two-level"],
+          ]}
+        />
+        <button type="button" className={btn} onClick={() => setAddr(Math.floor(Math.random() * 2 ** 32))}>
+          🎲 random address
+        </button>
+        <span className="font-mono text-sm">0x{addr.toString(16).toUpperCase().padStart(8, "0")}</span>
+      </div>
+      <div className="flex flex-wrap font-mono text-[12px] sm:text-sm overflow-x-auto">
+        {widths.map((w, k) => {
+          const chunk = bin.slice(pos, pos + w);
+          pos += w;
+          return (
+            <div key={`${mode}-${k}`} className={`flex flex-col items-center px-1 py-1 border-r-2 border-background animate-in fade-in duration-300 ${tones[k]}`}>
+              <span className="tracking-[0.15em]">{chunk}</span>
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                {names[k]} · {w} bits = {parts[k]}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        {mode === "one"
+          ? "One level: a 22-bit page number means a page table with 2²² (about 4 million) entries per process."
+          : "Two levels: p₁ picks an entry in the outer page table, which points to an inner page table; p₂ picks the entry there; d is the offset in the page. Inner tables that aren't needed don't have to exist."}
+      </p>
     </Panel>
   );
 }

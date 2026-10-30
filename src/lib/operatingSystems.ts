@@ -1100,3 +1100,147 @@ export function mlfq(jobs: { name: string; burst: number }[]) {
   }
   return slices;
 }
+
+/* ------------------------------ main memory ------------------------------ */
+
+/** Hardware protection: a user-mode address must satisfy base ≤ address < base + limit, or it traps. */
+export function baseLimitCheck(addr: number, base: number, limit: number) {
+  if (addr < base) return { ok: false, failed: "addr ≥ base" as const };
+  if (addr >= base + limit) return { ok: false, failed: "addr < base + limit" as const };
+  return { ok: true, failed: null };
+}
+
+/** Dynamic relocation: the MMU adds the relocation register to every logical address (after checking the limit). */
+export function relocate(logical: number, relocation: number, limit = Infinity) {
+  if (logical >= limit) return { ok: false, physical: null };
+  return { ok: true, physical: logical + relocation };
+}
+
+/** Swap time = size / transfer rate, out and back in. */
+export const swapTime = (sizeMB: number, rateMBs: number) => ({ out: (sizeMB / rateMBs) * 1000, total: ((2 * sizeMB) / rateMBs) * 1000 });
+
+export type Block = { start: number; size: number; owner: string | null };
+export type Fit = "first" | "best" | "worst";
+
+/** Pick a hole for a request of `size`: the first big enough, the smallest big enough, or the largest. Returns the block index or -1. */
+export function chooseHole(mem: Block[], size: number, fit: Fit) {
+  let pick = -1;
+  mem.forEach((b, i) => {
+    if (b.owner !== null || b.size < size) return;
+    if (pick < 0) pick = i; // first fit stops at this one
+    else if (fit === "best" && b.size < mem[pick].size) pick = i;
+    else if (fit === "worst" && b.size > mem[pick].size) pick = i;
+  });
+  return pick;
+}
+
+/** Allocate from the chosen hole, leaving the rest of the hole free. */
+export function allocate(mem: Block[], size: number, owner: string, fit: Fit): { mem: Block[]; at: number } {
+  const i = chooseHole(mem, size, fit);
+  if (i < 0) return { mem, at: -1 };
+  const h = mem[i];
+  const parts: Block[] = [{ start: h.start, size, owner }];
+  if (h.size > size) parts.push({ start: h.start + size, size: h.size - size, owner: null });
+  return { mem: [...mem.slice(0, i), ...parts, ...mem.slice(i + 1)], at: i };
+}
+
+/** Free a process's partition and merge it with neighbouring holes. */
+export function release(mem: Block[], owner: string): Block[] {
+  const freed = mem.map((b) => (b.owner === owner ? { ...b, owner: null } : b));
+  const out: Block[] = [];
+  for (const b of freed) {
+    const last = out[out.length - 1];
+    if (last && last.owner === null && b.owner === null && last.start + last.size === b.start) last.size += b.size;
+    else out.push({ ...b });
+  }
+  return out;
+}
+
+/** Compaction: slide every process down and gather all free memory into one hole at the end. */
+export function compact(mem: Block[]): Block[] {
+  let at = mem[0]?.start ?? 0;
+  const end = mem.length ? mem[mem.length - 1].start + mem[mem.length - 1].size : 0;
+  const used = mem.filter((b) => b.owner !== null).map((b) => {
+    const moved = { ...b, start: at };
+    at += b.size;
+    return moved;
+  });
+  return at < end ? [...used, { start: at, size: end - at, owner: null }] : used;
+}
+
+/** The textbook exercise: partitions of 100K, 500K, 200K, 300K and 600K (in order), with occupied blocks between them. */
+export function fitExerciseMemory(): Block[] {
+  const holes = [100, 500, 200, 300, 600];
+  const mem: Block[] = [];
+  let at = 0;
+  holes.forEach((h, i) => {
+    mem.push({ start: at, size: 50, owner: i === 0 ? "OS" : "used" });
+    at += 50;
+    mem.push({ start: at, size: h, owner: null });
+    at += h;
+  });
+  return mem;
+}
+
+export const FIT_REQUESTS = [212, 417, 112, 426];
+
+/* ------------------------------ segmentation ------------------------------ */
+
+/** The textbook's segment table: segment → base and limit. */
+export const SEGMENT_TABLE = [
+  { name: "subroutine", base: 1400, limit: 1000 },
+  { name: "sqrt", base: 6300, limit: 400 },
+  { name: "main program", base: 4300, limit: 400 },
+  { name: "stack", base: 3200, limit: 1100 },
+  { name: "symbol table", base: 4700, limit: 1000 },
+];
+
+export function segTranslate(s: number, d: number, table = SEGMENT_TABLE) {
+  if (s < 0 || s >= table.length) return { ok: false, physical: null, reason: `segment ${s} doesn't exist (s ≥ STLR)` };
+  if (d >= table[s].limit) return { ok: false, physical: null, reason: `offset ${d} ≥ limit ${table[s].limit}: addressing error` };
+  return { ok: true, physical: table[s].base + d, reason: null };
+}
+
+/* ------------------------------ paging ------------------------------ */
+
+/** Split an address into fields of the given bit widths, from the most significant. */
+export function splitAddress(addr: number, widths: number[]) {
+  const total = widths.reduce((a, b) => a + b, 0);
+  let shift = total;
+  return widths.map((w) => {
+    shift -= w;
+    return Math.floor(addr / 2 ** shift) % 2 ** w;
+  });
+}
+
+/** The textbook's paging example: 32-byte memory, 4-byte pages, page table 0→5, 1→6, 2→1, 3→2. */
+export const PAGE_EXAMPLE = { pageSize: 4, frames: 8, table: [5, 6, 1, 2], data: "abcdefghijklmnop" };
+
+export function pageTranslate(logical: number, pageSize: number, table: number[]) {
+  const p = Math.floor(logical / pageSize);
+  const d = logical % pageSize;
+  if (p >= table.length) return { p, d, f: null, physical: null };
+  return { p, d, f: table[p], physical: table[p] * pageSize + d };
+}
+
+/** Internal fragmentation when a process of `size` bytes is split into pages of `pageSize`. */
+export function internalFrag(size: number, pageSize: number) {
+  const full = Math.floor(size / pageSize);
+  const rest = size % pageSize;
+  return { full, rest, pages: full + (rest ? 1 : 0), waste: rest ? pageSize - rest : 0 };
+}
+
+/** Effective access time with a TLB: EAT = (m + ε)α + (2m + ε)(1 − α). */
+export const eat = (alpha: number, epsilon: number, m: number) => (m + epsilon) * alpha + (2 * m + epsilon) * (1 - alpha);
+
+/** Run a page-reference string through a small TLB (LRU replacement) and record hits and misses. */
+export function tlbRun(refs: number[], size: number) {
+  let tlb: number[] = [];
+  return refs.map((p) => {
+    const hit = tlb.includes(p);
+    tlb = [...tlb.filter((x) => x !== p), p];
+    let evicted: number | null = null;
+    if (tlb.length > size) evicted = tlb.shift()!;
+    return { page: p, hit, tlb: [...tlb], evicted };
+  });
+}

@@ -4,7 +4,7 @@ import path from "path";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { LinuxTerminal } from "@/components/mdx/OsVisualizers";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim, runThreads, matrixAddFrames, raceRun, TEXTBOOK_RACE, petersonStart, petersonStep, seeded, testAndSet, compareAndSwap, semWait, semSignal, deadlockFrames, semBuffer, semProduce, semConsume, rwStart, rwArrive, rwLeave, diningStart, diningStep, diningDeadlocked, type PetersonState, type Dining, jraceRun, monitorStart, monitorEnter, monitorWait, monitorNotify, monitorExit, schedule, SCHED_PRESETS, EVAL_WORKLOAD, expAverage, BURST_SAMPLE, switchesFor, mlfq } from "@/lib/operatingSystems";
+import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim, runThreads, matrixAddFrames, raceRun, TEXTBOOK_RACE, petersonStart, petersonStep, seeded, testAndSet, compareAndSwap, semWait, semSignal, deadlockFrames, semBuffer, semProduce, semConsume, rwStart, rwArrive, rwLeave, diningStart, diningStep, diningDeadlocked, type PetersonState, type Dining, jraceRun, monitorStart, monitorEnter, monitorWait, monitorNotify, monitorExit, schedule, SCHED_PRESETS, EVAL_WORKLOAD, expAverage, BURST_SAMPLE, switchesFor, mlfq, baseLimitCheck, relocate, swapTime, allocate, release, compact, fitExerciseMemory, FIT_REQUESTS, segTranslate, splitAddress, PAGE_EXAMPLE, pageTranslate, internalFrag, eat, tlbRun, type Fit } from "@/lib/operatingSystems";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -344,5 +344,77 @@ describe("chapter 6 helpers", () => {
     expect([12, 6, 1].map((q) => switchesFor(10, q))).toEqual([0, 1, 9]);
     const s = mlfq([{ name: "A", burst: 5 }, { name: "B", burst: 20 }, { name: "C", burst: 40 }]);
     expect(s.map((x) => `${x.name}${x.level}:${x.to - x.from}`)).toEqual(["A0:5", "B0:8", "C0:8", "B1:12", "C1:16", "C2:16"]);
+  });
+});
+
+describe("chapter 8 helpers", () => {
+  it("checks base and limit, and relocates logical addresses", () => {
+    expect(baseLimitCheck(300040, 300040, 120900).ok).toBe(true);
+    expect(baseLimitCheck(420940, 300040, 120900).ok).toBe(false);
+    expect(baseLimitCheck(300039, 300040, 120900).failed).toBe("addr ≥ base");
+    expect(relocate(346, 14000).physical).toBe(14346);
+    expect(relocate(500, 14000, 400).ok).toBe(false);
+  });
+
+  it("swaps a 100 MB process at 50 MB/s in 2000 ms each way", () => {
+    expect(swapTime(100, 50)).toEqual({ out: 2000, total: 4000 });
+  });
+
+  it("places the textbook requests with first, best and worst fit", () => {
+    const place = (fit: Fit) => {
+      let mem = fitExerciseMemory();
+      return FIT_REQUESTS.map((r, i) => {
+        const res = allocate(mem, r, `P${i + 1}`, fit);
+        const hole = res.at < 0 ? null : mem[res.at].size;
+        mem = res.mem;
+        return hole;
+      });
+    };
+    expect(place("first")).toEqual([500, 600, 288, null]);
+    expect(place("best")).toEqual([300, 500, 200, 600]);
+    expect(place("worst")).toEqual([600, 500, 388, null]);
+  });
+
+  it("merges freed holes and compacts free space into one block", () => {
+    let mem = fitExerciseMemory();
+    mem = allocate(mem, 100, "A", "first").mem;
+    const merged = release(mem, "A");
+    expect(merged).toEqual(fitExerciseMemory());
+    const c = compact(allocate(fitExerciseMemory(), 212, "B", "first").mem);
+    expect(c.filter((b) => b.owner === null)).toHaveLength(1);
+    expect(c.reduce((a, b) => a + b.size, 0)).toBe(fitExerciseMemory().reduce((a, b) => a + b.size, 0));
+  });
+
+  it("translates segment addresses and catches bad offsets", () => {
+    expect(segTranslate(2, 53).physical).toBe(4353);
+    expect(segTranslate(3, 852).physical).toBe(4052);
+    expect(segTranslate(0, 1222).ok).toBe(false);
+  });
+
+  it("translates the textbook paging example", () => {
+    const { pageSize, table, data } = PAGE_EXAMPLE;
+    expect(pageTranslate(0, pageSize, table).physical).toBe(20);
+    expect(pageTranslate(3, pageSize, table).physical).toBe(23);
+    expect(pageTranslate(4, pageSize, table).physical).toBe(24);
+    expect(pageTranslate(13, pageSize, table).physical).toBe(9);
+    expect(data[13]).toBe("n");
+  });
+
+  it("splits addresses into page fields", () => {
+    expect(splitAddress(13, [2, 2])).toEqual([3, 1]);
+    const a = 0b101000000011_0000000111_0000001010;
+    expect(splitAddress(a, [12, 10, 10])).toEqual([0b101000000011, 7, 10]);
+  });
+
+  it("computes internal fragmentation and EAT like the slides", () => {
+    expect(internalFrag(72766, 2048)).toEqual({ full: 35, rest: 1086, pages: 36, waste: 962 });
+    expect(eat(0.8, 20, 100)).toBeCloseTo(140);
+    expect(eat(0.99, 20, 100)).toBeCloseTo(121);
+  });
+
+  it("hits in the TLB on repeated pages", () => {
+    const r = tlbRun([1, 2, 1, 3, 4, 1], 3);
+    expect(r.map((x) => x.hit)).toEqual([false, false, true, false, false, true]);
+    expect(r[4].evicted).toBe(2);
   });
 });
