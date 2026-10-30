@@ -3,11 +3,22 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { SignInDialog } from "@/components/AccountButton";
 import { ProgressBackup } from "@/components/ProgressBackup";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import type { Course } from "@/content/registry";
 import { flattenLessons } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
 import { useRegistration } from "@/hooks/useRegistration";
-import { registerForCourse } from "@/lib/progressSync";
+import { leaveCourse, registerForCourse } from "@/lib/progressSync";
 
 const accentBg: Record<string, string> = {
   neon: "bg-neon", orange: "bg-orange", sky: "bg-sky", violet: "bg-violet", mint: "bg-mint",
@@ -82,6 +93,37 @@ function RegisterPrompt({ course }: { course: Course }) {
   );
 }
 
+function LeaveCourse({ course }: { course: Course }) {
+  const leave = async () => {
+    try {
+      await leaveCourse(course.slug);
+      toast.success(`You've left ${course.title}`);
+    } catch {
+      toast.error("Couldn't leave the course", { description: "Check your connection and try again." });
+    }
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition">
+        Leave course
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Leave {course.title}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This removes your registration and clears your progress in this course. The lessons stay open, and you can register again any time.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Stay registered</AlertDialogCancel>
+          <AlertDialogAction onClick={leave}>Leave course</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 function CourseProgress({ course }: { course: Course }) {
   const { completed, isComplete, reset } = useProgress(course.slug);
   const { registeredAt } = useRegistration(course.slug);
@@ -135,6 +177,7 @@ function CourseProgress({ course }: { course: Course }) {
             Reset progress
           </button>
         )}
+        {registeredAt !== null && <LeaveCourse course={course} />}
       </div>
     </div>
   );

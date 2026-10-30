@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CourseRegistration } from "@/components/CourseRegistration";
 import { courses, flattenLessons } from "@/content/registry";
-import { writeProgress } from "@/lib/progressStore";
+import { readProgress, writeProgress } from "@/lib/progressStore";
 import { resetProgressSyncForTests, syncProgress } from "@/lib/progressSync";
 
 const course = courses.find((c) => c.status === "available" && flattenLessons(c).length > 1)!;
@@ -11,8 +11,9 @@ const first = flattenLessons(course)[0];
 
 function stubApi(body: unknown, enrolledAt = 1_800_000_000_000) {
   const stub = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url.endsWith("/enrollments/remove")) return Response.json({ enrollments: {} });
     if (url.endsWith("/enrollments")) return Response.json({ enrollments: { [course.slug]: enrolledAt } });
-    if (init?.method === "POST") return Response.json({ progress: {} });
+    if (init?.method === "POST") return Response.json({ progress: (body as { progress?: unknown }).progress ?? {} });
     return Response.json(body);
   });
   vi.stubGlobal("fetch", stub);
@@ -94,5 +95,15 @@ describe("CourseRegistration", () => {
     fireEvent.click(registerButton()!);
     await waitFor(() => expect(registerButton()).toBeTruthy());
     expect(screen.queryByText("Your progress")).toBeNull();
+  });
+
+  it("leaving clears the course's progress and goes back to the prompt", async () => {
+    writeProgress({ [course.slug]: [first.slug], other: ["kept"] });
+    stubApi({ signedIn: true, progress: { [course.slug]: [first.slug], other: ["kept"] }, enrollments: { [course.slug]: 1_800_000_000_000 } });
+    await show();
+    fireEvent.click(screen.getByRole("button", { name: "Leave course" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Leave course" }).at(-1)!);
+    await waitFor(() => expect(registerButton()).toBeTruthy());
+    expect(readProgress()).toEqual({ other: ["kept"] });
   });
 });

@@ -3,11 +3,13 @@ import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import CourseCard from "@/components/CourseCard";
 import { courses } from "@/content/registry";
 import { useAccountStatus, useEnrollments } from "@/hooks/useAccountStatus";
+import { useProgress } from "@/hooks/useProgress";
 
 export default function Courses() {
   const status = useAccountStatus();
   const enrollments = useEnrollments();
-  const mine = status === "signed-in" ? courses.filter((c) => enrollments[c.slug]) : [];
+  const { allProgress } = useProgress();
+  const mine = status === "signed-in" ? courses.filter((c) => enrollments[c.slug] || allProgress[c.slug]?.length) : [];
 
   useEffect(() => {
     document.title = "All Tracks — Decoded";

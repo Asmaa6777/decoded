@@ -92,22 +92,23 @@ export async function changeProgress(request: Request, env: Env): Promise<Respon
   return Response.json({ progress: await readProgress(env, userId) });
 }
 
+function parseCourse(text: string): string | null {
+  if (text.length > 1024) return null;
+  try {
+    const { course } = JSON.parse(text);
+    return typeof course === "string" && course.length <= MAX_SLUG_LENGTH && SLUG.test(course) ? course : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Registers the user for a course; registering twice keeps the first date. */
 export async function enroll(request: Request, env: Env): Promise<Response> {
   const userId = await currentUserId(request, env);
   if (!userId) return Response.json({ error: "signed_out" }, { status: 401 });
 
-  const text = await request.text();
-  if (text.length > 1024) return Response.json({ error: "too_large" }, { status: 413 });
-  let course: unknown;
-  try {
-    course = JSON.parse(text)?.course;
-  } catch {
-    return Response.json({ error: "invalid" }, { status: 400 });
-  }
-  if (typeof course !== "string" || course.length > MAX_SLUG_LENGTH || !SLUG.test(course)) {
-    return Response.json({ error: "invalid" }, { status: 400 });
-  }
+  const course = parseCourse(await request.text());
+  if (!course) return Response.json({ error: "invalid" }, { status: 400 });
 
   const count = await env.DB.prepare("SELECT COUNT(*) AS n FROM enrollments WHERE user_id = ?").bind(userId).first<number>("n");
   if ((count ?? 0) >= MAX_ENROLLMENTS_PER_USER) return Response.json({ error: "too_many" }, { status: 413 });
@@ -115,5 +116,20 @@ export async function enroll(request: Request, env: Env): Promise<Response> {
   await env.DB.prepare("INSERT OR IGNORE INTO enrollments (user_id, course, enrolled_at) VALUES (?, ?, ?)")
     .bind(userId, course, Date.now())
     .run();
+  return Response.json({ enrollments: await readEnrollments(env, userId) });
+}
+
+/** Leaves a course, which also clears the progress in it. */
+export async function unenroll(request: Request, env: Env): Promise<Response> {
+  const userId = await currentUserId(request, env);
+  if (!userId) return Response.json({ error: "signed_out" }, { status: 401 });
+
+  const course = parseCourse(await request.text());
+  if (!course) return Response.json({ error: "invalid" }, { status: 400 });
+
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM enrollments WHERE user_id = ? AND course = ?").bind(userId, course),
+    env.DB.prepare("DELETE FROM progress WHERE user_id = ? AND course = ?").bind(userId, course),
+  ]);
   return Response.json({ enrollments: await readEnrollments(env, userId) });
 }

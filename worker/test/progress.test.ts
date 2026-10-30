@@ -197,6 +197,39 @@ describe("registering for a course", () => {
     expect(await enrollmentsOf(session)).toEqual({});
   });
 
+  it("leaving removes that course's registration and progress, and nothing else", async () => {
+    const alice = await signIn(1);
+    const bob = await signIn(2);
+    for (const session of [alice, bob]) {
+      await register(session, { course: "toc" });
+      await post(session, { add: [["toc", "intro"]] });
+    }
+    await register(alice, { course: "os" });
+    await post(alice, { add: [["os", "threads"]] });
+
+    const response = await call("/enrollments/remove", {
+      method: "POST",
+      headers: { Origin: SITE, Cookie: `__Host-decoded_session=${alice}` },
+      body: JSON.stringify({ course: "toc" }),
+    });
+    expect(response.status).toBe(200);
+
+    expect(Object.keys(await enrollmentsOf(alice))).toEqual(["os"]);
+    expect((await read(alice)).progress).toEqual({ os: ["threads"] });
+    expect((await read(bob)).progress).toEqual({ toc: ["intro"] });
+    expect(Object.keys(await enrollmentsOf(bob))).toEqual(["toc"]);
+  });
+
+  it("leaving needs a session and the site's origin", async () => {
+    const session = await signIn(1);
+    await register(session, { course: "toc" });
+    const remove = (headers: Record<string, string>) =>
+      call("/enrollments/remove", { method: "POST", headers, body: JSON.stringify({ course: "toc" }) });
+    expect((await remove({ Origin: SITE })).status).toBe(401);
+    expect((await remove({ Origin: "https://evil.example", Cookie: `__Host-decoded_session=${session}` })).status).toBe(403);
+    expect(Object.keys(await enrollmentsOf(session))).toEqual(["toc"]);
+  });
+
   it("is removed with the account", async () => {
     const session = await signIn(1);
     await register(session, { course: "toc" });

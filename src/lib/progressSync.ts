@@ -178,6 +178,27 @@ export async function registerForCourse(course: string) {
   listeners.forEach((listener) => listener());
 }
 
+/** Leaves a course. The server clears its progress too, so this browser's copy and queue follow. */
+export async function leaveCourse(course: string) {
+  const response = await fetch(`${API_URL}/enrollments/remove`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ course }),
+  });
+  if (!response.ok) throw new Error(String(response.status));
+  enrollments = ((await response.json()) as { enrollments: Record<string, number> }).enrollments;
+
+  const pending = loadPending();
+  if (pending) {
+    for (const key of Object.keys(pending)) if (key.startsWith(`${course}/`)) delete pending[key];
+    savePending(pending);
+  }
+  const { [course]: _left, ...rest } = readProgress();
+  writeProgress(rest);
+  listeners.forEach((listener) => listener());
+}
+
 export function signInWithGithub(returnTo = window.location.pathname + window.location.search) {
   window.location.href = `${API_URL}/auth/github/start?return=${encodeURIComponent(returnTo)}`;
 }

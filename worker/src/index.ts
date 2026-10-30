@@ -1,5 +1,5 @@
 import { currentUserId, deleteAccount, finishGithub, signOut, startGithub } from "./auth";
-import { changeProgress, enroll, getProgress } from "./progress";
+import { changeProgress, enroll, getProgress, unenroll } from "./progress";
 
 export interface Env {
   DB: D1Database;
@@ -37,6 +37,8 @@ async function route(request: Request, env: Env): Promise<Response> {
       return changeProgress(request, env);
     case "POST /enrollments":
       return enroll(request, env);
+    case "POST /enrollments/remove":
+      return unenroll(request, env);
     default:
       return Response.json({ error: "not_found" }, { status: 404 });
   }
