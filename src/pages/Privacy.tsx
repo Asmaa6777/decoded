@@ -13,6 +13,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
+import { ANALYTICS_TOKEN } from "@/lib/analytics";
 import { deleteAccount } from "@/lib/progressSync";
 
 export default function Privacy() {
@@ -45,6 +46,13 @@ export default function Privacy() {
         <article className="container py-20 max-w-2xl prose dark:prose-invert font-body">
           <h1 className="font-display">Privacy</h1>
           <p>You can use all of Decoded without an account. Your progress is then saved only in your browser.</p>
+
+          {ANALYTICS_TOKEN && (
+            <p>
+              Decoded counts page visits with Cloudflare Web Analytics, which doesn't use cookies or identify individual
+              visitors.
+            </p>
+          )}
 
           <h2 className="font-display">If you sign in</h2>
           <p>Signing in saves your progress so it follows you between devices. Decoded stores:</p>
