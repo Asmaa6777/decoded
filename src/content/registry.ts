@@ -74,6 +74,8 @@ import OsSchedulingBasics from "@/content/operating-systems/m4-01-cpu-scheduling
 import OsRoundRobin from "@/content/operating-systems/m4-02-round-robin-and-beyond.mdx";
 import OsMemoryAllocation from "@/content/operating-systems/m5-01-memory-allocation.mdx";
 import OsPaging from "@/content/operating-systems/m5-02-paging.mdx";
+import OsVirtualMemory from "@/content/operating-systems/m5-03-virtual-memory.mdx";
+import OsPageReplacement from "@/content/operating-systems/m5-04-page-replacement-and-thrashing.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -355,6 +357,8 @@ export const courses: Course[] = [
         lessons: [
           { slug: "memory-allocation", title: "Main Memory: Addresses, Swapping and Allocation", duration: "26 min", Component: OsMemoryAllocation },
           { slug: "paging", title: "Paging", duration: "26 min", Component: OsPaging },
+          { slug: "virtual-memory", title: "Virtual Memory and Demand Paging", duration: "24 min", Component: OsVirtualMemory },
+          { slug: "page-replacement-and-thrashing", title: "Page Replacement and Thrashing", duration: "28 min", Component: OsPageReplacement },
         ],
       },
     ],
