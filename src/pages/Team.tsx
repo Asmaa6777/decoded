@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
+import { ahmedAlghali, asmaaFarouq } from "@/content/authors";
 
 export default function Team() {
   useEffect(() => {
@@ -22,16 +23,16 @@ export default function Team() {
 
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-8">
             <CreatorCard
-              name="Ahmed Alghali"
+              name={ahmedAlghali.name}
               role="Architect & Lead"
               bio="I love when I finally understand what a theoratical CS course talks about"
-              image="https://github.com/a7med7x7.png"
+              image={ahmedAlghali.image}
             />
             <CreatorCard
-              name="Asmaa Farouq"
+              name={asmaaFarouq.name}
               role="Course Author"
-              image="https://github.com/Asmaa6777.png"
-              href="https://github.com/Asmaa6777"
+              image={asmaaFarouq.image}
+              href={asmaaFarouq.href}
             />
             <div className="flex flex-col items-center justify-center border border-dashed border-border p-8 text-center bg-muted/5">
               <div className="h-16 w-16 rounded-full bg-border/20 mb-4 animate-pulse" />

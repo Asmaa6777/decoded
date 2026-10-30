@@ -82,6 +82,7 @@ import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-yo
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
 import ExamMindLesson04 from "@/content/the-exam-mind/04-exam-day.mdx";
+import { ahmedAlghali, asmaaFarouq, type Author } from "./authors";
 
 
 export type LessonKind = "theory" | "practical" | "quiz";
@@ -112,6 +113,7 @@ export type Course = {
   accent: "neon" | "orange" | "sky" | "violet" | "mint";
   status: "available" | "coming-soon";
   number: string; // "01"
+  authors?: Author[];
   modules: Module[];
 };
 
@@ -125,6 +127,7 @@ export const courses: Course[] = [
     accent: "neon",
     status: "available",
     number: "01",
+    authors: [ahmedAlghali],
     modules: [
       {
         title: "Foundations",
@@ -172,6 +175,7 @@ export const courses: Course[] = [
     accent: "orange",
     status: "available",
     number: "02",
+    authors: [ahmedAlghali],
     modules: [
       {
         title: "The Three Layers of Fluency",
@@ -193,6 +197,7 @@ export const courses: Course[] = [
     accent: "sky",
     status: "available",
     number: "03",
+    authors: [ahmedAlghali],
     modules: [
       {
         title: "Foundations",
@@ -249,6 +254,7 @@ export const courses: Course[] = [
     accent: "violet",
     status: "available",
     number: "04",
+    authors: [asmaaFarouq],
     modules: [
       {
         title: "Foundations of Analysis",
@@ -315,6 +321,7 @@ export const courses: Course[] = [
     accent: "mint",
     status: "available",
     number: "05",
+    authors: [ahmedAlghali],
     modules: [
       {
         title: "Matrices",
@@ -386,6 +393,7 @@ export const courses: Course[] = [
     accent: "sky",
     status: "available",
     number: "08",
+    authors: [ahmedAlghali],
     modules: [
       {
         title: "The Strategy",
