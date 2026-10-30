@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Flag, PanelLeft } from "lucide-react";
 import { reportMistakeUrl } from "@/lib/reportMistake";
 import { writeLastLesson } from "@/lib/progressStore";
+import { scrollToSection } from "@/lib/scrollToSection";
 
 const SIDEBAR_KEY = "decoded:sidebar-open";
 
@@ -108,7 +109,7 @@ export default function LessonPage() {
   const onLessonLoaded = () => {
     setLoadedSlug(lessonSlug);
     const hash = window.location.hash;
-    if (hash) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView();
+    if (hash && contentRef.current) scrollToSection(decodeURIComponent(hash.slice(1)), contentRef.current);
   };
 
   return (
