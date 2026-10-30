@@ -1,0 +1,82 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { ElementwiseVisualizer } from "@/components/mdx/MatrixVisualizers";
+
+# Matrices and MATLAB
+
+A **matrix** is a rectangular grid of numbers. That plain definition covers a surprising amount of software: a photo is a matrix of pixel values, a spreadsheet is a matrix with labels, and a neural network layer is mostly a matrix of weights.
+
+This course uses MATLAB because its syntax is close to the maths on paper. Everything you learn here carries over to NumPy, Julia and R with small changes in spelling.
+
+## Writing a matrix down
+
+We describe size as **rows by columns**, always in that order. A 2-by-3 matrix has 2 rows and 3 columns. The entry in row $i$, column $j$ of $A$ is written $a_{ij}$.
+
+Three shapes get their own names:
+
+- A **column vector** is $m$-by-1.
+- A **row vector** is 1-by-$n$.
+- A **scalar** is 1-by-1, which is a single number.
+
+In MATLAB, a space or comma moves to the next column and a semicolon starts a new row:
+
+```matlab
+u = [3; 1; 4]      % column vector
+v = [2 0 -1]       % row vector
+s = 7              % scalar
+```
+
+## Two example matrices
+
+MATLAB ships with dozens of functions that build matrices. We'll keep coming back to two of them because they're small and easy to recognise. `pascal(3)` is **symmetric**, meaning it looks the same when you mirror it across its main diagonal. `magic(3)` isn't symmetric, but all its rows, columns and both diagonals add up to 15.
+
+```matlab
+A = pascal(3)          B = magic(3)
+
+A =                    B =
+     1     1     1          8     1     6
+     1     2     3          3     5     7
+     1     3     6          4     9     2
+```
+
+When you need test data, `rand` gives numbers between 0 and 1, and `fix` chops off the fractional part. This line makes a 3-by-2 matrix of random integers from 0 to 9:
+
+```matlab
+C = fix(10 * rand(3, 2))
+```
+
+## Adding and subtracting
+
+If $A$ and $B$ are both $m$-by-$n$, their sum $C = A + B$ is also $m$-by-$n$, with
+
+$$
+c_{ij} = a_{ij} + b_{ij}
+$$
+
+Subtraction works the same way. Adding $A$ to $B$ and then subtracting $A$ brings you back to $B$, just as it does with ordinary numbers.
+
+## Multiplying by a scalar
+
+The scalar multiple $rA$ multiplies every entry of $A$ by $r$:
+
+$$
+c_{ij} = r \cdot a_{ij}
+$$
+
+Pick an operation and step through it. Each entry only ever talks to the entry in the same position:
+
+<ElementwiseVisualizer />
+
+<Callout tone="orange" label="Common error">
+Addition needs matching sizes, with one exception: a scalar is allowed, and MATLAB adds it to every entry. Trying `pascal(3) + fix(10*rand(3,2))` stops with a dimensions error, because a 3-by-3 and a 3-by-2 don't line up.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Brightening a photo" tool="Image editors">
+A greyscale photo is a matrix of brightness values. Adding a scalar brightens every pixel, and multiplying by a scalar changes the contrast.
+</PracticalApplication>
+<PracticalApplication title="Changing a model's weights" tool="PyTorch, TensorFlow">
+One step of gradient descent is exactly this lesson: multiply the gradient by a scalar (the learning rate), then subtract it from the weights, entry by entry.
+</PracticalApplication>
+</ApplicationsGrid>
