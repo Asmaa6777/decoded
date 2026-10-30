@@ -69,6 +69,7 @@ import OsIpc from "@/content/operating-systems/m2-02-interprocess-communication.
 import OsLabThreads from "@/content/operating-systems/m2-03-lab-java-threads.mdx";
 import OsCriticalSection from "@/content/operating-systems/m3-01-critical-section-problem.mdx";
 import OsSemaphores from "@/content/operating-systems/m3-02-semaphores-and-classic-problems.mdx";
+import OsLabSync from "@/content/operating-systems/m3-03-lab-java-synchronization.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -333,6 +334,7 @@ export const courses: Course[] = [
         lessons: [
           { slug: "critical-section-problem", title: "Race Conditions and the Critical-Section Problem", duration: "24 min", Component: OsCriticalSection },
           { slug: "semaphores-and-classic-problems", title: "Semaphores and the Classic Synchronization Problems", duration: "26 min", Component: OsSemaphores },
+          { slug: "lab-java-synchronization", title: "Lab: Synchronization in Java", duration: "25 min", kind: "practical", Component: OsLabSync },
         ],
       },
     ],
