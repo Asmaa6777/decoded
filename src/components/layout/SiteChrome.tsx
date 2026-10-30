@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { BrandLockup, BrandMark } from "@/components/brand/BrandMark";
+import { AccountButton } from "@/components/AccountButton";
 import { ProgressBackup } from "@/components/ProgressBackup";
+import { useAccountStatus } from "@/hooks/useAccountStatus";
 
 export function SiteHeader() {
   const { pathname } = useLocation();
@@ -24,6 +26,7 @@ export function SiteHeader() {
           >
             Courses
           </Link>
+          <AccountButton />
         </nav>
       </div>
     </header>
@@ -31,6 +34,8 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const status = useAccountStatus();
+
   return (
     <footer className="border-t border-border">
       <div className="container py-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 font-mono text-[11px] tracking-widest text-muted-foreground uppercase">
@@ -43,7 +48,7 @@ export function SiteFooter() {
           <Link to="/team" className="hover:text-foreground transition-colors">Team</Link>
         </nav>
         <span className="flex flex-col gap-2 md:items-end">
-          <span>v0.1 · Progress saved on this device</span>
+          <span>v0.1 · Progress saved {status === "signed-in" ? "to your account" : "on this device"}</span>
           <ProgressBackup />
         </span>
       </div>
