@@ -4,7 +4,7 @@ import path from "path";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { LinuxTerminal } from "@/components/mdx/OsVisualizers";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES } from "@/lib/operatingSystems";
+import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim } from "@/lib/operatingSystems";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -117,5 +117,52 @@ describe("Linux practice terminal", () => {
     fireEvent.keyDown(input, { key: "Enter" });
     expect(screen.getByRole("log").textContent).toContain("dir1  dir2  file1  file2.txt  new1");
     expect(screen.getByText("1/10 missions")).toBeTruthy();
+  });
+});
+
+describe("chapter 3 helpers", () => {
+  it("only allows the textbook's state transitions", () => {
+    expect(nextState("new", "admitted")).toBe("ready");
+    expect(nextState("ready", "dispatch")).toBe("running");
+    expect(nextState("ready", "wait")).toBeNull();
+    expect(nextState("waiting", "dispatch")).toBeNull();
+    expect(nextState("running", "exit")).toBe("terminated");
+    expect(PROCESS_TRANSITIONS).toHaveLength(6);
+  });
+
+  it("saves into and reloads from the right PCB", () => {
+    const frames = contextSwitchFrames();
+    const touched = frames.filter((f) => f.state.touch !== null).map((f) => [f.state.phase, f.state.touch]);
+    expect(touched).toEqual([["save", 0], ["reload", 1], ["save", 1], ["reload", 0]]);
+    const last = frames[frames.length - 1].state;
+    expect(last.cpu!.pc).toBeGreaterThan(last.pcb[0].pc);
+    expect(frames.filter((f) => f.state.running === null).length).toBe(6);
+  });
+
+  it("makes 2^n processes from n forks", () => {
+    for (let n = 0; n <= 4; n++) expect(forkTree(n)).toHaveLength(2 ** n);
+    expect(forkTree(2).filter((p) => p.parent === 0)).toHaveLength(2);
+  });
+
+  it("uses only BUFFER_SIZE - 1 slots of the bounded buffer", () => {
+    let r = ring(10);
+    let made = 0;
+    for (let next = produce(r); next; next = produce(r)) {
+      r = next;
+      made++;
+    }
+    expect(made).toBe(9);
+    expect(ringFull(r)).toBe(true);
+    const c = consume(r)!;
+    expect(c.item).toBe(1);
+    expect(ringCount(c.ring)).toBe(8);
+  });
+
+  it("blocks the sender according to the link's capacity", () => {
+    const blocked = (cap: "zero" | "bounded" | "unbounded") => messageSim(cap, 18).filter((x) => x.blocked).length;
+    expect(blocked("unbounded")).toBe(0);
+    expect(blocked("zero")).toBeGreaterThan(blocked("bounded"));
+    expect(blocked("bounded")).toBeGreaterThan(0);
+    expect(Math.max(...messageSim("bounded", 18).map((x) => x.queue))).toBe(3);
   });
 });

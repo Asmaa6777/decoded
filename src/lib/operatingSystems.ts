@@ -344,3 +344,162 @@ export function bootFrames(): Frame<BootState>[] {
   ];
   return msgs.map((message, stage) => ({ state: { stage }, line: stage, message, stats: { stage: stage + 1 } }));
 }
+
+/* ------------------------------ process states ------------------------------ */
+
+export type PState = "new" | "ready" | "running" | "waiting" | "terminated";
+export type PEvent = "admitted" | "dispatch" | "interrupt" | "wait" | "complete" | "exit";
+
+/** The five-state diagram: which event moves a process from one state to another. */
+export const PROCESS_TRANSITIONS: { from: PState; to: PState; event: PEvent; label: string }[] = [
+  { from: "new", to: "ready", event: "admitted", label: "admitted" },
+  { from: "ready", to: "running", event: "dispatch", label: "scheduler dispatch" },
+  { from: "running", to: "ready", event: "interrupt", label: "interrupt" },
+  { from: "running", to: "waiting", event: "wait", label: "I/O or event wait" },
+  { from: "waiting", to: "ready", event: "complete", label: "I/O or event completion" },
+  { from: "running", to: "terminated", event: "exit", label: "exit" },
+];
+
+export function nextState(s: PState, e: PEvent): PState | null {
+  return PROCESS_TRANSITIONS.find((t) => t.from === s && t.event === e)?.to ?? null;
+}
+
+/* ------------------------------ context switch ------------------------------ */
+
+export type PcbView = { name: string; state: PState; pc: number; reg: number };
+export type SwitchState = { running: 0 | 1 | null; phase: "exec" | "save" | "reload"; touch: 0 | 1 | null; pcb: [PcbView, PcbView]; cpu: { pc: number; reg: number } | null };
+
+export const SWITCH_CODE = [
+  "P0 executing",
+  "interrupt or system call",
+  "save state into PCB0",
+  "reload state from PCB1",
+  "P1 executing",
+  "interrupt or system call",
+  "save state into PCB1",
+  "reload state from PCB0",
+  "P0 executing again",
+];
+
+/** The textbook's CPU switch from P0 to P1 and back, with the PCBs filling in. */
+export function contextSwitchFrames(): Frame<SwitchState>[] {
+  const p0: PcbView = { name: "P0", state: "running", pc: 104, reg: 7 };
+  const p1: PcbView = { name: "P1", state: "ready", pc: 512, reg: 42 };
+  const frames: Frame<SwitchState>[] = [];
+  let idle = 0;
+  const push = (running: 0 | 1 | null, phase: SwitchState["phase"], a: PcbView, b: PcbView, cpu: SwitchState["cpu"], line: number, message: string) => {
+    if (running === null) idle++;
+    // the PCB being written (save) or read (reload): SWITCH_CODE lines 2 and 7 touch PCB0, 3 and 6 touch PCB1
+    const touch: 0 | 1 | null = phase === "exec" ? null : line === 2 || line === 7 ? 0 : 1;
+    frames.push({ state: { running, phase, touch, pcb: [{ ...a }, { ...b }], cpu: cpu && { ...cpu } }, line, message, stats: { "idle steps": idle } });
+  };
+  push(0, "exec", p0, p1, { pc: 108, reg: 9 }, 0, "P0 is running. Its program counter and registers live in the CPU right now, and they keep changing.");
+  push(null, "exec", p0, p1, { pc: 112, reg: 11 }, 1, "An interrupt (say, the timer) or a system call stops P0. The OS takes over.");
+  const p0s = { ...p0, state: "ready" as PState, pc: 112, reg: 11 };
+  push(null, "save", p0s, p1, { pc: 112, reg: 11 }, 2, "The OS saves P0's context into PCB0: program counter 112, its registers, and its state (now ready).");
+  const p1r = { ...p1, state: "running" as PState };
+  push(null, "reload", p0s, p1r, { pc: 512, reg: 42 }, 3, "Then it reloads P1's context from PCB1 into the CPU. Notice the CPU did no useful work during these steps: that's the overhead.");
+  push(1, "exec", p0s, p1r, { pc: 520, reg: 44 }, 4, "P1 runs, picking up exactly where it left off last time.");
+  push(null, "exec", p0s, p1r, { pc: 524, reg: 45 }, 5, "Another interrupt or system call. Time to switch back.");
+  const p1s = { ...p1r, state: "ready" as PState, pc: 524, reg: 45 };
+  push(null, "save", p0s, p1s, { pc: 524, reg: 45 }, 6, "Save P1's context into PCB1.");
+  const p0r = { ...p0s, state: "running" as PState };
+  push(null, "reload", p0r, p1s, { pc: 112, reg: 11 }, 7, "Reload P0's context from PCB0: PC = 112, exactly where it was stopped.");
+  push(0, "exec", p0r, p1s, { pc: 116, reg: 12 }, 8, "P0 continues as if nothing happened. The more there is to save (a bigger PCB, more registers), the longer each switch takes.");
+  return frames;
+}
+
+/* ------------------------------ fork ------------------------------ */
+
+export type ForkNode = { id: number; parent: number | null; bornAt: number };
+
+/** n fork() calls in a row: every existing process forks at each call, so 2^n processes. */
+export function forkTree(n: number): ForkNode[] {
+  const nodes: ForkNode[] = [{ id: 0, parent: null, bornAt: 0 }];
+  for (let call = 1; call <= n; call++) {
+    const alive = nodes.length;
+    for (let i = 0; i < alive; i++) nodes.push({ id: nodes.length, parent: nodes[i].id, bornAt: call });
+  }
+  return nodes;
+}
+
+/** The textbook's Linux process tree (pid and name). */
+export const LINUX_TREE: { pid: number; name: string; parent: number | null }[] = [
+  { pid: 1, name: "init", parent: null },
+  { pid: 8415, name: "login", parent: 1 },
+  { pid: 2, name: "kthreadd", parent: 1 },
+  { pid: 3028, name: "sshd", parent: 1 },
+  { pid: 8416, name: "bash", parent: 8415 },
+  { pid: 6, name: "khelper", parent: 2 },
+  { pid: 200, name: "pdflush", parent: 2 },
+  { pid: 3610, name: "sshd", parent: 3028 },
+  { pid: 9298, name: "ps", parent: 8416 },
+  { pid: 9204, name: "emacs", parent: 8416 },
+  { pid: 4005, name: "tcsch", parent: 3610 },
+];
+
+/* ------------------------------ bounded buffer ------------------------------ */
+
+export type Ring = { buf: (number | null)[]; in: number; out: number; next: number };
+
+export function ring(size: number): Ring {
+  return { buf: Array(size).fill(null), in: 0, out: 0, next: 1 };
+}
+
+/** The shared-memory solution: full when (in + 1) % size == out, so only size − 1 slots are ever used. */
+export const ringFull = (r: Ring) => (r.in + 1) % r.buf.length === r.out;
+export const ringEmpty = (r: Ring) => r.in === r.out;
+export const ringCount = (r: Ring) => (r.in - r.out + r.buf.length) % r.buf.length;
+
+export function produce(r: Ring): Ring | null {
+  if (ringFull(r)) return null;
+  const buf = [...r.buf];
+  buf[r.in] = r.next;
+  return { buf, in: (r.in + 1) % buf.length, out: r.out, next: r.next + 1 };
+}
+
+export function consume(r: Ring): { ring: Ring; item: number } | null {
+  if (ringEmpty(r)) return null;
+  const buf = [...r.buf];
+  const item = buf[r.out]!;
+  buf[r.out] = null;
+  return { ring: { buf, in: r.in, out: (r.out + 1) % buf.length, next: r.next }, item };
+}
+
+/* ------------------------------ message buffering ------------------------------ */
+
+export type Capacity = "zero" | "bounded" | "unbounded";
+
+/**
+ * A sender that wants to send a message every tick and a receiver that takes one every `every` ticks.
+ * Returns, per tick, the queue length and whether the sender had to block.
+ */
+export function messageSim(capacity: Capacity, ticks: number, every = 3, bound = 3) {
+  const limit = capacity === "zero" ? 0 : capacity === "bounded" ? bound : Infinity;
+  let queue = 0;
+  let sent = 0;
+  let received = 0;
+  const out: { tick: number; queue: number; blocked: boolean; sent: number; received: number }[] = [];
+  for (let t = 1; t <= ticks; t++) {
+    const receiverReady = t % every === 0;
+    let blocked = false;
+    if (limit === 0) {
+      // rendezvous: the message only moves when the receiver is there to take it
+      if (receiverReady) {
+        sent++;
+        received++;
+      } else blocked = true;
+    } else {
+      if (queue < limit) {
+        queue++;
+        sent++;
+      } else blocked = true;
+      if (receiverReady && queue > 0) {
+        queue--;
+        received++;
+      }
+    }
+    out.push({ tick: t, queue, blocked, sent, received });
+  }
+  return out;
+}

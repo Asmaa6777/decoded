@@ -27,6 +27,26 @@ import {
   type ParamMethod,
   type StructureKind,
   type SyscallState,
+  consume,
+  contextSwitchFrames,
+  forkTree,
+  LINUX_TREE,
+  messageSim,
+  nextState,
+  produce,
+  PROCESS_TRANSITIONS,
+  ring,
+  ringCount,
+  ringEmpty,
+  ringFull,
+  SWITCH_CODE,
+  type Capacity,
+  type ForkNode,
+  type PcbView,
+  type PEvent,
+  type PState,
+  type Ring,
+  type SwitchState,
 } from "@/lib/operatingSystems";
 import { exists, initialShell, promptPath, readFile, run, type ShellState } from "@/lib/miniShell";
 
@@ -905,6 +925,509 @@ export function LinuxTerminal() {
         </button>
         <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">↑ ↓ history · ctrl+L clear · click a mission for a hint</span>
       </div>
+    </Panel>
+  );
+}
+
+/* ------------------------------ process in memory ------------------------------ */
+
+/** A process's memory: call functions to grow the stack down, allocate to grow the heap up. */
+export function ProcessMemory() {
+  const [frames, setFrames] = useState<string[]>(["main()"]);
+  const [heap, setHeap] = useState<number[]>([]);
+  const FN = ["readFile()", "parse()", "draw()", "sum()"];
+  const full = frames.length + heap.length >= 7;
+  return (
+    <Panel title="A process in memory" legend={[["bg-orange", "stack"], ["bg-violet", "heap"], ["bg-sky", "data"], ["bg-mint", "text"]]}>
+      <div className="grid sm:grid-cols-[220px_1fr] gap-5 items-start">
+        <div className="flex flex-col border-2 border-border rounded-sm overflow-hidden font-mono text-[11px]">
+          <div className="px-2 py-0.5 text-[10px] text-muted-foreground text-right">max address</div>
+          <div className="flex flex-col">
+            {frames.map((f, i) => (
+              <div key={i} className="bg-orange/25 border-b border-orange/40 px-2 py-1.5 animate-in slide-in-from-top-2 fade-in duration-300">
+                stack frame: {f}
+              </div>
+            ))}
+            <div className="text-center text-muted-foreground py-0.5">↓ stack grows down</div>
+          </div>
+          <div className="h-10 sm:h-16 bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,hsl(var(--border))_6px,hsl(var(--border))_7px)] flex items-center justify-center text-muted-foreground">
+            {full ? <span className="text-orange animate-pulse">nearly out of room!</span> : "free"}
+          </div>
+          <div className="flex flex-col-reverse">
+            {heap.map((h, i) => (
+              <div key={i} className="bg-violet/25 border-t border-violet/40 px-2 py-1.5 animate-in slide-in-from-bottom-2 fade-in duration-300">
+                heap block #{h} (malloc)
+              </div>
+            ))}
+            <div className="text-center text-muted-foreground py-0.5">↑ heap grows up</div>
+          </div>
+          <div className="bg-sky/20 px-2 py-2 border-t border-border">data: global variables</div>
+          <div className="bg-mint/20 px-2 py-2 border-t border-border">text: the program code</div>
+          <div className="px-2 py-0.5 text-[10px] text-muted-foreground text-right">0</div>
+        </div>
+        <div className="flex flex-col gap-3 text-sm">
+          <p className="leading-relaxed">
+            A process isn't just its code. It's the <b>text</b> (code), the <b>data</b> (globals), a <b>heap</b> for memory allocated while it runs, and a <b>stack</b> for function calls: their parameters, return addresses and local variables.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={btn} disabled={full} onClick={() => setFrames((f) => [...f, FN[(f.length - 1) % FN.length]])}>
+              call a function
+            </button>
+            <button type="button" className={btn} disabled={frames.length <= 1} onClick={() => setFrames((f) => f.slice(0, -1))}>
+              return
+            </button>
+            <button type="button" className={btn} disabled={full} onClick={() => setHeap((h) => [...h, h.length + 1])}>
+              malloc()
+            </button>
+            <button type="button" className={btn} disabled={!heap.length} onClick={() => setHeap((h) => h.slice(0, -1))}>
+              free()
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">The stack and heap grow toward each other through the free space in the middle. If they ever meet, the process is out of memory.</p>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/* ------------------------------ process states ------------------------------ */
+
+const STATE_POS: Record<PState, [number, number]> = {
+  new: [80, 50],
+  terminated: [520, 50],
+  ready: [170, 170],
+  running: [430, 170],
+  waiting: [300, 265],
+};
+
+const STATE_NOTE: Record<PState, string> = {
+  new: "new: the process is being created.",
+  ready: "ready: it's waiting to be assigned to a processor.",
+  running: "running: its instructions are being executed. On one CPU, only one process can be here at a time.",
+  waiting: "waiting: it's waiting for some event, like an I/O finishing or a signal.",
+  terminated: "terminated: it has finished execution.",
+};
+
+/** The five-state diagram. Click the events to move a process around it. */
+export function ProcessStateDiagram() {
+  const [s, setS] = useState<PState>("new");
+  const [last, setLast] = useState<PEvent | null>(null);
+  const [trail, setTrail] = useState<PState[]>(["new"]);
+  const fire = (e: PEvent) => {
+    const to = nextState(s, e);
+    if (!to) return;
+    setS(to);
+    setLast(e);
+    setTrail((t) => [...t, to].slice(-8));
+  };
+  const edge = (from: PState, to: PState, bend = 0) => {
+    const [x1, y1] = STATE_POS[from];
+    const [x2, y2] = STATE_POS[to];
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    const ux = dx / len;
+    const uy = dy / len;
+    const sx = x1 + ux * 46;
+    const sy = y1 + uy * 24;
+    const ex = x2 - ux * 46;
+    const ey = y2 - uy * 24;
+    const mx = (sx + ex) / 2 - uy * bend;
+    const my = (sy + ey) / 2 + ux * bend;
+    return { d: `M${sx},${sy} Q${mx},${my} ${ex},${ey}`, lx: (sx + 2 * mx + ex) / 4, ly: (sy + 2 * my + ey) / 4 };
+  };
+  return (
+    <Panel title="Diagram of process state">
+      <svg viewBox="0 0 600 310" className="w-full h-auto max-w-[640px] mx-auto" role="img" aria-label="process state diagram">
+        <defs>
+          <marker id="os-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" className="fill-muted-foreground" />
+          </marker>
+          <marker id="os-arrow-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" className="fill-mint" />
+          </marker>
+        </defs>
+        {PROCESS_TRANSITIONS.map((t) => {
+          const bend = t.event === "dispatch" ? -40 : t.event === "interrupt" ? -40 : 0;
+          const g = edge(t.from, t.to, bend);
+          const hot = last === t.event && s === t.to;
+          return (
+            <g key={t.event}>
+              <path d={g.d} fill="none" strokeWidth={hot ? 3 : 1.5} className={`transition-all duration-300 ${hot ? "stroke-mint" : "stroke-muted-foreground"}`} markerEnd={`url(#${hot ? "os-arrow-hot" : "os-arrow"})`} />
+              <text x={g.lx} y={g.ly - 6} textAnchor="middle" className={`font-mono text-[11px] ${hot ? "fill-mint font-bold" : "fill-muted-foreground"}`}>
+                {t.label}
+              </text>
+            </g>
+          );
+        })}
+        {(Object.keys(STATE_POS) as PState[]).map((k) => {
+          const [x, y] = STATE_POS[k];
+          const on = k === s;
+          return (
+            <g key={k}>
+              {on && <ellipse cx={x} cy={y} rx={56} ry={30} className="fill-mint/20 animate-pulse" />}
+              <ellipse cx={x} cy={y} rx={46} ry={24} strokeWidth={on ? 3 : 1.5} className={`transition-all duration-300 ${on ? "fill-mint/30 stroke-mint" : "fill-card stroke-border"}`} />
+              <text x={x} y={y + 4} textAnchor="middle" className={`font-display text-[14px] font-bold ${on ? "fill-foreground" : "fill-muted-foreground"}`}>
+                {k}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <p aria-live="polite" className="text-sm min-h-[2.5em]">
+        {STATE_NOTE[s]}
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {PROCESS_TRANSITIONS.map((t) => (
+          <button key={t.event} type="button" className={`${btn} !px-2 !py-1 !normal-case !tracking-normal`} disabled={t.from !== s} onClick={() => fire(t.event)}>
+            {t.label}
+          </button>
+        ))}
+        <button type="button" className={`${btn} !px-2 !py-1`} onClick={() => { setS("new"); setLast(null); setTrail(["new"]); }}>
+          ⟲ new process
+        </button>
+      </div>
+      <div className="font-mono text-[11px] text-muted-foreground">path: {trail.join(" → ")}</div>
+    </Panel>
+  );
+}
+
+/* ------------------------------ context switch ------------------------------ */
+
+function PcbCard({ p, hot }: { p: PcbView; hot: boolean }) {
+  return (
+    <div className={`rounded-sm border-2 p-3 font-mono text-xs flex flex-col gap-1 transition-all duration-300 ${hot ? "border-mint bg-mint/15 scale-[1.03]" : "border-border"}`}>
+      <div className="font-display font-bold text-sm">PCB{p.name.slice(1)}</div>
+      <div>process state: <span className="text-foreground">{p.state}</span></div>
+      <div>process number: {p.name}</div>
+      <div>program counter: <span key={p.pc} className="inline-block animate-in zoom-in-75 duration-300">{p.pc}</span></div>
+      <div>registers: <span key={p.reg} className="inline-block animate-in zoom-in-75 duration-300">r1 = {p.reg}</span></div>
+      <div className="text-muted-foreground">memory limits · open files · …</div>
+    </div>
+  );
+}
+
+/** CPU switching from P0 to P1 and back, saving into and reloading from the PCBs. */
+export function ContextSwitch() {
+  const frames = useMemo(() => contextSwitchFrames(), []);
+  return (
+    <Stepper
+      title="CPU switch from process to process"
+      frames={frames}
+      code={SWITCH_CODE}
+      codeLabel="What happens"
+      legend={[["bg-sky", "executing"], ["bg-muted", "idle (OS working)"]]}
+      render={(s: SwitchState) => (
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center min-w-[420px]">
+          <PcbCard p={s.pcb[0]} hot={s.touch === 0} />
+          <div className="flex flex-col items-center gap-2">
+            <div className={`rounded-sm border-2 px-4 py-3 text-center transition-all duration-300 ${s.running === null ? "border-dashed border-muted-foreground" : "border-sky bg-sky/20"}`}>
+              <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">CPU</div>
+              <div className="font-display font-bold">{s.running === null ? "OS" : `P${s.running}`}</div>
+              {s.cpu && <div className="font-mono text-[11px]">PC {s.cpu.pc}</div>}
+            </div>
+            <div className="font-mono text-lg h-6">
+              {s.phase !== "exec" && (
+                <span key={`${s.phase}${s.touch}`} className="animate-in fade-in duration-300">
+                  {s.phase === "save" ? (s.touch === 0 ? "← save" : "save →") : s.touch === 0 ? "reload →" : "← reload"}
+                </span>
+              )}
+              {s.phase === "exec" && s.running !== null && <span className="animate-spin inline-block">⚙</span>}
+            </div>
+          </div>
+          <PcbCard p={s.pcb[1]} hot={s.touch === 1} />
+        </div>
+      )}
+    />
+  );
+}
+
+/* ------------------------------ fork ------------------------------ */
+
+/** Put tree nodes on a grid: x by leaf order, y by `level`. */
+function layoutTree<T>(nodes: T[], id: (n: T) => number, parent: (n: T) => number | null, level: (n: T) => number) {
+  const kids = new Map<number, T[]>();
+  for (const n of nodes) {
+    const p = parent(n);
+    if (p !== null) kids.set(p, [...(kids.get(p) ?? []), n]);
+  }
+  const pos = new Map<number, { x: number; y: number }>();
+  let leaf = 0;
+  const walk = (n: T): number => {
+    const ch = kids.get(id(n)) ?? [];
+    const x = ch.length ? ch.map(walk).reduce((a, b) => a + b, 0) / ch.length : leaf++;
+    pos.set(id(n), { x, y: level(n) });
+    return x;
+  };
+  nodes.filter((n) => parent(n) === null).forEach(walk);
+  return { pos, leaves: Math.max(1, leaf) };
+}
+
+/** How many processes do n fork() calls make? Watch the tree double. */
+export function ForkTree() {
+  const [n, setN] = useState(2);
+  const nodes = useMemo(() => forkTree(n), [n]);
+  // depth in the tree = number of ancestors, which keeps children below their parents
+  const depth = (k: ForkNode): number => (k.parent === null ? 0 : 1 + depth(nodes[k.parent]));
+  const { pos, leaves } = layoutTree(nodes, (k) => k.id, (k) => k.parent, depth);
+  const maxDepth = Math.max(...nodes.map(depth));
+  const W = 560;
+  const H = 70 + maxDepth * 70;
+  const X = (x: number) => 30 + (leaves === 1 ? (W - 60) / 2 : (x / (leaves - 1)) * (W - 60));
+  const Y = (y: number) => 30 + y * 70;
+  const tone = ["fill-mint", "fill-sky", "fill-violet", "fill-orange", "fill-neon"];
+  return (
+    <Panel title="fork() doubles the processes" legend={[["bg-mint", "original"], ["bg-sky", "born at fork 1"], ["bg-violet", "fork 2"], ["bg-orange", "fork 3"]]}>
+      <div className="flex flex-wrap items-center gap-4">
+        <pre className="font-mono text-xs bg-muted/40 rounded-sm px-3 py-2 m-0">
+          {"int main() {\n" + Array.from({ length: n }, () => "    fork();\n").join("") + '    printf("hi\\n");\n}'}
+        </pre>
+        <div className="flex flex-col gap-2">
+          <label className="inline-flex items-center gap-2 font-mono text-xs">
+            <span className="uppercase tracking-widest text-muted-foreground">fork() calls</span>
+            <input type="range" min={0} max={4} value={n} onChange={(e) => setN(Number(e.target.value))} aria-label="number of fork calls" />
+            <span className="w-4">{n}</span>
+          </label>
+          <div className="font-display text-2xl font-bold">
+            {nodes.length} processes · "hi" printed {nodes.length}×
+          </div>
+          <div className="font-mono text-xs text-muted-foreground">
+            2<sup>{n}</sup> = {nodes.length}, so {nodes.length - 1} new child processes
+          </div>
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="tree of processes created by fork">
+        {nodes.map((k) => {
+          if (k.parent === null) return null;
+          const a = pos.get(k.parent)!;
+          const b = pos.get(k.id)!;
+          return <line key={`e${k.id}`} x1={X(a.x)} y1={Y(a.y)} x2={X(b.x)} y2={Y(b.y)} className="stroke-border" strokeWidth={1.5} />;
+        })}
+        {nodes.map((k) => {
+          const p = pos.get(k.id)!;
+          return (
+            <g key={`${n}-${k.id}`} className="animate-in zoom-in-50 fade-in duration-500" style={{ transformOrigin: `${X(p.x)}px ${Y(p.y)}px`, animationDelay: `${k.bornAt * 150}ms`, animationFillMode: "both" }}>
+              <circle cx={X(p.x)} cy={Y(p.y)} r={14} className={tone[k.bornAt]} />
+              <text x={X(p.x)} y={Y(p.y) + 4} textAnchor="middle" className="fill-background font-mono text-[10px] font-bold">
+                P{k.id}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        fork() creates a child that is a copy of the parent, and <i>both</i> continue from the next line. So at every fork() call, every process that exists splits in two.
+      </p>
+    </Panel>
+  );
+}
+
+/** The textbook's tree of processes on a Linux system. */
+export function LinuxProcessTree() {
+  const { pos, leaves } = layoutTree(
+    LINUX_TREE,
+    (p) => p.pid,
+    (p) => p.parent,
+    (p) => {
+      let d = 0;
+      let cur = p;
+      while (cur.parent !== null) {
+        cur = LINUX_TREE.find((q) => q.pid === cur.parent)!;
+        d++;
+      }
+      return d;
+    },
+  );
+  const W = 640;
+  const X = (x: number) => 45 + (x / (leaves - 1)) * (W - 90);
+  const Y = (y: number) => 30 + y * 70;
+  const [hover, setHover] = useState<number | null>(null);
+  return (
+    <Panel title="A tree of processes in Linux">
+      <svg viewBox={`0 0 ${W} 260`} className="w-full h-auto" role="img" aria-label="Linux process tree">
+        {LINUX_TREE.map((p) => {
+          if (p.parent === null) return null;
+          const a = pos.get(p.parent)!;
+          const b = pos.get(p.pid)!;
+          return <line key={`e${p.pid}`} x1={X(a.x)} y1={Y(a.y)} x2={X(b.x)} y2={Y(b.y)} className="stroke-border" strokeWidth={1.5} />;
+        })}
+        {LINUX_TREE.map((p) => {
+          const q = pos.get(p.pid)!;
+          const on = hover === p.pid;
+          return (
+            <g key={p.pid} onMouseEnter={() => setHover(p.pid)} onMouseLeave={() => setHover(null)} className="cursor-default">
+              <rect x={X(q.x) - 38} y={Y(q.y) - 17} width={76} height={34} rx={4} className={`transition-all ${on ? "fill-mint/30 stroke-mint" : "fill-card stroke-border"}`} strokeWidth={1.5} />
+              <text x={X(q.x)} y={Y(q.y) - 2} textAnchor="middle" className="fill-foreground font-display text-[12px] font-bold">
+                {p.name}
+              </text>
+              <text x={X(q.x)} y={Y(q.y) + 11} textAnchor="middle" className="fill-muted-foreground font-mono text-[10px]">
+                pid = {p.pid}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        <b>init</b> (pid 1) is the root of every user process. A user logged in through <b>login</b> got a <b>bash</b> shell, and every command typed in that shell, like <b>ps</b> or <b>emacs</b>, became bash's child.
+      </p>
+    </Panel>
+  );
+}
+
+/* ------------------------------ bounded buffer ------------------------------ */
+
+/** The shared-memory bounded buffer: a ring of BUFFER_SIZE slots with in and out pointers. */
+export function BoundedBuffer({ size = 8 }: { size?: number }) {
+  const [r, setR] = useState<Ring>(() => ring(size));
+  const [log, setLog] = useState<string>("Press produce or consume, or let them both run.");
+  const [auto, setAuto] = useState(false);
+  const [busy, setBusy] = useState<"p" | "c" | null>(null);
+  const doProduce = () => {
+    const next = produce(r);
+    setBusy("p");
+    if (!next) return setLog(`Producer: (in + 1) % ${size} == out, so the buffer is full. It spins in its while loop, waiting.`);
+    setR(next);
+    setLog(`Producer: buffer[${r.in}] = item ${r.next}; in = (${r.in} + 1) % ${size} = ${next.in}.`);
+  };
+  const doConsume = () => {
+    const res = consume(r);
+    setBusy("c");
+    if (!res) return setLog("Consumer: in == out, so the buffer is empty. It spins, waiting.");
+    setR(res.ring);
+    setLog(`Consumer: took item ${res.item} from buffer[${r.out}]; out = (${r.out} + 1) % ${size} = ${res.ring.out}.`);
+  };
+  const actions = useRef({ doProduce, doConsume });
+  actions.current = { doProduce, doConsume };
+  useEffect(() => {
+    if (!auto) return;
+    const t = setInterval(() => (Math.random() < 0.55 ? actions.current.doProduce() : actions.current.doConsume()), 650);
+    return () => clearInterval(t);
+  }, [auto]);
+  const R = 95;
+  const C = 130;
+  const angle = (i: number) => (i / size) * Math.PI * 2 - Math.PI / 2;
+  const pt = (i: number, rad: number) => [C + rad * Math.cos(angle(i)), C + rad * Math.sin(angle(i))] as const;
+  return (
+    <Panel title="Bounded buffer in shared memory" legend={[["bg-mint", "item"], ["bg-sky", "in (producer)"], ["bg-orange", "out (consumer)"]]}>
+      <div className="grid sm:grid-cols-[260px_1fr] gap-4 items-center">
+        <svg viewBox="0 0 260 260" className="w-full max-w-[260px] h-auto mx-auto" role="img" aria-label="circular buffer">
+          {r.buf.map((v, i) => {
+            const [x, y] = pt(i, R);
+            return (
+              <g key={i}>
+                <circle cx={x} cy={y} r={22} strokeWidth={2} className={`transition-all duration-300 ${v !== null ? "fill-mint/40 stroke-mint" : "fill-card stroke-border"}`} />
+                <text x={x} y={y + 4} textAnchor="middle" className="fill-foreground font-mono text-[12px] font-bold">
+                  {v ?? ""}
+                </text>
+                <text x={pt(i, R + 34)[0]} y={pt(i, R + 34)[1] + 3} textAnchor="middle" className="fill-muted-foreground font-mono text-[9px]">
+                  [{i}]
+                </text>
+              </g>
+            );
+          })}
+          {(["in", "out"] as const).map((k) => {
+            const idx = k === "in" ? r.in : r.out;
+            const [x, y] = pt(idx, R - 40);
+            return (
+              <g key={k} style={{ transition: "transform 300ms" }}>
+                <line x1={C} y1={C} x2={x} y2={y} strokeWidth={k === "in" ? 3 : 2} strokeDasharray={k === "out" ? "4 3" : undefined} className={`transition-all duration-300 ${k === "in" ? "stroke-sky" : "stroke-orange"}`} />
+                <text x={(C + x) / 2 + (k === "in" ? 8 : -8)} y={(C + y) / 2} textAnchor="middle" className={`font-mono text-[10px] font-bold ${k === "in" ? "fill-sky" : "fill-orange"}`}>
+                  {k}
+                </text>
+              </g>
+            );
+          })}
+          <text x={C} y={C + 4} textAnchor="middle" className="fill-muted-foreground font-mono text-[11px]">
+            {ringCount(r)}/{size - 1}
+          </text>
+        </svg>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={`${btn} ${busy === "p" ? "border-sky" : ""}`} onClick={doProduce}>
+              produce
+            </button>
+            <button type="button" className={`${btn} ${busy === "c" ? "border-orange" : ""}`} onClick={doConsume}>
+              consume
+            </button>
+            <button type="button" className={btn} onClick={() => setAuto((a) => !a)}>
+              {auto ? "❚❚ stop" : "▶ run both"}
+            </button>
+            <button type="button" className={btn} onClick={() => { setAuto(false); setR(ring(size)); setLog("Empty buffer: in == out == 0."); }}>
+              ⟲
+            </button>
+          </div>
+          <p aria-live="polite" className="text-sm min-h-[3em] leading-relaxed font-mono">
+            {log}
+          </p>
+          <div className="flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-widest">
+            {ringFull(r) && <span className="px-2 py-0.5 rounded-sm bg-orange text-background animate-in zoom-in-75">full</span>}
+            {ringEmpty(r) && <span className="px-2 py-0.5 rounded-sm bg-muted">empty</span>}
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Fill it up: one slot always stays empty. If the buffer could fill completely, in would equal out, and that already means "empty". So this solution can use only BUFFER_SIZE − 1 slots.
+          </p>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/* ------------------------------ message buffering ------------------------------ */
+
+/** Sender vs. a slower receiver, with a zero, bounded or unbounded message queue. */
+export function MessageBuffering() {
+  const [cap, setCap] = useState<Capacity>("bounded");
+  const sim = useMemo(() => messageSim(cap, 18), [cap]);
+  const [t, setT] = useState(0);
+  useEffect(() => setT(0), [cap]);
+  useEffect(() => {
+    if (t >= sim.length) return;
+    const id = setTimeout(() => setT((x) => x + 1), 450);
+    return () => clearTimeout(id);
+  }, [t, sim.length]);
+  const now = sim[Math.max(0, t - 1)];
+  const notes: Record<Capacity, string> = {
+    zero: "Zero capacity: there's no queue at all. The sender must wait until the receiver takes the message: a rendezvous.",
+    bounded: "Bounded capacity (here 3): the sender can run ahead until the queue is full, then it must wait.",
+    unbounded: "Unbounded capacity: the queue is infinitely long, so the sender never waits. The messages just pile up.",
+  };
+  return (
+    <Panel title="Buffering: how many messages can wait on the link?" legend={[["bg-sky", "message in the queue"], ["bg-orange", "sender blocked"]]}>
+      <Toggle<Capacity>
+        value={cap}
+        onChange={setCap}
+        options={[
+          ["zero", "Zero"],
+          ["bounded", "Bounded"],
+          ["unbounded", "Unbounded"],
+        ]}
+      />
+      <div className="flex items-center gap-3">
+        <div className={`rounded-sm border-2 px-3 py-2 text-center transition-colors duration-200 ${now?.blocked ? "border-orange bg-orange/20" : "border-border"}`}>
+          <div className="font-display font-bold">sender</div>
+          <div className="font-mono text-[10px]">{now?.blocked ? "blocked ⏸" : "sending ▶"}</div>
+        </div>
+        <div className="flex-1 min-h-[44px] rounded-sm border border-dashed border-border flex items-center gap-1 px-2 overflow-hidden">
+          {Array.from({ length: now?.queue ?? 0 }, (_, i) => (
+            <span key={i} className="h-6 w-6 shrink-0 rounded-sm bg-sky animate-in zoom-in-50 duration-200" />
+          ))}
+          {cap === "zero" && <span className="font-mono text-[10px] text-muted-foreground">no queue</span>}
+        </div>
+        <div className="rounded-sm border-2 border-border px-3 py-2 text-center">
+          <div className="font-display font-bold">receiver</div>
+          <div className="font-mono text-[10px]">every 3 ticks</div>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-x-6 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        <span>tick <span className="text-foreground">{now?.tick ?? 0}</span></span>
+        <span>sent <span className="text-foreground">{now?.sent ?? 0}</span></span>
+        <span>received <span className="text-foreground">{now?.received ?? 0}</span></span>
+        <span>blocked ticks <span className="text-foreground">{sim.slice(0, t).filter((x) => x.blocked).length}</span></span>
+      </div>
+      <p className="text-sm leading-relaxed">{notes[cap]}</p>
+      <button type="button" className={`${btn} self-start`} onClick={() => setT(0)}>
+        ⟲ Replay
+      </button>
     </Panel>
   );
 }
