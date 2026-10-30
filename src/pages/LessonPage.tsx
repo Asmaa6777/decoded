@@ -9,6 +9,7 @@ import { CourseNav } from "@/components/lesson/CourseNav";
 import { LessonToc } from "@/components/lesson/LessonToc";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { PanelLeft } from "lucide-react";
+import { writeLastLesson } from "@/lib/progressStore";
 
 const SIDEBAR_KEY = "decoded:sidebar-open";
 
@@ -55,6 +56,10 @@ export default function LessonPage() {
       setDrawerOpen(true);
     }
   };
+
+  useEffect(() => {
+    if (courseSlug && lessonSlug && data) writeLastLesson({ course: courseSlug, lesson: lessonSlug });
+  }, [courseSlug, lessonSlug, data]);
 
   useEffect(() => {
     if (data) document.title = `${data.lesson.title} — ${data.course.title}`;

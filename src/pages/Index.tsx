@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
+import { ContinueLearning } from "@/components/ContinueLearning";
 import CourseCard from "@/components/CourseCard";
 import { courses } from "@/content/registry";
 import { CourseGlyph } from "@/components/brand/Glyphs";
@@ -37,6 +38,8 @@ export default function Index() {
             Every course in a CS curriculum maps to something practical, used daily, with applications everywhere. It just has to be mapped.
             This is the layer that connects the theory with what's out there.
           </p>
+
+          <ContinueLearning />
 
           <div className="mt-10 flex flex-wrap gap-3">
             <Link

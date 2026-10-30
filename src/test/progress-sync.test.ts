@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { readProgress, writeProgress } from "@/lib/progressStore";
+import { readLastLesson, readProgress, writeLastLesson, writeProgress } from "@/lib/progressStore";
 import { deleteAccount, diffProgress, getAccountStatus, queueProgressChange, resetProgressSyncForTests, signOut, syncProgress } from "@/lib/progressSync";
 
 /** A tiny stand-in for the API, holding one account's progress. */
@@ -147,6 +147,14 @@ describe("signing out", () => {
     await syncProgress();
     expect(readProgress()).toEqual({ toc: ["bob-lesson"] });
     expect(api.state.account).toEqual({ toc: ["bob-lesson"] });
+  });
+
+  it("forgets the last lesson, so the next person isn't sent back to it", async () => {
+    fakeApi({ toc: ["intro"] });
+    await syncProgress();
+    writeLastLesson({ course: "toc", lesson: "intro" });
+    await signOut();
+    expect(readLastLesson()).toBeNull();
   });
 
   it("refuses while changes can't be saved, and keeps them", async () => {

@@ -5,7 +5,7 @@
    until the API has accepted them, so being offline loses nothing. */
 
 import type { ProgressMap } from "@/lib/progressBackup";
-import { readProgress, writeProgress } from "@/lib/progressStore";
+import { clearLastLesson, readLastLesson, readProgress, writeProgress } from "@/lib/progressStore";
 
 export const API_URL = import.meta.env.VITE_API_URL ?? "https://decoded-api.stack42.tech";
 
@@ -194,6 +194,7 @@ export async function leaveCourse(course: string) {
     for (const key of Object.keys(pending)) if (key.startsWith(`${course}/`)) delete pending[key];
     savePending(pending);
   }
+  if (readLastLesson()?.course === course) clearLastLesson();
   const { [course]: _left, ...rest } = readProgress();
   writeProgress(rest);
   listeners.forEach((listener) => listener());
@@ -210,6 +211,7 @@ export async function signOut() {
   const response = await fetch(`${API_URL}/auth/sign-out`, { method: "POST", credentials: "include" });
   if (!response.ok) throw new Error(String(response.status));
   forgetAccount();
+  clearLastLesson();
   writeProgress({});
   setStatus("signed-out");
 }
@@ -219,6 +221,7 @@ export async function deleteAccount() {
   const response = await fetch(`${API_URL}/account/delete`, { method: "POST", credentials: "include" });
   if (!response.ok) throw new Error(String(response.status));
   forgetAccount();
+  clearLastLesson();
   writeProgress({});
   setStatus("signed-out");
 }
