@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
+import { conv, convFrames, coverUpFrames, deconv, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
 import { adjoint, cofactors, det, fraction, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
 beforeAll(() => {
@@ -147,5 +148,52 @@ describe("determinants and inverses", () => {
     const f = inverseFrames([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
     expect(f.at(-1)!.state.stage).toBe("singular");
     expect(inverseFrames(A).at(-1)!.state.stage).toBe("inverse");
+  });
+});
+
+describe("polynomials", () => {
+  const p = [1, -2, -1, 2];
+  it("finds roots and rebuilds the polynomial", () => {
+    expect(realRoots(p).map((x) => Number(x.toFixed(6)))).toEqual([-1, 1, 2]);
+    expect(polyFromRoots([-1, 2, 1])).toEqual(p);
+    const c = roots([1, 0, 1]);
+    expect(c.every(([a]) => a === 0)).toBe(true);
+    expect(c.map(([, b]) => Math.abs(Number(b.toFixed(6))))).toEqual([1, 1]);
+  });
+
+  it("evaluates at a number and at a matrix", () => {
+    expect(polyval(p, 3)).toBe(8);
+    expect(polyvalm([1, 0, -2, -5], [[2, 4, 5], [-1, 0, 3], [7, 1, 5]])).toEqual([[377, 179, 439], [111, 81, 136], [490, 253, 639]]);
+  });
+
+  it("multiplies and divides", () => {
+    const c = conv([1, 2, 3], [4, 5, 6]);
+    expect(c).toEqual([4, 13, 28, 27, 18]);
+    expect(deconv(c, [1, 2, 3])).toEqual({ q: [4, 5, 6], r: [0, 0, 0, 0, 0] });
+    expect(convFrames([1, 2, 3], [4, 5, 6]).at(-1)!.state.c).toEqual(c);
+  });
+
+  it("differentiates, including the worked product", () => {
+    expect(polyder([1, 0, -2, -5])).toEqual([3, 0, -2]);
+    expect(polyder(conv([1, 3, 5], [2, 4, 6]))).toEqual([8, 30, 56, 38]);
+  });
+
+  it("matches the worked least-squares fit, and degree 4 hits all five points", () => {
+    const x = [1, 2, 3, 4, 5];
+    const y = [5.5, 43.1, 128, 290.7, 498.4];
+    const f = polyfit(x, y, 3);
+    [-0.1917, 31.5821, -60.3262, 35.34].forEach((c, i) => expect(f[i]).toBeCloseTo(c, 3));
+    expect(sumSquaredError(polyfit(x, y, 4), x, y)).toBeLessThan(1e-6);
+  });
+
+  it("splits the worked partial fraction", () => {
+    expect(residue([-4, 8], [1, 6, 8])).toEqual([{ p: -4, r: -12 }, { p: -2, r: 8 }]);
+    expect(coverUpFrames([-4, 8], [1, 6, 8]).at(-1)!.state.done).toHaveLength(2);
+  });
+
+  it("writes polynomials readably", () => {
+    expect(polyText(p)).toBe("x³ - 2x² - x + 2");
+    expect(polyText([4, 13, 28, 27, 18], "s")).toBe("4s⁴ + 13s³ + 28s² + 27s + 18");
+    expect(polyText([0, 1, 0, 1])).toBe("x² + 1");
   });
 });

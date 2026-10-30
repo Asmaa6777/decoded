@@ -67,6 +67,11 @@ import CmNorms from "@/content/computational-mathematics/m0-05-norms-and-trace.m
 import CmSpecial from "@/content/computational-mathematics/m0-06-special-matrices.mdx";
 import CmDeterminants from "@/content/computational-mathematics/m0-07-determinants-and-inverses.mdx";
 import CmMatricesQuiz from "@/content/computational-mathematics/m0-08-matrices-quiz.mdx";
+import CmPolyRoots from "@/content/computational-mathematics/m1-01-polynomials-and-roots.mdx";
+import CmPolyConv from "@/content/computational-mathematics/m1-02-multiplying-and-dividing.mdx";
+import CmPolyFit from "@/content/computational-mathematics/m1-03-derivatives-and-curve-fitting.mdx";
+import CmPolyResidue from "@/content/computational-mathematics/m1-04-partial-fractions.mdx";
+import CmPolyQuiz from "@/content/computational-mathematics/m1-05-polynomials-quiz.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -317,6 +322,17 @@ export const courses: Course[] = [
           { slug: "special-matrices", title: "Some Special Matrices", duration: "8 min", Component: CmSpecial },
           { slug: "determinants-and-inverses", title: "Determinants and Inverses", duration: "15 min", Component: CmDeterminants },
           { slug: "matrices-quiz", title: "Quiz: Matrices", duration: "10 min", kind: "quiz", Component: CmMatricesQuiz },
+        ],
+      },
+      {
+        title: "Polynomials",
+        blurb: "Storing polynomials as vectors, finding roots, and fitting curves to data.",
+        lessons: [
+          { slug: "polynomials-and-roots", title: "Polynomials and Their Roots", duration: "12 min", Component: CmPolyRoots },
+          { slug: "multiplying-and-dividing", title: "Multiplying and Dividing Polynomials", duration: "9 min", Component: CmPolyConv },
+          { slug: "derivatives-and-curve-fitting", title: "Derivatives and Curve Fitting", duration: "12 min", Component: CmPolyFit },
+          { slug: "partial-fractions", title: "Partial Fractions", duration: "9 min", Component: CmPolyResidue },
+          { slug: "polynomials-quiz", title: "Quiz: Polynomials", duration: "8 min", kind: "quiz", Component: CmPolyQuiz },
         ],
       },
     ],

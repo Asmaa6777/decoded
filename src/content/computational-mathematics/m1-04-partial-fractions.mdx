@@ -1,0 +1,71 @@
+import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CoverUpVisualizer } from "@/components/mdx/PolynomialVisualizers";
+
+# Partial Fractions
+
+A ratio of two polynomials can be hard to work with. Split it into a sum of simple fractions and each piece becomes easy to integrate, to invert, or to read off a system's behaviour.
+
+## The expansion
+
+For polynomials $b$ and $a$ with no repeated roots in $a$:
+
+$$
+\frac{b(s)}{a(s)} = \frac{r_1}{s - p_1} + \frac{r_2}{s - p_2} + \cdots + \frac{r_n}{s - p_n} + k(s)
+$$
+
+Here $p_i$ are the **poles** (the roots of $a$), $r_i$ are the **residues**, and $k(s)$ holds any direct terms. $k$ is empty when $b$ has a lower degree than $a$.
+
+## An example
+
+Take this transfer function:
+
+$$
+\frac{-4s + 8}{s^2 + 6s + 8}
+$$
+
+The denominator factors as $(s + 4)(s + 2)$. To find the residue at a pole, cover up that pole's factor and substitute the pole into everything left over:
+
+<CoverUpVisualizer />
+
+MATLAB's `residue` returns the same numbers:
+
+```matlab
+b = [-4 8];
+a = [1 6 8];
+[r, p, k] = residue(b, a)
+
+r =
+   -12
+     8
+p =
+    -4
+    -2
+k =
+     []
+```
+
+So the fraction equals $\dfrac{-12}{s + 4} + \dfrac{8}{s + 2}$.
+
+## Going back
+
+Give `residue` three inputs, and it converts back to polynomial form:
+
+```matlab
+[b2, a2] = residue(r, p, k)
+
+b2 =
+    -4     8
+a2 =
+     1     6     8
+```
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Predicting a system's response" tool="Control theory, Simulink">
+Each term $r/(s - p)$ corresponds to an exponential $re^{pt}$ over time. So once you've split a transfer function, you can read how the system responds term by term.
+</PracticalApplication>
+<PracticalApplication title="Designing filters" tool="Signal processing">
+Digital filters are often split into smaller first and second order sections, using this same expansion in its discrete form, which keeps them numerically stable.
+</PracticalApplication>
+</ApplicationsGrid>

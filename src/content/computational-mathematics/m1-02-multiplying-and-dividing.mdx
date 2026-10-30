@@ -1,0 +1,57 @@
+import { PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { ConvolutionVisualizer } from "@/components/mdx/PolynomialVisualizers";
+
+# Multiplying and Dividing Polynomials
+
+Multiply two polynomials by hand and you collect like terms. Do that on coefficient vectors and you've performed a **convolution**, an operation that also runs image filters and audio effects.
+
+## Convolution
+
+Take $a(s) = s^2 + 2s + 3$ and $b(s) = 4s^2 + 5s + 6$. The coefficient of $s^n$ in the product comes from every pair of powers adding up to $n$:
+
+$$
+c_n = \sum_{i} a_i \, b_{n-i}
+$$
+
+Picture $b$ flipped and sliding past $a$. Wherever they overlap, multiply the pairs and add:
+
+<ConvolutionVisualizer />
+
+```matlab
+a = [1 2 3];  b = [4 5 6];
+c = conv(a, b)
+
+c =
+     4    13    28    27    18
+```
+
+So the product is $4s^4 + 13s^3 + 28s^2 + 27s + 18$. If $a$ has degree $m$ and $b$ has degree $n$, the result has degree $m + n$.
+
+## Deconvolution
+
+`deconv` runs this backwards, which is polynomial long division. It returns the quotient and the remainder:
+
+```matlab
+[q, r] = deconv(c, a)
+
+q =
+     4     5     6
+r =
+     0     0     0     0     0
+```
+
+A remainder of all zeros tells you that $a$ divides $c$ exactly. This also gives a quick test for a root: $r$ is a root of $p$ exactly when `deconv(p, [1 -r])` leaves no remainder.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Blurring an image" tool="Photoshop, OpenCV">
+A blur slides a small grid of weights across the image, which is convolution in two dimensions.
+</PracticalApplication>
+<PracticalApplication title="Recognising images" tool="Convolutional neural networks">
+The layers of a CNN are convolutions, except that the network learns the weights itself.
+</PracticalApplication>
+<PracticalApplication title="Adding reverb to sound" tool="Audio plugins">
+Convolution reverb combines a recording with the recorded echo of a real room, so it sounds as if it were played there.
+</PracticalApplication>
+</ApplicationsGrid>
