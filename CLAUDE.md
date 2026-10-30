@@ -29,9 +29,9 @@ npx vitest run -t "name of test"
 ## Architecture
 
 ### Content registry is the single source of truth
-`src/content/registry.ts` defines the entire course catalog as a typed `courses: Course[]` array (`Course` → `Module[]` → `Lesson[]`). Each MDX lesson is **eagerly imported** at the top of this file and attached to its lesson as `Component`, so lessons render synchronously with no lazy/Suspense boundary. Helper functions (`getCourse`, `getLesson`, `lessonNeighbors`, `flattenLessons`) are how every page looks content up — pages never import MDX directly.
+`src/content/registry.ts` defines the entire course catalog as a typed `courses: Course[]` array (`Course` → `Module[]` → `Lesson[]`). Each MDX lesson is a `lazy()` import declared at the top of this file and attached to its lesson as `Component`, so its chunk is only fetched when the lesson opens. Render it inside a `Suspense` boundary; `LessonPage` does, and tests use `src/test/renderLesson.tsx`. Helper functions (`getCourse`, `getLesson`, `lessonNeighbors`, `flattenLessons`) are how every page looks content up — pages never import MDX directly.
 
-**To add a lesson:** create the `.mdx` file under `src/content/<course-slug>/NN-slug.mdx`, then import it in `registry.ts` and add a `{ slug, title, duration, Component }` entry to the right module. The `NN-` numeric prefix orders files on disk only; ordering at runtime comes from array position. Lesson `slug` must be kebab-case and is what appears in the URL.
+**To add a lesson:** create the `.mdx` file under `src/content/<course-slug>/NN-slug.mdx`, then declare it with `lesson(() => import(...))` in `registry.ts` and add a `{ slug, title, duration, Component }` entry to the right module. The `NN-` numeric prefix orders files on disk only; ordering at runtime comes from array position. Lesson `slug` must be kebab-case and is what appears in the URL.
 
 A course with `status: "coming-soon"` typically has empty `modules: []` and is rendered as a teaser; `status: "available"` courses have real lessons.
 
@@ -39,7 +39,7 @@ A course with `status: "coming-soon"` typically has empty `modules: []` and is r
 `src/App.tsx` wires global providers (React Query, `ThemeProvider`, tooltip, toasters) and four routes via React Router:
 `/` (Index) → `/courses` (Courses) → `/courses/:courseSlug` (CoursePage) → `/courses/:courseSlug/:lessonSlug` (LessonPage).
 
-`LessonPage` pulls the lesson from the registry, renders `<lesson.Component />` inside a Tailwind Typography `prose` article, and builds prev/next navigation from `lessonNeighbors`.
+`LessonPage` (itself lazily loaded) pulls the lesson from the registry, renders `<lesson.Component />` inside a Tailwind Typography `prose` article, and builds prev/next navigation from `lessonNeighbors`.
 
 ### MDX components are imported, not provided
 MDX is compiled by `@mdx-js/rollup` (configured `enforce: "pre"` in `vite.config.ts`). Although `providerImportSource: "@mdx-js/react"` is set, **there is no `MDXProvider` wrapping the app** — custom components (`Callout`, `PracticalApplication`, `Pillar`, `ApplicationsGrid` in `src/components/mdx/MdxComponents.tsx`) must be explicitly `import`ed at the top of each `.mdx` file that uses them. Plain markdown elements get their styling from the `prose` classes, not from mapped components.

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { Suspense, useEffect, useState, useMemo, useRef } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { MDXProvider } from "@mdx-js/react";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
@@ -7,6 +7,7 @@ import { useProgress } from "@/hooks/useProgress";
 import { CodeBlock } from "@/components/mdx/MdxComponents";
 import { CourseNav } from "@/components/lesson/CourseNav";
 import { LessonToc } from "@/components/lesson/LessonToc";
+import { ChunkErrorBoundary } from "@/components/ChunkErrorBoundary";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Flag, PanelLeft } from "lucide-react";
 import { reportMistakeUrl } from "@/lib/reportMistake";
@@ -23,6 +24,23 @@ function readSidebarPref() {
 }
 
 const mdxComponents = { pre: CodeBlock };
+
+function LessonSkeleton() {
+  return (
+    <div role="status" aria-label="Loading lesson" className="animate-pulse space-y-4 py-4">
+      <div className="h-10 w-2/3 bg-secondary" />
+      <div className="h-4 w-full bg-secondary" />
+      <div className="h-4 w-11/12 bg-secondary" />
+      <div className="h-4 w-4/5 bg-secondary" />
+    </div>
+  );
+}
+
+/** Renders next to the lesson, so its effect runs once the lesson's chunk is on the page. */
+function LessonLoaded({ onLoaded }: { onLoaded: () => void }) {
+  useEffect(onLoaded, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
 
 const accentBg: Record<string, string> = {
   neon: "bg-neon", orange: "bg-orange", sky: "bg-sky", violet: "bg-violet", mint: "bg-mint",
@@ -42,6 +60,7 @@ export default function LessonPage() {
   // Desktop: sidebar shown inline (remembered). Mobile: it opens as a drawer.
   const [sidebarOpen, setSidebarOpen] = useState(readSidebarPref);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [loadedSlug, setLoadedSlug] = useState<string | null>(null);
 
   const toggleSidebar = () => {
     if (window.matchMedia("(min-width: 1024px)").matches) {
@@ -64,10 +83,8 @@ export default function LessonPage() {
 
   useEffect(() => {
     if (data) document.title = `${data.lesson.title} — ${data.course.title}`;
-    // Keep a #section deep link; otherwise start at the top.
-    const target = window.location.hash ? document.getElementById(decodeURIComponent(window.location.hash.slice(1))) : null;
-    if (target) target.scrollIntoView();
-    else window.scrollTo({ top: 0 });
+    // A #section deep link waits for the lesson to load; otherwise start at the top.
+    if (!window.location.hash) window.scrollTo({ top: 0 });
   }, [data]);
 
   useEffect(() => {
@@ -87,6 +104,12 @@ export default function LessonPage() {
   const { prev, next } = lessonNeighbors(courseSlug, lessonSlug);
   const done = isComplete(lessonSlug);
   const kind = lessonKind(lesson);
+
+  const onLessonLoaded = () => {
+    setLoadedSlug(lessonSlug);
+    const hash = window.location.hash;
+    if (hash) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView();
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -146,7 +169,12 @@ export default function LessonPage() {
 
           <MDXProvider components={mdxComponents}>
             <div className="prose-reading" ref={contentRef}>
-              <Lesson />
+              <ChunkErrorBoundary key={lessonSlug}>
+                <Suspense fallback={<LessonSkeleton />}>
+                  <Lesson />
+                  <LessonLoaded onLoaded={onLessonLoaded} />
+                </Suspense>
+              </ChunkErrorBoundary>
             </div>
           </MDXProvider>
 
@@ -237,7 +265,7 @@ export default function LessonPage() {
 
         <aside className="hidden xl:block w-56 shrink-0">
           <div className="sticky top-0 max-h-screen overflow-y-auto pt-24 pb-8">
-            <LessonToc contentRef={contentRef} contentKey={lessonSlug} accent={course.accent} />
+            <LessonToc contentRef={contentRef} contentKey={loadedSlug === lessonSlug ? lessonSlug : ""} accent={course.accent} />
           </div>
         </aside>
         </div>
