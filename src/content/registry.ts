@@ -72,6 +72,8 @@ import CmPolyConv from "@/content/computational-mathematics/m1-02-multiplying-an
 import CmPolyFit from "@/content/computational-mathematics/m1-03-derivatives-and-curve-fitting.mdx";
 import CmPolyResidue from "@/content/computational-mathematics/m1-04-partial-fractions.mdx";
 import CmPolyQuiz from "@/content/computational-mathematics/m1-05-polynomials-quiz.mdx";
+import CmEuclid from "@/content/computational-mathematics/m2-01-divisibility-and-euclid.mdx";
+import CmModular from "@/content/computational-mathematics/m2-02-modular-arithmetic.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -333,6 +335,14 @@ export const courses: Course[] = [
           { slug: "derivatives-and-curve-fitting", title: "Derivatives and Curve Fitting", duration: "12 min", Component: CmPolyFit },
           { slug: "partial-fractions", title: "Partial Fractions", duration: "9 min", Component: CmPolyResidue },
           { slug: "polynomials-quiz", title: "Quiz: Polynomials", duration: "8 min", kind: "quiz", Component: CmPolyQuiz },
+        ],
+      },
+      {
+        title: "Number Theory",
+        blurb: "The whole-number arithmetic behind modern cryptography, from remainders to discrete logarithms.",
+        lessons: [
+          { slug: "divisibility-and-euclid", title: "Divisibility and the Euclidean Algorithm", duration: "12 min", Component: CmEuclid },
+          { slug: "modular-arithmetic", title: "Modular Arithmetic", duration: "12 min", Component: CmModular },
         ],
       },
     ],
