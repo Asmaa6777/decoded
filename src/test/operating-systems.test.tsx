@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { readdirSync, readFileSync } from "fs";
 import path from "path";
-import { render } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { LinuxTerminal } from "@/components/mdx/OsVisualizers";
 import { getCourse, flattenLessons } from "@/content/registry";
 import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES } from "@/lib/operatingSystems";
 
@@ -103,5 +104,18 @@ describe("chapter 2 helpers", () => {
   it("boots in order and ends running", () => {
     const frames = bootFrames();
     expect(frames.map((f) => f.state.stage)).toEqual(BOOT_STAGES.map((_, i) => i));
+  });
+});
+
+describe("Linux practice terminal", () => {
+  it("runs typed commands and ticks off missions", () => {
+    render(<LinuxTerminal />);
+    const input = screen.getByLabelText("terminal input");
+    fireEvent.change(input, { target: { value: "mkdir new1" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.change(input, { target: { value: "ls" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(screen.getByRole("log").textContent).toContain("dir1  dir2  file1  file2.txt  new1");
+    expect(screen.getByText("1/10 missions")).toBeTruthy();
   });
 });
