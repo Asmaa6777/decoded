@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { add, dot, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
+import { add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -63,5 +63,28 @@ describe("matrix arithmetic", () => {
   it("builds inner and outer vector products", () => {
     expect(vectorProductFrames("inner", [3, 1, 4], [2, 0, -1]).at(-1)!.state.terms.reduce((a, b) => a + b, 0)).toBe(2);
     expect(vectorProductFrames("outer", [3, 1, 4], [2, 0, -1]).at(-1)!.state.outer).toEqual([[6, 0, -3], [2, 0, -1], [8, 0, -4]]);
+  });
+});
+
+describe("matrix multiplication and linear maps", () => {
+  const A = pascal(3);
+  it("matches the worked products and is not commutative", () => {
+    expect(mul(A, MAGIC3)).toEqual([[15, 15, 15], [26, 38, 26], [41, 70, 39]]);
+    expect(mul(MAGIC3, A)).toEqual([[15, 28, 47], [15, 34, 60], [15, 28, 43]]);
+    expect(mul(A, identity(3))).toEqual(A);
+    expect(() => mul(A, [[1, 2]])).toThrow();
+  });
+
+  it("ends the animation on the product, counting n^3 multiplications", () => {
+    const last = matMulFrames(A, MAGIC3).at(-1)!;
+    expect(last.state.c).toEqual(mul(A, MAGIC3));
+    expect(last.stats.multiplications).toBe(27);
+  });
+
+  it("applies 2-by-2 maps and reads their determinant", () => {
+    expect(apply2([0, -1, 1, 0], 1, 0)).toEqual([0, 1]);
+    expect(det2([1, 1, 0, 1])).toBe(1);
+    expect(det2([-1, 0, 0, 1])).toBe(-1);
+    expect(det2([1, 2, 0.5, 1])).toBe(0);
   });
 });

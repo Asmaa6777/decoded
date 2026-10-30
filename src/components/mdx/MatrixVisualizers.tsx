@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { btn, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { elementwiseFrames, MAGIC3, MATLAB_ELEMENTWISE, MATLAB_VECTOR_PRODUCT, pascal, transpose, vectorProductFrames, type ElementwiseOp, type Mat, type VectorProductKind } from "@/lib/matrix";
+import { apply2, det2, elementwiseFrames, MAGIC3, MATLAB_ELEMENTWISE, MATLAB_MATMUL, matMulFrames, type Map2, MATLAB_VECTOR_PRODUCT, pascal, transpose, vectorProductFrames, type ElementwiseOp, type Mat, type VectorProductKind } from "@/lib/matrix";
 
 /* ============================================================
    Visualizers for the Computational Mathematics course. Matrix
@@ -239,3 +239,140 @@ export function VectorProductVisualizer({ kind: k0 = "inner" }: { kind?: VectorP
 }
 
 const signed = (x: number) => (x < 0 ? `(${x})` : String(x));
+
+/* ----------------------- matrix multiplication ----------------------- */
+
+const MUL_PRESETS: Record<string, [Mat, Mat]> = {
+  ab: [pascal(3), MAGIC3],
+  ba: [MAGIC3, pascal(3)],
+  rect: [[[2, -1, 3], [0, 4, 1]], [[1, 2], [3, -1], [0, 5]]],
+};
+
+export function MatMulVisualizer() {
+  const [preset, setPreset] = useState("rect");
+  const frames = useMemo(() => matMulFrames(...MUL_PRESETS[preset]), [preset]);
+  return (
+    <Stepper
+      title="Row meets column"
+      frames={frames}
+      code={MATLAB_MATMUL}
+      codeLabel="MATLAB"
+      legend={[["bg-sky", "row and column"], ["bg-neon", "this term"], ["bg-orange", "writing"], ["bg-mint", "done"]]}
+      inputs={<Toggle<string> value={preset} onChange={setPreset} options={[["rect", "2-by-3 × 3-by-2"], ["ab", "pascal × magic"], ["ba", "magic × pascal"]]} />}
+      render={(s) => (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <MatrixStage rows={s.a.length} cols={s.a[0].length} label="A" cells={matCells(s.a, "a", (i, j) => (i === s.i ? (j === s.k ? "neon" : "sky") : undefined))} />
+            <Op>×</Op>
+            <MatrixStage rows={s.b.length} cols={s.b[0].length} label="B" cells={matCells(s.b, "b", (i, j) => (j === s.j ? (i === s.k ? "neon" : "sky") : undefined))} />
+            <Op>=</Op>
+            <MatrixStage rows={s.c.length} cols={s.c[0].length} label="C" cells={matCells(s.c, "c", (i, j) => (i === s.i && j === s.j ? "orange" : s.c[i][j] !== null ? "mint" : undefined))} />
+          </div>
+          <div className="font-mono text-sm min-h-[24px] overflow-x-auto whitespace-nowrap">
+            {s.i !== null && s.j !== null && (
+              <>
+                <span className="text-muted-foreground">C({s.i + 1}, {s.j + 1}) = </span>
+                {s.terms.join(" + ")} <span className="text-muted-foreground">=</span> <span className="text-mint">{s.running}</span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    />
+  );
+}
+
+/* ---------------------------- linear maps ---------------------------- */
+
+const MAP_PRESETS: { id: string; label: string; m: Map2; note: string }[] = [
+  { id: "rotate", label: "Rotate 90°", m: [0, -1, 1, 0], note: "Lengths and area stay the same. The area factor is 1." },
+  { id: "shear", label: "Shear", m: [1, 1, 0, 1], note: "Squares lean over, but the base and height don't change, so area doesn't either." },
+  { id: "stretch", label: "Stretch", m: [2, 0, 0, 1.5], note: "A diagonal matrix scales each axis on its own. Area grows by 2 × 1.5." },
+  { id: "reflect", label: "Reflect", m: [-1, 0, 0, 1], note: "The determinant is negative: space has been flipped over, like a page seen from behind." },
+  { id: "squash", label: "Squash", m: [1, 2, 0.5, 1], note: "The determinant is 0. All of space lands on one line, so no inverse can ever undo this." },
+];
+
+const fmt2 = (x: number) => (Math.abs(x) < 0.005 ? "0" : Number(x.toFixed(2)).toString());
+
+/** A grid carried through (1 - t)I + tM, so lines move straight to where the matrix sends them. */
+export function LinearMapGrid({ start = "shear" }: { start?: string }) {
+  const [m, setM] = useState<Map2>(MAP_PRESETS.find((p) => p.id === start)?.m ?? [1, 0, 0, 1]);
+  const [now, replay] = useTween(m);
+  const cur = now as Map2;
+  const preset = MAP_PRESETS.find((p) => p.m.every((x, i) => x === m[i]));
+  const R = 6;
+  const px = (x: number, y: number) => {
+    const [u, v] = apply2(cur, x, y);
+    return `${(u * 34).toFixed(2)},${(-v * 34).toFixed(2)}`;
+  };
+  const lines = [];
+  for (let k = -R; k <= R; k++) {
+    lines.push(<path key={`v${k}`} d={`M${px(k, -R)}L${px(k, R)}`} className={k === 0 ? "stroke-foreground/50" : "stroke-sky/35"} strokeWidth={k === 0 ? 1.4 : 1} />);
+    lines.push(<path key={`h${k}`} d={`M${px(-R, k)}L${px(R, k)}`} className={k === 0 ? "stroke-foreground/50" : "stroke-sky/35"} strokeWidth={k === 0 ? 1.4 : 1} />);
+  }
+  const d = det2(m);
+  const liveDet = det2(cur);
+  return (
+    <Panel title="What a matrix does to space" legend={[["bg-neon", "where (1, 0) lands"], ["bg-orange", "where (0, 1) lands"], ["bg-violet", "unit square"]]}>
+      <div className="flex flex-wrap gap-5 items-start">
+        <svg viewBox="-170 -170 340 340" className="w-full max-w-[380px] rounded-sm border border-border bg-background/60" role="img" aria-label={`Grid transformed by the matrix with rows ${m[0]}, ${m[1]} and ${m[2]}, ${m[3]}`}>
+          <defs>
+            <marker id="cm-arrow-n" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto"><path d="M0,0L6,3L0,6z" className="fill-neon" /></marker>
+            <marker id="cm-arrow-o" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto"><path d="M0,0L6,3L0,6z" className="fill-orange" /></marker>
+          </defs>
+          {lines}
+          <polygon points={`${px(0, 0)} ${px(1, 0)} ${px(1, 1)} ${px(0, 1)}`} className="fill-violet/35 stroke-violet" strokeWidth={1.2} />
+          <path d={`M${px(0, 0)}L${px(1, 0)}`} className="stroke-neon" strokeWidth={3} markerEnd="url(#cm-arrow-n)" />
+          <path d={`M${px(0, 0)}L${px(0, 1)}`} className="stroke-orange" strokeWidth={3} markerEnd="url(#cm-arrow-o)" />
+        </svg>
+        <div className="flex flex-col gap-3 min-w-[220px] flex-1">
+          <div className="flex items-center gap-3 font-mono">
+            <div className="inline-grid grid-cols-2 gap-x-4 gap-y-1 border-x-2 border-foreground/50 rounded-[5px] px-3 py-1.5 text-base">
+              <span className="text-neon text-right">{fmt2(cur[0])}</span>
+              <span className="text-orange text-right">{fmt2(cur[1])}</span>
+              <span className="text-neon text-right">{fmt2(cur[2])}</span>
+              <span className="text-orange text-right">{fmt2(cur[3])}</span>
+            </div>
+            <div className="text-sm">
+              det = <span className={liveDet < -0.005 ? "text-orange" : Math.abs(liveDet) < 0.005 ? "text-violet" : "text-mint"}>{fmt2(liveDet)}</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {(["a", "b", "c", "d"] as const).map((name, i) => (
+              <label key={name} className="flex flex-col gap-0.5 font-mono text-[11px] text-muted-foreground">
+                {name} = {fmt2(m[i])}
+                <input
+                  type="range"
+                  aria-label={`Matrix entry ${name}`}
+                  min={-2}
+                  max={2}
+                  step={0.1}
+                  value={m[i]}
+                  onChange={(e) => {
+                    const next = [...m] as Map2;
+                    next[i] = Number(e.target.value);
+                    setM(next);
+                  }}
+                  className="accent-[hsl(var(--mint))]"
+                />
+              </label>
+            ))}
+          </div>
+          <p className="text-sm leading-relaxed min-h-[4.5em]">
+            {preset?.note ?? (d < 0 ? "A negative determinant: this map flips space over." : d === 0 ? "A zero determinant: space collapses, so this map can't be undone." : `Every area gets multiplied by ${fmt2(d)}.`)}
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {MAP_PRESETS.map((p) => (
+          <button key={p.id} type="button" className={`${btn} ${preset?.id === p.id ? "border-foreground" : ""}`} onClick={() => setM(p.m)}>
+            {p.label}
+          </button>
+        ))}
+        <button type="button" className={btn} onClick={() => replay([1, 0, 0, 1])}>
+          ▶ Replay from identity
+        </button>
+      </div>
+    </Panel>
+  );
+}
