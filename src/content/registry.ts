@@ -76,6 +76,8 @@ import CmEuclid from "@/content/computational-mathematics/m2-01-divisibility-and
 import CmModular from "@/content/computational-mathematics/m2-02-modular-arithmetic.mdx";
 import CmPrimes from "@/content/computational-mathematics/m2-03-primes-and-the-sieve.mdx";
 import CmTotient from "@/content/computational-mathematics/m2-04-primality-and-the-totient.mdx";
+import CmOrder from "@/content/computational-mathematics/m2-05-order-and-primitive-roots.mdx";
+import CmInverses from "@/content/computational-mathematics/m2-06-modular-inverses.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -347,6 +349,8 @@ export const courses: Course[] = [
           { slug: "modular-arithmetic", title: "Modular Arithmetic", duration: "12 min", Component: CmModular },
           { slug: "primes-and-the-sieve", title: "Primes and the Sieve", duration: "10 min", Component: CmPrimes },
           { slug: "primality-and-the-totient", title: "Primality Tests and Euler's Totient", duration: "15 min", Component: CmTotient },
+          { slug: "order-and-primitive-roots", title: "Order and Primitive Roots", duration: "12 min", Component: CmOrder },
+          { slug: "modular-inverses", title: "Modular Inverses", duration: "11 min", Component: CmInverses },
         ],
       },
     ],

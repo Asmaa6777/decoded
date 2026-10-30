@@ -145,3 +145,93 @@ export function wilsonFrames(p: number): Frame<WilsonState>[] {
   frames.push({ state: { p, pairs: [...pairs], active: null, product: p - 1 }, line: 1, message: `Only 1 and ${p - 1} are their own inverses, so they stay single. The product is 1 × ${p - 1} ≡ -1 (mod ${p}).`, stats: {} });
   return frames;
 }
+
+/* ------------------------- order and primitive roots ------------------------ */
+
+/** Smallest k > 0 with a^k ≡ 1 (mod n), or null when a and n share a factor. */
+export function order(a: number, n: number): number | null {
+  if (gcd(a, n) !== 1) return null;
+  let v = mod(a, n);
+  for (let k = 1; k <= n; k++) {
+    if (v === 1 % n) return k;
+    v = (v * a) % n;
+  }
+  return null;
+}
+
+export const isPrimitiveRoot = (a: number, n: number) => order(a, n) === phi(n);
+export const primitiveRoots = (n: number) => Array.from({ length: n - 1 }, (_, i) => i + 1).filter((a) => isPrimitiveRoot(a, n));
+
+/** a^1, a^2, ... a^count, all reduced modulo n. */
+export function powers(a: number, n: number, count: number): number[] {
+  const out: number[] = [];
+  let v = 1;
+  for (let k = 0; k < count; k++) {
+    v = (v * a) % n;
+    out.push(v);
+  }
+  return out;
+}
+
+export type CycleState = { a: number; n: number; seq: number[]; target: number | null };
+
+export const MATLAB_ORDER = ["v = mod(a, n);  k = 1;", "while v ~= 1", "  v = mod(v * a, n);", "  k = k + 1;", "end", "k    % the order of a modulo n"];
+
+export function cycleFrames(a: number, n: number): Frame<CycleState>[] {
+  const k = order(a, n)!;
+  const all = powers(a, n, k);
+  const frames: Frame<CycleState>[] = [{ state: { a, n, seq: [1], target: null }, line: 0, message: `Start at 1 and keep multiplying by ${a} modulo ${n}.`, stats: { k: 0 } }];
+  all.forEach((v, i) => {
+    const prev = i === 0 ? 1 : all[i - 1];
+    frames.push({ state: { a, n, seq: [1, ...all.slice(0, i + 1)], target: null }, line: i === k - 1 ? 5 : 2, message: `${a}^${i + 1} = ${prev} × ${a} = ${prev * a} ≡ ${v} (mod ${n}).`, stats: { k: i + 1 } });
+  });
+  const f = phi(n);
+  frames.push({
+    state: { a, n, seq: [1, ...all], target: null },
+    line: 5,
+    message: k === f ? `Back at 1 after ${k} steps. That's the maximum, φ(${n}) = ${f}, so ${a} is a primitive root of ${n}.` : `Back at 1 after only ${k} steps, and φ(${n}) = ${f}. So the order of ${a} is ${k}, ${a} isn't a primitive root, and ${k} divides ${f}.`,
+    stats: { k },
+  });
+  return frames;
+}
+
+/* --------------------------- extended Euclidean --------------------------- */
+
+export type ExtRow = EuclidStep & { x: number | null; y: number | null };
+
+/** Back-substitution from the bottom row: g = x·a + y·b holds on every row. */
+export function extendedRows(a: number, b: number): ExtRow[] {
+  const steps = euclidSteps(a, b);
+  const rows: ExtRow[] = steps.map((s) => ({ ...s, x: null, y: null }));
+  let [x, y] = [0, 1];
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (i < rows.length - 1) [x, y] = [y, x - rows[i].q * y];
+    rows[i].x = x;
+    rows[i].y = y;
+  }
+  return rows;
+}
+
+export type ExtState = { a: number; b: number; rows: ExtRow[]; down: number; up: number | null };
+
+export const MATLAB_EXT = ["[g, x, y] = gcd(a, b)    % g = a*x + b*y", "inverse = mod(x, b)      % when g is 1"];
+
+export function extendedFrames(a: number, b: number): Frame<ExtState>[] {
+  const rows = extendedRows(a, b);
+  const g = rows[rows.length - 1].b;
+  const frames: Frame<ExtState>[] = [{ state: { a, b, rows, down: -1, up: null }, line: 0, message: `We want x and y with ${a}x + ${b}y = gcd(${a}, ${b}). First, run Euclid's algorithm downwards.`, stats: {} }];
+  rows.forEach((r, i) => frames.push({ state: { a, b, rows, down: i, up: null }, line: 0, message: `${r.a} = ${r.q} × ${r.b} + ${r.r}.`, stats: {} }));
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i];
+    frames.push({
+      state: { a, b, rows, down: rows.length - 1, up: i },
+      line: 0,
+      message: i === rows.length - 1 ? `The gcd is ${g}, and it's trivially ${g} = 0 × ${r.a} + 1 × ${r.b}. Now climb back up, rewriting it one row at a time.` : `Replace ${rows[i + 1].b} using this row: ${g} = (${r.x}) × ${r.a} + (${r.y}) × ${r.b}.`,
+      stats: {},
+    });
+  }
+  const top = rows[0];
+  const inv = mod(top.y!, a);
+  frames.push({ state: { a, b, rows, down: rows.length - 1, up: 0 }, line: 1, message: g === 1 ? `Done: ${a} × (${top.x}) + ${b} × (${top.y}) = 1. Modulo ${a}, the first term vanishes, so the inverse of ${b} is ${inv}.` : `Done: ${a} × (${top.x}) + ${b} × (${top.y}) = ${g}. The gcd isn't 1, so there's no inverse.`, stats: {} });
+  return frames;
+}

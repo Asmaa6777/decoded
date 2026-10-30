@@ -1,0 +1,56 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { ExtendedEuclidVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
+
+# Modular Inverses
+
+Modular arithmetic has no fractions, so how do you divide? You multiply by an **inverse**: a number $x$ with $a \cdot x \equiv 1 \pmod n$. Every affine cipher and RSA key later in this course depends on finding one.
+
+## When an inverse exists
+
+If $\gcd(a, n) = 1$, the equation $a \cdot x \equiv b \pmod n$ has a solution, and it's unique modulo $n$. So $a$ has an inverse exactly when it's coprime to $n$. For example, 2 has no inverse modulo 4, because $2x$ is always even and can't equal 1 modulo an even number.
+
+## The extended Euclidean algorithm
+
+The key fact is that if $g = \gcd(a, b)$, there are integers $x$ and $y$ with
+
+$$
+a x + b y = g
+$$
+
+To find them, run Euclid's algorithm down, and then climb back up. On each row, replace the smaller remainder using the division on that row. The expression stays equal to $g$ the whole way:
+
+<ExtendedEuclidVisualizer />
+
+For $\gcd(130, 61)$ this gives $130 \cdot 23 + 61 \cdot (-49) = 1$. Check it: $2990 - 2989 = 1$.
+
+## From there to the inverse
+
+To solve $17x \equiv 1 \pmod{61}$, find $x$ and $y$ with $17x + 61y = 1$. The algorithm gives:
+
+$$
+17 \cdot 18 + 61 \cdot (-5) = 1
+$$
+
+Now look at this equation modulo 61. The second term is a multiple of 61, so it vanishes and leaves $17 \cdot 18 \equiv 1 \pmod{61}$. So the inverse of 17 is 18.
+
+MATLAB returns the coefficients if you ask for three outputs from `gcd`:
+
+```matlab
+[g, x, y] = gcd(17, 61)    % g = 1, x = 18, y = -5
+inverse = mod(x, 61)       % 18
+```
+
+<Callout tone="sky" label="Negative answers are fine">
+If $x$ comes out negative, take `mod(x, n)`. For example, if $x = -5$ with $n = 18$, the same inverse is $13$.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Building an RSA private key" tool="OpenSSL">
+The private exponent $d$ is the inverse of the public exponent $e$ modulo a value derived from the primes. OpenSSL finds it with this same family of algorithm.
+</PracticalApplication>
+<PracticalApplication title="Elliptic curve signatures" tool="ECDSA, Bitcoin">
+Every point addition on an elliptic curve involves a division, and in a finite field that means a modular inverse.
+</PracticalApplication>
+</ApplicationsGrid>
