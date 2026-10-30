@@ -4,7 +4,7 @@ import path from "path";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { LinuxTerminal } from "@/components/mdx/OsVisualizers";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim, runThreads, matrixAddFrames, raceRun, TEXTBOOK_RACE, petersonStart, petersonStep, seeded, testAndSet, compareAndSwap, semWait, semSignal, deadlockFrames, semBuffer, semProduce, semConsume, rwStart, rwArrive, rwLeave, diningStart, diningStep, diningDeadlocked, type PetersonState, type Dining, jraceRun, monitorStart, monitorEnter, monitorWait, monitorNotify, monitorExit } from "@/lib/operatingSystems";
+import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim, runThreads, matrixAddFrames, raceRun, TEXTBOOK_RACE, petersonStart, petersonStep, seeded, testAndSet, compareAndSwap, semWait, semSignal, deadlockFrames, semBuffer, semProduce, semConsume, rwStart, rwArrive, rwLeave, diningStart, diningStep, diningDeadlocked, type PetersonState, type Dining, jraceRun, monitorStart, monitorEnter, monitorWait, monitorNotify, monitorExit, schedule, SCHED_PRESETS, EVAL_WORKLOAD, expAverage, BURST_SAMPLE, switchesFor, mlfq } from "@/lib/operatingSystems";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -308,5 +308,41 @@ describe("lab 3 helpers", () => {
     m = monitorExit(m, "T2");
     expect(m.owner).toBe("T1");
     expect(monitorWait(m, "T3").owner).toBe("T1");
+  });
+});
+
+describe("chapter 6 helpers", () => {
+  for (const p of SCHED_PRESETS) {
+    it(`matches the slides for ${p.label}`, () => {
+      expect(schedule(p.procs, p.algo, p.quantum).avgWaiting).toBeCloseTo(p.expected, 5);
+    });
+  }
+
+  it("draws the slides' Gantt charts", () => {
+    const chart = (id: string) => {
+      const p = SCHED_PRESETS.find((x) => x.id === id)!;
+      return schedule(p.procs, p.algo, p.quantum).slices.map((s) => `${s.name}@${s.from}`).join(" ");
+    };
+    expect(chart("srtf1")).toBe("P1@0 P2@2 P3@4 P2@5 P4@7 P1@11");
+    expect(chart("rr4")).toBe("P1@0 P2@4 P3@7 P1@10");
+    expect(chart("rr20")).toBe("P1@0 P2@20 P3@37 P4@57 P1@77 P3@97 P4@117 P1@121 P3@134");
+  });
+
+  it("matches the deterministic evaluation: FCFS 28, SJF 13, RR(10) 23", () => {
+    expect(schedule(EVAL_WORKLOAD, "fcfs").avgWaiting).toBe(28);
+    expect(schedule(EVAL_WORKLOAD, "sjf").avgWaiting).toBe(13);
+    expect(schedule(EVAL_WORKLOAD, "rr", 10).avgWaiting).toBe(23);
+  });
+
+  it("predicts the next burst like the textbook chart", () => {
+    expect(expAverage(BURST_SAMPLE, 0.5, 10)).toEqual([10, 8, 6, 6, 5, 9, 11, 12]);
+    expect(expAverage([3, 9], 0, 10)).toEqual([10, 10, 10]);
+    expect(expAverage([3, 9], 1, 10)).toEqual([10, 3, 9]);
+  });
+
+  it("counts context switches for a time quantum and demotes long jobs", () => {
+    expect([12, 6, 1].map((q) => switchesFor(10, q))).toEqual([0, 1, 9]);
+    const s = mlfq([{ name: "A", burst: 5 }, { name: "B", burst: 20 }, { name: "C", burst: 40 }]);
+    expect(s.map((x) => `${x.name}${x.level}:${x.to - x.from}`)).toEqual(["A0:5", "B0:8", "C0:8", "B1:12", "C1:16", "C2:16"]);
   });
 });

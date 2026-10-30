@@ -943,3 +943,160 @@ export function monitorNotify(m: Monitor, t: string, all = false): Monitor {
     note: `${t} calls notify${all ? "All" : ""}(): ${woken.join(", ")} ${woken.length > 1 ? "wake" : "wakes"} up and must re-acquire the lock, so ${woken.length > 1 ? "they move" : "it moves"} to the entry set. ${t} still holds the lock.`,
   };
 }
+
+/* ------------------------------ CPU scheduling ------------------------------ */
+
+export type Proc = { name: string; arrival: number; burst: number; priority?: number };
+export type Algo = "fcfs" | "sjf" | "srtf" | "priority" | "priority-p" | "rr";
+export type Slice = { name: string | null; from: number; to: number };
+export type ProcStats = { name: string; arrival: number; burst: number; completion: number; turnaround: number; waiting: number; response: number };
+
+/**
+ * Run one CPU over the processes and return the Gantt chart plus each process's times.
+ * Ties go to the earlier arrival, then the earlier position in the list (so FCFS order is the list order).
+ * Smaller priority numbers mean higher priority.
+ */
+export function schedule(procs: Proc[], algo: Algo, quantum = 4) {
+  const n = procs.length;
+  const left = procs.map((p) => p.burst);
+  const firstRun: (number | null)[] = procs.map(() => null);
+  const done: number[] = procs.map(() => -1);
+  const slices: Slice[] = [];
+  const order = procs.map((_, i) => i).sort((a, b) => procs[a].arrival - procs[b].arrival || a - b);
+  const queue: number[] = []; // round-robin ready queue
+  let enqueued = 0;
+  let t = 0;
+  let current = -1;
+  let sliceLeft = 0;
+  const push = (name: string | null, from: number, to: number) => {
+    if (to <= from) return;
+    const last = slices[slices.length - 1];
+    if (last && last.name === name && last.to === from) last.to = to;
+    else slices.push({ name, from, to });
+  };
+  const admit = (upTo: number) => {
+    while (enqueued < n && procs[order[enqueued]].arrival <= upTo) queue.push(order[enqueued++]);
+  };
+  const key = (i: number) => (algo === "sjf" || algo === "srtf" ? left[i] : algo === "priority" || algo === "priority-p" ? procs[i].priority ?? 0 : procs[i].arrival);
+  const preemptive = algo === "srtf" || algo === "priority-p";
+  let guard = 0;
+  while (done.some((d) => d < 0) && guard++ < 100000) {
+    if (algo === "rr") {
+      admit(t);
+      if (current < 0) {
+        if (!queue.length) {
+          const nextArrival = procs[order[enqueued]].arrival;
+          push(null, t, nextArrival);
+          t = nextArrival;
+          continue;
+        }
+        current = queue.shift()!;
+        sliceLeft = quantum;
+      }
+      const run = Math.min(sliceLeft, left[current]);
+      if (firstRun[current] === null) firstRun[current] = t;
+      push(procs[current].name, t, t + run);
+      t += run;
+      left[current] -= run;
+      sliceLeft -= run;
+      admit(t); // arrivals during the slice join the queue before the preempted process
+      if (left[current] === 0) {
+        done[current] = t;
+        current = -1;
+      } else if (sliceLeft === 0) {
+        queue.push(current);
+        current = -1;
+      }
+      continue;
+    }
+    const ready = procs.map((_, i) => i).filter((i) => done[i] < 0 && procs[i].arrival <= t);
+    if (!ready.length) {
+      const next = Math.min(...procs.filter((_, i) => done[i] < 0).map((p) => p.arrival));
+      push(null, t, next);
+      t = next;
+      continue;
+    }
+    const best = (cands: number[]) => cands.reduce((a, b) => (key(b) < key(a) || (key(b) === key(a) && (procs[b].arrival < procs[a].arrival || (procs[b].arrival === procs[a].arrival && b < a))) ? b : a));
+    if (current < 0 || done[current] >= 0 || (preemptive && best(ready) !== current && key(best(ready)) < key(current))) current = best(ready);
+    if (firstRun[current] === null) firstRun[current] = t;
+    // run until it finishes, or (if preemptive) until the next arrival might change our mind
+    const nextArrival = Math.min(...procs.filter((p, i) => done[i] < 0 && p.arrival > t).map((p) => p.arrival), Infinity);
+    const run = preemptive ? Math.min(left[current], nextArrival - t) : left[current];
+    push(procs[current].name, t, t + run);
+    t += run;
+    left[current] -= run;
+    if (left[current] === 0) {
+      done[current] = t;
+      current = -1;
+    }
+  }
+  const stats: ProcStats[] = procs.map((p, i) => ({
+    name: p.name,
+    arrival: p.arrival,
+    burst: p.burst,
+    completion: done[i],
+    turnaround: done[i] - p.arrival,
+    waiting: done[i] - p.arrival - p.burst,
+    response: (firstRun[i] ?? 0) - p.arrival,
+  }));
+  const avg = (k: "waiting" | "turnaround" | "response") => stats.reduce((s, x) => s + x[k], 0) / n;
+  const switches = slices.filter((s) => s.name !== null).length - 1;
+  return { slices, stats, avgWaiting: avg("waiting"), avgTurnaround: avg("turnaround"), avgResponse: avg("response"), switches };
+}
+
+/** The deterministic-evaluation workload: five processes arriving at time 0. */
+export const EVAL_WORKLOAD: Proc[] = [
+  { name: "P1", arrival: 0, burst: 10 },
+  { name: "P2", arrival: 0, burst: 29 },
+  { name: "P3", arrival: 0, burst: 3 },
+  { name: "P4", arrival: 0, burst: 7 },
+  { name: "P5", arrival: 0, burst: 12 },
+];
+
+/** The worked examples from the slides, with the average waiting time each one should give. */
+export const SCHED_PRESETS: { id: string; label: string; algo: Algo; quantum?: number; procs: Proc[]; expected: number }[] = [
+  { id: "fcfs1", label: "FCFS: P1, P2, P3", algo: "fcfs", procs: [{ name: "P1", arrival: 0, burst: 24 }, { name: "P2", arrival: 0, burst: 3 }, { name: "P3", arrival: 0, burst: 3 }], expected: 17 },
+  { id: "fcfs2", label: "FCFS: P2, P3, P1", algo: "fcfs", procs: [{ name: "P2", arrival: 0, burst: 3 }, { name: "P3", arrival: 0, burst: 3 }, { name: "P1", arrival: 0, burst: 24 }], expected: 3 },
+  { id: "sjf", label: "SJF, all arrive at 0", algo: "sjf", procs: [{ name: "P1", arrival: 0, burst: 6 }, { name: "P2", arrival: 0, burst: 8 }, { name: "P3", arrival: 0, burst: 7 }, { name: "P4", arrival: 0, burst: 3 }], expected: 7 },
+  { id: "sjf-np", label: "Non-preemptive SJF", algo: "sjf", procs: [{ name: "P1", arrival: 0, burst: 7 }, { name: "P2", arrival: 2, burst: 4 }, { name: "P3", arrival: 4, burst: 1 }, { name: "P4", arrival: 5, burst: 4 }], expected: 4 },
+  { id: "srtf1", label: "Preemptive SJF (SRTF)", algo: "srtf", procs: [{ name: "P1", arrival: 0, burst: 7 }, { name: "P2", arrival: 2, burst: 4 }, { name: "P3", arrival: 4, burst: 1 }, { name: "P4", arrival: 5, burst: 4 }], expected: 3 },
+  { id: "srtf2", label: "SRTF, second example", algo: "srtf", procs: [{ name: "P1", arrival: 0, burst: 8 }, { name: "P2", arrival: 1, burst: 4 }, { name: "P3", arrival: 2, burst: 9 }, { name: "P4", arrival: 3, burst: 5 }], expected: 6.5 },
+  { id: "prio", label: "Priority", algo: "priority", procs: [{ name: "P1", arrival: 0, burst: 10, priority: 3 }, { name: "P2", arrival: 0, burst: 1, priority: 1 }, { name: "P3", arrival: 0, burst: 2, priority: 4 }, { name: "P4", arrival: 0, burst: 1, priority: 5 }, { name: "P5", arrival: 0, burst: 5, priority: 2 }], expected: 8.2 },
+  { id: "rr4", label: "RR, q = 4", algo: "rr", quantum: 4, procs: [{ name: "P1", arrival: 0, burst: 24 }, { name: "P2", arrival: 0, burst: 3 }, { name: "P3", arrival: 0, burst: 3 }], expected: 17 / 3 },
+  { id: "rr20", label: "RR, q = 20", algo: "rr", quantum: 20, procs: [{ name: "P1", arrival: 0, burst: 53 }, { name: "P2", arrival: 0, burst: 17 }, { name: "P3", arrival: 0, burst: 68 }, { name: "P4", arrival: 0, burst: 24 }], expected: 73 },
+  { id: "eval", label: "Evaluation workload", algo: "fcfs", procs: EVAL_WORKLOAD, expected: 28 },
+];
+
+/** Exponential averaging: τ(n+1) = α·t(n) + (1 − α)·τ(n). Returns the predictions τ0, τ1, … */
+export function expAverage(bursts: number[], alpha: number, tau0: number) {
+  const tau = [tau0];
+  for (const t of bursts) tau.push(alpha * t + (1 - alpha) * tau[tau.length - 1]);
+  return tau;
+}
+
+/** The textbook's burst sequence for the prediction chart. */
+export const BURST_SAMPLE = [6, 4, 6, 4, 13, 13, 13];
+
+/** Context switches needed to run one burst of `burst` units with time quantum q. */
+export const switchesFor = (burst: number, q: number) => Math.max(0, Math.ceil(burst / q) - 1);
+
+export type MlfqSlice = { name: string; from: number; to: number; level: 0 | 1 | 2 };
+
+/** The slides' multilevel feedback queue: Q0 is RR with q = 8, Q1 is RR with q = 16, Q2 is FCFS. All jobs arrive at 0. */
+export function mlfq(jobs: { name: string; burst: number }[]) {
+  const left = jobs.map((j) => j.burst);
+  const slices: MlfqSlice[] = [];
+  let t = 0;
+  const quanta = [8, 16, Infinity];
+  for (let level = 0 as 0 | 1 | 2; level <= 2; level = (level + 1) as 0 | 1 | 2) {
+    for (let i = 0; i < jobs.length; i++) {
+      if (left[i] === 0) continue;
+      const run = Math.min(left[i], quanta[level]);
+      slices.push({ name: jobs[i].name, from: t, to: t + run, level });
+      t += run;
+      left[i] -= run;
+    }
+    if (level === 2) break;
+  }
+  return slices;
+}

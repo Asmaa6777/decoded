@@ -89,6 +89,14 @@ import {
   monitorStart,
   monitorWait,
   type Monitor,
+  BURST_SAMPLE,
+  expAverage,
+  mlfq,
+  schedule,
+  SCHED_PRESETS,
+  switchesFor,
+  type Algo,
+  type Proc,
 } from "@/lib/operatingSystems";
 import { exists, initialShell, promptPath, readFile, run, type ShellState } from "@/lib/miniShell";
 
@@ -2369,6 +2377,386 @@ export function JavaMonitor() {
       <button type="button" className={`${btn} self-start`} onClick={() => setM(monitorStart())}>
         ⟲ reset
       </button>
+    </Panel>
+  );
+}
+
+/* ------------------------------ CPU scheduling ------------------------------ */
+
+const PROC_FILL = ["bg-sky", "bg-violet", "bg-orange", "bg-mint", "bg-neon", "bg-sky/60", "bg-violet/60", "bg-orange/60"];
+
+/** A Gantt chart revealed up to time t, with the slice boundaries labelled underneath. */
+function Gantt({ slices, t, names }: { slices: { name: string | null; from: number; to: number; level?: number }[]; t: number; names: string[] }) {
+  const total = slices.length ? slices[slices.length - 1].to : 1;
+  const ticks = [...new Set(slices.flatMap((s) => [s.from, s.to]))];
+  return (
+    <div className="min-w-[420px]">
+      <div className="relative h-10 rounded-sm border border-border bg-background/60 overflow-hidden">
+        {slices.map((s, i) => {
+          const end = Math.min(s.to, t);
+          if (end <= s.from) return null;
+          const tone = s.name === null ? "bg-muted" : PROC_FILL[names.indexOf(s.name) % PROC_FILL.length];
+          return (
+            <div
+              key={i}
+              className={`absolute top-0 bottom-0 ${tone} border-r border-background flex items-center justify-center overflow-hidden transition-[width] duration-150`}
+              style={{ left: `${(s.from / total) * 100}%`, width: `${((end - s.from) / total) * 100}%` }}
+            >
+              <span className="font-mono text-[11px] font-bold text-background">{s.name ?? "idle"}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="relative h-5">
+        {ticks.map((x) => (
+          <span key={x} className={`absolute -translate-x-1/2 font-mono text-[10px] transition-opacity ${x <= t ? "text-foreground" : "text-muted-foreground/40"}`} style={{ left: `${(x / total) * 100}%` }}>
+            {x}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const ALGO_LABEL: Record<Algo, string> = {
+  fcfs: "FCFS",
+  sjf: "SJF",
+  srtf: "SRTF (preemptive SJF)",
+  priority: "Priority",
+  "priority-p": "Priority (preemptive)",
+  rr: "Round robin",
+};
+
+const fmt = (x: number) => (Number.isInteger(x) ? String(x) : x.toFixed(2));
+
+/** Pick a slide example or type your own processes, choose an algorithm, and watch the Gantt chart fill in. */
+export function CpuScheduler({ presets, algos }: { presets?: string; algos?: string }) {
+  const presetList = useMemo(() => (presets ? presets.split(",").map((id) => SCHED_PRESETS.find((p) => p.id === id.trim())!).filter(Boolean) : SCHED_PRESETS), [presets]);
+  const algoList = (algos ? algos.split(",").map((a) => a.trim()) : ["fcfs", "sjf", "srtf", "priority", "priority-p", "rr"]) as Algo[];
+  const [presetId, setPresetId] = useState<string | null>(presetList[0].id);
+  const [procs, setProcs] = useState<Proc[]>(presetList[0].procs);
+  const [algo, setAlgo] = useState<Algo>(presetList[0].algo);
+  const [q, setQ] = useState(presetList[0].quantum ?? 4);
+  const run = useMemo(() => schedule(procs, algo, q), [procs, algo, q]);
+  const total = run.slices.length ? run.slices[run.slices.length - 1].to : 0;
+  const [t, setT] = useState(0);
+  useEffect(() => setT(0), [run]);
+  useEffect(() => {
+    if (t >= total) return;
+    const step = Math.max(1, Math.round(total / 60));
+    const id = setTimeout(() => setT((x) => Math.min(total, x + step)), 40);
+    return () => clearTimeout(id);
+  }, [t, total]);
+  const preset = presetList.find((p) => p.id === presetId);
+  const showPriority = algo === "priority" || algo === "priority-p" || procs.some((p) => p.priority !== undefined);
+  const choose = (id: string) => {
+    const p = presetList.find((x) => x.id === id)!;
+    setPresetId(id);
+    setProcs(p.procs);
+    setAlgo(p.algo);
+    if (p.quantum) setQ(p.quantum);
+  };
+  const edit = (i: number, k: "arrival" | "burst" | "priority", v: number) => {
+    setPresetId(null);
+    setProcs((ps) => ps.map((p, j) => (j === i ? { ...p, [k]: Math.max(k === "burst" ? 1 : 0, Math.min(99, v || 0)) } : p)));
+  };
+  const names = procs.map((p) => p.name);
+  const cell = "w-14 bg-transparent border border-border rounded-sm px-1 py-0.5 font-mono text-xs text-right";
+  return (
+    <Panel title="CPU scheduler" legend={procs.map((p, i) => [PROC_FILL[i % PROC_FILL.length], p.name] as [string, string])}>
+      <div className="flex flex-wrap gap-1.5">
+        {presetList.map((p) => (
+          <button key={p.id} type="button" className={`${btn} !px-2 !py-1 !normal-case !tracking-normal ${p.id === presetId ? "bg-foreground text-background" : ""}`} onClick={() => choose(p.id)}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="inline-flex flex-wrap border border-border rounded-sm overflow-hidden">
+          {algoList.map((a) => (
+            <button
+              key={a}
+              type="button"
+              onClick={() => {
+                setAlgo(a);
+                setPresetId(null);
+              }}
+              className={`font-mono text-[11px] uppercase tracking-widest px-3 py-2 transition-colors ${algo === a ? "bg-foreground text-background" : "hover:bg-foreground/10"}`}
+            >
+              {ALGO_LABEL[a]}
+            </button>
+          ))}
+        </div>
+        {algo === "rr" && (
+          <label className="inline-flex items-center gap-2 font-mono text-xs">
+            <span className="uppercase tracking-widest text-muted-foreground">quantum q</span>
+            <input type="range" min={1} max={30} value={q} onChange={(e) => { setQ(Number(e.target.value)); setPresetId(null); }} aria-label="time quantum" />
+            <span className="w-6">{q}</span>
+          </label>
+        )}
+      </div>
+      <div className="overflow-x-auto">
+        <Gantt slices={run.slices} t={t} names={names} />
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full font-mono text-xs border-collapse min-w-[460px]">
+          <thead>
+            <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">
+              <th className="text-left py-1.5 font-normal">process</th>
+              <th className="text-right py-1.5 font-normal">arrival</th>
+              <th className="text-right py-1.5 font-normal">burst</th>
+              {showPriority && <th className="text-right py-1.5 font-normal">priority</th>}
+              <th className="text-right py-1.5 font-normal">finish</th>
+              <th className="text-right py-1.5 font-normal">turnaround</th>
+              <th className="text-right py-1.5 font-normal">waiting</th>
+            </tr>
+          </thead>
+          <tbody>
+            {procs.map((p, i) => {
+              const st = run.stats[i];
+              const finished = st.completion <= t;
+              return (
+                <tr key={p.name} className="border-b border-border/50">
+                  <td className="py-1">
+                    <span className={`inline-block h-2.5 w-2.5 rounded-[2px] mr-2 ${PROC_FILL[i % PROC_FILL.length]}`} />
+                    {p.name}
+                  </td>
+                  <td className="py-1 text-right">
+                    <input type="number" className={cell} value={p.arrival} onChange={(e) => edit(i, "arrival", Number(e.target.value))} aria-label={`${p.name} arrival`} />
+                  </td>
+                  <td className="py-1 text-right">
+                    <input type="number" className={cell} value={p.burst} onChange={(e) => edit(i, "burst", Number(e.target.value))} aria-label={`${p.name} burst`} />
+                  </td>
+                  {showPriority && (
+                    <td className="py-1 text-right">
+                      <input type="number" className={cell} value={p.priority ?? 0} onChange={(e) => edit(i, "priority", Number(e.target.value))} aria-label={`${p.name} priority`} />
+                    </td>
+                  )}
+                  <td className="py-1 text-right">{finished ? st.completion : "…"}</td>
+                  <td className="py-1 text-right">{finished ? st.turnaround : "…"}</td>
+                  <td className={`py-1 text-right ${finished ? "font-bold" : ""}`}>{finished ? st.waiting : "…"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">average waiting time </span>
+          <span className="font-display text-2xl font-bold">{t >= total ? fmt(run.avgWaiting) : "…"}</span>
+        </div>
+        <div className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          avg turnaround <span className="text-foreground">{t >= total ? fmt(run.avgTurnaround) : "…"}</span> · context switches <span className="text-foreground">{run.switches}</span>
+        </div>
+        {preset && t >= total && <span className="font-mono text-[11px] px-2 py-1 rounded-sm bg-mint/20 text-mint animate-in zoom-in-75">✓ same as the slides</span>}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={btn} onClick={() => setT(0)}>
+          ⟲ replay
+        </button>
+        <button
+          type="button"
+          className={btn}
+          disabled={procs.length >= 8}
+          onClick={() => {
+            setPresetId(null);
+            setProcs((ps) => [...ps, { name: `P${ps.length + 1}`, arrival: 0, burst: 5, priority: 3 }]);
+          }}
+        >
+          + process
+        </button>
+        <button
+          type="button"
+          className={btn}
+          disabled={procs.length <= 1}
+          onClick={() => {
+            setPresetId(null);
+            setProcs((ps) => ps.slice(0, -1));
+          }}
+        >
+          − process
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground">Edit any arrival, burst or priority to make your own exercise. Waiting time = turnaround − burst = finish − arrival − burst. Smaller priority numbers mean higher priority.</p>
+    </Panel>
+  );
+}
+
+/** Predicting the next CPU burst with exponential averaging. */
+export function BurstPrediction() {
+  const [alpha, setAlpha] = useState(0.5);
+  const tau0 = 10;
+  const tau = expAverage(BURST_SAMPLE, alpha, tau0);
+  const W = 520;
+  const H = 220;
+  const steps = BURST_SAMPLE.length + 1;
+  const X = (i: number) => 40 + (i / steps) * (W - 60);
+  const Y = (v: number) => H - 30 - (v / 14) * (H - 50);
+  const stair = (vals: number[]) => vals.map((v, i) => `${i ? "L" : "M"}${X(i)},${Y(v)} L${X(i + 1)},${Y(v)}`).join(" ");
+  return (
+    <Panel title="Predicting the length of the next CPU burst" legend={[["bg-sky", "actual burst tᵢ"], ["bg-orange", "prediction τᵢ"]]}>
+      <label className="flex flex-wrap items-center gap-3 font-mono text-xs">
+        <span className="uppercase tracking-widest text-muted-foreground">α</span>
+        <input type="range" min={0} max={1} step={0.05} value={alpha} onChange={(e) => setAlpha(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="alpha" />
+        <span className="w-10 font-display text-lg font-bold">{alpha.toFixed(2)}</span>
+        <span className="text-muted-foreground">τ₀ = {tau0}</span>
+      </label>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-w-[600px]" role="img" aria-label="actual and predicted CPU bursts">
+        {[0, 2, 4, 6, 8, 10, 12].map((v) => (
+          <g key={v}>
+            <line x1={40} x2={W - 20} y1={Y(v)} y2={Y(v)} className="stroke-border" strokeWidth={0.5} />
+            <text x={30} y={Y(v) + 3} textAnchor="end" className="fill-muted-foreground font-mono text-[9px]">
+              {v}
+            </text>
+          </g>
+        ))}
+        <path d={stair(BURST_SAMPLE)} fill="none" strokeWidth={2.5} className="stroke-sky" />
+        <path d={stair(tau)} fill="none" strokeWidth={2.5} strokeDasharray="5 3" className="stroke-orange transition-all duration-300" />
+        {tau.map((v, i) => (
+          <text key={i} x={(X(i) + X(i + 1)) / 2} y={Y(v) - 5} textAnchor="middle" className="fill-orange font-mono text-[10px] font-bold">
+            {fmt(v)}
+          </text>
+        ))}
+        {BURST_SAMPLE.map((v, i) => (
+          <text key={i} x={(X(i) + X(i + 1)) / 2} y={Y(v) + 13} textAnchor="middle" className="fill-sky font-mono text-[10px]">
+            {v}
+          </text>
+        ))}
+      </svg>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        {alpha === 0 ? "α = 0: the prediction never changes. Recent history doesn't count." : alpha === 1 ? "α = 1: the prediction is just the last actual burst. Only the most recent history counts." : "With α in between, the prediction follows the real bursts but smooths out sudden jumps. Commonly α = ½."}
+      </p>
+    </Panel>
+  );
+}
+
+/** One process of 10 time units, cut into slices by the time quantum. */
+export function QuantumSwitches() {
+  const [q, setQ] = useState(6);
+  const burst = 10;
+  const n = Math.ceil(burst / q);
+  return (
+    <Panel title="A smaller time quantum means more context switches">
+      <label className="flex flex-wrap items-center gap-3 font-mono text-xs">
+        <span className="uppercase tracking-widest text-muted-foreground">quantum q</span>
+        <input type="range" min={1} max={12} value={q} onChange={(e) => setQ(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="time quantum" />
+        <span className="w-6 font-display text-lg font-bold">{q}</span>
+      </label>
+      <div className="flex h-10 rounded-sm overflow-hidden border border-border">
+        {Array.from({ length: n }, (_, i) => (
+          <div key={`${q}-${i}`} className={`flex items-center justify-center border-r-4 border-background last:border-r-0 animate-in fade-in duration-300 ${i % 2 ? "bg-sky/70" : "bg-sky"}`} style={{ width: `${(Math.min(q, burst - i * q) / burst) * 100}%` }}>
+            <span className="font-mono text-[10px] text-background font-bold">{Math.min(q, burst - i * q)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="font-mono text-sm">
+        process time = {burst} · quantum = {q} · <b>context switches = {switchesFor(burst, q)}</b>
+      </div>
+      <p className="text-xs text-muted-foreground">Each switch costs time where no useful work is done. Rule of thumb: q should be large compared to the context-switch time, and about 80% of CPU bursts should be shorter than q.</p>
+    </Panel>
+  );
+}
+
+/** The slides' three-level feedback queue: long jobs sink to lower levels. */
+export function MlfqDemo() {
+  const [bursts, setBursts] = useState([5, 20, 40, 12]);
+  const jobs = bursts.map((b, i) => ({ name: String.fromCharCode(65 + i), burst: b }));
+  const slices = useMemo(() => mlfq(bursts.map((b, i) => ({ name: String.fromCharCode(65 + i), burst: b }))), [bursts]);
+  const total = slices.length ? slices[slices.length - 1].to : 0;
+  const [t, setT] = useState(0);
+  useEffect(() => setT(0), [slices]);
+  useEffect(() => {
+    if (t >= total) return;
+    const id = setTimeout(() => setT((x) => Math.min(total, x + 1)), 45);
+    return () => clearTimeout(id);
+  }, [t, total]);
+  const levelTone = ["bg-mint", "bg-sky", "bg-orange"];
+  const current = slices.find((s) => s.from <= t && t < s.to);
+  const levelOf = (name: string) => {
+    const past = slices.filter((s) => s.name === name && s.from <= t);
+    const last = past[past.length - 1];
+    if (!last) return 0;
+    const job = jobs.find((j) => j.name === name)!;
+    const usedSoFar = past.reduce((a, s) => a + Math.min(s.to, t) - s.from, 0);
+    if (usedSoFar >= job.burst) return 3;
+    return last.to <= t ? Math.min(2, last.level + 1) : last.level;
+  };
+  return (
+    <Panel title="Multilevel feedback queue" legend={[["bg-mint", "Q0: RR, q = 8"], ["bg-sky", "Q1: RR, q = 16"], ["bg-orange", "Q2: FCFS"]]}>
+      <div className="grid sm:grid-cols-3 gap-2">
+        {["Q0 · quantum 8", "Q1 · quantum 16", "Q2 · FCFS"].map((title, lvl) => (
+          <div key={title} className={`rounded-sm border-2 p-2 min-h-[64px] ${lvl === 0 ? "border-mint/50" : lvl === 1 ? "border-sky/50" : "border-orange/50"}`}>
+            <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{title}</div>
+            <div className="flex flex-wrap gap-1">
+              {jobs
+                .filter((j) => levelOf(j.name) === lvl)
+                .map((j) => (
+                  <span key={j.name} className={`px-2 py-1 rounded-sm font-mono text-xs text-background font-bold animate-in zoom-in-50 duration-300 ${levelTone[lvl]} ${current?.name === j.name ? "ring-2 ring-foreground" : ""}`}>
+                    {j.name}
+                  </span>
+                ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto">
+        <div className="min-w-[420px]">
+          <div className="relative h-9 rounded-sm border border-border overflow-hidden">
+            {slices.map((s, i) => {
+              const end = Math.min(s.to, t);
+              if (end <= s.from) return null;
+              return (
+                <div key={i} className={`absolute top-0 bottom-0 ${levelTone[s.level]} border-r border-background flex items-center justify-center`} style={{ left: `${(s.from / total) * 100}%`, width: `${((end - s.from) / total) * 100}%` }}>
+                  <span className="font-mono text-[11px] font-bold text-background">{s.name}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
+        {bursts.map((b, i) => (
+          <label key={i} className="inline-flex items-center gap-1">
+            {String.fromCharCode(65 + i)} burst
+            <input type="number" min={1} max={60} value={b} onChange={(e) => setBursts((bs) => bs.map((x, j) => (j === i ? Math.max(1, Math.min(60, Number(e.target.value) || 1)) : x)))} className="w-14 bg-transparent border border-border rounded-sm px-1 py-0.5 text-right" aria-label={`job ${String.fromCharCode(65 + i)} burst`} />
+          </label>
+        ))}
+        <button type="button" className={btn} onClick={() => setT(0)}>
+          ⟲ replay
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">Every job starts in Q0. Short jobs finish there, fast. A job that uses its whole 8 ms is demoted to Q1, and one that also uses its 16 ms there sinks to Q2, where CPU-hungry jobs run FCFS when nothing better is waiting.</p>
+    </Panel>
+  );
+}
+
+/** Little's formula: n = λ × W. */
+export function LittlesLaw() {
+  const [lambda, setLambda] = useState(7);
+  const [w, setW] = useState(2);
+  return (
+    <Panel title="Little's formula">
+      <div className="grid sm:grid-cols-2 gap-4">
+        <label className="flex flex-col gap-1 font-mono text-xs">
+          <span className="uppercase tracking-widest text-muted-foreground">λ: arrivals per second</span>
+          <input type="range" min={1} max={20} value={lambda} onChange={(e) => setLambda(Number(e.target.value))} aria-label="arrival rate" />
+          <span className="font-display text-lg font-bold">{lambda}</span>
+        </label>
+        <label className="flex flex-col gap-1 font-mono text-xs">
+          <span className="uppercase tracking-widest text-muted-foreground">W: average wait (seconds)</span>
+          <input type="range" min={0.5} max={5} step={0.5} value={w} onChange={(e) => setW(Number(e.target.value))} aria-label="average wait" />
+          <span className="font-display text-lg font-bold">{w}</span>
+        </label>
+      </div>
+      <div className="font-display text-2xl">
+        n = λ × W = {lambda} × {w} = <b>{fmt(lambda * w)}</b> <span className="text-sm font-mono text-muted-foreground">processes in the queue, on average</span>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {Array.from({ length: Math.min(60, Math.round(lambda * w)) }, (_, i) => (
+          <span key={i} className="h-3 w-3 rounded-[2px] bg-sky animate-in zoom-in-50 duration-200" />
+        ))}
+      </div>
     </Panel>
   );
 }
