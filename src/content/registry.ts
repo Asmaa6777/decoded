@@ -101,6 +101,43 @@ import LdRegisters from "@/content/logic-design/m4-04-registers.mdx";
 import LdCounters from "@/content/logic-design/m4-05-counters.mdx";
 import LdMemory from "@/content/logic-design/m4-06-memory-unit.mdx";
 import LdSeqQuiz from "@/content/logic-design/m4-07-sequential-quiz.mdx";
+import OrgInside from "@/content/computer-organization/m0-01-whats-inside.mdx";
+import OrgBits from "@/content/computer-organization/m0-02-bits-and-bytes.mdx";
+import OrgCpu from "@/content/computer-organization/m1-01-inside-the-cpu.mdx";
+import OrgCycle from "@/content/computer-organization/m1-02-machine-cycle.mdx";
+import OrgBuses from "@/content/computer-organization/m1-03-buses.mdx";
+import OrgRam from "@/content/computer-organization/m2-01-ram-and-rom.mdx";
+import OrgHierarchy from "@/content/computer-organization/m2-02-memory-hierarchy.mdx";
+import OrgHdd from "@/content/computer-organization/m3-01-hard-disks.mdx";
+import OrgSsd from "@/content/computer-organization/m3-02-ssds-and-optical.mdx";
+import OrgQuiz from "@/content/computer-organization/m3-03-final-quiz.mdx";
+import MpInside from "@/content/microprocessors/m0-01-inside-the-8086.mdx";
+import MpRegisters from "@/content/microprocessors/m0-02-registers.mdx";
+import MpFlags from "@/content/microprocessors/m0-03-flags.mdx";
+import MpSegments from "@/content/microprocessors/m1-01-segments-and-addresses.mdx";
+import MpModes from "@/content/microprocessors/m1-02-addressing-modes.mdx";
+import MpFirst from "@/content/microprocessors/m2-01-first-program.mdx";
+import MpArith from "@/content/microprocessors/m2-02-arithmetic-and-logic.mdx";
+import MpJumps from "@/content/microprocessors/m2-03-jumps-and-loops.mdx";
+import MpStack from "@/content/microprocessors/m2-04-stack-and-procedures.mdx";
+import MpInterrupts from "@/content/microprocessors/m3-01-interrupts.mdx";
+import MpBusCycles from "@/content/microprocessors/m3-02-bus-cycles.mdx";
+import MpQuiz from "@/content/microprocessors/m3-03-final-quiz.mdx";
+import ArchIntro from "@/content/computer-architecture/m0-01-architecture-and-organization.mdx";
+import ArchFormats from "@/content/computer-architecture/m1-01-instruction-formats.mdx";
+import ArchRisc from "@/content/computer-architecture/m1-02-risc-and-cisc.mdx";
+import ArchPerf from "@/content/computer-architecture/m1-03-measuring-performance.mdx";
+import ArchControl from "@/content/computer-architecture/m1-04-control-unit.mdx";
+import ArchMemory from "@/content/computer-architecture/m2-01-main-memory.mdx";
+import ArchMapping from "@/content/computer-architecture/m2-02-cache-mapping.mdx";
+import ArchPolicies from "@/content/computer-architecture/m2-03-cache-policies.mdx";
+import ArchVm from "@/content/computer-architecture/m2-04-virtual-memory.mdx";
+import ArchIo from "@/content/computer-architecture/m3-01-io-methods.mdx";
+import ArchArbiter from "@/content/computer-architecture/m3-02-buses-and-arbitration.mdx";
+import ArchPipe from "@/content/computer-architecture/m4-01-pipelining.mdx";
+import ArchHazards from "@/content/computer-architecture/m4-02-pipeline-hazards.mdx";
+import ArchParallel from "@/content/computer-architecture/m4-03-parallel-processing.mdx";
+import ArchQuiz from "@/content/computer-architecture/m4-04-final-quiz.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -386,6 +423,53 @@ export const courses: Course[] = [
     ],
   },
   {
+    slug: "computer-organization",
+    title: "Computer Organization",
+    tagline: "What's inside the box, and how the parts work together.",
+    description:
+      "A top-down tour of a computer with the history left out. Step a working CPU through a program, follow a read across the buses, cut the power on RAM, and spin a hard disk to see why it's the slowest part of the machine.",
+    accent: "sky",
+    status: "available",
+    number: "06",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "The Big Picture",
+        blurb: "What a computer is made of, and why it all comes down to bits.",
+        lessons: [
+          { slug: "whats-inside", title: "What's Inside a Computer", duration: "8 min", Component: OrgInside },
+          { slug: "bits-and-bytes", title: "Bits and Bytes", duration: "9 min", Component: OrgBits },
+        ],
+      },
+      {
+        title: "The CPU",
+        blurb: "The parts of a processor and the one loop it runs forever.",
+        lessons: [
+          { slug: "inside-the-cpu", title: "Inside the CPU", duration: "8 min", Component: OrgCpu },
+          { slug: "machine-cycle", title: "The Machine Cycle", duration: "12 min", Component: OrgCycle },
+          { slug: "buses", title: "Buses: The Computer's Roads", duration: "9 min", Component: OrgBuses },
+        ],
+      },
+      {
+        title: "Memory",
+        blurb: "Words and addresses, kinds of RAM and ROM, and why cache works.",
+        lessons: [
+          { slug: "ram-and-rom", title: "Memory: Words, Addresses, RAM and ROM", duration: "12 min", Component: OrgRam },
+          { slug: "memory-hierarchy", title: "The Memory Hierarchy and Cache", duration: "11 min", Component: OrgHierarchy },
+        ],
+      },
+      {
+        title: "Storage",
+        blurb: "Where data lives when the power's off: disks, flash and light.",
+        lessons: [
+          { slug: "hard-disks", title: "Hard Disks", duration: "10 min", Component: OrgHdd },
+          { slug: "ssds-and-optical", title: "SSDs and Optical Discs", duration: "10 min", Component: OrgSsd },
+          { slug: "final-quiz", title: "Quiz: Computer Organization", duration: "10 min", kind: "quiz", Component: OrgQuiz },
+        ],
+      },
+    ],
+  },
+  {
     slug: "logic-design",
     title: "Logic Design",
     tagline: "From a single switch to working memory, one live circuit at a time.",
@@ -394,6 +478,7 @@ export const courses: Course[] = [
     accent: "neon",
     status: "available",
     number: "07",
+    authors: [ahmedAlghali],
     modules: [
       {
         title: "Signals",
@@ -446,6 +531,113 @@ export const courses: Course[] = [
           { slug: "counters", title: "Binary Counters", duration: "8 min", Component: LdCounters },
           { slug: "memory-unit", title: "The Memory Unit: Putting It All Together", duration: "10 min", Component: LdMemory },
           { slug: "sequential-quiz", title: "Quiz: Sequential Logic", duration: "10 min", kind: "quiz", Component: LdSeqQuiz },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "microprocessors",
+    title: "Microprocessors",
+    tagline: "Program a real 8086, one instruction at a time.",
+    description:
+      "Learn a real processor from the inside: its registers, flags, segments and addressing modes. Then write assembly and step through it in the browser, watching every register, flag and stack entry change.",
+    accent: "orange",
+    status: "available",
+    number: "08",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "The 8086",
+        blurb: "A real chip: its two units, its registers and its flags.",
+        lessons: [
+          { slug: "inside-the-8086", title: "Inside the 8086", duration: "11 min", Component: MpInside },
+          { slug: "registers", title: "The 8086's Registers", duration: "11 min", Component: MpRegisters },
+          { slug: "flags", title: "The Flags Register", duration: "10 min", Component: MpFlags },
+        ],
+      },
+      {
+        title: "Addressing Memory",
+        blurb: "How 16-bit registers reach 1 MB, and the ways of saying where data is.",
+        lessons: [
+          { slug: "segments-and-addresses", title: "Segments and Physical Addresses", duration: "12 min", Component: MpSegments },
+          { slug: "addressing-modes", title: "Addressing Modes", duration: "13 min", Component: MpModes },
+        ],
+      },
+      {
+        title: "Programming in Assembly",
+        blurb: "Write and step through real programs in the browser.",
+        lessons: [
+          { slug: "first-program", title: "Your First Program", duration: "12 min", kind: "practical", Component: MpFirst },
+          { slug: "arithmetic-and-logic", title: "Arithmetic and Logic Instructions", duration: "15 min", kind: "practical", Component: MpArith },
+          { slug: "jumps-and-loops", title: "Jumps and Loops", duration: "14 min", kind: "practical", Component: MpJumps },
+          { slug: "stack-and-procedures", title: "The Stack and Procedures", duration: "13 min", kind: "practical", Component: MpStack },
+        ],
+      },
+      {
+        title: "Talking to the Outside World",
+        blurb: "Interrupts, bus timing and the modes modern chips run in.",
+        lessons: [
+          { slug: "interrupts", title: "Interrupts", duration: "11 min", Component: MpInterrupts },
+          { slug: "bus-cycles", title: "Reading from Memory: The Bus Cycle", duration: "9 min", Component: MpBusCycles },
+          { slug: "final-quiz", title: "Quiz: Microprocessors", duration: "10 min", kind: "quiz", Component: MpQuiz },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "computer-architecture",
+    title: "Computer Architecture",
+    tagline: "What actually makes a computer fast.",
+    description:
+      "Instruction sets, RISC and CISC, control units, cache, virtual memory, I/O, pipelines and parallelism. Run a cache simulator, cause a pipeline hazard and fix it, and take a page fault, with every abstract term shown working.",
+    accent: "violet",
+    status: "available",
+    number: "09",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "Foundations",
+        blurb: "What architecture means, and what you should already know.",
+        lessons: [
+          { slug: "architecture-and-organization", title: "Architecture and Organization", duration: "7 min", Component: ArchIntro },
+        ],
+      },
+      {
+        title: "Instructions and Control",
+        blurb: "What the hardware promises software, and how to measure it.",
+        lessons: [
+          { slug: "instruction-formats", title: "Instruction Formats", duration: "10 min", Component: ArchFormats },
+          { slug: "risc-and-cisc", title: "RISC and CISC", duration: "10 min", Component: ArchRisc },
+          { slug: "measuring-performance", title: "Measuring Performance", duration: "12 min", Component: ArchPerf },
+          { slug: "control-unit", title: "The Control Unit", duration: "9 min", Component: ArchControl },
+        ],
+      },
+      {
+        title: "The Storage System",
+        blurb: "Bandwidth, interleaving, cache design and virtual memory.",
+        lessons: [
+          { slug: "main-memory", title: "Main Memory Performance", duration: "9 min", Component: ArchMemory },
+          { slug: "cache-mapping", title: "Cache Mapping", duration: "15 min", Component: ArchMapping },
+          { slug: "cache-policies", title: "Cache Policies: Replacement, Writes and Block Size", duration: "13 min", Component: ArchPolicies },
+          { slug: "virtual-memory", title: "Virtual Memory", duration: "14 min", Component: ArchVm },
+        ],
+      },
+      {
+        title: "Input and Output",
+        blurb: "Moving data to and from devices without wasting the CPU.",
+        lessons: [
+          { slug: "io-methods", title: "Input and Output", duration: "10 min", Component: ArchIo },
+          { slug: "buses-and-arbitration", title: "Buses and Arbitration", duration: "9 min", Component: ArchArbiter },
+        ],
+      },
+      {
+        title: "Parallelism",
+        blurb: "Overlapping instructions, the hazards that follow, and many processors at once.",
+        lessons: [
+          { slug: "pipelining", title: "Pipelining", duration: "12 min", Component: ArchPipe },
+          { slug: "pipeline-hazards", title: "Pipeline Hazards", duration: "14 min", Component: ArchHazards },
+          { slug: "parallel-processing", title: "Parallel Processing", duration: "13 min", Component: ArchParallel },
+          { slug: "final-quiz", title: "Quiz: Computer Architecture", duration: "12 min", kind: "quiz", Component: ArchQuiz },
         ],
       },
     ],
