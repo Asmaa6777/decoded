@@ -197,3 +197,150 @@ export function dualModeFrames(): Frame<ModeState>[] {
     f({ mode: 1, where: "user" }, 5, "The program carries on with the result. Dual mode is how the OS protects itself and every other program from a buggy or malicious one.", 1),
   ];
 }
+
+/* ------------------------------ system calls ------------------------------ */
+
+/** A small slice of a system-call table: the number is the index the interface looks up. */
+export const SYSCALL_TABLE = ["read", "write", "open", "close", "fork", "exit", "wait"];
+
+export type SyscallState = { stage: "user" | "api" | "interface" | "kernel" | "return"; index: number | null; mode: 0 | 1 };
+
+export const SYSCALL_CODE = [
+  "user application calls the API function",
+  "library prepares the system-call number + parameters",
+  "trap into the kernel (mode bit ← 0)",
+  "system-call interface looks up the number in its table",
+  "kernel runs the real system call",
+  "return status + values, mode bit ← 1",
+];
+
+/** One call travelling from a program, through the API and the system-call interface, into the kernel and back. */
+export function syscallFrames(call: "open" | "printf"): Frame<SyscallState>[] {
+  const name = call === "open" ? "open" : "write";
+  const index = SYSCALL_TABLE.indexOf(name);
+  const f = (stage: SyscallState["stage"], line: number, message: string, mode: 0 | 1 = 1, idx: number | null = null): Frame<SyscallState> => ({
+    state: { stage, index: idx, mode },
+    line,
+    message,
+    stats: { "mode bit": mode },
+  });
+  const first =
+    call === "open"
+      ? "Your program calls open(\"notes.txt\"). It's using the POSIX API, a library function, not the system call itself."
+      : "Your C program calls printf(\"Hello\"). printf is part of the standard C library, not a system call.";
+  const lib =
+    call === "open"
+      ? `The library puts the system-call number for open (${index}) and the parameters (file name, flags) where the kernel can find them.`
+      : `printf formats the text, then the library calls the write() system call, number ${index}, with the screen as the destination.`;
+  return [
+    f("user", 0, first),
+    f("api", 1, lib),
+    f("interface", 2, "The library executes a trap instruction. The CPU switches to kernel mode and jumps into the system-call interface.", 0),
+    f("interface", 3, `The system-call interface keeps a table indexed by system-call numbers. Entry ${index} points to the kernel's ${name}() code.`, 0, index),
+    f("kernel", 4, `The kernel runs ${name}(). Your program never needs to know how this part works. It only follows the API.`, 0, index),
+    f("return", 5, `The kernel returns a status (and any values) and switches back to user mode. ${call === "open" ? "open() hands back a file descriptor, a small number naming the open file." : "\"Hello\" appears on the screen and printf returns."}`, 1),
+  ];
+}
+
+/** The textbook's system-call sequence for copying one file to another. */
+export const COPY_FILE_CALLS: { step: string; group: "input" | "open" | "loop" | "close" }[] = [
+  { step: "Write a prompt to the screen", group: "input" },
+  { step: "Accept the input file name", group: "input" },
+  { step: "Write a prompt to the screen", group: "input" },
+  { step: "Accept the output file name", group: "input" },
+  { step: "Open the input file (abort if it doesn't exist)", group: "open" },
+  { step: "Create the output file (abort if it already exists)", group: "open" },
+  { step: "Loop: read from the input file", group: "loop" },
+  { step: "Loop: write to the output file (until read fails)", group: "loop" },
+  { step: "Close the output file", group: "close" },
+  { step: "Write a completion message to the screen", group: "close" },
+  { step: "Terminate normally", group: "close" },
+];
+
+export type ParamMethod = "registers" | "table" | "stack";
+
+/** Where the parameters end up for each passing method. Registers run out after `regs`. */
+export function paramPassing(method: ParamMethod, params: string[], regs = 4) {
+  if (method === "registers") return { registers: params.slice(0, regs), memory: [] as string[], stack: [] as string[], overflow: params.length > regs };
+  if (method === "table") return { registers: ["X = address of the table"], memory: params, stack: [] as string[], overflow: false };
+  return { registers: [] as string[], memory: [] as string[], stack: [...params].reverse(), overflow: false };
+}
+
+/* ------------------------------ OS structures ------------------------------ */
+
+export type StructureKind = "simple" | "unix" | "layered" | "microkernel" | "modules" | "hybrid";
+
+export const STRUCTURES: Record<StructureKind, { title: string; example: string; layers: string[]; pros: string[]; cons: string[] }> = {
+  simple: {
+    title: "Simple structure",
+    example: "MS-DOS",
+    layers: ["application program", "resident system program", "MS-DOS device drivers", "ROM BIOS device drivers"],
+    pros: ["most functionality in the least space"],
+    cons: ["not divided into modules", "levels aren't well separated: an app can reach the hardware directly, so one buggy app can crash everything"],
+  },
+  unix: {
+    title: "Traditional UNIX (monolithic)",
+    example: "original UNIX",
+    layers: ["users", "shells, commands, compilers, interpreters, system libraries", "system-call interface to the kernel", "kernel: file system, CPU scheduling, memory management, signals, swapping, device drivers", "kernel interface to the hardware", "hardware: terminals, disks, memory"],
+    pros: ["fast: kernel parts call each other directly, with little overhead"],
+    cons: ["a huge number of functions packed into one level", "hard to implement, extend and maintain"],
+  },
+  layered: {
+    title: "Layered approach",
+    example: "layer 0 is the hardware, layer N is the user interface",
+    layers: ["layer N: user interface", "…", "layer 2", "layer 1", "layer 0: hardware"],
+    pros: ["each layer only uses the layers below it, so you can build and debug one layer at a time"],
+    cons: ["hard to decide which layer goes where", "a request has to pass through many layers, which is slower"],
+  },
+  microkernel: {
+    title: "Microkernel",
+    example: "Mach (macOS's Darwin kernel is partly based on it)",
+    layers: ["user mode: application program, file system, device driver", "kernel mode (microkernel): interprocess communication, memory management, CPU scheduling", "hardware"],
+    pros: ["easier to extend", "easier to port to new hardware", "more reliable: less code runs in kernel mode", "more secure"],
+    cons: ["performance overhead from all the messages between user space and kernel space"],
+  },
+  modules: {
+    title: "Loadable kernel modules",
+    example: "Linux, Solaris",
+    layers: ["core kernel", "scheduling classes, file systems, loadable system calls, executable formats, STREAMS modules, device and bus drivers, miscellaneous"],
+    pros: ["object-oriented: each core part is separate and talks to the others over known interfaces", "modules are loaded into the kernel only when needed", "like layers, but more flexible: any module can call any other"],
+    cons: ["a buggy module still runs in kernel mode"],
+  },
+  hybrid: {
+    title: "Hybrid systems",
+    example: "Linux, Windows, macOS, iOS, Android",
+    layers: ["Linux and Solaris: monolithic kernel plus loadable modules", "Windows: mostly monolithic, plus microkernel ideas for its subsystem personalities", "macOS: Aqua UI and Cocoa on top of a kernel made of the Mach microkernel, BSD UNIX parts, the I/O kit and kernel extensions"],
+    pros: ["combines approaches to balance performance, security and usability"],
+    cons: ["no single clean model: you have to learn each system's mix"],
+  },
+};
+
+/** The message hops for one request in a microkernel: the app never talks to the file system directly. */
+export const MICROKERNEL_HOPS = ["application", "microkernel", "file system", "microkernel", "application"];
+
+/* ------------------------------ system boot ------------------------------ */
+
+export const BOOT_CODE = [
+  "power on: execution starts at a fixed memory address",
+  "firmware in ROM runs the initial boot code",
+  "ROM code loads the boot block from a fixed place on disk",
+  "boot block loads the bootstrap loader (e.g. GRUB)",
+  "loader lets you pick a kernel, then loads it into memory",
+  "kernel starts: the system is running",
+];
+
+export const BOOT_STAGES = ["Power on", "ROM firmware", "Boot block", "Bootstrap loader", "Kernel in memory", "System running"];
+
+export type BootState = { stage: number };
+
+export function bootFrames(): Frame<BootState>[] {
+  const msgs = [
+    "You press the power button. The CPU starts executing at a fixed memory location, wired in by the hardware.",
+    "That location holds firmware in ROM (or EEPROM). It can't be erased by accident, so the computer can always start.",
+    "Booting is often a two-step process: the ROM code is tiny, so it only loads a boot block from a fixed location on the disk.",
+    "The boot block loads the bootstrap loader. A common one on Linux is GRUB.",
+    "GRUB lets you choose a kernel from several disks, versions or options. Then it finds the kernel, loads it into memory and starts it.",
+    "The kernel takes over. The system is now running.",
+  ];
+  return msgs.map((message, stage) => ({ state: { stage }, line: stage, message, stats: { stage: stage + 1 } }));
+}

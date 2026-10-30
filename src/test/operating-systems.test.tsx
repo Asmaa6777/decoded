@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS } from "@/lib/operatingSystems";
+import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES } from "@/lib/operatingSystems";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -76,5 +76,32 @@ describe("chapter 1 helpers", () => {
   it("only runs in kernel mode between the trap and the return", () => {
     const frames = dualModeFrames();
     for (const f of frames) expect(f.state.mode === 0).toBe(f.state.where === "kernel");
+  });
+});
+
+describe("chapter 2 helpers", () => {
+  it("looks up the right system-call number and returns to user mode", () => {
+    for (const call of ["open", "printf"] as const) {
+      const frames = syscallFrames(call);
+      const idx = frames.find((f) => f.state.index !== null)!.state.index!;
+      expect(SYSCALL_TABLE[idx]).toBe(call === "open" ? "open" : "write");
+      expect(frames[0].state.mode).toBe(1);
+      expect(frames[frames.length - 1].state.mode).toBe(1);
+      expect(frames.some((f) => f.state.mode === 0)).toBe(true);
+    }
+  });
+
+  it("runs out of registers but never out of table or stack space", () => {
+    const six = ["a", "b", "c", "d", "e", "f"];
+    expect(paramPassing("registers", six).overflow).toBe(true);
+    expect(paramPassing("registers", six.slice(0, 3)).overflow).toBe(false);
+    expect(paramPassing("table", six).memory).toEqual(six);
+    expect(paramPassing("table", six).registers).toHaveLength(1);
+    expect(paramPassing("stack", six).stack[0]).toBe("f");
+  });
+
+  it("boots in order and ends running", () => {
+    const frames = bootFrames();
+    expect(frames.map((f) => f.state.stage)).toEqual(BOOT_STAGES.map((_, i) => i));
   });
 });

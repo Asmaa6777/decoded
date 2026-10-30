@@ -13,6 +13,20 @@ import {
   STORAGE_LEVELS,
   type Lane,
   type ModeState,
+  BOOT_CODE,
+  BOOT_STAGES,
+  bootFrames,
+  COPY_FILE_CALLS,
+  MICROKERNEL_HOPS,
+  paramPassing,
+  STRUCTURES,
+  SYSCALL_CODE,
+  SYSCALL_TABLE,
+  syscallFrames,
+  type BootState,
+  type ParamMethod,
+  type StructureKind,
+  type SyscallState,
 } from "@/lib/operatingSystems";
 
 /* ============================================================
@@ -465,5 +479,282 @@ export function TimerInterrupt({ slice = 8 }: { slice?: number }) {
         </button>
       </div>
     </Panel>
+  );
+}
+
+/* ------------------------------ system calls ------------------------------ */
+
+const SYSCALL_STAGES = [
+  { key: "user", label: "user application", sub: "open(\"notes.txt\")", tone: "border-sky bg-sky/10" },
+  { key: "api", label: "API / C library", sub: "libc, Win32, Java API", tone: "border-violet bg-violet/10" },
+  { key: "interface", label: "system-call interface", sub: "table of call numbers", tone: "border-orange bg-orange/10" },
+  { key: "kernel", label: "kernel", sub: "the real implementation", tone: "border-mint bg-mint/15" },
+] as const;
+
+/** A system call travelling from a program through the API and the system-call table into the kernel, and back. */
+export function SystemCallFlow() {
+  const [call, setCall] = useState<"open" | "printf">("open");
+  const frames = useMemo(() => syscallFrames(call), [call]);
+  return (
+    <Stepper
+      title="API → system call → OS"
+      frames={frames}
+      code={SYSCALL_CODE}
+      codeLabel="What happens"
+      legend={[["bg-sky", "user mode"], ["bg-orange", "kernel mode"]]}
+      inputs={
+        <Toggle<"open" | "printf">
+          value={call}
+          onChange={setCall}
+          options={[
+            ["open", "open() a file"],
+            ["printf", "printf() in C"],
+          ]}
+        />
+      }
+      render={(s: SyscallState) => {
+        const at = s.stage === "return" ? "user" : s.stage;
+        return (
+          <div className="grid md:grid-cols-[1fr_200px] gap-4 min-w-[300px]">
+            <div className="flex flex-col gap-2">
+              {SYSCALL_STAGES.map((st, i) => (
+                <div key={st.key} className="flex flex-col items-stretch">
+                  {i === 2 && (
+                    <div className="my-1 flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      <span className="flex-1 border-t border-dashed border-border" />
+                      user mode ↑ · kernel mode ↓
+                      <span className="flex-1 border-t border-dashed border-border" />
+                    </div>
+                  )}
+                  <div className={`relative rounded-sm border-l-4 px-4 py-2 transition-all duration-300 ${st.tone} ${at === st.key ? "ring-2 ring-foreground scale-[1.02]" : "opacity-60"}`}>
+                    <div className="font-display font-bold text-sm">{st.label}</div>
+                    <div className="font-mono text-[11px] text-muted-foreground">{st.key === "user" && call === "printf" ? "printf(\"Hello\")" : st.sub}</div>
+                    {at === st.key && <span className="absolute right-3 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-foreground animate-ping" aria-hidden />}
+                  </div>
+                </div>
+              ))}
+              {s.stage === "return" && <div className="font-mono text-xs text-mint animate-in fade-in slide-in-from-bottom-2 duration-300">↑ return value delivered</div>}
+            </div>
+            <div className="border border-border rounded-sm">
+              <div className="px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">system-call table</div>
+              {SYSCALL_TABLE.map((name, i) => (
+                <div key={name} className={`flex justify-between px-3 py-1 font-mono text-xs transition-colors duration-300 ${s.index === i ? "bg-orange/25 text-foreground font-bold" : "text-muted-foreground"}`}>
+                  <span>{i}</span>
+                  <span>{name}()</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }}
+    />
+  );
+}
+
+/** The system calls behind "copy one file to another", ticking off one by one. */
+export function CopyFileCalls() {
+  const [run, setRun] = useState(false);
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!run || n >= COPY_FILE_CALLS.length) return;
+    const t = setTimeout(() => setN((x) => x + 1), 550);
+    return () => clearTimeout(t);
+  }, [run, n]);
+  const tone: Record<string, string> = { input: "bg-sky", open: "bg-violet", loop: "bg-orange", close: "bg-mint" };
+  return (
+    <Panel title="System calls to copy one file to another" legend={[["bg-sky", "get file names"], ["bg-violet", "open files"], ["bg-orange", "copy loop"], ["bg-mint", "finish"]]}>
+      <div className="font-mono text-xs text-muted-foreground">
+        <span className="text-foreground">$ cp</span> in.txt out.txt
+      </div>
+      <ol className="flex flex-col gap-1">
+        {COPY_FILE_CALLS.map((c, i) => (
+          <li
+            key={i}
+            className={`flex items-center gap-3 rounded-sm px-3 py-1.5 text-sm transition-all duration-300 ${i < n ? "bg-muted/50 opacity-100 translate-x-0" : "opacity-30 -translate-x-1"}`}
+          >
+            <span className={`h-2.5 w-2.5 rounded-[2px] ${tone[c.group]}`} />
+            <span className="font-mono text-[10px] w-5 text-muted-foreground">{i + 1}</span>
+            {c.step}
+            {i < n && <span className="ml-auto text-mint animate-in zoom-in-50 duration-200">✓</span>}
+          </li>
+        ))}
+      </ol>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Even a simple copy makes many system calls, and the read/write pair runs once per block, so a big file means thousands of them. Most programmers never see these: the API hides them.
+      </p>
+      <div className="flex gap-2">
+        <button type="button" className={btn} onClick={() => { if (n >= COPY_FILE_CALLS.length) setN(0); setRun(true); }}>
+          ▶ Run cp
+        </button>
+        <button type="button" className={btn} onClick={() => { setRun(false); setN(0); }}>
+          ⟲ Reset
+        </button>
+      </div>
+    </Panel>
+  );
+}
+
+/** The three ways to hand parameters to the OS. */
+export function ParameterPassing() {
+  const [method, setMethod] = useState<ParamMethod>("table");
+  const [count, setCount] = useState(3);
+  const params = Array.from({ length: count }, (_, i) => `p${i + 1}`);
+  const r = paramPassing(method, params);
+  const box = "rounded-sm border border-border p-3 min-h-[120px] flex flex-col gap-1";
+  const cell = (v: string, tone: string) => (
+    <div key={v} className={`font-mono text-xs px-2 py-1 rounded-sm ${tone} animate-in fade-in slide-in-from-left-2 duration-300`}>
+      {v}
+    </div>
+  );
+  const notes: Record<ParamMethod, string> = {
+    registers: "Simplest and fastest: put each parameter in a CPU register. But there are only a few registers, so long parameter lists don't fit.",
+    table: "Store the parameters in a block (table) in memory and pass the block's address in one register. Linux and Solaris do this. No limit on the number of parameters.",
+    stack: "The program pushes the parameters onto the stack, and the operating system pops them off. No limit either.",
+  };
+  return (
+    <Panel title="Passing parameters to a system call">
+      <div className="flex flex-wrap items-center gap-4">
+        <Toggle<ParamMethod>
+          value={method}
+          onChange={setMethod}
+          options={[
+            ["registers", "Registers"],
+            ["table", "Table in memory"],
+            ["stack", "Stack"],
+          ]}
+        />
+        <label className="inline-flex items-center gap-2 font-mono text-xs">
+          <span className="uppercase tracking-widest text-muted-foreground">parameters</span>
+          <input type="range" min={1} max={7} value={count} onChange={(e) => setCount(Number(e.target.value))} aria-label="number of parameters" />
+          <span className="w-4">{count}</span>
+        </label>
+      </div>
+      <div key={method} className="grid grid-cols-3 gap-3">
+        <div className={box}>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">CPU registers</div>
+          {r.registers.map((v) => cell(v, "bg-sky/20"))}
+          {r.overflow && <div className="font-mono text-[11px] text-orange animate-pulse">✗ {count - 4} won't fit!</div>}
+        </div>
+        <div className={box}>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">memory (table at X)</div>
+          {r.memory.map((v) => cell(v, "bg-violet/20"))}
+        </div>
+        <div className={box}>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">stack (top first)</div>
+          {r.stack.map((v) => cell(v, "bg-orange/20"))}
+        </div>
+      </div>
+      <p className="text-sm leading-relaxed">{notes[method]}</p>
+    </Panel>
+  );
+}
+
+/* ------------------------------ OS structures ------------------------------ */
+
+const STRUCTURE_ORDER: [StructureKind, string][] = [
+  ["simple", "Simple"],
+  ["unix", "UNIX"],
+  ["layered", "Layered"],
+  ["microkernel", "Microkernel"],
+  ["modules", "Modules"],
+  ["hybrid", "Hybrid"],
+];
+
+/** Flip between the ways to structure an OS. The microkernel view animates its message passing. */
+export function OsStructures() {
+  const [kind, setKind] = useState<StructureKind>("simple");
+  const s = STRUCTURES[kind];
+  const [hop] = useTicker(kind === "microkernel", MICROKERNEL_HOPS.length, 700);
+  const where = MICROKERNEL_HOPS[hop];
+  return (
+    <Panel title="Ways to structure an operating system">
+      <div className="flex flex-wrap gap-1.5">
+        {STRUCTURE_ORDER.map(([k, label]) => (
+          <button key={k} type="button" className={`${btn} !px-2 !py-1 ${k === kind ? "bg-foreground text-background" : ""}`} onClick={() => setKind(k)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div key={kind} className="flex flex-col gap-3 animate-in fade-in duration-300">
+        <div>
+          <div className="font-display text-xl font-bold">{s.title}</div>
+          <div className="font-mono text-[11px] text-muted-foreground">e.g. {s.example}</div>
+        </div>
+        {kind === "microkernel" ? (
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-3 gap-2">
+              {["application", "file system", "device driver"].map((m) => (
+                <div key={m} className={`rounded-sm border-2 px-2 py-3 text-center text-sm transition-all duration-300 ${where === m ? "border-mint bg-mint/20 scale-105" : "border-sky/50 bg-sky/10"}`}>
+                  {m}
+                </div>
+              ))}
+            </div>
+            <div className="text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground">user mode ↑ · messages · kernel mode ↓</div>
+            <div className={`rounded-sm border-2 px-3 py-3 text-center text-sm transition-all duration-300 ${where === "microkernel" ? "border-mint bg-mint/20 scale-[1.02]" : "border-orange/50 bg-orange/10"}`}>
+              microkernel: interprocess communication · memory management · CPU scheduling
+            </div>
+            <div className="rounded-sm border border-border bg-muted/40 px-3 py-2 text-center text-sm">hardware</div>
+            <p className="font-mono text-xs text-muted-foreground">
+              message now at: <span className="text-foreground">{where}</span>. The app asks to read a file: app → microkernel → file system → microkernel → app.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {s.layers.map((l, i) => (
+              <div
+                key={i}
+                className="rounded-sm border border-border bg-muted/30 px-3 py-2 text-sm animate-in fade-in slide-in-from-top-1 duration-300"
+                style={{ marginLeft: kind === "layered" ? `${i * 4}%` : 0, marginRight: kind === "layered" ? `${i * 4}%` : 0, animationDelay: `${i * 60}ms`, animationFillMode: "both" }}
+              >
+                {l}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="grid sm:grid-cols-2 gap-3 text-sm">
+          <div className="border-l-2 border-mint pl-3">
+            <div className="eyebrow text-mint mb-1">good</div>
+            <ul className="list-disc pl-4 space-y-0.5">{s.pros.map((p) => <li key={p}>{p}</li>)}</ul>
+          </div>
+          <div className="border-l-2 border-orange pl-3">
+            <div className="eyebrow text-orange mb-1">bad</div>
+            <ul className="list-disc pl-4 space-y-0.5">{s.cons.map((p) => <li key={p}>{p}</li>)}</ul>
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/* ------------------------------ boot ------------------------------ */
+
+/** From the power button to a running kernel. */
+export function BootSequence() {
+  const frames = useMemo(() => bootFrames(), []);
+  return (
+    <Stepper
+      title="System boot"
+      frames={frames}
+      code={BOOT_CODE}
+      codeLabel="What happens"
+      render={(s: BootState) => (
+        <div className="flex flex-wrap items-center gap-2 min-w-[300px]">
+          {BOOT_STAGES.map((name, i) => (
+            <div key={name} className="flex items-center gap-2">
+              <div
+                className={`rounded-sm border-2 px-3 py-2 text-xs sm:text-sm font-display font-bold transition-all duration-500 ${
+                  i < s.stage ? "border-mint/60 bg-mint/10 opacity-70" : i === s.stage ? "border-mint bg-mint/25 scale-110 shadow-lg" : "border-dashed border-border opacity-40"
+                }`}
+              >
+                {i === 0 && "⏻ "}
+                {name}
+                {i === BOOT_STAGES.length - 1 && i === s.stage && " 🎉"}
+              </div>
+              {i < BOOT_STAGES.length - 1 && <span className={`transition-opacity duration-500 ${i < s.stage ? "opacity-100" : "opacity-20"}`}>→</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    />
   );
 }
