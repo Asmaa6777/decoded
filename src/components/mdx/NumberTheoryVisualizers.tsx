@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { btn, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import { Panel } from "@/components/mdx/MatrixVisualizers";
-import { factorize, gcd, MATLAB_SIEVE, MATLAB_WILSON, phi, sieveFrames, wilsonFrames, euclidTiles, MATLAB_EUCLID, mod, tileFrames } from "@/lib/numberTheory";
+import { cycleFrames, extendedFrames, isPrimitiveRoot, MATLAB_EXT, MATLAB_ORDER, order, powers, factorize, gcd, MATLAB_SIEVE, MATLAB_WILSON, phi, sieveFrames, wilsonFrames, euclidTiles, MATLAB_EUCLID, mod, tileFrames } from "@/lib/numberTheory";
 
 /* ------------------------------- Euclid tiles ------------------------------ */
 
@@ -235,6 +235,144 @@ export function WilsonVisualizer({ p = 13 }: { p?: number }) {
           </svg>
         );
       }}
+    />
+  );
+}
+
+/* ------------------------------ power cycles ----------------------------- */
+
+/** Draws each power of a as a chord, so its order is the number of hops back to 1. */
+export function CycleRing({ n, seq, target }: { n: number; seq: number[]; target?: number | null }) {
+  const pos = (v: number) => ringPoint(v, n, 122);
+  const visited = new Set(seq);
+  const cur = seq[seq.length - 1];
+  return (
+    <svg viewBox="0 0 300 300" className="w-full max-w-[320px]" role="img" aria-label={`Powers modulo ${n}: ${seq.join(", ")}`}>
+      {seq.slice(1).map((v, i) => {
+        const [x1, y1] = pos(seq[i]);
+        const [x2, y2] = pos(v);
+        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} pathLength={1} strokeDasharray={1} strokeWidth={i === seq.length - 2 ? 2.6 : 1.5} className={`cm-draw ${i === seq.length - 2 ? "stroke-neon" : "stroke-sky/70"}`} />;
+      })}
+      {Array.from({ length: n }, (_, v) => {
+        const [x, y] = pos(v);
+        const isCur = v === cur;
+        const isT = v === target;
+        return (
+          <g key={v}>
+            <circle cx={x} cy={y} r={n > 16 ? 11 : 14} className={`transition-colors duration-300 ${isCur ? "fill-neon" : isT ? "fill-orange" : visited.has(v) ? "fill-mint" : "fill-card stroke-border"}`} />
+            <text x={x} y={y} dy=".35em" textAnchor="middle" fontSize={n > 16 ? 10 : 12} className={`font-mono ${isCur || isT || visited.has(v) ? "fill-background font-bold" : "fill-muted-foreground"}`}>{v}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+const CYCLE_PRESETS: Record<string, [number, number]> = { a: [3, 7], b: [2, 7], c: [3, 16], d: [2, 19], e: [7, 19] };
+
+export function PowerCycleVisualizer() {
+  const [preset, setPreset] = useState("a");
+  const [a, n] = CYCLE_PRESETS[preset];
+  const frames = useMemo(() => cycleFrames(a, n), [a, n]);
+  return (
+    <Stepper
+      title="Powers walk in a cycle"
+      frames={frames}
+      code={MATLAB_ORDER}
+      codeLabel="MATLAB"
+      legend={[["bg-neon", "current power"], ["bg-mint", "visited"]]}
+      inputs={<Toggle<string> value={preset} onChange={setPreset} options={Object.entries(CYCLE_PRESETS).map(([k, [x, y]]) => [k, `${x} mod ${y}`] as [string, string])} />}
+      render={(s) => (
+        <div className="flex flex-wrap items-center gap-5">
+          <CycleRing n={s.n} seq={s.seq} />
+          <div className="font-mono text-sm flex flex-col gap-1 min-w-[150px]">
+            <div className="text-muted-foreground text-[11px] uppercase tracking-widest">powers of {s.a}</div>
+            <div className="break-words max-w-[240px]">{s.seq.slice(1).join(", ") || "…"}</div>
+          </div>
+        </div>
+      )}
+    />
+  );
+}
+
+/* ------------------------------ powers table ----------------------------- */
+
+export function PowersTable() {
+  const [m, setM] = useState("19");
+  const n = Number(m);
+  const f = n - 1;
+  return (
+    <Panel title={`Powers of every a, modulo ${n}`} legend={[["bg-sky", "first period"], ["bg-mint", "primitive root row"]]}>
+      <div className="overflow-x-auto">
+        <table className="font-mono text-[11px] border-separate border-spacing-[2px]">
+          <thead>
+            <tr>
+              <th className="px-1 text-muted-foreground font-normal">a</th>
+              {Array.from({ length: f }, (_, k) => <th key={k} className="w-6 text-muted-foreground font-normal">a<sup>{k + 1}</sup></th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: f }, (_, i) => i + 1).map((a) => {
+              const k = order(a, n)!;
+              const root = isPrimitiveRoot(a, n);
+              return (
+                <tr key={a}>
+                  <td className={`px-1 text-right ${root ? "text-mint font-bold" : ""}`}>{a}</td>
+                  {powers(a, n, f).map((v, j) => (
+                    <td key={j} className={`w-6 h-6 text-center rounded-[2px] transition-colors duration-300 ${j < k ? (root ? "bg-mint/30" : "bg-sky/25") : "text-muted-foreground/50"}`}>{v}</td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <Toggle<string> value={m} onChange={setM} options={[["7", "mod 7"], ["11", "mod 11"], ["19", "mod 19"]]} />
+    </Panel>
+  );
+}
+
+/* --------------------------- extended Euclidean -------------------------- */
+
+const EXT_PRESETS: Record<string, [number, number]> = { a: [130, 61], b: [61, 17], c: [240, 46] };
+
+export function ExtendedEuclidVisualizer() {
+  const [preset, setPreset] = useState("b");
+  const [a, b] = EXT_PRESETS[preset];
+  const frames = useMemo(() => extendedFrames(a, b), [a, b]);
+  return (
+    <Stepper
+      title="Extended Euclidean algorithm"
+      frames={frames}
+      code={MATLAB_EXT}
+      codeLabel="MATLAB"
+      legend={[["bg-sky", "going down"], ["bg-neon", "climbing back"], ["bg-mint", "x and y known"]]}
+      inputs={<Toggle<string> value={preset} onChange={setPreset} options={[["b", "61 and 17"], ["a", "130 and 61"], ["c", "240 and 46"]]} />}
+      render={(s) => (
+        <table className="font-mono text-[13px] border-separate border-spacing-y-1 min-w-[340px]">
+          <thead>
+            <tr className="text-[10px] uppercase tracking-widest text-muted-foreground text-left">
+              <th className="pr-5 font-normal">division</th>
+              <th className="pr-3 font-normal text-right">x</th>
+              <th className="font-normal text-right">y</th>
+            </tr>
+          </thead>
+          <tbody>
+            {s.rows.map((r, i) => {
+              const shown = i <= s.down;
+              const known = s.up !== null && i >= s.up;
+              const live = s.up === i;
+              return (
+                <tr key={i} className="transition-opacity duration-300 motion-reduce:transition-none" style={{ opacity: shown ? 1 : 0.12 }}>
+                  <td className={`pr-5 rounded-l-sm px-2 py-1 transition-colors duration-300 ${live ? "bg-neon/25" : i === s.down && s.up === null ? "bg-sky/25" : ""}`}>{r.a} = {r.q} × {r.b} + {r.r}</td>
+                  <td className={`pr-3 text-right transition-opacity duration-500 ${live ? "bg-neon/25" : ""} ${known ? "text-mint opacity-100" : "opacity-0"}`}>{r.x}</td>
+                  <td className={`pl-3 pr-2 text-right rounded-r-sm transition-opacity duration-500 ${live ? "bg-neon/25" : ""} ${known ? "text-mint opacity-100" : "opacity-0"}`}>{r.y}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
     />
   );
 }

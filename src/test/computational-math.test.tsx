@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
+import { cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
 import { conv, convFrames, coverUpFrames, deconv, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
 import { adjoint, cofactors, det, fraction, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
@@ -264,5 +264,32 @@ describe("primes and primality", () => {
     expect(f.at(-1)!.state.pairs).toEqual([[2, 7], [3, 9], [4, 10], [5, 8], [6, 11]]);
     expect(f.at(-1)!.state.pairs.every(([a, b]) => (a * b) % 13 === 1)).toBe(true);
     expect(inverseMod(2, 4)).toBeNull();
+  });
+});
+
+describe("order, primitive roots and inverses", () => {
+  it("finds orders and primitive roots from the lessons", () => {
+    expect(order(3, 16)).toBe(4);
+    expect(order(7, 19)).toBe(3);
+    expect(order(2, 7)).toBe(3);
+    expect(isPrimitiveRoot(3, 7)).toBe(true);
+    expect(primitiveRoots(7)).toEqual([3, 5]);
+    expect(primitiveRoots(19)).toEqual([2, 3, 10, 13, 14, 15]);
+    expect(isPrimitiveRoot(7, 45)).toBe(false);
+    expect(powers(3, 7, 6)).toEqual([3, 2, 6, 4, 5, 1]);
+    expect(powers(2, 9, 6)).toEqual([2, 4, 8, 7, 5, 1]);
+    expect(cycleFrames(3, 7).at(-1)!.stats.k).toBe(6);
+  });
+
+  it.each([[130, 61, 23, -49], [61, 17, -5, 18]])("solves %i x + %i y = 1", (a, b, x, y) => {
+    const top = extendedRows(a, b)[0];
+    expect([top.x, top.y]).toEqual([x, y]);
+    expect(a * x + b * y).toBe(1);
+  });
+
+  it("keeps ax + by = g on every row, and names the inverse", () => {
+    for (const r of extendedRows(240, 46)) expect(r.x! * r.a + r.y! * r.b).toBe(2);
+    expect(extendedFrames(61, 17).at(-1)!.message).toContain("inverse of 17 is 18");
+    expect((17 * 18) % 61).toBe(1);
   });
 });
