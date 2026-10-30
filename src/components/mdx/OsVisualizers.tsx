@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { btn, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
+import { btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import {
   DEMO_JOBS,
   DUAL_MODE_CODE,
@@ -115,6 +115,21 @@ import {
   tlbRun,
   type Block,
   type Fit,
+  BELADY_STRING,
+  demandEat,
+  faults,
+  PAGE_FAULT_CODE,
+  pageFaultFrames,
+  proportional,
+  REF_STRING,
+  replace,
+  utilization,
+  workingSet,
+  WS_REFS,
+  WS_T1,
+  WS_T2,
+  type PfState,
+  type Repl,
 } from "@/lib/operatingSystems";
 import { exists, initialShell, promptPath, readFile, run, type ShellState } from "@/lib/miniShell";
 
@@ -3255,6 +3270,425 @@ export function AddressSplit() {
           ? "One level: a 22-bit page number means a page table with 2²² (about 4 million) entries per process."
           : "Two levels: p₁ picks an entry in the outer page table, which points to an inner page table; p₂ picks the entry there; d is the offset in the page. Inner tables that aren't needed don't have to exist."}
       </p>
+    </Panel>
+  );
+}
+
+/* ------------------------------ virtual memory ------------------------------ */
+
+/** The steps of handling a page fault: page table, physical memory and the backing store. */
+export function PageFaultSteps() {
+  const frames = useMemo(() => pageFaultFrames(), []);
+  const pages = ["A", "B", "C", "D", "E", "F"];
+  return (
+    <Stepper
+      title="Steps in handling a page fault"
+      frames={frames}
+      code={PAGE_FAULT_CODE}
+      codeLabel="What happens"
+      legend={[["bg-mint", "valid (in memory)"], ["bg-orange", "invalid / faulting"]]}
+      render={(s: PfState) => (
+        <div className="grid grid-cols-[auto_auto_1fr] gap-4 items-start min-w-[420px]">
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">page table</div>
+            {pages.map((p, i) => {
+              const frame = s.frames.indexOf(p);
+              const hot = i === 3 && s.stage >= 0;
+              return (
+                <div key={p} className={`flex gap-3 px-2 py-1 font-mono text-xs border border-border -mt-px transition-colors duration-300 ${hot ? (s.valid[i] ? "bg-mint/30" : s.stage >= 1 ? "bg-orange/30" : "bg-sky/20") : ""}`}>
+                  <span className="opacity-60 w-3">{i}</span>
+                  <span className="w-4">{frame >= 0 ? frame : ""}</span>
+                  <span key={`${i}-${s.valid[i]}`} className={`font-bold animate-in zoom-in-50 ${s.valid[i] ? "text-mint" : "text-orange"}`}>
+                    {s.valid[i] ? "v" : "i"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">physical memory</div>
+            {s.frames.map((f, i) => (
+              <div key={i} className={`flex gap-2 px-2 py-1 font-mono text-xs border border-border -mt-px transition-all duration-300 ${i === 2 && s.stage >= 3 ? "bg-mint/25" : ""}`}>
+                <span className="opacity-60 w-3">{i}</span>
+                <span className={f === "D…" ? "animate-pulse" : ""}>{f ?? (i === 2 && s.stage === 3 ? "free ✓" : "")}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col gap-3">
+            <div className={`rounded-sm border-2 px-3 py-2 font-mono text-xs transition-all duration-300 ${s.stage === 1 || s.stage === 2 ? "border-orange bg-orange/15 scale-[1.03]" : "border-border"}`}>
+              ⚙ operating system {s.stage === 1 && <span className="font-bold">← trap!</span>}
+            </div>
+            <div className={`rounded-sm border-2 px-3 py-2 font-mono text-xs transition-all duration-300 ${s.stage === 4 ? "border-sky bg-sky/15 scale-[1.03]" : "border-border"}`}>
+              💽 backing store: A B C <b className={s.stage === 4 ? "text-sky" : ""}>D</b> E F {s.stage === 4 && <span className="animate-pulse">→ frame 2</span>}
+            </div>
+            <div className={`rounded-sm border-2 px-3 py-2 font-mono text-xs transition-all duration-300 ${s.stage === 0 || s.stage === 6 ? "border-mint bg-mint/15" : "border-border"}`}>
+              ▶ process: load M {s.stage === 6 && <span className="font-bold">(restarted ✓)</span>}
+            </div>
+          </div>
+        </div>
+      )}
+    />
+  );
+}
+
+/** How much a page-fault rate slows memory down. */
+export function DemandPagingCost() {
+  const [exp, setExp] = useState(-3); // p = 10^exp
+  const p = 10 ** exp;
+  const e = demandEat(p);
+  const slow = e / 200;
+  return (
+    <Panel title="The cost of page faults">
+      <label className="flex flex-wrap items-center gap-3 font-mono text-xs">
+        <span className="uppercase tracking-widest text-muted-foreground">page-fault rate p</span>
+        <input type="range" min={-7} max={-1} step={0.1} value={exp} onChange={(e) => setExp(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="page fault rate" />
+        <span className="w-44">
+          1 fault per {Math.round(1 / p).toLocaleString("en-US")} accesses
+        </span>
+      </label>
+      <div className="font-mono text-sm">
+        EAT = (1 − p) × 200 ns + p × 8,000,000 ns = <b className="font-display text-xl">{e >= 1000 ? `${fmt(Math.round(e / 10) / 100)} µs` : `${fmt(Math.round(e * 10) / 10)} ns`}</b>
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-4 rounded-sm bg-muted overflow-hidden">
+          <div className={`h-full transition-all duration-300 ${slow > 1.1 ? "bg-orange" : "bg-mint"}`} style={{ width: `${Math.min(100, (Math.log10(slow) / Math.log10(4000)) * 100 + 2)}%` }} />
+        </div>
+        <span className={`font-display text-lg font-bold w-28 ${slow > 1.1 ? "text-orange" : "text-mint"}`}>{fmt(Math.round(slow * 10) / 10)}× slower</span>
+      </div>
+      <p className="text-xs text-muted-foreground">To stay under 10% slowdown, p must be below 0.0000025: fewer than one page fault in every 400,000 memory accesses.</p>
+    </Panel>
+  );
+}
+
+/** Copy-on-write: parent and child share pages until one of them writes. */
+export function CopyOnWrite() {
+  const [copied, setCopied] = useState(false);
+  const page = (label: string, k: string, hot = false) => (
+    <div key={k} className={`h-9 w-16 rounded-sm border-2 flex items-center justify-center font-mono text-xs font-bold transition-all duration-500 animate-in zoom-in-75 ${hot ? "border-orange bg-orange/25" : "border-border bg-card"}`}>
+      {label}
+    </div>
+  );
+  return (
+    <Panel title="Copy-on-write">
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
+        <div className="rounded-sm border border-sky/60 p-2 text-center">
+          <div className="font-display font-bold mb-1">process 1</div>
+          <div className="font-mono text-[10px] text-muted-foreground">pages A B C</div>
+        </div>
+        <div className="flex flex-col gap-1.5 items-center">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">physical memory</div>
+          {page("page A", "a")}
+          {page("page B", "b")}
+          {page("page C", "c")}
+          {copied && page("copy of C", "c2", true)}
+        </div>
+        <div className="rounded-sm border border-violet/60 p-2 text-center">
+          <div className="font-display font-bold mb-1">process 2</div>
+          <div className="font-mono text-[10px] text-muted-foreground">pages A B C</div>
+        </div>
+      </div>
+      <p className="text-sm min-h-[2.5em]">
+        {copied
+          ? "Process 1 wrote to page C. Only then did the OS make a copy of C for it. A and B are still shared, so only one page was copied instead of the whole process."
+          : "After fork(), parent and child share all their pages, marked copy-on-write. Nothing is copied yet."}
+      </p>
+      <div className="flex gap-2">
+        <button type="button" className={btn} disabled={copied} onClick={() => setCopied(true)}>
+          process 1 modifies page C
+        </button>
+        <button type="button" className={btn} onClick={() => setCopied(false)}>
+          ⟲
+        </button>
+      </div>
+    </Panel>
+  );
+}
+
+/* ------------------------------ page replacement ------------------------------ */
+
+const REPL_LABEL: Record<Repl, string> = { fifo: "FIFO", opt: "Optimal", lru: "LRU", clock: "Second chance", lfu: "LFU", mfu: "MFU" };
+
+/** Run a page-replacement algorithm over a reference string and watch the frames change, column by column. */
+export function PageReplacement({ algos = "fifo,opt,lru,clock,lfu,mfu", initial = "fifo" }: { algos?: string; initial?: Repl }) {
+  const list = algos.split(",").map((a) => a.trim()) as Repl[];
+  const [algo, setAlgo] = useState<Repl>(initial);
+  const [n, setN] = useState(3);
+  const [text, setText] = useState(REF_STRING.join(","));
+  const refs = useMemo(() => text.split(/[\s,]+/).map(Number).filter((x) => Number.isInteger(x) && x >= 0).slice(0, 30), [text]);
+  const steps = useMemo(() => replace(refs, n, algo), [refs, n, algo]);
+  const [k, setK] = useState(0);
+  useEffect(() => setK(0), [steps]);
+  useEffect(() => {
+    if (k >= steps.length) return;
+    const t = setTimeout(() => setK((x) => x + 1), 260);
+    return () => clearTimeout(t);
+  }, [k, steps.length]);
+  const shown = steps.slice(0, k);
+  const nFaults = shown.filter((s) => s.fault).length;
+  return (
+    <Panel title="Page replacement" legend={[["bg-orange", "page fault"], ["bg-mint", "page just loaded"]]}>
+      <div className="flex flex-wrap gap-1.5">
+        {list.map((a) => (
+          <button key={a} type="button" className={`${btn} !px-2 !py-1 ${a === algo ? "bg-foreground text-background" : ""}`} onClick={() => setAlgo(a)}>
+            {REPL_LABEL[a]}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-4 font-mono text-xs">
+        <label className="inline-flex items-center gap-2">
+          <span className="uppercase tracking-widest text-muted-foreground">frames</span>
+          <input type="range" min={1} max={7} value={n} onChange={(e) => setN(Number(e.target.value))} aria-label="number of frames" />
+          <span className="w-3">{n}</span>
+        </label>
+        <label className="inline-flex flex-1 items-center gap-2 min-w-[240px]">
+          <span className="uppercase tracking-widest text-muted-foreground">reference string</span>
+          <input value={text} onChange={(e) => setText(e.target.value)} className={`${inputCls} !py-1 flex-1`} aria-label="reference string" />
+        </label>
+        <button type="button" className={`${btn} !px-2 !py-1`} onClick={() => setText(REF_STRING.join(","))}>
+          slides
+        </button>
+        <button type="button" className={`${btn} !px-2 !py-1`} onClick={() => setText(BELADY_STRING.join(","))}>
+          Belady
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="border-collapse font-mono text-xs">
+          <tbody>
+            <tr>
+              {refs.map((p, i) => (
+                <td key={i} className={`w-7 h-7 text-center font-bold ${i === k - 1 ? "text-foreground" : "text-muted-foreground"}`}>
+                  {p}
+                </td>
+              ))}
+            </tr>
+            {Array.from({ length: n }, (_, row) => (
+              <tr key={row}>
+                {steps.map((s, i) => {
+                  const visible = i < k;
+                  const v = s.frames[row];
+                  const fresh = s.fault && s.slot === row;
+                  return (
+                    <td key={i} className={`w-7 h-7 text-center border border-border transition-colors duration-200 ${!visible ? "" : fresh ? "bg-mint/40 font-bold" : s.fault ? "bg-orange/10" : ""}`}>
+                      {visible && v !== null ? (
+                        <span className={fresh ? "inline-block animate-in zoom-in-50 duration-200" : ""}>
+                          {v}
+                          {algo === "clock" && s.refBits?.[row] ? "'" : ""}
+                        </span>
+                      ) : (
+                        ""
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+            <tr>
+              {steps.map((s, i) => (
+                <td key={i} className="w-7 h-5 text-center">
+                  {i < k && s.fault && <span className="inline-block h-2.5 w-2.5 rounded-full bg-orange animate-in zoom-in-50" title={s.victim !== null ? `replaced ${s.victim}` : "loaded into a free frame"} />}
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div>
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">page faults </span>
+          <span className="font-display text-2xl font-bold">{nFaults}</span>
+          <span className="font-mono text-xs text-muted-foreground"> / {refs.length} references</span>
+        </div>
+        <div className="font-mono text-[11px] text-muted-foreground">
+          {list.map((a) => `${REPL_LABEL[a]} ${faults(refs, n, a)}`).join(" · ")}
+        </div>
+        <button type="button" className={btn} onClick={() => setK(0)}>
+          ⟲ replay
+        </button>
+      </div>
+      {algo === "clock" && <p className="text-xs text-muted-foreground">A ' marks a page whose reference bit is 1: it gets a second chance before being replaced.</p>}
+    </Panel>
+  );
+}
+
+/** Page faults against number of frames: FIFO on the Belady string goes up at 4 frames. */
+export function FaultsVsFrames() {
+  const [refsName, setRefsName] = useState<"belady" | "slides">("belady");
+  const refs = refsName === "belady" ? BELADY_STRING : REF_STRING;
+  const ns = [1, 2, 3, 4, 5, 6, 7];
+  const series: [Repl, string][] = [
+    ["fifo", "stroke-orange"],
+    ["lru", "stroke-sky"],
+    ["opt", "stroke-mint"],
+  ];
+  const data = series.map(([a]) => ns.map((n) => faults(refs, n, a)));
+  const max = Math.max(...data.flat());
+  const W = 460;
+  const H = 220;
+  const X = (n: number) => 40 + ((n - 1) / 6) * (W - 60);
+  const Y = (v: number) => H - 30 - (v / max) * (H - 50);
+  return (
+    <Panel title="Page faults vs number of frames" legend={[["bg-orange", "FIFO"], ["bg-sky", "LRU"], ["bg-mint", "Optimal"]]}>
+      <Toggle<"belady" | "slides">
+        value={refsName}
+        onChange={setRefsName}
+        options={[
+          ["belady", "1,2,3,4,1,2,5,1,2,3,4,5"],
+          ["slides", "slides' string"],
+        ]}
+      />
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-w-[520px]" role="img" aria-label="page faults by number of frames">
+        {ns.map((n) => (
+          <text key={n} x={X(n)} y={H - 10} textAnchor="middle" className="fill-muted-foreground font-mono text-[10px]">
+            {n}
+          </text>
+        ))}
+        <text x={W / 2} y={H} textAnchor="middle" className="fill-muted-foreground font-mono text-[9px]">
+          number of frames
+        </text>
+        {series.map(([a, tone], si) => (
+          <g key={`${refsName}-${a}`}>
+            <path d={data[si].map((v, i) => `${i ? "L" : "M"}${X(ns[i])},${Y(v)}`).join(" ")} fill="none" strokeWidth={2.5} className={`${tone} animate-in fade-in duration-500`} />
+            {data[si].map((v, i) => (
+              <g key={i}>
+                <circle cx={X(ns[i])} cy={Y(v)} r={3.5} className={tone.replace("stroke", "fill")} />
+                {a === "fifo" && (
+                  <text x={X(ns[i])} y={Y(v) - 8} textAnchor="middle" className="fill-orange font-mono text-[10px] font-bold">
+                    {v}
+                  </text>
+                )}
+              </g>
+            ))}
+          </g>
+        ))}
+      </svg>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        {refsName === "belady"
+          ? "Look at FIFO between 3 and 4 frames: 9 faults becomes 10. More memory, more faults! That's Belady's anomaly. LRU and Optimal never do this."
+          : "On the slides' string all three curves only go down as frames are added."}
+      </p>
+    </Panel>
+  );
+}
+
+/* ------------------------------ allocation and thrashing ------------------------------ */
+
+/** Equal vs proportional allocation of frames. */
+export function FrameAllocation() {
+  const [m, setM] = useState(64);
+  const [sizes, setSizes] = useState([10, 127]);
+  const prop = proportional(sizes, m);
+  const equal = sizes.map(() => m / sizes.length);
+  const bar = (vals: number[], label: string) => (
+    <div>
+      <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">{label}</div>
+      <div className="flex h-8 rounded-sm overflow-hidden border border-border">
+        {vals.map((v, i) => (
+          <div key={i} className={`flex items-center justify-center font-mono text-[11px] font-bold text-background transition-all duration-500 ${i ? "bg-violet" : "bg-sky"}`} style={{ width: `${(v / m) * 100}%` }}>
+            {v >= 3 ? `P${i + 1}: ${fmt(Math.round(v * 10) / 10)}` : ""}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  return (
+    <Panel title="Allocating frames" legend={[["bg-sky", "P1"], ["bg-violet", "P2"]]}>
+      <div className="flex flex-wrap items-center gap-4 font-mono text-xs">
+        <label className="inline-flex items-center gap-2">
+          m (free frames)
+          <input type="number" min={2} max={500} value={m} onChange={(e) => setM(Math.max(2, Number(e.target.value) || 2))} className="w-16 bg-transparent border border-border rounded-sm px-1 py-0.5 text-right" aria-label="total frames" />
+        </label>
+        {sizes.map((s, i) => (
+          <label key={i} className="inline-flex items-center gap-2">
+            s{i + 1} (size of P{i + 1})
+            <input type="number" min={1} max={1000} value={s} onChange={(e) => setSizes((ss) => ss.map((x, j) => (j === i ? Math.max(1, Number(e.target.value) || 1) : x)))} className="w-16 bg-transparent border border-border rounded-sm px-1 py-0.5 text-right" aria-label={`size of process ${i + 1}`} />
+          </label>
+        ))}
+      </div>
+      {bar(equal, "equal allocation: m / n each")}
+      {bar(prop, "proportional allocation: aᵢ = sᵢ / S × m")}
+      <p className="font-mono text-xs text-muted-foreground">
+        S = {sizes.join(" + ")} = {sizes.reduce((a, b) => a + b, 0)} · a₁ = {sizes[0]}/{sizes.reduce((a, b) => a + b, 0)} × {m} ≈ {Math.round(prop[0])} · a₂ = {sizes[1]}/{sizes.reduce((a, b) => a + b, 0)} × {m} ≈ {Math.round(prop[1])}
+      </p>
+    </Panel>
+  );
+}
+
+/** CPU utilization against the degree of multiprogramming. */
+export function ThrashingChart() {
+  const [n, setN] = useState(3);
+  const ns = Array.from({ length: 12 }, (_, i) => i + 1);
+  const W = 460;
+  const H = 210;
+  const X = (k: number) => 40 + ((k - 1) / 11) * (W - 60);
+  const Y = (u: number) => H - 30 - u * (H - 50);
+  const u = utilization(n);
+  const thrashing = n * 12 > 60;
+  return (
+    <Panel title="Thrashing">
+      <label className="flex flex-wrap items-center gap-3 font-mono text-xs">
+        <span className="uppercase tracking-widest text-muted-foreground">processes in memory</span>
+        <input type="range" min={1} max={12} value={n} onChange={(e) => setN(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="degree of multiprogramming" />
+        <span className="w-6 font-display text-lg font-bold">{n}</span>
+      </label>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-w-[520px]" role="img" aria-label="CPU utilization against degree of multiprogramming">
+        <path d={ns.map((k, i) => `${i ? "L" : "M"}${X(k)},${Y(utilization(k))}`).join(" ")} fill="none" strokeWidth={2.5} className="stroke-sky" />
+        <rect x={X(5.5)} y={10} width={X(12) - X(5.5)} height={H - 40} className="fill-orange/10" />
+        <text x={X(9)} y={26} textAnchor="middle" className="fill-orange font-mono text-[10px]">
+          thrashing
+        </text>
+        <circle cx={X(n)} cy={Y(u)} r={7} className={`transition-all duration-300 ${thrashing ? "fill-orange" : "fill-mint"}`} />
+        <text x={18} y={H / 2} textAnchor="middle" transform={`rotate(-90 18 ${H / 2})`} className="fill-muted-foreground font-mono text-[9px]">
+          CPU utilization
+        </text>
+        <text x={W / 2} y={H - 8} textAnchor="middle" className="fill-muted-foreground font-mono text-[9px]">
+          degree of multiprogramming
+        </text>
+      </svg>
+      <p className={`text-sm ${thrashing ? "text-orange font-bold" : ""}`}>
+        {thrashing
+          ? `CPU utilization ${Math.round(u * 100)}%. The processes' localities need ${n * 12} frames but only 60 exist. Everyone page-faults constantly and waits on the disk, and the CPU sits idle.`
+          : `CPU utilization ${Math.round(u * 100)}%. Every process has room for its locality, so adding processes keeps the CPU busier.`}
+      </p>
+    </Panel>
+  );
+}
+
+/** The working set: the pages used in the last Δ references. */
+export function WorkingSetDemo() {
+  const [delta, setDelta] = useState(10);
+  const [t, setT] = useState(WS_T1);
+  const ws = workingSet(WS_REFS, t, delta);
+  return (
+    <Panel title="Working-set model" legend={[["bg-sky", "inside the window Δ"]]}>
+      <div className="flex flex-wrap items-center gap-4 font-mono text-xs">
+        <label className="inline-flex items-center gap-2">
+          <span className="uppercase tracking-widest text-muted-foreground">Δ</span>
+          <input type="range" min={1} max={20} value={delta} onChange={(e) => setDelta(Number(e.target.value))} aria-label="window size" />
+          <span className="w-5">{delta}</span>
+        </label>
+        <button type="button" className={`${btn} !px-2 !py-1 ${t === WS_T1 ? "bg-foreground text-background" : ""}`} onClick={() => setT(WS_T1)}>
+          t₁
+        </button>
+        <button type="button" className={`${btn} !px-2 !py-1 ${t === WS_T2 ? "bg-foreground text-background" : ""}`} onClick={() => setT(WS_T2)}>
+          t₂
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-0.5">
+        {WS_REFS.map((p, i) => {
+          const inside = i <= t && i > t - delta;
+          return (
+            <button key={i} type="button" onClick={() => setT(i)} className={`h-8 w-7 rounded-sm font-mono text-xs transition-colors duration-200 ${inside ? "bg-sky/40 font-bold" : "bg-muted/40 text-muted-foreground"} ${i === t ? "ring-2 ring-foreground" : ""}`}>
+              {p}
+            </button>
+          );
+        })}
+      </div>
+      <div className="font-display text-xl">
+        WS(t) = {"{"}
+        {ws.join(", ")}
+        {"}"} <span className="font-mono text-sm text-muted-foreground">· WSS = {ws.length}</span>
+      </div>
+      <p className="text-xs text-muted-foreground">Click any reference to move t. With Δ = 10, the working set at t₁ is {"{1, 2, 5, 6, 7}"}, and at t₂ the program has moved to a new locality: {"{3, 4}"}.</p>
     </Panel>
   );
 }

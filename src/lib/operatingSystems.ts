@@ -1244,3 +1244,138 @@ export function tlbRun(refs: number[], size: number) {
     return { page: p, hit, tlb: [...tlb], evicted };
   });
 }
+
+/* ------------------------------ virtual memory ------------------------------ */
+
+/** Demand-paging effective access time: (1 − p) × memory + p × page-fault service time (both in ns). */
+export const demandEat = (p: number, memNs = 200, faultNs = 8_000_000) => (1 - p) * memNs + p * faultNs;
+
+/** Largest page-fault rate that keeps the slowdown under `pct` percent. */
+export const maxFaultRate = (pct: number, memNs = 200, faultNs = 8_000_000) => ((pct / 100) * memNs) / (faultNs - memNs);
+
+export type PfState = { stage: number; valid: boolean[]; frames: (string | null)[] };
+
+export const PAGE_FAULT_CODE = [
+  "reference: load M (page 3)",
+  "page table entry is i → trap to the OS: page fault",
+  "OS checks its internal table: legal, just not in memory",
+  "find a free frame",
+  "read the page from the backing store into the frame",
+  "reset the page table: set the bit to v",
+  "restart the instruction",
+];
+
+/** The six steps of handling a page fault, for page 3 of a process with pages A–F. */
+export function pageFaultFrames(): Frame<PfState>[] {
+  const before: PfState = { stage: 0, valid: [true, false, true, false, false, true], frames: [null, "A", null, "C", null, "F", null, null] };
+  const after = { valid: [true, false, true, true, false, true], frames: [null, "A", "D", "C", null, "F", null, null] };
+  const msgs = [
+    "The process references page 3 (page D), say with an instruction like load M.",
+    "The MMU finds the valid-invalid bit is i. It can't finish the translation, so it traps to the OS: a page fault.",
+    "The OS looks at the process's internal table. Is the reference invalid (outside the process)? Then abort. Here it's legal, the page is just not in memory yet.",
+    "The OS finds a free frame: frame 2.",
+    "It schedules a disk read to bring page D from the backing store into frame 2. The process waits; the CPU runs someone else.",
+    "When the read finishes, the OS updates the page table: page 3 → frame 2, bit set to v.",
+    "Finally the instruction that caused the fault is restarted. This time the translation succeeds, as if the page had always been there.",
+  ];
+  return msgs.map((message, stage) => ({
+    state: stage < 5 ? { ...before, stage, frames: stage === 4 ? [...before.frames.slice(0, 2), "D…", ...before.frames.slice(3)] : before.frames } : { stage, ...after },
+    line: stage,
+    message,
+    stats: { "page faults": stage >= 1 ? 1 : 0 },
+  }));
+}
+
+/* ------------------------------ page replacement ------------------------------ */
+
+export type Repl = "fifo" | "opt" | "lru" | "clock" | "lfu" | "mfu";
+export type ReplStep = { page: number; frames: (number | null)[]; fault: boolean; victim: number | null; slot: number | null; refBits?: number[]; hand?: number };
+
+/** The slides' reference string. */
+export const REF_STRING = [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1];
+/** The string that shows Belady's anomaly under FIFO. */
+export const BELADY_STRING = [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5];
+
+/** Run a page-replacement algorithm. Ties (LFU/MFU) go to the page that has been in memory longest. */
+export function replace(refs: number[], nFrames: number, algo: Repl): ReplStep[] {
+  const frames: (number | null)[] = Array(nFrames).fill(null);
+  const loadedAt: number[] = Array(nFrames).fill(-1);
+  const lastUse: number[] = Array(nFrames).fill(-1);
+  const count = new Map<number, number>();
+  const refBit: number[] = Array(nFrames).fill(0);
+  let hand = 0;
+  return refs.map((page, t) => {
+    count.set(page, (count.get(page) ?? 0) + 1);
+    const at = frames.indexOf(page);
+    if (at >= 0) {
+      lastUse[at] = t;
+      refBit[at] = 1;
+      return { page, frames: [...frames], fault: false, victim: null, slot: null, refBits: [...refBit], hand };
+    }
+    let slot = frames.indexOf(null);
+    let victim: number | null = null;
+    if (slot < 0) {
+      const idx = frames.map((_, i) => i);
+      if (algo === "fifo") slot = idx.reduce((a, b) => (loadedAt[b] < loadedAt[a] ? b : a));
+      else if (algo === "lru") slot = idx.reduce((a, b) => (lastUse[b] < lastUse[a] ? b : a));
+      else if (algo === "opt") {
+        const nextUse = (p: number) => {
+          const k = refs.indexOf(p, t + 1);
+          return k < 0 ? Infinity : k;
+        };
+        slot = idx.reduce((a, b) => (nextUse(frames[b]!) > nextUse(frames[a]!) || (nextUse(frames[b]!) === nextUse(frames[a]!) && loadedAt[b] < loadedAt[a]) ? b : a));
+      } else if (algo === "clock") {
+        // second chance: skip (and clear) pages whose reference bit is 1
+        while (refBit[hand] === 1) {
+          refBit[hand] = 0;
+          hand = (hand + 1) % nFrames;
+        }
+        slot = hand;
+        hand = (hand + 1) % nFrames;
+      } else {
+        const c = (i: number) => count.get(frames[i]!) ?? 0;
+        slot = idx.reduce((a, b) => {
+          const better = algo === "lfu" ? c(b) < c(a) : c(b) > c(a);
+          return better || (c(b) === c(a) && loadedAt[b] < loadedAt[a]) ? b : a;
+        });
+      }
+      victim = frames[slot];
+    } else if (algo === "clock") hand = (slot + 1) % nFrames;
+    frames[slot] = page;
+    loadedAt[slot] = t;
+    lastUse[slot] = t;
+    refBit[slot] = algo === "clock" ? 0 : 1;
+    return { page, frames: [...frames], fault: true, victim, slot, refBits: [...refBit], hand };
+  });
+}
+
+export const faults = (refs: number[], n: number, algo: Repl) => replace(refs, n, algo).filter((s) => s.fault).length;
+
+/* ------------------------------ frame allocation ------------------------------ */
+
+/** Proportional allocation: a_i = s_i / S × m. */
+export function proportional(sizes: number[], m: number) {
+  const S = sizes.reduce((a, b) => a + b, 0);
+  return sizes.map((s) => (s / S) * m);
+}
+
+/* ------------------------------ working set ------------------------------ */
+
+/** The textbook's reference string for the working-set example, and the two times it looks at. */
+export const WS_REFS = [2, 6, 1, 5, 7, 7, 7, 7, 5, 1, 6, 2, 3, 4, 1, 2, 3, 4, 4, 4, 3, 4, 3, 4, 4, 4, 1, 3, 2, 3, 4, 4, 4, 3, 4, 4, 4];
+export const WS_T1 = 9;
+export const WS_T2 = 25;
+
+/** The pages referenced in the window of Δ references ending at time t (inclusive). */
+export function workingSet(refs: number[], t: number, delta: number) {
+  return [...new Set(refs.slice(Math.max(0, t - delta + 1), t + 1))].sort((a, b) => a - b);
+}
+
+/** A toy model of CPU utilization as the degree of multiprogramming grows, with a fixed amount of memory. */
+export function utilization(n: number, memFrames = 60, wss = 12) {
+  if (n <= 0) return 0;
+  const busy = 1 - 0.55 ** n; // more processes: more chance someone is ready
+  const demand = n * wss;
+  if (demand <= memFrames) return busy;
+  return busy * (memFrames / demand) ** 4; // not enough frames for everyone's locality: thrashing
+}

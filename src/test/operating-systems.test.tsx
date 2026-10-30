@@ -4,7 +4,7 @@ import path from "path";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { LinuxTerminal } from "@/components/mdx/OsVisualizers";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim, runThreads, matrixAddFrames, raceRun, TEXTBOOK_RACE, petersonStart, petersonStep, seeded, testAndSet, compareAndSwap, semWait, semSignal, deadlockFrames, semBuffer, semProduce, semConsume, rwStart, rwArrive, rwLeave, diningStart, diningStep, diningDeadlocked, type PetersonState, type Dining, jraceRun, monitorStart, monitorEnter, monitorWait, monitorNotify, monitorExit, schedule, SCHED_PRESETS, EVAL_WORKLOAD, expAverage, BURST_SAMPLE, switchesFor, mlfq, baseLimitCheck, relocate, swapTime, allocate, release, compact, fitExerciseMemory, FIT_REQUESTS, segTranslate, splitAddress, PAGE_EXAMPLE, pageTranslate, internalFrag, eat, tlbRun, type Fit } from "@/lib/operatingSystems";
+import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim, runThreads, matrixAddFrames, raceRun, TEXTBOOK_RACE, petersonStart, petersonStep, seeded, testAndSet, compareAndSwap, semWait, semSignal, deadlockFrames, semBuffer, semProduce, semConsume, rwStart, rwArrive, rwLeave, diningStart, diningStep, diningDeadlocked, type PetersonState, type Dining, jraceRun, monitorStart, monitorEnter, monitorWait, monitorNotify, monitorExit, schedule, SCHED_PRESETS, EVAL_WORKLOAD, expAverage, BURST_SAMPLE, switchesFor, mlfq, baseLimitCheck, relocate, swapTime, allocate, release, compact, fitExerciseMemory, FIT_REQUESTS, segTranslate, splitAddress, PAGE_EXAMPLE, pageTranslate, internalFrag, eat, tlbRun, type Fit, demandEat, maxFaultRate, pageFaultFrames, replace, faults, REF_STRING, BELADY_STRING, proportional, workingSet, WS_REFS, WS_T1, WS_T2, utilization } from "@/lib/operatingSystems";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -416,5 +416,54 @@ describe("chapter 8 helpers", () => {
     const r = tlbRun([1, 2, 1, 3, 4, 1], 3);
     expect(r.map((x) => x.hit)).toEqual([false, false, true, false, false, true]);
     expect(r[4].evicted).toBe(2);
+  });
+});
+
+describe("chapter 9 helpers", () => {
+  it("matches the demand-paging EAT example", () => {
+    expect(demandEat(0.001)).toBeCloseTo(8199.8, 1);
+    expect(demandEat(0.001) / 200).toBeGreaterThan(40);
+    expect(maxFaultRate(10)).toBeCloseTo(0.0000025, 8);
+  });
+
+  it("ends the page-fault walk-through with the page valid in its frame", () => {
+    const last = pageFaultFrames().at(-1)!.state;
+    expect(last.valid[3]).toBe(true);
+    expect(last.frames[2]).toBe("D");
+  });
+
+  it("counts the slides' page faults: FIFO 15, OPT 9, LRU 12", () => {
+    expect(faults(REF_STRING, 3, "fifo")).toBe(15);
+    expect(faults(REF_STRING, 3, "opt")).toBe(9);
+    expect(faults(REF_STRING, 3, "lru")).toBe(12);
+  });
+
+  it("shows Belady's anomaly for FIFO but not LRU", () => {
+    expect(faults(BELADY_STRING, 3, "fifo")).toBe(9);
+    expect(faults(BELADY_STRING, 4, "fifo")).toBe(10);
+    for (let n = 1; n < 6; n++) expect(faults(BELADY_STRING, n + 1, "lru")).toBeLessThanOrEqual(faults(BELADY_STRING, n, "lru"));
+  });
+
+  it("never beats OPT, and gives the clock a second chance", () => {
+    for (const a of ["fifo", "lru", "clock", "lfu", "mfu"] as const) expect(faults(REF_STRING, 3, a)).toBeGreaterThanOrEqual(9);
+    const steps = replace([1, 2, 3, 1, 4], 3, "clock");
+    expect(steps[4].victim).toBe(2);
+  });
+
+  it("allocates frames proportionally like the slides", () => {
+    const [a1, a2] = proportional([10, 127], 64);
+    expect(Math.round(a1)).toBe(5);
+    expect(Math.round(a2)).toBe(59);
+  });
+
+  it("finds the textbook working sets", () => {
+    expect(workingSet(WS_REFS, WS_T1, 10)).toEqual([1, 2, 5, 6, 7]);
+    expect(workingSet(WS_REFS, WS_T2, 10)).toEqual([3, 4]);
+  });
+
+  it("models thrashing: utilization rises, then collapses", () => {
+    const u = [1, 2, 3, 4, 5, 6, 8, 10].map((n) => utilization(n));
+    expect(u[4]).toBeGreaterThan(u[0]);
+    expect(u[7]).toBeLessThan(u[4] / 2);
   });
 });
