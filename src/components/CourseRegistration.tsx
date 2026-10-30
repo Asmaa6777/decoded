@@ -15,7 +15,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { Course } from "@/content/registry";
-import { flattenLessons } from "@/content/registry";
+import { flattenLessons, getCourse } from "@/content/registry";
+import { prerequisites } from "@/content/paths";
 import { useProgress } from "@/hooks/useProgress";
 import { useRegistration } from "@/hooks/useRegistration";
 import { leaveCourse, registerForCourse } from "@/lib/progressSync";
@@ -187,4 +188,23 @@ function CourseProgress({ course }: { course: Course }) {
 export function CourseRegistration({ course }: { course: Course }) {
   const { registered } = useRegistration(course.slug);
   return registered ? <CourseProgress course={course} /> : <RegisterPrompt course={course} />;
+}
+
+/** What helps to read first. Only a suggestion: every course stays open. */
+export function CoursePrerequisites({ courseSlug }: { courseSlug: string }) {
+  const required = prerequisites[courseSlug];
+  if (!required) return null;
+  return (
+    <p className="mt-6 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+      Helps to know first:{" "}
+      {required.map((slug, i) => (
+        <span key={slug}>
+          {i > 0 && " · "}
+          <Link to={`/courses/${slug}`} className="underline underline-offset-4 hover:text-foreground">
+            {getCourse(slug)?.title}
+          </Link>
+        </span>
+      ))}
+    </p>
+  );
 }

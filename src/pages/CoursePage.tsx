@@ -4,7 +4,7 @@ import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getCourse, flattenLessons, lessonKind } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
 import { useQuizScores } from "@/hooks/useQuizScores";
-import { CourseRegistration } from "@/components/CourseRegistration";
+import { CoursePrerequisites, CourseRegistration } from "@/components/CourseRegistration";
 import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 import { CourseAuthors } from "@/components/CourseAuthors";
 
@@ -53,6 +53,7 @@ export default function CoursePage() {
 
             {course.authors && <CourseAuthors authors={course.authors} />}
 
+            <CoursePrerequisites courseSlug={course.slug} />
             {total > 0 && <CourseRegistration course={course} />}
           </div>
         </header>

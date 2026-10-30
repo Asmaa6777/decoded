@@ -1,6 +1,8 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import CourseCard from "@/components/CourseCard";
+import { LearningPaths } from "@/components/LearningPaths";
 import { courses } from "@/content/registry";
 import { useAccountStatus, useEnrollments } from "@/hooks/useAccountStatus";
 import { useProgress } from "@/hooks/useProgress";
@@ -38,6 +40,15 @@ export default function Courses() {
               </div>
             </section>
           )}
+
+          {mine.length === 0 && <LearningPaths />}
+
+          <p className="mb-6 font-mono text-xs text-muted-foreground">
+            Rather start from something you already use?{" "}
+            <Link to="/tools" className="underline underline-offset-4 hover:text-foreground">
+              Browse by tool
+            </Link>
+          </p>
 
           <div className="grid gap-4 md:grid-cols-2">
             {courses.filter((c) => !mine.includes(c)).map((c) => (
