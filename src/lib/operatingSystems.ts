@@ -862,3 +862,84 @@ export function diningDeadlocked(d: Dining, mode: "naive" | "asymmetric") {
     return p === "hungry" && d.stick[first] === i && d.stick[second] !== null && d.stick[second] !== i;
   });
 }
+
+/* ------------------------------ Java synchronization (lab 3) ------------------------------ */
+
+export type JRace = { c: number; reg: [number | null, number | null]; pc: [number, number]; owner: 0 | 1 | null; blocked: [boolean, boolean]; log: string[] };
+
+/** The steps of increment() / decrement(); acquire and release only exist when the methods are synchronized. */
+export function jraceSteps(synced: boolean, op: "inc" | "dec") {
+  const body = ["int register = c;", `register = register ${op === "inc" ? "+" : "-"} 1;`, "c = register;"];
+  return synced ? ["acquire the object's lock", ...body, "release the lock"] : body;
+}
+
+/**
+ * Thread 0 runs increment(), thread 1 runs decrement(), on the same counter (start 1, like the lab).
+ * With synchronized methods, a thread that reaches the lock while the other holds it is blocked.
+ */
+export function jraceRun(order: (0 | 1)[], synced: boolean, start = 1): JRace {
+  const ops: ("inc" | "dec")[] = ["inc", "dec"];
+  const steps = ops.map((o) => jraceSteps(synced, o));
+  const s: JRace = { c: start, reg: [null, null], pc: [0, 0], owner: null, blocked: [false, false], log: [] };
+  for (const t of order) {
+    const pc = s.pc[t];
+    if (pc >= steps[t].length) continue;
+    const line = steps[t][pc];
+    if (synced && pc === 0) {
+      if (s.owner !== null && s.owner !== t) {
+        s.blocked[t] = true;
+        s.log.push(`T${s.log.length}: ${t ? "B" : "A"} tries to enter, but ${s.owner ? "B" : "A"} holds the lock: blocked`);
+        continue;
+      }
+      s.owner = t;
+      s.blocked[t] = false;
+    } else if (line.startsWith("int register")) s.reg[t] = s.c;
+    else if (line.startsWith("register =")) s.reg[t] = s.reg[t]! + (ops[t] === "inc" ? 1 : -1);
+    else if (line.startsWith("c =")) s.c = s.reg[t]!;
+    else if (line.startsWith("release")) s.owner = null;
+    s.pc[t]++;
+    s.log.push(`T${s.log.length}: ${t ? "B" : "A"} ${line}  {${line.startsWith("c =") ? `c = ${s.c}` : line.includes("lock") ? `lock: ${s.owner === null ? "free" : s.owner ? "B" : "A"}` : `register = ${s.reg[t]}`}}`);
+  }
+  return s;
+}
+
+/* A Java object's monitor: one owner, an entry set waiting for the lock, a wait set waiting for notify. */
+export type Monitor = { owner: string | null; entry: string[]; waitSet: string[]; note: string };
+
+export const monitorStart = (): Monitor => ({ owner: null, entry: [], waitSet: [], note: "The object's lock is free." });
+
+/** Hand the lock to the first thread in the entry set, if any. */
+function nextOwner(m: Monitor): Monitor {
+  const [first, ...rest] = m.entry;
+  return first ? { ...m, owner: first, entry: rest } : { ...m, owner: null };
+}
+
+export function monitorEnter(m: Monitor, t: string): Monitor {
+  if (m.owner === t || m.entry.includes(t) || m.waitSet.includes(t)) return m;
+  if (m.owner === null) return { ...m, owner: t, note: `${t} enters the synchronized block and acquires the object's lock.` };
+  return { ...m, entry: [...m.entry, t], note: `${t} wants the lock, but ${m.owner} has it. ${t} blocks in the entry set.` };
+}
+
+export function monitorExit(m: Monitor, t: string): Monitor {
+  if (m.owner !== t) return m;
+  const n = nextOwner(m);
+  return { ...n, note: `${t} leaves the synchronized block and releases the lock.${n.owner ? ` ${n.owner} gets it next.` : ""}` };
+}
+
+export function monitorWait(m: Monitor, t: string): Monitor {
+  if (m.owner !== t) return { ...m, note: `${t} can only call wait() while it owns the lock (otherwise Java throws IllegalMonitorStateException).` };
+  const n = nextOwner({ ...m, waitSet: [...m.waitSet, t] });
+  return { ...n, note: `${t} calls wait(): it releases the lock and goes to sleep in the wait set.${n.owner ? ` ${n.owner} gets the lock.` : ""}` };
+}
+
+export function monitorNotify(m: Monitor, t: string, all = false): Monitor {
+  if (m.owner !== t) return { ...m, note: `${t} must own the lock to call notify${all ? "All" : ""}().` };
+  if (!m.waitSet.length) return { ...m, note: `${t} calls notify${all ? "All" : ""}(), but nobody is in the wait set. Nothing happens.` };
+  const woken = all ? m.waitSet : m.waitSet.slice(0, 1);
+  return {
+    ...m,
+    waitSet: all ? [] : m.waitSet.slice(1),
+    entry: [...m.entry, ...woken],
+    note: `${t} calls notify${all ? "All" : ""}(): ${woken.join(", ")} ${woken.length > 1 ? "wake" : "wakes"} up and must re-acquire the lock, so ${woken.length > 1 ? "they move" : "it moves"} to the entry set. ${t} still holds the lock.`,
+  };
+}

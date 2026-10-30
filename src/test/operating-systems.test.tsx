@@ -4,7 +4,7 @@ import path from "path";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { LinuxTerminal } from "@/components/mdx/OsVisualizers";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim, runThreads, matrixAddFrames, raceRun, TEXTBOOK_RACE, petersonStart, petersonStep, seeded, testAndSet, compareAndSwap, semWait, semSignal, deadlockFrames, semBuffer, semProduce, semConsume, rwStart, rwArrive, rwLeave, diningStart, diningStep, diningDeadlocked, type PetersonState, type Dining } from "@/lib/operatingSystems";
+import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim, runThreads, matrixAddFrames, raceRun, TEXTBOOK_RACE, petersonStart, petersonStep, seeded, testAndSet, compareAndSwap, semWait, semSignal, deadlockFrames, semBuffer, semProduce, semConsume, rwStart, rwArrive, rwLeave, diningStart, diningStep, diningDeadlocked, type PetersonState, type Dining, jraceRun, monitorStart, monitorEnter, monitorWait, monitorNotify, monitorExit } from "@/lib/operatingSystems";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -282,5 +282,31 @@ describe("chapter 5 helpers", () => {
       }
       expect(a.meals.reduce((x, y) => x + y, 0)).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("lab 3 helpers", () => {
+  it("lets the lab's interleaving go wrong only without synchronized", () => {
+    expect(jraceRun([0, 1, 0, 1, 0, 1], false).c).toBe(0);
+    expect(jraceRun([1, 0, 1, 0, 1, 0], false).c).toBe(2);
+    const order = Array.from({ length: 20 }, (_, k) => (k % 2) as 0 | 1);
+    const synced = jraceRun(order, true);
+    expect(synced.c).toBe(1);
+    expect(synced.log.some((l) => l.includes("blocked"))).toBe(true);
+  });
+
+  it("moves threads between the entry set, the owner and the wait set", () => {
+    let m = monitorEnter(monitorEnter(monitorStart(), "T1"), "T2");
+    expect(m.owner).toBe("T1");
+    expect(m.entry).toEqual(["T2"]);
+    m = monitorWait(m, "T1");
+    expect(m.owner).toBe("T2");
+    expect(m.waitSet).toEqual(["T1"]);
+    m = monitorNotify(m, "T2");
+    expect(m.entry).toEqual(["T1"]);
+    expect(m.owner).toBe("T2");
+    m = monitorExit(m, "T2");
+    expect(m.owner).toBe("T1");
+    expect(monitorWait(m, "T3").owner).toBe("T1");
   });
 });

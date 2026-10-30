@@ -81,6 +81,14 @@ import {
   type RW,
   type Sem,
   type SemBuffer,
+  jraceRun,
+  jraceSteps,
+  monitorEnter,
+  monitorExit,
+  monitorNotify,
+  monitorStart,
+  monitorWait,
+  type Monitor,
 } from "@/lib/operatingSystems";
 import { exists, initialShell, promptPath, readFile, run, type ShellState } from "@/lib/miniShell";
 
@@ -1990,18 +1998,33 @@ export function SemaphoreDeadlock() {
 /* ------------------------------ bounded buffer with semaphores ------------------------------ */
 
 /** The semaphore solution: empty counts free slots, full counts items, mutex guards the buffer. */
-export function SemaphoreBuffer({ n = 5 }: { n?: number }) {
+export function SemaphoreBuffer({ n = 5, java = false }: { n?: number; java?: boolean }) {
+  // the lab's Java version calls the semaphores spaces/elements, uses P()/V(), and has no mutex
+  const E = java ? "spaces" : "empty";
+  const F = java ? "elements" : "full";
   const [b, setB] = useState<SemBuffer>(() => semBuffer(n));
-  const [msg, setMsg] = useState("empty = n, full = 0, mutex = 1.");
+  const [msg, setMsg] = useState(java ? `spaces = ${n}, elements = 0.` : "empty = n, full = 0, mutex = 1.");
   const prod = () => {
     const r = semProduce(b);
     setB(r);
-    setMsg(r.blockedP ? "Producer: wait(empty) with empty = 0. No free slot, so the producer blocks until a consumer signals empty." : `Producer: wait(empty) → empty = ${r.empty}; wait(mutex); put item ${b.next}; signal(mutex); signal(full) → full = ${r.full}.`);
+    setMsg(
+      r.blockedP
+        ? `Producer: ${java ? "spaces.P()" : "wait(empty)"} with ${E} = 0. No free slot, so the producer blocks until a consumer signals ${E}.`
+        : java
+          ? `Producer: spaces.P() → spaces = ${r.empty}; store[inptr] = ${b.next}; elements.V() → elements = ${r.full}.`
+          : `Producer: wait(empty) → empty = ${r.empty}; wait(mutex); put item ${b.next}; signal(mutex); signal(full) → full = ${r.full}.`,
+    );
   };
   const cons = () => {
     const r = semConsume(b);
     setB(r);
-    setMsg(r.blockedC ? "Consumer: wait(full) with full = 0. Nothing to take, so the consumer blocks until a producer signals full." : `Consumer: wait(full) → full = ${r.full}; wait(mutex); take an item; signal(mutex); signal(empty) → empty = ${r.empty}.`);
+    setMsg(
+      r.blockedC
+        ? `Consumer: ${java ? "elements.P()" : "wait(full)"} with ${F} = 0. Nothing to take, so the consumer blocks until a producer signals ${F}.`
+        : java
+          ? `Consumer: elements.P() → elements = ${r.full}; value = store[outptr]; spaces.V() → spaces = ${r.empty}.`
+          : `Consumer: wait(full) → full = ${r.full}; wait(mutex); take an item; signal(mutex); signal(empty) → empty = ${r.empty}.`,
+    );
   };
   const sem = (name: string, v: number, tone: string) => (
     <div className="text-center">
@@ -2022,9 +2045,9 @@ export function SemaphoreBuffer({ n = 5 }: { n?: number }) {
           ))}
         </div>
         <div className="flex gap-5">
-          {sem("empty", b.empty, b.empty === 0 ? "text-orange" : "")}
-          {sem("full", b.full, b.full === 0 ? "text-orange" : "")}
-          {sem("mutex", 1, "")}
+          {sem(E, b.empty, b.empty === 0 ? "text-orange" : "")}
+          {sem(F, b.full, b.full === 0 ? "text-orange" : "")}
+          {!java && sem("mutex", 1, "")}
         </div>
       </div>
       <p aria-live="polite" className="text-sm font-mono min-h-[2.5em]">
@@ -2041,7 +2064,9 @@ export function SemaphoreBuffer({ n = 5 }: { n?: number }) {
           ⟲
         </button>
       </div>
-      <p className="text-xs text-muted-foreground">Unlike the in/out-only version from the IPC lesson, the semaphores keep count, so all {n} slots can be used.</p>
+      <p className="text-xs text-muted-foreground">
+        {java ? "One producer thread and one consumer thread: inptr and outptr are each touched by only one thread, so no mutex is needed." : `Unlike the in/out-only version from the IPC lesson, the semaphores keep count, so all ${n} slots can be used.`}
+      </p>
     </Panel>
   );
 }
@@ -2195,6 +2220,155 @@ export function DiningPhilosophers() {
           </p>
         </div>
       </div>
+    </Panel>
+  );
+}
+
+/* ------------------------------ Java synchronization ------------------------------ */
+
+/** Thread A increments and thread B decrements the same counter. Flip synchronized on and off. */
+export function SynchronizedRace() {
+  const [synced, setSynced] = useState(false);
+  const [order, setOrder] = useState<(0 | 1)[]>([]);
+  const s = useMemo(() => jraceRun(order, synced), [order, synced]);
+  const steps = [jraceSteps(synced, "inc"), jraceSteps(synced, "dec")];
+  const done = s.pc[0] >= steps[0].length && s.pc[1] >= steps[1].length;
+  // the lab's trace: alternate A, B, A, B... (blocked turns don't advance) until both finish
+  const labOrder = useMemo(() => {
+    const o: (0 | 1)[] = [];
+    for (let k = 0; k < 40; k++) {
+      o.push((k % 2) as 0 | 1);
+      const r = jraceRun(o, synced);
+      if (r.pc[0] >= jraceSteps(synced, "inc").length && r.pc[1] >= jraceSteps(synced, "dec").length) break;
+    }
+    return o;
+  }, [synced]);
+  return (
+    <Panel title="Two threads, one counter (c starts at 1)" legend={[["bg-sky", "A: increment()"], ["bg-violet", "B: decrement()"]]}>
+      <div className="flex flex-wrap items-center gap-3">
+        <Toggle<"off" | "on">
+          value={synced ? "on" : "off"}
+          onChange={(v) => {
+            setSynced(v === "on");
+            setOrder([]);
+          }}
+          options={[
+            ["off", "plain methods"],
+            ["on", "synchronized methods"],
+          ]}
+        />
+        <span className={`font-mono text-xs px-2 py-1 rounded-sm transition-colors ${s.owner === null ? "bg-muted" : "bg-orange text-background"}`}>
+          {synced ? (s.owner === null ? "🔓 lock free" : `🔒 held by ${s.owner ? "B" : "A"}`) : "no lock"}
+        </span>
+      </div>
+      <div className="grid sm:grid-cols-[1fr_auto_1fr] gap-3 items-start">
+        <CodeColumn title={`A · increment()${s.blocked[0] ? " · blocked" : ""}`} lines={steps[0]} pc={s.pc[0]} tone={s.blocked[0] ? "bg-orange/30" : "bg-sky/20"} done={s.pc[0] >= steps[0].length} />
+        <div className="text-center py-2">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">c</div>
+          <div key={s.c} className={`font-display text-4xl font-bold animate-in zoom-in-75 duration-300 ${done ? (s.c === 1 ? "text-mint" : "text-orange") : ""}`}>
+            {s.c}
+          </div>
+          <div className="font-mono text-[11px]">A.reg = {s.reg[0] ?? "–"} · B.reg = {s.reg[1] ?? "–"}</div>
+        </div>
+        <CodeColumn title={`B · decrement()${s.blocked[1] ? " · blocked" : ""}`} lines={steps[1]} pc={s.pc[1]} tone={s.blocked[1] ? "bg-orange/30" : "bg-violet/20"} done={s.pc[1] >= steps[1].length} />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={btn} disabled={s.pc[0] >= steps[0].length} onClick={() => setOrder((o) => [...o, 0])}>
+          run A
+        </button>
+        <button type="button" className={btn} disabled={s.pc[1] >= steps[1].length} onClick={() => setOrder((o) => [...o, 1])}>
+          run B
+        </button>
+        <button type="button" className={btn} onClick={() => setOrder(labOrder)}>
+          the lab's order (A, B, A, B, …)
+        </button>
+        <button type="button" className={btn} onClick={() => setOrder([])}>
+          ⟲
+        </button>
+      </div>
+      <div className="font-mono text-[11px] text-muted-foreground flex flex-col min-h-[1.5em]">
+        {s.log.map((l, i) => (
+          <span key={i} className="animate-in fade-in duration-200">
+            {l}
+          </span>
+        ))}
+      </div>
+      {done && (
+        <p className={`text-sm font-bold animate-in fade-in ${s.c === 1 ? "text-mint" : "text-orange"}`}>
+          {s.c === 1 ? "c = 1, correct. " + (synced ? "With synchronized, the two methods can't interleave, whatever order you pick." : "Lucky order! Try alternating A and B.") : `c = ${s.c}, but +1 − 1 should leave it at 1. Now switch on synchronized and try the same order.`}
+        </p>
+      )}
+    </Panel>
+  );
+}
+
+/** A Java object's monitor: who owns the lock, who waits to enter, who sleeps in wait(). */
+export function JavaMonitor() {
+  const [m, setM] = useState<Monitor>(monitorStart);
+  const threads = ["T1", "T2", "T3"];
+  const where = (t: string) => (m.owner === t ? "owner" : m.entry.includes(t) ? "entry" : m.waitSet.includes(t) ? "wait" : "outside");
+  const zone = (title: string, list: string[], tone: string, hint: string) => (
+    <div className={`rounded-sm border-2 border-dashed p-2 min-h-[70px] ${tone}`}>
+      <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{title}</div>
+      <div className="text-[10px] text-muted-foreground mb-1">{hint}</div>
+      <div className="flex flex-wrap gap-1.5">
+        {list.map((t) => (
+          <span key={t} className="px-2 py-1 rounded-sm bg-foreground text-background font-mono text-xs animate-in zoom-in-50 duration-300">
+            {t}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+  return (
+    <Panel title="Inside a Java object's monitor">
+      <div className="grid sm:grid-cols-3 gap-3">
+        {zone("entry set", m.entry, "border-orange/50", "blocked, waiting for the lock")}
+        <div className={`rounded-sm border-2 p-2 min-h-[70px] flex flex-col items-center justify-center transition-colors duration-300 ${m.owner ? "border-mint bg-mint/15" : "border-border"}`}>
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">owner {m.owner ? "🔒" : "🔓"}</div>
+          {m.owner ? (
+            <span key={m.owner} className="mt-1 px-3 py-1.5 rounded-sm bg-mint text-background font-mono font-bold animate-in zoom-in-50 duration-300">
+              {m.owner}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground mt-1">nobody</span>
+          )}
+        </div>
+        {zone("wait set", m.waitSet, "border-sky/50", "called wait(), sleeping until notify()")}
+      </div>
+      <p aria-live="polite" className="text-sm min-h-[2.5em]">
+        {m.note}
+      </p>
+      <div className="flex flex-col gap-2">
+        {threads.map((t) => {
+          const w = where(t);
+          return (
+            <div key={t} className="flex flex-wrap items-center gap-1.5">
+              <span className="font-mono text-xs w-20">
+                {t} <span className="text-muted-foreground">· {w}</span>
+              </span>
+              <button type="button" className={`${btn} !px-2 !py-1`} disabled={w !== "outside"} onClick={() => setM(monitorEnter(m, t))}>
+                synchronized
+              </button>
+              <button type="button" className={`${btn} !px-2 !py-1`} disabled={w !== "owner"} onClick={() => setM(monitorWait(m, t))}>
+                wait()
+              </button>
+              <button type="button" className={`${btn} !px-2 !py-1`} disabled={w !== "owner"} onClick={() => setM(monitorNotify(m, t))}>
+                notify()
+              </button>
+              <button type="button" className={`${btn} !px-2 !py-1`} disabled={w !== "owner"} onClick={() => setM(monitorNotify(m, t, true))}>
+                notifyAll()
+              </button>
+              <button type="button" className={`${btn} !px-2 !py-1`} disabled={w !== "owner"} onClick={() => setM(monitorExit(m, t))}>
+                exit block
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      <button type="button" className={`${btn} self-start`} onClick={() => setM(monitorStart())}>
+        ⟲ reset
+      </button>
     </Panel>
   );
 }
