@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { BrandLockup, BrandMark } from "@/components/brand/BrandMark";
 import { AccountButton } from "@/components/AccountButton";
 import { SearchButton } from "@/components/SearchDialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ProgressBackup } from "@/components/ProgressBackup";
 import { useAccountStatus } from "@/hooks/useAccountStatus";
 
@@ -28,6 +29,7 @@ export function SiteHeader() {
             Courses
           </Link>
           <SearchButton />
+          <ThemeToggle />
           <AccountButton />
         </nav>
       </div>
