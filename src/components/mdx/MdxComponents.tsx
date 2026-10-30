@@ -792,6 +792,7 @@ export function Diagram({ nodes, edges, direction = "LR" }: DiagramProps) {
     type: e.back ? "smoothstep" : "default",
     sourceHandle: e.back ? "loop-out" : undefined,
     targetHandle: e.back ? "loop-in" : undefined,
+    ...(e.back ? { pathOptions: { offset: 60 } } : {}),
     markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--foreground))" },
     labelBgPadding: [6, 3],
     labelBgBorderRadius: 2,
