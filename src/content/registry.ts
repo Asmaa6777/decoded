@@ -60,6 +60,7 @@ import AaHuffman from "@/content/advanced-algorithms/m3-04-huffman-and-activity-
 import AaShortestPaths from "@/content/advanced-algorithms/m3-05-shortest-paths.mdx";
 import AaPNP from "@/content/advanced-algorithms/m4-01-p-and-np.mdx";
 import OsWhatAnOsDoes from "@/content/operating-systems/m1-01-what-an-os-does.mdx";
+import OsArchitecture from "@/content/operating-systems/m1-02-os-architecture-and-operations.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -303,6 +304,7 @@ export const courses: Course[] = [
         blurb: "What an OS is, how the hardware underneath it works, and how the OS is built.",
         lessons: [
           { slug: "what-an-os-does", title: "What an Operating System Does", duration: "18 min", Component: OsWhatAnOsDoes },
+          { slug: "os-architecture-and-operations", title: "Inside the OS: Architecture, Operations and Environments", duration: "22 min", Component: OsArchitecture },
         ],
       },
     ],

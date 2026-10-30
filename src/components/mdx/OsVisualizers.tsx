@@ -417,3 +417,53 @@ export function DualModeSwitch() {
     />
   );
 }
+
+/* ------------------------------ timer ------------------------------ */
+
+/** A program stuck in an infinite loop, and the timer that takes the CPU back from it. */
+export function TimerInterrupt({ slice = 8 }: { slice?: number }) {
+  const [on, setOn] = useState(false);
+  const [tick, setTick] = useTicker(on, slice + 3, 450);
+  const counter = Math.max(0, slice - tick);
+  const fired = tick >= slice;
+  return (
+    <Panel title="The timer takes back control" legend={[["bg-sky", "user program"], ["bg-orange", "operating system"]]}>
+      <div className="grid sm:grid-cols-[1fr_auto] gap-4 items-center">
+        <div className={`rounded-sm border-2 p-4 font-mono text-xs transition-colors duration-300 ${fired ? "border-orange bg-orange/10" : "border-sky bg-sky/10"}`}>
+          {fired ? (
+            <div className="animate-in fade-in duration-300">
+              <div className="font-display text-base font-bold">⚡ timer interrupt → OS is back in charge</div>
+              <div className="text-muted-foreground mt-1">It can give the CPU to another program, or end this one for going over its time.</div>
+            </div>
+          ) : (
+            <>
+              <div>while (true) {"{"}</div>
+              <div className="pl-4">
+                x = x + 1; <span className={on ? "inline-block animate-spin" : ""}>↻</span>
+              </div>
+              <div>{"}"}</div>
+              <div className="text-muted-foreground mt-1">this loop will never give the CPU back by itself</div>
+            </>
+          )}
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">counter</div>
+          <div key={counter} className={`font-display text-5xl font-bold w-20 text-center animate-in zoom-in-90 duration-200 ${counter === 0 ? "text-orange" : ""}`}>
+            {counter}
+          </div>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Before giving a program the CPU, the OS loads the timer's counter. Every clock tick the counter goes down by one. At zero the timer raises an interrupt, and the OS runs again, no matter what the program was doing.
+      </p>
+      <div className="flex gap-2">
+        <button type="button" className={btn} onClick={() => setOn((r) => !r)}>
+          {on ? "❚❚ Pause" : "▶ Run the program"}
+        </button>
+        <button type="button" className={btn} onClick={() => { setOn(false); setTick(0); }}>
+          ⟲ Reset
+        </button>
+      </div>
+    </Panel>
+  );
+}
