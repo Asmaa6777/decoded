@@ -257,9 +257,11 @@ const SEO_BLOCK = /<!-- seo:start[\s\S]*?<!-- seo:end -->/;
 const routes = [];
 
 async function writeRoute(template, route, meta) {
-  routes.push(meta.url);
+  // GitHub Pages redirects /route to /route/, so that's the address to advertise.
+  const url = meta.url.endsWith("/") ? meta.url : `${meta.url}/`;
+  routes.push(url);
   if (!SEO_BLOCK.test(template)) throw new Error("seo markers not found in dist/index.html");
-  const html = template.replace(SEO_BLOCK, seoBlock(meta));
+  const html = template.replace(SEO_BLOCK, seoBlock({ ...meta, url }));
   const file = route === "/" ? path.join(DIST, "index.html") : path.join(DIST, route, "index.html");
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, html);
