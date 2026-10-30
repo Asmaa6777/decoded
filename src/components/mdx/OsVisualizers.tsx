@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { btn, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import {
   DEMO_JOBS,
@@ -28,6 +28,7 @@ import {
   type StructureKind,
   type SyscallState,
 } from "@/lib/operatingSystems";
+import { exists, initialShell, promptPath, readFile, run, type ShellState } from "@/lib/miniShell";
 
 /* ============================================================
    Visualizers for the Operating Systems course. They reuse the
@@ -756,5 +757,154 @@ export function BootSequence() {
         </div>
       )}
     />
+  );
+}
+
+/* ------------------------------ Linux terminal ------------------------------ */
+
+type Mission = { text: string; hint: string; done: (st: ShellState, history: string[]) => boolean };
+
+const ran = (history: string[], re: RegExp) => history.some((h) => re.test(h.trim()));
+
+const LAB1_MISSIONS: Mission[] = [
+  { text: "Print the working directory", hint: "pwd", done: (_s, h) => ran(h, /^pwd$/) },
+  { text: "List everything, hidden files too", hint: "ls -a", done: (_s, h) => ran(h, /^ls\b.*-\w*a/) },
+  { text: "Read the manual page of ls", hint: "man ls", done: (_s, h) => ran(h, /^man ls$/) },
+  { text: "Make a directory called new1", hint: "mkdir new1", done: (s) => exists(s, "~/new1", "dir") },
+  { text: "Create an empty file f1.txt inside new1", hint: "touch new1/f1.txt", done: (s) => exists(s, "~/new1/f1.txt", "file") },
+  { text: "Copy file1 into new1", hint: "cp file1 new1", done: (s) => exists(s, "~/new1/file1", "file") },
+  { text: "Remove the empty directory dir2", hint: "rmdir dir2", done: (s, h) => !exists(s, "~/dir2") && ran(h, /^(rmdir|rm)\b/) },
+  { text: "Print both text files with one command", hint: "cat file1 file2.txt", done: (_s, h) => ran(h, /^cat\s+\S+\s+\S+/) },
+  { text: "Save the output of ls into a file called list", hint: "ls > list", done: (s) => (readFile(s, "~/list") ?? "").includes("dir1") },
+  { text: "Append ls to list again, then sort it and drop repeats", hint: "ls >> list   then   sort list | uniq", done: (_s, h) => ran(h, />>/) && ran(h, /sort.*\|\s*uniq/) },
+];
+
+type Line = { kind: "in" | "out" | "err"; text: string; prompt?: string };
+
+/** A small Linux terminal running in the browser, with the lab's tasks as checkable missions. */
+export function LinuxTerminal() {
+  const [st, setSt] = useState<ShellState>(initialShell);
+  const [lines, setLines] = useState<Line[]>([{ kind: "out", text: "Welcome! This is a pretend Linux terminal. Try ls, then work through the missions." }]);
+  const [history, setHistory] = useState<string[]>([]);
+  const [input, setInput] = useState("");
+  const [back, setBack] = useState(-1);
+  const scroller = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const done = LAB1_MISSIONS.map((m) => m.done(st, history));
+  const score = done.filter(Boolean).length;
+
+  useEffect(() => {
+    const el = scroller.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [lines]);
+
+  const submit = (cmd: string) => {
+    const prompt = `user@linux:${promptPath(st.cwd)}$`;
+    const r = run(st, cmd);
+    setSt(r.state);
+    setHistory((h) => (cmd.trim() ? [...h, cmd] : h));
+    setBack(-1);
+    setInput("");
+    if (r.clear) return setLines([]);
+    setLines((ls) => [...ls, { kind: "in", text: cmd, prompt }, ...(r.output ? [{ kind: r.error ? "err" : "out", text: r.output } as Line] : [])]);
+  };
+
+  const onKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") submit(input);
+    else if (e.key === "ArrowUp" && history.length) {
+      e.preventDefault();
+      const i = back < 0 ? history.length - 1 : Math.max(0, back - 1);
+      setBack(i);
+      setInput(history[i]);
+    } else if (e.key === "ArrowDown" && back >= 0) {
+      e.preventDefault();
+      const i = back + 1;
+      if (i >= history.length) {
+        setBack(-1);
+        setInput("");
+      } else {
+        setBack(i);
+        setInput(history[i]);
+      }
+    } else if (e.key === "l" && e.ctrlKey) {
+      e.preventDefault();
+      setLines([]);
+    }
+  };
+
+  const reset = () => {
+    setSt(initialShell());
+    setLines([{ kind: "out", text: "Fresh start: the home directory is back to dir1, dir2, file1 and file2.txt." }]);
+    setHistory([]);
+    setInput("");
+  };
+
+  return (
+    <Panel title="Practice terminal" legend={[["bg-mint", `${score}/${LAB1_MISSIONS.length} missions`]]}>
+      <div className="grid lg:grid-cols-[1fr_260px] gap-4">
+        <div
+          className="rounded-sm bg-[#0d1117] text-[#c9d1d9] font-mono text-[13px] leading-relaxed h-[340px] flex flex-col cursor-text"
+          onClick={() => inputRef.current?.focus()}
+        >
+          <div className="flex items-center gap-1.5 px-3 py-2 border-b border-white/10">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
+            <span className="ml-2 text-[11px] text-white/40">bash</span>
+          </div>
+          <div ref={scroller} className="flex-1 overflow-y-auto px-3 py-2" role="log" aria-live="polite">
+            {lines.map((l, i) => (
+              <div key={i} className="whitespace-pre-wrap break-words animate-in fade-in duration-150">
+                {l.kind === "in" ? (
+                  <>
+                    <span className="text-[#7ee787]">{l.prompt}</span> {l.text}
+                  </>
+                ) : (
+                  <span className={l.kind === "err" ? "text-[#ff7b72]" : ""}>{l.text}</span>
+                )}
+              </div>
+            ))}
+            <div className="flex items-center">
+              <span className="text-[#7ee787] shrink-0">user@linux:{promptPath(st.cwd)}$</span>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={onKey}
+                className="flex-1 min-w-0 bg-transparent outline-none ml-2 caret-[#7ee787]"
+                spellCheck={false}
+                autoCapitalize="off"
+                autoComplete="off"
+                aria-label="terminal input"
+              />
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">missions</div>
+          {LAB1_MISSIONS.map((m, i) => (
+            <button
+              key={m.text}
+              type="button"
+              onClick={() => {
+                setInput(m.hint.split("   ")[0]);
+                inputRef.current?.focus();
+              }}
+              title={`Hint: ${m.hint}`}
+              className={`text-left text-xs rounded-sm px-2 py-1.5 border transition-all duration-300 ${done[i] ? "border-mint bg-mint/15" : "border-border hover:border-foreground/40"}`}
+            >
+              <span className={`inline-block w-4 ${done[i] ? "text-mint animate-in zoom-in-50 duration-300" : "text-muted-foreground"}`}>{done[i] ? "✓" : i + 1}</span> {m.text}
+            </button>
+          ))}
+          {score === LAB1_MISSIONS.length && <div className="text-sm font-display font-bold text-mint animate-in zoom-in-75 duration-500">🎉 All done. You speak Linux now!</div>}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className={btn} onClick={reset}>
+          ⟲ Reset files
+        </button>
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">↑ ↓ history · ctrl+L clear · click a mission for a hint</span>
+      </div>
+    </Panel>
   );
 }
