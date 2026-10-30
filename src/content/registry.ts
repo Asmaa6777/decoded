@@ -74,6 +74,8 @@ import CmPolyResidue from "@/content/computational-mathematics/m1-04-partial-fra
 import CmPolyQuiz from "@/content/computational-mathematics/m1-05-polynomials-quiz.mdx";
 import CmEuclid from "@/content/computational-mathematics/m2-01-divisibility-and-euclid.mdx";
 import CmModular from "@/content/computational-mathematics/m2-02-modular-arithmetic.mdx";
+import CmPrimes from "@/content/computational-mathematics/m2-03-primes-and-the-sieve.mdx";
+import CmTotient from "@/content/computational-mathematics/m2-04-primality-and-the-totient.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -343,6 +345,8 @@ export const courses: Course[] = [
         lessons: [
           { slug: "divisibility-and-euclid", title: "Divisibility and the Euclidean Algorithm", duration: "12 min", Component: CmEuclid },
           { slug: "modular-arithmetic", title: "Modular Arithmetic", duration: "12 min", Component: CmModular },
+          { slug: "primes-and-the-sieve", title: "Primes and the Sieve", duration: "10 min", Component: CmPrimes },
+          { slug: "primality-and-the-totient", title: "Primality Tests and Euler's Totient", duration: "15 min", Component: CmTotient },
         ],
       },
     ],

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { btn, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import { Panel } from "@/components/mdx/MatrixVisualizers";
-import { euclidTiles, MATLAB_EUCLID, mod, tileFrames } from "@/lib/numberTheory";
+import { factorize, gcd, MATLAB_SIEVE, MATLAB_WILSON, phi, sieveFrames, wilsonFrames, euclidTiles, MATLAB_EUCLID, mod, tileFrames } from "@/lib/numberTheory";
 
 /* ------------------------------- Euclid tiles ------------------------------ */
 
@@ -114,3 +114,127 @@ export function ModClock({ a: a0 = 11, n: n0 = 7 }: { a?: number; n?: number }) 
   );
 }
 
+
+/* ------------------------------- the sieve ------------------------------- */
+
+export function SieveVisualizer({ n = 100 }: { n?: number }) {
+  const frames = useMemo(() => sieveFrames(n), [n]);
+  const nums = useMemo(() => Array.from({ length: n - 1 }, (_, i) => i + 2), [n]);
+  return (
+    <Stepper
+      title="Sieve of Eratosthenes"
+      frames={frames}
+      code={MATLAB_SIEVE}
+      codeLabel="MATLAB"
+      legend={[["bg-violet", "current prime"], ["bg-orange", "just struck"], ["bg-mint", "prime"]]}
+      render={(s) => {
+        const newlyIn = s.prime;
+        return (
+          <div className="grid gap-1 max-w-[440px]" style={{ gridTemplateColumns: "repeat(10, minmax(0, 1fr))" }}>
+            <div />
+            {nums.map((v) => {
+              const by = s.crossed[v];
+              const fresh = by !== undefined && by === newlyIn;
+              const isCur = v === s.prime;
+              const survivor = !by && (s.done || (s.prime !== null && v <= s.prime));
+              return (
+                <div
+                  key={v}
+                  className={`relative aspect-square flex items-center justify-center rounded-sm border font-mono text-[11px] transition-[background-color,border-color,color,opacity] duration-300 motion-reduce:transition-none ${
+                    isCur ? "bg-violet/40 border-violet" : fresh ? "bg-orange/30 border-orange" : by ? "border-border/30 text-muted-foreground/40" : survivor ? "bg-mint/20 border-mint" : "border-border bg-background/50"
+                  }`}
+                  style={{ transitionDelay: fresh ? `${Math.floor(v / by) * 18}ms` : "0ms" }}
+                >
+                  {v}
+                </div>
+              );
+            })}
+          </div>
+        );
+      }}
+    />
+  );
+}
+
+/* ------------------------------- the totient ------------------------------ */
+
+export function TotientGrid({ n: n0 = 35 }: { n?: number }) {
+  const [n, setN] = useState(n0);
+  const f = factorize(n);
+  const value = phi(n);
+  const formula = f.map(([p]) => `(1 − 1/${p})`).join(" ");
+  return (
+    <Panel title="Euler's totient" legend={[["bg-mint", "coprime to n"], ["bg-orange", "shares a factor"]]}>
+      <div className="flex flex-col gap-1 font-mono text-sm">
+        <div className="text-lg">φ({n}) = <span className="text-mint">{value}</span></div>
+        <div className="text-[12px] text-muted-foreground">
+          {n} = {f.map(([p, e]) => (e > 1 ? `${p}^${e}` : p)).join(" × ")}, so φ({n}) = {n} {formula} = {value}
+        </div>
+      </div>
+      <div className="grid gap-1" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(32px, 1fr))" }}>
+        {Array.from({ length: 100 }, (_, i) => i + 1).map((v) => {
+          const inRange = v < n;
+          const co = inRange && gcd(v, n) === 1;
+          return (
+            <div
+              key={v}
+              className={`aspect-square flex items-center justify-center rounded-sm border font-mono text-[11px] transition-[transform,opacity,background-color,border-color] duration-300 motion-reduce:transition-none ${co ? "bg-mint/25 border-mint" : "bg-orange/10 border-orange/40 text-muted-foreground"}`}
+              style={{ opacity: inRange ? 1 : 0.05, transform: `scale(${inRange ? 1 : 0.7})` }}
+            >
+              {v}
+            </div>
+          );
+        })}
+      </div>
+      <label className="flex flex-col gap-1 font-mono text-[11px] text-muted-foreground max-w-[420px]">
+        n = {n}
+        <input type="range" aria-label="Value of n" min={2} max={100} value={n} onChange={(e) => setN(Number(e.target.value))} className="accent-[hsl(var(--mint))]" />
+      </label>
+      <div className="flex flex-wrap gap-2">
+        {[23, 35, 37, 81, 100].map((v) => (
+          <button key={v} type="button" className={`${btn} ${v === n ? "border-foreground" : ""}`} onClick={() => setN(v)}>φ({v})</button>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+/* --------------------------------- Wilson -------------------------------- */
+
+export function WilsonVisualizer({ p = 13 }: { p?: number }) {
+  const frames = useMemo(() => wilsonFrames(p), [p]);
+  return (
+    <Stepper
+      title="Why Wilson's theorem works"
+      frames={frames}
+      code={MATLAB_WILSON}
+      codeLabel="MATLAB"
+      legend={[["bg-neon", "this pair"], ["bg-sky", "paired, equals 1"], ["bg-orange", "its own inverse"]]}
+      render={(s) => {
+        const pos = (v: number) => ringPoint(v - 1, s.p - 1, 118);
+        const paired = new Set(s.pairs.flat());
+        return (
+          <svg viewBox="0 0 300 300" className="w-full max-w-[320px] mx-auto" role="img" aria-label={`Numbers 1 to ${s.p - 1} around a ring, joined to their inverses`}>
+            {s.pairs.map(([a, b]) => {
+              const [x1, y1] = pos(a);
+              const [x2, y2] = pos(b);
+              const live = s.active?.[0] === a;
+              return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2} pathLength={1} strokeDasharray={1} strokeWidth={live ? 3 : 1.6} className={`${live ? "stroke-neon" : "stroke-sky"} cm-draw`} />;
+            })}
+            {Array.from({ length: s.p - 1 }, (_, i) => i + 1).map((v) => {
+              const [x, y] = pos(v);
+              const live = s.active?.includes(v);
+              const self = v === 1 || v === s.p - 1;
+              return (
+                <g key={v}>
+                  <circle cx={x} cy={y} r={15} className={`transition-colors duration-300 ${live ? "fill-neon" : self ? "fill-orange" : paired.has(v) ? "fill-sky" : "fill-card stroke-border"}`} />
+                  <text x={x} y={y} dy=".35em" textAnchor="middle" fontSize={12} className={`font-mono ${live || self || paired.has(v) ? "fill-background font-bold" : "fill-foreground"}`}>{v}</text>
+                </g>
+              );
+            })}
+          </svg>
+        );
+      }}
+    />
+  );
+}
