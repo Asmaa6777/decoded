@@ -212,6 +212,8 @@
   /* Lift code blocks off the page background in dark mode */
   .dark .prose-reading pre { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); }
   .prose-reading ul, .prose-reading ol { margin: 0 0 1.25rem 1.5rem; }
+  .prose-reading ul:not(:where(.not-prose, .not-prose *)) { list-style: disc; }
+  .prose-reading ol:not(:where(.not-prose, .not-prose *)) { list-style: decimal; }
   .prose-reading li { margin-bottom: .5rem; }
   .prose-reading blockquote {
     border-left: 3px solid hsl(var(--orange));
