@@ -64,6 +64,8 @@ import OsArchitecture from "@/content/operating-systems/m1-02-os-architecture-an
 import OsServicesSyscalls from "@/content/operating-systems/m1-03-services-and-system-calls.mdx";
 import OsDesignStructure from "@/content/operating-systems/m1-04-os-design-and-structure.mdx";
 import OsLabLinux from "@/content/operating-systems/m1-05-lab-linux-commands.mdx";
+import OsProcesses from "@/content/operating-systems/m2-01-processes.mdx";
+import OsIpc from "@/content/operating-systems/m2-02-interprocess-communication.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -311,6 +313,14 @@ export const courses: Course[] = [
           { slug: "services-and-system-calls", title: "OS Services, Interfaces and System Calls", duration: "18 min", Component: OsServicesSyscalls },
           { slug: "os-design-and-structure", title: "System Programs, OS Design and Structure", duration: "20 min", Component: OsDesignStructure },
           { slug: "lab-linux-commands", title: "Lab: Linux and the Command Line", duration: "25 min", kind: "practical", Component: OsLabLinux },
+        ],
+      },
+      {
+        title: "Processes and Threads",
+        blurb: "A program in motion: its states, how the OS switches between processes, how they talk, and threads.",
+        lessons: [
+          { slug: "processes", title: "Processes: The Program in Motion", duration: "22 min", Component: OsProcesses },
+          { slug: "interprocess-communication", title: "Interprocess Communication", duration: "22 min", Component: OsIpc },
         ],
       },
     ],
