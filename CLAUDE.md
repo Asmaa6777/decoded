@@ -54,6 +54,9 @@ For signed-in users, `src/lib/progressSync.ts` keeps that copy in step with the 
 
 Registering for a course (`src/hooks/useRegistration.ts`) is what shows the progress bar and details. Lessons stay readable without it. Someone counts as registered if the account has an enrollment or they've completed a lesson in that course, so older local progress keeps its bar; if the API is unreachable everyone counts as registered, which falls back to device-only progress. Leaving a course removes the enrollment and its progress.
 
+### Paths and tools
+`src/content/paths.ts` holds the suggested learning paths and course prerequisites (suggestions only; nothing is locked). `src/content/tools.ts` maps real tools to lessons for `/tools`. A test checks each linked lesson's source mentions what the entry claims, so update the entry if a lesson changes.
+
 ### Search
 `src/components/SearchDialog.tsx` (header icon or Cmd/Ctrl+K) searches in the browser. Lesson titles come from the registry; headings and body text come from `dist/search-index.json`, which `scripts/og/generate.mjs` writes and the dialog fetches on first open. In `npm run dev` that file doesn't exist, so only titles match.
 

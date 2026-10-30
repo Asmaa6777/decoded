@@ -1,6 +1,6 @@
 // Build-time social previews. Runs after `vite build` (see package.json).
 //
-// For the home page, /courses, /team, /privacy, every course and every lesson it writes
+// For the home page, /courses, /tools, /team, /privacy, every course and every lesson it writes
 // dist/<route>/index.html with that page's <title>, description, canonical
 // URL and Open Graph / Twitter tags, so link unfurlers (which don't run JS)
 // see the right card. It also renders a 1200×630 PNG per course plus one for
@@ -290,6 +290,12 @@ await writeRoute(template, "/courses", {
   image: img("courses"),
 });
 
+await writeRoute(template, "/tools", {
+  title: "Browse by Tool — Decoded",
+  description: "Start from a tool you already use, like regex engines, hash maps or CPU caches, and go straight to the theory that explains it.",
+  url: `${SITE}/tools`,
+  image: img("courses"),
+});
 await writeRoute(template, "/team", {
   title: "Team — Decoded",
   description: "The people behind Decoded, mapping computer science theory to the real tools it powers.",
@@ -303,7 +309,7 @@ await writeRoute(template, "/privacy", {
   image: img("home"),
 });
 
-let pages = 4;
+let pages = 5;
 for (const course of mod.courses) {
   await renderPng(courseCard(mod, course), fonts, path.join(DIST, `og/${course.slug}.png`));
   await writeRoute(template, `/courses/${course.slug}`, {

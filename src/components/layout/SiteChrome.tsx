@@ -47,6 +47,7 @@ export function SiteFooter() {
         </span>
         <nav className="flex items-center gap-6">
           <Link to="/courses" className="hover:text-foreground transition-colors">Courses</Link>
+          <Link to="/tools" className="hover:text-foreground transition-colors">Tools</Link>
           <Link to="/team" className="hover:text-foreground transition-colors">Team</Link>
           <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
         </nav>
