@@ -72,6 +72,8 @@ import OsSemaphores from "@/content/operating-systems/m3-02-semaphores-and-class
 import OsLabSync from "@/content/operating-systems/m3-03-lab-java-synchronization.mdx";
 import OsSchedulingBasics from "@/content/operating-systems/m4-01-cpu-scheduling-basics.mdx";
 import OsRoundRobin from "@/content/operating-systems/m4-02-round-robin-and-beyond.mdx";
+import OsMemoryAllocation from "@/content/operating-systems/m5-01-memory-allocation.mdx";
+import OsPaging from "@/content/operating-systems/m5-02-paging.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -345,6 +347,14 @@ export const courses: Course[] = [
         lessons: [
           { slug: "cpu-scheduling-basics", title: "CPU Scheduling: FCFS, SJF and Priority", duration: "26 min", Component: OsSchedulingBasics },
           { slug: "round-robin-and-beyond", title: "Round Robin, Multilevel Queues and Choosing a Scheduler", duration: "24 min", Component: OsRoundRobin },
+        ],
+      },
+      {
+        title: "Memory Management",
+        blurb: "Sharing RAM safely: addresses and the MMU, swapping, allocation, segmentation, paging and virtual memory.",
+        lessons: [
+          { slug: "memory-allocation", title: "Main Memory: Addresses, Swapping and Allocation", duration: "26 min", Component: OsMemoryAllocation },
+          { slug: "paging", title: "Paging", duration: "26 min", Component: OsPaging },
         ],
       },
     ],
