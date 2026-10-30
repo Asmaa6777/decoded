@@ -129,6 +129,37 @@ describe("progress", () => {
   });
 });
 
+describe("profile", () => {
+  function stubProfile(login: string, avatarUrl: string) {
+    return async (input: RequestInfo | URL) =>
+      String(input).endsWith("/access_token")
+        ? Response.json({ access_token: "t" })
+        : Response.json({ id: 1, login, avatar_url: avatarUrl });
+  }
+
+  async function signInAs(login: string, avatarUrl: string): Promise<string> {
+    const session = await signIn(1);
+    vi.stubGlobal("fetch", stubProfile(login, avatarUrl));
+    const start = await call("/auth/github/start");
+    const state = new URL(start.headers.get("Location")!).searchParams.get("state")!;
+    const oauth = cookieValue(start, "__Host-decoded_oauth");
+    await call(`/auth/github/callback?code=c&state=${state}`, { headers: { Cookie: `__Host-decoded_oauth=${oauth}` } });
+    return session;
+  }
+
+  const AVATAR = "https://avatars.githubusercontent.com/u/1?v=4";
+
+  it("returns the GitHub username and avatar, refreshed at sign-in", async () => {
+    const session = await signInAs("octocat", AVATAR);
+    expect(((await read(session)) as unknown as { user: unknown }).user).toEqual({ name: "octocat", avatarUrl: AVATAR });
+  });
+
+  it("drops an avatar from any other host and a malformed username", async () => {
+    const session = await signInAs("<b>x</b>", "https://evil.example/a.png");
+    expect(((await read(session)) as unknown as { user: unknown }).user).toEqual({ name: null, avatarUrl: null });
+  });
+});
+
 describe("deleting an account", () => {
   const count = (table: string) => env.DB.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first<number>("n");
 

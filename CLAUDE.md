@@ -53,7 +53,7 @@ Five brand accent colors — `neon`, `orange`, `sky`, `violet`, `mint` — are t
 For signed-in users, `src/lib/progressSync.ts` keeps that copy in step with the account. A browser's first sign-in merges its progress into the account; after that the account wins on load, so a lesson unmarked on one device doesn't return from another. Unsent changes wait in `decoded:account:v1`.
 
 ### API Worker
-`worker/` is a separate npm project (Cloudflare Worker + D1) deployed to `https://decoded-api.stack42.tech` with `npx wrangler deploy`; pushing to GitHub doesn't deploy it. Schema changes go in `worker/migrations/` and are applied with `npm run migrate`. It has its own tests (`npm test` in `worker/`), which CI runs. OAuth credentials are Worker secrets (`wrangler secret put`), never committed. Accounts hold only the sign-in provider's user ID, and session tokens are stored hashed. Google sign-in is tracked in #27.
+`worker/` is a separate npm project (Cloudflare Worker + D1) deployed to `https://decoded-api.stack42.tech` with `npx wrangler deploy`; pushing to GitHub doesn't deploy it. Schema changes go in `worker/migrations/` and are applied with `npm run migrate`. It has its own tests (`npm test` in `worker/`), which CI runs. OAuth credentials are Worker secrets (`wrangler secret put`), never committed. Accounts hold only the sign-in provider's user ID, username and avatar URL, and session tokens are stored hashed. Google sign-in is tracked in #27.
 
 ## Conventions and gotchas
 

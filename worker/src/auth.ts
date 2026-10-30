@@ -65,7 +65,9 @@ export async function startGithub(request: Request, env: Env): Promise<Response>
   return redirect(authorize.toString(), [setCookie(OAUTH_COOKIE, cookie, OAUTH_MINUTES * 60)]);
 }
 
-async function fetchGithubUserId(request: Request, env: Env, code: string, verifier: string): Promise<string | null> {
+type GithubUser = { id: string; login: string | null; avatarUrl: string | null };
+
+async function fetchGithubUser(request: Request, env: Env, code: string, verifier: string): Promise<GithubUser | null> {
   const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json" },
@@ -89,8 +91,14 @@ async function fetchGithubUserId(request: Request, env: Env, code: string, verif
     },
   });
   if (!userResponse.ok) return null;
-  const { id } = await userResponse.json<{ id?: number }>();
-  return typeof id === "number" ? String(id) : null;
+  const { id, login, avatar_url: avatarUrl } = await userResponse.json<{ id?: number; login?: string; avatar_url?: string }>();
+  if (typeof id !== "number") return null;
+  return {
+    id: String(id),
+    login: typeof login === "string" && /^[a-zA-Z0-9-]{1,39}$/.test(login) ? login : null,
+    // The site puts this in an <img>, so only GitHub's own avatar host is accepted.
+    avatarUrl: typeof avatarUrl === "string" && avatarUrl.startsWith("https://avatars.githubusercontent.com/") ? avatarUrl : null,
+  };
 }
 
 async function findUserId(env: Env, provider: string, providerUserId: string): Promise<string | null> {
@@ -132,14 +140,15 @@ export async function finishGithub(request: Request, env: Env): Promise<Response
   const code = url.searchParams.get("code");
   if (!state || !verifier || !code || url.searchParams.get("state") !== state) return failed;
 
-  const githubId = await fetchGithubUserId(request, env, code, verifier);
-  if (!githubId) return failed;
+  const github = await fetchGithubUser(request, env, code, verifier);
+  if (!github) return failed;
 
-  const userId = await findOrCreateUser(env, "github", githubId);
+  const userId = await findOrCreateUser(env, "github", github.id);
   const token = randomToken();
   const now = Date.now();
   await env.DB.batch([
     env.DB.prepare("DELETE FROM sessions WHERE expires_at <= ?").bind(now),
+    env.DB.prepare("UPDATE users SET display_name = ?, avatar_url = ? WHERE id = ?").bind(github.login, github.avatarUrl, userId),
     env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)").bind(
       await hashToken(token),
       userId,

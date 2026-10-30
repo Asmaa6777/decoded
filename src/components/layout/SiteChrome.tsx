@@ -11,12 +11,12 @@ export function SiteHeader() {
     <header className="relative z-10 bg-background text-foreground border-b border-border">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" aria-label="Decoded home">
-          <BrandLockup />
+          <BrandLockup collapse />
         </Link>
-        <nav className="flex items-center gap-6 font-mono text-xs uppercase tracking-widest">
+        <nav className="flex items-center gap-3 sm:gap-6 font-mono text-xs uppercase tracking-widest">
           <Link
             to="/"
-            className={`transition-colors hover:text-foreground ${pathname === "/" ? "text-foreground" : "text-muted-foreground"}`}
+            className={`hidden sm:inline transition-colors hover:text-foreground ${pathname === "/" ? "text-foreground" : "text-muted-foreground"}`}
           >
             Home
           </Link>

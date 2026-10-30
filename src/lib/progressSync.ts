@@ -7,7 +7,7 @@
 import type { ProgressMap } from "@/lib/progressBackup";
 import { readProgress, writeProgress } from "@/lib/progressStore";
 
-export const API_URL = "https://decoded-api.stack42.tech";
+export const API_URL = import.meta.env.VITE_API_URL ?? "https://decoded-api.stack42.tech";
 
 const ACCOUNT_KEY = "decoded:account:v1";
 
@@ -16,7 +16,10 @@ export type AccountStatus = "unknown" | "unavailable" | "signed-out" | "signed-i
 /** "course/lesson" -> true to mark complete, false to unmark. Present only once linked to an account. */
 type Pending = Record<string, boolean>;
 
+export type AccountProfile = { name: string | null; avatarUrl: string | null };
+
 let status: AccountStatus = "unknown";
+let profile: AccountProfile | null = null;
 let flushing = false;
 const listeners = new Set<() => void>();
 
@@ -27,6 +30,10 @@ function setStatus(next: AccountStatus) {
 
 export function getAccountStatus() {
   return status;
+}
+
+export function getAccountProfile() {
+  return profile;
 }
 
 export function subscribeAccountStatus(listener: () => void) {
@@ -125,7 +132,7 @@ export function queueProgressChange(before: ProgressMap, after: ProgressMap) {
 }
 
 export async function syncProgress() {
-  let body: { signedIn: boolean; progress?: ProgressMap };
+  let body: { signedIn: boolean; user?: AccountProfile; progress?: ProgressMap };
   try {
     const response = await fetch(`${API_URL}/progress`, { credentials: "include" });
     if (!response.ok) throw new Error(String(response.status));
@@ -144,6 +151,7 @@ export async function syncProgress() {
   // Nothing queued for this browser yet means this is its first sign-in.
   const pending = loadPending() ?? diffProgress({}, readProgress());
   savePending(pending);
+  profile = body.user ?? null;
   setStatus("signed-in");
 
   if (Object.keys(pending).length > 0) await flush();
@@ -187,6 +195,7 @@ export function startProgressSync() {
 /** Test hook: forget in-memory state between tests. */
 export function resetProgressSyncForTests() {
   status = "unknown";
+  profile = null;
   flushing = false;
   started = false;
   listeners.clear();

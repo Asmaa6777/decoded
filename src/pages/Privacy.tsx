@@ -50,11 +50,12 @@ export default function Privacy() {
           <p>Signing in saves your progress so it follows you between devices. Decoded stores:</p>
           <ul>
             <li>your numeric GitHub user ID, which is how your account is recognised</li>
+            <li>your GitHub username and the address of your profile picture, shown in your account menu</li>
             <li>the lessons you've completed and when</li>
             <li>a sign-in session, kept in a cookie that lasts up to 90 days</li>
           </ul>
           <p>
-            Decoded doesn't store your name, email address or GitHub password. The data is held on Cloudflare, and the
+            Decoded doesn't store your email address or GitHub password. The data is held on Cloudflare, and the
             cookie is used only to keep you signed in.
           </p>
 

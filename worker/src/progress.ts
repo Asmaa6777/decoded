@@ -43,7 +43,10 @@ async function readProgress(env: Env, userId: string): Promise<ProgressMap> {
 export async function getProgress(request: Request, env: Env): Promise<Response> {
   const userId = await currentUserId(request, env);
   if (!userId) return Response.json({ signedIn: false });
-  return Response.json({ signedIn: true, progress: await readProgress(env, userId) });
+  const profile = await env.DB.prepare("SELECT display_name AS name, avatar_url AS avatarUrl FROM users WHERE id = ?")
+    .bind(userId)
+    .first<{ name: string | null; avatarUrl: string | null }>();
+  return Response.json({ signedIn: true, user: profile, progress: await readProgress(env, userId) });
 }
 
 /** Applies a batch of changes and returns the user's progress after them. */
