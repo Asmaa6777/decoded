@@ -1,4 +1,5 @@
 import { currentUserId, finishGithub, signOut, startGithub } from "./auth";
+import { changeProgress, getProgress } from "./progress";
 
 export interface Env {
   DB: D1Database;
@@ -28,6 +29,10 @@ async function route(request: Request, env: Env): Promise<Response> {
       return Response.json({ signedIn: (await currentUserId(request, env)) !== null });
     case "POST /auth/sign-out":
       return signOut(request, env);
+    case "GET /progress":
+      return getProgress(request, env);
+    case "POST /progress":
+      return changeProgress(request, env);
     default:
       return Response.json({ error: "not_found" }, { status: 404 });
   }
@@ -45,7 +50,7 @@ export default {
         status: 204,
         headers: {
           ...corsHeaders,
-          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
+          "Access-Control-Allow-Methods": "GET, POST",
           "Access-Control-Allow-Headers": "Content-Type",
           Vary: "Origin",
         },
