@@ -91,7 +91,7 @@ export function CircuitDrawing({ layout, values, changed, onToggle }: { layout: 
   });
 
   return (
-    <svg viewBox={`0 0 ${layout.w} ${layout.h}`} className="w-full max-w-[640px] mx-auto block" role="img" aria-label="Logic circuit">
+    <svg viewBox={`-20 0 ${layout.w + 20} ${layout.h}`} className="w-full max-w-[640px] mx-auto block" role="img" aria-label="Logic circuit">
       {/* LOW wires first, so a HIGH wire is never painted over at a crossing */}
       {[...wires, ...outWires]
         .slice()
@@ -564,7 +564,7 @@ export function FullAdderCircuit() {
 }
 
 const DECODER: CircuitLayout = {
-  w: 460,
+  w: 490,
   h: 300,
   inputs: [{ id: "A1", label: "A1", x: 40, y: 40 }, { id: "A0", label: "A0", x: 40, y: 100 }],
   gates: [

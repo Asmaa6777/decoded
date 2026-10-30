@@ -143,6 +143,13 @@
     color: hsl(var(--reading-fg));
     font-size: 18px;
     line-height: 1.75;
+    overflow-wrap: break-word;
+  }
+  /* a wide equation scrolls inside its own box instead of widening the page */
+  .prose-reading .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.25em;
   }
   .prose-reading h1 {
     font-family: var(--font-display);
