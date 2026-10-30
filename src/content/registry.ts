@@ -59,6 +59,7 @@ import AaMst from "@/content/advanced-algorithms/m3-03-minimum-spanning-trees.md
 import AaHuffman from "@/content/advanced-algorithms/m3-04-huffman-and-activity-selection.mdx";
 import AaShortestPaths from "@/content/advanced-algorithms/m3-05-shortest-paths.mdx";
 import AaPNP from "@/content/advanced-algorithms/m4-01-p-and-np.mdx";
+import OsWhatAnOsDoes from "@/content/operating-systems/m1-01-what-an-os-does.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -292,11 +293,19 @@ export const courses: Course[] = [
     title: "Operating Systems",
     tagline: "The invisible layer that makes everything work.",
     description:
-      "Processes, memory, file systems, schedulers — and where each shows up the moment something goes wrong. Coming soon.",
-    accent: "violet",
-    status: "coming-soon",
+      "What really happens between your click and the hardware. Interrupts and system calls, processes and threads, synchronization, CPU scheduling, main memory and virtual memory, plus hands-on Linux and threads labs. Every lesson follows the lectures and labs, in plain language, with animations you can step through.",
+    accent: "mint",
+    status: "available",
     number: "05",
-    modules: [],
+    modules: [
+      {
+        title: "Meet the Operating System",
+        blurb: "What an OS is, how the hardware underneath it works, and how the OS is built.",
+        lessons: [
+          { slug: "what-an-os-does", title: "What an Operating System Does", duration: "18 min", Component: OsWhatAnOsDoes },
+        ],
+      },
+    ],
   },
   {
     slug: "distributed-systems",
