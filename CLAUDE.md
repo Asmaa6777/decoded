@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Decoded is a client-side educational site that maps abstract CS theory to the real tools it powers (e.g. finite automata → regex engines). It is content-first: courses and lessons are authored as MDX and rendered by a small React/Vite app. There is no backend.
+Decoded is a client-side educational site that maps abstract CS theory to the real tools it powers (e.g. finite automata → regex engines). It is content-first: courses and lessons are authored as MDX and rendered by a small React/Vite app. The site is static; the only backend is a small Cloudflare Worker in `worker/` for optional sign-in and saved progress.
 
 ## Commands
 
@@ -48,7 +48,12 @@ MDX is compiled by `@mdx-js/rollup` (configured `enforce: "pre"` in `vite.config
 Five brand accent colors — `neon`, `orange`, `sky`, `violet`, `mint` — are the only accents in use. They are defined as CSS variables (`src/index.css`), exposed as Tailwind colors (`tailwind.config.ts`), and referenced two ways: a course's `accent` field in the registry, and the `tone` prop on MDX components (which maps through `toneMap`). Use only these five. Fonts: Syne (`font-display`), IBM Plex Mono (`font-mono`), Lora (`font-body`), loaded via Google Fonts in `index.html`.
 
 ### Progress tracking
-`src/hooks/useProgress.ts` persists per-course completed-lesson slugs to `localStorage` under key `decoded:progress:v1`. It syncs across mounted components by dispatching/listening for a custom `decoded:progress` window event (plus the native `storage` event for cross-tab). No server involvement.
+`localStorage` under `decoded:progress:v1` is the copy the UI reads, through `src/hooks/useProgress.ts`, for signed-in and signed-out visitors alike. It syncs across mounted components by dispatching/listening for a custom `decoded:progress` window event (plus the native `storage` event for cross-tab).
+
+For signed-in users, `src/lib/progressSync.ts` keeps that copy in step with the account. A browser's first sign-in merges its progress into the account; after that the account wins on load, so a lesson unmarked on one device doesn't return from another. Unsent changes wait in `decoded:account:v1`.
+
+### API Worker
+`worker/` is a separate npm project (Cloudflare Worker + D1) deployed to `https://decoded-api.stack42.tech` with `npx wrangler deploy`; pushing to GitHub doesn't deploy it. Schema changes go in `worker/migrations/` and are applied with `npm run migrate`. It has its own tests (`npm test` in `worker/`), which CI runs. OAuth credentials are Worker secrets (`wrangler secret put`), never committed. Accounts hold only the sign-in provider's user ID, and session tokens are stored hashed. Google sign-in is tracked in #27.
 
 ## Conventions and gotchas
 
