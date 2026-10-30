@@ -61,6 +61,7 @@ import AaShortestPaths from "@/content/advanced-algorithms/m3-05-shortest-paths.
 import AaPNP from "@/content/advanced-algorithms/m4-01-p-and-np.mdx";
 import CmMatrices from "@/content/computational-mathematics/m0-01-matrices-and-matlab.mdx";
 import CmTranspose from "@/content/computational-mathematics/m0-02-transpose-and-products.mdx";
+import CmMultiply from "@/content/computational-mathematics/m0-03-multiplying-matrices.mdx";
 import ExamMindLesson01 from "@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx";
 import ExamMindLesson02 from "@/content/the-exam-mind/02-the-one-week-plan.mdx";
 import ExamMindLesson03 from "@/content/the-exam-mind/03-stress-and-anxiety.mdx";
@@ -305,6 +306,7 @@ export const courses: Course[] = [
         lessons: [
           { slug: "matrices-and-matlab", title: "Matrices and MATLAB", duration: "10 min", Component: CmMatrices },
           { slug: "transpose-and-products", title: "Transpose and Vector Products", duration: "10 min", Component: CmTranspose },
+          { slug: "multiplying-matrices", title: "Multiplying Matrices", duration: "14 min", Component: CmMultiply },
         ],
       },
     ],

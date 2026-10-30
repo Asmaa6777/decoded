@@ -120,3 +120,61 @@ export function vectorProductFrames(kind: VectorProductKind, u: number[], v: num
   }
   return frames;
 }
+
+/* ------------------------ matrix multiplication ------------------------ */
+
+export type MatMulState = {
+  a: Mat;
+  b: Mat;
+  c: (number | null)[][];
+  i: number | null;
+  j: number | null;
+  k: number | null;
+  terms: string[];
+  running: number;
+};
+
+export const MATLAB_MATMUL = [
+  "[m, p] = size(A);",
+  "[~, n] = size(B);",
+  "C = zeros(m, n);",
+  "for i = 1:m",
+  "  for j = 1:n",
+  "    C(i, j) = A(i, :) * B(:, j);",
+  "  end",
+  "end",
+];
+
+export function matMulFrames(a: Mat, b: Mat): Frame<MatMulState>[] {
+  const [m, p] = shape(a);
+  const [, n] = shape(b);
+  const c: (number | null)[][] = zeros(m, n).map((r) => r.map(() => null));
+  const frames: Frame<MatMulState>[] = [];
+  let mults = 0;
+  const push = (i: number | null, j: number | null, k: number | null, terms: string[], running: number, line: number, message: string) =>
+    frames.push({ state: { a, b, c: c.map((r) => [...r]), i, j, k, terms, running }, line, message, stats: { multiplications: mults } });
+  push(null, null, null, [], 0, 2, `A is ${m}-by-${p} and B is ${p}-by-${n}. The inner sizes match, so C is ${m}-by-${n}.`);
+  for (let i = 0; i < m; i++) {
+    for (let j = 0; j < n; j++) {
+      const terms: string[] = [];
+      let running = 0;
+      for (let k = 0; k < p; k++) {
+        running += a[i][k] * b[k][j];
+        mults++;
+        terms.push(`${signed(a[i][k])}×${signed(b[k][j])}`);
+        push(i, j, k, [...terms], running, 5, `Row ${i + 1} of A meets column ${j + 1} of B. Term ${k + 1}: ${signed(a[i][k])} × ${signed(b[k][j])} = ${a[i][k] * b[k][j]}.`);
+      }
+      c[i][j] = running;
+      push(i, j, null, terms, running, 5, `Write ${running} into C(${i + 1}, ${j + 1}).`);
+    }
+  }
+  push(null, null, null, [], 0, 7, `Finished with ${mults} multiplications. For n-by-n matrices that count is n³, which is why matrix size matters so much.`);
+  return frames;
+}
+
+/* ---------------------------- linear maps ----------------------------- */
+
+export type Map2 = [number, number, number, number];
+
+export const det2 = ([a, b, c, d]: Map2) => a * d - b * c;
+export const apply2 = ([a, b, c, d]: Map2, x: number, y: number): [number, number] => [a * x + b * y, c * x + d * y];
