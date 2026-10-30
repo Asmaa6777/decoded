@@ -5,6 +5,7 @@ import { getCourse, flattenLessons, lessonKind } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
 import { ProgressBackup } from "@/components/ProgressBackup";
 import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
+import { CourseAuthors } from "@/components/CourseAuthors";
 
 const accentBg: Record<string, string> = {
   neon: "bg-neon", orange: "bg-orange", sky: "bg-sky", violet: "bg-violet", mint: "bg-mint",
@@ -52,6 +53,8 @@ export default function CoursePage() {
             <p className="font-body text-base leading-relaxed text-foreground/80 max-w-2xl">
               {course.description}
             </p>
+
+            {course.authors && <CourseAuthors authors={course.authors} />}
 
             {total > 0 && (
               <div className="mt-8 max-w-md">
@@ -103,7 +106,7 @@ export default function CoursePage() {
                   <div key={module.title}>
                     <div className="flex items-baseline gap-4 mb-1">
                       <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
-                        Module {String(mi + 1).padStart(2, "0")}
+                        Module {String(mi).padStart(2, "0")}
                       </span>
                     </div>
                     <h2 className="font-display text-2xl md:text-3xl font-bold mb-2">{module.title}</h2>
