@@ -8,7 +8,8 @@ import { CodeBlock } from "@/components/mdx/MdxComponents";
 import { CourseNav } from "@/components/lesson/CourseNav";
 import { LessonToc } from "@/components/lesson/LessonToc";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { PanelLeft } from "lucide-react";
+import { Flag, PanelLeft } from "lucide-react";
+import { reportMistakeUrl } from "@/lib/reportMistake";
 import { writeLastLesson } from "@/lib/progressStore";
 
 const SIDEBAR_KEY = "decoded:sidebar-open";
@@ -181,6 +182,16 @@ export default function LessonPage() {
               </button>
             )}
           </div>
+
+          <a
+            href={reportMistakeUrl(course.title, lesson.title, `${window.location.origin}/courses/${course.slug}/${lesson.slug}`)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-6 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition"
+          >
+            <Flag className="h-3 w-3" aria-hidden="true" />
+            Report a mistake
+          </a>
 
           {/* Prev / Next */}
           <nav className="mt-10 grid gap-3 sm:grid-cols-2">
