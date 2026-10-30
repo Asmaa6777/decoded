@@ -45,18 +45,22 @@ function redirect(location: string, cookies: string[]): Response {
   return new Response(null, { status: 302, headers });
 }
 
-function callbackUrl(request: Request): string {
-  return `${new URL(request.url).origin}/auth/github/callback`;
+export type Provider = "github" | "google";
+
+function callbackUrl(request: Request, provider: Provider): string {
+  return `${new URL(request.url).origin}/auth/${provider}/callback`;
 }
 
-export async function startGithub(request: Request, env: Env): Promise<Response> {
+export async function startSignIn(request: Request, env: Env, provider: Provider): Promise<Response> {
   const state = randomToken();
   const verifier = randomToken();
   const returnPath = safeReturnPath(new URL(request.url).searchParams.get("return"));
+  const { authorizeUrl, authorizeParams, clientId } = PROVIDERS[provider];
 
-  const authorize = new URL("https://github.com/login/oauth/authorize");
-  authorize.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
-  authorize.searchParams.set("redirect_uri", callbackUrl(request));
+  const authorize = new URL(authorizeUrl);
+  for (const [name, value] of Object.entries(authorizeParams)) authorize.searchParams.set(name, value);
+  authorize.searchParams.set("client_id", clientId(env));
+  authorize.searchParams.set("redirect_uri", callbackUrl(request, provider));
   authorize.searchParams.set("state", state);
   authorize.searchParams.set("code_challenge", base64url(await sha256(verifier)));
   authorize.searchParams.set("code_challenge_method", "S256");
@@ -65,9 +69,9 @@ export async function startGithub(request: Request, env: Env): Promise<Response>
   return redirect(authorize.toString(), [setCookie(OAUTH_COOKIE, cookie, OAUTH_MINUTES * 60)]);
 }
 
-type GithubUser = { id: string; login: string | null; avatarUrl: string | null };
+type ProviderUser = { id: string; name: string | null; avatarUrl: string | null };
 
-async function fetchGithubUser(request: Request, env: Env, code: string, verifier: string): Promise<GithubUser | null> {
+async function fetchGithubUser(request: Request, env: Env, code: string, verifier: string): Promise<ProviderUser | null> {
   const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json" },
@@ -75,7 +79,7 @@ async function fetchGithubUser(request: Request, env: Env, code: string, verifie
       client_id: env.GITHUB_CLIENT_ID,
       client_secret: env.GITHUB_CLIENT_SECRET,
       code,
-      redirect_uri: callbackUrl(request),
+      redirect_uri: callbackUrl(request, "github"),
       code_verifier: verifier,
     }),
   });
@@ -95,11 +99,68 @@ async function fetchGithubUser(request: Request, env: Env, code: string, verifie
   if (typeof id !== "number") return null;
   return {
     id: String(id),
-    login: typeof login === "string" && /^[a-zA-Z0-9-]{1,39}$/.test(login) ? login : null,
+    name: typeof login === "string" && /^[a-zA-Z0-9-]{1,39}$/.test(login) ? login : null,
     // The site puts this in an <img>, so only GitHub's own avatar host is accepted.
     avatarUrl: typeof avatarUrl === "string" && avatarUrl.startsWith("https://avatars.githubusercontent.com/") ? avatarUrl : null,
   };
 }
+
+/** The token comes straight from Google over TLS, so its claims are checked but its signature needn't be. */
+function readGoogleIdToken(idToken: string, env: Env): string | null {
+  try {
+    const payload = idToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const bytes = Uint8Array.from(atob(payload), (c) => c.charCodeAt(0));
+    const { aud, iss, sub } = JSON.parse(new TextDecoder().decode(bytes));
+    if (aud !== env.GOOGLE_CLIENT_ID) return null;
+    if (iss !== "https://accounts.google.com" && iss !== "accounts.google.com") return null;
+    return typeof sub === "string" && sub ? sub : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Sign-in only asks for the openid scope, so Google shares an ID and no name or picture. */
+async function fetchGoogleUser(request: Request, env: Env, code: string, verifier: string): Promise<ProviderUser | null> {
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    body: new URLSearchParams({
+      client_id: env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      code,
+      grant_type: "authorization_code",
+      redirect_uri: callbackUrl(request, "google"),
+      code_verifier: verifier,
+    }),
+  });
+  if (!tokenResponse.ok) return null;
+  const { id_token: idToken } = await tokenResponse.json<{ id_token?: string }>();
+  if (typeof idToken !== "string") return null;
+  const id = readGoogleIdToken(idToken, env);
+  return id ? { id, name: null, avatarUrl: null } : null;
+}
+
+const PROVIDERS: Record<
+  Provider,
+  {
+    authorizeUrl: string;
+    authorizeParams: Record<string, string>;
+    clientId: (env: Env) => string;
+    fetchUser: (request: Request, env: Env, code: string, verifier: string) => Promise<ProviderUser | null>;
+  }
+> = {
+  github: {
+    authorizeUrl: "https://github.com/login/oauth/authorize",
+    authorizeParams: {},
+    clientId: (env) => env.GITHUB_CLIENT_ID,
+    fetchUser: fetchGithubUser,
+  },
+  google: {
+    authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+    authorizeParams: { response_type: "code", scope: "openid" },
+    clientId: (env) => env.GOOGLE_CLIENT_ID,
+    fetchUser: fetchGoogleUser,
+  },
+};
 
 async function findUserId(env: Env, provider: string, providerUserId: string): Promise<string | null> {
   return env.DB.prepare("SELECT user_id FROM identities WHERE provider = ? AND provider_user_id = ?")
@@ -130,7 +191,7 @@ async function findOrCreateUser(env: Env, provider: string, providerUserId: stri
   }
 }
 
-export async function finishGithub(request: Request, env: Env): Promise<Response> {
+export async function finishSignIn(request: Request, env: Env, provider: Provider): Promise<Response> {
   const url = new URL(request.url);
   const clearOauth = setCookie(OAUTH_COOKIE, "", 0);
   const failed = redirect(`${env.SITE_ORIGIN}/?signin=failed`, [clearOauth]);
@@ -140,15 +201,15 @@ export async function finishGithub(request: Request, env: Env): Promise<Response
   const code = url.searchParams.get("code");
   if (!state || !verifier || !code || url.searchParams.get("state") !== state) return failed;
 
-  const github = await fetchGithubUser(request, env, code, verifier);
-  if (!github) return failed;
+  const user = await PROVIDERS[provider].fetchUser(request, env, code, verifier);
+  if (!user) return failed;
 
-  const userId = await findOrCreateUser(env, "github", github.id);
+  const userId = await findOrCreateUser(env, provider, user.id);
   const token = randomToken();
   const now = Date.now();
   await env.DB.batch([
     env.DB.prepare("DELETE FROM sessions WHERE expires_at <= ?").bind(now),
-    env.DB.prepare("UPDATE users SET display_name = ?, avatar_url = ? WHERE id = ?").bind(github.login, github.avatarUrl, userId),
+    env.DB.prepare("UPDATE users SET display_name = ?, avatar_url = ? WHERE id = ?").bind(user.name, user.avatarUrl, userId),
     env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)").bind(
       await hashToken(token),
       userId,

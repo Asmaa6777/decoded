@@ -38,6 +38,30 @@ async function signIn(id = 1, returnPath = "/courses"): Promise<{ response: Resp
   return { response, session: cookieValue(response, "__Host-decoded_session") };
 }
 
+function stubGoogle(claims: Record<string, unknown>) {
+  const payload = btoa(JSON.stringify({ aud: "test-google-id", iss: "https://accounts.google.com", ...claims }))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+  const stub = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+    const url = String(input);
+    if (url === "https://oauth2.googleapis.com/token") return Response.json({ id_token: `header.${payload}.signature` });
+    throw new Error(`unexpected fetch: ${url}`);
+  });
+  vi.stubGlobal("fetch", stub);
+  return stub;
+}
+
+async function finishGoogle(): Promise<{ response: Response; oauth: string }> {
+  const start = await call("/auth/google/start");
+  const state = new URL(start.headers.get("Location")!).searchParams.get("state")!;
+  const oauth = cookieValue(start, "__Host-decoded_oauth");
+  const response = await call(`/auth/google/callback?code=abc&state=${state}`, {
+    headers: { Cookie: `__Host-decoded_oauth=${oauth}` },
+  });
+  return { response, oauth };
+}
+
 function withSession(session: string, init: RequestInit = {}): RequestInit {
   return { ...init, headers: { ...init.headers, Cookie: `__Host-decoded_session=${session}` } };
 }
@@ -110,6 +134,74 @@ describe("finishing sign-in", () => {
     await signIn(2);
     const users = await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first<number>("n");
     expect(users).toBe(2);
+  });
+});
+
+describe("Google sign-in", () => {
+  it("sends the browser to Google asking only for the openid scope", async () => {
+    const response = await call("/auth/google/start");
+    const location = new URL(response.headers.get("Location")!);
+    expect(location.origin).toBe("https://accounts.google.com");
+    expect(location.searchParams.get("client_id")).toBe("test-google-id");
+    expect(location.searchParams.get("redirect_uri")).toBe(`${API}/auth/google/callback`);
+    expect(location.searchParams.get("response_type")).toBe("code");
+    expect(location.searchParams.get("scope")).toBe("openid");
+    expect(location.searchParams.get("state")).toBeTruthy();
+    expect(location.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(location.toString()).not.toContain("test-google-secret");
+  });
+
+  it("exchanges the code with the secret and PKCE verifier, then signs in", async () => {
+    const google = stubGoogle({ sub: "1234" });
+    const { response, oauth } = await finishGoogle();
+    expect(response.headers.get("Location")).toBe(`${SITE}/`);
+
+    const body = new URLSearchParams(google.mock.calls[0][1]!.body as URLSearchParams);
+    expect(body.get("client_secret")).toBe("test-google-secret");
+    expect(body.get("grant_type")).toBe("authorization_code");
+    expect(body.get("redirect_uri")).toBe(`${API}/auth/google/callback`);
+    expect(body.get("code_verifier")).toBe(oauth.split(".")[1]);
+
+    const session = cookieValue(response, "__Host-decoded_session");
+    expect(await (await call("/me", withSession(session))).json()).toEqual({ signedIn: true });
+  });
+
+  it("stores no name or picture", async () => {
+    stubGoogle({ sub: "1234", name: "Ada", picture: "https://example.com/a.png" });
+    await finishGoogle();
+    const row = await env.DB.prepare("SELECT display_name, avatar_url FROM users").first();
+    expect(row).toEqual({ display_name: null, avatar_url: null });
+  });
+
+  it("reuses one account for repeat sign-ins", async () => {
+    stubGoogle({ sub: "1234" });
+    await finishGoogle();
+    await finishGoogle();
+    expect(await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first<number>("n")).toBe(1);
+  });
+
+  it("keeps the same ID on GitHub and Google as separate accounts", async () => {
+    await signIn(1234);
+    stubGoogle({ sub: "1234" });
+    await finishGoogle();
+    expect(await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first<number>("n")).toBe(2);
+  });
+
+  it.each([
+    ["another app's audience", { sub: "1234", aud: "someone-else" }],
+    ["the wrong issuer", { sub: "1234", iss: "https://evil.example" }],
+    ["no subject", {}],
+  ])("rejects a token with %s", async (_name, claims) => {
+    stubGoogle(claims);
+    const { response } = await finishGoogle();
+    expect(response.headers.get("Location")).toBe(`${SITE}/?signin=failed`);
+    expect(await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first<number>("n")).toBe(0);
+  });
+
+  it("fails cleanly on a malformed token", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ id_token: "not-a-token" })));
+    const { response } = await finishGoogle();
+    expect(response.headers.get("Location")).toBe(`${SITE}/?signin=failed`);
   });
 });
 

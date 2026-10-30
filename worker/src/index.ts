@@ -1,4 +1,4 @@
-import { currentUserId, deleteAccount, finishGithub, signOut, startGithub } from "./auth";
+import { currentUserId, deleteAccount, finishSignIn, signOut, startSignIn } from "./auth";
 import { changeProgress, enroll, getProgress, saveQuizScore, unenroll } from "./progress";
 
 export interface Env {
@@ -6,6 +6,8 @@ export interface Env {
   SITE_ORIGIN: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
+  GOOGLE_CLIENT_ID: string;
+  GOOGLE_CLIENT_SECRET: string;
 }
 
 async function route(request: Request, env: Env): Promise<Response> {
@@ -22,9 +24,13 @@ async function route(request: Request, env: Env): Promise<Response> {
       await env.DB.prepare("SELECT 1").first();
       return Response.json({ ok: true });
     case "GET /auth/github/start":
-      return startGithub(request, env);
+      return startSignIn(request, env, "github");
     case "GET /auth/github/callback":
-      return finishGithub(request, env);
+      return finishSignIn(request, env, "github");
+    case "GET /auth/google/start":
+      return startSignIn(request, env, "google");
+    case "GET /auth/google/callback":
+      return finishSignIn(request, env, "google");
     case "GET /me":
       return Response.json({ signedIn: (await currentUserId(request, env)) !== null });
     case "POST /auth/sign-out":

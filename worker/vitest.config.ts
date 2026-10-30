@@ -9,6 +9,8 @@ export default defineConfig(async () => ({
         bindings: {
           GITHUB_CLIENT_ID: "test-client-id",
           GITHUB_CLIENT_SECRET: "test-client-secret",
+          GOOGLE_CLIENT_ID: "test-google-id",
+          GOOGLE_CLIENT_SECRET: "test-google-secret",
           TEST_MIGRATIONS: await readD1Migrations("./migrations"),
         },
       },
