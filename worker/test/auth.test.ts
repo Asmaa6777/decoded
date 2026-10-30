@@ -138,14 +138,14 @@ describe("finishing sign-in", () => {
 });
 
 describe("Google sign-in", () => {
-  it("sends the browser to Google asking only for the openid scope", async () => {
+  it("sends the browser to Google asking for the openid and profile scopes", async () => {
     const response = await call("/auth/google/start");
     const location = new URL(response.headers.get("Location")!);
     expect(location.origin).toBe("https://accounts.google.com");
     expect(location.searchParams.get("client_id")).toBe("test-google-id");
     expect(location.searchParams.get("redirect_uri")).toBe(`${API}/auth/google/callback`);
     expect(location.searchParams.get("response_type")).toBe("code");
-    expect(location.searchParams.get("scope")).toBe("openid");
+    expect(location.searchParams.get("scope")).toBe("openid profile");
     expect(location.searchParams.get("state")).toBeTruthy();
     expect(location.searchParams.get("code_challenge_method")).toBe("S256");
     expect(location.toString()).not.toContain("test-google-secret");
@@ -166,11 +166,18 @@ describe("Google sign-in", () => {
     expect(await (await call("/me", withSession(session))).json()).toEqual({ signedIn: true });
   });
 
-  it("stores no name or picture", async () => {
-    stubGoogle({ sub: "1234", name: "Ada", picture: "https://example.com/a.png" });
+  it("stores the picture but not the name", async () => {
+    const picture = "https://lh3.googleusercontent.com/a/abc=s96-c";
+    stubGoogle({ sub: "1234", name: "Ada", picture });
     await finishGoogle();
     const row = await env.DB.prepare("SELECT display_name, avatar_url FROM users").first();
-    expect(row).toEqual({ display_name: null, avatar_url: null });
+    expect(row).toEqual({ display_name: null, avatar_url: picture });
+  });
+
+  it("ignores a picture from any other host", async () => {
+    stubGoogle({ sub: "1234", picture: "https://evil.example/a.png" });
+    await finishGoogle();
+    expect(await env.DB.prepare("SELECT avatar_url FROM users").first<string>("avatar_url")).toBeNull();
   });
 
   it("reuses one account for repeat sign-ins", async () => {

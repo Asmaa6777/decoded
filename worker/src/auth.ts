@@ -106,20 +106,26 @@ async function fetchGithubUser(request: Request, env: Env, code: string, verifie
 }
 
 /** The token comes straight from Google over TLS, so its claims are checked but its signature needn't be. */
-function readGoogleIdToken(idToken: string, env: Env): string | null {
+function readGoogleIdToken(idToken: string, env: Env): ProviderUser | null {
   try {
     const payload = idToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
     const bytes = Uint8Array.from(atob(payload), (c) => c.charCodeAt(0));
-    const { aud, iss, sub } = JSON.parse(new TextDecoder().decode(bytes));
+    const { aud, iss, sub, picture } = JSON.parse(new TextDecoder().decode(bytes));
     if (aud !== env.GOOGLE_CLIENT_ID) return null;
     if (iss !== "https://accounts.google.com" && iss !== "accounts.google.com") return null;
-    return typeof sub === "string" && sub ? sub : null;
+    if (typeof sub !== "string" || !sub) return null;
+    return {
+      id: sub,
+      name: null,
+      // The site puts this in an <img>, so only Google's own avatar hosts are accepted.
+      avatarUrl: typeof picture === "string" && /^https:\/\/lh\d\.googleusercontent\.com\//.test(picture) ? picture : null,
+    };
   } catch {
     return null;
   }
 }
 
-/** Sign-in only asks for the openid scope, so Google shares an ID and no name or picture. */
+/** The profile scope also shares the person's name, which is left unread. */
 async function fetchGoogleUser(request: Request, env: Env, code: string, verifier: string): Promise<ProviderUser | null> {
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -135,8 +141,7 @@ async function fetchGoogleUser(request: Request, env: Env, code: string, verifie
   if (!tokenResponse.ok) return null;
   const { id_token: idToken } = await tokenResponse.json<{ id_token?: string }>();
   if (typeof idToken !== "string") return null;
-  const id = readGoogleIdToken(idToken, env);
-  return id ? { id, name: null, avatarUrl: null } : null;
+  return readGoogleIdToken(idToken, env);
 }
 
 const PROVIDERS: Record<
@@ -156,7 +161,7 @@ const PROVIDERS: Record<
   },
   google: {
     authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
-    authorizeParams: { response_type: "code", scope: "openid" },
+    authorizeParams: { response_type: "code", scope: "openid profile" },
     clientId: (env) => env.GOOGLE_CLIENT_ID,
     fetchUser: fetchGoogleUser,
   },

@@ -57,7 +57,7 @@ export function SignInDialog({ trigger, title = "Keep your progress", returnTo }
           Continue with Google
         </button>
         <p className="text-center font-mono text-[11px] leading-relaxed text-muted-foreground">
-          Decoded keeps your Google ID, or your GitHub ID, username and picture.{" "}
+          Decoded only keeps your account ID and picture, plus your username on GitHub.{" "}
           <Link to="/privacy" className="underline hover:text-foreground">
             Privacy
           </Link>
