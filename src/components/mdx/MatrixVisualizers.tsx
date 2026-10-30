@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { btn, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { apply2, det2, elementwiseFrames, MAGIC3, MATLAB_ELEMENTWISE, MATLAB_MATMUL, matMulFrames, type Map2, MATLAB_VECTOR_PRODUCT, pascal, transpose, vectorProductFrames, type ElementwiseOp, type Mat, type VectorProductKind } from "@/lib/matrix";
+import { apply2, det2, diagOf, diagOnly, kron, kronFrames, MAGIC4, MATLAB_KRON, MATLAB_NORM, normFrames, tril, triu, type NormKind, elementwiseFrames, MAGIC3, MATLAB_ELEMENTWISE, MATLAB_MATMUL, matMulFrames, type Map2, MATLAB_VECTOR_PRODUCT, pascal, transpose, vectorProductFrames, type ElementwiseOp, type Mat, type VectorProductKind } from "@/lib/matrix";
 
 /* ============================================================
    Visualizers for the Computational Mathematics course. Matrix
@@ -373,6 +373,138 @@ export function LinearMapGrid({ start = "shear" }: { start?: string }) {
           ▶ Replay from identity
         </button>
       </div>
+    </Panel>
+  );
+}
+
+/* ------------------------- Kronecker product ------------------------- */
+
+export function KroneckerVisualizer({ a = [[1, -2], [-1, 0]], b = [[4, -3], [2, 3]] }: { a?: Mat; b?: Mat }) {
+  const frames = useMemo(() => kronFrames(a, b), [a, b]);
+  const big = useMemo(() => kron(a, b), [a, b]);
+  const [p, q] = [b.length, b[0].length];
+  return (
+    <Stepper
+      title="Copies of B, scaled by A"
+      frames={frames}
+      code={MATLAB_KRON}
+      codeLabel="MATLAB"
+      legend={[["bg-orange", "this block"], ["bg-mint", "finished"]]}
+      render={(s) => {
+        const blockIndex = (i: number, j: number) => Math.floor(i / p) * a[0].length + Math.floor(j / q) + 1;
+        return (
+          <div className="flex flex-wrap items-center gap-4">
+            <MatrixStage rows={a.length} cols={a[0].length} size={38} label="A" cells={matCells(a, "a", (i, j) => (s.block?.[0] === i && s.block?.[1] === j ? "orange" : undefined))} />
+            <Op>⊗</Op>
+            <MatrixStage rows={p} cols={q} size={38} label="B" cells={matCells(b, "b", () => (s.block ? "sky" : undefined))} />
+            <Op>=</Op>
+            <MatrixStage
+              rows={big.length}
+              cols={big[0].length}
+              size={38}
+              label={`${big.length}-by-${big[0].length}`}
+              cells={big.flatMap((r, i) =>
+                r.map((v, j) => {
+                  const n = blockIndex(i, j);
+                  const live = s.block && Math.floor(i / p) === s.block[0] && Math.floor(j / q) === s.block[1];
+                  return { id: `k${i}-${j}`, row: i, col: j, text: String(v), hidden: n > s.done, tone: (live ? "orange" : "mint") as CellTone };
+                }),
+              )}
+            />
+          </div>
+        );
+      }}
+    />
+  );
+}
+
+/* ------------------------------- norms ------------------------------- */
+
+export function NormVisualizer({ a = [[5, -4, 2], [-1, 2, 3], [-2, 1, 0]] }: { a?: Mat }) {
+  const [kind, setKind] = useState<NormKind>("one");
+  const frames = useMemo(() => normFrames(kind, a), [kind, a]);
+  return (
+    <Stepper
+      title="Three ways to measure a matrix"
+      frames={frames}
+      code={MATLAB_NORM[kind]}
+      codeLabel="MATLAB"
+      legend={[["bg-neon", "adding"], ["bg-mint", "the winner"]]}
+      inputs={<Toggle<NormKind> value={kind} onChange={setKind} options={[["one", "1-norm"], ["inf", "infinity-norm"], ["fro", "Euclidean"]]} />}
+      render={(s) => {
+        const n = a[0].length;
+        const tone = (i: number, j: number): CellTone | undefined => {
+          if (s.kind === "fro") return s.line === i * n + j ? "neon" : undefined;
+          const on = s.kind === "one" ? j : i;
+          if (s.best === on) return "mint";
+          return s.line === on ? "neon" : undefined;
+        };
+        const max = Math.max(1, ...s.sums.map((x) => x ?? 0));
+        return (
+          <div className="flex flex-wrap items-center gap-6">
+            <MatrixStage rows={a.length} cols={n} cells={matCells(a, "n", tone)} label="B" size={46} />
+            {s.kind === "fro" ? (
+              <div className="font-mono text-sm flex flex-col gap-1 min-w-[180px]">
+                <div className="text-muted-foreground">sum of squares</div>
+                <div className="text-2xl text-sky">{s.total}</div>
+                <div className="text-muted-foreground">√ = <span className="text-mint">{Number(Math.sqrt(s.total ?? 0).toFixed(3))}</span></div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 min-w-[200px] flex-1 max-w-[320px]">
+                {s.sums.map((v, i) => (
+                  <div key={i} className="flex items-center gap-2 font-mono text-xs">
+                    <span className="w-14 text-muted-foreground">{s.kind === "one" ? "col" : "row"} {i + 1}</span>
+                    <div className="h-4 flex-1 bg-background/60 rounded-[2px] overflow-hidden">
+                      <div className={`h-full transition-all duration-500 ease-out motion-reduce:transition-none ${s.best === i ? "bg-mint" : "bg-sky"}`} style={{ width: `${((v ?? 0) / max) * 100}%` }} />
+                    </div>
+                    <span className={`w-6 text-right ${s.best === i ? "text-mint" : ""}`}>{v ?? ""}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }}
+    />
+  );
+}
+
+/* -------------------------- special matrices ------------------------- */
+
+type SpecialKind = "triu" | "tril" | "diag";
+
+/** Entries that a command drops fade to zero in place, so the kept shape stands out. */
+export function SpecialMatrixExplorer() {
+  const [kind, setKind] = useState<SpecialKind>("triu");
+  const [k, setK] = useState(0);
+  const out = kind === "triu" ? triu(MAGIC4, k) : kind === "tril" ? tril(MAGIC4, k) : diagOnly(MAGIC4, k);
+  const cmd = kind === "diag" ? `diag(diag(A, ${k}), ${k})` : `${kind}(A, ${k})`;
+  return (
+    <Panel title="Keep part of a matrix" legend={[["bg-mint", "kept"], ["bg-neon", "the k-th diagonal"]]}>
+      <div className="flex flex-wrap items-center gap-6">
+        <MatrixStage
+          rows={4}
+          cols={4}
+          size={46}
+          label="A = magic(4)"
+          cells={MAGIC4.flatMap((r, i) =>
+            r.map((v, j) => {
+              const kept = kind === "triu" ? j - i >= k : kind === "tril" ? j - i <= k : j - i === k;
+              return { id: `s${i}-${j}`, row: i, col: j, text: kept ? String(v) : "0", tone: (!kept ? "muted" : j - i === k ? "neon" : "mint") as CellTone };
+            }),
+          )}
+        />
+        <div className="flex flex-col gap-3 font-mono text-sm min-w-[220px]">
+          <div className="text-base">{cmd}</div>
+          <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+            diagonal offset k = {k}
+            <input type="range" aria-label="Diagonal offset" min={-3} max={3} value={k} onChange={(e) => setK(Number(e.target.value))} className="accent-[hsl(var(--mint))]" />
+          </label>
+          <div className="text-[12px] text-muted-foreground">diag(A, {k}) = [{diagOf(MAGIC4, k).join(" ")}]</div>
+          <div className="text-[12px] text-muted-foreground">non-zero entries: {out.flat().filter((x) => x !== 0).length}</div>
+        </div>
+      </div>
+      <Toggle<SpecialKind> value={kind} onChange={setKind} options={[["triu", "Upper triangular"], ["tril", "Lower triangular"], ["diag", "Diagonal"]]} />
     </Panel>
   );
 }

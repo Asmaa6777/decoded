@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
+import { diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -86,5 +86,32 @@ describe("matrix multiplication and linear maps", () => {
     expect(det2([1, 1, 0, 1])).toBe(1);
     expect(det2([-1, 0, 0, 1])).toBe(-1);
     expect(det2([1, 2, 0.5, 1])).toBe(0);
+  });
+});
+
+describe("Kronecker products, norms and special matrices", () => {
+  const B = [[5, -4, 2], [-1, 2, 3], [-2, 1, 0]];
+  it("builds the block matrix", () => {
+    expect(kron([[1, -2], [-1, 0]], [[4, -3], [2, 3]])).toEqual([[4, -3, -8, 6], [2, 3, -4, -6], [-4, 3, 0, 0], [-2, -3, 0, 0]]);
+    expect(kron([[1, 2], [3, 4]], [[1, 0], [0, 1]])).toEqual([[1, 0, 2, 0], [0, 1, 0, 2], [3, 0, 4, 0], [0, 3, 0, 4]]);
+    expect(kronFrames([[1, 2]], [[1]]).at(-1)!.state.done).toBe(2);
+  });
+
+  it("computes each norm and trace", () => {
+    expect(norm1(B)).toBe(8);
+    expect(normInf(B)).toBe(11);
+    expect(normFro(B)).toBe(8);
+    expect(norm1([[1, -7], [-2, -3]])).toBe(10);
+    expect(normInf([[1, -7], [-2, -3]])).toBe(8);
+    expect(normFro([[1, -7], [-2, -3]])).toBeCloseTo(7.937, 3);
+    expect(trace(MAGIC4)).toBe(34);
+    expect(normFrames("one", B).at(-1)!.state.best).toBe(0);
+    expect(normFrames("inf", B).at(-1)!.state.best).toBe(0);
+  });
+
+  it("keeps the right triangle and diagonals", () => {
+    expect(diagOf(MAGIC4)).toEqual([16, 11, 6, 1]);
+    expect(triu([[1, 1], [1, 1]])).toEqual([[1, 1], [0, 1]]);
+    expect(tril([[1, 1, 1], [1, 1, 1], [1, 1, 1]], -1)).toEqual([[0, 0, 0], [1, 0, 0], [1, 1, 0]]);
   });
 });
