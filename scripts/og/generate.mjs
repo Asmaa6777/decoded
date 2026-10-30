@@ -1,10 +1,11 @@
 // Build-time social previews. Runs after `vite build` (see package.json).
 //
-// For the home page, /courses, every course and every lesson it writes
+// For the home page, /courses, /team, /privacy, every course and every lesson it writes
 // dist/<route>/index.html with that page's <title>, description, canonical
 // URL and Open Graph / Twitter tags, so link unfurlers (which don't run JS)
 // see the right card. It also renders a 1200×630 PNG per course plus one for
-// home and /courses into dist/og/. Lessons reuse their course's image.
+// home and /courses into dist/og/. Lessons reuse their course's image. Every
+// route it writes also goes into dist/sitemap.xml.
 //
 // GitHub Pages serves dist/courses/<slug>/index.html for /courses/<slug>,
 // and the SPA boots from it exactly as it does from the root index.html.
@@ -253,7 +254,10 @@ function seoBlock({ title, description, url, image }) {
 
 const SEO_BLOCK = /<!-- seo:start[\s\S]*?<!-- seo:end -->/;
 
+const routes = [];
+
 async function writeRoute(template, route, meta) {
+  routes.push(meta.url);
   if (!SEO_BLOCK.test(template)) throw new Error("seo markers not found in dist/index.html");
   const html = template.replace(SEO_BLOCK, seoBlock(meta));
   const file = route === "/" ? path.join(DIST, "index.html") : path.join(DIST, route, "index.html");
@@ -284,7 +288,20 @@ await writeRoute(template, "/courses", {
   image: img("courses"),
 });
 
-let pages = 2;
+await writeRoute(template, "/team", {
+  title: "Team — Decoded",
+  description: "The people behind Decoded, mapping computer science theory to the real tools it powers.",
+  url: `${SITE}/team`,
+  image: img("home"),
+});
+await writeRoute(template, "/privacy", {
+  title: "Privacy — Decoded",
+  description: "What Decoded stores when you sign in, and how to delete it.",
+  url: `${SITE}/privacy`,
+  image: img("home"),
+});
+
+let pages = 4;
 for (const course of mod.courses) {
   await renderPng(courseCard(mod, course), fonts, path.join(DIST, `og/${course.slug}.png`));
   await writeRoute(template, `/courses/${course.slug}`, {
@@ -304,5 +321,12 @@ for (const course of mod.courses) {
     pages++;
   }
 }
+
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${routes.map((url) => `  <url><loc>${esc(url)}</loc></url>`).join("\n")}
+</urlset>
+`;
+await writeFile(path.join(DIST, "sitemap.xml"), sitemap);
 
 console.log(`og: ${mod.courses.length + 2} images, ${pages} pages`);
