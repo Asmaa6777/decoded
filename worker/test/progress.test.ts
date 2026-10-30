@@ -160,6 +160,51 @@ describe("profile", () => {
   });
 });
 
+describe("registering for a course", () => {
+  function register(session: string | null, body: unknown, origin = SITE): Promise<Response> {
+    return call("/enrollments", {
+      method: "POST",
+      headers: { Origin: origin, ...(session ? { Cookie: `__Host-decoded_session=${session}` } : {}) },
+      body: JSON.stringify(body),
+    });
+  }
+  const enrollmentsOf = async (session: string) =>
+    ((await read(session)) as unknown as { enrollments: Record<string, number> }).enrollments;
+
+  it("records the course and keeps the first date on a repeat", async () => {
+    const session = await signIn(1);
+    expect((await register(session, { course: "toc" })).status).toBe(200);
+    const first = (await enrollmentsOf(session)).toc;
+    expect(first).toBeGreaterThan(0);
+    await env.DB.prepare("UPDATE enrollments SET enrolled_at = 1").run();
+    await register(session, { course: "toc" });
+    expect((await enrollmentsOf(session)).toc).toBe(1);
+  });
+
+  it("keeps registrations separate between users", async () => {
+    const alice = await signIn(1);
+    const bob = await signIn(2);
+    await register(alice, { course: "toc" });
+    expect(await enrollmentsOf(bob)).toEqual({});
+  });
+
+  it("needs a session, the site's origin and a valid slug", async () => {
+    const session = await signIn(1);
+    expect((await register(null, { course: "toc" })).status).toBe(401);
+    expect((await register(session, { course: "toc" }, "https://evil.example")).status).toBe(403);
+    expect((await register(session, { course: "<b>" })).status).toBe(400);
+    expect((await register(session, {})).status).toBe(400);
+    expect(await enrollmentsOf(session)).toEqual({});
+  });
+
+  it("is removed with the account", async () => {
+    const session = await signIn(1);
+    await register(session, { course: "toc" });
+    await call("/account/delete", { method: "POST", headers: { Origin: SITE, Cookie: `__Host-decoded_session=${session}` } });
+    expect(await env.DB.prepare("SELECT COUNT(*) AS n FROM enrollments").first<number>("n")).toBe(0);
+  });
+});
+
 describe("deleting an account", () => {
   const count = (table: string) => env.DB.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first<number>("n");
 

@@ -3,13 +3,10 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getCourse, flattenLessons, lessonKind } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
-import { ProgressBackup } from "@/components/ProgressBackup";
+import { CourseRegistration } from "@/components/CourseRegistration";
 import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 import { CourseAuthors } from "@/components/CourseAuthors";
 
-const accentBg: Record<string, string> = {
-  neon: "bg-neon", orange: "bg-orange", sky: "bg-sky", violet: "bg-violet", mint: "bg-mint",
-};
 const accentText: Record<string, string> = {
   neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
 };
@@ -17,7 +14,7 @@ const accentText: Record<string, string> = {
 export default function CoursePage() {
   const { courseSlug } = useParams<{ courseSlug: string }>();
   const course = courseSlug ? getCourse(courseSlug) : undefined;
-  const { isComplete, completed, reset } = useProgress(courseSlug);
+  const { isComplete } = useProgress(courseSlug);
 
   useEffect(() => {
     if (course) document.title = `${course.title} — Decoded`;
@@ -26,8 +23,6 @@ export default function CoursePage() {
   if (!course) return <Navigate to="/404" replace />;
 
   const total = flattenLessons(course).length;
-  const done = completed.filter((s) => flattenLessons(course).some((l) => l.slug === s)).length;
-  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -56,35 +51,7 @@ export default function CoursePage() {
 
             {course.authors && <CourseAuthors authors={course.authors} />}
 
-            {total > 0 && (
-              <div className="mt-8 max-w-md">
-                <div className="flex items-center justify-between font-mono text-[11px] tracking-widest uppercase text-muted-foreground mb-2">
-                  <span>Your progress</span>
-                  <span>
-                    {done}/{total} · {pct}%
-                  </span>
-                </div>
-                <div className="h-1 w-full bg-secondary overflow-hidden">
-                  <div
-                    className={`h-full ${accentBg[course.accent]} transition-all duration-500`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-                  <ProgressBackup />
-                  {done > 0 && (
-                    <button
-                      onClick={() => {
-                        if (confirm("Reset progress for this course?")) reset();
-                      }}
-                      className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground transition"
-                    >
-                      Reset progress
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+            {total > 0 && <CourseRegistration course={course} />}
           </div>
         </header>
 

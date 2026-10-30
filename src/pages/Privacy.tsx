@@ -51,7 +51,7 @@ export default function Privacy() {
           <ul>
             <li>your numeric GitHub user ID, which is how your account is recognised</li>
             <li>your GitHub username and the address of your profile picture, shown in your account menu</li>
-            <li>the lessons you've completed and when</li>
+            <li>the courses you've registered for, the lessons you've completed, and when</li>
             <li>a sign-in session, kept in a cookie that lasts up to 90 days</li>
           </ul>
           <p>
@@ -60,7 +60,7 @@ export default function Privacy() {
           </p>
 
           <h2 className="font-display">Deleting your data</h2>
-          <p>Deleting your account removes your account, sessions and saved progress straight away.</p>
+          <p>Deleting your account removes your account, sessions, registrations and saved progress straight away.</p>
           {status === "signed-in" ? (
             <AlertDialog>
               <AlertDialogTrigger asChild>

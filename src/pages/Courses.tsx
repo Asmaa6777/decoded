@@ -2,8 +2,13 @@ import { useEffect } from "react";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import CourseCard from "@/components/CourseCard";
 import { courses } from "@/content/registry";
+import { useAccountStatus, useEnrollments } from "@/hooks/useAccountStatus";
 
 export default function Courses() {
+  const status = useAccountStatus();
+  const enrollments = useEnrollments();
+  const mine = status === "signed-in" ? courses.filter((c) => enrollments[c.slug]) : [];
+
   useEffect(() => {
     document.title = "All Tracks — Decoded";
   }, []);
@@ -21,8 +26,19 @@ export default function Courses() {
             Each track pairs the formal theoratical ideas with the modern tools and practices, the job, and the failure mode you've already seen.
           </p>
 
+          {mine.length > 0 && (
+            <section aria-label="Your courses" className="mb-12">
+              <div className="eyebrow text-muted-foreground mb-4">Your courses</div>
+              <div className="grid gap-4 md:grid-cols-2">
+                {mine.map((c) => (
+                  <CourseCard key={c.slug} slug={c.slug} />
+                ))}
+              </div>
+            </section>
+          )}
+
           <div className="grid gap-4 md:grid-cols-2">
-            {courses.map((c) => (
+            {courses.filter((c) => !mine.includes(c)).map((c) => (
               <CourseCard key={c.slug} slug={c.slug} />
             ))}
           </div>

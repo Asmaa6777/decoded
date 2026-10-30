@@ -20,11 +20,13 @@ export type AccountProfile = { name: string | null; avatarUrl: string | null };
 
 let status: AccountStatus = "unknown";
 let profile: AccountProfile | null = null;
+let enrollments: Record<string, number> = {};
 let flushing = false;
 const listeners = new Set<() => void>();
 
 function setStatus(next: AccountStatus) {
   status = next;
+  if (next === "signed-out") enrollments = {};
   listeners.forEach((listener) => listener());
 }
 
@@ -34,6 +36,11 @@ export function getAccountStatus() {
 
 export function getAccountProfile() {
   return profile;
+}
+
+/** course slug -> when the signed-in user registered for it */
+export function getEnrollments() {
+  return enrollments;
 }
 
 export function subscribeAccountStatus(listener: () => void) {
@@ -132,7 +139,7 @@ export function queueProgressChange(before: ProgressMap, after: ProgressMap) {
 }
 
 export async function syncProgress() {
-  let body: { signedIn: boolean; user?: AccountProfile; progress?: ProgressMap };
+  let body: { signedIn: boolean; user?: AccountProfile; progress?: ProgressMap; enrollments?: Record<string, number> };
   try {
     const response = await fetch(`${API_URL}/progress`, { credentials: "include" });
     if (!response.ok) throw new Error(String(response.status));
@@ -152,14 +159,26 @@ export async function syncProgress() {
   const pending = loadPending() ?? diffProgress({}, readProgress());
   savePending(pending);
   profile = body.user ?? null;
+  enrollments = body.enrollments ?? {};
   setStatus("signed-in");
 
   if (Object.keys(pending).length > 0) await flush();
   else writeProgress(body.progress ?? {});
 }
 
-export function signInWithGithub() {
-  const returnTo = window.location.pathname + window.location.search;
+export async function registerForCourse(course: string) {
+  const response = await fetch(`${API_URL}/enrollments`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ course }),
+  });
+  if (!response.ok) throw new Error(String(response.status));
+  enrollments = ((await response.json()) as { enrollments: Record<string, number> }).enrollments;
+  listeners.forEach((listener) => listener());
+}
+
+export function signInWithGithub(returnTo = window.location.pathname + window.location.search) {
   window.location.href = `${API_URL}/auth/github/start?return=${encodeURIComponent(returnTo)}`;
 }
 
@@ -196,6 +215,7 @@ export function startProgressSync() {
 export function resetProgressSyncForTests() {
   status = "unknown";
   profile = null;
+  enrollments = {};
   flushing = false;
   started = false;
   listeners.clear();

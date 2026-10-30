@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Github, LogOut, ShieldCheck } from "lucide-react";
@@ -16,23 +16,22 @@ import {
 import { useAccountProfile, useAccountStatus } from "@/hooks/useAccountStatus";
 import { signInWithGithub, signOut } from "@/lib/progressSync";
 
-function SignInDialog() {
+/** `returnTo` is where GitHub sends people back to; defaults to the current page. */
+export function SignInDialog({ trigger, title = "Keep your progress", returnTo }: { trigger: ReactNode; title?: string; returnTo?: string }) {
   return (
     <Dialog>
-      <DialogTrigger className="rounded-sm border border-border px-3 py-1.5 font-mono text-xs uppercase tracking-widest text-foreground transition-colors hover:border-foreground">
-        Sign in
-      </DialogTrigger>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader className="items-center text-center sm:text-center">
           <BrandMark className="mb-2 h-10 w-10 text-foreground" />
-          <DialogTitle className="font-display text-2xl">Keep your progress</DialogTitle>
+          <DialogTitle className="font-display text-2xl">{title}</DialogTitle>
           <DialogDescription className="font-body text-base">
             Sign in to pick up where you left off on any device. Lessons you've already finished here come with you.
           </DialogDescription>
         </DialogHeader>
         <button
           type="button"
-          onClick={signInWithGithub}
+          onClick={() => signInWithGithub(returnTo)}
           className="mt-2 flex w-full items-center justify-center gap-2.5 rounded-sm bg-foreground px-4 py-3 font-mono text-sm text-background transition-opacity hover:opacity-85"
         >
           <Github className="h-4 w-4" aria-hidden />
@@ -99,7 +98,20 @@ export function AccountButton() {
     toast.error("Couldn't sign you in", { description: "Your progress is still saved on this device. Please try again." });
   }, []);
 
-  if (status === "signed-out") return <SignInDialog />;
+  if (status === "signed-out") {
+    return (
+      <SignInDialog
+        trigger={
+          <button
+            type="button"
+            className="rounded-sm border border-border px-3 py-1.5 font-mono text-xs uppercase tracking-widest text-foreground transition-colors hover:border-foreground"
+          >
+            Sign in
+          </button>
+        }
+      />
+    );
+  }
   if (status === "signed-in") return <AccountMenu />;
   return null;
 }

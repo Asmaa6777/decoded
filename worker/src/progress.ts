@@ -5,6 +5,7 @@ const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MAX_SLUG_LENGTH = 100;
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_LESSONS_PER_USER = 5000;
+const MAX_ENROLLMENTS_PER_USER = 200;
 
 type LessonRef = [course: string, lesson: string];
 type ProgressMap = Record<string, string[]>;
@@ -40,13 +41,26 @@ async function readProgress(env: Env, userId: string): Promise<ProgressMap> {
   return progress;
 }
 
+/** course slug -> when the user registered for it */
+async function readEnrollments(env: Env, userId: string): Promise<Record<string, number>> {
+  const { results } = await env.DB.prepare("SELECT course, enrolled_at FROM enrollments WHERE user_id = ?")
+    .bind(userId)
+    .all<{ course: string; enrolled_at: number }>();
+  return Object.fromEntries(results.map((row) => [row.course, row.enrolled_at]));
+}
+
 export async function getProgress(request: Request, env: Env): Promise<Response> {
   const userId = await currentUserId(request, env);
   if (!userId) return Response.json({ signedIn: false });
   const profile = await env.DB.prepare("SELECT display_name AS name, avatar_url AS avatarUrl FROM users WHERE id = ?")
     .bind(userId)
     .first<{ name: string | null; avatarUrl: string | null }>();
-  return Response.json({ signedIn: true, user: profile, progress: await readProgress(env, userId) });
+  return Response.json({
+    signedIn: true,
+    user: profile,
+    progress: await readProgress(env, userId),
+    enrollments: await readEnrollments(env, userId),
+  });
 }
 
 /** Applies a batch of changes and returns the user's progress after them. */
@@ -76,4 +90,30 @@ export async function changeProgress(request: Request, env: Env): Promise<Respon
   ]);
 
   return Response.json({ progress: await readProgress(env, userId) });
+}
+
+/** Registers the user for a course; registering twice keeps the first date. */
+export async function enroll(request: Request, env: Env): Promise<Response> {
+  const userId = await currentUserId(request, env);
+  if (!userId) return Response.json({ error: "signed_out" }, { status: 401 });
+
+  const text = await request.text();
+  if (text.length > 1024) return Response.json({ error: "too_large" }, { status: 413 });
+  let course: unknown;
+  try {
+    course = JSON.parse(text)?.course;
+  } catch {
+    return Response.json({ error: "invalid" }, { status: 400 });
+  }
+  if (typeof course !== "string" || course.length > MAX_SLUG_LENGTH || !SLUG.test(course)) {
+    return Response.json({ error: "invalid" }, { status: 400 });
+  }
+
+  const count = await env.DB.prepare("SELECT COUNT(*) AS n FROM enrollments WHERE user_id = ?").bind(userId).first<number>("n");
+  if ((count ?? 0) >= MAX_ENROLLMENTS_PER_USER) return Response.json({ error: "too_many" }, { status: 413 });
+
+  await env.DB.prepare("INSERT OR IGNORE INTO enrollments (user_id, course, enrolled_at) VALUES (?, ?, ?)")
+    .bind(userId, course, Date.now())
+    .run();
+  return Response.json({ enrollments: await readEnrollments(env, userId) });
 }
