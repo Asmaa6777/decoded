@@ -503,3 +503,107 @@ export function messageSim(capacity: Capacity, ticks: number, every = 3, bound =
   }
   return out;
 }
+
+/* ------------------------------ Java threads (lab 2) ------------------------------ */
+
+export type JState = "New" | "Runnable" | "Running" | "Blocked" | "Dead";
+
+/** The lab's Java thread lifecycle. */
+export const JAVA_TRANSITIONS: { from: JState; to: JState; label: string }[] = [
+  { from: "New", to: "Runnable", label: "start()" },
+  { from: "Runnable", to: "Running", label: "run()" },
+  { from: "Running", to: "Runnable", label: "yield()" },
+  { from: "Running", to: "Blocked", label: "sleep() / wait() / suspend()" },
+  { from: "Blocked", to: "Runnable", label: "resume() / notify()" },
+  { from: "Running", to: "Dead", label: "end of execution" },
+  { from: "New", to: "Dead", label: "stop()" },
+  { from: "Runnable", to: "Dead", label: "stop()" },
+  { from: "Blocked", to: "Dead", label: "stop()" },
+];
+
+/** A small seeded random generator, so a "random" schedule replays the same way. */
+export function seeded(seed: number) {
+  let s = seed >>> 0 || 1;
+  return () => {
+    s ^= s << 13;
+    s ^= s >>> 17;
+    s ^= s << 5;
+    return ((s >>> 0) % 10000) / 10000;
+  };
+}
+
+export type ThreadOpts = { yieldEach: boolean; join: boolean; priorities: Record<"t1" | "A" | "B", number>; iterations: number; seed: number };
+export type PrintLine = { thread: "t1" | "A" | "B" | "main"; text: string };
+
+const LINE_TEXT: Record<"t1" | "A" | "B", string> = { t1: "MyRunnable is running!", A: "A is running!", B: "B is running!" };
+
+/**
+ * Simulate the lab's main(): start t1 (MyRunnable), t2 ("A") and t3 ("B"), then print "In main thread!".
+ * Without yield, the scheduler runs a thread for a random burst, picking higher priorities more often.
+ * With yield, every thread gives up the CPU after each line, so they take turns.
+ * With join, main waits for all three before printing.
+ */
+export function runThreads(o: ThreadOpts): PrintLine[] {
+  const rnd = seeded(o.seed);
+  const left: Record<"t1" | "A" | "B", number> = { t1: o.iterations, A: o.iterations, B: o.iterations };
+  const order: ("t1" | "A" | "B")[] = ["t1", "A", "B"];
+  const out: PrintLine[] = [];
+  // main keeps running right after start() unless it joins; it gets the CPU after 0-2 lines
+  let mainAfter = o.join ? Infinity : Math.floor(rnd() * 3);
+  let turn = 0;
+  while (order.some((t) => left[t] > 0)) {
+    if (out.length >= mainAfter) {
+      out.push({ thread: "main", text: "In main thread!" });
+      mainAfter = Infinity;
+    }
+    const alive = order.filter((t) => left[t] > 0);
+    let pick: "t1" | "A" | "B";
+    let burst: number;
+    if (o.yieldEach) {
+      pick = alive[turn % alive.length];
+      turn++;
+      burst = 1;
+    } else {
+      const total = alive.reduce((s, t) => s + o.priorities[t], 0);
+      let x = rnd() * total;
+      pick = alive.find((t) => (x -= o.priorities[t]) < 0) ?? alive[alive.length - 1];
+      burst = 1 + Math.floor(rnd() * 3);
+    }
+    for (let k = 0; k < burst && left[pick] > 0; k++) {
+      out.push({ thread: pick, text: LINE_TEXT[pick] });
+      left[pick]--;
+    }
+  }
+  if (mainAfter !== Infinity || o.join) out.push({ thread: "main", text: "In main thread!" });
+  return out;
+}
+
+export type MatrixState = { done: boolean[][]; active: number[]; joined: boolean };
+
+/** Exercise 2: one thread per row adds its row; the threads run interleaved, then main joins. */
+export function matrixAddFrames(rows: number, cols: number, seed = 7): Frame<MatrixState>[] {
+  const rnd = seeded(seed);
+  const done = Array.from({ length: rows }, () => Array(cols).fill(false));
+  const next = Array(rows).fill(0);
+  const frames: Frame<MatrixState>[] = [];
+  const snap = (active: number[], joined: boolean, line: number, message: string) =>
+    frames.push({ state: { done: done.map((r) => [...r]), active, joined }, line, message, stats: { "cells done": done.flat().filter(Boolean).length, threads: rows } });
+  snap([], false, 0, `main creates ${rows} threads, one for each row, and starts them all.`);
+  while (next.some((c) => c < cols)) {
+    const alive = next.map((c, r) => (c < cols ? r : -1)).filter((r) => r >= 0);
+    const r = alive[Math.floor(rnd() * alive.length)];
+    done[r][next[r]] = true;
+    next[r]++;
+    snap([r], false, 2, `Thread ${r} adds A[${r}][${next[r] - 1}] + B[${r}][${next[r] - 1}] and writes it into C. The scheduler decides which thread runs, so rows fill in an unpredictable order.`);
+  }
+  snap([], true, 3, "main called join() on every thread, so it waited here until all of them finished. Now C is complete and main can print it.");
+  return frames;
+}
+
+export const MATRIX_CODE = [
+  "for each row r: threads[r] = new RowAdder(r); threads[r].start();",
+  "  // inside RowAdder.run():",
+  "  for (int c = 0; c < cols; c++) C[r][c] = A[r][c] + B[r][c];",
+  "for each row r: threads[r].join();",
+  "print(C);",
+];

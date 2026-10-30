@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { btn, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import {
   DEMO_JOBS,
@@ -32,7 +32,6 @@ import {
   forkTree,
   LINUX_TREE,
   messageSim,
-  nextState,
   produce,
   PROCESS_TRANSITIONS,
   ring,
@@ -43,10 +42,16 @@ import {
   type Capacity,
   type ForkNode,
   type PcbView,
-  type PEvent,
   type PState,
   type Ring,
   type SwitchState,
+  JAVA_TRANSITIONS,
+  type JState,
+  matrixAddFrames,
+  MATRIX_CODE,
+  runThreads,
+  type MatrixState,
+  type PrintLine,
 } from "@/lib/operatingSystems";
 import { exists, initialShell, promptPath, readFile, run, type ShellState } from "@/lib/miniShell";
 
@@ -990,83 +995,80 @@ export function ProcessMemory() {
   );
 }
 
-/* ------------------------------ process states ------------------------------ */
+/* ------------------------------ state machines ------------------------------ */
 
-const STATE_POS: Record<PState, [number, number]> = {
-  new: [80, 50],
-  terminated: [520, 50],
-  ready: [170, 170],
-  running: [430, 170],
-  waiting: [300, 265],
-};
+type SmEdge<S extends string> = { from: S; to: S; label: string; bend?: number };
 
-const STATE_NOTE: Record<PState, string> = {
-  new: "new: the process is being created.",
-  ready: "ready: it's waiting to be assigned to a processor.",
-  running: "running: its instructions are being executed. On one CPU, only one process can be here at a time.",
-  waiting: "waiting: it's waiting for some event, like an I/O finishing or a signal.",
-  terminated: "terminated: it has finished execution.",
-};
-
-/** The five-state diagram. Click the events to move a process around it. */
-export function ProcessStateDiagram() {
-  const [s, setS] = useState<PState>("new");
-  const [last, setLast] = useState<PEvent | null>(null);
-  const [trail, setTrail] = useState<PState[]>(["new"]);
-  const fire = (e: PEvent) => {
-    const to = nextState(s, e);
-    if (!to) return;
-    setS(to);
-    setLast(e);
-    setTrail((t) => [...t, to].slice(-8));
+/** A clickable state diagram: only the transitions out of the current state are enabled. */
+function StateMachine<S extends string>({
+  title,
+  positions,
+  edges,
+  notes,
+  initial,
+  height = 310,
+  resetLabel,
+}: {
+  title: string;
+  positions: Record<S, [number, number]>;
+  edges: SmEdge<S>[];
+  notes: Record<S, string>;
+  initial: S;
+  height?: number;
+  resetLabel: string;
+}) {
+  const [s, setS] = useState<S>(initial);
+  const [last, setLast] = useState<number | null>(null);
+  const [trail, setTrail] = useState<S[]>([initial]);
+  const uid = useId().replace(/:/g, "");
+  const fire = (i: number) => {
+    setS(edges[i].to);
+    setLast(i);
+    setTrail((t) => [...t, edges[i].to].slice(-8));
   };
-  const edge = (from: PState, to: PState, bend = 0) => {
-    const [x1, y1] = STATE_POS[from];
-    const [x2, y2] = STATE_POS[to];
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const len = Math.hypot(dx, dy);
-    const ux = dx / len;
-    const uy = dy / len;
-    const sx = x1 + ux * 46;
+  const curve = (from: S, to: S, bend = 0) => {
+    const [x1, y1] = positions[from];
+    const [x2, y2] = positions[to];
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    const ux = (x2 - x1) / len;
+    const uy = (y2 - y1) / len;
+    const sx = x1 + ux * 50;
     const sy = y1 + uy * 24;
-    const ex = x2 - ux * 46;
+    const ex = x2 - ux * 50;
     const ey = y2 - uy * 24;
     const mx = (sx + ex) / 2 - uy * bend;
     const my = (sy + ey) / 2 + ux * bend;
     return { d: `M${sx},${sy} Q${mx},${my} ${ex},${ey}`, lx: (sx + 2 * mx + ex) / 4, ly: (sy + 2 * my + ey) / 4 };
   };
   return (
-    <Panel title="Diagram of process state">
-      <svg viewBox="0 0 600 310" className="w-full h-auto max-w-[640px] mx-auto" role="img" aria-label="process state diagram">
+    <Panel title={title}>
+      <svg viewBox={`0 0 600 ${height}`} className="w-full h-auto max-w-[640px] mx-auto" role="img" aria-label={title}>
         <defs>
-          <marker id="os-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 z" className="fill-muted-foreground" />
-          </marker>
-          <marker id="os-arrow-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 z" className="fill-mint" />
-          </marker>
+          {(["cold", "hot"] as const).map((k) => (
+            <marker key={k} id={`${uid}-${k}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" className={k === "hot" ? "fill-mint" : "fill-muted-foreground"} />
+            </marker>
+          ))}
         </defs>
-        {PROCESS_TRANSITIONS.map((t) => {
-          const bend = t.event === "dispatch" ? -40 : t.event === "interrupt" ? -40 : 0;
-          const g = edge(t.from, t.to, bend);
-          const hot = last === t.event && s === t.to;
+        {edges.map((e, i) => {
+          const g = curve(e.from, e.to, e.bend);
+          const hot = last === i && s === e.to;
           return (
-            <g key={t.event}>
-              <path d={g.d} fill="none" strokeWidth={hot ? 3 : 1.5} className={`transition-all duration-300 ${hot ? "stroke-mint" : "stroke-muted-foreground"}`} markerEnd={`url(#${hot ? "os-arrow-hot" : "os-arrow"})`} />
+            <g key={`${e.from}-${e.to}`}>
+              <path d={g.d} fill="none" strokeWidth={hot ? 3 : 1.5} className={`transition-all duration-300 ${hot ? "stroke-mint" : "stroke-muted-foreground"}`} markerEnd={`url(#${uid}-${hot ? "hot" : "cold"})`} />
               <text x={g.lx} y={g.ly - 6} textAnchor="middle" className={`font-mono text-[11px] ${hot ? "fill-mint font-bold" : "fill-muted-foreground"}`}>
-                {t.label}
+                {e.label}
               </text>
             </g>
           );
         })}
-        {(Object.keys(STATE_POS) as PState[]).map((k) => {
-          const [x, y] = STATE_POS[k];
+        {(Object.keys(positions) as S[]).map((k) => {
+          const [x, y] = positions[k];
           const on = k === s;
           return (
             <g key={k}>
-              {on && <ellipse cx={x} cy={y} rx={56} ry={30} className="fill-mint/20 animate-pulse" />}
-              <ellipse cx={x} cy={y} rx={46} ry={24} strokeWidth={on ? 3 : 1.5} className={`transition-all duration-300 ${on ? "fill-mint/30 stroke-mint" : "fill-card stroke-border"}`} />
+              {on && <ellipse cx={x} cy={y} rx={60} ry={30} className="fill-mint/20 animate-pulse" />}
+              <ellipse cx={x} cy={y} rx={50} ry={24} strokeWidth={on ? 3 : 1.5} className={`transition-all duration-300 ${on ? "fill-mint/30 stroke-mint" : "fill-card stroke-border"}`} />
               <text x={x} y={y + 4} textAnchor="middle" className={`font-display text-[14px] font-bold ${on ? "fill-foreground" : "fill-muted-foreground"}`}>
                 {k}
               </text>
@@ -1075,20 +1077,62 @@ export function ProcessStateDiagram() {
         })}
       </svg>
       <p aria-live="polite" className="text-sm min-h-[2.5em]">
-        {STATE_NOTE[s]}
+        {notes[s]}
       </p>
       <div className="flex flex-wrap gap-1.5">
-        {PROCESS_TRANSITIONS.map((t) => (
-          <button key={t.event} type="button" className={`${btn} !px-2 !py-1 !normal-case !tracking-normal`} disabled={t.from !== s} onClick={() => fire(t.event)}>
-            {t.label}
+        {edges.map((e, i) => (
+          <button key={`${e.from}-${e.to}`} type="button" className={`${btn} !px-2 !py-1 !normal-case !tracking-normal`} disabled={e.from !== s} onClick={() => fire(i)}>
+            {e.label}
           </button>
         ))}
-        <button type="button" className={`${btn} !px-2 !py-1`} onClick={() => { setS("new"); setLast(null); setTrail(["new"]); }}>
-          ⟲ new process
+        <button type="button" className={`${btn} !px-2 !py-1`} onClick={() => { setS(initial); setLast(null); setTrail([initial]); }}>
+          ⟲ {resetLabel}
         </button>
       </div>
       <div className="font-mono text-[11px] text-muted-foreground">path: {trail.join(" → ")}</div>
     </Panel>
+  );
+}
+
+/** The five-state process diagram. */
+export function ProcessStateDiagram() {
+  return (
+    <StateMachine<PState>
+      title="Diagram of process state"
+      positions={{ new: [80, 50], terminated: [520, 50], ready: [170, 170], running: [430, 170], waiting: [300, 265] }}
+      edges={PROCESS_TRANSITIONS.map((t) => ({ ...t, bend: t.event === "dispatch" || t.event === "interrupt" ? -40 : 0 }))}
+      notes={{
+        new: "new: the process is being created.",
+        ready: "ready: it's waiting to be assigned to a processor.",
+        running: "running: its instructions are being executed. On one CPU, only one process can be here at a time.",
+        waiting: "waiting: it's waiting for some event, like an I/O finishing or a signal.",
+        terminated: "terminated: it has finished execution.",
+      }}
+      initial="new"
+      resetLabel="new process"
+    />
+  );
+}
+
+/** The lab's Java thread lifecycle. */
+export function JavaThreadLifecycle() {
+  const bend: Record<string, number> = { "Runnable-Running": 30, "Running-Runnable": 30, "Blocked-Runnable": -120, "New-Dead": -30 };
+  return (
+    <StateMachine<JState>
+      title="The thread lifecycle in Java"
+      positions={{ New: [220, 40], Runnable: [220, 135], Running: [220, 235], Blocked: [220, 330], Dead: [500, 185] }}
+      edges={JAVA_TRANSITIONS.map((t) => ({ ...t, bend: bend[`${t.from}-${t.to}`] ?? 0 }))}
+      notes={{
+        New: "New: the Thread object exists, but start() hasn't been called yet.",
+        Runnable: "Runnable: started and ready to go. It's waiting for the scheduler to give it the CPU.",
+        Running: "Running: the thread's run() method is executing on a CPU right now.",
+        Blocked: "Blocked (idle, not runnable): it's sleeping or waiting, and won't be scheduled until it's woken up.",
+        Dead: "Dead: run() finished, or the thread was killed. A dead thread can't be started again.",
+      }}
+      initial="New"
+      height={370}
+      resetLabel="new Thread()"
+    />
   );
 }
 
@@ -1429,5 +1473,136 @@ export function MessageBuffering() {
         ⟲ Replay
       </button>
     </Panel>
+  );
+}
+
+/* ------------------------------ Java threads ------------------------------ */
+
+const THREAD_TONE: Record<PrintLine["thread"], string> = { t1: "text-sky", A: "text-violet", B: "text-orange", main: "text-mint" };
+
+/** Run the lab's main() and watch the threads' output interleave. Toggle yield, join and priorities. */
+export function ThreadRace() {
+  const [yieldEach, setYield] = useState(false);
+  const [join, setJoin] = useState(false);
+  const [prio, setPrio] = useState(false);
+  const [seed, setSeed] = useState(3);
+  const lines = useMemo(
+    () => runThreads({ yieldEach, join, priorities: prio ? { t1: 1, A: 5, B: 10 } : { t1: 5, A: 5, B: 5 }, iterations: 5, seed }),
+    [yieldEach, join, prio, seed],
+  );
+  const [shown, setShown] = useState(0);
+  useEffect(() => setShown(0), [lines]);
+  useEffect(() => {
+    if (shown >= lines.length) return;
+    const t = setTimeout(() => setShown((n) => n + 1), 140);
+    return () => clearTimeout(t);
+  }, [shown, lines.length]);
+  const code = [
+    "Thread t1 = new Thread(new MyRunnable());",
+    'Thread t2 = new MyThread("A");',
+    'Thread t3 = new MyThread("B");',
+    ...(prio ? ["t3.setPriority(10); //MAX_PRIORITY", "t1.setPriority(Thread.MIN_PRIORITY);"] : []),
+    "t1.start(); t2.start(); t3.start();",
+    ...(join ? ["t1.join(); t2.join(); t3.join();"] : []),
+    'System.out.println("In main thread!");',
+  ];
+  const toggle = (on: boolean, set: (v: boolean) => void, label: string) => (
+    <button type="button" className={`${btn} !normal-case !tracking-normal ${on ? "bg-foreground text-background" : ""}`} onClick={() => set(!on)} aria-pressed={on}>
+      {on ? "✓ " : ""}
+      {label}
+    </button>
+  );
+  return (
+    <Panel title="Threads taking turns" legend={[["bg-sky", "t1 (MyRunnable)"], ["bg-violet", "A"], ["bg-orange", "B"], ["bg-mint", "main"]]}>
+      <div className="flex flex-wrap gap-2">
+        {toggle(yieldEach, setYield, "Thread.yield() after each print")}
+        {toggle(join, setJoin, "main joins t1, t2, t3")}
+        {toggle(prio, setPrio, "B = MAX, t1 = MIN priority")}
+        <button type="button" className={btn} onClick={() => setSeed((x) => x + 1)}>
+          ⟳ run again
+        </button>
+      </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        <pre className="font-mono text-[11px] leading-relaxed bg-muted/40 rounded-sm p-3 m-0 overflow-x-auto">
+          {"public static void main(String[] args) {\n" + code.map((c) => "    " + c).join("\n") + "\n}"}
+        </pre>
+        <div className="rounded-sm bg-[#0d1117] text-[#c9d1d9] font-mono text-[12px] leading-relaxed p-3 h-[260px] overflow-y-auto" role="log">
+          {lines.slice(0, shown).map((l, i) => (
+            <div key={i} className={`${THREAD_TONE[l.thread]} animate-in fade-in slide-in-from-left-1 duration-150`}>
+              {l.text}
+            </div>
+          ))}
+          {shown < lines.length && <span className="animate-pulse">▌</span>}
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        {yieldEach
+          ? "With yield(), every thread steps aside after each line, so the output takes neat turns."
+          : "Without yield(), the scheduler switches whenever it likes, so the order changes from run to run. Press run again."}{" "}
+        {join ? "Because main joins all three, \"In main thread!\" is always last." : "main doesn't wait, so \"In main thread!\" usually appears early, before the threads are done."}
+        {prio && " Priorities are only a hint to the scheduler: B tends to run more, but nothing is guaranteed."}
+      </p>
+    </Panel>
+  );
+}
+
+/** Exercise 2: add two matrices with one thread per row. */
+export function MatrixAddThreads({ rows = 3, cols = 4 }: { rows?: number; cols?: number }) {
+  const A = useMemo(() => Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => r + c + 1)), [rows, cols]);
+  const B = useMemo(() => Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => (r * cols + c) % 5)), [rows, cols]);
+  const frames = useMemo(() => matrixAddFrames(rows, cols), [rows, cols]);
+  const rowTone = ["border-sky bg-sky/20", "border-violet bg-violet/20", "border-orange bg-orange/20", "border-mint bg-mint/20"];
+  const grid = (m: number[][], label: string, s?: MatrixState) => (
+    <div className="flex flex-col items-center gap-1">
+      <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+        {m.flatMap((row, r) =>
+          row.map((v, c) => {
+            const show = !s || s.done[r][c];
+            return (
+              <div
+                key={`${r}-${c}`}
+                className={`h-8 w-8 sm:h-9 sm:w-9 rounded-sm border flex items-center justify-center font-mono text-xs transition-all duration-300 ${
+                  s ? (show ? rowTone[r % rowTone.length] : "border-dashed border-border") : "border-border"
+                } ${s?.active.includes(r) && show && s.done[r][c] ? "scale-105" : ""}`}
+              >
+                {show ? v : ""}
+              </div>
+            );
+          }),
+        )}
+      </div>
+    </div>
+  );
+  const C = A.map((row, r) => row.map((v, c) => v + B[r][c]));
+  return (
+    <Stepper
+      title="Matrix addition, one thread per row"
+      frames={frames}
+      code={MATRIX_CODE}
+      codeLabel="Java (outline)"
+      render={(s: MatrixState) => (
+        <div className="flex flex-col gap-3 items-center">
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {grid(A, "A")}
+            <span className="font-display text-xl">+</span>
+            {grid(B, "B")}
+            <span className="font-display text-xl">=</span>
+            {grid(C, "C (shared output)", s)}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: rows }, (_, r) => {
+              const finished = s.done[r].every(Boolean);
+              return (
+                <span key={r} className={`font-mono text-[11px] px-2 py-1 rounded-sm border transition-all ${s.active.includes(r) ? rowTone[r % rowTone.length] + " animate-pulse" : finished ? "border-border opacity-50" : "border-border"}`}>
+                  thread {r}: {finished ? "dead ✓" : s.active.includes(r) ? "running" : "runnable"}
+                </span>
+              );
+            })}
+            <span className={`font-mono text-[11px] px-2 py-1 rounded-sm border ${s.joined ? "border-mint bg-mint/20" : "border-border"}`}>main: {s.joined ? "joined, printing C" : "waiting in join()"}</span>
+          </div>
+        </div>
+      )}
+    />
   );
 }

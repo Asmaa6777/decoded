@@ -4,7 +4,7 @@ import path from "path";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { LinuxTerminal } from "@/components/mdx/OsVisualizers";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim } from "@/lib/operatingSystems";
+import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim, runThreads, matrixAddFrames } from "@/lib/operatingSystems";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -164,5 +164,34 @@ describe("chapter 3 helpers", () => {
     expect(blocked("zero")).toBeGreaterThan(blocked("bounded"));
     expect(blocked("bounded")).toBeGreaterThan(0);
     expect(Math.max(...messageSim("bounded", 18).map((x) => x.queue))).toBe(3);
+  });
+});
+
+describe("lab 2 helpers", () => {
+  const base = { yieldEach: false, join: false, priorities: { t1: 5, A: 5, B: 5 }, iterations: 5, seed: 3 };
+
+  it("prints every thread's lines plus main's exactly once", () => {
+    const out = runThreads(base);
+    expect(out.filter((l) => l.thread === "main")).toHaveLength(1);
+    for (const t of ["t1", "A", "B"] as const) expect(out.filter((l) => l.thread === t)).toHaveLength(5);
+  });
+
+  it("puts main last when it joins, and alternates threads with yield", () => {
+    const joined = runThreads({ ...base, join: true });
+    expect(joined[joined.length - 1].thread).toBe("main");
+    const turns = runThreads({ ...base, yieldEach: true, join: true }).filter((l) => l.thread !== "main").map((l) => l.thread);
+    expect(turns.slice(0, 6)).toEqual(["t1", "A", "B", "t1", "A", "B"]);
+  });
+
+  it("replays the same schedule for the same seed", () => {
+    expect(runThreads(base)).toEqual(runThreads(base));
+  });
+
+  it("fills every cell before main's join returns", () => {
+    const frames = matrixAddFrames(3, 4);
+    const last = frames[frames.length - 1].state;
+    expect(last.joined).toBe(true);
+    expect(last.done.flat().every(Boolean)).toBe(true);
+    expect(frames.slice(0, -1).every((f) => !f.state.joined)).toBe(true);
   });
 });
