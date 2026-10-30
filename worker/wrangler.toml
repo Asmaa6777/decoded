@@ -3,7 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2026-10-01"
 workers_dev = false
 
-routes = [{ pattern = "api.decoded.stack42.tech", custom_domain = true }]
+routes = [{ pattern = "decoded-api.stack42.tech", custom_domain = true }]
 
 [vars]
 SITE_ORIGIN = "https://decoded.stack42.tech"

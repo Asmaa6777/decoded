@@ -4,7 +4,7 @@ import worker, { type Env } from "../src/index";
 import { safeReturnPath } from "../src/auth";
 
 const env = testEnv as unknown as Env & { TEST_MIGRATIONS: Parameters<typeof applyD1Migrations>[1] };
-const API = "https://api.decoded.stack42.tech";
+const API = "https://decoded-api.stack42.tech";
 const SITE = "https://decoded.stack42.tech";
 
 function call(path: string, init: RequestInit = {}): Promise<Response> {
