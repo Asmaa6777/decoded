@@ -78,13 +78,13 @@ export default function Index() {
           </h2>
           <div className="font-body text-lg leading-relaxed text-foreground/80 space-y-5">
             <p>
-              University courses hide enterprise-grade engineering tools behind layers of dense,
-              abstract proofs, complex notations and theorems. You shouldn't have to decode your own syllabus 
-              just to figure out what it talks about fundamentally or how it applies to production. 
-              We help extract the exact real-world utility hidden inside your current coursework.
+              University courses hide the tools engineers use every day behind dense proofs, heavy notation
+              and theorems. You shouldn't have to decode your own syllabus just to find out what it's really
+              about or where it shows up in production. Decoded pulls out the real-world use hiding inside
+              your coursework.
             </p>
             <p className="text-neon">
-              Decoded does that. One topic at a time.
+              One topic at a time.
             </p>
           </div>
         </div>
@@ -122,14 +122,13 @@ export default function Index() {
               </h2>
               <div className="font-body text-lg text-foreground/70 space-y-4">
                 <p>
-                  Stop guessing the application.
-                  Computer Science education is good at what it's supposed to do, 
-                  but the student puts so much effort into mapping a course into practical 
-                  labs and linking theory to practice, memorizing abstract proofs without 
-                  ever seeing the enterprise tools they built based on this.
+                  Computer science education is good at what it's supposed to do. But students are left to
+                  connect each course to practice on their own, memorizing abstract proofs without ever
+                  seeing the tools built on them.
                 </p>
                 <p>
-                  you don't just learn concepts learn how computing itself works how they communicate and more.
+                  Here you don't only learn the concepts. You learn how computing itself works, and how
+                  its pieces talk to each other.
                 </p>
               </div>
             </div>
@@ -138,7 +137,7 @@ export default function Index() {
                <div className="relative z-10 text-center p-8">
                  <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-4">Core Philosophy</div>
                  <div className="font-display text-2xl italic leading-relaxed">
-                   "Theory without tools is boring. Tools without theory are fragile"
+                   "Theory without tools is boring. Tools without theory are fragile."
                  </div>
                </div>
             </div>
