@@ -607,3 +607,258 @@ export const MATRIX_CODE = [
   "for each row r: threads[r].join();",
   "print(C);",
 ];
+
+/* ------------------------------ race condition ------------------------------ */
+
+export const RACE_CODE = {
+  P: ["register1 = counter", "register1 = register1 + 1", "counter = register1"],
+  C: ["register2 = counter", "register2 = register2 - 1", "counter = register2"],
+};
+
+export type RaceState = { counter: number; r1: number | null; r2: number | null; pcP: number; pcC: number; log: string[] };
+
+/** counter++ (producer) and counter-- (consumer) as three machine instructions each, run in the given order. */
+export function raceRun(order: ("P" | "C")[], start = 5): RaceState[] {
+  let s: RaceState = { counter: start, r1: null, r2: null, pcP: 0, pcC: 0, log: [] };
+  const out = [s];
+  for (const who of order) {
+    const pc = who === "P" ? s.pcP : s.pcC;
+    if (pc >= 3) continue;
+    const n = { ...s, log: [...s.log] };
+    if (who === "P") {
+      if (pc === 0) n.r1 = s.counter;
+      else if (pc === 1) n.r1 = s.r1! + 1;
+      else n.counter = s.r1!;
+      n.pcP++;
+      n.log.push(`S${s.log.length}: producer ${RACE_CODE.P[pc]}  {${pc === 2 ? `counter = ${n.counter}` : `register1 = ${n.r1}`}}`);
+    } else {
+      if (pc === 0) n.r2 = s.counter;
+      else if (pc === 1) n.r2 = s.r2! - 1;
+      else n.counter = s.r2!;
+      n.pcC++;
+      n.log.push(`S${s.log.length}: consumer ${RACE_CODE.C[pc]}  {${pc === 2 ? `counter = ${n.counter}` : `register2 = ${n.r2}`}}`);
+    }
+    s = n;
+    out.push(s);
+  }
+  return out;
+}
+
+/** The interleaving from the slides: it ends with counter = 4 instead of 5. */
+export const TEXTBOOK_RACE: ("P" | "C")[] = ["P", "P", "C", "C", "P", "C"];
+
+/* ------------------------------ Peterson's solution ------------------------------ */
+
+export const PETERSON_CODE = [
+  "flag[i] = true;",
+  "turn = j;",
+  "while (flag[j] && turn == j);",
+  "    /* critical section */",
+  "flag[i] = false;",
+  "    /* remainder section */",
+];
+
+export type PetersonState = { pc: [number, number]; flag: [boolean, boolean]; turn: 0 | 1; spins: [number, number]; entries: [number, number] };
+
+export const petersonStart = (): PetersonState => ({ pc: [0, 0], flag: [false, false], turn: 0, spins: [0, 0], entries: [0, 0] });
+
+/** Let process i run one line of Peterson's algorithm. */
+export function petersonStep(s: PetersonState, i: 0 | 1): PetersonState {
+  const j = (1 - i) as 0 | 1;
+  const n: PetersonState = { pc: [...s.pc] as [number, number], flag: [...s.flag] as [boolean, boolean], turn: s.turn, spins: [...s.spins] as [number, number], entries: [...s.entries] as [number, number] };
+  switch (s.pc[i]) {
+    case 0:
+      n.flag[i] = true;
+      n.pc[i] = 1;
+      break;
+    case 1:
+      n.turn = j;
+      n.pc[i] = 2;
+      break;
+    case 2:
+      if (s.flag[j] && s.turn === j) n.spins[i]++;
+      else {
+        n.pc[i] = 3;
+        n.entries[i]++;
+      }
+      break;
+    case 3:
+      n.pc[i] = 4;
+      break;
+    case 4:
+      n.flag[i] = false;
+      n.pc[i] = 5;
+      break;
+    default:
+      n.pc[i] = 0;
+  }
+  return n;
+}
+
+/* ------------------------------ hardware instructions ------------------------------ */
+
+/** test_and_set: return the old value and set the target to true, as one atomic step. */
+export function testAndSet(target: { value: boolean }) {
+  const rv = target.value;
+  target.value = true;
+  return rv;
+}
+
+/** compare_and_swap: set to new_value only if it equals expected; always return the old value. */
+export function compareAndSwap(target: { value: number }, expected: number, newValue: number) {
+  const temp = target.value;
+  if (target.value === expected) target.value = newValue;
+  return temp;
+}
+
+/* ------------------------------ semaphores ------------------------------ */
+
+export type Sem = { value: number; list: string[] };
+
+/** wait() without busy waiting: decrement, and block the caller if the value went negative. */
+export function semWait(s: Sem, who: string): { sem: Sem; blocked: boolean } {
+  const value = s.value - 1;
+  if (value < 0) return { sem: { value, list: [...s.list, who] }, blocked: true };
+  return { sem: { value, list: s.list }, blocked: false };
+}
+
+/** signal(): increment, and wake the first blocked process if anyone is waiting. */
+export function semSignal(s: Sem): { sem: Sem; woke: string | null } {
+  const value = s.value + 1;
+  if (value <= 0) return { sem: { value, list: s.list.slice(1) }, woke: s.list[0] };
+  return { sem: { value, list: s.list }, woke: null };
+}
+
+export type DeadlockState = { held: Record<"S" | "Q", "P0" | "P1" | null>; waiting: Record<"P0" | "P1", "S" | "Q" | null> };
+
+export const DEADLOCK_CODE = ["P0: wait(S);", "P1: wait(Q);", "P0: wait(Q);   ← blocks, P1 has Q", "P1: wait(S);   ← blocks, P0 has S", "deadlock: each waits for the other forever"];
+
+/** The slides' S and Q example, in the one order that deadlocks. */
+export function deadlockFrames(): Frame<DeadlockState>[] {
+  const f = (held: DeadlockState["held"], waiting: DeadlockState["waiting"], line: number, message: string): Frame<DeadlockState> => ({
+    state: { held, waiting },
+    line,
+    message,
+    stats: { blocked: Object.values(waiting).filter(Boolean).length },
+  });
+  return [
+    f({ S: null, Q: null }, { P0: null, P1: null }, -1, "S and Q are both semaphores initialized to 1. P0 needs S then Q. P1 needs Q then S."),
+    f({ S: "P0", Q: null }, { P0: null, P1: null }, 0, "P0 runs wait(S). S goes from 1 to 0: P0 holds S."),
+    f({ S: "P0", Q: "P1" }, { P0: null, P1: null }, 1, "Context switch. P1 runs wait(Q). Q goes from 1 to 0: P1 holds Q."),
+    f({ S: "P0", Q: "P1" }, { P0: "Q", P1: null }, 2, "P0 runs wait(Q). Q is 0, so P0 blocks, waiting for P1 to signal(Q)."),
+    f({ S: "P0", Q: "P1" }, { P0: "Q", P1: "S" }, 3, "P1 runs wait(S). S is 0, so P1 blocks, waiting for P0 to signal(S)."),
+    f({ S: "P0", Q: "P1" }, { P0: "Q", P1: "S" }, 4, "Deadlock! Each process waits for an event (a signal) that only the other, blocked, process can cause. Nobody will ever move again."),
+  ];
+}
+
+/* ------------------------------ bounded buffer with semaphores ------------------------------ */
+
+export type SemBuffer = { slots: (number | null)[]; in: number; out: number; next: number; empty: number; full: number; blockedP: number; blockedC: number };
+
+export const semBuffer = (n: number): SemBuffer => ({ slots: Array(n).fill(null), in: 0, out: 0, next: 1, empty: n, full: 0, blockedP: 0, blockedC: 0 });
+
+/** Producer: wait(empty); wait(mutex); add; signal(mutex); signal(full). Blocks when empty is 0. */
+export function semProduce(b: SemBuffer): SemBuffer {
+  if (b.empty === 0) return { ...b, blockedP: b.blockedP + 1 };
+  const slots = [...b.slots];
+  slots[b.in] = b.next;
+  return { ...b, slots, in: (b.in + 1) % slots.length, next: b.next + 1, empty: b.empty - 1, full: b.full + 1, blockedP: 0 };
+}
+
+/** Consumer: wait(full); wait(mutex); remove; signal(mutex); signal(empty). Blocks when full is 0. */
+export function semConsume(b: SemBuffer): SemBuffer {
+  if (b.full === 0) return { ...b, blockedC: b.blockedC + 1 };
+  const slots = [...b.slots];
+  slots[b.out] = null;
+  return { ...b, slots, out: (b.out + 1) % slots.length, empty: b.empty + 1, full: b.full - 1, blockedC: 0 };
+}
+
+/* ------------------------------ readers-writers ------------------------------ */
+
+export type RW = { reading: string[]; writing: string | null; readCount: number; queue: { kind: "R" | "W"; name: string }[]; behind: string[]; nextR: number; nextW: number };
+
+export const rwStart = (): RW => ({ reading: [], writing: null, readCount: 0, queue: [], behind: [], nextR: 1, nextW: 1 });
+
+/** Give rw_mutex to whoever is first in its queue. A reader brings every reader queued behind it. */
+function rwRelease(s: RW): RW {
+  const [first, ...rest] = s.queue;
+  if (!first) return { ...s, queue: [] };
+  if (first.kind === "W") return { ...s, writing: first.name, queue: rest };
+  const reading = [first.name, ...s.behind];
+  return { ...s, reading, readCount: reading.length, behind: [], queue: rest };
+}
+
+/** The first readers-writers variation: readers never wait unless a writer already has the data. */
+export function rwArrive(s: RW, kind: "R" | "W"): RW {
+  if (kind === "R") {
+    const name = `R${s.nextR}`;
+    const n = { ...s, nextR: s.nextR + 1 };
+    if (s.writing || s.queue.some((q) => q.kind === "R")) {
+      // the first reader waits on rw_mutex while holding mutex; later readers wait on mutex behind it
+      if (s.queue.some((q) => q.kind === "R")) return { ...n, behind: [...s.behind, name] };
+      return { ...n, queue: [...s.queue, { kind: "R", name }] };
+    }
+    return { ...n, reading: [...s.reading, name], readCount: s.readCount + 1 };
+  }
+  const name = `W${s.nextW}`;
+  const n = { ...s, nextW: s.nextW + 1 };
+  if (s.writing || s.readCount > 0) return { ...n, queue: [...s.queue, { kind: "W", name }] };
+  return { ...n, writing: name };
+}
+
+export function rwLeave(s: RW, kind: "R" | "W"): RW {
+  if (kind === "W") {
+    if (!s.writing) return s;
+    return rwRelease({ ...s, writing: null });
+  }
+  if (!s.reading.length) return s;
+  const reading = s.reading.slice(1);
+  const n = { ...s, reading, readCount: reading.length };
+  return reading.length === 0 ? rwRelease(n) : n;
+}
+
+/* ------------------------------ dining philosophers ------------------------------ */
+
+export type Phil = "thinking" | "hungry" | "eating";
+export type Dining = { phil: Phil[]; stick: (number | null)[]; meals: number[] };
+
+export const diningStart = (n = 5): Dining => ({ phil: Array(n).fill("thinking"), stick: Array(n).fill(null), meals: Array(n).fill(0) });
+
+/** Philosopher i's chopsticks, in the order they pick them up. */
+export function stickOrder(i: number, n: number, mode: "naive" | "asymmetric") {
+  const left = i;
+  const right = (i + 1) % n;
+  return mode === "asymmetric" && i % 2 === 1 ? [right, left] : [left, right];
+}
+
+/** One move by philosopher i: get hungry, pick up the next chopstick if it's free, eat, or put both down. */
+export function diningStep(d: Dining, i: number, mode: "naive" | "asymmetric"): Dining {
+  const n = d.phil.length;
+  const phil = [...d.phil];
+  const stick = [...d.stick];
+  const meals = [...d.meals];
+  const [first, second] = stickOrder(i, n, mode);
+  if (phil[i] === "thinking") phil[i] = "hungry";
+  else if (phil[i] === "hungry") {
+    if (stick[first] === null) stick[first] = i;
+    else if (stick[first] === i && stick[second] === null) {
+      stick[second] = i;
+      phil[i] = "eating";
+      meals[i]++;
+    }
+  } else {
+    stick[first] = null;
+    stick[second] = null;
+    phil[i] = "thinking";
+  }
+  return { phil, stick, meals };
+}
+
+/** Deadlocked: everyone is hungry and holds exactly their first chopstick, waiting for one that's taken. */
+export function diningDeadlocked(d: Dining, mode: "naive" | "asymmetric") {
+  const n = d.phil.length;
+  return d.phil.every((p, i) => {
+    const [first, second] = stickOrder(i, n, mode);
+    return p === "hungry" && d.stick[first] === i && d.stick[second] !== null && d.stick[second] !== i;
+  });
+}

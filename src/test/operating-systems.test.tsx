@@ -4,7 +4,7 @@ import path from "path";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { LinuxTerminal } from "@/components/mdx/OsVisualizers";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim, runThreads, matrixAddFrames } from "@/lib/operatingSystems";
+import { dualModeFrames, interruptCount, interruptFrames, INTERRUPT_TIMELINE, runJobs, DEMO_JOBS, syscallFrames, SYSCALL_TABLE, paramPassing, bootFrames, BOOT_STAGES, nextState, PROCESS_TRANSITIONS, contextSwitchFrames, forkTree, ring, produce, consume, ringFull, ringCount, messageSim, runThreads, matrixAddFrames, raceRun, TEXTBOOK_RACE, petersonStart, petersonStep, seeded, testAndSet, compareAndSwap, semWait, semSignal, deadlockFrames, semBuffer, semProduce, semConsume, rwStart, rwArrive, rwLeave, diningStart, diningStep, diningDeadlocked, type PetersonState, type Dining } from "@/lib/operatingSystems";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -193,5 +193,94 @@ describe("lab 2 helpers", () => {
     expect(last.joined).toBe(true);
     expect(last.done.flat().every(Boolean)).toBe(true);
     expect(frames.slice(0, -1).every((f) => !f.state.joined)).toBe(true);
+  });
+});
+
+describe("chapter 5 helpers", () => {
+  it("reproduces the slides' race: counter ends at 4, not 5", () => {
+    const run = raceRun(TEXTBOOK_RACE);
+    expect(run[run.length - 1].counter).toBe(4);
+    expect(raceRun(["P", "P", "C", "C", "C", "P"]).at(-1)!.counter).toBe(6);
+    expect(raceRun(["P", "P", "P", "C", "C", "C"]).at(-1)!.counter).toBe(5);
+  });
+
+  it("never lets both processes into Peterson's critical section", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const rnd = seeded(seed);
+      let s: PetersonState = petersonStart();
+      for (let k = 0; k < 400; k++) {
+        s = petersonStep(s, rnd() < 0.5 ? 0 : 1);
+        expect(s.pc[0] === 3 && s.pc[1] === 3).toBe(false);
+      }
+      expect(s.entries[0] + s.entries[1]).toBeGreaterThan(0);
+    }
+  });
+
+  it("implements test_and_set and compare_and_swap", () => {
+    const lock = { value: false };
+    expect(testAndSet(lock)).toBe(false);
+    expect(testAndSet(lock)).toBe(true);
+    const v = { value: 0 };
+    expect(compareAndSwap(v, 0, 1)).toBe(0);
+    expect(v.value).toBe(1);
+    expect(compareAndSwap(v, 0, 1)).toBe(1);
+  });
+
+  it("queues blocked processes on a semaphore and wakes them in order", () => {
+    let s = { value: 1, list: [] as string[] };
+    s = semWait(s, "P1").sem;
+    const b = semWait(s, "P2");
+    expect(b.blocked).toBe(true);
+    s = semWait(b.sem, "P3").sem;
+    expect(s).toEqual({ value: -2, list: ["P2", "P3"] });
+    const w = semSignal(s);
+    expect(w.woke).toBe("P2");
+    expect(w.sem.value).toBe(-1);
+  });
+
+  it("ends the S/Q example with both processes blocked", () => {
+    const last = deadlockFrames().at(-1)!.state;
+    expect(last.waiting).toEqual({ P0: "Q", P1: "S" });
+  });
+
+  it("lets the semaphore buffer use every slot and blocks at the ends", () => {
+    let b = semBuffer(4);
+    for (let i = 0; i < 4; i++) b = semProduce(b);
+    expect(b.full).toBe(4);
+    b = semProduce(b);
+    expect(b.blockedP).toBe(1);
+    b = semConsume(b);
+    expect(b.empty).toBe(1);
+  });
+
+  it("lets readers share but keeps writers alone", () => {
+    let s = rwArrive(rwArrive(rwStart(), "R"), "R");
+    expect(s.reading).toEqual(["R1", "R2"]);
+    s = rwArrive(s, "W");
+    expect(s.writing).toBeNull();
+    s = rwArrive(s, "R");
+    expect(s.reading).toHaveLength(3);
+    for (let i = 0; i < 3; i++) s = rwLeave(s, "R");
+    expect(s.writing).toBe("W1");
+    s = rwArrive(rwArrive(s, "R"), "R");
+    expect(s.reading).toEqual([]);
+    s = rwLeave(s, "W");
+    expect(s.reading).toEqual(["R4", "R5"]);
+  });
+
+  it("deadlocks the naive philosophers but not the asymmetric ones", () => {
+    let d: Dining = diningStart();
+    for (let i = 0; i < 5; i++) d = diningStep(d, i, "naive");
+    for (let i = 0; i < 5; i++) d = diningStep(d, i, "naive");
+    expect(diningDeadlocked(d, "naive")).toBe(true);
+    for (let seed = 1; seed <= 20; seed++) {
+      const rnd = seeded(seed);
+      let a = diningStart();
+      for (let k = 0; k < 500; k++) {
+        a = diningStep(a, Math.floor(rnd() * 5), "asymmetric");
+        expect(diningDeadlocked(a, "asymmetric")).toBe(false);
+      }
+      expect(a.meals.reduce((x, y) => x + y, 0)).toBeGreaterThan(0);
+    }
   });
 });

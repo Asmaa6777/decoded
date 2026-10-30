@@ -52,6 +52,35 @@ import {
   runThreads,
   type MatrixState,
   type PrintLine,
+  compareAndSwap,
+  DEADLOCK_CODE,
+  deadlockFrames,
+  diningDeadlocked,
+  diningStart,
+  diningStep,
+  PETERSON_CODE,
+  petersonStart,
+  petersonStep,
+  RACE_CODE,
+  raceRun,
+  rwArrive,
+  rwLeave,
+  rwStart,
+  seeded,
+  semBuffer,
+  semConsume,
+  semProduce,
+  semSignal,
+  semWait,
+  testAndSet,
+  TEXTBOOK_RACE,
+  type DeadlockState,
+  type Dining,
+  type PetersonState,
+  type Phil,
+  type RW,
+  type Sem,
+  type SemBuffer,
 } from "@/lib/operatingSystems";
 import { exists, initialShell, promptPath, readFile, run, type ShellState } from "@/lib/miniShell";
 
@@ -1604,5 +1633,568 @@ export function MatrixAddThreads({ rows = 3, cols = 4 }: { rows?: number; cols?:
         </div>
       )}
     />
+  );
+}
+
+/* ------------------------------ race condition ------------------------------ */
+
+function CodeColumn({ title, lines, pc, tone, done }: { title: string; lines: string[]; pc: number; tone: string; done?: boolean }) {
+  return (
+    <div className="rounded-sm border border-border overflow-hidden">
+      <div className={`px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest ${tone}`}>{title}</div>
+      <div className="font-mono text-[12px] py-1">
+        {lines.map((l, i) => (
+          <div key={i} className={`px-3 py-0.5 whitespace-pre border-l-2 transition-colors duration-200 ${i === pc && !done ? "border-foreground bg-foreground/10 font-bold" : i < pc ? "border-transparent opacity-50 line-through decoration-1" : "border-transparent"}`}>
+            {l}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Interleave the machine instructions of counter++ and counter-- yourself, and watch the shared counter go wrong. */
+export function RaceCondition() {
+  const [order, setOrder] = useState<("P" | "C")[]>([]);
+  const states = useMemo(() => raceRun(order), [order]);
+  const s = states[states.length - 1];
+  const finished = s.pcP === 3 && s.pcC === 3;
+  const step = (w: "P" | "C") => setOrder((o) => [...o, w]);
+  return (
+    <Panel title="A race on counter (it starts at 5)" legend={[["bg-sky", "producer: counter++"], ["bg-orange", "consumer: counter--"]]}>
+      <div className="grid sm:grid-cols-[1fr_auto_1fr] gap-3 items-start">
+        <CodeColumn title="producer" lines={RACE_CODE.P} pc={s.pcP} tone="bg-sky/20" done={s.pcP === 3} />
+        <div className="flex sm:flex-col gap-3 justify-center items-center py-2">
+          <div className="text-center">
+            <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">counter</div>
+            <div key={s.counter} className={`font-display text-4xl font-bold animate-in zoom-in-75 duration-300 ${finished ? (s.counter === 5 ? "text-mint" : "text-orange") : ""}`}>
+              {s.counter}
+            </div>
+          </div>
+          <div className="font-mono text-xs text-center">
+            <div>register1 = <b>{s.r1 ?? "–"}</b></div>
+            <div>register2 = <b>{s.r2 ?? "–"}</b></div>
+          </div>
+        </div>
+        <CodeColumn title="consumer" lines={RACE_CODE.C} pc={s.pcC} tone="bg-orange/20" done={s.pcC === 3} />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={`${btn} border-sky`} disabled={s.pcP >= 3} onClick={() => step("P")}>
+          producer step
+        </button>
+        <button type="button" className={`${btn} border-orange`} disabled={s.pcC >= 3} onClick={() => step("C")}>
+          consumer step
+        </button>
+        <button type="button" className={btn} onClick={() => setOrder(TEXTBOOK_RACE)}>
+          the slides' order
+        </button>
+        <button type="button" className={btn} onClick={() => setOrder([])}>
+          ⟲
+        </button>
+      </div>
+      <div className="font-mono text-[11px] text-muted-foreground min-h-[1.5em] flex flex-col">
+        {s.log.map((l) => (
+          <span key={l} className="animate-in fade-in duration-200">
+            {l}
+          </span>
+        ))}
+      </div>
+      {finished && (
+        <p className={`text-sm font-bold animate-in fade-in duration-300 ${s.counter === 5 ? "text-mint" : "text-orange"}`}>
+          {s.counter === 5
+            ? "counter = 5: correct, because one operation finished before the other started. Now try interleaving them."
+            : `counter = ${s.counter}, but one item was produced and one consumed, so it should be 5! That's a race condition.`}
+        </p>
+      )}
+    </Panel>
+  );
+}
+
+/* ------------------------------ Peterson ------------------------------ */
+
+/** Peterson's algorithm for two processes. You are the scheduler: pick who runs the next line. */
+export function PetersonDemo() {
+  const [s, setS] = useState<PetersonState>(petersonStart);
+  const [last, setLast] = useState<string>("You're the scheduler. Pick which process runs its next line. Try to get both into the critical section at once!");
+  const step = (i: 0 | 1) => {
+    const n = petersonStep(s, i);
+    setS(n);
+    const j = 1 - i;
+    if (s.pc[i] === 2 && n.pc[i] === 2) setLast(`P${i} spins: flag[${j}] is true and turn == ${j}, so P${j} goes first.`);
+    else if (n.pc[i] === 3) setLast(`P${i} enters its critical section${s.flag[j] ? ` (turn == ${i}, so it's P${i}'s turn)` : ` (flag[${j}] is false: P${j} isn't interested)`}.`);
+    else setLast(`P${i} ran: ${PETERSON_CODE[s.pc[i]].trim()}`);
+  };
+  const codeFor = (i: 0 | 1) => PETERSON_CODE.map((l) => l.replace(/\[i\]/g, `[${i}]`).replace(/\[j\]/g, `[${1 - i}]`).replace("turn = j", `turn = ${1 - i}`).replace("turn == j", `turn == ${1 - i}`));
+  return (
+    <Panel title="Peterson's solution" legend={[["bg-mint", "in critical section"]]}>
+      <div className="grid sm:grid-cols-[1fr_auto_1fr] gap-3 items-start">
+        {([0, 1] as const).map((i) => (
+          <div key={i} className={`${i === 0 ? "order-1" : "order-3"} rounded-sm transition-all duration-300 ${s.pc[i] === 3 ? "ring-2 ring-mint" : ""}`}>
+            <CodeColumn title={`P${i}${s.pc[i] === 3 ? " · in critical section" : s.pc[i] === 2 && s.spins[i] ? " · spinning" : ""}`} lines={codeFor(i)} pc={s.pc[i]} tone={s.pc[i] === 3 ? "bg-mint/30" : "bg-muted/50"} />
+          </div>
+        ))}
+        <div className="order-2 flex sm:flex-col gap-4 justify-center items-center py-2 font-mono text-xs">
+          <div className="text-center">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">flag</div>
+            <div className="flex gap-1">
+              {s.flag.map((f, i) => (
+                <span key={i} className={`px-2 py-1 rounded-sm transition-colors ${f ? "bg-foreground text-background" : "bg-muted"}`}>
+                  {f ? "T" : "F"}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">turn</div>
+            <div key={s.turn} className="font-display text-2xl font-bold animate-in zoom-in-75 duration-300">
+              {s.turn}
+            </div>
+          </div>
+        </div>
+      </div>
+      <p aria-live="polite" className="text-sm min-h-[2.5em]">
+        {last}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={btn} onClick={() => step(0)}>
+          run P0
+        </button>
+        <button type="button" className={btn} onClick={() => step(1)}>
+          run P1
+        </button>
+        <button type="button" className={btn} onClick={() => { setS(petersonStart()); setLast("Reset."); }}>
+          ⟲
+        </button>
+        <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground self-center">
+          entries P0 {s.entries[0]} · P1 {s.entries[1]}
+        </span>
+      </div>
+    </Panel>
+  );
+}
+
+/* ------------------------------ spinlock ------------------------------ */
+
+/** Three processes competing for a lock built from test_and_set or compare_and_swap. */
+export function SpinlockDemo() {
+  const [instr, setInstr] = useState<"tas" | "cas">("tas");
+  const [lock, setLock] = useState(false);
+  const [inside, setInside] = useState<number | null>(null);
+  const [spins, setSpins] = useState([0, 0, 0]);
+  const [msg, setMsg] = useState("Click a process to make it try to enter its critical section.");
+  const tryEnter = (p: number) => {
+    if (inside === p) return;
+    let rv: boolean | number;
+    if (instr === "tas") {
+      const t = { value: lock };
+      rv = testAndSet(t);
+      setLock(t.value);
+    } else {
+      const t = { value: lock ? 1 : 0 };
+      rv = compareAndSwap(t, 0, 1);
+      setLock(t.value === 1);
+    }
+    const gotIt = rv === false || rv === 0;
+    if (gotIt) {
+      setInside(p);
+      setMsg(instr === "tas" ? `P${p}: test_and_set(&lock) returned false (it was free) and set lock = true, all in one step. P${p} is in!` : `P${p}: compare_and_swap(&lock, 0, 1) returned 0: the lock was 0, so it's now 1. P${p} is in!`);
+    } else {
+      setSpins((s) => s.map((x, i) => (i === p ? x + 1 : x)));
+      setMsg(instr === "tas" ? `P${p}: test_and_set returned true: someone holds the lock. P${p} loops and tries again (busy waiting).` : `P${p}: compare_and_swap returned 1, not 0, so nothing changed. P${p} spins.`);
+    }
+  };
+  const leave = () => {
+    if (inside === null) return;
+    setMsg(`P${inside} leaves: lock = ${instr === "tas" ? "false" : "0"}.`);
+    setLock(false);
+    setInside(null);
+  };
+  return (
+    <Panel title="A lock built from an atomic instruction">
+      <Toggle<"tas" | "cas">
+        value={instr}
+        onChange={(v) => {
+          setInstr(v);
+          setLock(false);
+          setInside(null);
+          setSpins([0, 0, 0]);
+        }}
+        options={[
+          ["tas", "test_and_set"],
+          ["cas", "compare_and_swap"],
+        ]}
+      />
+      <div className="flex flex-wrap items-center gap-4">
+        {[0, 1, 2].map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => tryEnter(p)}
+            className={`rounded-sm border-2 px-4 py-3 text-center transition-all duration-300 ${inside === p ? "border-mint bg-mint/20 scale-105" : "border-border hover:border-foreground/50"}`}
+          >
+            <div className="font-display font-bold">P{p}</div>
+            <div className="font-mono text-[10px] text-muted-foreground">{inside === p ? "in critical section" : spins[p] ? `spun ${spins[p]}×` : "remainder"}</div>
+          </button>
+        ))}
+        <div className={`ml-auto rounded-sm px-4 py-3 font-mono text-sm transition-colors duration-300 ${lock ? "bg-orange text-background" : "bg-muted"}`}>
+          lock = {instr === "tas" ? String(lock) : lock ? 1 : 0} {lock ? "🔒" : "🔓"}
+        </div>
+      </div>
+      <p aria-live="polite" className="text-sm min-h-[2.5em]">
+        {msg}
+      </p>
+      <button type="button" className={`${btn} self-start`} disabled={inside === null} onClick={leave}>
+        {inside === null ? "nobody inside" : `P${inside} leaves`}
+      </button>
+    </Panel>
+  );
+}
+
+/* ------------------------------ semaphores ------------------------------ */
+
+/** A semaphore with a waiting list: wait() below zero blocks you, signal() wakes the first in line. */
+export function SemaphoreQueue({ initial = 2 }: { initial?: number }) {
+  const [sem, setSem] = useState<Sem>({ value: initial, list: [] });
+  const [inside, setInside] = useState<string[]>([]);
+  const [next, setNext] = useState(1);
+  const [msg, setMsg] = useState(`S = ${initial}: up to ${initial} processes can be inside at once.`);
+  const arrive = () => {
+    const who = `P${next}`;
+    setNext((n) => n + 1);
+    const r = semWait(sem, who);
+    setSem(r.sem);
+    if (r.blocked) setMsg(`${who}: wait(S) makes S.value = ${r.sem.value}. That's below 0, so ${who} is added to S.list and blocked. No busy waiting: it uses no CPU.`);
+    else {
+      setInside((x) => [...x, who]);
+      setMsg(`${who}: wait(S) makes S.value = ${r.sem.value}, which isn't negative, so ${who} carries on.`);
+    }
+  };
+  const leave = () => {
+    if (!inside.length) return;
+    const [who, ...rest] = inside;
+    const r = semSignal(sem);
+    setSem(r.sem);
+    setInside(r.woke ? [...rest, r.woke] : rest);
+    setMsg(r.woke ? `${who}: signal(S) makes S.value = ${r.sem.value}, which is ≤ 0, so someone is waiting: wakeup(${r.woke}) moves it to the ready queue.` : `${who}: signal(S) makes S.value = ${r.sem.value}. Nobody was waiting.`);
+  };
+  return (
+    <Panel title="A semaphore with a waiting queue" legend={[["bg-mint", "inside"], ["bg-orange", "blocked in S.list"]]}>
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="text-center">
+          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">S.value</div>
+          <div key={sem.value} className={`font-display text-4xl font-bold animate-in zoom-in-75 duration-300 ${sem.value < 0 ? "text-orange" : ""}`}>
+            {sem.value}
+          </div>
+        </div>
+        <div className="flex-1 min-w-[200px] flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 min-h-[34px] rounded-sm border border-mint/50 p-1.5">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mr-1">inside</span>
+            {inside.map((p) => (
+              <span key={p} className="px-2 py-1 rounded-sm bg-mint/30 font-mono text-xs animate-in zoom-in-50 duration-300">
+                {p}
+              </span>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5 min-h-[34px] rounded-sm border border-orange/50 p-1.5">
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mr-1">S.list</span>
+            {sem.list.map((p) => (
+              <span key={p} className="px-2 py-1 rounded-sm bg-orange/30 font-mono text-xs animate-in slide-in-from-right-2 duration-300">
+                {p} 💤
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+      <p aria-live="polite" className="text-sm min-h-[2.5em]">
+        {msg}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={btn} onClick={arrive}>
+          a process calls wait(S)
+        </button>
+        <button type="button" className={btn} disabled={!inside.length} onClick={leave}>
+          {inside[0] ? `${inside[0]} calls signal(S)` : "signal(S)"}
+        </button>
+        <button type="button" className={btn} onClick={() => { setSem({ value: initial, list: [] }); setInside([]); setNext(1); setMsg("Reset."); }}>
+          ⟲
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground">When S.value is negative, its size is exactly the number of processes waiting.</p>
+    </Panel>
+  );
+}
+
+/** The S and Q deadlock from the slides. */
+export function SemaphoreDeadlock() {
+  const frames = useMemo(() => deadlockFrames(), []);
+  return (
+    <Stepper
+      title="Deadlock with two semaphores"
+      frames={frames}
+      code={DEADLOCK_CODE}
+      codeLabel="What happens"
+      legend={[["bg-sky", "holds"], ["bg-orange", "waits for"]]}
+      render={(s: DeadlockState) => (
+        <svg viewBox="0 0 420 200" className="w-full max-w-[460px] h-auto mx-auto" role="img" aria-label="processes and semaphores">
+          <defs>
+            <marker id="dl-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" className="fill-orange" />
+            </marker>
+            <marker id="dl-arrow-hold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" className="fill-sky" />
+            </marker>
+          </defs>
+          {(["S", "Q"] as const).map((r) => {
+            const x = r === "S" ? 110 : 310;
+            const owner = s.held[r];
+            return owner ? (
+              <line key={`h${r}`} x1={x} y1={135} x2={owner === "P0" ? 120 : 300} y2={68} className="stroke-sky animate-in fade-in duration-500" strokeWidth={3} markerEnd="url(#dl-arrow-hold)" />
+            ) : null;
+          })}
+          {(["P0", "P1"] as const).map((p) => {
+            const r = s.waiting[p];
+            if (!r) return null;
+            const x1 = p === "P0" ? 120 : 300;
+            const x2 = r === "S" ? 120 : 300;
+            return <line key={`w${p}`} x1={x1} y1={68} x2={x2 + (p === "P0" ? -10 : 10)} y2={135} className="stroke-orange animate-in fade-in duration-500" strokeWidth={3} strokeDasharray="6 4" markerEnd="url(#dl-arrow)" />;
+          })}
+          {(["P0", "P1"] as const).map((p) => {
+            const x = p === "P0" ? 120 : 300;
+            const blocked = !!s.waiting[p];
+            return (
+              <g key={p}>
+                <circle cx={x} cy={45} r={24} strokeWidth={2} className={`transition-all duration-300 ${blocked ? "fill-orange/20 stroke-orange" : "fill-card stroke-border"}`} />
+                <text x={x} y={50} textAnchor="middle" className="fill-foreground font-display font-bold text-[14px]">
+                  {p}
+                </text>
+              </g>
+            );
+          })}
+          {(["S", "Q"] as const).map((r) => {
+            const x = r === "S" ? 110 : 310;
+            return (
+              <g key={r}>
+                <rect x={x - 30} y={135} width={60} height={40} rx={4} strokeWidth={2} className={`transition-all duration-300 ${s.held[r] ? "fill-sky/20 stroke-sky" : "fill-card stroke-border"}`} />
+                <text x={x} y={160} textAnchor="middle" className="fill-foreground font-mono text-[13px] font-bold">
+                  {r} = {s.held[r] ? 0 : 1}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      )}
+    />
+  );
+}
+
+/* ------------------------------ bounded buffer with semaphores ------------------------------ */
+
+/** The semaphore solution: empty counts free slots, full counts items, mutex guards the buffer. */
+export function SemaphoreBuffer({ n = 5 }: { n?: number }) {
+  const [b, setB] = useState<SemBuffer>(() => semBuffer(n));
+  const [msg, setMsg] = useState("empty = n, full = 0, mutex = 1.");
+  const prod = () => {
+    const r = semProduce(b);
+    setB(r);
+    setMsg(r.blockedP ? "Producer: wait(empty) with empty = 0. No free slot, so the producer blocks until a consumer signals empty." : `Producer: wait(empty) → empty = ${r.empty}; wait(mutex); put item ${b.next}; signal(mutex); signal(full) → full = ${r.full}.`);
+  };
+  const cons = () => {
+    const r = semConsume(b);
+    setB(r);
+    setMsg(r.blockedC ? "Consumer: wait(full) with full = 0. Nothing to take, so the consumer blocks until a producer signals full." : `Consumer: wait(full) → full = ${r.full}; wait(mutex); take an item; signal(mutex); signal(empty) → empty = ${r.empty}.`);
+  };
+  const sem = (name: string, v: number, tone: string) => (
+    <div className="text-center">
+      <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{name}</div>
+      <div key={v} className={`font-display text-2xl font-bold animate-in zoom-in-75 duration-300 ${tone}`}>
+        {v}
+      </div>
+    </div>
+  );
+  return (
+    <Panel title="Bounded buffer with semaphores">
+      <div className="flex flex-wrap items-center gap-6">
+        <div className="flex gap-1.5">
+          {b.slots.map((v, i) => (
+            <div key={i} className={`h-12 w-12 rounded-sm border-2 flex items-center justify-center font-mono font-bold transition-all duration-300 ${v !== null ? "border-mint bg-mint/25" : "border-dashed border-border"}`}>
+              {v !== null && <span className="animate-in zoom-in-50 duration-300">{v}</span>}
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-5">
+          {sem("empty", b.empty, b.empty === 0 ? "text-orange" : "")}
+          {sem("full", b.full, b.full === 0 ? "text-orange" : "")}
+          {sem("mutex", 1, "")}
+        </div>
+      </div>
+      <p aria-live="polite" className="text-sm font-mono min-h-[2.5em]">
+        {msg}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={btn} onClick={prod}>
+          producer
+        </button>
+        <button type="button" className={btn} onClick={cons}>
+          consumer
+        </button>
+        <button type="button" className={btn} onClick={() => { setB(semBuffer(n)); setMsg("Reset."); }}>
+          ⟲
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground">Unlike the in/out-only version from the IPC lesson, the semaphores keep count, so all {n} slots can be used.</p>
+    </Panel>
+  );
+}
+
+/* ------------------------------ readers-writers ------------------------------ */
+
+/** Readers share the data; a writer needs it alone. Add readers and writers and watch who waits. */
+export function ReadersWriters() {
+  const [s, setS] = useState<RW>(rwStart);
+  return (
+    <Panel title="Readers and writers" legend={[["bg-sky", "reader"], ["bg-orange", "writer"]]}>
+      <div className="grid sm:grid-cols-[1fr_auto] gap-4 items-center">
+        <div className={`relative rounded-sm border-2 min-h-[110px] p-3 flex flex-wrap content-start gap-2 transition-colors duration-300 ${s.writing ? "border-orange bg-orange/10" : s.reading.length ? "border-sky bg-sky/10" : "border-border"}`}>
+          <div className="w-full font-mono text-[10px] uppercase tracking-widest text-muted-foreground">📄 shared data set</div>
+          {s.reading.map((r) => (
+            <span key={r} className="px-2 py-1 rounded-sm bg-sky/40 font-mono text-xs animate-in zoom-in-50 duration-300">
+              {r} reading 👀
+            </span>
+          ))}
+          {s.writing && <span className="px-2 py-1 rounded-sm bg-orange/50 font-mono text-xs animate-in zoom-in-50 duration-300">{s.writing} writing ✍️</span>}
+        </div>
+        <div className="font-mono text-xs flex sm:flex-col gap-3">
+          <div>read_count = <b>{s.readCount}</b></div>
+          <div>rw_mutex = <b>{s.writing || s.readCount ? 0 : 1}</b></div>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5 min-h-[34px] rounded-sm border border-dashed border-border p-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mr-1">waiting</span>
+        {[...s.queue.map((q) => q.name), ...s.behind].map((w) => (
+          <span key={w} className={`px-2 py-1 rounded-sm font-mono text-xs animate-in slide-in-from-right-2 duration-300 ${w.startsWith("W") ? "bg-orange/30" : "bg-sky/30"}`}>
+            {w}
+          </span>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={btn} onClick={() => setS(rwArrive(s, "R"))}>
+          + reader
+        </button>
+        <button type="button" className={btn} onClick={() => setS(rwArrive(s, "W"))}>
+          + writer
+        </button>
+        <button type="button" className={btn} disabled={!s.reading.length} onClick={() => setS(rwLeave(s, "R"))}>
+          a reader leaves
+        </button>
+        <button type="button" className={btn} disabled={!s.writing} onClick={() => setS(rwLeave(s, "W"))}>
+          writer leaves
+        </button>
+        <button type="button" className={btn} onClick={() => setS(rwStart())}>
+          ⟲
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Try this: add two readers, then a writer, then keep adding readers. New readers walk right in while the writer waits... possibly forever. That's the <b>starvation</b> risk of the first variation.
+      </p>
+    </Panel>
+  );
+}
+
+/* ------------------------------ dining philosophers ------------------------------ */
+
+/** Five philosophers, five chopsticks. Run them randomly, or make everyone grab their left chopstick at once. */
+export function DiningPhilosophers() {
+  const N = 5;
+  const [mode, setMode] = useState<"naive" | "asymmetric">("naive");
+  const [d, setD] = useState<Dining>(() => diningStart(N));
+  const [running, setRunning] = useState(false);
+  const rnd = useRef(seeded(11));
+  const dead = diningDeadlocked(d, mode);
+  useEffect(() => {
+    if (!running || dead) return;
+    const t = setInterval(() => setD((x) => diningStep(x, Math.floor(rnd.current() * N), mode)), 260);
+    return () => clearInterval(t);
+  }, [running, dead, mode]);
+  const grabLeft = () => {
+    setRunning(false);
+    let x = diningStart(N);
+    for (let i = 0; i < N; i++) x = diningStep(x, i, mode);
+    for (let i = 0; i < N; i++) x = diningStep(x, i, mode);
+    setD(x);
+  };
+  const C = 140;
+  const at = (i: number, r: number, offset = 0) => {
+    const a = ((i + offset) / N) * Math.PI * 2 - Math.PI / 2;
+    return [C + r * Math.cos(a), C + r * Math.sin(a)] as const;
+  };
+  const face: Record<Phil, string> = { thinking: "🤔", hungry: "😋", eating: "🍜" };
+  return (
+    <Panel title="Dining philosophers" legend={[["bg-sky", "thinking"], ["bg-orange", "hungry"], ["bg-mint", "eating"]]}>
+      <Toggle<"naive" | "asymmetric">
+        value={mode}
+        onChange={(m) => {
+          setMode(m);
+          setD(diningStart(N));
+          setRunning(false);
+        }}
+        options={[
+          ["naive", "Slides' algorithm: left, then right"],
+          ["asymmetric", "Fix: odd philosophers pick right first"],
+        ]}
+      />
+      <div className="grid sm:grid-cols-[280px_1fr] gap-4 items-center">
+        <svg viewBox="0 0 280 280" className="w-full max-w-[280px] h-auto mx-auto" role="img" aria-label="table of philosophers">
+          <circle cx={C} cy={C} r={62} className="fill-muted/60 stroke-border" />
+          <text x={C} y={C + 6} textAnchor="middle" className="text-[22px]">
+            🍚
+          </text>
+          {d.stick.map((owner, k) => {
+            // chopstick k sits between philosopher k and k+1
+            const [x1, y1] = at(k, owner === null ? 72 : 88, owner === null ? 0.5 : owner === k ? 0.25 : 0.75);
+            const [x2, y2] = at(k, owner === null ? 102 : 112, owner === null ? 0.5 : owner === k ? 0.25 : 0.75);
+            return <line key={k} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={5} strokeLinecap="round" className={`transition-all duration-300 ${owner === null ? "stroke-muted-foreground" : "stroke-foreground"}`} />;
+          })}
+          {d.phil.map((p, i) => {
+            const [x, y] = at(i, 118);
+            return (
+              <g key={i}>
+                <circle cx={x} cy={y} r={20} strokeWidth={2.5} className={`transition-all duration-300 ${p === "eating" ? "fill-mint/40 stroke-mint" : p === "hungry" ? "fill-orange/30 stroke-orange" : "fill-sky/20 stroke-sky"}`} />
+                <text x={x} y={y + 6} textAnchor="middle" className="text-[16px]">
+                  {face[p]}
+                </text>
+                <text x={x} y={y + 34} textAnchor="middle" className="fill-muted-foreground font-mono text-[9px]">
+                  P{i} · {d.meals[i]}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+        <div className="flex flex-col gap-3">
+          {dead ? (
+            <p className="text-sm font-bold text-orange animate-in zoom-in-95 duration-300">
+              💀 Deadlock! Every philosopher holds their left chopstick and waits forever for the right one, which their neighbour is holding.
+            </p>
+          ) : (
+            <p className="text-sm">{running ? "Philosophers think, get hungry, pick up chopsticks one at a time, eat, and put them down." : "Press run, or force the worst case."}</p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className={btn} disabled={dead} onClick={() => setRunning((r) => !r)}>
+              {running ? "❚❚ pause" : "▶ run"}
+            </button>
+            <button type="button" className={btn} onClick={grabLeft}>
+              everyone grabs a chopstick at once
+            </button>
+            <button type="button" className={btn} onClick={() => { setD(diningStart(N)); setRunning(false); }}>
+              ⟲
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {mode === "naive"
+              ? "With the slides' algorithm, \"everyone grabs a chopstick at once\" deadlocks immediately."
+              : "With the fix, philosophers next to each other reach for the same chopstick first, so the circle of waiting can never close. Try to deadlock it: you can't."}
+          </p>
+        </div>
+      </div>
+    </Panel>
   );
 }
