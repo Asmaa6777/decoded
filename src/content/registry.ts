@@ -186,7 +186,7 @@ export const courses: Course[] = [
       },
       {
         title: "Sorting",
-        blurb: "Four ways to put things in order, and why the fastest on paper isn't always the one you want.",
+        blurb: "Five ways to put things in order, and why the fastest on paper isn't always the one you want.",
         lessons: [
           { slug: "selection-and-bubble-sort", title: "Selection Sort and Bubble Sort", duration: "12 min", Component: AdaSelectionBubble },
           { slug: "insertion-sort", title: "Insertion Sort: Sorting Like a Card Player", duration: "9 min", Component: AdaInsertionSort },
