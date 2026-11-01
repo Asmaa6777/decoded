@@ -1,9 +1,9 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CodeTabs, Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { SynchronizedRace, JavaMonitor, SemaphoreBuffer } from "@/components/mdx/OsVisualizers";
 
 # Lab: Synchronization in Java
 
-The last two lessons were theory: race conditions, critical sections, semaphores. This lab makes them real in Java. You'll fix a race with `synchronized`, coordinate threads with `wait()` and `notify()`, build your own counting semaphore, and use it to solve the producer-consumer problem.
+The last two lessons were theory: [race conditions](/courses/operating-systems/critical-section-problem#race-condition), [critical sections](/courses/operating-systems/critical-section-problem#the-critical-section-problem), [semaphores](/courses/operating-systems/semaphores-and-classic-problems). This lab makes them real in Java. You'll fix a race with `synchronized`, coordinate threads with `wait()` and `notify()`, build your own counting semaphore, and use it to solve the [producer-consumer](/courses/operating-systems/interprocess-communication#the-producer-consumer-problem) problem.
 
 ## Theory recap
 
@@ -42,7 +42,7 @@ That's not the only bad scenario. We get these wrong answers because both proces
 
 Java supports two kinds of thread synchronization:
 
-- **Mutual exclusion**, supported by the JVM through **object locks**. Several threads can work on shared data **without interfering** with each other.
+- **[Mutual exclusion](/courses/operating-systems/critical-section-problem#what-a-solution-must-guarantee)**, supported by the JVM through **object locks**. Several threads can work on shared data **without interfering** with each other.
 - **Cooperation**, supported through the **`wait`** and **`notify`** methods of class `Object`. Threads can **work together** toward a common goal.
 
 ## 1. Mutual exclusion
@@ -202,7 +202,7 @@ Let's build a **semaphore**: a tool for synchronization and cooperation. A semap
 
 We'll use **synchronized methods** to make them atomic.
 
-A semaphore can be built with **busy waiting**, or by **blocking** threads in a waiting queue:
+A semaphore can be built with **[busy waiting](/courses/operating-systems/critical-section-problem#mutex-locks)**, or by **blocking** threads in a waiting queue:
 
 ```c
 /* busy waiting */
@@ -214,6 +214,30 @@ Wait(S) {
 
 Signal(S) {
     S++;
+}
+```
+
+Here's the version that **blocks** instead of busy waiting, as pseudocode and as a counting semaphore in Java. Java's own `wait()` and `notify()` give us the waiting queue for free:
+
+<CodeTabs>
+
+```java
+class semaphore {
+    protected int value = 0;
+
+    protected semaphore() { value = 0; }
+    protected semaphore(int initial) { value = initial; }
+
+    public synchronized void P() {
+        value--;
+        if (value < 0)
+            try { wait(); } catch (InterruptedException e) { }
+    }
+
+    public synchronized void V() {
+        value++;
+        if (value <= 0) notify();
+    }
 }
 ```
 
@@ -243,27 +267,7 @@ Signal(semaphore S) {
 }
 ```
 
-Here's a counting semaphore in Java that **blocks** instead of busy waiting. Java's own `wait()` and `notify()` give us the waiting queue for free:
-
-```java
-class semaphore {
-    protected int value = 0;
-
-    protected semaphore() { value = 0; }
-    protected semaphore(int initial) { value = initial; }
-
-    public synchronized void P() {
-        value--;
-        if (value < 0)
-            try { wait(); } catch (InterruptedException e) { }
-    }
-
-    public synchronized void V() {
-        value++;
-        if (value <= 0) notify();
-    }
-}
-```
+</CodeTabs>
 
 <Callout tone="orange" label="For real projects">
 This small class is perfect for learning. In production Java code, use `java.util.concurrent.Semaphore`, which handles interrupts, fairness and rare "spurious" wake-ups for you.

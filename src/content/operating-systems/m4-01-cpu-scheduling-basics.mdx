@@ -7,13 +7,13 @@ Your computer has a handful of CPU cores and hundreds of processes that want the
 
 ## Basic concepts
 
-- **Maximum CPU utilization** is obtained with **multiprogramming**: keep several processes in memory so there's always one to run.
+- **Maximum CPU utilization** is obtained with **[multiprogramming](/courses/operating-systems/os-architecture-and-operations#multiprogramming)**: keep several processes in memory so there's always one to run.
 - **The CPU–I/O burst cycle.** A process's execution is a **cycle** of **CPU execution** and **I/O wait**: a **CPU burst**, followed by an **I/O burst**, then another CPU burst, and so on.
 - The **distribution of CPU-burst lengths** matters most. Measured on real systems, the histogram shows **a large number of short CPU bursts** and **a small number of long ones**. I/O-bound programs make lots of short bursts; CPU-bound programs make a few long ones.
 
 ### The CPU scheduler
 
-The **short-term scheduler** picks one of the processes in the **ready queue** and gives it the CPU. (The ready queue isn't necessarily first-in-first-out: it can be ordered in different ways.)
+The **[short-term scheduler](/courses/operating-systems/processes#schedulers)** picks one of the processes in the **[ready queue](/courses/operating-systems/processes#process-scheduling)** and gives it the CPU. (The ready queue isn't necessarily first-in-first-out: it can be ordered in different ways.)
 
 CPU-scheduling decisions may happen when a process:
 
@@ -25,7 +25,7 @@ CPU-scheduling decisions may happen when a process:
 - Scheduling under **1 and 4 only** is **non-preemptive**: once a process has the CPU, it keeps it until it waits or finishes. The OS has no choice to make; a new process must be picked.
 - All other scheduling is **preemptive**: the OS can take the CPU away from a running process.
 
-Preemption brings its own headaches: a process could be preempted **while updating shared data**, or while the kernel is in the middle of **critical OS activities** when an interrupt arrives. That's the synchronization problem again.
+Preemption brings its own headaches: a process could be preempted **while updating shared data**, or while the [kernel](/courses/operating-systems/what-an-os-does#so-what-exactly-counts-as-the-os) is in the middle of **critical OS activities** when an interrupt arrives. That's the synchronization problem again.
 
 ### The dispatcher
 
@@ -169,7 +169,7 @@ SRTF chart: P1 from 0 to 1, P2 from 1 to 5, P4 from 5 to 10, P1 from 10 to 17, P
 - The CPU goes to the process with the **highest priority**. Here, the **smallest integer means the highest priority**.
   - It can be **preemptive** or **non-preemptive**.
 - **SJF is a special case** of priority scheduling, where the priority is the inverse of the predicted next CPU burst.
-- **Problem: starvation.** Low-priority processes may **never run**.
+- **Problem: [starvation](/courses/operating-systems/semaphores-and-classic-problems#deadlock-and-starvation).** Low-priority processes may **never run**.
 - **Solution: aging.** As time goes by, **increase the priority** of processes that have been waiting.
 
 **Example** (all arrive at time 0):

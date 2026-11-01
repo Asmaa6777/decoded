@@ -278,7 +278,7 @@ do {
 But this solution needs **busy waiting**: a process that can't get the lock loops, burning CPU. A lock like this is called a **spinlock**.
 
 <Callout tone="orange" label="Is spinning always bad?">
-Spinning wastes CPU while waiting. But it needs **no context switch**, so on a multiprocessor, when the lock will only be held for a very short time, a spinlock can actually be the fastest option.
+Spinning wastes CPU while waiting. But it needs **no [context switch](/courses/operating-systems/processes#context-switch)**, so on a multiprocessor, when the lock will only be held for a very short time, a spinlock can actually be the fastest option.
 </Callout>
 
 ## Where you meet this every day

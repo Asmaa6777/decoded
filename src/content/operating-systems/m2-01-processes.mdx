@@ -60,7 +60,7 @@ Both are "not running", but for different reasons. A **waiting** process *couldn
 The OS keeps all the information about each process in its **Process Control Block (PCB)**:
 
 - **Process state**: running, waiting, etc.
-- **Program counter**: the location of the next instruction to execute.
+- **[Program counter](/courses/computer-organization/inside-the-cpu#the-registers-that-matter-most)**: the location of the next instruction to execute.
 - **CPU registers**: the contents of all the process-centric registers.
 - **CPU-scheduling information**: priorities, pointers to scheduling queues.
 - **Memory-management information**: the memory allocated to the process.
@@ -100,7 +100,7 @@ Each path eventually leads back to the ready queue, until the process terminates
 | **Short-term** (CPU scheduler) | which process **runs next** on the CPU | very **frequently** (milliseconds) | must be fast |
 
 - The short-term scheduler is sometimes the **only** scheduler in a system.
-- The **long-term** scheduler controls the **degree of multiprogramming**: how many processes are in memory.
+- The **long-term** scheduler controls the **degree of [multiprogramming](/courses/operating-systems/os-architecture-and-operations#multiprogramming)**: how many processes are in memory.
 
 Processes can be described as either:
 
@@ -113,7 +113,7 @@ The long-term scheduler aims for a **good mix** of the two. All I/O-bound and th
 
 ### Medium-term scheduling
 
-A **medium-term scheduler** can be added when the degree of multiprogramming needs to **decrease**. It removes a process from memory, stores it on disk, then brings it back from disk later to continue running. This is **swapping**.
+A **medium-term scheduler** can be added when the degree of multiprogramming needs to **decrease**. It removes a process from memory, stores it on disk, then brings it back from disk later to continue running. This is **[swapping](/courses/operating-systems/memory-allocation#swapping)**.
 
 ### Context switch
 
@@ -152,7 +152,7 @@ A **parent** process creates **child** processes, which can create their own, fo
 
 ### fork() and exec() in UNIX
 
-- The **`fork()`** system call creates a new process. The child is a copy of the parent.
+- The **`fork()`** [system call](/courses/operating-systems/services-and-system-calls) creates a new process. The child is a copy of the parent.
 - The **`exec()`** system call is used **after** `fork()` to **replace the process's memory** with a new program.
 
 ```c

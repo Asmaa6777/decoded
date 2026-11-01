@@ -3,7 +3,9 @@ import { PagingTranslator, FragmentationCalc, TlbDemo, AddressSplit } from "@/co
 
 # Paging
 
-Contiguous allocation and segmentation both suffer from **external fragmentation**: free memory chopped into holes too small to use. Paging solves it with a simple idea: cut **everything** into equal-sized pieces. Any free piece fits any page. Almost every modern computer, including your phone, uses paging.
+Contiguous allocation and [segmentation](/courses/operating-systems/memory-allocation#segmentation) both suffer from **[external fragmentation](/courses/operating-systems/memory-allocation#fragmentation)**: free memory chopped into holes too small to use. Paging solves it with a simple idea: cut **everything** into equal-sized pieces. Any free piece fits any page. Almost every modern computer, including your phone, uses paging.
+
+Those frames live in [RAM](/courses/computer-organization/ram-and-rom#primary-memory-four-kinds-of-chip), one level of the [memory hierarchy](/courses/computer-organization/memory-hierarchy).
 
 ## The idea
 
@@ -20,7 +22,7 @@ How it works:
 - To run a program of **N pages**, find **N free frames** (anywhere!) and load the program.
 - Set up a **page table** to translate logical addresses to physical ones: it maps each logical **page** to its physical **frame**.
 - The **backing store** is split into pages too.
-- There's still **internal fragmentation**: the last frame a process gets may not be completely full.
+- There's still **[internal fragmentation](/courses/operating-systems/memory-allocation#fragmentation)**: the last frame a process gets may not be completely full.
 
 ## Address translation
 
@@ -106,7 +108,7 @@ So with a good TLB, paging costs only about **21%** extra instead of 100%.
   - **"valid"**: the page is in the process's logical address space, so it's a **legal** page,
   - **"invalid"**: the page is **not** in the process's logical address space.
   - Or use the **PTLR** to reject page numbers beyond the table's length.
-- Any **violation** causes a **trap** to the kernel.
+- Any **violation** causes a **trap** to the [kernel](/courses/operating-systems/what-an-os-does#so-what-exactly-counts-as-the-os).
 
 ## Shared pages
 
@@ -179,7 +181,7 @@ Instead of **each process** having a page table that tracks all its possible log
 
 This **decreases the memory** needed for page tables, but **increases the time** to search the table on each reference. A **hash table** limits the search to one (or a few) entries, and the **TLB** speeds up access.
 
-But how do we implement **shared memory**? With only one virtual address per frame, a frame can't easily be mapped into two processes at once.
+But how do we implement **[shared memory](/courses/operating-systems/interprocess-communication#the-producer-consumer-problem)**? With only one virtual address per frame, a frame can't easily be mapped into two processes at once.
 
 ## Where you meet this every day
 

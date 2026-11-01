@@ -3,14 +3,14 @@ import { PageReplacement, FaultsVsFrames, FrameAllocation, ThrashingChart, Worki
 
 # Page Replacement and Thrashing
 
-Memory is full and a page fault arrives. Some page has to go. Pick well, and the program barely notices; pick badly, and the page you just threw out is needed again a moment later. This last lesson compares the algorithms for picking a victim, then looks at how many frames each process should get, and at **thrashing**, the state where a computer spends all its time moving pages and none doing work.
+Memory is full and a [page fault](/courses/operating-systems/virtual-memory#page-fault) arrives. Some page has to go. Pick well, and the program barely notices; pick badly, and the page you just threw out is needed again a moment later. This last lesson compares the algorithms for picking a victim, then looks at how many frames each process should get, and at **thrashing**, the state where a computer spends all its time moving pages and none doing work.
 
 ## Page replacement
 
 We **prevent over-allocation** of memory by changing the page-fault service routine to include **page replacement**.
 
 - Use a **modify (dirty) bit** to reduce the overhead of page transfers: only **modified** pages are written back to disk. A clean page can just be overwritten, since an identical copy is already on disk.
-- Page replacement **completes the separation** between logical and physical memory: a **large virtual memory** can be provided on a **smaller physical memory**.
+- Page replacement **completes the separation** between logical and physical memory: a **large [virtual memory](/courses/operating-systems/virtual-memory#virtual-memory)** can be provided on a **smaller physical memory**.
 
 ### Basic page replacement
 
@@ -92,7 +92,7 @@ Use **past** knowledge instead of the future: **replace the page that hasn't bee
 
 - every page-table entry has a **time-of-use** field; whenever the page is referenced, the **clock** is copied into it,
 - replace the page with the **smallest** time value,
-- this needs a **search of the whole page table**.
+- this needs a **search of the whole [page table](/courses/operating-systems/paging#the-idea)**.
 
 **Stack implementation:**
 
@@ -167,7 +167,7 @@ Two major allocation schemes: **fixed allocation** and **priority allocation**, 
 ### Fixed allocation
 
 - **Equal allocation**: with **100 frames** (after the OS's share) and **5 processes**, give each process **20 frames**. Keep some as a free-frame buffer pool.
-- **Proportional allocation**: allocate according to the **size** of each process. It's dynamic, changing as the degree of multiprogramming and process sizes change.
+- **Proportional allocation**: allocate according to the **size** of each process. It's dynamic, changing as the degree of [multiprogramming](/courses/operating-systems/os-architecture-and-operations#multiprogramming) and process sizes change.
 
 $$
 s_i = \text{size of process } p_i, \qquad S = \sum s_i, \qquad m = \text{total frames}, \qquad a_i = \frac{s_i}{S} \times m
@@ -213,7 +213,7 @@ This leads to:
 - the OS thinking it needs to **increase** the degree of multiprogramming,
 - **another process** added to the system, which makes it **worse**.
 
-**Thrashing**: a process is **busy swapping pages in and out**, instead of running.
+**Thrashing**: a process is **busy [swapping](/courses/operating-systems/memory-allocation#swapping) pages in and out**, instead of running.
 
 <ThrashingChart />
 

@@ -79,7 +79,7 @@ export function CodeBlock(props: React.ComponentPropsWithoutRef<"pre">) {
 
 const CODE_LANG_KEY = "decoded:code-lang";
 const CODE_LANG_EVENT = "decoded:code-lang";
-const LANG_LABEL: Record<string, string> = { matlab: "MATLAB", python: "Python" };
+const LANG_LABEL: Record<string, string> = { matlab: "MATLAB", python: "Python", java: "Java", c: "C" };
 
 function readCodeLang() {
   try {

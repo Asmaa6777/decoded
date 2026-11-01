@@ -3,13 +3,13 @@ import { OsStructures, BootSequence } from "@/components/mdx/OsVisualizers";
 
 # System Programs, OS Design and Structure
 
-Last lesson was about what an OS *offers*. This one is about how an OS is *built*: the system programs that ship with it, the goals its designers balance, the different ways to organize millions of lines of kernel code, and finally how all of it gets started when you press the power button.
+Last lesson was about what an OS *offers*. This one is about how an OS is *built*: the system programs that ship with it, the goals its designers balance, the different ways to organize millions of lines of [kernel](/courses/operating-systems/what-an-os-does#so-what-exactly-counts-as-the-os) code, and finally how all of it gets started when you press the power button.
 
 ## System programs
 
 **System programs** provide a convenient environment for **developing and running programs**.
 
-- Some are just **user interfaces to system calls**. Others are much more complex.
+- Some are just **user interfaces to [system calls](/courses/operating-systems/services-and-system-calls)**. Others are much more complex.
 - **Most users' view of the OS is defined by its system programs**, not by the actual system calls. To most people, "Windows" *is* File Explorer and Task Manager.
 
 They fall into these categories:
@@ -119,13 +119,13 @@ Traditional UNIX is **beyond simple, but not fully layered**. We call a big kern
 **Move as much as possible from the kernel into user space.**
 
 - **Mach** is an example. The macOS kernel (**Darwin**) is partly based on Mach.
-- User modules communicate using **message passing**, through the microkernel.
+- User modules communicate using **[message passing](/courses/operating-systems/interprocess-communication#message-passing)**, through the microkernel.
 
 **Benefits:**
 
 - **easier to extend** a microkernel,
 - **easier to port** the OS to new architectures,
-- **more reliable** (less code runs in kernel mode),
+- **more reliable** (less code runs in [kernel mode](/courses/operating-systems/os-architecture-and-operations#dual-mode-operation)),
 - **more secure**.
 
 **Detriment:** the **performance overhead** of communication between user space and kernel space.

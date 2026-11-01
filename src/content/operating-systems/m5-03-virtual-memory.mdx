@@ -5,6 +5,8 @@ import { PageFaultSteps, DemandPagingCost, CopyOnWrite } from "@/components/mdx/
 
 Your laptop has maybe 16 GB of RAM, yet it happily runs programs that, added together, want far more. The trick is that programs never need **all** of themselves at once. Virtual memory loads only the pieces that are actually used, the moment they're used. This lesson shows how, and what it costs when it goes wrong.
 
+Computer Architecture covers the hardware side of this, including how addresses get translated quickly, in its [virtual memory](/courses/computer-architecture/virtual-memory#making-it-fast-the-tlb) lesson.
+
 ## Background
 
 Code needs to be in memory to run, but the **entire program is rarely used**:
@@ -34,7 +36,7 @@ The **virtual address space** is the **logical view** of how a process is stored
 Virtual memory can be implemented with:
 
 - **demand paging**,
-- **demand segmentation**.
+- **demand [segmentation](/courses/operating-systems/memory-allocation#segmentation)**.
 
 ## Demand paging
 
@@ -45,7 +47,7 @@ We **could** bring the entire process into memory at load time. Or we could brin
 - **faster response**,
 - **more users**.
 
-It's similar to a paging system with swapping. When a page is **needed**, there's a reference to it:
+It's similar to a paging system with [swapping](/courses/operating-systems/memory-allocation#swapping). When a page is **needed**, there's a reference to it:
 
 - **invalid** reference → **abort**,
 - **not in memory** → **bring it into memory**.
@@ -90,11 +92,11 @@ The **first** reference to a page that isn't in memory **traps** to the OS: a **
   - And so on for every other page, on **first access**.
   - This is **pure demand paging**.
 - One instruction could even touch **several new pages**, causing **several page faults**. Think of fetching and decoding an instruction that adds 2 numbers from memory and stores the result back in memory.
-- In practice the pain is small thanks to **locality of reference**: programs tend to use the same nearby pages over and over.
+- In practice the pain is small thanks to **[locality of reference](/courses/computer-organization/memory-hierarchy#why-such-a-small-cache-works)**: programs tend to use the same nearby pages over and over.
 
 **Hardware support** needed for demand paging:
 
-- a **page table** with a **valid-invalid bit**,
+- a **[page table](/courses/operating-systems/paging#the-idea)** with a **valid-invalid bit**,
 - **secondary memory** (a swap device with **swap space**),
 - the ability to **restart any instruction** after a page fault.
 
@@ -182,7 +184,7 @@ Free frames are usually given out from a **pool of zero-fill-on-demand pages**:
 ## What if there's no free frame?
 
 - Free frames get **used up** by user processes' pages.
-- They're also in demand by the **kernel**, **I/O buffers**, and so on. How much should each get?
+- They're also in demand by the **[kernel](/courses/operating-systems/what-an-os-does#so-what-exactly-counts-as-the-os)**, **I/O buffers**, and so on. How much should each get?
 - **Page replacement**: find some page in memory that **isn't really in use**, and **page it out**.
   - Which algorithm? Terminate a process? Swap one out? Replace a page?
   - **Performance**: we want an algorithm that gives the **minimum number of page faults**.

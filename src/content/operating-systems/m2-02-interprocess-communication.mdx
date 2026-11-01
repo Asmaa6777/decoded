@@ -5,6 +5,8 @@ import { BoundedBuffer, MessageBuffering } from "@/components/mdx/OsVisualizers"
 
 Processes are isolated from each other on purpose: one can't read another's memory. But real work often needs teamwork. Your browser talks to its tab processes; a web server talks to your browser across the world. This lesson covers how processes **communicate**: by sharing memory, by sending messages, and with the tools used between clients and servers.
 
+This lesson builds on [processes](/courses/operating-systems/processes#the-process-concept). When they share memory, [race conditions](/courses/operating-systems/critical-section-problem#race-condition) become possible, which a later lesson covers.
+
 ## Independent and cooperating processes
 
 Processes in a system may be:

@@ -7,7 +7,7 @@ A mutex lets one process in at a time. Often you need more: "let up to 3 in", "d
 
 ## Semaphores
 
-A **semaphore** is a synchronization tool that can be built **without busy waiting**.
+A **semaphore** is a synchronization tool that can be built **without [busy waiting](/courses/operating-systems/critical-section-problem#mutex-locks)**.
 
 - A semaphore **S** is an **integer variable**.
 - It's changed by two standard operations, **`wait()`** and **`signal()`**. They were originally called **P()** and **V()** (from the Dutch words *proberen*, "to test", and *verhogen*, "to increment").
@@ -29,7 +29,7 @@ signal(S) {
 ### Semaphore usage
 
 - A **counting semaphore**'s value can range over an **unrestricted** domain. Use it to control access to a resource with **several instances**: initialize S to the number available.
-- A **binary semaphore**'s value can only be **0 or 1**. That's the **same as a mutex lock**.
+- A **binary semaphore**'s value can only be **0 or 1**. That's the **same as a [mutex lock](/courses/operating-systems/critical-section-problem#mutex-locks)**.
 - A counting semaphore can be **implemented** using binary semaphores.
 
 Semaphores solve many synchronization problems. For example: two concurrent processes, $P_1$ with a statement $S_1$, and $P_2$ with a statement $S_2$. We need $S_2$ to run **only after** $S_1$ has finished. Use a semaphore `synch` initialized to **0**:
@@ -46,7 +46,7 @@ If $P_2$ gets there first, `wait(synch)` stops it until $P_1$ signals.
 
 The implementation must guarantee that **no two processes** can run `wait()` and `signal()` on the **same semaphore at the same time**.
 
-- So the implementation **itself** becomes a critical-section problem, with the wait and signal code inside the critical section.
+- So the implementation **itself** becomes a [critical-section problem](/courses/operating-systems/critical-section-problem#the-critical-section-problem), with the wait and signal code inside the critical section.
 - We could now have **busy waiting** in the implementation. But that code is **short**, so there's **little busy waiting** if the critical section is rarely occupied.
 - But **applications** may spend a long time in their critical sections, so busy waiting there is **not a good solution**.
 
@@ -64,7 +64,7 @@ typedef struct {
 Two operations help:
 
 - **`block()`**: put the process that called it on the right **waiting queue**, and stop running it.
-- **`wakeup(P)`**: take process P off the waiting queue and put it in the **ready queue**.
+- **`wakeup(P)`**: take process P off the waiting queue and put it in the **[ready queue](/courses/operating-systems/processes#process-scheduling)**.
 
 ```c
 wait(semaphore *S) {
@@ -226,7 +226,7 @@ do {
 - **Second variation:** once a writer is **ready**, it writes **as soon as possible**.
 - Both may lead to **starvation** (of writers in the first, of readers in the second), which leads to even more variations.
 
-On some systems the **kernel provides reader-writer locks** that solve this for you.
+On some systems the **[kernel](/courses/operating-systems/what-an-os-does#so-what-exactly-counts-as-the-os) provides reader-writer locks** that solve this for you.
 
 ### 3. The dining-philosophers problem
 
@@ -266,7 +266,7 @@ Some ways to fix it:
 
 Semaphores are powerful but easy to misuse, and one mistake anywhere breaks everything:
 
-- **`signal(mutex) … wait(mutex)`**: the order is swapped. Several processes may be in their critical sections at once, so mutual exclusion is gone.
+- **`signal(mutex) … wait(mutex)`**: the order is swapped. Several processes may be in their critical sections at once, so [mutual exclusion](/courses/operating-systems/critical-section-problem#what-a-solution-must-guarantee) is gone.
 - **`wait(mutex) … wait(mutex)`**: `signal` was replaced by `wait`. The process blocks itself forever: deadlock.
 - **Omitting** `wait(mutex)` or `signal(mutex)` (or both): either mutual exclusion is broken, or a deadlock happens.
 

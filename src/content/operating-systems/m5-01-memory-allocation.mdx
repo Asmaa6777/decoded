@@ -5,6 +5,8 @@ import { MmuDemo, SwapTimeCalc, MemoryAllocator, SegmentTranslator } from "@/com
 
 Every running program needs memory, and they all share the same RAM. How does the OS give each one its own space, stop them from scribbling on each other, and pack them in without wasting room? This lesson covers addresses, the hardware that checks and translates them, swapping, and the first two ways to divide memory up: contiguous allocation and segmentation.
 
+For how the chips behind that RAM work, see [RAM and ROM](/courses/computer-organization/ram-and-rom).
+
 ## Background
 
 - A program must be brought (from disk) **into memory** and placed within a process for it to run.
@@ -22,7 +24,7 @@ A pair of **base** (relocation) and **limit** registers define a process's **log
 - **base** holds the smallest legal physical address,
 - **limit** holds the size of the range.
 
-The CPU must check **every memory access made in user mode** to make sure it lies between base and base + limit. If not, it **traps** to the OS (addressing error). Only the OS, in kernel mode, can load these registers.
+The CPU must check **every memory access made in user mode** to make sure it lies between base and base + limit. If not, it **traps** to the OS (addressing error). Only the OS, in [kernel mode](/courses/operating-systems/os-architecture-and-operations#dual-mode-operation), can load these registers.
 
 <MmuDemo />
 
@@ -99,13 +101,13 @@ A process can be **swapped** temporarily **out of memory** to a **backing store*
 - **Backing store**: a fast disk, large enough to hold copies of all memory images for all users, with **direct access** to them.
 - **Roll out, roll in**: a swapping variant for **priority-based** scheduling. A lower-priority process is swapped out so a higher-priority one can be loaded and run.
 - The **major part of swap time is transfer time**: it's directly proportional to the **amount of memory swapped**.
-- The system keeps a **ready queue** of all ready-to-run processes whose memory images are on the backing store or in memory.
+- The system keeps a **[ready queue](/courses/operating-systems/processes#process-scheduling)** of all ready-to-run processes whose memory images are on the backing store or in memory.
 - Does a swapped-out process need to come back to the **same physical addresses**? It **depends on the address-binding method**. With execution-time binding, it can go anywhere.
 - **Modified versions** of swapping are found on many systems (UNIX, Linux, Windows): swapping is normally **disabled**, starts only when more than a **threshold** of memory is allocated, and stops again when demand drops below it.
 
 ### Context-switch time with swapping
 
-If the next process to run isn't in memory, we must swap a process **out** and swap the target process **in**. The context switch can then take a **very** long time:
+If the next process to run isn't in memory, we must swap a process **out** and swap the target process **in**. The [context switch](/courses/operating-systems/processes#context-switch) can then take a **very** long time:
 
 - a **100 MB** process swapping to a hard disk with a transfer rate of **50 MB/sec**,
 - swap out time: **2000 ms**,
@@ -114,11 +116,11 @@ If the next process to run isn't in memory, we must swap a process **out** and s
 
 <SwapTimeCalc />
 
-We can reduce this by swapping only the memory that's **really being used**. Processes can tell the OS with system calls like `request_memory()` and `release_memory()`.
+We can reduce this by swapping only the memory that's **really being used**. Processes can tell the OS with [system calls](/courses/operating-systems/services-and-system-calls) like `request_memory()` and `release_memory()`.
 
 **Other constraints:**
 
-- **Pending I/O**: a process **can't be swapped out** while I/O is happening into its memory, or the I/O would land in the wrong process's memory. Or the I/O can go into **kernel buffers** first, then to the process. That's **double buffering**, which adds overhead.
+- **Pending I/O**: a process **can't be swapped out** while I/O is happening into its memory, or the I/O would land in the wrong process's memory. Or the I/O can go into **[kernel](/courses/operating-systems/what-an-os-does#so-what-exactly-counts-as-the-os) buffers** first, then to the process. That's **double buffering**, which adds overhead.
 - **Standard swapping isn't used in modern OSs**, but a modified version is common: swap only when free memory is **extremely low**.
 - **Mobile systems don't support swapping.** Instead, when memory is low:
   - **Android terminates apps**,
@@ -140,7 +142,7 @@ Main memory must hold **both the OS and the user processes**, and it must be sha
 - the **base (relocation) register** holds the value of the **smallest physical address**,
 - the **limit register** holds the **range of logical addresses**: each logical address must be **less than** the limit,
 - the MMU maps logical addresses **dynamically** by **adding** the base,
-- on each **context switch**, the dispatcher loads the base and limit registers for the process about to run.
+- on each **context switch**, the [dispatcher](/courses/operating-systems/cpu-scheduling-basics#the-dispatcher) loads the base and limit registers for the process about to run.
 
 This scheme also lets the **OS's own size change dynamically**: useful for OS services that aren't used often. Their code, loaded and unloaded as needed, is called **transient code**.
 
@@ -148,7 +150,7 @@ This scheme also lets the **OS's own size change dynamically**: useful for OS se
 
 Memory is divided into **several partitions** (the **multiple-partition method**):
 
-- The **degree of multiprogramming** is limited by the number of partitions.
+- The **degree of [multiprogramming](/courses/operating-systems/os-architecture-and-operations#multiprogramming)** is limited by the number of partitions.
 - **Variable-partition sizes** are used for efficiency: each sized to a process's needs.
 - A **hole** is a block of **available** memory. Holes of various sizes are **scattered** throughout memory.
 - When a process **arrives**, it's given memory from a hole **large enough** for it.

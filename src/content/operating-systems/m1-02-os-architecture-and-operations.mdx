@@ -65,8 +65,8 @@ A single user can't keep the CPU and I/O devices busy all the time. While your p
 - **Response time** should be short, typically **under 1 second**.
 - Each user has at least one program executing in memory. A program in execution is called a **process**.
 - If several jobs are ready to run at the same time, the OS must choose: that's **CPU scheduling**.
-- If processes don't fit in memory, **swapping** moves them in and out of memory to run.
-- **Virtual memory** allows running a process that is **not completely in memory**.
+- If processes don't fit in memory, **[swapping](/courses/operating-systems/memory-allocation#swapping)** moves them in and out of memory to run.
+- **[Virtual memory](/courses/operating-systems/virtual-memory#virtual-memory)** allows running a process that is **not completely in memory**.
 
 <Callout tone="mint" label="Multiprogramming vs. timesharing">
 **Multiprogramming** switches when a job *has to wait*, to keep the CPU busy. **Timesharing** switches *very often*, on purpose, so every user feels the computer is answering them right away.
@@ -85,9 +85,9 @@ The OS is **interrupt driven**:
 **Dual-mode operation** lets the OS protect itself and the other system components.
 
 - There are two modes: **user mode** and **kernel mode**.
-- A **mode bit**, provided by the **hardware**, tells whether the CPU is running user code (1) or kernel code (0).
+- A **mode bit**, provided by the **hardware**, tells whether the CPU is running user code (1) or [kernel](/courses/operating-systems/what-an-os-does#so-what-exactly-counts-as-the-os) code (0).
 - Some instructions are **privileged**: they can **only run in kernel mode**. Trying one in user mode causes a trap.
-- A **system call** switches the mode to kernel. **Returning** from the call switches it back to user.
+- A **[system call](/courses/operating-systems/services-and-system-calls)** switches the mode to kernel. **Returning** from the call switches it back to user.
 
 <DualModeSwitch />
 
@@ -113,7 +113,7 @@ A **process** is a **program in execution**. It's a **unit of work** within the 
 - A **program is a passive entity**: a file sitting on the disk. A **process is an active entity**: that program, running.
 - A process needs **resources** to do its task: CPU, memory, I/O, files, and initialization data.
 - When a process **terminates**, the OS must **reclaim** any reusable resources.
-- A **single-threaded** process has **one program counter**, pointing at the next instruction to execute. It runs instructions one at a time, in order, until it finishes.
+- A **single-threaded** process has **one [program counter](/courses/computer-organization/inside-the-cpu#the-registers-that-matter-most)**, pointing at the next instruction to execute. It runs instructions one at a time, in order, until it finishes.
 - A **multi-threaded** process has **one program counter per thread**.
 - A system usually has **many processes**, some user and some system, running **concurrently** on one or more CPUs. Concurrency comes from **multiplexing** the CPUs among the processes and threads.
 
@@ -124,7 +124,7 @@ The OS is responsible for:
 - **suspending and resuming** processes,
 - providing mechanisms for process **synchronization**,
 - providing mechanisms for process **communication**,
-- providing mechanisms for **deadlock** handling.
+- providing mechanisms for **[deadlock](/courses/operating-systems/semaphores-and-classic-problems#deadlock-and-starvation)** handling.
 
 ### Memory management
 
@@ -159,7 +159,7 @@ The OS gives a **uniform, logical view** of stored information. It hides the phy
 
 ### Cache management
 
-- Information moves between the levels of the storage hierarchy, either **explicitly** (the OS moves it) or **implicitly** (the hardware moves it).
+- Information moves between the levels of the [storage hierarchy](/courses/operating-systems/what-an-os-does#the-storage-hierarchy), either **explicitly** (the OS moves it) or **implicitly** (the hardware moves it).
 - Choosing the **cache size** and **replacement policy** carefully can make a huge difference to performance.
 - In a **multitasking** environment, every process must use the **most recent value** of a piece of data, wherever it is stored.
 - In a **multiprocessor** environment, the hardware must provide **cache coherency**, so that all CPUs see the most recent value in their caches.

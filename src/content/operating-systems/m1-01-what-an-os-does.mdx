@@ -98,7 +98,7 @@ An operating system is **interrupt driven**. When nothing is happening, it waits
 
 ### Interrupt handling
 
-1. The OS **preserves the state of the CPU** by storing the registers and the program counter.
+1. The OS **preserves the state of the CPU** by storing the registers and the [program counter](/courses/computer-organization/inside-the-cpu#the-registers-that-matter-most).
 2. It figures out **which type of interrupt** happened, either by **polling** (asking each device "was it you?") or with a **vectored interrupt system** (the interrupt carries a number that points straight to its handler).
 3. **Separate pieces of code** decide what to do for each type of interrupt.
 
@@ -106,13 +106,15 @@ Step through the timeline to watch the CPU and an I/O device work side by side:
 
 <InterruptTimeline />
 
+To see this on a real chip, follow an [interrupt](/courses/microprocessors/interrupts) on the 8086.
+
 ## Storage structure
 
 - **Main memory** is the **only large storage** the CPU can access **directly**.
   - It's **random access**: any byte can be read in about the same time.
   - It's usually **volatile**: everything is lost when the power goes off.
 - **Secondary storage** extends main memory with **large, nonvolatile** capacity.
-  - **Magnetic disks** are rigid metal or glass platters covered with magnetic material. The surface is divided into **tracks**, and each track into **sectors**. The **disk controller** handles how the device talks to the computer.
+  - **Magnetic disks** are rigid metal or glass [platters](/courses/computer-organization/hard-disks) covered with magnetic material. The surface is divided into **tracks**, and each track into **sectors**. The **disk controller** handles how the device talks to the computer.
   - **Solid-state disks (SSDs)** are faster than magnetic disks, use several technologies, and are becoming more and more popular.
 
 ### The storage hierarchy
@@ -149,7 +151,7 @@ There are two ways to handle an I/O request:
 
 **Asynchronous I/O.** After I/O starts, control returns to the user program **without waiting** for the I/O to finish.
 
-- A **system call** lets the program ask the OS to wait for the I/O to complete when it's ready to.
+- A **[system call](/courses/operating-systems/services-and-system-calls)** lets the program ask the OS to wait for the I/O to complete when it's ready to.
 - The OS keeps a **device-status table** with an entry for each I/O device: its **type**, **address** and **state** (idle or busy, plus any requests waiting for it).
 - The OS looks up the device in this table to check its status, and updates the entry when an interrupt arrives.
 

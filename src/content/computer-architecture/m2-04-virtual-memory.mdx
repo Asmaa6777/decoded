@@ -9,6 +9,8 @@ The answer is that the addresses a program uses aren't real. A **virtual address
 
 The idea also treats RAM as a [cache](/courses/computer-organization/memory-hierarchy) for the disk.
 
+The Operating Systems course covers the software side: [demand paging](/courses/operating-systems/virtual-memory#demand-paging) and [page replacement](/courses/operating-systems/page-replacement-and-thrashing#page-replacement).
+
 ## Pages and frames
 
 Memory is split up into fixed-size chunks. In virtual memory they're called **pages**, and in physical memory **frames**, and they're the same size (commonly 4 KB). Any page can go in any frame.
@@ -37,7 +39,7 @@ Disks are slow: a page fault costs millions of times more than a memory access. 
 
 ## Making it fast: the TLB
 
-There's a problem. Every memory access now needs a page table lookup first, which is itself a memory access, so every access costs twice as much. The fix is another cache. The **TLB** (translation lookaside buffer) is a small, fast cache of recent translations, and thanks to locality it hits the vast majority of the time.
+There's a problem. Every memory access now needs a page table lookup first, which is itself a memory access, so every access costs twice as much. The fix is another cache. The **TLB** (translation lookaside buffer) is a small, fast cache of recent translations, and thanks to [locality](/courses/computer-organization/memory-hierarchy#why-such-a-small-cache-works) it hits the vast majority of the time.
 
 ## What you get from it
 
