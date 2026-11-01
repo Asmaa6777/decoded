@@ -1,0 +1,82 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { PigeonholeLab } from "@/components/mdx/DiscreteVisualizers";
+
+# The Pigeonhole Principle
+
+Why does every hash table need a plan for collisions? Why can't any program compress every file? Why must a finite automaton fail on long enough inputs? One idea, so obvious it sounds like a joke, answers all three.
+
+## The principle
+
+**The pigeonhole principle:** if $n$ items are put into $m$ boxes and $n > m$, then at least one box holds two or more items.
+
+Ten pigeons, nine holes: some hole has two pigeons. You don't know which one, and you don't need to. That's the strange power of the principle: it proves something *exists* without finding it.
+
+The proof is one line, by [contradiction](/courses/discrete-mathematics/direct-and-indirect-proof#proof-by-contradiction): if every box held at most one item, there would be at most $m$ items, but there are $n > m$.
+
+In the language of [functions](/courses/discrete-mathematics/functions#three-properties): if $|A| > |B|$, no function $f: A \to B$ is injective. Some two inputs share an output.
+
+## The general version
+
+**The generalised pigeonhole principle:** if $n$ items go into $m$ boxes, some box holds at least $\lceil n/m \rceil$ items.
+
+The $\lceil\ \rceil$ is the [ceiling](/courses/discrete-mathematics/functions#two-functions-youll-see-everywhere), rounding up. With 100 people and 12 months, some month has at least $\lceil 100/12 \rceil = 9$ birthdays. If every month had 8 or fewer, there would be at most $96$ people.
+
+## Collisions in a hash table
+
+A hash table puts each key in bucket $h(\text{key}) \bmod m$. Below, keys go into $m$ buckets one at a time. Set the keys to more than the buckets and a collision is guaranteed before the first key drops, whatever the keys are. Set fewer and you might still get one; the principle only says when it's *certain*.
+
+<PigeonholeLab />
+
+This is why every hash table has a [collision strategy](/courses/advanced-algorithms/collision-resolution), and why the strategy isn't optional. A table with more possible keys than buckets, which is every useful table, will meet collisions. Good hashing spreads keys evenly so collisions are rare and short, but it can't remove them. How soon the first one tends to happen is a question for [the birthday problem](/courses/discrete-mathematics/birthday-problem), and the answer is "much sooner than you'd think."
+
+## No compressor shrinks everything
+
+**Claim.** No lossless compression program can make every file smaller.
+
+**Proof.** Consider all files of exactly $n$ bits: there are $2^n$ of them. Files shorter than $n$ bits number
+
+$$
+2^0 + 2^1 + \cdots + 2^{n-1} = 2^n - 1,
+$$
+
+by the sum from the [induction lesson](/courses/discrete-mathematics/induction#a-second-proof-all-ones-in-binary). That's one fewer than the number of $n$-bit files. If every $n$-bit file were compressed to a shorter one, two of them would have to share a compressed version, and decompression couldn't tell them apart. $\blacksquare$
+
+So every compressor makes some files *bigger*. Zip, gzip and PNG all win on files with patterns, like text and screenshots, and lose slightly on files that are already random-looking, such as encrypted data or other zip files.
+
+<Callout tone="orange" label="Watch for 'compresses any file' claims">
+Products that promise to compress *any* file, or to compress already-compressed files repeatedly, are making a claim the pigeonhole principle rules out. Some have been sold anyway.
+</Callout>
+
+## Finite memory runs out
+
+A [finite automaton](/courses/theory-of-computation/limits-of-finite-memory#the-intuition-first) with $p$ states that reads a string of $p$ or more symbols passes through $p + 1$ or more states along the way, counting the start. There are only $p$ different states, so it must visit one of them twice: it has gone round a loop. That repeated state is the heart of the pumping lemma, and the reason no DFA can match balanced brackets. The proof is the pigeonhole principle with states as boxes.
+
+## A few more
+
+- Among any 5 integers, two have the same remainder mod 4 (5 numbers, 4 possible remainders).
+- London has around 9 million people and a human head has at most about 150,000 hairs, so at least two Londoners have exactly the same number of hairs. In fact, at least $\lceil 9{,}000{,}000 / 150{,}001 \rceil = 60$ of them share a count.
+- In any group of 13 people, two were born in the same month.
+- If you pick 6 different numbers from 1 to 10, two of them add up to 11. The pairs $\{1,10\}, \{2,9\}, \{3,8\}, \{4,7\}, \{5,6\}$ are 5 boxes, and 6 numbers can't all land in different ones.
+
+The skill is choosing the boxes. In each example above, the hard part was seeing what to use as the boxes; the counting was trivial.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Hash tables and hashes" tool="Dictionaries, Git, SHA-256">
+Every hash has more inputs than outputs, so collisions exist. Git used SHA-1 for object IDs and is moving to SHA-256 because SHA-1 collisions have been found in practice.
+</PracticalApplication>
+<PracticalApplication title="Compression" tool="zip, gzip, PNG">
+Lossless compressors bet on patterns. The pigeonhole principle guarantees the bet loses on some inputs, so formats add a small header to store data uncompressed when that's smaller.
+</PracticalApplication>
+<PracticalApplication title="Load balancing" tool="Servers, sharding">
+With $n$ requests across $m$ servers, some server handles at least $\lceil n/m \rceil$. That's the floor you size each machine against.
+</PracticalApplication>
+<PracticalApplication title="Lower bounds" tool="Algorithm analysis">
+Arguments that "any algorithm must take at least…" often come down to pigeonholes: too many possible answers for too few possible runs.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+An existence proof that needs no search: too many items, too few boxes, so something is shared. The [quiz](/courses/discrete-mathematics/counting-quiz) covers the counting module.
+</Callout>

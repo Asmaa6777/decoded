@@ -3,7 +3,7 @@ import { HashTableVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
 # Collisions: Chaining and Open Addressing
 
-However good the [hash function](/courses/advanced-algorithms/hashing) is, two different keys will sometimes land in the **same slot**. That's a **collision**. There are two families of solutions:
+However good the [hash function](/courses/advanced-algorithms/hashing) is, two different keys will sometimes land in the **same slot**. With more possible keys than slots, the [pigeonhole principle](/courses/discrete-mathematics/pigeonhole-principle#collisions-in-a-hash-table) makes it certain, and the [birthday problem](/courses/discrete-mathematics/birthday-problem#the-square-root-rule) shows it starts after only about $\sqrt{m}$ keys. That's a **collision**. There are two families of solutions:
 
 - **Separate chaining** (also called *open hashing*): each slot holds a **list** of all the keys that hash there.
 - **Open addressing** (also called *closed hashing*): every key lives **in the table itself**. On a collision, you go looking for another free slot.

@@ -1,0 +1,104 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { QuantifierLab } from "@/components/mdx/DiscreteVisualizers";
+
+# Predicates and Quantifiers
+
+"Every user has a unique email." "Some order hasn't shipped." Neither sentence is about one particular user or order. They talk about *all* of them, or *at least one*. Propositions can't say that. Predicates and quantifiers can, and they're what database constraints, type systems and test assertions are written in.
+
+## Predicates
+
+A **predicate** is a statement with a variable in it, like $P(x)$: "$x$ is even." It isn't true or false by itself. Plug in a value and it becomes a [proposition](/courses/discrete-mathematics/propositions-and-connectives#propositions): $P(4)$ is true, $P(7)$ is false.
+
+In code, a predicate is a function that returns a boolean: `isEven = x => x % 2 === 0`. The set of values $x$ is allowed to take is the **domain**, sometimes called the universe of discourse. It matters a lot, as you'll see.
+
+## The universal quantifier
+
+$\forall x\, P(x)$, read "for all $x$, $P(x)$", is true when $P(x)$ holds for **every** $x$ in the domain. It's a giant $\land$: on the domain $\{1, 2, 3\}$ it means $P(1) \land P(2) \land P(3)$.
+
+To show it's **false**, you need one **counterexample**: a single $x$ where $P(x)$ fails. To show it's true, you have to cover every $x$, which for an infinite domain takes a [proof](/courses/discrete-mathematics/direct-and-indirect-proof).
+
+## The existential quantifier
+
+$\exists x\, P(x)$, read "there exists an $x$ such that $P(x)$", is true when $P(x)$ holds for **at least one** $x$. It's a giant $\lor$: $P(1) \lor P(2) \lor P(3)$.
+
+To show it's true, you need one **witness**. To show it's false, you have to rule out every $x$.
+
+In the lab below, the domain is $\{1, \dots, 12\}$. Green tiles make the predicate true, orange ones make it false, and the tile with a ring is the one that decides the answer: the counterexample for $\forall$, or the witness for $\exists$.
+
+<QuantifierLab />
+
+Try **∀** with **x > 12**: false, because 1 is a counterexample. Now **∃** with **x > 12**: also false, since there is no witness. Both answers would change if the domain were $\{1, \dots, 20\}$. A quantified statement means nothing until you know its domain.
+
+Python has both quantifiers built in, as `all()` and `any()`:
+
+```python
+domain = range(1, 13)
+print(all(x > 0 for x in domain))  # True
+print(all(x % 2 == 0 for x in domain))  # False
+print(any(x % 2 == 0 for x in domain))  # True
+print(any(x > 12 for x in domain))  # False
+
+# Over an empty domain, "for all" is vacuously true and "exists" is false
+print(all(x > 100 for x in []))  # True
+print(any(x > 100 for x in []))  # False
+```
+
+That last pair is the [vacuous truth](/courses/discrete-mathematics/propositions-and-connectives#implication-the-one-that-trips-everyone-up) from the first lesson again: with no elements, there's nothing to break a "for all."
+
+## Negating quantifiers
+
+What's the opposite of "every test passed"? Not "every test failed." It's "**some** test failed." Negation flips the quantifier and pushes the $\lnot$ inside:
+
+$$
+\lnot \forall x\, P(x) \;\equiv\; \exists x\, \lnot P(x)
+\qquad\qquad
+\lnot \exists x\, P(x) \;\equiv\; \forall x\, \lnot P(x)
+$$
+
+These are [De Morgan's laws](/courses/discrete-mathematics/equivalence-and-laws#de-morgans-laws) for quantifiers. Since $\forall$ is a big $\land$ and $\exists$ a big $\lor$, negating swaps one for the other. Tick **negate** in the lab to watch it happen.
+
+<Callout tone="orange" label="The negation of all is not none">
+"Not all students passed" does not mean "no student passed." It means at least one failed. When you negate a statement with "all" or "every," the result starts with "some" or "there is."
+</Callout>
+
+## Nested quantifiers
+
+Quantifiers can stack, and then **order matters**. Take the domain of people and $L(x, y)$: "$x$ loves $y$."
+
+- $\forall x\, \exists y\, L(x, y)$: everyone loves somebody. Each person can pick a different $y$.
+- $\exists y\, \forall x\, L(x, y)$: there is one person whom everybody loves.
+
+The second is much stronger. The difference shows up in real definitions. "For every request there is a server that can handle it" allows a different server per request. "There is a server that can handle every request" says one server does it all.
+
+To negate a nested statement, flip each quantifier from the outside in:
+
+$$
+\lnot\, \forall x\, \exists y\, L(x, y) \;\equiv\; \exists x\, \forall y\, \lnot L(x, y)
+$$
+
+"It's not true that everyone loves somebody" means "someone loves nobody."
+
+<Callout tone="sky" label="Where you'll see these next">
+The definition of [Big-O](/courses/algorithm-design-and-analysis/counting-steps) is a nested quantifier: $f \in O(g)$ means $\exists c\, \exists n_0\, \forall n \ge n_0:\ f(n) \le c\,g(n)$. Reading it left to right: there are constants such that, from some point on, $f$ never exceeds a fixed multiple of $g$.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="SQL" tool="EXISTS, NOT EXISTS, ALL">
+`WHERE EXISTS (SELECT …)` is $\exists$. "Customers with no unpaid invoice" is $\lnot\exists$, written `NOT EXISTS`, which is the same as "every invoice is paid."
+</PracticalApplication>
+<PracticalApplication title="Array methods" tool="JavaScript, Java streams">
+`arr.every(p)` and `arr.some(p)` in JavaScript, `allMatch` and `anyMatch` in Java streams. `[].every(p)` returns `true`, for the reason above.
+</PracticalApplication>
+<PracticalApplication title="Property-based testing" tool="Hypothesis, QuickCheck">
+You state a property "for all inputs," and the tool hunts for a counterexample. If it finds one, it shrinks it to the smallest failing input.
+</PracticalApplication>
+<PracticalApplication title="Type systems" tool="TypeScript generics">
+A generic function `<T>(x: T) => T` promises to work for all types $T$. That's a universal quantifier, and type checkers are built on logic of this kind.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Predicates, the two quantifiers, how to prove or refute each with a single element, and how negation flips them. The [quiz](/courses/discrete-mathematics/logic-quiz) checks this module before sets build on it.
+</Callout>

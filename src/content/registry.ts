@@ -172,6 +172,30 @@ const OsPaging = lesson(() => import("@/content/operating-systems/m5-02-paging.m
 const OsVirtualMemory = lesson(() => import("@/content/operating-systems/m5-03-virtual-memory.mdx"));
 const OsPageReplacement = lesson(() => import("@/content/operating-systems/m5-04-page-replacement-and-thrashing.mdx"));
 
+const DmPropositions = lesson(() => import("@/content/discrete-mathematics/m1-01-propositions-and-connectives.mdx"));
+const DmEquivalence = lesson(() => import("@/content/discrete-mathematics/m1-02-equivalence-and-laws.mdx"));
+const DmQuantifiers = lesson(() => import("@/content/discrete-mathematics/m1-03-predicates-and-quantifiers.mdx"));
+const DmLogicQuiz = lesson(() => import("@/content/discrete-mathematics/m1-04-logic-quiz.mdx"));
+const DmSets = lesson(() => import("@/content/discrete-mathematics/m2-01-sets.mdx"));
+const DmFunctions = lesson(() => import("@/content/discrete-mathematics/m2-02-functions.mdx"));
+const DmRelations = lesson(() => import("@/content/discrete-mathematics/m2-03-relations.mdx"));
+const DmSetsQuiz = lesson(() => import("@/content/discrete-mathematics/m2-04-sets-quiz.mdx"));
+const DmProof = lesson(() => import("@/content/discrete-mathematics/m3-01-direct-and-indirect-proof.mdx"));
+const DmInduction = lesson(() => import("@/content/discrete-mathematics/m3-02-induction.mdx"));
+const DmInvariants = lesson(() => import("@/content/discrete-mathematics/m3-03-loop-invariants.mdx"));
+const DmProofQuiz = lesson(() => import("@/content/discrete-mathematics/m3-04-proof-quiz.mdx"));
+const DmSumProduct = lesson(() => import("@/content/discrete-mathematics/m4-01-sum-and-product-rules.mdx"));
+const DmPermComb = lesson(() => import("@/content/discrete-mathematics/m4-02-permutations-and-combinations.mdx"));
+const DmPigeonhole = lesson(() => import("@/content/discrete-mathematics/m4-03-pigeonhole-principle.mdx"));
+const DmCountingQuiz = lesson(() => import("@/content/discrete-mathematics/m4-04-counting-quiz.mdx"));
+const DmGraphs = lesson(() => import("@/content/discrete-mathematics/m5-01-graphs.mdx"));
+const DmPathsDags = lesson(() => import("@/content/discrete-mathematics/m5-02-paths-and-dags.mdx"));
+const DmTrees = lesson(() => import("@/content/discrete-mathematics/m5-03-trees.mdx"));
+const DmGraphsQuiz = lesson(() => import("@/content/discrete-mathematics/m5-04-graphs-quiz.mdx"));
+const DmProbability = lesson(() => import("@/content/discrete-mathematics/m6-01-probability-and-expectation.mdx"));
+const DmBirthday = lesson(() => import("@/content/discrete-mathematics/m6-02-birthday-problem.mdx"));
+const DmFinalQuiz = lesson(() => import("@/content/discrete-mathematics/m6-03-final-quiz.mdx"));
+
 import { ahmedAlghali, asmaaFarouq, type Author } from "./authors";
 
 export type LessonKind = "theory" | "practical" | "quiz";
@@ -781,6 +805,78 @@ export const courses: Course[] = [
         lessons: [
           { slug: "stress-and-anxiety", title: "Stress & Anxiety", duration: "8 min", Component: ExamMindLesson03 },
           { slug: "exam-day", title: "Exam Day", duration: "7 min", Component: ExamMindLesson04 },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "discrete-mathematics",
+    title: "Discrete Mathematics",
+    tagline: "The maths under every algorithm, proof and data structure.",
+    description:
+      "Logic, sets, proof, counting, graphs and probability: the foundation the other courses lean on. Build truth tables, turn relations into equivalence classes, watch induction climb a staircase and binary search keep its invariant, then see the same ideas run package managers, hash tables and password crackers.",
+    accent: "sky",
+    status: "available",
+    number: "13",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "Logic",
+        blurb: "Propositions, connectives and quantifiers: the language every condition, query and specification is written in.",
+        lessons: [
+          { slug: "propositions-and-connectives", title: "Propositions and Connectives", duration: "14 min", Component: DmPropositions },
+          { slug: "equivalence-and-laws", title: "Logical Equivalence and the Laws of Logic", duration: "15 min", Component: DmEquivalence },
+          { slug: "predicates-and-quantifiers", title: "Predicates and Quantifiers", duration: "14 min", Component: DmQuantifiers },
+          { slug: "logic-quiz", title: "Quiz: Logic", duration: "8 min", kind: "quiz", Component: DmLogicQuiz },
+        ],
+      },
+      {
+        title: "Sets, Functions and Relations",
+        blurb: "The objects every other definition is built from, and the properties that let you group and order them.",
+        lessons: [
+          { slug: "sets", title: "Sets and Set Operations", duration: "15 min", Component: DmSets },
+          { slug: "functions", title: "Functions: Injective, Surjective, Bijective", duration: "14 min", Component: DmFunctions },
+          { slug: "relations", title: "Relations, Equivalence and Order", duration: "16 min", Component: DmRelations },
+          { slug: "sets-quiz", title: "Quiz: Sets, Functions and Relations", duration: "8 min", kind: "quiz", Component: DmSetsQuiz },
+        ],
+      },
+      {
+        title: "Proof",
+        blurb: "How to show a claim holds for every case: direct proof, contradiction, induction and loop invariants.",
+        lessons: [
+          { slug: "direct-and-indirect-proof", title: "Direct Proof, Contrapositive and Contradiction", duration: "16 min", Component: DmProof },
+          { slug: "induction", title: "Mathematical Induction", duration: "16 min", Component: DmInduction },
+          { slug: "loop-invariants", title: "Loop Invariants: Proving Code Correct", duration: "14 min", Component: DmInvariants },
+          { slug: "proof-quiz", title: "Quiz: Proof", duration: "7 min", kind: "quiz", Component: DmProofQuiz },
+        ],
+      },
+      {
+        title: "Counting",
+        blurb: "Counting without listing: products, permutations, combinations and the pigeonhole principle.",
+        lessons: [
+          { slug: "sum-and-product-rules", title: "The Sum and Product Rules", duration: "12 min", Component: DmSumProduct },
+          { slug: "permutations-and-combinations", title: "Permutations and Combinations", duration: "15 min", Component: DmPermComb },
+          { slug: "pigeonhole-principle", title: "The Pigeonhole Principle", duration: "13 min", Component: DmPigeonhole },
+          { slug: "counting-quiz", title: "Quiz: Counting", duration: "8 min", kind: "quiz", Component: DmCountingQuiz },
+        ],
+      },
+      {
+        title: "Graphs and Trees",
+        blurb: "Vertices and edges, dependency graphs and topological sort, and why balanced trees are only log n deep.",
+        lessons: [
+          { slug: "graphs", title: "Graphs: Vocabulary and Representations", duration: "15 min", Component: DmGraphs },
+          { slug: "paths-and-dags", title: "Paths, Cycles and DAGs", duration: "15 min", Component: DmPathsDags },
+          { slug: "trees", title: "Trees", duration: "15 min", Component: DmTrees },
+          { slug: "graphs-quiz", title: "Quiz: Graphs and Trees", duration: "8 min", kind: "quiz", Component: DmGraphsQuiz },
+        ],
+      },
+      {
+        title: "Discrete Probability",
+        blurb: "Probability as counting, expectation, and the birthday problem behind every hash collision.",
+        lessons: [
+          { slug: "probability-and-expectation", title: "Probability and Expectation", duration: "16 min", Component: DmProbability },
+          { slug: "birthday-problem", title: "The Birthday Problem and Hash Collisions", duration: "13 min", Component: DmBirthday },
+          { slug: "final-quiz", title: "Quiz: Probability and the Whole Course", duration: "10 min", kind: "quiz", Component: DmFinalQuiz },
         ],
       },
     ],

@@ -1,0 +1,105 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { TruthTableLab } from "@/components/mdx/DiscreteVisualizers";
+
+# Propositions and Connectives
+
+Every `if` statement you've written is a small piece of logic. `if (user.isAdmin || post.authorId === user.id)` decides who may edit a post, and if that condition is wrong, the wrong people can. Logic is the study of conditions like that one: how to build them, how to evaluate them and how to tell when two of them mean the same thing.
+
+## Propositions
+
+A **proposition** is a statement that is either true or false, never both and never neither.
+
+- "7 is prime." True.
+- "Paris is in Spain." False, but still a proposition.
+- "x > 3." Not a proposition yet. Its truth depends on $x$, which the [lesson on quantifiers](/courses/discrete-mathematics/predicates-and-quantifiers) deals with.
+- "Close the door." Not a proposition. A command is neither true nor false.
+
+We name propositions with letters, usually $p$, $q$ and $r$, the way code names a boolean with a variable. Then we combine them with **connectives**, the operators of logic.
+
+## The five connectives
+
+| Name | Symbol | Read as | In code | True when |
+|---|---|---|---|---|
+| Negation | $\lnot p$ | not $p$ | `!p` | $p$ is false |
+| Conjunction | $p \land q$ | $p$ and $q$ | `p && q` | both are true |
+| Disjunction | $p \lor q$ | $p$ or $q$ | `p \|\| q` | at least one is true |
+| Implication | $p \to q$ | if $p$ then $q$ | `!p \|\| q` | $p$ is false, or $q$ is true |
+| Biconditional | $p \leftrightarrow q$ | $p$ if and only if $q$ | `p === q` | they have the same value |
+
+These are the same operations as the NOT, AND and OR [logic gates](/courses/logic-design/logic-gates) in hardware. A gate is a connective built out of transistors, and $1$ and $0$ play the parts of true and false.
+
+<Callout tone="orange" label="Or means at least one">
+In everyday English, "tea or coffee?" usually means one but not both. In logic, $p \lor q$ is also true when both are true. The "one but not both" version has its own name, **exclusive or** (XOR), written $p \oplus q$.
+</Callout>
+
+## Truth tables
+
+A **truth table** lists every combination of values for the variables and the value of the formula on each one. With $n$ variables there are $2^n$ rows, because each variable doubles the number of cases.
+
+Type a formula below, or pick one of the examples. The columns build the formula up piece by piece, the way you'd evaluate it by hand, and the last column, marked with a bar, is the whole thing.
+
+<TruthTableLab />
+
+## Implication, the one that trips everyone up
+
+$p \to q$ makes a promise: *whenever $p$ is true, $q$ is true too.* It is false in exactly one case, when $p$ is true and $q$ is false, because that's the only case where the promise is broken.
+
+| $p$ | $q$ | $p \to q$ |
+|---|---|---|
+| T | T | T |
+| T | F | F |
+| F | T | T |
+| F | F | T |
+
+The last two rows are the ones people argue with. Take the promise "if it rains, I'll bring an umbrella." On a dry day you might bring one or not. Either way you haven't broken your word, so the statement counts as true. An implication with a false $p$ is called **vacuously true**.
+
+You rely on this all the time without noticing. A test that says "every item in the list is positive" passes on an empty list, because there is no item that could break the promise.
+
+In $p \to q$, $p$ is the **hypothesis** and $q$ the **conclusion**. Three related statements come up so often they have names:
+
+- The **converse** is $q \to p$.
+- The **inverse** is $\lnot p \to \lnot q$.
+- The **contrapositive** is $\lnot q \to \lnot p$.
+
+Only the contrapositive always means the same as the original. "If it's a square, it has four sides" is true; its converse "if it has four sides, it's a square" is false (think of a rectangle). The [next lesson](/courses/discrete-mathematics/equivalence-and-laws#the-contrapositive) proves this with a truth table.
+
+<Callout tone="sky" label="Necessary and sufficient">
+$p \to q$ is also read "$p$ is **sufficient** for $q$" and "$q$ is **necessary** for $p$." Having a valid ticket is necessary to board a plane, but not sufficient: you also need ID. $p \leftrightarrow q$ says each is both necessary and sufficient for the other.
+</Callout>
+
+## Precedence
+
+Like $\times$ before $+$ in arithmetic, connectives have an order: $\lnot$ binds tightest, then $\land$, then $\lor$, then $\to$, then $\leftrightarrow$. So
+
+$$
+\lnot p \land q \lor r \;\text{ means }\; ((\lnot p) \land q) \lor r.
+$$
+
+Implication groups to the right: $p \to q \to r$ means $p \to (q \to r)$. Most programming languages follow the same order for `!`, `&&` and `||`. When in doubt, add brackets. The reader of your code will thank you.
+
+## Tautologies and contradictions
+
+A formula that is true on every row is a **tautology**. $p \lor \lnot p$ is the simplest: whatever $p$ is, one side holds. A formula false on every row is a **contradiction**, like $p \land \lnot p$. Everything else is a **contingency**: its value depends on the inputs.
+
+Try $(p \to q) \land p \to q$ in the table above. It's a tautology called *modus ponens*: if $p$ implies $q$, and $p$ is true, then $q$ is true. Every proof you'll read uses this step.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Feature flags and permissions" tool="Access control">
+Rules such as "admins, or authors of the post who are not banned" are formulas: $a \lor (u \land \lnot b)$. Writing the truth table is the fastest way to find the case you forgot.
+</PracticalApplication>
+<PracticalApplication title="SAT solvers" tool="Package managers, chip verification">
+A SAT solver searches for values that make a big formula true. Package managers such as Conda and pip's resolver, and the tools that check chip designs, turn their problem into a formula with thousands of variables and hand it to one.
+</PracticalApplication>
+<PracticalApplication title="Short-circuit evaluation" tool="Every language">
+`p && q` skips $q$ when $p$ is false, because the answer is already known. That's why `user && user.name` doesn't crash on a missing user.
+</PracticalApplication>
+<PracticalApplication title="Search filters" tool="Gmail, SQL">
+`from:alice -label:read` and `WHERE paid AND NOT refunded` are conjunctions and negations over each message or row.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Five connectives, the truth table that defines each, and the one rule about implication that most people get wrong. The [next lesson](/courses/discrete-mathematics/equivalence-and-laws) uses them to rewrite formulas without changing what they mean.
+</Callout>

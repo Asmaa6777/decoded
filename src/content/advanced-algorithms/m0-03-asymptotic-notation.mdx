@@ -12,15 +12,15 @@ If these ideas are new to you, [Counting Steps](/courses/algorithm-design-and-an
 
 You'll meet five tools again and again:
 
-- **Sets.** A set is a collection of distinguishable members, or elements. $\Theta(n^2)$, for example, is a *set* of functions.
+- **Sets.** A [set](/courses/discrete-mathematics/sets#what-a-set-is) is a collection of distinguishable members, or elements. $\Theta(n^2)$, for example, is a *set* of functions.
 - **Logarithms.** $\log_b n = x$ means $b^x = n$. In this course, $\lg n$ means $\log_2 n$: how many times you can halve $n$ before reaching 1.
-- **Summations.** Above all the arithmetic series $1 + 2 + \dots + n = \frac{n(n+1)}{2}$ and the geometric series $1 + r + r^2 + \dots$
+- **Summations.** Above all the [arithmetic series](/courses/discrete-mathematics/induction#a-first-proof) $1 + 2 + \dots + n = \frac{n(n+1)}{2}$ and the geometric series $1 + r + r^2 + \dots$
 - **Recursion.** An algorithm is recursive if it calls itself to do part of its work. Classic examples are computing $n!$ and the Towers of Hanoi puzzle.
 - **Mathematical proof.** There are three templates, shown below.
 
 ### Proof by induction
 
-A proof by induction has two parts:
+A proof by [induction](/courses/discrete-mathematics/induction#the-domino-idea) has two parts:
 
 1. **Base case.** Show the statement is true for a small value.
 2. **Inductive step.** *Assume* it's true for all cases up to some $k$ (the **inductive hypothesis**). Using that assumption, show it's true for $k + 1$.
@@ -47,7 +47,7 @@ To show a claim is **false**, one example where it fails is enough. Claim: $F_k 
 
 ### Proof by contradiction
 
-Assume the theorem is false, then show that leads to something impossible.
+Assume the theorem is false, then show that leads to something impossible, a [contradiction](/courses/discrete-mathematics/direct-and-indirect-proof#proof-by-contradiction).
 
 **Theorem:** there is no largest integer.
 

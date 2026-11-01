@@ -1,0 +1,126 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { VennLab } from "@/components/mdx/DiscreteVisualizers";
+
+# Sets and Set Operations
+
+A database table, the tags on a blog post, the states a machine can be in, the keys of a dictionary: each one is a collection where order doesn't matter and nothing appears twice. That's a set. Almost every definition in computer science is built from sets, so this lesson sets out the vocabulary you'll read in all the others.
+
+## What a set is
+
+A **set** is an unordered collection of distinct objects, called its **elements**. We write $x \in A$ for "$x$ is an element of $A$" and $x \notin A$ for "it isn't."
+
+- $\{1, 2, 3\} = \{3, 1, 2\}$. Order doesn't matter.
+- $\{1, 1, 2\} = \{1, 2\}$. Repeats don't count.
+- $\{\}$, also written $\varnothing$, is the **empty set**. It has no elements.
+
+The number of elements is the **cardinality**, written $|A|$. So $|\{a, b, c\}| = 3$ and $|\varnothing| = 0$.
+
+There are two ways to describe a set. **Roster notation** lists the elements: $\{2, 4, 6, 8\}$. **Set-builder notation** gives a [predicate](/courses/discrete-mathematics/predicates-and-quantifiers#predicates) that elements must satisfy:
+
+$$
+\{\, x \in \mathbb{Z} \mid x > 0 \text{ and } x \text{ is even} \,\}
+$$
+
+reads "the set of integers $x$ such that $x$ is positive and even." Python's set comprehension is the same notation in code: `{x for x in range(1, 9) if x % 2 == 0}`.
+
+The standard number sets have their own letters: $\mathbb{N}$ for the natural numbers $\{0, 1, 2, \dots\}$, $\mathbb{Z}$ for the integers, $\mathbb{Q}$ for the rationals and $\mathbb{R}$ for the reals. (Some books start $\mathbb{N}$ at 1; check which one a text uses.)
+
+<Callout tone="orange" label="∅ is not {∅}">
+$\varnothing$ is an empty box. $\{\varnothing\}$ is a box with an empty box inside, so it has one element. The same trap appears in [Theory of Computation](/courses/theory-of-computation/language-of-languages), where the empty string $\varepsilon$ is not the empty set: $\{\varepsilon\}$ is a language with one string in it.
+</Callout>
+
+## Subsets
+
+$A$ is a **subset** of $B$, written $A \subseteq B$, when every element of $A$ is also in $B$:
+
+$$
+A \subseteq B \;\iff\; \forall x\,(x \in A \to x \in B)
+$$
+
+If also $A \ne B$, it's a **proper subset**, $A \subset B$. Two facts follow straight from the definition:
+
+- Every set is a subset of itself.
+- $\varnothing$ is a subset of every set. The implication $x \in \varnothing \to x \in B$ is [vacuously true](/courses/discrete-mathematics/propositions-and-connectives#implication-the-one-that-trips-everyone-up), because nothing is in $\varnothing$.
+
+Two sets are equal when each is a subset of the other. That's how you prove two sets equal: show every element of the first is in the second, then the reverse.
+
+## Set operations
+
+Take a **universe** $U$ containing everything under discussion, and sets $A$ and $B$ inside it.
+
+| Operation | Notation | Elements | Python |
+|---|---|---|---|
+| Union | $A \cup B$ | in $A$ or $B$ (or both) | `A \| B` |
+| Intersection | $A \cap B$ | in both | `A & B` |
+| Difference | $A - B$ | in $A$ but not $B$ | `A - B` |
+| Symmetric difference | $A \,\Delta\, B$ | in exactly one | `A ^ B` |
+| Complement | $\overline{A}$ or $A'$ | in $U$ but not $A$ | `U - A` |
+
+Two sets with nothing in common, $A \cap B = \varnothing$, are **disjoint**.
+
+## Sets are logic
+
+Look at the "Elements" column again: *or*, *and*, *but not*, *exactly one*. Each set operation is a [connective](/courses/discrete-mathematics/propositions-and-connectives#the-five-connectives) applied to membership:
+
+$$
+x \in A \cup B \iff (x \in A) \lor (x \in B) \qquad
+x \in A \cap B \iff (x \in A) \land (x \in B) \qquad
+x \in \overline{A} \iff \lnot (x \in A)
+$$
+
+So every law of logic gives you a law of sets for free. De Morgan becomes $\overline{A \cup B} = \overline{A} \cap \overline{B}$, and distributivity becomes $A \cap (B \cup C) = (A \cap B) \cup (A \cap C)$.
+
+The Venn diagram below shades the region an expression describes, and translates it into logic underneath. Try `(A ∪ B)'` and then `A' ∩ B'`: same region, which is De Morgan's law. Then try the two distributive presets.
+
+<VennLab />
+
+## Power sets
+
+The **power set** $\mathcal{P}(A)$ is the set of all subsets of $A$:
+
+$$
+\mathcal{P}(\{a, b, c\}) = \{\varnothing, \{a\}, \{b\}, \{c\}, \{a,b\}, \{a,c\}, \{b,c\}, \{a,b,c\}\}
+$$
+
+A set with $n$ elements has $2^n$ subsets. To build one, go through the elements and decide for each one "in or out": two choices, $n$ times. That's the same doubling as the rows of a truth table, and the same as the $2^n$ values of an $n$-bit number, where each bit says whether an element is in. Bitmask code uses exactly this: `0b101` is the subset $\{a, c\}$.
+
+## Cartesian products
+
+The **Cartesian product** $A \times B$ is the set of all ordered pairs $(a, b)$ with $a \in A$ and $b \in B$:
+
+$$
+\{1, 2\} \times \{x, y, z\} = \{(1,x), (1,y), (1,z), (2,x), (2,y), (2,z)\}
+$$
+
+Unlike a set, a pair is ordered: $(1, x) \ne (x, 1)$. And $|A \times B| = |A| \cdot |B|$. A database table is a subset of a Cartesian product: each row is one tuple from $\text{IDs} \times \text{Names} \times \text{Emails}$, and a SQL `CROSS JOIN` builds the whole product.
+
+## Counting a union
+
+How many elements are in $A \cup B$? Adding $|A| + |B|$ counts the overlap twice, so subtract it once:
+
+$$
+|A \cup B| = |A| + |B| - |A \cap B|
+$$
+
+This is the **inclusion–exclusion principle**. Suppose 120 users enabled email alerts, 80 enabled push alerts and 30 enabled both. Then $120 + 80 - 30 = 170$ users have at least one alert turned on.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="SQL" tool="UNION, INTERSECT, EXCEPT">
+SQL's set operators are these operations on result rows. `UNION` removes duplicates, because the result is a set; `UNION ALL` keeps them, because it isn't.
+</PracticalApplication>
+<PracticalApplication title="Permissions" tool="Unix, IAM policies">
+A user's effective permissions are often the union of their groups' permissions, minus anything explicitly denied: $(G_1 \cup G_2) - D$.
+</PracticalApplication>
+<PracticalApplication title="Bitsets and Bloom filters" tool="Redis, databases">
+Storing a subset of $\{0, \dots, n-1\}$ as $n$ bits makes union an OR and intersection an AND over whole machine words. Redis bitmaps and the Bloom filters inside databases work this way.
+</PracticalApplication>
+<PracticalApplication title="Formal languages" tool="Regex, parsers">
+An alphabet is a set, a language is a set of strings, and the union of two regular languages is what `|` means in a regex.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+The words and symbols every later definition uses: elements, subsets, the five operations, power sets and products. Next, sets get connected to each other by [functions](/courses/discrete-mathematics/functions).
+</Callout>

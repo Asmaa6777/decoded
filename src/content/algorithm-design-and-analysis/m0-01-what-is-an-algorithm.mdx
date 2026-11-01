@@ -25,7 +25,7 @@ We also want it to be *efficient* (it doesn't waste time or memory) and *underst
 
 An algorithm is **correct** if, for *every* valid input, it stops and gives the right output.
 
-That means every input, not just the three examples you tried. A sorting algorithm that works on 99.9% of arrays and silently scrambles the rest is wrong. This is why algorithm courses spend time on traces and proofs: testing can show that a bug exists, but only reasoning can show that one doesn't.
+That means every input, not just the three examples you tried. A sorting algorithm that works on 99.9% of arrays and silently scrambles the rest is wrong. This is why algorithm courses spend time on traces and proofs: testing can show that a bug exists, but only reasoning can show that one doesn't. For loops, that reasoning is a [loop invariant](/courses/discrete-mathematics/loop-invariants#what-a-loop-invariant-is).
 
 <Callout tone="orange" label="Why this matters at work">
 Most production incidents aren't caused by a slow algorithm. They come from an algorithm that was wrong on an input nobody thought about: an empty list, a duplicate, a negative number, a value right at the edge. Asking "does this work for *every* input?" catches those before users do.

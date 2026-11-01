@@ -1,0 +1,118 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { PascalExplorer } from "@/components/mdx/DiscreteVisualizers";
+
+# Permutations and Combinations
+
+A podium has a gold, a silver and a bronze. A committee just has three members. Picking 3 of 10 runners for each gives very different counts, 720 versus 120, and the only difference is whether order matters. That one question, *does order matter?*, decides which formula you need.
+
+## Permutations
+
+A **permutation** is an arrangement where order matters. How many ways can you arrange $n$ different items in a row? There are $n$ choices for the first position, $n - 1$ for the second, and so on down to 1. By the [product rule](/courses/discrete-mathematics/sum-and-product-rules#the-product-rule):
+
+$$
+n! = n \cdot (n-1) \cdots 2 \cdot 1
+$$
+
+read "$n$ factorial." By convention $0! = 1$: there's exactly one way to arrange nothing.
+
+If you only fill $k$ of the positions, stop after $k$ factors. The number of **$k$-permutations** of $n$ items is
+
+$$
+P(n, k) = n \cdot (n-1) \cdots (n-k+1) = \frac{n!}{(n-k)!}.
+$$
+
+The podium: $P(10, 3) = 10 \cdot 9 \cdot 8 = 720$.
+
+<Callout tone="orange" label="Factorials outgrow everything">
+$10! = 3{,}628{,}800$. $20! \approx 2.4 \times 10^{18}$. $52!$, the number of orders of a deck of cards, has 68 digits. Any algorithm that tries every ordering, such as brute-force route planning for a delivery van, already takes hours at 15 stops ($15! \approx 1.3 \times 10^{12}$ routes) and is hopeless at 25. This is why the travelling salesman problem sits among the [hard problems](/courses/advanced-algorithms/p-and-np#the-traveling-salesman-problem-tsp).
+</Callout>
+
+## Combinations
+
+A **combination** is a selection where order doesn't matter. Start from the 720 podiums. Each committee of 3 runners shows up as $3! = 6$ different podiums, one for each way to hand out the medals. So there are $720 / 6 = 120$ committees.
+
+In general, the number of ways to choose $k$ items from $n$ is
+
+$$
+\binom{n}{k} = \frac{P(n, k)}{k!} = \frac{n!}{k!\,(n-k)!}
+$$
+
+read "$n$ choose $k$" and also written $C(n, k)$. A 6-from-49 lottery has $\binom{49}{6} = 13{,}983{,}816$ possible tickets, and a five-card poker hand from a 52-card deck has $\binom{52}{5} = 2{,}598{,}960$ possibilities.
+
+Two facts help you check your work:
+
+- $\binom{n}{k} = \binom{n}{n-k}$. Choosing who's *in* is the same as choosing who's *out*.
+- $\binom{n}{0} + \binom{n}{1} + \cdots + \binom{n}{n} = 2^n$. Adding up subsets of every size gives all subsets, the size of the [power set](/courses/discrete-mathematics/sets#power-sets).
+
+Python has both built in, and `itertools` lists them:
+
+```python
+from math import comb, perm, factorial
+from itertools import combinations, permutations
+
+print(perm(10, 3))  # 720
+print(comb(10, 3))  # 120
+print(factorial(10))  # 3628800
+print(comb(49, 6))  # 13983816
+
+print(list(combinations("abcd", 2)))  # [('a', 'b'), ('a', 'c'), ('a', 'd'), ('b', 'c'), ('b', 'd'), ('c', 'd')]
+print(len(list(permutations("abcd", 2))))  # 12
+```
+
+## Pascal's triangle
+
+Lay out $\binom{n}{k}$ with row $n$ going down and $k$ going across, and every entry is the sum of the two above it:
+
+$$
+\binom{n}{k} = \binom{n-1}{k-1} + \binom{n-1}{k}.
+$$
+
+Here's why. Fix one particular item, say the last one. Every $k$-subset either contains it, and then the other $k - 1$ come from the remaining $n - 1$, or it doesn't, and then all $k$ come from the remaining $n - 1$. Those two groups don't overlap, so the [sum rule](/courses/discrete-mathematics/sum-and-product-rules#the-sum-rule) adds them.
+
+Click any entry below. Its two parents light up, and for small rows you'll see the actual subsets split into the two groups.
+
+<PascalExplorer />
+
+This identity is also an algorithm. Computing $\binom{n}{k}$ from factorials overflows fast; building the triangle row by row uses only additions of numbers no bigger than the answer. It's one of the simplest examples of [dynamic programming](/courses/algorithm-design-and-analysis/dynamic-programming).
+
+## The binomial theorem
+
+Why "binomial" coefficients? Expand $(x + y)^n$ and each term picks $x$ or $y$ from each of the $n$ brackets. The number of ways to pick $y$ from exactly $k$ of them is $\binom{n}{k}$, so
+
+$$
+(x + y)^n = \sum_{k=0}^{n} \binom{n}{k} x^{n-k} y^{k}.
+$$
+
+Row 4 of the triangle is $1, 4, 6, 4, 1$, and indeed $(x + y)^4 = x^4 + 4x^3y + 6x^2y^2 + 4xy^3 + y^4$. Put $x = y = 1$ and you get the fact from earlier: row $n$ adds up to $2^n$.
+
+## Choosing the formula
+
+| Does order matter? | Can items repeat? | Count | Example |
+|---|---|---|---|
+| Yes | Yes | $n^k$ | 4-digit PINs: $10^4$ |
+| Yes | No | $P(n, k) = \frac{n!}{(n-k)!}$ | Gold, silver, bronze from 10: 720 |
+| No | No | $\binom{n}{k}$ | 3-person committee from 10: 120 |
+| No | Yes | $\binom{n+k-1}{k}$ | 3 scoops from 10 flavours, repeats allowed: 220 |
+
+The last row is called "stars and bars." It turns up less often, but when it does nothing else works.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Grid paths" tool="Robots, interview problems">
+A route from one corner of an $m \times n$ grid to the other, moving only right or down, is a choice of which $m$ of the $m + n$ moves go down: $\binom{m+n}{m}$ routes.
+</PracticalApplication>
+<PracticalApplication title="Feature combinations" tool="ML, A/B testing">
+With 20 features there are $\binom{20}{2} = 190$ pairs to test for interactions. Counting first tells you whether "try them all" is feasible.
+</PracticalApplication>
+<PracticalApplication title="Error-correcting codes" tool="Storage, QR codes">
+The number of ways $k$ bits out of $n$ can be flipped is $\binom{n}{k}$. Code designers use it to work out how many errors a code can catch.
+</PracticalApplication>
+<PracticalApplication title="Probability" tool="Card games, simulations">
+The chance of a particular hand is (ways to get it) divided by $\binom{52}{5}$. The [probability lesson](/courses/discrete-mathematics/probability-and-expectation) builds on exactly this.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Factorials, permutations and combinations, the question that picks between them, and Pascal's rule as both a proof and an algorithm.
+</Callout>

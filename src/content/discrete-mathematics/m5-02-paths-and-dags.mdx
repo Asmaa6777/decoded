@@ -1,0 +1,91 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { TopoSortLab } from "@/components/mdx/DiscreteVisualizers";
+
+# Paths, Cycles and DAGs
+
+When you run `npm install`, `make` or a CI pipeline, something has to decide what happens first. Libraries must be built before the code that uses them, and if two packages each require the other, there's no valid order at all. Behind every build tool is a question about paths and cycles in a directed graph, and one algorithm that answers it.
+
+## Connected components
+
+In an undirected graph, say two vertices are linked if there's a path between them. That's an [equivalence relation](/courses/discrete-mathematics/relations#equivalence-relations): every vertex reaches itself, paths can be reversed, and paths can be joined end to end. Its equivalence classes are the **connected components**: the separate islands of the graph.
+
+A single [BFS or DFS](/courses/algorithm-design-and-analysis/bfs-and-dfs) from one vertex finds its whole component. Start a new search from any vertex not yet visited and you find the next one. Counting components this way takes $O(n + m)$ time, and it's how image tools find separate shapes in a picture and how networks find which machines can still reach each other after a link fails.
+
+## Euler paths: every edge once
+
+Can you draw a figure without lifting your pen or tracing a line twice? That asks for an **Euler path**: a path that uses every edge exactly once. If it ends where it started, it's an **Euler circuit**.
+
+The answer depends only on degrees. For a connected graph:
+
+- An Euler circuit exists **if and only if** every vertex has even degree.
+- An Euler path exists **if and only if** exactly 0 or 2 vertices have odd degree. With 2, the path must start at one of them and end at the other.
+
+Why even degrees? Every time the path passes *through* a vertex, it uses one edge in and one edge out: two at a time. Only the start and end of a path can use an odd number. (The handshake lemma already told you the number of odd vertices is [always even](/courses/discrete-mathematics/graphs#the-handshake-lemma), so "exactly one" can never happen.)
+
+This is a rare kind of question: it sounds like a search through every possible route, but a simple count settles it.
+
+<Callout tone="orange" label="Every vertex once is a different problem">
+A **Hamiltonian path** visits every *vertex* once, not every edge. It sounds like a twin of the Euler path, but no fast test for it is known. Deciding whether one exists is NP-complete, in the same family as the [travelling salesman problem](/courses/advanced-algorithms/p-and-np#the-traveling-salesman-problem-tsp). One word changed and the problem went from easy to (probably) hard.
+</Callout>
+
+## Directed acyclic graphs
+
+A **directed acyclic graph**, or **DAG**, is a directed graph with no directed cycle: follow the arrows from anywhere and you can never get back to where you started.
+
+DAGs are what dependencies look like. Draw an arrow from each task to the tasks that need it first done, and as long as nothing depends (directly or indirectly) on itself, the graph is a DAG. Other DAGs you've used:
+
+- the commit history of a Git repository, where each commit points to its parents,
+- a spreadsheet, where each cell's formula depends on other cells,
+- the layers of a neural network, where data flows forward only.
+
+A DAG describes a [partial order](/courses/discrete-mathematics/relations#partial-orders): $u$ comes before $v$ when there's a path from $u$ to $v$. Some pairs, like two independent libraries, are left unordered.
+
+## Topological sort
+
+A **topological sort** lists the vertices of a DAG in an order where every arrow points forward: each vertex comes after everything it depends on. It turns a partial order into a sequence you can actually execute.
+
+**Kahn's algorithm** does it by repeatedly taking a vertex that has nothing left to wait for:
+
+1. Count each vertex's **in-degree**, the arrows coming in.
+2. Every vertex with in-degree 0 is ready.
+3. Take a ready vertex, append it to the order, and delete its outgoing arrows. Any vertex whose in-degree drops to 0 becomes ready.
+4. Repeat until nothing is ready.
+
+If every vertex made it into the order, you're done. If some are left over, each of them is still waiting on another leftover vertex. Walk backwards from any of them, from each vertex to one it waits on: there are only finitely many leftovers, so by the [pigeonhole principle](/courses/discrete-mathematics/pigeonhole-principle) the walk must repeat a vertex. That repeat is a cycle, and no valid order exists. (Not every leftover is on the cycle; some just depend on it.)
+
+Step through it on a small project below. The small number by each module is its current in-degree. Then switch to **Add api → net**, which makes `net` depend on `api` while `api` already depends on `net` through `db`.
+
+<TopoSortLab />
+
+Each vertex and each arrow is handled once, so Kahn's algorithm runs in $O(n + m)$. A DAG often has many valid orders: here `parser` and `net` can go either way round. Build tools use that freedom to run independent steps in parallel.
+
+## Detecting cycles
+
+Kahn's algorithm is also a cycle detector: a directed graph has a cycle exactly when the algorithm gets stuck before ordering everything. That's what's behind the error messages
+
+- `npm`/`pip`: circular dependency detected,
+- Excel: "There are one or more circular references,"
+- Terraform: `Error: Cycle: …`,
+
+and the same check is how an operating system can detect deadlock: processes waiting on resources held by other processes form a directed graph, and a cycle in it means none of them can ever proceed.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Build systems" tool="make, Bazel, Gradle">
+Targets and their prerequisites form a DAG. The tool topologically sorts it, then builds anything whose inputs are ready, in parallel.
+</PracticalApplication>
+<PracticalApplication title="Package managers" tool="npm, pip, apt">
+Install order is a topological sort of the dependency graph, and a cycle is reported as an error.
+</PracticalApplication>
+<PracticalApplication title="Data pipelines" tool="Airflow, dbt">
+Airflow calls its workflows DAGs outright. dbt sorts SQL models by the tables they read from.
+</PracticalApplication>
+<PracticalApplication title="Spreadsheets and ML" tool="Excel, PyTorch">
+A spreadsheet recalculates cells in topological order. Autograd in PyTorch walks the computation DAG backwards to compute gradients.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Components as equivalence classes, the degree test for Euler paths, DAGs as dependency graphs, and Kahn's algorithm for ordering them or finding the cycle that makes ordering impossible.
+</Callout>

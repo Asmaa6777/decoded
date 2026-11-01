@@ -30,6 +30,8 @@ export const tools: Tool[] = [
       { course: "advanced-algorithms", lesson: "hashing", mentions: "hash" },
       { course: "advanced-algorithms", lesson: "collision-resolution", mentions: "hash" },
       { course: "advanced-algorithms", lesson: "lab-hashing", mentions: "hash" },
+      { course: "discrete-mathematics", lesson: "pigeonhole-principle", mentions: "hash table" },
+      { course: "discrete-mathematics", lesson: "birthday-problem", mentions: "hash table" },
     ],
   },
   {
@@ -48,7 +50,26 @@ export const tools: Tool[] = [
   {
     name: "File compression",
     what: "How zip-style formats make common data take fewer bits.",
-    lessons: [{ course: "advanced-algorithms", lesson: "huffman-and-activity-selection", mentions: "Huffman" }],
+    lessons: [
+      { course: "advanced-algorithms", lesson: "huffman-and-activity-selection", mentions: "Huffman" },
+      { course: "discrete-mathematics", lesson: "pigeonhole-principle", mentions: "gzip" },
+    ],
+  },
+  {
+    name: "Package managers and build tools",
+    what: "How npm, make and Airflow decide what runs first, and why they reject circular dependencies.",
+    lessons: [
+      { course: "discrete-mathematics", lesson: "relations", mentions: "partial order" },
+      { course: "discrete-mathematics", lesson: "paths-and-dags", mentions: "npm" },
+    ],
+  },
+  {
+    name: "Passwords and hashes",
+    what: "Why length beats complexity, and how many bits a hash or random ID really needs.",
+    lessons: [
+      { course: "discrete-mathematics", lesson: "sum-and-product-rules", mentions: "password" },
+      { course: "discrete-mathematics", lesson: "birthday-problem", mentions: "SHA-256" },
+    ],
   },
   {
     name: "Encryption",
