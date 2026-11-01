@@ -17,9 +17,9 @@ G = (V,\ T,\ P,\ S)
 $$
 
 - $V$ is a finite set of **variables** (also called non-terminals). We write them as uppercase letters: $S$, $A$, $B$.
-- $T$ is the set of **terminals**, the symbols that end up in the finished string. It's the alphabet $\Sigma$ from the last lesson, written in lowercase: $a$, $b$, $0$, $1$.
+- $T$ is the set of **terminals**, the symbols that end up in the finished string. It's the [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) $\Sigma$ from the last lesson, written in lowercase: $a$, $b$, $0$, $1$.
 - $P$ is a finite set of **productions** (rules) of the form $\alpha \rightarrow \beta$, read "$\alpha$ can be rewritten as $\beta$".
-- $S \in V$ is the **start variable**.
+- $S \in V$ is the **start variable**, the symbol every derivation begins from.
 
 Some textbooks write the same thing as $(N, \Sigma, P, S)$, with $N$ for non-terminals. The parts are identical; only the letters change.
 
@@ -47,7 +47,7 @@ $$
 L(G) = \{w \in T^* \mid S \Rightarrow^* w\}
 $$
 
-For $S \rightarrow aS \mid b$, every string is some number of $a$'s followed by one $b$, so $L(G) = \{b,\ ab,\ aab,\ aaab,\ \ldots\}$, which is the regular expression $a^*b$.
+For $S \rightarrow aS \mid b$, every string is some number of $a$'s followed by one $b$, so $L(G) = \{b,\ ab,\ aab,\ aaab,\ \ldots\}$, which is the [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) $a^*b$.
 
 ## Try it: deriving $a^nb^n$
 
@@ -64,7 +64,7 @@ Each use of $S \rightarrow aSb$ adds one $a$ on the left and one $b$ on the righ
 Try a target like `aab` that isn't in the language. The stepper searches every derivation that could still lead to it and reports that none does.
 
 <Callout tone="violet" label="Leftmost derivations">
-  The stepper always replaces the **leftmost** variable first. When a sentential form has several variables, you could replace them in any order and reach the same strings. Fixing the order makes every derivation easier to compare, and Module 2 uses it to define parse trees.
+  The stepper always replaces the **leftmost** variable first. When a sentential form has several variables, you could replace them in any order and reach the same strings. Fixing the order makes every derivation easier to compare, and Module 2 uses it to define [parse trees](/courses/theory-of-computation/context-free-grammars#parse-trees).
 </Callout>
 
 Now edit the rules to `S -> (S)S | ε`. That grammar generates every string of balanced brackets. Pick `(())()` from the examples and watch the derivation keep a variable open for each unclosed bracket.
@@ -80,7 +80,7 @@ Chomsky's other contribution was to sort grammars by how much freedom their rule
 | 1 | Context-sensitive | $\alpha \rightarrow \beta$ with $\lvert\alpha\rvert \le \lvert\beta\rvert$ | Linear-bounded automaton | $a^nb^nc^n$ |
 | 0 | Unrestricted | $\alpha \rightarrow \beta$, anything | Turing machine | Anything a program can enumerate |
 
-Each type contains the ones below it. Every regular language is context-free, every context-free language is context-sensitive, and so on. The examples in the last column sit exactly one level up: $a^nb^n$ is context-free but not regular, and $a^nb^nc^n$ is context-sensitive but not context-free.
+Each type contains the ones below it. Every [regular language](/courses/theory-of-computation/kleenes-theorem) is context-free, every [context-free language](/courses/theory-of-computation/context-free-grammars) is context-sensitive, and so on. The examples in the last column sit exactly one level up: $a^nb^n$ is context-free but not regular, and $a^nb^nc^n$ is context-sensitive but not context-free.
 
 This table is also a map of this course. Module 1 covers type 3 and Module 2 covers type 2. Types 1 and 0, and the Turing machine, are where later courses pick up.
 
@@ -90,7 +90,7 @@ This table is also a map of this course. Module 1 covers type 3 and Module 2 cov
 
 ## A regular grammar is a finite automaton
 
-Type 3 rules have a shape you've already seen. In $A \rightarrow aB$, read $A$ and $B$ as states and the rule as an arrow from $A$ to $B$ labelled $a$. A rule $A \rightarrow a$ is an arrow from $A$ to an accept state. Here is $S \rightarrow aS \mid b$ drawn that way:
+Type 3 rules have a shape you've already seen. In $A \rightarrow aB$, read $A$ and $B$ as states and the rule as an arrow from $A$ to $B$ labelled $a$. A rule $A \rightarrow a$ is an arrow from $A$ to an [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). Here is $S \rightarrow aS \mid b$ drawn that way:
 
 <AutomatonDiagram
   states={["S", "F"]}

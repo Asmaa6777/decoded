@@ -4,7 +4,7 @@ import { KleeneBuilder } from "@/components/mdx/TocVisualizers";
 
 # Kleene's Theorem
 
-You've now met three ways to define a language: regular expressions, finite automata and transition graphs. Transition graphs looked more powerful than finite automata, since they allow word labels, several starts and free moves. Stephen Kleene proved in the 1950s that the extra freedom adds nothing:
+You've now met three ways to define a language: [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter), finite automata and [transition graphs](/courses/theory-of-computation/transition-graphs). Transition graphs looked more powerful than finite automata, since they allow word labels, several starts and free moves. Stephen Kleene proved in the 1950s that the extra freedom adds nothing:
 
 > **Kleene's theorem.** Any language that can be defined by a regular expression, a finite automaton or a transition graph can be defined by all three.
 
@@ -79,12 +79,12 @@ For the union, $z_1$ = "$x_1$ or $y_1$" is final already, because $y_1$ is: the 
 </Callout>
 
 <Callout tone="violet" label="You've seen the concatenation trick before">
-  Tracking a set of FA2 states at once is the subset construction from the NFA lesson. Concatenation and star are naturally nondeterministic (where does one piece end?), and sets of states are how a deterministic machine keeps every possibility open.
+  Tracking a set of FA2 states at once is the [subset construction](/courses/theory-of-computation/nfa#the-theorem-nfa--dfa) from the [NFA](/courses/theory-of-computation/nfa) lesson. Concatenation and star are naturally nondeterministic (where does one piece end?), and sets of states are how a deterministic machine keeps every possibility open.
 </Callout>
 
 ## What else follows
 
-The union rule works with any combining condition. Mark a pair final when **both** halves are final, and you get an FA for the **intersection** of two regular languages. Swap final and non-final states in one complete DFA, and you get its **complement**. So regular languages are closed under union, concatenation, star, intersection and complement: none of these operations can take you outside the regular languages.
+The union rule works with any combining condition. Mark a pair final when **both** halves are final, and you get an FA for the **intersection** of two regular languages. Swap final and non-final states in one complete [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means), and you get its **complement**. So regular languages are closed under union, concatenation, star, intersection and complement: none of these operations can take you outside the regular languages.
 
 ## Where this shows up today
 

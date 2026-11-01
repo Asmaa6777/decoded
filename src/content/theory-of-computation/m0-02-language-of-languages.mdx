@@ -150,7 +150,7 @@ And $w^0 = \varepsilon$ for any string $w$, since concatenating zero times gives
 
 ## Regular Expressions: The First Compact Notation
 
-You've probably met regular expressions through `grep`. They are also a formal mathematical notation for describing [regular languages](https://en.wikipedia.org/wiki/Regular_language), invented by [Stephen Kleene](https://en.wikipedia.org/wiki/Stephen_Cole_Kleene) in 1951, and based on exactly the three operations you just learned.
+You've probably met [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) through `grep`. They are also a formal mathematical notation for describing [regular languages](https://en.wikipedia.org/wiki/Regular_language), invented by [Stephen Kleene](https://en.wikipedia.org/wiki/Stephen_Cole_Kleene) in 1951, and based on exactly the three operations you just learned.
 
 A regular expression over $\Sigma$ is defined by three rules:
 
@@ -197,7 +197,7 @@ That's every possible string over $\{a, b\}$. The $(a+b)^*$ pattern, which you m
 | $XY$           | Concatenation     | $\{uv \mid u \in X,\ v \in Y\}$                          |
 
 <Callout tone="mint" label="What you just built">
-  You now have the three primitives that everything else in this course rests on: an alphabet defines the symbols, strings are finite sequences of those symbols, and languages are sets of strings. Regular expressions are the first tool for describing those sets compactly. Every machine you study from here (finite automata, then pushdown automata) is a different mechanism for deciding which strings belong to a language and which don't.
+  You now have the three primitives that everything else in this course rests on: an alphabet defines the symbols, strings are finite sequences of those symbols, and languages are sets of strings. Regular expressions are the first tool for describing those sets compactly. Every machine you study from here (finite automata, then [pushdown automata](/courses/theory-of-computation/pushdown-automata)) is a different mechanism for deciding which strings belong to a language and which don't.
 </Callout>
 
 ## Optional Further Reading

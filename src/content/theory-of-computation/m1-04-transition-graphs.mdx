@@ -4,14 +4,14 @@ import { TgRunner, StateEliminator } from "@/components/mdx/TocVisualizers";
 
 # Transition Graphs
 
-A DFA is strict: exactly one start state, exactly one edge per letter out of every state, and every edge reads a single letter. Those rules make it fast to run, but awkward to design. A **transition graph** (TG) drops all three, and in exchange it becomes much easier to draw.
+A [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means) is strict: exactly one start state, exactly one edge per letter out of every state, and every edge reads a single letter. Those rules make it fast to run, but awkward to design. A **transition graph** (TG) drops all three, and in exchange it becomes much easier to draw.
 
 ## What changes
 
 A transition graph has:
 
 - a finite set of states, **at least one** of which is a start state (marked $-$), and some final states (marked $+$);
-- an alphabet $\Sigma$;
+- an [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma) $\Sigma$;
 - edges labelled with **words** over $\Sigma$, not just single letters. A label can also be $\Lambda$, the empty word, which lets the machine move without reading anything.
 
 A word is **accepted** if you can cut it into pieces, $w = w_1 w_2 \ldots w_k$, so that some path from a start state to a final state has edges labelled $w_1$, $w_2$, ..., $w_k$ in that order. If no such cut and path exist, the word is rejected.
@@ -19,7 +19,7 @@ A word is **accepted** if you can cut it into pieces, $w = w_1 w_2 \ldots w_k$, 
 Nothing else is required. A state can have no edge for some letter, two edges with the same label, or both. The machine doesn't have to be told which path to take; a word is in the language as long as **some** path works.
 
 <Callout tone="violet" label="Every FA is a TG">
-  A finite automaton is a transition graph that happens to follow extra rules: one start state and single-letter labels, one edge per letter. So anything a DFA or NFA can do, a TG can do too. The question for the next lesson is whether TGs can do *more*.
+  A finite automaton is a transition graph that happens to follow extra rules: one start state and single-letter labels, one edge per letter. So anything a DFA or [NFA](/courses/theory-of-computation/nfa) can do, a TG can do too. The question for the next lesson is whether TGs can do *more*.
 </Callout>
 
 ## Words on edges
@@ -71,7 +71,7 @@ From $y$, the machine reads any number of $b$'s, slips to $z$ for free, and then
 
 ## From a TG to a regular expression
 
-Exams often draw a TG and ask for its regular expression. The method is **state elimination**: replace the TG by a *generalized* transition graph, where edges are labelled with regular expressions instead of words, and remove states one at a time until a single edge is left.
+Exams often draw a TG and ask for its [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter). The method is **state elimination**: replace the TG by a *generalized* transition graph, where edges are labelled with regular expressions instead of words, and remove states one at a time until a single edge is left.
 
 1. Add a new start state $-$ with $\Lambda$-edges into every old start state, and a new final state $+$ with $\Lambda$-edges out of every old final state. Now the machine has one way in and one way out.
 2. If two edges join the same pair of states, merge them: labels $r_1$ and $r_2$ become one edge labelled $r_1 + r_2$.

@@ -2,7 +2,7 @@ import { Callout, ApplicationsGrid, AutomatonDiagram, PracticalApplication, Rege
 
 # The Limits of Finite Memory
 
-Module 1 showed that DFAs, NFAs and regex are three ways of writing the same thing, and that the pipeline between them runs inside tools you use every day.
+Module 1 showed that [DFAs](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means), [NFAs](/courses/theory-of-computation/nfa) and regex are three ways of writing the same thing, and that the pipeline between them runs inside tools you use every day.
 
 So here is a fair question. If regex is that powerful, why does every senior engineer tell you not to parse HTML with it? Why can't a regex check that the brackets in your code are balanced?
 
@@ -87,13 +87,13 @@ A repeated state means the machine walked a **loop**, and a loop can be walked a
 
 ### The formal statement
 
-If $L$ is a regular language, then there is a number $p \geq 1$ (the **pumping length**) such that every string $w \in L$ with $|w| \geq p$ can be split into three parts, $w = xyz$, where:
+If $L$ is a [regular language](/courses/theory-of-computation/kleenes-theorem), then there is a number $p \geq 1$ (the **pumping length**) such that every string $w \in L$ with $|w| \geq p$ can be split into three parts, $w = xyz$, where:
 
 1. $|y| \geq 1$: the loop part is not empty
 2. $|xy| \leq p$: the loop happens within the first $p$ symbols
 3. $xy^iz \in L$ for every $i \geq 0$: you can repeat the loop any number of times, including zero, and stay in the language
 
-Map it back to the picture. $x$ is the path to the repeated state. $y$ is the loop. $z$ is the rest of the path to the accept state. Condition 2 holds because the pigeonhole argument already forces a repeat inside the first $p$ symbols.
+Map it back to the picture. $x$ is the path to the repeated state. $y$ is the loop. $z$ is the rest of the path to the [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram). Condition 2 holds because the pigeonhole argument already forces a repeat inside the first $p$ symbols.
 
 ### Using it on $a^nb^n$
 
@@ -162,7 +162,7 @@ Compare it with the DFA. The loop reads one symbol at a time, just like $\delta$
 Add that one stack to a finite automaton and you get a new machine: the **pushdown automaton**, or **PDA**. It recognizes exactly the **context-free languages**, the class that contains $a^nb^n$, balanced brackets, arithmetic expressions, and the grammar of almost every programming language. The next lesson starts with the grammars for these languages; the machine comes later in this module.
 
 <Callout tone="violet" label="Why only one stack">
-  The stack is a limited kind of memory: last in, first out, and you can only see the top. The limit matters, because a finite automaton with two stacks is as powerful as a Turing machine, the most powerful model in the Chomsky hierarchy. One stack is exactly the extra memory that nesting needs.
+  The stack is a limited kind of memory: last in, first out, and you can only see the top. The limit matters, because a finite automaton with two stacks is as powerful as a Turing machine, the most powerful model in the [Chomsky hierarchy](/courses/theory-of-computation/grammars#the-chomsky-hierarchy). One stack is exactly the extra memory that nesting needs.
 </Callout>
 
 ## Where This Shows Up Today
@@ -175,7 +175,7 @@ Add that one stack to a finite automaton and you get a new machine: the **pushdo
     HTML elements nest inside each other with no depth limit. That is a context-free structure. A regex can find a single tag, but it cannot correctly match an opening tag with its closing tag in nested markup. Use a real parser such as the DOM parser built into your browser.
   </PracticalApplication>
   <PracticalApplication title="Regex that is not regular" tool="PCRE">
-    Some engines (PCRE, Perl, .NET) add recursion or balancing groups, which can match balanced brackets. That works because those features go beyond finite automata. Such patterns are no longer "regular expressions" in the theory sense, and they lose the linear-time guarantee. JavaScript's RegExp has no recursion, which is why the exercise above could not be solved in general.
+    Some engines (PCRE, Perl, .NET) add recursion or balancing groups, which can match balanced brackets. That works because those features go beyond finite automata. Such patterns are no longer "[regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter)" in the theory sense, and they lose the linear-time guarantee. JavaScript's RegExp has no recursion, which is why the exercise above could not be solved in general.
   </PracticalApplication>
   <PracticalApplication title="Bracket matching in your editor" tool="TOOLS">
     When your editor highlights the matching bracket, or a linter reports an unclosed block, a stack is doing the work. It's the same push-on-open, pop-on-close loop as the code above.

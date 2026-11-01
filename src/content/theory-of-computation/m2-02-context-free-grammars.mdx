@@ -10,7 +10,7 @@ $$
 S \rightarrow aSb \mid \Lambda \qquad\qquad S \rightarrow (S)S \mid \Lambda
 $$
 
-These are **context-free grammars** (CFGs): every rule has a single variable on its left-hand side, so a variable can be replaced wherever it appears, whatever is around it. The languages they generate are the **context-free languages**, one level up from the regular languages in the Chomsky hierarchy. This lesson covers what exams ask about them: what language a grammar generates, leftmost and rightmost derivations, parse trees, and ambiguity.
+These are **context-free grammars** (CFGs): every rule has a single variable on its left-hand side, so a variable can be replaced wherever it appears, whatever is around it. The languages they generate are the **context-free languages**, one level up from the [regular languages](/courses/theory-of-computation/kleenes-theorem) in the [Chomsky hierarchy](/courses/theory-of-computation/grammars#the-chomsky-hierarchy). This lesson covers what exams ask about them: what language a grammar generates, leftmost and rightmost derivations, parse trees, and ambiguity.
 
 ## What language does this grammar generate?
 
@@ -20,7 +20,7 @@ $$
 S \rightarrow XaXaX \qquad X \rightarrow aX \mid bX \mid \Lambda
 $$
 
-$X$ generates any word at all over $\{a, b\}$, including $\Lambda$, because it can add $a$'s and $b$'s in any order and stop. So $S$ is "anything, $a$, anything, $a$, anything": the words with **at least two** $a$'s. As a regular expression, $(a + b)^*a(a + b)^*a(a + b)^*$.
+$X$ generates any word at all over $\{a, b\}$, including $\Lambda$, because it can add $a$'s and $b$'s in any order and stop. So $S$ is "anything, $a$, anything, $a$, anything": the words with **at least two** $a$'s. As a [regular expression](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter), $(a + b)^*a(a + b)^*a(a + b)^*$.
 
 $$
 S \rightarrow AbA \mid BaB \qquad A \rightarrow aA \mid a \qquad B \rightarrow bB \mid b
@@ -32,7 +32,7 @@ Both of these happen to be regular. A CFG can describe regular languages too; it
 
 ## Leftmost and rightmost derivations
 
-When a sentential form has more than one variable, you choose which to replace. A **leftmost derivation** always replaces the leftmost variable; a **rightmost derivation** always replaces the rightmost one. Exams often ask for both for the same word. Here is $aaaabaaa$ in the second grammar above. Switch between the two and compare the sentential forms.
+When a [sentential form](/courses/theory-of-computation/grammars#derivations) has more than one variable, you choose which to replace. A **leftmost derivation** always replaces the leftmost variable; a **rightmost derivation** always replaces the rightmost one. Exams often ask for both for the same word. Here is $aaaabaaa$ in the second grammar above. Switch between the two and compare the sentential forms.
 
 <DerivationStepper grammar={"S -> AbA | BaB\nA -> aA | a\nB -> bB | b"} target="aaaabaaa" showSide />
 
@@ -40,7 +40,7 @@ Both derivations apply the same rules to the same variables. Only the order diff
 
 ## Parse trees
 
-A **parse tree** records which rule rewrote each variable, without the order. The root is the start variable, every inner node is a variable whose children are the right-hand side of the rule used on it, and the leaves, read left to right, spell the word (a $\Lambda$ leaf contributes nothing). Every parse tree corresponds to exactly one leftmost derivation and one rightmost derivation, which is why exams can ask for "the leftmost derivation, the rightmost derivation and the tree" for the same word: all three describe the same structure.
+A **parse tree** records which rule rewrote each variable, without the order. The root is the [start variable](/courses/theory-of-computation/grammars#the-four-parts-of-a-grammar), every inner node is a variable whose children are the right-hand side of the rule used on it, and the leaves, read left to right, spell the word (a $\Lambda$ leaf contributes nothing). Every parse tree corresponds to exactly one leftmost derivation and one rightmost derivation, which is why exams can ask for "the leftmost derivation, the rightmost derivation and the tree" for the same word: all three describe the same structure.
 
 <ParseTreeExplorer grammar={"S -> AbA | BaB\nA -> aA | a\nB -> bB | b"} target="aaaabaaa" />
 

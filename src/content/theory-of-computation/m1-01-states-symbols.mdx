@@ -22,7 +22,7 @@ $$
 Q = \{q_0,\ q_1,\ q_2\}
 $$
 
-**$\Sigma$** is the alphabet, the set of symbols the machine is allowed to read. A symbol outside $\Sigma$ never appears in its input.
+**$\Sigma$** is the [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma), the set of symbols the machine is allowed to read. A symbol outside $\Sigma$ never appears in its input.
 
 $$
 \Sigma = \{a,\ b\}
@@ -38,10 +38,10 @@ Read that as: given any state in $Q$ and any symbol in $\Sigma$, $\delta$ tells 
 
 **$q_0$** is the initial state, where computation always begins. $q_0 \in Q$.
 
-**$F$** is the set of accept states, the double circles. $F \subseteq Q$. If the machine runs out of input while its current state is in $F$, it accepts the input.
+**$F$** is the set of [accept states](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram), the double circles. $F \subseteq Q$. If the machine runs out of input while its current state is in $F$, it accepts the input.
 
 <Callout tone="violet" label="Why a five-tuple">
-  Five components are the minimum needed to fully specify a DFA. Give someone these five and they can reconstruct the diagram exactly, and they can also reason about the machine mathematically without drawing it.
+  Five components are the minimum needed to fully specify a [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means). Give someone these five and they can reconstruct the diagram exactly, and they can also reason about the machine mathematically without drawing it.
 </Callout>
 
 ## Mapping Diagram to Tuple
@@ -92,7 +92,7 @@ $$
 Each row is a state, each column a symbol, and each cell is where $\delta$ sends you. The table and the diagram hold identical information; they're two representations of the same machine.
 
 <Callout tone="orange" label="The transition table must be complete">
-  Every cell in the table must be filled, because every state needs a transition for every symbol in $\Sigma$. A machine with a missing transition is no longer a DFA. This is one of the differences between a DFA and an NFA, which you'll meet in the next lesson.
+  Every cell in the table must be filled, because every state needs a transition for every symbol in $\Sigma$. A machine with a missing transition is no longer a DFA. This is one of the differences between a DFA and an [NFA](/courses/theory-of-computation/nfa), which you'll meet in the next lesson.
 </Callout>
 
 ## The Extended Transition Function: $\hat{\delta}$
@@ -103,7 +103,7 @@ $$
 \hat{\delta}(q,\ \varepsilon) = q
 $$
 
-Reading the empty string from any state leaves you in that state.
+Reading the [empty string](/courses/theory-of-computation/language-of-languages#string-word) from any state leaves you in that state.
 
 $$
 \hat{\delta}(q,\ wa) = \delta(\hat{\delta}(q,\ w),\ a)
@@ -148,7 +148,7 @@ The codomain is $Q$, not the power set of $Q$, so one input pair always returns 
 Two consequences follow. First, a DFA simulator is a tight loop: read one character, do one table lookup, never backtrack. That's why regex engines built on DFAs run in time linear in the length of the input. Second, this single-arrow rule is exactly what the next lesson relaxes. An NFA's transition function returns a *set* of states, and the machine explores all of them at once. The diagrams look the same, but the signature differs and the runtime behaves very differently.
 
 <Callout tone="sky" label="Historical note">
-  The DFA was formally defined by Warren McCulloch and Walter Pitts in 1943, originally as a mathematical model of how neurons fire rather than as a computing model. Kleene then connected it to regular expressions in 1951. The parking meter, the regex engine, and the original neuron model are all instances of the same five-tuple.
+  The DFA was formally defined by Warren McCulloch and Walter Pitts in 1943, originally as a mathematical model of how neurons fire rather than as a computing model. Kleene then connected it to [regular expressions](/courses/theory-of-computation/regular-expressions#the-notation-and-what-binds-tighter) in 1951. The parking meter, the regex engine, and the original neuron model are all instances of the same five-tuple.
 </Callout>
 
 ## Building Your First DFA
@@ -196,5 +196,5 @@ $q_0$ is initial. $q_1$ is the only accept state. Once you reach $q_1$, no symbo
 Try `a`, `ba`, `bbb`, `bab`. The machine should accept exactly the strings where at least one `a` appears anywhere.
 
 <Callout tone="mint" label="What you now have">
-  A DFA is now a mathematical object with a precise definition, as well as a picture you can trace. You can write one as a five-tuple, read its transition table, apply $\hat{\delta}$ to compute what any string does, and build one from scratch by identifying the conditions your language needs to track. The next lesson introduces NFAs, machines where $\delta$ returns a set of states, and the surprising theorem that they recognize exactly the same languages as DFAs.
+  A DFA is now a mathematical object with a precise definition, as well as a picture you can trace. You can write one as a five-tuple, read its [transition table](/courses/theory-of-computation/how-to-read-a-machine#a-machine-read-by-hand), apply $\hat{\delta}$ to compute what any string does, and build one from scratch by identifying the conditions your language needs to track. The next lesson introduces NFAs, machines where $\delta$ returns a set of states, and the surprising theorem that they recognize exactly the same languages as DFAs.
 </Callout>

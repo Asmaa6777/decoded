@@ -55,5 +55,5 @@ MOV AL, [BX+SI+1]     ; with displacement: fifth item
 MOV BYTE PTR [BX], 99 ; write through a pointer`} />
 
 <Callout tone="orange" label="Where you've seen this">
-When C code does `a[i]` or `rec.age`, the compiler picks these modes. `a[i]` is base plus index, `rec.age` is base plus displacement, and `grid[i].y` uses all three. Modes like these are also a key difference between [RISC and CISC](/courses/computer-architecture/risc-and-cisc).
+When C code does `a[i]` or `rec.age`, the [compiler](/courses/theory-of-computation/context-free-grammars#where-this-shows-up-today) picks these modes. `a[i]` is base plus index, `rec.age` is base plus displacement, and `grid[i].y` uses all three. Modes like these are also a key difference between [RISC and CISC](/courses/computer-architecture/risc-and-cisc).
 </Callout>

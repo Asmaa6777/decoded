@@ -14,9 +14,9 @@ The formal definition of an NFA is almost identical to a DFA's. Only the transit
 
 **DFA:** $\delta : Q \times \Sigma \rightarrow Q$
 
-**NFA:** $\delta : Q \times \Sigma_\varepsilon \rightarrow \mathcal{P}(Q)$
+**An NFA:** $\delta : Q \times \Sigma_\varepsilon \rightarrow \mathcal{P}(Q)$
 
-The signature has two differences. First, $\Sigma_\varepsilon = \Sigma \cup \{\varepsilon\}$: the machine can transition on the empty string, moving to a new state without consuming any symbol. That can feel strange at first, and an example below makes it concrete.
+The signature has two differences. First, $\Sigma_\varepsilon = \Sigma \cup \{\varepsilon\}$: the machine can transition on the [empty string](/courses/theory-of-computation/language-of-languages#string-word), moving to a new state without consuming any symbol. That can feel strange at first, and an example below makes it concrete.
 
 Second, $\mathcal{P}(Q)$ is the **power set** of $Q$, the set of all subsets of states. So δ no longer returns a single next state. It returns a *set* of possible next states, which may be $\emptyset$, meaning there's no transition at all.
 
@@ -28,7 +28,7 @@ Everything else ($Q$, $\Sigma$, $q_0$, $F$) means exactly what it meant for a DF
 
 ## How to Read an NFA
 
-When an NFA is in state $q$ and reads symbol $a$, it does not pick one next state. It **splits into copies**, one per state in $\delta(q, a)$, and all the copies run simultaneously. If *any* copy ends in an accept state when the input runs out, the string is accepted.
+When an NFA is in state $q$ and reads symbol $a$, it does not pick one next state. It **splits into copies**, one per state in $\delta(q, a)$, and all the copies run simultaneously. If *any* copy ends in an [accept state](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram) when the input runs out, the string is accepted.
 
 Another way to think about an NFA is as a machine that always guesses right: if any path through it leads to acceptance, the NFA finds that path.
 

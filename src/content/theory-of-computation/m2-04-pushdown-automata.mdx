@@ -64,11 +64,11 @@ Step through `aaabbb` and watch the stack fill to three $a$'s and drain back to 
 - `abb`: the second $b$ tries to pop from an empty stack, finds $\Delta$, and has nowhere to go.
 - `ba`: a $b$ before any $a$ pops from the empty stack straight away.
 
-The stack is the counter that a finite automaton was missing. A DFA would need a different state for each possible count of $a$'s; this machine needs only one stack symbol, pushed as many times as the input demands.
+The stack is the counter that a finite automaton was missing. A [DFA](/courses/theory-of-computation/how-to-read-a-machine#what-dfa-means) would need a different state for each possible count of $a$'s; this machine needs only one stack symbol, pushed as many times as the input demands.
 
 ## Nondeterminism
 
-Like an NFA, a PDA may have several edges with the same label out of one READ or POP box. Then it accepts a word if **some** path reaches ACCEPT. The runner searches all the paths and shows one that works.
+Like an [NFA](/courses/theory-of-computation/nfa), a PDA may have several edges with the same label out of one READ or POP box. Then it accepts a word if **some** path reaches ACCEPT. The runner searches all the paths and shows one that works.
 
 Here is a PDA for **even-length palindromes**, words like $abba$ that read the same backwards. The first half is pushed onto the stack; the second half must match it, popped in reverse. The machine has no way to know where the middle is, so after every letter it nondeterministically guesses between "keep pushing" and "the middle was here, start matching".
 
@@ -120,12 +120,12 @@ Here is a PDA for **even-length palindromes**, words like $abba$ that read the s
 In `abba`, the successful run pushes $a$ and $b$, guesses the middle on the third letter, pops $b$ to match it and $a$ to match the last letter, then finds $\Delta$ on both the tape and the stack. Try `abab` or `aba`: every guess fails somewhere.
 
 <Callout tone="violet" label="Here nondeterminism adds power">
-  For finite automata, NFAs and DFAs recognize the same languages. For pushdown automata that's no longer true: some context-free languages, including the even palindromes, can only be recognized by a nondeterministic PDA. A deterministic PDA reading $abba$ left to right can't know where the first half ends.
+  For finite automata, NFAs and DFAs recognize the same languages. For pushdown automata that's no longer true: some [context-free languages](/courses/theory-of-computation/context-free-grammars), including the even palindromes, can only be recognized by a nondeterministic PDA. A deterministic PDA reading $abba$ left to right can't know where the first half ends.
 </Callout>
 
 ## The formal definition
 
-Other textbooks define a PDA as a 7-tuple $(Q, \Sigma, \Gamma, \delta, q_0, Z_0, F)$: states, input alphabet, stack alphabet, transition function, start state, initial stack symbol and final states. Each transition reads an input letter (or $\varepsilon$), looks at the top of the stack, and replaces it with a string of stack symbols. The flowchart and the 7-tuple describe the same machines; the flowchart just splits each transition into separate READ, POP and PUSH steps.
+Other textbooks define a PDA as a 7-tuple $(Q, \Sigma, \Gamma, \delta, q_0, Z_0, F)$: states, input [alphabet](/courses/theory-of-computation/language-of-languages#alphabet-sigma), stack alphabet, transition function, start state, initial stack symbol and final states. Each transition reads an input letter (or $\varepsilon$), looks at the top of the stack, and replaces it with a string of stack symbols. The flowchart and the 7-tuple describe the same machines; the flowchart just splits each transition into separate READ, POP and PUSH steps.
 
 ## Where this shows up today
 
