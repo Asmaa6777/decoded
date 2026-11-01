@@ -3,7 +3,7 @@ import { PolynomialExplorer } from "@/components/mdx/PolynomialVisualizers";
 
 # Polynomials and Their Roots
 
-MATLAB has no special polynomial type. A polynomial is just a row vector of its coefficients, in descending powers. So everything from the [matrix module](/courses/computational-mathematics/matrices-and-matlab) applies: a polynomial is data you can store, pass around and do arithmetic on.
+MATLAB has no special polynomial type. A polynomial is just a [row vector](/courses/computational-mathematics/matrices-and-matlab#writing-a-matrix-down) of its coefficients, in descending powers. So everything from the [matrix module](/courses/computational-mathematics/matrices-and-matlab) applies: a polynomial is data you can store, pass around and do arithmetic on.
 
 ## Writing one down
 
@@ -37,7 +37,7 @@ Polynomials are also the oldest trick for making a straight-line model bend. A l
 
 ## Roots
 
-A **root** is a value of $x$ where $p(x) = 0$, which is where the curve crosses the x-axis. `roots` returns them as a column vector, and `poly` goes the other way:
+A **root** is a value of $x$ where $p(x) = 0$, which is where the curve crosses the x-axis. `roots` returns them as a [column vector](/courses/computational-mathematics/matrices-and-matlab#writing-a-matrix-down), and `poly` goes the other way:
 
 <CodeTabs>
 

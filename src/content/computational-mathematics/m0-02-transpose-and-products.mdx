@@ -44,7 +44,7 @@ print([list(col) for col in zip(*A)])  # [[1, 4], [2, 5], [3, 6]]
 
 </CodeTabs>
 
-A matrix is **symmetric** when $A' = A$. `pascal(3)` is symmetric and `magic(3)` isn't. Transposing also turns a row vector into a column vector, which is the move you need next.
+A matrix is **symmetric** when $A' = A$. `pascal(3)` is symmetric and `magic(3)` isn't. Transposing also turns a [row vector](/courses/computational-mathematics/matrices-and-matlab#writing-a-matrix-down) into a [column vector](/courses/computational-mathematics/matrices-and-matlab#writing-a-matrix-down), which is the move you need next.
 
 <Callout tone="sky" label="For complex numbers">
 In MATLAB, `'` also conjugates complex entries. Use `.'` when you want the transpose alone. For real matrices the two are identical. NumPy's `.T` never conjugates; write `.conj().T` when you want both.
