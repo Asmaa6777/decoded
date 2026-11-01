@@ -1,0 +1,133 @@
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { HeapLab } from "@/components/mdx/DataStructureVisualizers";
+
+# Heaps and Priority Queues
+
+An emergency room doesn't treat patients in arrival order; it treats the most urgent first. A route planner always expands the closest unvisited place next. An operating system runs the highest-priority task. Each needs a **priority queue**: insert items in any order, and always get the smallest (or largest) one out quickly. The structure that does it is the binary heap, and it fits inside a plain array.
+
+## The interface
+
+A **priority queue** supports:
+
+- **push(x)**: add an item. O(log n).
+- **peek()**: look at the smallest item. O(1).
+- **pop()**: remove and return the smallest item. O(log n).
+
+A sorted array would make pop O(1) but push O(n). An unsorted one makes push O(1) but pop O(n). A heap makes both O(log n).
+
+## The heap rule
+
+A **binary min-heap** is a binary tree with two properties:
+
+1. **Shape**: it's **complete**: every level is full except possibly the last, which fills from the left.
+2. **Order**: every parent is **≤ its children**.
+
+That's much weaker than a [search tree's](/courses/data-structures/binary-search-trees#the-ordering-rule) rule. Siblings can be in any order, and the tree isn't sorted. But the smallest item is always at the root.
+
+Because the tree is complete, it needs no pointers at all. Number the nodes level by level and store them in an array: the children of index $i$ are at $2i + 1$ and $2i + 2$, and its parent is at $\lfloor (i - 1) / 2 \rfloor$.
+
+## Push and pop
+
+**Push** puts the new item in the next free array slot, which keeps the shape, then **sifts it up**: while it's smaller than its parent, swap them.
+
+**Pop** takes the root, moves the **last** item into the root's place (again keeping the shape), then **sifts it down**: while it's bigger than its smaller child, swap with that child. Always the smaller child, so the one that moves up is ≤ the other.
+
+Each sift moves one level per swap, and a complete tree has height $\lfloor \log_2 n \rfloor$ (the [height bound](/courses/discrete-mathematics/trees#height)), so both are **O(log n)**. Push a few values, including a new minimum, and pop a few:
+
+<HeapLab />
+
+<CodeTabs>
+
+```python
+import heapq
+
+tasks = []
+heapq.heappush(tasks, (3, "write tests"))       # (priority, task): smaller is sooner
+heapq.heappush(tasks, (1, "fix the outage"))
+heapq.heappush(tasks, (2, "review PR"))
+print(tasks[0])  # (1, 'fix the outage')
+print(heapq.heappop(tasks)[1])  # fix the outage
+print(heapq.heappop(tasks)[1])  # review PR
+
+data = [9, 4, 7, 1, 8, 2]
+heapq.heapify(data)                              # O(n), in place
+print(data[0])  # 1
+print(heapq.nsmallest(3, [9, 4, 7, 1, 8, 2]))  # [1, 2, 4]
+```
+
+```java
+import java.util.Collections;
+import java.util.PriorityQueue;
+
+public class Main {
+    record Task(int priority, String name) {}
+
+    public static void main(String[] args) {
+        PriorityQueue<Task> tasks = new PriorityQueue<>((a, b) -> Integer.compare(a.priority(), b.priority()));
+        tasks.add(new Task(3, "write tests"));
+        tasks.add(new Task(1, "fix the outage"));
+        tasks.add(new Task(2, "review PR"));
+        System.out.println(tasks.peek().name());  // fix the outage
+        tasks.poll();
+        System.out.println(tasks.poll().name());  // review PR
+
+        PriorityQueue<Integer> max = new PriorityQueue<>(Collections.reverseOrder());
+        for (int x : new int[]{9, 4, 7, 1}) max.add(x);
+        System.out.println(max.peek());  // 9
+    }
+}
+```
+
+```cpp
+#include <functional>
+#include <iostream>
+#include <queue>
+#include <vector>
+
+int main() {
+    // careful: std::priority_queue is a MAX-heap by default
+    std::priority_queue<int> max_heap;
+    for (int x : {9, 4, 7, 1}) max_heap.push(x);
+    std::cout << max_heap.top() << "\n";  // 9
+
+    // std::greater turns it into a min-heap
+    std::priority_queue<int, std::vector<int>, std::greater<int>> min_heap;
+    for (int x : {9, 4, 7, 1}) min_heap.push(x);
+    std::cout << min_heap.top() << "\n";  // 1
+    min_heap.pop();
+    std::cout << min_heap.top() << "\n";  // 4
+}
+```
+
+</CodeTabs>
+
+<Callout tone="orange" label="Min or max depends on the language">
+Python's `heapq` and Java's `PriorityQueue` are **min**-heaps. C++'s `priority_queue` is a **max**-heap. Porting code between them without flipping the comparison is a classic bug. In Python, a common trick for a max-heap is to push negated priorities.
+</Callout>
+
+## Building a heap in O(n)
+
+Pushing $n$ items one at a time costs O(n log n). But `heapify` turns an existing array into a heap in **O(n)**: sift down every non-leaf node, starting from the last one and working back to the root. Half the nodes are leaves and need no work, a quarter need at most one swap, an eighth at most two, and the total, $\sum k \cdot n/2^{k+1}$, is under $n$.
+
+Heapify, then pop $n$ times, and you've sorted the array: that's **heapsort**, O(n log n) in the worst case using no extra memory, which matches the [lower bound](/courses/advanced-algorithms/sorting-lower-bounds#the-lower-bound) for comparison sorting.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Shortest paths" tool="Google Maps, network routing">
+[Dijkstra's algorithm](/courses/advanced-algorithms/shortest-paths) keeps unvisited places in a priority queue keyed by distance and always expands the nearest one.
+</PracticalApplication>
+<PracticalApplication title="Schedulers and timers" tool="OS kernels, event loops">
+Timer queues in Node.js, Go and operating systems keep the next deadline at the top of a heap.
+</PracticalApplication>
+<PracticalApplication title="Top-k" tool="Search ranking, monitoring">
+Keep the 10 largest of a billion values with a min-heap of size 10: each new value only needs comparing with the smallest of the current top 10.
+</PracticalApplication>
+<PracticalApplication title="Compression" tool="Huffman coding, zip">
+[Huffman coding](/courses/advanced-algorithms/huffman-and-activity-selection) repeatedly merges the two least frequent symbols, pulled from a priority queue.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+The priority queue interface, the heap's shape and order rules, the array layout with no pointers, sift up and sift down in O(log n), heapify in O(n), and heapsort for free. The [next lesson](/courses/data-structures/tries) is a tree built from the letters of the keys.
+</Callout>

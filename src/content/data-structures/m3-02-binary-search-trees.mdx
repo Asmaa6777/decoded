@@ -1,0 +1,130 @@
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { BstLab } from "@/components/mdx/DataStructureVisualizers";
+
+# Binary Search Trees
+
+A hash map finds a key in O(1), but it can't answer "what's the next key after this one?" or "give me everything between March and May" without looking at every key. A sorted array can, but inserting into it is O(n). A binary search tree does both: ordered queries and fast inserts.
+
+## The ordering rule
+
+A **binary search tree** (BST) is a [binary tree](/courses/data-structures/binary-trees) where, for every node:
+
+- every key in its **left** subtree is **smaller**, and
+- every key in its **right** subtree is **bigger**.
+
+That one rule turns the tree into a [binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half) you can insert into. To find a key, start at the root: if it's smaller go left, if bigger go right, until you find it or fall off the bottom.
+
+Search, insert and delete below. Then press **sorted input**.
+
+<BstLab />
+
+## Insert and delete
+
+**Insert** searches for the key. If it isn't there, the search falls off the tree at exactly the spot the new key belongs, and the new node goes there as a leaf.
+
+**Delete** has three cases, by how many children the node has:
+
+1. **No children**: just remove it.
+2. **One child**: the child takes its place.
+3. **Two children**: replace its key with its **in-order successor**, the smallest key in its right subtree (go right once, then left as far as possible). That successor has no left child, so removing it from its old spot is case 1 or 2.
+
+All three operations walk one path from the root, so they cost **O(h)**, where $h$ is the height of the tree.
+
+## Height is everything
+
+A tree with $n$ nodes has height at least $\lfloor \log_2 n \rfloor$ (the [height bound](/courses/discrete-mathematics/trees#height)), so a well-shaped BST of a million keys is about 20 levels deep. But nothing in the rule forces a good shape. Insert keys in sorted order and each one goes to the right of the last: the tree becomes a chain of height $n - 1$, and every operation is O(n), no better than a linked list.
+
+<Callout tone="orange" label="Sorted input is the common case, not a rare one">
+Timestamps, auto-incrementing IDs and alphabetical imports all arrive sorted. A plain BST fed real data often degenerates. That's why libraries never ship a plain BST.
+</Callout>
+
+**Self-balancing trees** fix this by restructuring with small local **rotations** after each insert or delete, keeping the height O(log n) whatever the order of the input. The best known are **AVL trees** and **red-black trees**; the [Advanced Algorithms course](/courses/advanced-algorithms/balanced-search-trees) builds red-black trees in full. B-trees, which databases use, take the same idea and give each node hundreds of children.
+
+## Ordered maps in your language
+
+You'll rarely write a BST yourself. You'll use the balanced one in your standard library:
+
+<CodeTabs>
+
+```python
+import bisect
+
+# Python has no tree map built in. A sorted list with bisect gives the same
+# ordered queries (O(log n) to search, O(n) to insert); for big data the
+# third-party sortedcontainers.SortedDict is the usual choice.
+keys = []
+for k in [50, 30, 70, 20, 40, 60, 80]:
+    bisect.insort(keys, k)
+print(keys)  # [20, 30, 40, 50, 60, 70, 80]
+
+i = bisect.bisect_right(keys, 45)        # first key after 45
+print(keys[i])  # 50
+lo, hi = bisect.bisect_left(keys, 30), bisect.bisect_right(keys, 60)
+print(keys[lo:hi])  # [30, 40, 50, 60]
+```
+
+```java
+import java.util.TreeMap;
+
+public class Main {
+    public static void main(String[] args) {
+        // TreeMap is a red-black tree: O(log n) for everything, keys kept sorted
+        TreeMap<Integer, String> m = new TreeMap<>();
+        for (int k : new int[]{50, 30, 70, 20, 40, 60, 80}) m.put(k, "v" + k);
+        System.out.println(m.keySet());  // [20, 30, 40, 50, 60, 70, 80]
+        System.out.println(m.higherKey(45));  // 50
+        System.out.println(m.subMap(30, true, 60, true).keySet());  // [30, 40, 50, 60]
+        System.out.println(m.firstKey() + " " + m.lastKey());  // 20 80
+    }
+}
+```
+
+```cpp
+#include <iostream>
+#include <map>
+
+int main() {
+    // std::map is a red-black tree in every major standard library
+    std::map<int, char> m;
+    for (int k : {50, 30, 70, 20, 40, 60, 80}) m[k] = 'v';
+    std::cout << m.upper_bound(45)->first << "\n";  // 50
+    std::cout << m.begin()->first << " " << m.rbegin()->first << "\n";  // 20 80
+
+    int count = 0;
+    for (auto it = m.lower_bound(30); it != m.upper_bound(60); ++it) count++;
+    std::cout << count << "\n";  // 4
+}
+```
+
+</CodeTabs>
+
+## Hash map or tree map?
+
+| Need | Choose |
+|---|---|
+| Fastest lookup by exact key | Hash map: O(1) average |
+| Keys in sorted order, or min and max | Tree map: O(log n) |
+| "Next key after x", ranges like 30 to 60 | Tree map |
+| Keys that can't be hashed but can be compared | Tree map |
+| Guaranteed worst case, no hash flooding | Tree map: O(log n) always |
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Database indexes" tool="PostgreSQL, MySQL, SQLite">
+A B-tree index answers `WHERE date BETWEEN …` and `ORDER BY` without sorting the table, by walking a balanced search tree.
+</PracticalApplication>
+<PracticalApplication title="The Linux scheduler" tool="CFS, EEVDF">
+Linux kept runnable tasks in a red-black tree ordered by how much CPU time each had used, and picked the leftmost (the one owed most time) next.
+</PracticalApplication>
+<PracticalApplication title="Leaderboards and order books" tool="Trading engines, games">
+Prices or scores kept in a tree give the best one in O(log n) and support "everything between these two values" directly.
+</PracticalApplication>
+<PracticalApplication title="Memory allocators" tool="malloc implementations">
+Allocators keep free blocks in trees ordered by size to find the smallest block that's big enough in O(log n).
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+The ordering rule, search, insert and the three cases of delete, why everything costs O(height), and why real libraries balance their trees. The [next lesson](/courses/data-structures/heaps) uses a weaker ordering rule to get something different: the smallest item, always, in O(1).
+</Callout>

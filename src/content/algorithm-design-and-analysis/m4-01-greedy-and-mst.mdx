@@ -68,7 +68,7 @@ The reason is the **cut property**. Split the vertices into any two groups. The 
 
 ## Analysis
 
-- **Prim**, simple version (matrix, scan for the cheapest crossing edge each time): $O(V^2)$. With a priority queue: $O(E \log V)$.
+- **Prim**, simple version (matrix, scan for the cheapest crossing edge each time): $O(V^2)$. With a [priority queue](/courses/data-structures/heaps#the-interface): $O(E \log V)$.
 - **Kruskal**: sorting the edges dominates, $O(E \log E)$. The "same tree?" check uses a **union–find** structure, which is nearly $O(1)$ per check with the standard optimizations.
 
 Rule of thumb: Prim for dense graphs (lots of edges), Kruskal for sparse ones.

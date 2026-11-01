@@ -1,0 +1,186 @@
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { TrieLab } from "@/components/mdx/DataStructureVisualizers";
+
+# Tries
+
+Type "car" into a search box and it suggests "card", "care" and "cart" before you've finished. A hash map can tell you whether "car" is a stored word, but not which stored words **start** with it, short of checking every one. A trie is built for exactly that question, and its speed depends on the length of what you type, not on how many words it holds.
+
+## A tree of letters
+
+A **trie** (from re*trie*val, usually said "try") stores strings by their characters. Each edge is one character, and the path from the root to a node spells a **prefix**. A node is marked when the path to it spells a whole stored word.
+
+Words that share a beginning share the nodes for it: "card", "care" and "cart" all go through c → a → r. Type a prefix below, or insert words of your own.
+
+<TrieLab />
+
+## Operations
+
+- **Insert** a word of length $L$: walk down letter by letter, creating any missing nodes, and mark the last one. O(L).
+- **Search** for a word: walk down; it's there if the walk succeeds and ends on a marked node. O(L).
+- **Prefix query**: walk down to the prefix's node (O(L)), then collect every marked node below it.
+
+None of these depend on $n$, the number of stored words. Looking up a 5-letter word costs 5 steps whether the trie holds a hundred words or a million.
+
+<CodeTabs>
+
+```python
+class Trie:
+    def __init__(self):
+        self.children = {}
+        self.end = False
+
+    def insert(self, word):
+        node = self
+        for ch in word:
+            node = node.children.setdefault(ch, Trie())
+        node.end = True
+
+    def complete(self, prefix):
+        node = self
+        for ch in prefix:
+            if ch not in node.children:
+                return []
+            node = node.children[ch]
+        out = []
+        def walk(n, acc):
+            if n.end:
+                out.append(acc)
+            for ch in sorted(n.children):
+                walk(n.children[ch], acc + ch)
+        walk(node, prefix)
+        return out
+
+t = Trie()
+for w in ["car", "card", "care", "cart", "cat", "dog"]:
+    t.insert(w)
+print(t.complete("car"))  # ['car', 'card', 'care', 'cart']
+print(t.complete("ca"))  # ['car', 'card', 'care', 'cart', 'cat']
+print(t.complete("x"))  # []
+```
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeMap;
+
+public class Main {
+    static class Trie {
+        TreeMap<Character, Trie> children = new TreeMap<>();   // sorted, for alphabetical output
+        boolean end;
+
+        void insert(String word) {
+            Trie node = this;
+            for (char c : word.toCharArray()) node = node.children.computeIfAbsent(c, k -> new Trie());
+            node.end = true;
+        }
+
+        List<String> complete(String prefix) {
+            Trie node = this;
+            for (char c : prefix.toCharArray()) {
+                node = node.children.get(c);
+                if (node == null) return List.of();
+            }
+            List<String> out = new ArrayList<>();
+            node.collect(prefix, out);
+            return out;
+        }
+
+        void collect(String acc, List<String> out) {
+            if (end) out.add(acc);
+            children.forEach((c, child) -> child.collect(acc + c, out));
+        }
+    }
+
+    public static void main(String[] args) {
+        Trie t = new Trie();
+        for (String w : new String[]{"car", "card", "care", "cart", "cat", "dog"}) t.insert(w);
+        System.out.println(t.complete("car"));  // [car, card, care, cart]
+        System.out.println(t.complete("x"));  // []
+    }
+}
+```
+
+```cpp
+#include <iostream>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
+struct Trie {
+    std::map<char, std::unique_ptr<Trie>> children;   // ordered, for alphabetical output
+    bool end = false;
+
+    void insert(const std::string& word) {
+        Trie* node = this;
+        for (char c : word) {
+            auto& next = node->children[c];
+            if (!next) next = std::make_unique<Trie>();
+            node = next.get();
+        }
+        node->end = true;
+    }
+
+    void collect(const std::string& acc, std::vector<std::string>& out) const {
+        if (end) out.push_back(acc);
+        for (const auto& [c, child] : children) child->collect(acc + c, out);
+    }
+
+    std::vector<std::string> complete(const std::string& prefix) const {
+        const Trie* node = this;
+        for (char c : prefix) {
+            auto it = node->children.find(c);
+            if (it == node->children.end()) return {};
+            node = it->second.get();
+        }
+        std::vector<std::string> out;
+        node->collect(prefix, out);
+        return out;
+    }
+};
+
+int main() {
+    Trie t;
+    for (std::string w : {"car", "card", "care", "cart", "cat", "dog"}) t.insert(w);
+    auto words = t.complete("car");
+    std::cout << words.size() << " " << words.front() << " " << words.back() << "\n";  // 4 car cart
+    std::cout << t.complete("x").size() << "\n";  // 0
+}
+```
+
+</CodeTabs>
+
+<Callout tone="orange" label="Tries can use a lot of memory">
+Every node needs a map (or an array of 26, or 256) for its children, and most of those slots are empty. A trie of English words can take several times the memory of the words themselves. **Compressed tries** (radix trees) fix this by merging chains of single-child nodes into one edge labelled with a whole substring.
+</Callout>
+
+## Trie or hash set?
+
+| Question | Hash set | Trie |
+|---|---|---|
+| Is this exact word stored? | O(L) to hash, then O(1) | O(L) |
+| Which words start with this prefix? | must check every word | walk to the prefix, then list |
+| Words in alphabetical order | must sort | a preorder walk |
+| Longest stored prefix of this input | try every prefix | one walk down |
+| Memory | compact | larger, unless compressed |
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Autocomplete" tool="Search boxes, IDEs, phone keyboards">
+Suggestions are a prefix query, usually with each node also storing its most popular completions.
+</PracticalApplication>
+<PracticalApplication title="IP routing" tool="Routers, longest-prefix match">
+A router sends a packet using the longest stored address prefix that matches its destination, found by walking a binary trie of address bits.
+</PracticalApplication>
+<PracticalApplication title="Spell checkers and word games" tool="Boggle solvers, Scrabble">
+Search can stop a branch the moment no word has that prefix, which prunes most of the possibilities.
+</PracticalApplication>
+<PracticalApplication title="Radix trees in systems" tool="Linux page cache, Redis streams">
+Compressed tries index everything from the Linux kernel's cached file pages to Ethereum's account state.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+A tree whose paths spell prefixes, operations that cost the length of the key rather than the number of keys, and prefix queries a hash set can't answer. The [quiz](/courses/data-structures/trees-quiz) covers the four kinds of tree in this module.
+</Callout>

@@ -1,0 +1,175 @@
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { LinkedListLab } from "@/components/mdx/DataStructureVisualizers";
+
+# Linked Lists
+
+An array keeps its items side by side, so inserting in the middle means shifting everything after it. A **linked list** gives up being side by side. Each item lives wherever memory is free and carries a **pointer** to the next one. Inserting or removing then means changing a pointer or two, with nothing shifted, but you lose the ability to jump straight to item $i$.
+
+## Nodes and pointers
+
+A linked list is a chain of **nodes**. Each node holds a value and a reference to the next node. The list itself only remembers the first node, the **head**. The last node's next pointer is empty: `None` in Python, `null` in Java, `nullptr` in C++.
+
+Try it: push to the front, append to the end, and remove values. Watch which nodes get walked past.
+
+<LinkedListLab />
+
+Notice the asymmetry. **Push front** never walks: it points the new node at the old head and moves `head`. **Append** walks the whole chain to find the end, unless you also keep a **tail** pointer. **Remove** walks until it finds the value, then makes the node before it skip over it.
+
+## The costs, compared with an array
+
+| Operation | Dynamic array | Singly linked list |
+|---|---|---|
+| Read item $i$ | **O(1)** | O(i): walk from the head |
+| Insert or remove at the front | O(n): shift everything | **O(1)** |
+| Insert or remove after a node you already hold | O(n) | **O(1)** |
+| Append at the end | O(1) amortized | O(1) with a tail pointer |
+| Find a value | O(n) | O(n) |
+| Memory per item | the value | the value **plus a pointer** |
+
+A linked list wins only when you insert and remove in the middle **and already have a reference to the spot**. If you have to search for the spot first, that search is O(n) anyway.
+
+<Callout tone="orange" label="Linked lists are slower than Big-O suggests">
+Each node is a separate allocation, somewhere random in memory. Walking a list means a [cache miss](/courses/data-structures/arrays-and-memory#why-contiguous-is-fast-in-practice) at almost every step, while an array streams through memory. In benchmarks, a dynamic array often beats a linked list even at middle insertions for lists of thousands of items. Reach for a linked list when you need its specific trick, not by default.
+</Callout>
+
+## Building one
+
+<CodeTabs>
+
+```python
+class Node:
+    def __init__(self, value, next=None):
+        self.value = value
+        self.next = next
+
+class LinkedList:
+    def __init__(self):
+        self.head = None
+
+    def push_front(self, value):          # O(1)
+        self.head = Node(value, self.head)
+
+    def remove(self, value):              # O(n) to find, O(1) to unlink
+        prev, node = None, self.head
+        while node and node.value != value:
+            prev, node = node, node.next
+        if node is None:
+            return False
+        if prev is None:
+            self.head = node.next
+        else:
+            prev.next = node.next
+        return True
+
+    def __iter__(self):
+        node = self.head
+        while node:
+            yield node.value
+            node = node.next
+
+lst = LinkedList()
+for v in [5, 3, 8]:
+    lst.push_front(v)
+print(list(lst))  # [8, 3, 5]
+print(lst.remove(3))  # True
+print(list(lst))  # [8, 5]
+```
+
+```java
+public class Main {
+    static class Node {
+        int value;
+        Node next;
+        Node(int value, Node next) { this.value = value; this.next = next; }
+    }
+
+    static Node head = null;
+
+    static void pushFront(int value) { head = new Node(value, head); }   // O(1)
+
+    static boolean remove(int value) {
+        Node prev = null, node = head;
+        while (node != null && node.value != value) { prev = node; node = node.next; }
+        if (node == null) return false;
+        if (prev == null) head = node.next; else prev.next = node.next;
+        return true;
+    }
+
+    static String show() {
+        StringBuilder sb = new StringBuilder();
+        for (Node n = head; n != null; n = n.next) sb.append(n.value).append(n.next != null ? " -> " : "");
+        return sb.toString();
+    }
+
+    public static void main(String[] args) {
+        for (int v : new int[]{5, 3, 8}) pushFront(v);
+        System.out.println(show());  // 8 -> 3 -> 5
+        System.out.println(remove(3));  // true
+        System.out.println(show());  // 8 -> 5
+    }
+}
+```
+
+```cpp
+#include <iostream>
+#include <memory>
+
+struct Node {
+    int value;
+    std::unique_ptr<Node> next;   // owns the rest of the list
+};
+
+std::unique_ptr<Node> head;
+
+void push_front(int value) {      // O(1)
+    head = std::make_unique<Node>(Node{value, std::move(head)});
+}
+
+bool remove(int value) {
+    std::unique_ptr<Node>* link = &head;      // the pointer that points at the node
+    while (*link && (*link)->value != value) link = &(*link)->next;
+    if (!*link) return false;
+    *link = std::move((*link)->next);         // unlink; the node is freed here
+    return true;
+}
+
+int main() {
+    for (int v : {5, 3, 8}) push_front(v);
+    std::cout << head->value << "\n";  // 8
+    std::cout << std::boolalpha << remove(3) << "\n";  // true
+    std::cout << head->next->value << "\n";  // 5
+}
+```
+
+</CodeTabs>
+
+The C++ version shows what the others hide. `unique_ptr` means each node **owns** the next one, so removing a node frees its memory automatically. In Python and Java the garbage collector does that once nothing refers to the node. In C with raw pointers you'd call `free` yourself, and forgetting is a memory leak.
+
+The C++ `remove` uses a classic trick: instead of tracking the previous node, it holds a pointer to **the link itself**. Removing the head and removing any other node become the same operation.
+
+## Doubly linked lists
+
+Give each node a **prev** pointer as well and you get a **doubly linked list**. Now you can walk both ways and remove a node you hold in O(1) without knowing its predecessor. It costs one more pointer per node.
+
+That's the structure behind Java's `LinkedList`, C++'s `std::list`, Python's `collections.OrderedDict`, and the classic **LRU cache**: a hash map finds a node in O(1), and the doubly linked list moves it to the front, or evicts the back, in O(1).
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="LRU caches" tool="Redis, CPU caches, browsers">
+A hash map plus a doubly linked list gives O(1) lookup and O(1) "move to most recent", the textbook LRU cache.
+</PracticalApplication>
+<PracticalApplication title="The OS kernel" tool="Linux list_head">
+Linux keeps process lists, wait queues and free memory blocks in doubly linked lists embedded inside the structures themselves.
+</PracticalApplication>
+<PracticalApplication title="Hash table chaining" tool="Java HashMap">
+Each bucket of a chained [hash table](/courses/advanced-algorithms/collision-resolution#separate-chaining) is a short linked list of the keys that collided there.
+</PracticalApplication>
+<PracticalApplication title="Undo and history" tool="Editors, browsers">
+Back and forward navigation is a walk along a doubly linked list of pages.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Nodes and pointers, the cost table that tells you when a linked list beats an array (rarely, and for a specific reason), and the doubly linked list that powers LRU caches. The [quiz](/courses/data-structures/lists-quiz) checks the module.
+</Callout>

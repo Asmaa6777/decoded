@@ -18,8 +18,8 @@ export const learningPaths: LearningPath[] = [
   {
     slug: "algorithms",
     title: "Algorithms in depth",
-    description: "From proofs and counting to your first sort, then hashing, balanced trees, dynamic programming and P vs NP.",
-    courses: ["discrete-mathematics", "algorithm-design-and-analysis", "computational-mathematics", "advanced-algorithms"],
+    description: "From proofs and counting to your first sort and the core data structures, then hashing, balanced trees, dynamic programming and P vs NP.",
+    courses: ["discrete-mathematics", "algorithm-design-and-analysis", "data-structures", "computational-mathematics", "advanced-algorithms"],
   },
   {
     slug: "languages",
@@ -31,7 +31,7 @@ export const learningPaths: LearningPath[] = [
 
 /** Courses that make a course easier. Nothing is locked; these are only suggestions. */
 export const prerequisites: Record<string, string[]> = {
-  "advanced-algorithms": ["algorithm-design-and-analysis", "discrete-mathematics"],
+  "advanced-algorithms": ["algorithm-design-and-analysis", "discrete-mathematics", "data-structures"],
   "theory-of-computation": ["discrete-mathematics"],
   "computer-organization": ["computer-literacy"],
   microprocessors: ["logic-design", "computer-organization"],

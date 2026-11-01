@@ -196,6 +196,23 @@ const DmProbability = lesson(() => import("@/content/discrete-mathematics/m6-01-
 const DmBirthday = lesson(() => import("@/content/discrete-mathematics/m6-02-birthday-problem.mdx"));
 const DmFinalQuiz = lesson(() => import("@/content/discrete-mathematics/m6-03-final-quiz.mdx"));
 
+const DsArrays = lesson(() => import("@/content/data-structures/m1-01-arrays-and-memory.mdx"));
+const DsDynamic = lesson(() => import("@/content/data-structures/m1-02-dynamic-arrays.mdx"));
+const DsLinked = lesson(() => import("@/content/data-structures/m1-03-linked-lists.mdx"));
+const DsListsQuiz = lesson(() => import("@/content/data-structures/m1-04-lists-quiz.mdx"));
+const DsStacks = lesson(() => import("@/content/data-structures/m2-01-stacks.mdx"));
+const DsQueues = lesson(() => import("@/content/data-structures/m2-02-queues-and-deques.mdx"));
+const DsHash = lesson(() => import("@/content/data-structures/m2-03-hash-maps.mdx"));
+const DsSqQuiz = lesson(() => import("@/content/data-structures/m2-04-stacks-queues-quiz.mdx"));
+const DsTrees = lesson(() => import("@/content/data-structures/m3-01-binary-trees.mdx"));
+const DsBst = lesson(() => import("@/content/data-structures/m3-02-binary-search-trees.mdx"));
+const DsHeaps = lesson(() => import("@/content/data-structures/m3-03-heaps.mdx"));
+const DsTries = lesson(() => import("@/content/data-structures/m3-04-tries.mdx"));
+const DsTreesQuiz = lesson(() => import("@/content/data-structures/m3-05-trees-quiz.mdx"));
+const DsUnionFind = lesson(() => import("@/content/data-structures/m4-01-union-find.mdx"));
+const DsChoosing = lesson(() => import("@/content/data-structures/m4-02-choosing-a-data-structure.mdx"));
+const DsFinalQuiz = lesson(() => import("@/content/data-structures/m4-03-final-quiz.mdx"));
+
 import { ahmedAlghali, asmaaFarouq, type Author } from "./authors";
 
 export type LessonKind = "theory" | "practical" | "quiz";
@@ -877,6 +894,59 @@ export const courses: Course[] = [
           { slug: "probability-and-expectation", title: "Probability and Expectation", duration: "16 min", Component: DmProbability },
           { slug: "birthday-problem", title: "The Birthday Problem and Hash Collisions", duration: "13 min", Component: DmBirthday },
           { slug: "final-quiz", title: "Quiz: Probability and the Whole Course", duration: "10 min", kind: "quiz", Component: DmFinalQuiz },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "data-structures",
+    title: "Data Structures",
+    tagline: "How data is laid out in memory decides how fast your code can be.",
+    description:
+      "Arrays, linked lists, stacks, queues, hash maps, trees, heaps, tries and union-find, each built step by step and taken apart in interactive visualizers. Code comes in Python, with Java and C++ one click away, and every structure is tied to where it runs in real software: list.append, HashMap, the call stack, database indexes, autocomplete.",
+    accent: "violet",
+    status: "available",
+    number: "14",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "Arrays and Lists",
+        blurb: "How memory really holds data: arrays, the dynamic arrays behind every list type, and linked lists.",
+        lessons: [
+          { slug: "arrays-and-memory", title: "Arrays and Memory", duration: "13 min", Component: DsArrays },
+          { slug: "dynamic-arrays", title: "Dynamic Arrays", duration: "14 min", Component: DsDynamic },
+          { slug: "linked-lists", title: "Linked Lists", duration: "15 min", Component: DsLinked },
+          { slug: "lists-quiz", title: "Quiz: Arrays and Lists", duration: "7 min", kind: "quiz", Component: DsListsQuiz },
+        ],
+      },
+      {
+        title: "Stacks, Queues and Hash Maps",
+        blurb: "Last in first out, first in first out, and the structure that finds any key in O(1).",
+        lessons: [
+          { slug: "stacks", title: "Stacks", duration: "12 min", Component: DsStacks },
+          { slug: "queues-and-deques", title: "Queues and Deques", duration: "13 min", Component: DsQueues },
+          { slug: "hash-maps", title: "Hash Maps and Sets", duration: "16 min", Component: DsHash },
+          { slug: "stacks-queues-quiz", title: "Quiz: Stacks, Queues and Hash Maps", duration: "8 min", kind: "quiz", Component: DsSqQuiz },
+        ],
+      },
+      {
+        title: "Trees",
+        blurb: "Traversals, search trees, heaps and tries: four ways a tree makes a hard operation fast.",
+        lessons: [
+          { slug: "binary-trees", title: "Binary Trees and Traversals", duration: "14 min", Component: DsTrees },
+          { slug: "binary-search-trees", title: "Binary Search Trees", duration: "16 min", Component: DsBst },
+          { slug: "heaps", title: "Heaps and Priority Queues", duration: "16 min", Component: DsHeaps },
+          { slug: "tries", title: "Tries", duration: "13 min", Component: DsTries },
+          { slug: "trees-quiz", title: "Quiz: Trees", duration: "8 min", kind: "quiz", Component: DsTreesQuiz },
+        ],
+      },
+      {
+        title: "Choosing and Combining",
+        blurb: "Union-find for merging groups, and how to pick the right structure for a job.",
+        lessons: [
+          { slug: "union-find", title: "Union-Find", duration: "13 min", Component: DsUnionFind },
+          { slug: "choosing-a-data-structure", title: "Choosing a Data Structure", duration: "12 min", Component: DsChoosing },
+          { slug: "final-quiz", title: "Quiz: Choosing and Combining", duration: "10 min", kind: "quiz", Component: DsFinalQuiz },
         ],
       },
     ],

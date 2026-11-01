@@ -1,0 +1,122 @@
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+
+# Arrays and Memory
+
+Every data structure in this course is built from two things: arrays and pointers. Arrays come first because they're what memory actually looks like. Once you see why reading `a[1000000]` takes the same time as reading `a[0]`, and why inserting at the front of a big array is slow, you can predict the cost of most of the code you'll ever write.
+
+## Memory is one long array
+
+Main memory is a long row of numbered bytes. The number of each byte is its **address**. The CPU can read any address directly, in about the same time, which is why it's called **random-access memory**: there's no rewinding or searching, just "give me byte 4,096" (the [RAM lesson](/courses/computer-organization/ram-and-rom) has the hardware side).
+
+An **array** is a block of equal-sized slots sitting next to each other in that row. If an array of 4-byte integers starts at address 1000, then:
+
+| index | 0 | 1 | 2 | 3 |
+|---|---|---|---|---|
+| address | 1000 | 1004 | 1008 | 1012 |
+
+So the address of element $i$ is one multiplication and one addition away:
+
+$$
+\text{address}(i) = \text{start} + i \times \text{size of one element}
+$$
+
+That's why **indexing an array is O(1)**: reading `a[3]` and `a[3000000]` are the same amount of work. It's also why array indexes start at 0 in most languages: the index is the distance from the start.
+
+## What arrays are good and bad at
+
+| Operation | Cost | Why |
+|---|---|---|
+| Read or write `a[i]` | O(1) | one address calculation |
+| Find a value (unsorted) | O(n) | check every slot ([linear search](/courses/algorithm-design-and-analysis/linear-and-binary-search#linear-search-check-everything)) |
+| Find a value (sorted) | O(log n) | [binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half) |
+| Insert or delete at the end | O(1) | nothing else moves |
+| Insert or delete at the front or middle | O(n) | every later item shifts one slot |
+
+The last row is the price of being contiguous. To insert at index 0, every existing item has to move up one slot to make room. In a list of a million items, that's a million moves.
+
+<CodeTabs>
+
+```python
+import array
+
+a = [10, 20, 30, 40]          # a Python list: an array of references
+print(a[2])  # 30
+a.insert(0, 5)                 # shifts 10, 20, 30, 40 up one slot: O(n)
+print(a)  # [5, 10, 20, 30, 40]
+
+# array.array stores raw numbers side by side, like C does
+nums = array.array("i", [10, 20, 30, 40])
+print(nums.itemsize)  # 4
+print(nums.buffer_info()[1])  # 4
+```
+
+```java
+import java.util.Arrays;
+
+public class Main {
+    public static void main(String[] args) {
+        int[] a = {10, 20, 30, 40};   // fixed size, ints side by side
+        System.out.println(a[2]);  // 30
+        System.out.println(a.length);  // 4
+
+        // inserting at the front means building a new array and shifting
+        int[] b = new int[a.length + 1];
+        b[0] = 5;
+        System.arraycopy(a, 0, b, 1, a.length);
+        System.out.println(Arrays.toString(b));  // [5, 10, 20, 30, 40]
+    }
+}
+```
+
+```cpp
+#include <iostream>
+
+int main() {
+    int a[4] = {10, 20, 30, 40};
+    std::cout << a[2] << "\n";  // 30
+    std::cout << sizeof(int) << "\n";  // 4
+
+    // a[i] is literally *(a + i): start address plus i elements
+    std::cout << *(a + 3) << "\n";  // 40
+    std::cout << (&a[3] - &a[0]) << "\n";  // 3
+}
+```
+
+</CodeTabs>
+
+<Callout tone="orange" label="A Python list is an array of references">
+A Python `list` doesn't store the numbers themselves next to each other. It stores **references** (addresses) to number objects that live elsewhere. Indexing is still O(1), but the numbers are scattered, which costs memory and speed. That's why NumPy, `array.array` and Java's `int[]` exist: they store raw values side by side.
+</Callout>
+
+## Why contiguous is fast in practice
+
+Big-O says an array and a linked list both take O(n) to sum. On real hardware the array is often 10 times faster or more. The reason is the [cache](/courses/computer-organization/memory-hierarchy#cache-the-desk-next-to-the-cpu): when the CPU reads one address, it pulls in the whole surrounding block, typically 64 bytes. Walking an array uses every byte of every block it fetches. Walking a linked list jumps to a new, unpredictable address at each step, and often waits on main memory each time.
+
+This is called **locality of reference**, and it's why the fastest code in the world, from game engines to databases to NumPy, keeps its data in arrays.
+
+## Two-dimensional arrays
+
+In C, C++ and NumPy, a grid is stored as one long array in **row-major** order: row 0 comes first, then row 1, and so on. Element `[r][c]` of a grid with `C` columns sits at index `r × C + c`. Java's `int[][]` is slightly different, an array of separate row arrays, but each row is still contiguous.
+
+Either way, looping row by row walks memory in order and is cache-friendly. Looping column by column jumps a whole row's width at every step, and on large grids can be several times slower, for exactly the same arithmetic.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="NumPy and pandas" tool="Data science">
+A NumPy array is one contiguous block of raw numbers. That's why `a.sum()` is about 100 times faster than summing a Python list in a loop.
+</PracticalApplication>
+<PracticalApplication title="Images and video" tool="Every pixel buffer">
+A 1920 × 1080 image is an array of about 2 million pixels in row-major order. Image filters are loops over it.
+</PracticalApplication>
+<PracticalApplication title="Strings" tool="Every language">
+A string is an array of characters, which is why `s[i]` is fast and why building a string by repeated `+` in a loop can be slow: each step may copy the whole thing.
+</PracticalApplication>
+<PracticalApplication title="GPU programming" tool="CUDA, shaders">
+GPUs run thousands of threads that each read neighbouring array elements at once. Their whole design assumes contiguous data.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Why indexing is O(1), why inserting in the middle is O(n), and why arrays beat their Big-O rivals on real machines. The [next lesson](/courses/data-structures/dynamic-arrays) solves the array's other problem: a fixed size.
+</Callout>

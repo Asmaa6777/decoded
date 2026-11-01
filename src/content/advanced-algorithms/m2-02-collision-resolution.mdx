@@ -10,7 +10,7 @@ However good the [hash function](/courses/advanced-algorithms/hashing) is, two d
 
 ## Separate chaining
 
-Suppose $hash(k_1) = i = hash(k_2)$, where $k_1$ and $k_2$ are different keys for two entries $e_1$ and $e_2$ that we want to store in a table $A$ of size $m$. The simplest way to deal with the collision is to put $e_1$ and $e_2$ into a **chain** (a linked list) and store that list in $A[i]$.
+Suppose $hash(k_1) = i = hash(k_2)$, where $k_1$ and $k_2$ are different keys for two entries $e_1$ and $e_2$ that we want to store in a table $A$ of size $m$. The simplest way to deal with the collision is to put $e_1$ and $e_2$ into a **chain** (a [linked list](/courses/data-structures/linked-lists#nodes-and-pointers)) and store that list in $A[i]$.
 
 <HashTableVisualizer
   mode="chaining"

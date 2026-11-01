@@ -1,0 +1,130 @@
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { HashMapDemo } from "@/components/mdx/DataStructureVisualizers";
+
+# Hash Maps and Sets
+
+Look up a username among a hundred million accounts. A sorted array with [binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half) takes about 27 comparisons. A hash map takes, on average, about one. It's the most useful structure in everyday programming, and it works by turning the key itself into an array index.
+
+## Keys into indexes
+
+A **hash map** (dictionary, associative array) stores key–value pairs and supports `put`, `get` and `remove`, all **O(1) on average**. Underneath it's an array of **buckets**. To find a key's bucket:
+
+1. Compute a **hash**: a number made from the key. The same key must always give the same number.
+2. Take it **mod** the number of buckets: `index = hash(key) mod m`.
+
+For strings, a common hash multiplies the running total by 31 and adds each character's code. That's exactly Java's `String.hashCode`, and the one the demo below uses.
+
+Two different keys can land in the same bucket: a **collision**. With more possible keys than buckets, collisions are [guaranteed](/courses/discrete-mathematics/pigeonhole-principle#collisions-in-a-hash-table), and they start much sooner than intuition says, after only about $\sqrt{m}$ keys, by the [birthday problem](/courses/discrete-mathematics/birthday-problem#the-square-root-rule). This demo handles them by **separate chaining**: each bucket holds a short list.
+
+<HashMapDemo />
+
+## Load factor and resizing
+
+The **load factor** is $\alpha = n / m$: keys per bucket. With a decent hash, a lookup inspects about $1 + \alpha$ keys on average, so the map stays fast as long as $\alpha$ stays small. When it passes a threshold (0.75 in Java's `HashMap`, 1.0 in C++'s `unordered_map`, about 2/3 in Python's `dict`), the map **doubles** its buckets and **rehashes** every key into the new array.
+
+One resize is O(n), but it happens after the number of keys has doubled, so by the [same argument as the dynamic array](/courses/data-structures/dynamic-arrays#why-doubling-is-o1-per-append) inserts stay O(1) amortized.
+
+## The worst case
+
+If every key landed in one bucket, a lookup would scan them all: O(n). That happens with a bad hash function, or with an attacker who chooses keys that collide on purpose. In 2011, researchers showed that about 500 KB of carefully chosen form fields could keep a web server's CPU core busy for around a minute this way. The fixes you'll find in real systems:
+
+- **Randomised hashing.** Python and Rust mix a secret per-process seed into string hashes, so attackers can't predict collisions. That's why `hash("hello")` in Python changes every time you restart it.
+- **Tree buckets.** Java's `HashMap` turns a bucket holding more than 8 keys into a small balanced tree (once the table has at least 64 buckets), so even the worst bucket is O(log n).
+
+The [Advanced Algorithms course](/courses/advanced-algorithms/collision-resolution) covers the other family of collision handling, **open addressing**, where a collided key probes for another free slot in the same array. Python's `dict` works that way.
+
+<CodeTabs>
+
+```python
+ages = {}                       # a dict is a hash map
+ages["ada"] = 36
+ages["alan"] = 41
+ages["grace"] = 85
+print(ages["alan"])  # 41
+print("bob" in ages)  # False
+print(ages.get("bob", 0))  # 0
+
+seen = set()                    # a set is a hash map with keys only
+for word in ["to", "be", "or", "not", "to", "be"]:
+    seen.add(word)
+print(len(seen))  # 4
+print(sorted(seen))  # ['be', 'not', 'or', 'to']
+```
+
+```java
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+public class Main {
+    public static void main(String[] args) {
+        Map<String, Integer> ages = new HashMap<>();
+        ages.put("ada", 36);
+        ages.put("alan", 41);
+        ages.put("grace", 85);
+        System.out.println(ages.get("alan"));  // 41
+        System.out.println(ages.containsKey("bob"));  // false
+        System.out.println(ages.getOrDefault("bob", 0));  // 0
+
+        System.out.println("hello".hashCode());  // 99162322
+        System.out.println("hello".hashCode() % 16);  // 2
+
+        Set<String> seen = new HashSet<>();
+        for (String w : new String[]{"to", "be", "or", "not", "to", "be"}) seen.add(w);
+        System.out.println(seen.size());  // 4
+    }
+}
+```
+
+```cpp
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+
+int main() {
+    std::unordered_map<std::string, int> ages;
+    ages["ada"] = 36;
+    ages["alan"] = 41;
+    ages["grace"] = 85;
+    std::cout << ages["alan"] << "\n";  // 41
+    std::cout << ages.count("bob") << "\n";  // 0
+    std::cout << ages.max_load_factor() << "\n";  // 1
+
+    std::unordered_set<std::string> seen;
+    for (std::string w : {"to", "be", "or", "not", "to", "be"}) seen.insert(w);
+    std::cout << seen.size() << "\n";  // 4
+}
+```
+
+</CodeTabs>
+
+<Callout tone="orange" label="Keys must not change">
+A key's bucket is computed from its contents when it's inserted. Change the key afterwards and the map looks in the wrong bucket and can't find it. That's why Python refuses lists as dict keys (they're mutable) and accepts tuples, and why Java keys should be immutable, like `String`.
+</Callout>
+
+<Callout tone="sky" label="Hash maps don't keep order">
+Iterating a `HashMap` or `unordered_map` gives the keys in bucket order, which looks random and can change after a resize. Python's `dict` remembers insertion order (since 3.7), and Java's `LinkedHashMap` adds a linked list to do the same. If you need keys **sorted**, you want a [search tree](/courses/data-structures/binary-search-trees) instead.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Every language's dictionary" tool="dict, HashMap, Map, objects">
+JSON objects, Python namespaces, JavaScript objects and database caches are all hash maps.
+</PracticalApplication>
+<PracticalApplication title="Counting and deduplication" tool="Counter, GROUP BY">
+Counting word frequencies or removing duplicates is one pass with a hash map or set: O(n) instead of O(n²) comparisons.
+</PracticalApplication>
+<PracticalApplication title="Caches" tool="Memcached, Redis, memoization">
+A cache is a hash map from a request to its answer. Memoizing a recursive function is the same idea, and it's half of [dynamic programming](/courses/algorithm-design-and-analysis/dynamic-programming).
+</PracticalApplication>
+<PracticalApplication title="Database joins" tool="PostgreSQL hash join">
+To join two tables, a database often builds a hash map on one table's key and probes it with each row of the other.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+How a key becomes an index, why collisions happen and how chaining handles them, the load factor that triggers a resize, and the worst case that randomised hashing defends against. The [quiz](/courses/data-structures/stacks-queues-quiz) covers the module.
+</Callout>

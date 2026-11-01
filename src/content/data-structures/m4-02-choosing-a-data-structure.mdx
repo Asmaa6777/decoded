@@ -1,0 +1,135 @@
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+
+# Choosing a Data Structure
+
+Most performance problems in real code aren't clever algorithms gone wrong. They're a list used where a set belonged, or a search inside a loop that turned O(n) into O(n²). This lesson puts every structure from the course side by side, then walks through how to pick one.
+
+## The cheat sheet
+
+Costs are for the usual implementation in Python, Java and C++. "Amortized" means on average over many operations; "average" means assuming a decent hash.
+
+| Structure | Access by position | Search by value | Insert / delete | Min or max | Ordered? |
+|---|---|---|---|---|---|
+| [Dynamic array](/courses/data-structures/dynamic-arrays) | **O(1)** | O(n) | end O(1) amortized, middle O(n) | O(n) | insertion order |
+| Sorted array | O(1) | **O(log n)** | O(n) | **O(1)** | sorted |
+| [Linked list](/courses/data-structures/linked-lists) | O(n) | O(n) | O(1) at a known node | O(n) | insertion order |
+| [Stack](/courses/data-structures/stacks) / [queue / deque](/courses/data-structures/queues-and-deques) | ends only | — | **O(1)** at the ends | — | LIFO / FIFO |
+| [Hash map / set](/courses/data-structures/hash-maps) | — | **O(1)** average | **O(1)** average | O(n) | no |
+| [Balanced search tree](/courses/data-structures/binary-search-trees) | O(log n) with extra data | **O(log n)** | **O(log n)** | O(log n) | **sorted** |
+| [Binary heap](/courses/data-structures/heaps) | — | O(n) | push O(log n), pop-min O(log n) | **O(1)** peek | no |
+| [Trie](/courses/data-structures/tries) | — | O(L) per word | O(L) | — | alphabetical |
+| [Union-find](/courses/data-structures/union-find) | — | find ≈ O(1) | union ≈ O(1) | — | — |
+
+## Four questions to ask
+
+1. **What will I do most?** Count the operations in the hot loop, not the ones that run once. A structure is chosen for its most frequent operation.
+2. **Do I look things up by key, by position, or by "smallest"?** Key → hash map. Position → array. Smallest or most urgent → heap. Next or range → tree.
+3. **Does order matter?** Insertion order → array or deque. Sorted → tree. Neither → hash map.
+4. **How big will it get?** For 20 items, a plain array beats everything thanks to the [cache](/courses/data-structures/arrays-and-memory#why-contiguous-is-fast-in-practice). Big-O starts to matter in the thousands, and dominates in the millions.
+
+## The most common fix: a set instead of a list
+
+Checking membership in a list scans it: O(n). Do that inside a loop over another list and the whole thing is O(n × m). Turning one side into a hash set makes each check O(1):
+
+<CodeTabs>
+
+```python
+banned = [f"user{i}" for i in range(0, 20000, 2)]        # 10,000 names
+signups = [f"user{i}" for i in range(15000, 25000)]
+
+# O(n × m): each "in" scans the whole list
+slow = [u for u in signups[:200] if u in banned]
+
+# O(n + m): build a set once, then each check is O(1)
+banned_set = set(banned)
+fast = [u for u in signups if u in banned_set]
+
+print(len(slow))  # 100
+print(len(fast))  # 2500
+print(fast[:2])  # ['user15000', 'user15002']
+```
+
+```java
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class Main {
+    public static void main(String[] args) {
+        List<String> banned = new ArrayList<>();
+        for (int i = 0; i < 20000; i += 2) banned.add("user" + i);
+        List<String> signups = new ArrayList<>();
+        for (int i = 15000; i < 25000; i++) signups.add("user" + i);
+
+        Set<String> bannedSet = new HashSet<>(banned);      // O(n) once
+        int hits = 0;
+        for (String u : signups) if (bannedSet.contains(u)) hits++;   // O(1) each
+        System.out.println(hits);  // 2500
+        System.out.println(banned.contains("user15000"));  // true
+    }
+}
+```
+
+```cpp
+#include <iostream>
+#include <string>
+#include <unordered_set>
+#include <vector>
+
+int main() {
+    std::vector<std::string> banned;
+    for (int i = 0; i < 20000; i += 2) banned.push_back("user" + std::to_string(i));
+
+    std::unordered_set<std::string> banned_set(banned.begin(), banned.end());
+    int hits = 0;
+    for (int i = 15000; i < 25000; i++)
+        if (banned_set.count("user" + std::to_string(i))) hits++;
+    std::cout << hits << "\n";  // 2500
+    std::cout << banned_set.size() << "\n";  // 10000
+}
+```
+
+</CodeTabs>
+
+The slow version above only checks 200 signups. Run it on all 10,000 and it does about 97 million string comparisons; the set version does about 20,000 operations in all.
+
+## Worked choices
+
+| Problem | Structure | Why |
+|---|---|---|
+| Undo history in an editor | Stack | the last change is undone first |
+| Requests waiting for a worker | Queue | first come, first served |
+| Count how often each word appears | Hash map | lookup by key, no order needed |
+| Leaderboard: top 10, and "who's just above me?" | Balanced tree | sorted order and neighbours |
+| Always run the most urgent job next | Heap | repeated "give me the minimum" |
+| Suggest completions as someone types | Trie | prefix queries |
+| Are these two accounts linked through friends? (links only added) | Union-find | merging groups, asking "same group?" |
+| LRU cache | Hash map + doubly linked list | O(1) lookup and O(1) move-to-front |
+
+The last row is a reminder that real systems often **combine** structures, each covering the other's weak spot.
+
+<Callout tone="sky" label="Measure before you optimise">
+Big-O tells you how things grow, not what's fast at your size. When it matters, time it: Python's `timeit`, Java's JMH, or Google Benchmark in C++. The cheat sheet tells you where to look; a measurement tells you whether you've found it.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Code review" tool="Everyday engineering">
+"Why is this a list?" is one of the most useful review comments there is. A membership check inside a loop is the first thing to look for.
+</PracticalApplication>
+<PracticalApplication title="Interviews" tool="LeetCode, system design">
+Most interview problems are "pick the right structure": a hash map for two-sum, a heap for top-k, a deque for sliding-window maximum.
+</PracticalApplication>
+<PracticalApplication title="Databases" tool="Indexes and query plans">
+Choosing between a hash index and a B-tree index, or reading `EXPLAIN` output, is this lesson's table applied to tables on disk.
+</PracticalApplication>
+<PracticalApplication title="Profilers" tool="py-spy, perf, VisualVM">
+When a profiler shows most time inside `list.__contains__` or `ArrayList.indexOf`, the fix is usually in this lesson.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Every structure in the course on one table, four questions that narrow the choice, and the single most common fix in real code. The [final quiz](/courses/data-structures/final-quiz) puts it to work.
+</Callout>

@@ -1,0 +1,135 @@
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { DynamicArrayDemo } from "@/components/mdx/DataStructureVisualizers";
+
+# Dynamic Arrays
+
+An [array](/courses/data-structures/arrays-and-memory#memory-is-one-long-array) has a fixed size: the block of memory is reserved up front, and the slot after the last one may already belong to something else. Yet `list.append` in Python, `ArrayList.add` in Java and `vector::push_back` in C++ never run out of room. They're **dynamic arrays**, and the trick that makes them fast is worth understanding exactly, because it's the most-used data structure in programming.
+
+## The idea: leave room, and grow by a lot
+
+A dynamic array keeps two numbers: its **size** (how many items it holds) and its **capacity** (how many slots it has reserved). While size < capacity, appending just writes into the next free slot: O(1).
+
+When it's full, it can't extend the block in place. It allocates a **bigger** block, **copies** every item across, and frees the old one. That copy costs O(n). The question is how much bigger to make the new block.
+
+Step through it below, then switch the growth rule.
+
+<DynamicArrayDemo />
+
+With **doubling**, 17 appends cause copies of 1, 2, 4, 8 and 16 items: 31 copies in all, under 2 per append. With **grow by 1**, every append past the first is a full copy: 136 copies for 17 items, and about $n^2/2$ for $n$.
+
+## Why doubling is O(1) per append
+
+Suppose we append $n$ items and the capacity doubles each time it fills. The copies happen at sizes $1, 2, 4, \dots$ up to the last power of two below $n$, so the total is
+
+$$
+1 + 2 + 4 + \cdots + 2^k < 2^{k+1} \le 2n,
+$$
+
+using the [sum of powers of two](/courses/discrete-mathematics/induction#a-second-proof-all-ones-in-binary). Add the $n$ writes themselves and the whole run costs under $3n$ steps: on average **O(1) per append**, even though a single append is occasionally O(n).
+
+That "on average over a sequence" cost is called **amortized** cost. The [hashing lesson](/courses/advanced-algorithms/hashing#amortized-analysis) works through the same growing-table argument three formal ways.
+
+<Callout tone="orange" label="Growing by a fixed amount doesn't fix it">
+Growing by 1,000 slots instead of 1 still copies about $n^2 / 2000$ items in total: O(n²), just with a smaller constant. Only growing by a **constant factor** (×2, ×1.5, even ×1.125) makes appends amortized O(1).
+</Callout>
+
+## What real libraries do
+
+Each language picks a factor, trading wasted space against copying:
+
+<CodeTabs>
+
+```python
+import sys
+
+# CPython over-allocates by about 1/8 plus a little, so the
+# reserved size (in bytes) only jumps now and then
+a = []
+sizes = []
+for i in range(20):
+    a.append(i)
+    sizes.append(sys.getsizeof(a))
+reused = sum(1 for before, after in zip(sizes, sizes[1:]) if before == after)
+print(reused > 10)  # True
+print(len(a))  # 20
+```
+
+```java
+import java.util.ArrayList;
+
+public class Main {
+    // ArrayList grows its backing array to old + old/2 (×1.5) when full
+    static int next(int capacity) {
+        return capacity + (capacity >> 1);
+    }
+
+    public static void main(String[] args) {
+        int capacity = 10;               // the default first allocation
+        StringBuilder steps = new StringBuilder("10");
+        for (int i = 0; i < 4; i++) {
+            capacity = next(capacity);
+            steps.append(" ").append(capacity);
+        }
+        System.out.println(steps);  // 10 15 22 33 49
+
+        ArrayList<Integer> list = new ArrayList<>();
+        for (int i = 0; i < 100; i++) list.add(i);
+        System.out.println(list.size());  // 100
+    }
+}
+```
+
+```cpp
+#include <iostream>
+#include <string>
+#include <vector>
+
+int main() {
+    std::vector<int> v;
+    std::size_t last = 0;
+    std::string growth;
+    for (int i = 0; i < 33; i++) {
+        v.push_back(i);
+        if (v.capacity() != last) {          // a reallocation happened
+            last = v.capacity();
+            growth += (growth.empty() ? "" : " ") + std::to_string(last);
+        }
+    }
+    std::cout << growth << "\n";  // 1 2 4 8 16 32 64
+    v.reserve(1000);                          // one allocation up front
+    std::cout << v.capacity() << "\n";  // 1000
+}
+```
+
+</CodeTabs>
+
+The C++ output is from GCC's library, which doubles. Microsoft's grows by 1.5. Both are correct; the standard only requires amortized O(1).
+
+<Callout tone="sky" label="Reserve when you know the size">
+If you know you'll add a million items, `vector::reserve(1000000)`, `new ArrayList<>(1000000)` or a pre-sized NumPy array skip every reallocation. The result is the same; the copying disappears.
+</Callout>
+
+## Shrinking
+
+Removing from the end is O(1): just decrease size. Some implementations also shrink the capacity when the array gets mostly empty, but they wait until it's **a quarter** full before halving, not half. Halving at exactly half full would let an alternating add, remove, add, remove at the boundary trigger a full copy every time.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Every list type" tool="list, ArrayList, vector, Vec">
+Python's list, Java's ArrayList, C++'s vector, Rust's Vec, Go's slices and JavaScript arrays are all dynamic arrays.
+</PracticalApplication>
+<PracticalApplication title="String builders" tool="StringBuilder, io.StringIO">
+Building a long string piece by piece uses a growable buffer for the same reason: one copy per doubling, not one per piece.
+</PracticalApplication>
+<PracticalApplication title="Hash tables" tool="dict, HashMap">
+When a hash table gets too full it doubles its bucket array and re-inserts everything: the same amortized argument.
+</PracticalApplication>
+<PracticalApplication title="Latency spikes" tool="Games, trading systems">
+The occasional O(n) resize can cause a visible pause. Systems that can't afford one reserve capacity in advance.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+A growable array with O(1) amortized appends, the doubling argument that proves it, and how real libraries tune it. The [next lesson](/courses/data-structures/linked-lists) gives up indexing in exchange for O(1) inserts anywhere.
+</Callout>

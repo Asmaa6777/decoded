@@ -1,0 +1,114 @@
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { BracketStack } from "@/components/mdx/DataStructureVisualizers";
+
+# Stacks
+
+Ctrl+Z undoes your last change, then the one before it. Your browser's back button returns to the page you were on most recently. A function returns to whoever called it last. Each of these is "last in, first out", and the data structure behind all three is the simplest one there is: a stack.
+
+## The interface
+
+A **stack** holds items and lets you touch only the most recent one:
+
+- **push(x)**: put x on top.
+- **pop()**: remove and return the top item.
+- **peek()**: look at the top item without removing it.
+- **is_empty()**.
+
+The rule is **LIFO**: last in, first out. All four operations are O(1).
+
+That's the whole definition, and it's an **abstract data type**: a promise about behaviour, not about memory. You can keep a stack in a [dynamic array](/courses/data-structures/dynamic-arrays) (push and pop at the end) or in a [linked list](/courses/data-structures/linked-lists) (push and pop at the head). The array version is usually faster, for the [cache reasons](/courses/data-structures/arrays-and-memory#why-contiguous-is-fast-in-practice) from the first lesson.
+
+<CodeTabs>
+
+```python
+stack = []              # a list used as a stack: push and pop at the end
+stack.append("a")
+stack.append("b")
+stack.append("c")
+print(stack.pop())  # c
+print(stack[-1])  # b
+print(len(stack))  # 2
+```
+
+```java
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+public class Main {
+    public static void main(String[] args) {
+        // ArrayDeque is the recommended stack in Java; the old Stack class is synchronized and slower
+        Deque<String> stack = new ArrayDeque<>();
+        stack.push("a");
+        stack.push("b");
+        stack.push("c");
+        System.out.println(stack.pop());  // c
+        System.out.println(stack.peek());  // b
+        System.out.println(stack.size());  // 2
+    }
+}
+```
+
+```cpp
+#include <iostream>
+#include <stack>
+#include <string>
+
+int main() {
+    std::stack<std::string> stack;   // a vector-like container underneath
+    stack.push("a");
+    stack.push("b");
+    stack.push("c");
+    std::cout << stack.top() << "\n";  // c
+    stack.pop();                      // C++ pop() returns nothing: read top() first
+    std::cout << stack.top() << "\n";  // b
+    std::cout << stack.size() << "\n";  // 2
+}
+```
+
+</CodeTabs>
+
+## Matching brackets
+
+Your editor highlights a mismatched bracket the moment you type it. How does it know? Read left to right. Every opener is a promise that must be kept later, and the **most recent** unkept promise must be kept **first**: in `([)]`, the `)` arrives while `[` is still open, which is wrong. "Most recent first" is exactly a stack.
+
+Step through a few strings, or type your own:
+
+<BracketStack />
+
+Three things can go wrong, and each has its own place in the code: a closer that doesn't match the top (`([)]`), a closer with nothing open (`())`), and openers left over at the end (`(()`).
+
+This is also why a [finite automaton can't do this check](/courses/theory-of-computation/limits-of-finite-memory#what-is-missing-is-a-stack) but a [pushdown automaton](/courses/theory-of-computation/pushdown-automata) can: the difference between them is precisely one stack.
+
+## The call stack
+
+When a function calls another, the computer needs to remember where to come back to, and the caller's local variables. It pushes a **stack frame** holding them. When the called function returns, its frame is popped and execution resumes in the caller. That's the **call stack**, kept by the CPU itself with [PUSH, POP, CALL and RET](/courses/microprocessors/stack-and-procedures#call-and-ret).
+
+Two consequences you'll meet:
+
+- **Recursion** works because each call gets its own frame. A recursive function can always be rewritten with an explicit stack, and depth-first search usually is.
+- **Stack overflow** happens when recursion goes too deep and the frames exhaust the stack's fixed memory, typically a few megabytes. Python stops you earlier, at a default depth of 1,000.
+
+<Callout tone="orange" label="The stack and the heap are different things">
+"The stack" in "stack overflow" is the call stack, a region of memory. "The heap" where `new` and `malloc` allocate memory is a different region, and it has nothing to do with the [heap data structure](/courses/data-structures/heaps) later in this course. Same words, different meanings.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Undo" tool="Editors, Photoshop, Figma">
+Each edit is pushed onto an undo stack. Undo pops it and pushes it onto a redo stack; any new edit clears the redo stack.
+</PracticalApplication>
+<PracticalApplication title="Parsers and compilers" tool="JSON, HTML, expression evaluators">
+Nested structure is checked and built with a stack, from bracket matching to turning `2 + 3 * 4` into the right order of operations.
+</PracticalApplication>
+<PracticalApplication title="Depth-first search" tool="Maze solvers, file system walks">
+DFS is a stack of "places still to explore". With recursion, the call stack plays that role.
+</PracticalApplication>
+<PracticalApplication title="Browser history" tool="The back button">
+Visiting a page pushes it; back pops. (Forward is a second stack.)
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+A last-in-first-out container with O(1) operations, the bracket-matching algorithm that shows why "most recent first" matters, and the call stack that runs every program. The [next lesson](/courses/data-structures/queues-and-deques) flips the order.
+</Callout>
