@@ -1,0 +1,90 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { TreeHeightLab } from "@/components/mdx/DiscreteVisualizers";
+
+# Trees
+
+Your file system, the HTML of every web page, a JSON document, the parse of every line of code you compile, a database index: all trees. They're the graphs with just enough edges to hold everything together and not one more, and that one fact explains why searching a balanced tree of a billion items takes about 30 steps.
+
+## What a tree is
+
+A **tree** is a [graph](/courses/discrete-mathematics/graphs#what-a-graph-is) that is connected and has no cycles. A graph with no cycles that may be in several pieces is a **forest**: a collection of trees.
+
+For a graph with $n$ vertices, these all say the same thing, and any one can serve as the definition:
+
+1. It is connected and has no cycles.
+2. It is connected and has exactly $n - 1$ edges.
+3. It has no cycles and has exactly $n - 1$ edges.
+4. There is exactly one path between any two vertices.
+5. It is connected, but removing any edge disconnects it.
+
+The last one is the sense in which a tree is "minimal": every edge is holding something up.
+
+## Why n − 1 edges
+
+**Claim.** Every tree with $n$ vertices has $n - 1$ edges.
+
+First, a tool. A **leaf** is a vertex of degree 1. Every tree with at least 2 vertices has a leaf: take a longest path in the tree, and look at its last vertex. It can't have another neighbour further along (the path would be longer) or back on the path (that would close a cycle). So its only neighbour is the one before it.
+
+**Proof**, by [induction](/courses/discrete-mathematics/induction) on $n$. A tree with 1 vertex has $0$ edges. Now take a tree with $k + 1$ vertices. Remove a leaf and its one edge. What's left is still connected (no path needed to pass *through* a leaf) and still has no cycles, so it's a tree with $k$ vertices, which by hypothesis has $k - 1$ edges. Put the leaf back: $k$ edges, which is $(k + 1) - 1$. $\blacksquare$
+
+So a connected graph with $n$ vertices needs at least $n - 1$ edges, and a tree is one that uses exactly that many. Add any edge to a tree and you create exactly one cycle; remove any edge and it falls into two pieces.
+
+## Rooted trees
+
+Pick one vertex as the **root** and hang the tree from it, and the edges get a direction: away from the root. This is the kind of tree data structures use.
+
+- Each vertex except the root has exactly one **parent**, the neighbour on the path to the root. Its other neighbours are its **children**.
+- Vertices with no children are **leaves**; the others are **internal** vertices.
+- The **depth** of a vertex is the length of its path from the root. The root has depth 0.
+- The **height** of the tree is the greatest depth of any vertex.
+
+A **binary tree** is a rooted tree where each vertex has at most two children, called left and right.
+
+## Height
+
+How tall must a binary tree with $n$ vertices be? Level $d$ can hold at most $2^d$ vertices, since each vertex on the level above has at most two children. So a tree of height $h$ holds at most
+
+$$
+1 + 2 + 4 + \cdots + 2^h = 2^{h+1} - 1
+$$
+
+vertices (by the sum from the [induction lesson](/courses/discrete-mathematics/induction#a-second-proof-all-ones-in-binary)). Turning that around, a binary tree with $n$ vertices has height at least $\lfloor \log_2 n \rfloor$, and a **complete** binary tree, filled level by level from the left, reaches exactly that.
+
+Slide the number of vertices below. The height only goes up when a level fills and a new one starts: at 2, 4, 8 and 16 vertices.
+
+<TreeHeightLab />
+
+Run the numbers the other way and you get the reason trees are everywhere: a balanced tree with a billion items ($\approx 2^{30}$) is only about 30 levels deep. A search that goes down one level per step finds anything in about 30 steps. That's what [balanced search trees](/courses/advanced-algorithms/balanced-search-trees) guarantee, and what a database's B-tree index achieves with even fewer levels, because each node has hundreds of children instead of two.
+
+The same count also gives a **lower bound**. A binary tree with $L$ leaves has height at least $\log_2 L$, because a tree of height $h$ has at most $2^h$ leaves. A comparison sort can be drawn as a binary tree of yes/no questions with one leaf for each of the $n!$ possible orderings, so some input needs at least $\log_2(n!)$ comparisons, which grows like $n \log_2 n$. That's the [sorting lower bound](/courses/advanced-algorithms/sorting-lower-bounds#the-lower-bound): no comparison sort can beat it.
+
+<Callout tone="orange" label="Height depends on shape, not just size">
+The bound $\lfloor \log_2 n \rfloor$ is a *minimum*. Insert sorted keys 1, 2, 3, … into a plain binary search tree and every node gets only a right child: height $n - 1$, and searching becomes a linear scan. Balanced trees exist to stop exactly that.
+</Callout>
+
+## Spanning trees
+
+A **spanning tree** of a connected graph is a tree that uses all of its vertices and some of its edges. It's the cheapest way to keep everything connected: $n - 1$ edges, no redundancy.
+
+When edges have costs, the cheapest spanning tree is the **minimum spanning tree**, found by [Prim's or Kruskal's algorithm](/courses/algorithm-design-and-analysis/greedy-and-mst). The BFS or DFS of a connected graph also builds a spanning tree as it goes: each vertex's tree edge is the one it was first discovered along.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="File systems and the DOM" tool="Folders, HTML">
+Every folder has one parent, so paths are unique: exactly one path between any two vertices. The browser's DOM is a rooted tree of elements.
+</PracticalApplication>
+<PracticalApplication title="Parse trees" tool="Compilers, JSON">
+A compiler turns each statement into a tree whose leaves are tokens. The same structure is behind JSON, XML and every abstract syntax tree.
+</PracticalApplication>
+<PracticalApplication title="Database indexes" tool="B-trees, PostgreSQL">
+B-trees keep every leaf at the same depth with hundreds of children per node, so even huge tables need only 3 or 4 levels.
+</PracticalApplication>
+<PracticalApplication title="Network spanning trees" tool="Ethernet STP">
+Ethernet switches run the Spanning Tree Protocol to switch off redundant links, because frames sent around a cycle of switches would circulate forever.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Five equivalent definitions of a tree, why it has $n - 1$ edges, and the height bound that makes trees fast and puts a floor under sorting. The [quiz](/courses/discrete-mathematics/graphs-quiz) covers the graphs module.
+</Callout>

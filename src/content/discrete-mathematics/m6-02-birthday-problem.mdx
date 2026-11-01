@@ -1,0 +1,97 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { BirthdayCurve } from "@/components/mdx/DiscreteVisualizers";
+
+# The Birthday Problem and Hash Collisions
+
+How many people do you need in a room before two of them probably share a birthday? Most people guess somewhere near 180, half of 365. The answer is 23. The same arithmetic decides how soon a hash table sees its first collision, how many bits a hash needs to be secure, and why random IDs need to be as long as they are.
+
+## Working it out
+
+Assume 365 equally likely birthdays and ignore leap years. "At least two share" has many overlapping cases, so [count the opposite](/courses/discrete-mathematics/sum-and-product-rules#count-the-opposite): the chance that all $k$ birthdays are **different**.
+
+The first person can have any birthday. The second must avoid one day, so $364/365$. The third must avoid two days, $363/365$, and so on. These choices are [independent](/courses/discrete-mathematics/probability-and-expectation#independence), so multiply:
+
+$$
+P(\text{all different}) = \frac{365}{365} \cdot \frac{364}{365} \cdots \frac{365 - k + 1}{365}.
+$$
+
+Then $P(\text{some pair shares}) = 1 - P(\text{all different})$. For $k = 23$ the product is about $0.493$, so the chance of a shared birthday is about $0.507$: better than even. At 70 people it's 99.9%.
+
+Drag the slider below, or switch to a 16-bit hash with 65,536 possible values. The orange line marks 50%.
+
+<BirthdayCurve />
+
+## Why so soon
+
+The intuition that fails is "my birthday against everyone else's." That's only $k - 1$ comparisons. But a match can be between **any** two people, and with 23 people there are $\binom{23}{2} = 253$ [pairs](/courses/discrete-mathematics/permutations-and-combinations#combinations). Each pair matches with probability $1/365$, so by [linearity of expectation](/courses/discrete-mathematics/probability-and-expectation#linearity-of-expectation) the expected number of matching pairs is
+
+$$
+\frac{253}{365} \approx 0.69.
+$$
+
+The number of pairs grows like $k^2/2$, so collisions arrive once $k^2$ is comparable to the number of possible values, not once $k$ is.
+
+## The square-root rule
+
+For $m$ equally likely values, the chance of a collision passes 50% at about
+
+$$
+k \approx 1.18\sqrt{m} \qquad (\text{more precisely } \sqrt{2 \ln 2 \cdot m}).
+$$
+
+For $m = 365$ that gives $22.5$, and the exact answer is 23. The slider shows the same thing for a 1,000-slot table (38 keys) and a 16-bit hash (302 values).
+
+| Possible values $m$ | 50% collision chance after about |
+|---|---|
+| 365 birthdays | 23 |
+| $2^{16} = 65{,}536$ | 302 |
+| $2^{32} \approx 4.3$ billion | 77,000 |
+| $2^{64}$ | 5 billion |
+| $2^{122}$ (random UUID) | $2.7 \times 10^{18}$ |
+
+A hash with $b$ bits has $2^b$ values, and its first collision is expected after about $2^{b/2}$ items. **You get collisions at the square root of the space, not at the space.**
+
+<Callout tone="orange" label="32 bits is not enough for IDs">
+A 32-bit hash has over 4 billion values, which sounds like plenty. But a 50% chance of a collision arrives after only about 77,000 items. If you use a 32-bit hash or random number as a unique ID for anything with more than a few thousand records, plan for duplicates.
+</Callout>
+
+## Collisions in practice
+
+**Hash tables.** With $k$ keys in $m$ buckets, collisions appear once $k$ is around $\sqrt{m}$, long before the table is full. A table of 1,000 buckets has better-than-even odds of a collision after only 38 keys. The [pigeonhole principle](/courses/discrete-mathematics/pigeonhole-principle#collisions-in-a-hash-table) says collisions are *certain* past $m$ keys; the birthday problem says they're *likely* long before. That's why [chaining and open addressing](/courses/advanced-algorithms/collision-resolution) are part of every hash table, not an edge case.
+
+**Cryptographic hashes.** An attacker who wants *any* two inputs with the same hash doesn't search for a match to one fixed value; they generate many and wait for a pair. That's the **birthday attack**, and it means a $b$-bit hash offers only about $b/2$ bits of collision resistance. MD5's 128 bits give about $2^{64}$ work, which is why it was broken and why SHA-256 is used now: $2^{128}$ is out of reach.
+
+**Random IDs.** A version-4 UUID has 122 random bits. You'd need around $2.7 \times 10^{18}$ of them for an even chance of a single duplicate, which is why databases and distributed systems create them independently without checking with each other.
+
+```python
+def p_collision(k, m):
+    p_distinct = 1.0
+    for i in range(k):
+        p_distinct *= (m - i) / m
+    return 1 - p_distinct
+
+print(round(p_collision(23, 365), 3))  # 0.507
+print(round(p_collision(70, 365), 3))  # 0.999
+print(round(p_collision(38, 1000), 3))  # 0.509
+```
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Hash sizes" tool="Git, content addressing">
+Git, IPFS and Docker name content by its hash. Their hashes are 160 or 256 bits so that the square root, $2^{80}$ or $2^{128}$, is still far out of reach.
+</PracticalApplication>
+<PracticalApplication title="Short IDs" tool="URL shorteners, git short hashes">
+Git's abbreviated commit hashes grow longer in big repositories for exactly this reason: 7 hex digits is 28 bits, and collisions appear after about 19,000 objects.
+</PracticalApplication>
+<PracticalApplication title="Signatures and certificates" tool="TLS, MD5, SHA-1">
+Real attacks forged certificates using MD5 collisions, found with birthday-style searches. Certificate authorities moved to SHA-256.
+</PracticalApplication>
+<PracticalApplication title="Sampling and dedup" tool="Bloom filters, sketches">
+Estimating how many distinct items a stream contains (HyperLogLog, used in Redis) relies on the same collision statistics.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+The complement trick, the pair count, and the square-root rule: collisions show up after about $\sqrt{m}$ items, not $m$. That one rule sizes hash tables, hash functions and IDs. The [final quiz](/courses/discrete-mathematics/final-quiz) wraps up the course.
+</Callout>

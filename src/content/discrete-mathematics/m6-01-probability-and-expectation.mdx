@@ -1,0 +1,115 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { DiceGrid } from "@/components/mdx/DiscreteVisualizers";
+
+# Probability and Expectation
+
+Randomised quicksort is fast "on average." A hash table finds keys in $O(1)$ "expected" time. A load balancer picks servers at random and still spreads work evenly. Each of these claims is a statement about probability over a finite set of outcomes, which makes it discrete maths: [counting](/courses/discrete-mathematics/sum-and-product-rules), with a division at the end.
+
+## Sample spaces and events
+
+A random process, such as rolling dice or picking a pivot, has a **sample space** $S$: the set of all possible outcomes. An **event** is a subset of $S$, the outcomes you care about.
+
+When all outcomes are equally likely, the probability of an event $E$ is
+
+$$
+P(E) = \frac{|E|}{|S|}.
+$$
+
+Count the outcomes in the event, count all the outcomes, divide. Everything in this lesson starts from that.
+
+Two dice give $6 \times 6 = 36$ outcomes, by the product rule. Pick an event below to see which ones it contains.
+
+<DiceGrid />
+
+The sum 7 happens 6 ways out of 36, so $P = 1/6$. The sum 2 happens only one way, $(1, 1)$, so $P = 1/36$. The sums aren't equally likely even though the outcomes are, because more outcomes add up to 7.
+
+<Callout tone="orange" label="Count outcomes, not results">
+"The sum is 2 to 12, so each sum has a 1-in-11 chance" is wrong. The 11 sums aren't equally likely; the 36 ordered pairs are. Always count in the sample space where outcomes really are equally likely. Note that $(1, 2)$ and $(2, 1)$ are different outcomes: the two dice are different dice.
+</Callout>
+
+## Combining events
+
+Because events are sets, the [set operations](/courses/discrete-mathematics/sets#set-operations) give you the rules:
+
+- **Complement:** $P(\overline{E}) = 1 - P(E)$. The chance of *at least one 6* in two rolls is $1 - P(\text{no 6}) = 1 - \frac{25}{36} = \frac{11}{36}$. That's [counting the opposite](/courses/discrete-mathematics/sum-and-product-rules#count-the-opposite) again.
+- **Union:** $P(A \cup B) = P(A) + P(B) - P(A \cap B)$, which is [inclusion–exclusion](/courses/discrete-mathematics/sets#counting-a-union) divided by $|S|$.
+- **Disjoint events**, which can't both happen, just add: $P(A \cup B) = P(A) + P(B)$.
+
+## Independence
+
+Events $A$ and $B$ are **independent** when knowing one happened doesn't change the chance of the other. Formally,
+
+$$
+P(A \cap B) = P(A) \cdot P(B).
+$$
+
+Separate dice, separate coin flips and separately seeded random choices are independent. For independent events, "and" multiplies, just as in the product rule. The chance of *no* 6 in four rolls is $(5/6)^4$, so the chance of at least one 6 in four rolls is $1 - (5/6)^4 \approx 0.518$.
+
+<Callout tone="orange" label="Independence is a claim, not a default">
+Two servers in the same data centre don't fail independently: a power cut takes out both. Treating them as independent makes "both down" look far rarer than it is. Before you multiply probabilities, ask whether the events really have nothing in common.
+</Callout>
+
+## Random variables and expectation
+
+A **random variable** is a number attached to each outcome: the sum of two dice, the number of comparisons a sort makes, the length of a hash bucket. Formally it's a [function](/courses/discrete-mathematics/functions) from $S$ to the real numbers.
+
+Its **expected value** is the average over all outcomes, weighted by probability:
+
+$$
+E[X] = \sum_{s \in S} P(s)\, X(s).
+$$
+
+For the sum of two dice, the 36 sums add up to 252, so $E[\text{sum}] = 252 / 36 = 7$. Expectation is what "on average" means when an algorithm's running time is advertised: [randomised quicksort](/courses/advanced-algorithms/quicksort) makes about $2n \ln n \approx 1.39\, n \log_2 n$ comparisons in expectation, whatever the input.
+
+## Linearity of expectation
+
+The most useful fact in this lesson:
+
+$$
+E[X + Y] = E[X] + E[Y]
+$$
+
+**always**, whether or not $X$ and $Y$ are independent. So you can split a complicated count into simple pieces, find the expected value of each piece, and add.
+
+The dice again: each die has $E = (1 + 2 + \cdots + 6)/6 = 3.5$, so the sum has $E = 3.5 + 3.5 = 7$, without looking at 36 cases.
+
+A harder example. A program shuffles $n$ items into a random order. How many, on average, end up where they started? The number of orderings is $n!$, and counting fixed points across all of them looks painful. Instead, let $X_i = 1$ if item $i$ stays put and 0 otherwise. Item $i$ lands in any of the $n$ positions equally likely, so $E[X_i] = 1/n$. The total is $X_1 + \cdots + X_n$, so
+
+$$
+E[\text{items in place}] = n \cdot \frac{1}{n} = 1.
+$$
+
+One item, on average, whether you shuffle 5 items or 5 million. The $X_i$ are not independent (if $n - 1$ items stay put, so does the last), and linearity doesn't care.
+
+```python
+from itertools import permutations
+from fractions import Fraction
+
+n = 5
+fixed = [sum(p[i] == i for i in range(n)) for p in permutations(range(n))]
+print(len(fixed))  # 120
+print(Fraction(sum(fixed), len(fixed)))  # 1
+```
+
+The same trick, with $X_i$ for "the $i$-th pair of elements gets compared," is how the expected cost of randomised quicksort is worked out.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Randomised algorithms" tool="Quicksort, skip lists">
+Random pivots and random levels in a [skip list](/courses/advanced-algorithms/skip-lists) make the expected cost good for every input, so no adversary can pick a bad one.
+</PracticalApplication>
+<PracticalApplication title="Hash table performance" tool="Load factor">
+With $n$ keys in $m$ buckets, the expected bucket length is $n/m$ by linearity, which is why tables resize when that ratio grows.
+</PracticalApplication>
+<PracticalApplication title="A/B testing" tool="Experiments">
+Deciding whether version B really beats version A means asking how likely the observed difference is to arise by chance.
+</PracticalApplication>
+<PracticalApplication title="Machine learning" tool="Loss functions, dropout">
+Training minimises an *expected* loss over the data. Dropout switches each unit off with some probability during training, and the scaling it uses comes from expectation.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Probability as counting, the complement and union rules, independence, expectation, and linearity: the tool that turns hard averages into sums of easy ones. The [next lesson](/courses/discrete-mathematics/birthday-problem) uses all of them on hash collisions.
+</Callout>

@@ -1,0 +1,83 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { PasswordSpace } from "@/components/mdx/DiscreteVisualizers";
+
+# The Sum and Product Rules
+
+How long would it take to guess an 8-character password? How many IPv4 addresses are there, and why did they run out? How many test cases does a function with five boolean flags need to cover every combination? These questions are all counting, and nearly every counting argument is built from two rules.
+
+## The product rule
+
+If a task is done in a sequence of steps, with $n_1$ ways to do the first step, $n_2$ ways to do the second (whatever happened in the first), and so on, then the whole task can be done in
+
+$$
+n_1 \cdot n_2 \cdots n_k \text{ ways.}
+$$
+
+Think of it as a tree: each choice at step one branches into $n_2$ choices at step two, and you count the leaves.
+
+- An outfit from 3 shirts and 4 pairs of trousers: $3 \cdot 4 = 12$.
+- A function with 5 boolean flags: $2^5 = 32$ combinations, the same count as the rows of a [truth table](/courses/discrete-mathematics/propositions-and-connectives#truth-tables).
+- An IPv4 address is 32 bits: $2^{32} = 4{,}294{,}967{,}296$ addresses. That's fewer than the number of people alive, which is why IPv6 has 128 bits.
+
+When each step has the same $n$ choices and there are $k$ steps, the count is $n^k$. A string of length $k$ over an alphabet of $n$ symbols is the standard example.
+
+## The sum rule
+
+If a task can be done in **one** of several **non-overlapping** ways, with $n_1$ ways of the first kind, $n_2$ of the second, and so on, then there are
+
+$$
+n_1 + n_2 + \cdots + n_k \text{ ways.}
+$$
+
+- Choosing one character from lowercase letters (26), uppercase letters (26) or digits (10): $26 + 26 + 10 = 62$.
+- A variable name of 1 or 2 letters: $26 + 26^2 = 702$.
+
+The rule of thumb: **"and then" multiplies, "or" adds.** The sum rule needs the options to be [disjoint](/courses/discrete-mathematics/sets#set-operations). If they overlap, you'd count the shared ones twice, and you need [inclusion–exclusion](/courses/discrete-mathematics/sets#counting-a-union) instead.
+
+## Password strength
+
+A password is a sequence of characters. The sum rule gives the number of choices per character; the product rule raises it to the length. Try different settings below.
+
+<PasswordSpace />
+
+Two things stand out:
+
+- **Length beats variety.** Going from lowercase to all 62 letters and digits multiplies the count of 8-character passwords by about 1,000. Adding just two more lowercase characters multiplies it by $26^2 = 676$, and two more after that by another 676. Each character multiplies; each new character class only adds to the base.
+- **These are upper bounds.** The count assumes every character is chosen at random. Real passwords like `Summer2024!` are nowhere near random, so attackers try likely ones first and find them far sooner.
+
+<Callout tone="orange" label="Exponential growth runs both ways">
+The same $n^k$ that protects a long password is what makes brute-force algorithms hopeless. Trying every subset of 60 items means $2^{60} \approx 10^{18}$ cases. That's why problems like the [knapsack](/courses/algorithm-design-and-analysis/dynamic-programming) need cleverer algorithms than "try everything."
+</Callout>
+
+## Count the opposite
+
+Sometimes it's easier to count what you **don't** want and subtract. How many 4-digit PINs (0000 to 9999) contain at least one 7?
+
+Counting directly means juggling "a 7 in the first place, or the second, or…" with overlaps everywhere. Instead, count PINs with **no** 7: each digit has 9 choices, so $9^4 = 6{,}561$. All PINs: $10^4 = 10{,}000$. So
+
+$$
+10{,}000 - 6{,}561 = 3{,}439 \text{ PINs contain at least one 7.}
+$$
+
+"At least one" is the signal to count the complement. The same move gives the [birthday problem](/courses/discrete-mathematics/birthday-problem) its answer.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Key sizes" tool="AES, UUIDs">
+A 128-bit AES key has $2^{128}$ possibilities. A random UUID has 122 random bits, which is why systems can generate them independently and not worry about clashes.
+</PracticalApplication>
+<PracticalApplication title="Test planning" tool="Pairwise testing">
+Five settings with 4 options each give $4^5 = 1{,}024$ combinations. Pairwise testing tools cover every pair of settings with a few dozen tests instead.
+</PracticalApplication>
+<PracticalApplication title="Address spaces" tool="IPv4, IPv6, memory">
+A $k$-bit address reaches $2^k$ locations: 32-bit programs see at most 4 GiB, and IPv4 has about 4.3 billion addresses.
+</PracticalApplication>
+<PracticalApplication title="Search spaces" tool="Brute force, puzzles">
+Counting the possibilities first tells you whether brute force is a few milliseconds or longer than the age of the universe.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Two rules, "and then multiplies, or adds," plus the trick of counting the complement. The [next lesson](/courses/discrete-mathematics/permutations-and-combinations) uses them to count arrangements and selections.
+</Callout>

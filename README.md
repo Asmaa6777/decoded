@@ -36,6 +36,7 @@ Decoded tries to draw that map. Every lesson answers one question:
 | [Logic Design](https://decoded.stack42.tech/courses/logic-design) | Available | 23, from gates and K-maps to latches, flip-flops and a memory unit, with live circuits |
 | [Microprocessors](https://decoded.stack42.tech/courses/microprocessors) | Available | 12, real 8086 assembly with a step-through simulator |
 | [Computer Architecture](https://decoded.stack42.tech/courses/computer-architecture) | Available | 15, instruction sets, cache, virtual memory, I/O, pipelines and parallelism |
+| [Discrete Mathematics](https://decoded.stack42.tech/courses/discrete-mathematics) | Available | 23, across logic, sets, proof, counting, graphs and probability, with interactive truth tables, relations and proofs |
 | [Computer Literacy](https://decoded.stack42.tech/courses/computer-literacy) | Available | 3 |
 | [The Exam Mind](https://decoded.stack42.tech/courses/the-exam-mind) | Available | 4 |
 | Operating Systems | Coming soon | |

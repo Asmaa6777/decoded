@@ -1,0 +1,109 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { EquivalenceChecker } from "@/components/mdx/DiscreteVisualizers";
+
+# Logical Equivalence and the Laws of Logic
+
+A code reviewer asks you to change `if (!(isEmpty || isLocked))` to `if (!isEmpty && !isLocked)`. Is that safe, or have you just shipped a bug? This lesson gives you two ways to answer for certain: compare truth tables, or rewrite one formula into the other with laws you can trust.
+
+## Logical equivalence
+
+Two formulas are **logically equivalent**, written $A \equiv B$, when they have the same value on every row of the truth table. Equivalent formulas are interchangeable: replace one with the other anywhere and nothing changes.
+
+Put another way, $A \equiv B$ exactly when $A \leftrightarrow B$ is a [tautology](/courses/discrete-mathematics/propositions-and-connectives#tautologies-and-contradictions).
+
+The checker below puts two formulas side by side. If any row disagrees, it's highlighted, and that row is a **counterexample**: a concrete input where the two behave differently. One counterexample is enough to show they aren't equivalent.
+
+<EquivalenceChecker />
+
+## The contrapositive
+
+Pick **Contrapositive**: $p \to q$ and $\lnot q \to \lnot p$ agree on all four rows. Now pick **Converse**: $p \to q$ and $q \to p$ disagree on two.
+
+| $p$ | $q$ | $p \to q$ | $\lnot q \to \lnot p$ | $q \to p$ |
+|---|---|---|---|---|
+| T | T | T | T | T |
+| T | F | F | F | T |
+| F | T | T | T | F |
+| F | F | T | T | T |
+
+So "if it compiles, the tests ran" means exactly the same as "if the tests didn't run, it didn't compile." But it doesn't mean "if the tests ran, it compiled." Confusing a statement with its converse is the most common logical mistake there is, and it has a name: *affirming the consequent*.
+
+<Callout tone="orange" label="The converse trap">
+"All prime numbers greater than 2 are odd" is true. "All odd numbers greater than 2 are prime" is false: 9 is odd and not prime. When someone flips an implication, check it on an example before you believe it.
+</Callout>
+
+## The laws
+
+Truth tables always work, but they double in size with each variable: 20 variables means over a million rows. The other way is algebra: rewrite step by step using equivalences that are already proved. Each law below can be checked with the tool above.
+
+| Law | Form with $\land$ | Form with $\lor$ |
+|---|---|---|
+| Identity | $p \land T \equiv p$ | $p \lor F \equiv p$ |
+| Domination | $p \land F \equiv F$ | $p \lor T \equiv T$ |
+| Idempotent | $p \land p \equiv p$ | $p \lor p \equiv p$ |
+| Double negation | $\lnot\lnot p \equiv p$ | |
+| Complement | $p \land \lnot p \equiv F$ | $p \lor \lnot p \equiv T$ |
+| Commutative | $p \land q \equiv q \land p$ | $p \lor q \equiv q \lor p$ |
+| Associative | $(p \land q) \land r \equiv p \land (q \land r)$ | same with $\lor$ |
+| Distributive | $p \land (q \lor r) \equiv (p \land q) \lor (p \land r)$ | $p \lor (q \land r) \equiv (p \lor q) \land (p \lor r)$ |
+| Absorption | $p \land (p \lor q) \equiv p$ | $p \lor (p \land q) \equiv p$ |
+| De Morgan | $\lnot(p \land q) \equiv \lnot p \lor \lnot q$ | $\lnot(p \lor q) \equiv \lnot p \land \lnot q$ |
+
+And two that remove the arrows, so the laws above can work on them:
+
+$$
+p \to q \;\equiv\; \lnot p \lor q \qquad\qquad p \leftrightarrow q \;\equiv\; (p \to q) \land (q \to p)
+$$
+
+Notice the pairs. Every law in the table comes in two versions, one with $\land$ and $T$, one with $\lor$ and $F$. Swap $\land$ with $\lor$ and $T$ with $F$ in any true equivalence and you get another true one. This is called **duality**.
+
+These are the same laws as [Boolean algebra](/courses/logic-design/boolean-algebra) in Logic Design, written with $\land$, $\lor$, $\lnot$ instead of $\cdot$, $+$ and a bar. Engineers use them to make circuits smaller; here we use them to make arguments and code clearer.
+
+## De Morgan's laws
+
+The two you'll use most. In words: *the negation of "and" is "or" of the negations, and the negation of "or" is "and" of the negations.* The negation goes inside and the operator flips.
+
+That answers the reviewer's question at the top. $\lnot(e \lor l) \equiv \lnot e \land \lnot l$, so `!(isEmpty || isLocked)` and `!isEmpty && !isLocked` are the same. The change is safe.
+
+<Callout tone="orange" label="Don't just push the not inside">
+$\lnot(p \land q)$ is **not** $\lnot p \land \lnot q$. "Not (rich and famous)" is true of someone who is rich but not famous; "not rich and not famous" isn't. Choose **De Morgan** in the checker, then change the right side's $\lor$ to $\land$ to see the rows where they part ways.
+</Callout>
+
+## Simplifying a formula
+
+Let's simplify $\lnot(p \to q) \lor (p \land q)$, giving the law for each step.
+
+$$
+\begin{aligned}
+\lnot(p \to q) \lor (p \land q)
+&\equiv \lnot(\lnot p \lor q) \lor (p \land q) && \text{implication as or} \\
+&\equiv (\lnot\lnot p \land \lnot q) \lor (p \land q) && \text{De Morgan} \\
+&\equiv (p \land \lnot q) \lor (p \land q) && \text{double negation} \\
+&\equiv p \land (\lnot q \lor q) && \text{distributive, read right to left} \\
+&\equiv p \land T && \text{complement} \\
+&\equiv p && \text{identity}
+\end{aligned}
+$$
+
+A formula with two variables and four connectives turned out to depend on $p$ alone. Check it: type `!(p -> q) | p & q` on the left and `p` on the right.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Refactoring conditions" tool="Linters, IDEs">
+IntelliJ and ESLint offer to "simplify boolean expression" or "invert if condition." Each suggestion is one of these laws applied for you.
+</PracticalApplication>
+<PracticalApplication title="Query optimisers" tool="PostgreSQL, MySQL">
+A database rewrites `WHERE NOT (a OR b)` into `WHERE NOT a AND NOT b` when that lets it use an index. It can only do that because the two are equivalent.
+</PracticalApplication>
+<PracticalApplication title="Compilers" tool="GCC, LLVM">
+Compilers fold `x && true` to `x` and drop branches that can never run. These are the identity and domination laws.
+</PracticalApplication>
+<PracticalApplication title="Smaller circuits" tool="Chip design">
+Fewer gates means less power and space. The same laws, under the name Boolean algebra, are how a circuit gets minimised.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Two ways to decide whether two conditions mean the same thing: a truth table, which always works but grows fast, and the laws, which scale. Next, logic gets variables: [predicates and quantifiers](/courses/discrete-mathematics/predicates-and-quantifiers).
+</Callout>

@@ -1,0 +1,100 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { InvariantSearch } from "@/components/mdx/DiscreteVisualizers";
+
+# Loop Invariants: Proving Code Correct
+
+Binary search is ten lines long, and getting it right is notoriously hard. When it was studied, most professional programmers asked to write it produced bugs, and an integer-overflow bug sat in Java's standard library version for about nine years. The tool that gets it right on paper first is the **loop invariant**, which is [induction](/courses/discrete-mathematics/induction) applied to the iterations of a loop.
+
+## What a loop invariant is
+
+A **loop invariant** is a statement about the program's variables that is true every time the loop condition is about to be checked: before the first iteration, and after each one.
+
+It's not "something that doesn't change." The variables change on every pass; the invariant is a *relationship* between them that survives each change. For a loop that sums an array,
+
+```python
+def array_sum(a):
+    s = 0
+    i = 0
+    # invariant: s == sum of a[0:i]
+    while i < len(a):
+        s += a[i]
+        i += 1
+    return s
+
+print(array_sum([4, 8, 15, 16, 23, 42]))  # 108
+```
+
+$s$ and $i$ both change, but "$s$ is the sum of the first $i$ elements" stays true throughout.
+
+## The three checks
+
+To prove a loop correct with an invariant $I$, show three things:
+
+1. **Initialisation.** $I$ is true before the first iteration. *(The base case.)*
+2. **Maintenance.** If $I$ is true before an iteration, it's still true after it. *(The inductive step.)*
+3. **Termination.** When the loop stops, $I$ together with the reason it stopped gives the result you wanted.
+
+And separately, show the loop does stop: some whole number gets smaller on every pass and can't go below zero.
+
+For `array_sum`: before the loop $s = 0$ and $a[0{:}0]$ is empty, whose sum is 0, so $I$ holds. Each pass adds $a[i]$ to $s$ and then moves $i$ one further, so $s$ is again the sum of $a[0{:}i]$. The loop ends when $i = \text{len}(a)$, and then $I$ says $s$ is the sum of the whole array. And $\text{len}(a) - i$ shrinks by 1 each time, so it stops.
+
+## Binary search, with its invariant
+
+[Binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half) looks for a target in a sorted array by keeping a window $a[lo..hi]$ and halving it. The invariant is:
+
+$$
+I:\quad \text{if the target is anywhere in } a, \text{ it is in } a[lo..hi].
+$$
+
+- **Initialisation.** $lo = 0$, $hi = n - 1$: the window is the whole array, so $I$ holds trivially.
+- **Maintenance.** If $a[mid] <$ target, then because the array is sorted, every element at or left of $mid$ is too small too. Discarding them by setting $lo = mid + 1$ can't throw the target away. The case $a[mid] >$ target is the mirror image.
+- **Termination.** Either we found it, or $lo > hi$ and the window is empty. Then $I$ says: if the target were in $a$, it would be in an empty window. It can't be, so it isn't in $a$, and returning $-1$ is correct.
+- **It stops.** The window size $hi - lo + 1$ shrinks on every pass that doesn't return.
+
+Step through it below. The blue window is $a[lo..hi]$, the yellow cell is $mid$, and the badge checks the invariant after every line. Try a target that isn't there, such as 50.
+
+<InvariantSearch />
+
+## What the invariant catches
+
+The invariant tells you exactly which updates are allowed. Suppose you wrote `lo = mid` instead of `lo = mid + 1`. The invariant still holds, since you only discarded elements that were too small, but now the window might not shrink: with $lo = 4$, $hi = 5$, $mid$ is 4 and $lo$ stays 4 forever. The termination check fails, and the loop hangs.
+
+Or suppose you wrote `while lo < hi`. Then the loop stops when the window has one element left, without checking it, and the termination argument no longer gives "not in the array." A target sitting in that last cell would be missed.
+
+Each classic binary search bug breaks exactly one of the checks. Writing the invariant down first means you find out which.
+
+<Callout tone="orange" label="The overflow bug">
+`mid = (lo + hi) / 2` in Java or C can overflow when `lo + hi` exceeds the largest `int`, giving a negative index on arrays with more than about a billion elements. The fix is `mid = lo + (hi - lo) / 2`. Python's integers don't overflow, which is why the code here doesn't need it. Invariants check logic, not machine limits: you still have to know your number types.
+</Callout>
+
+## Choosing an invariant
+
+Good invariants usually describe **progress so far** in terms of the loop variable:
+
+- "$s$ is the sum of the first $i$ elements."
+- "$a[0..i-1]$ is sorted" for [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort).
+- "$a[0..i-1]$ holds the $i$ smallest elements, in order" for selection sort.
+- "every node in `visited` is reachable from the start" for a graph search.
+
+A useful test: at termination, plug in the stopping condition. If the invariant then reads like the specification of the function, you've chosen well.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Assertions" tool="assert, debug builds">
+Writing the invariant as an `assert` at the top of the loop body turns a silent wrong answer into an immediate failure on the iteration where it broke.
+</PracticalApplication>
+<PracticalApplication title="Verified software" tool="Dafny, Frama-C, SPARK">
+These tools ask you to write loop invariants as annotations, then prove all three checks automatically. Amazon Web Services uses Dafny for parts of its authorisation engine.
+</PracticalApplication>
+<PracticalApplication title="Interview questions" tool="Binary search, two pointers">
+Two-pointer and sliding-window problems are much easier once you state what's true about the window at each step.
+</PracticalApplication>
+<PracticalApplication title="Data structure invariants" tool="Red-black trees, heaps">
+"Every parent is ≤ its children" for a heap and the colour rules for a [red-black tree](/courses/advanced-algorithms/balanced-search-trees) are invariants that every operation must maintain.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+A way to argue that a loop is right, the same three-part shape every time, and a binary search you can write without guessing at the boundaries. The [quiz](/courses/discrete-mathematics/proof-quiz) covers the whole module.
+</Callout>

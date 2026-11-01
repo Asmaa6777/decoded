@@ -1,0 +1,115 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { EquivalenceChecker } from "@/components/mdx/DiscreteVisualizers";
+
+# Direct Proof, Contrapositive and Contradiction
+
+Tests check the cases you thought of. A proof covers every case at once, including the ones you didn't. You won't prove most of your code correct, but you'll read proofs in every algorithms book, and the habits they teach (state what you assume, justify each step, look for the counterexample) are the same habits that find bugs.
+
+## What a proof is
+
+A **proof** is a chain of statements, each one either an assumption, a definition, a fact proved earlier, or something that follows from earlier lines by a valid rule of logic. The last line is the thing you wanted to show.
+
+Most claims you'll prove have the shape "for all $x$, if $P(x)$ then $Q(x)$." There are four standard ways in, and choosing the right one is most of the work.
+
+The examples below use two definitions. An integer $n$ is **even** if $n = 2k$ for some integer $k$, and **odd** if $n = 2k + 1$ for some integer $k$.
+
+## Direct proof
+
+Assume $P$. Use definitions and known facts to reach $Q$.
+
+**Claim.** The sum of two even integers is even.
+
+**Proof.** Let $a$ and $b$ be even. By definition $a = 2j$ and $b = 2k$ for some integers $j$ and $k$. Then
+
+$$
+a + b = 2j + 2k = 2(j + k).
+$$
+
+Since $j + k$ is an integer, $a + b$ is even. $\blacksquare$
+
+Notice the shape. The first line unpacks the hypothesis using the definition. The middle is algebra. The last line packs the result back into the definition of the conclusion. Most direct proofs look like this. The $\blacksquare$ marks the end of a proof (you'll also see "QED").
+
+<Callout tone="orange" label="Examples are not a proof">
+$2 + 4 = 6$, $10 + 12 = 22$ and $100 + 2 = 102$ are all even, but checking examples proves nothing about the infinitely many pairs you didn't check. Use the letters $j$ and $k$ so that the argument works for *every* pair at once.
+</Callout>
+
+## Proof by contrapositive
+
+Sometimes $P \to Q$ is hard to prove head-on but its [contrapositive](/courses/discrete-mathematics/equivalence-and-laws#the-contrapositive) $\lnot Q \to \lnot P$ is easy. Since the two are equivalent, proving one proves the other.
+
+<EquivalenceChecker left="p -> q" right="!q -> !p" />
+
+**Claim.** If $n^2$ is even, then $n$ is even.
+
+Going directly is awkward: from $n^2 = 2k$ you'd need a square root. So prove the contrapositive instead: *if $n$ is odd, then $n^2$ is odd.*
+
+**Proof.** Suppose $n$ is odd, so $n = 2k + 1$. Then
+
+$$
+n^2 = 4k^2 + 4k + 1 = 2(2k^2 + 2k) + 1,
+$$
+
+which is odd. So whenever $n$ is odd, $n^2$ is odd, which is the contrapositive of the claim. $\blacksquare$
+
+## Proof by contradiction
+
+Assume the claim is **false**, and show that this leads to something impossible, a statement of the form $R \land \lnot R$. Since a [contradiction](/courses/discrete-mathematics/propositions-and-connectives#tautologies-and-contradictions) can't be true, the assumption was wrong, and the claim holds.
+
+**Claim.** $\sqrt{2}$ is irrational: it can't be written as a fraction $a/b$ of integers.
+
+**Proof.** Suppose it can. Write $\sqrt{2} = a/b$ in lowest terms, so $a$ and $b$ have no common factor. Squaring, $2 = a^2 / b^2$, so $a^2 = 2b^2$. That makes $a^2$ even, and by the claim we just proved, $a$ is even: $a = 2c$. Substituting, $4c^2 = 2b^2$, so $b^2 = 2c^2$, and $b$ is even too. Now $a$ and $b$ are both even, so they share the factor 2, which contradicts "lowest terms." So no such fraction exists. $\blacksquare$
+
+**Claim.** There are infinitely many primes.
+
+**Proof.** Suppose there are only finitely many, $p_1, p_2, \dots, p_n$. Let $N = p_1 p_2 \cdots p_n + 1$. $N > 1$, so it has at least one prime factor $q$. But dividing $N$ by any $p_i$ leaves remainder 1, so $q$ isn't any of the $p_i$. That's a prime missing from a list that was supposed to contain every prime: a contradiction. $\blacksquare$
+
+<Callout tone="orange" label="N itself needn't be prime">
+A common misreading of that proof says "$N$ is a new prime." Not necessarily: $2 \cdot 3 \cdot 5 \cdot 7 \cdot 11 \cdot 13 + 1 = 30031 = 59 \times 509$. The proof only needs $N$ to have *some* prime factor outside the list, and 59 and 509 both are.
+</Callout>
+
+Contradiction is the tool of choice for "there is no…" claims: no fraction equals $\sqrt{2}$, no [finite automaton](/courses/theory-of-computation/limits-of-finite-memory#proving-it-the-pumping-lemma) recognises $a^n b^n$, no comparison sort beats $n \log n$. To show something can't exist, assume it does and watch it break.
+
+## Disproof by counterexample
+
+To show a "for all" claim is **false**, one counterexample is enough, because $\lnot \forall x\, P(x) \equiv \exists x\, \lnot P(x)$ (the [quantifier negation](/courses/discrete-mathematics/predicates-and-quantifiers#negating-quantifiers) rule).
+
+**Claim (false).** $n^2 + n + 41$ is prime for every natural number $n$.
+
+It holds for $n = 0, 1, 2, \dots, 39$, forty cases in a row. Then at $n = 40$:
+
+$$
+40^2 + 40 + 41 = 1681 = 41^2.
+$$
+
+Forty successes didn't make it true; one failure made it false. This is why the counterexample is the most useful thing a test can find.
+
+## Choosing a method
+
+| The claim looks like | Try first |
+|---|---|
+| "If $P$ then $Q$," and $P$ gives you something to work with | Direct proof |
+| "If $P$ then $Q$," and $\lnot Q$ is easier to work with than $P$ | Contrapositive |
+| "There is no…", "… is irrational", "… is infinite" | Contradiction |
+| "For all…", and you suspect it's false | Search for a counterexample |
+| "For every natural number $n$…" | [Induction](/courses/discrete-mathematics/induction), next lesson |
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Algorithm correctness" tool="Textbooks, interviews">
+"Why does Dijkstra's algorithm work?" and "why is this greedy choice safe?" are answered by proofs, usually by contradiction: assume a better solution exists and show it can't.
+</PracticalApplication>
+<PracticalApplication title="Proof assistants" tool="Lean, Coq, Isabelle">
+These tools check every step of a proof mechanically. They've verified the CompCert C compiler and the seL4 operating-system kernel.
+</PracticalApplication>
+<PracticalApplication title="Fuzzing and property tests" tool="AFL, Hypothesis">
+These are automated counterexample hunters. They can't prove a property, but one failure they find disproves it.
+</PracticalApplication>
+<PracticalApplication title="Code review" tool="Everyday engineering">
+"This can't be null here, because…" is an informal proof. Writing out the "because" is how reviewers catch the case where it can.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Four ways to prove or disprove a claim, and how to tell which one a claim is asking for. The next lesson adds the one built for statements about every natural number.
+</Callout>

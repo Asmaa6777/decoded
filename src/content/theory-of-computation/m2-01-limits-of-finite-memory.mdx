@@ -81,7 +81,7 @@ If you got 10/10, look at your pattern. It grew by one layer for every level of 
 
 Take a DFA with $p$ states. Feed it a string of length $p$ or more. Reading $p$ symbols means the machine passes through $p + 1$ states (the start state, plus one after each symbol). But there are only $p$ different states. So at least one state appears twice.
 
-This is the **pigeonhole principle**: put $p + 1$ pigeons into $p$ holes, and some hole gets two pigeons.
+This is the [pigeonhole principle](/courses/discrete-mathematics/pigeonhole-principle#the-principle): put $p + 1$ pigeons into $p$ holes, and some hole gets two pigeons.
 
 A repeated state means the machine walked a **loop**, and a loop can be walked again, or skipped entirely. The DFA can't tell the difference, because it remembers only the state and not how many times it went around.
 

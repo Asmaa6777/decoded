@@ -96,6 +96,14 @@ const COURSE_GLYPHS: Record<string, (p: IconProps) => JSX.Element> = {
       <path d="M11 7.3L6.3 15.8M13 7.3l4.7 8.5M7.5 18h9" />
     </svg>
   ),
+  // Venn diagram: two overlapping sets, the shared region filled
+  "discrete-mathematics": ({ className }) => (
+    <svg {...base} className={className}>
+      <circle cx="9" cy="12" r="6.5" />
+      <circle cx="15" cy="12" r="6.5" />
+      <path d="M12 6.2a6.5 6.5 0 010 11.6a6.5 6.5 0 010-11.6z" fill="currentColor" stroke="none" />
+    </svg>
+  ),
   // target
   "the-exam-mind": ({ className }) => (
     <svg {...base} className={className}>

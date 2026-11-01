@@ -1,0 +1,88 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { FunctionMapper } from "@/components/mdx/DiscreteVisualizers";
+
+# Functions: Injective, Surjective, Bijective
+
+A hash function turns any string into a number. A database index turns a key into a row. A cipher turns a message into ciphertext and must be able to turn it back. Each of these is a function, and whether it can be undone, or whether two inputs can land on the same output, comes down to three properties with unfriendly names. This lesson makes them friendly.
+
+## What a function is
+
+A **function** $f: A \to B$ assigns to **every** element of $A$ **exactly one** element of $B$. $A$ is the **domain**, $B$ the **codomain**, and $f(a)$ is the **image** of $a$. The set of values actually reached, $\{f(a) \mid a \in A\}$, is the **range**.
+
+Both conditions matter:
+
+- *Every* element of $A$ gets an output. A rule that has no answer for some inputs, like $1/x$ at $x = 0$, isn't a function on all of $\mathbb{R}$.
+- *Exactly one* output. A "function" that returns different answers for the same input isn't a function in this sense. That's why mathematicians would call `Math.random()` something else.
+
+Formally, $f$ is a set of pairs, a subset of $A \times B$ (a [Cartesian product](/courses/discrete-mathematics/sets#cartesian-products)) in which each $a$ appears in exactly one pair. Picture it as arrows: one arrow leaves each element of the domain.
+
+## Three properties
+
+**Injective** (one-to-one): different inputs give different outputs. No two arrows land on the same target.
+
+$$
+\forall a_1, a_2 \in A:\; f(a_1) = f(a_2) \to a_1 = a_2
+$$
+
+**Surjective** (onto): every element of the codomain is hit. The range is all of $B$.
+
+$$
+\forall b \in B\; \exists a \in A:\; f(a) = b
+$$
+
+**Bijective**: both. Each element of $B$ is hit by exactly one arrow, so the elements of $A$ and $B$ pair off perfectly.
+
+Below, four people are assigned to numbered desks. Click a name to move its arrow, change the number of desks, or load an example. Arrows that share a target turn orange, and desks nobody uses turn violet.
+
+<FunctionMapper />
+
+Try setting the codomain to 3. No matter how you move the arrows, some two people end up at the same desk: four arrows can't land on three targets without sharing. That's the [pigeonhole principle](/courses/discrete-mathematics/pigeonhole-principle), which gets a lesson of its own. In terms of sizes, for finite sets:
+
+- an injective $f: A \to B$ needs $|A| \le |B|$,
+- a surjective one needs $|A| \ge |B|$,
+- a bijective one needs $|A| = |B|$.
+
+The last line is in fact how "same size" is *defined* for infinite sets: two sets have the same cardinality when a bijection exists between them.
+
+<Callout tone="orange" label="Codomain is not range">
+Whether $f(x) = x^2$ is surjective depends on what you said the codomain is. As $f: \mathbb{R} \to \mathbb{R}$ it isn't, since $-1$ is never hit. As $f: \mathbb{R} \to [0, \infty)$ it is. The rule is the same; the claim about it is different. Always check the codomain before you answer.
+</Callout>
+
+## Inverses
+
+If $f$ is a bijection, you can reverse every arrow and get a function back: the **inverse** $f^{-1}: B \to A$, with $f^{-1}(f(a)) = a$.
+
+If $f$ isn't injective, reversing the arrows gives some $b$ two arrows, and you can't tell which input it came from. If $f$ isn't surjective, some $b$ has no arrow to reverse. Either way, there's no inverse. **Only bijections can be undone.**
+
+That's why encryption has to be a bijection on the set of messages (otherwise two messages would encrypt to the same ciphertext and decryption couldn't tell them apart), and why the [affine cipher](/courses/computational-mathematics/affine-ciphers) needs a key with a modular inverse.
+
+## Composition
+
+If $f: A \to B$ and $g: B \to C$, the **composition** $g \circ f: A \to C$ applies $f$ first, then $g$: $(g \circ f)(a) = g(f(a))$. Read the circle as "after."
+
+Composition keeps the properties: the composition of two injections is an injection, and the same goes for surjections and bijections. A pipeline of reversible steps is reversible, and you undo it in the opposite order: $(g \circ f)^{-1} = f^{-1} \circ g^{-1}$. You take off your shoes before your socks.
+
+## Two functions you'll see everywhere
+
+The **floor** $\lfloor x \rfloor$ is the largest integer $\le x$, and the **ceiling** $\lceil x \rceil$ is the smallest integer $\ge x$. So $\lfloor 3.7 \rfloor = 3$, $\lceil 3.2 \rceil = 4$ and $\lfloor -1.5 \rfloor = -2$. Integer division in Python, `7 // 2 == 3`, is a floor. They show up whenever something is split into whole pieces: $n$ items in pages of 10 take $\lceil n / 10 \rceil$ pages.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Hash functions" tool="SHA-256, hash maps">
+A hash maps infinitely many strings to a fixed number of outputs, so it can never be injective. Collisions must exist; a good hash only makes them hard to find.
+</PracticalApplication>
+<PracticalApplication title="Database keys" tool="PRIMARY KEY, UNIQUE">
+A `UNIQUE` constraint says the map from rows to that column is injective. A primary key is a bijection between rows and key values.
+</PracticalApplication>
+<PracticalApplication title="Encoding and compression" tool="UTF-8, gzip">
+Lossless formats must be injective, or two different files would decode the same way. Lossy formats like JPEG deliberately aren't, which is why you can't get the original back.
+</PracticalApplication>
+<PracticalApplication title="Pure functions" tool="React, functional programming">
+"Same input, same output" is the definition of a function above. Frameworks cache pure functions' results, which is only safe because each input has exactly one output.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+What makes something a function, the three properties, and why only bijections can be undone. A function is a special kind of relation, the subject of the [next lesson](/courses/discrete-mathematics/relations).
+</Callout>

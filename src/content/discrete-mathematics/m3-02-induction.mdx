@@ -1,0 +1,126 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { InductionStairs } from "@/components/mdx/DiscreteVisualizers";
+
+# Mathematical Induction
+
+How do you prove something about every natural number when there are infinitely many of them? You can't check them one by one. Induction gets around it with a trick you already trust from writing recursive functions: handle the smallest case, and show that each case follows from the one before.
+
+## The domino idea
+
+Picture an endless line of dominoes. You know two things:
+
+1. The first domino falls.
+2. Whenever a domino falls, it knocks over the next one.
+
+Then every domino falls. Nobody has to watch all of them; the two facts together leave no domino standing.
+
+Induction is that argument for statements $P(n)$ about natural numbers:
+
+1. **Base case:** prove $P(1)$ (or $P(0)$, wherever the claim starts).
+2. **Inductive step:** prove that for every $k \ge 1$, **if** $P(k)$ is true **then** $P(k+1)$ is true.
+
+Together, these prove $P(n)$ for every $n \ge 1$. In the inductive step, the assumption "$P(k)$ is true" is called the **inductive hypothesis**. You don't prove it there; you *use* it, to get $P(k+1)$.
+
+<Callout tone="violet" label="Why assuming P(k) isn't cheating">
+The inductive step proves an implication, $P(k) \to P(k+1)$, and [to prove an implication](/courses/discrete-mathematics/direct-and-indirect-proof#direct-proof) you assume its left side. You never claim $P(k)$ is true on its own. That comes from the base case, passed along the chain.
+</Callout>
+
+## A first proof
+
+**Claim.** For every $n \ge 1$,
+
+$$
+1 + 2 + \cdots + n = \frac{n(n+1)}{2}.
+$$
+
+**Base case.** For $n = 1$ the left side is $1$ and the right side is $\frac{1 \cdot 2}{2} = 1$. They match.
+
+**Inductive step.** Assume $1 + 2 + \cdots + k = \frac{k(k+1)}{2}$ for some $k \ge 1$. Add $k + 1$ to both sides:
+
+$$
+1 + 2 + \cdots + k + (k+1) = \frac{k(k+1)}{2} + (k+1) = \frac{k(k+1) + 2(k+1)}{2} = \frac{(k+1)(k+2)}{2}.
+$$
+
+That's the formula with $n = k + 1$. So $P(k)$ implies $P(k+1)$, and by induction the formula holds for all $n \ge 1$. $\blacksquare$
+
+The picture below is the same proof. The sum is a staircase of blocks; each inductive step adds the next column and checks both sides still agree.
+
+<InductionStairs />
+
+This sum is what you get when you count the comparisons in [selection sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort): $(n-1) + (n-2) + \cdots + 1 = \frac{n(n-1)}{2}$, which is why it's $\Theta(n^2)$.
+
+## A second proof: all ones in binary
+
+Adding up the powers of two, $1 + 2 + 4 + \cdots$, always gives one less than the next power of two. This sum comes back in the lessons on trees and the pigeonhole principle, so it's worth proving once.
+
+**Claim.** For every $n \ge 1$, $\;1 + 2 + 4 + \cdots + 2^{n-1} = 2^n - 1$.
+
+In binary this says $\underbrace{11\ldots1}_{n} = 2^n - 1$, which is why the largest 8-bit number is 255.
+
+**Base case.** $n = 1$: the left side is $1$, the right is $2^1 - 1 = 1$.
+
+**Inductive step.** Assume $1 + 2 + \cdots + 2^{k-1} = 2^k - 1$. Then
+
+$$
+1 + 2 + \cdots + 2^{k-1} + 2^k = (2^k - 1) + 2^k = 2 \cdot 2^k - 1 = 2^{k+1} - 1. \quad\blacksquare
+$$
+
+The same sum explains why a [binary tree](/courses/discrete-mathematics/trees#height) with $h + 1$ full levels has $2^{h+1} - 1$ nodes, and why doubling an array each time it fills up costs $O(1)$ per insertion on average: all the copying together is less than twice the final size.
+
+## How induction proofs go wrong
+
+**Skipping the base case.** "If $P(k)$ then $P(k+1)$" can be true for a false statement. Take $P(n)$: "$n = n + 1$." Adding 1 to both sides of $k = k + 1$ gives $k + 1 = k + 2$, so the step works. But $P(1)$, "1 = 2," is false, so no domino ever falls.
+
+**A step that fails for one $k$.** The classic false proof that all horses are the same colour: in a group of $k + 1$ horses, remove one, and the remaining $k$ are the same colour by hypothesis; put it back and remove another, and those $k$ are too, so all $k + 1$ match. The flaw is at $k = 1$: two horses, remove either and the two groups of one *don't overlap*, so nothing links their colours. The step has to work for every $k$, including the smallest.
+
+<Callout tone="orange" label="Check the step at the base">
+Before trusting an inductive step, run it by hand from the base case to the next one. Most broken induction proofs break exactly there.
+</Callout>
+
+## Strong induction
+
+Sometimes $P(k+1)$ needs more than $P(k)$. **Strong induction** lets the inductive hypothesis be "$P(j)$ holds for **every** $j$ from the base up to $k$." It proves exactly the same things as ordinary induction; it just lets you reach further back.
+
+**Claim.** Every integer $n \ge 2$ is a product of primes.
+
+**Base case.** $2$ is prime, so it's a product of one prime.
+
+**Inductive step.** Assume every integer from 2 to $k$ is a product of primes, and look at $k + 1$. If it's prime, done. If not, $k + 1 = a \cdot b$ with $2 \le a, b \le k$. By the hypothesis each of $a$ and $b$ is a product of primes, so their product is too. $\blacksquare$
+
+Ordinary induction couldn't do that, because $a$ and $b$ can be anywhere below $k + 1$, not just at $k$.
+
+## Recursion is induction
+
+A recursive function has a **base case** and a **recursive case** that trusts the function on a smaller input. That's an induction proof waiting to be written. To argue that
+
+```python
+def total(xs):
+    if not xs:
+        return 0
+    return xs[0] + total(xs[1:])
+
+print(total([3, 1, 4, 1, 5]))  # 14
+```
+
+sums any list, use induction on the length: it's right for the empty list, and if it's right for lists of length $k$, then for a list of length $k + 1$ it adds the first element to the correct total of the remaining $k$. The same reasoning is how you'd solve a [recurrence](/courses/advanced-algorithms/solving-recurrences) like $T(n) = 2T(n/2) + n$ and then check the answer.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Recursive algorithms" tool="Merge sort, tree traversals">
+Every proof that a recursive algorithm is correct, from merge sort to tree traversals, is an induction on the input size.
+</PracticalApplication>
+<PracticalApplication title="Running-time bounds" tool="Algorithm analysis">
+Guessing a bound such as $T(n) \le c\,n \log n$ and confirming it is the substitution method, which is an induction proof.
+</PracticalApplication>
+<PracticalApplication title="Type checkers and compilers" tool="Structural induction">
+Proving something about every program means induction on the program's structure: true for the smallest expressions, and preserved when you combine them.
+</PracticalApplication>
+<PracticalApplication title="Loop correctness" tool="Invariants">
+A loop is an induction over its iterations. The [next lesson](/courses/discrete-mathematics/loop-invariants) turns that into a method for code.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+A way to prove a claim for infinitely many cases with two finite arguments, the stronger version for when one step back isn't enough, and the link between induction and recursion.
+</Callout>

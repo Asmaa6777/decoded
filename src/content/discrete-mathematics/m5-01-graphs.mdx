@@ -1,0 +1,100 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { GraphRepresentations } from "@/components/mdx/DiscreteVisualizers";
+
+# Graphs: Vocabulary and Representations
+
+A road map, a social network, the links between web pages, the imports between your source files, the states of a parser: drop the details and each is a set of things with connections between them. That's a graph, and it's the most widely used structure in computer science after the array. This lesson gives you the vocabulary and the two standard ways to store one.
+
+## What a graph is
+
+A **graph** $G = (V, E)$ is a set $V$ of **vertices** (also called nodes) and a set $E$ of **edges**, each joining two vertices. In an **undirected** graph an edge is an unordered pair $\{u, v\}$: friendship goes both ways. In a **directed** graph, or **digraph**, an edge is an ordered pair $(u, v)$, drawn as an arrow from $u$ to $v$: following someone doesn't mean they follow you back.
+
+A directed graph is the same thing as a [relation](/courses/discrete-mathematics/relations#what-a-relation-is) on $V$, drawn as arrows. So everything from the relations lesson, such as transitive closure, has a graph meaning.
+
+We usually write $n = |V|$ and $m = |E|$, and assume there's at most one edge between two vertices and no edge from a vertex to itself (a **loop**), unless we say otherwise.
+
+## Vocabulary
+
+- $u$ and $v$ are **adjacent**, or **neighbours**, if an edge joins them.
+- The **degree** $\deg(v)$ is the number of edges at $v$. In a digraph, the **in-degree** counts arrows coming in and the **out-degree** arrows going out.
+- A **path** is a sequence of vertices, each adjacent to the next. Its **length** is the number of edges.
+- A **cycle** is a path of length at least 3 that returns to its start without repeating any other vertex.
+- A graph is **connected** if there's a path between every pair of vertices.
+- A **weighted** graph puts a number on each edge: a distance, a cost, a latency.
+
+## The handshake lemma
+
+At a party, add up how many hands each person shook. The total is always even. Why? Every handshake involves two hands, so it adds exactly 2 to the total.
+
+**The handshake lemma:** in any undirected graph,
+
+$$
+\sum_{v \in V} \deg(v) = 2m.
+$$
+
+Each edge has two ends and contributes 1 to the degree of each. A consequence you can use to catch errors: **the number of vertices with odd degree is always even.** If someone describes a network where exactly three machines have an odd number of cables, something's been miscounted.
+
+In a digraph, each arrow adds 1 to one out-degree and 1 to one in-degree, so out-degrees sum to $m$ and in-degrees sum to $m$.
+
+## Storing a graph
+
+A program can't hold a picture. It needs a data structure, and there are two standard choices.
+
+An **adjacency matrix** is an $n \times n$ table with a 1 in row $u$, column $v$ when there's an edge from $u$ to $v$. For an undirected graph it's symmetric across the diagonal. It's the [relation matrix](/courses/discrete-mathematics/relations#the-four-properties) again.
+
+An **adjacency list** stores, for each vertex, a list of its neighbours. In Python that's a dictionary of lists.
+
+Click a vertex below to highlight its row in the matrix and its entry in the list. Switch to **Directed** and watch the matrix lose its symmetry.
+
+<GraphRepresentations />
+
+| | Adjacency matrix | Adjacency list |
+|---|---|---|
+| Space | $n^2$ | $n + m$ (undirected: $n + 2m$) |
+| Is $u$–$v$ an edge? | one lookup, $O(1)$ | scan $u$'s list, $O(\deg u)$ |
+| List $u$'s neighbours | scan a row, $O(n)$ | $O(\deg u)$ |
+| Best for | dense graphs, small $n$ | sparse graphs, which is most real ones |
+
+Real graphs are almost always **sparse**: a social network with a billion users has a few hundred friends per user, not a billion. A matrix would need $10^{18}$ cells; a list needs roughly the number of friendships. That's why traversal algorithms such as [BFS and DFS](/courses/algorithm-design-and-analysis/bfs-and-dfs) are written over adjacency lists and run in $O(n + m)$.
+
+```python
+graph = {
+    "A": ["B", "C"],
+    "B": ["A", "C", "D"],
+    "C": ["A", "B", "D", "E"],
+    "D": ["B", "C"],
+    "E": ["C"],
+}
+degrees = {v: len(nbrs) for v, nbrs in graph.items()}
+print(degrees)  # {'A': 2, 'B': 3, 'C': 4, 'D': 2, 'E': 1}
+print(sum(degrees.values()))  # 12
+```
+
+Six edges, total degree 12: the handshake lemma in action.
+
+## Special graphs
+
+- The **complete graph** $K_n$ has an edge between every pair of vertices, so $\binom{n}{2} = \frac{n(n-1)}{2}$ edges (a [combination](/courses/discrete-mathematics/permutations-and-combinations#combinations): choose 2 endpoints). That's the most a simple graph can have, so $m = O(n^2)$ always.
+- A **bipartite** graph splits its vertices into two groups with every edge going between the groups, never inside one: students and courses, users and products. A graph is bipartite exactly when it has no cycle of odd length.
+- A **tree** is a connected graph with no cycles. It gets [its own lesson](/courses/discrete-mathematics/trees).
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Maps and routing" tool="Google Maps, OSRM">
+Intersections are vertices and road segments are weighted edges. A route is a shortest path, found by [Dijkstra's algorithm](/courses/advanced-algorithms/shortest-paths) or its faster cousins.
+</PracticalApplication>
+<PracticalApplication title="The web and PageRank" tool="Search engines">
+Pages are vertices, links are directed edges, and a page's importance depends on the in-degree and importance of the pages linking to it.
+</PracticalApplication>
+<PracticalApplication title="Recommendations" tool="Bipartite graphs">
+Users and items form a bipartite graph. "People who bought this also bought" walks two steps: item → buyers → their other items.
+</PracticalApplication>
+<PracticalApplication title="Graph databases" tool="Neo4j, social networks">
+Graph databases store adjacency lists directly so that "friends of friends" is a short walk, not a large join.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+The words (vertex, edge, degree, path, cycle, connected), the handshake lemma, and when to choose a matrix or a list. The [next lesson](/courses/discrete-mathematics/paths-and-dags) asks what paths and cycles can tell you about a graph.
+</Callout>
