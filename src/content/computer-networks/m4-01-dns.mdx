@@ -1,0 +1,89 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { DnsLookup } from "@/components/mdx/NetworkVisualizers";
+
+# DNS
+
+Routers move packets by [IP address](/courses/computer-networks/ip-addresses-and-subnets), but people type names. The **Domain Name System** turns `decoded.stack42.tech` into an address, and it does it for billions of lookups a day without any single machine knowing every name. It's a distributed, cached database whose design explains a lot of everyday internet behaviour, including why a change to a website's address can take hours to reach everyone.
+
+## A tree of names
+
+Domain names are read right to left, from the general to the specific. `www.decoded-demo.com.` sits under `decoded-demo`, under `com`, under the **root** (the final dot, usually left off). The tree is split into **zones**, each run by whoever owns that part of it:
+
+- The **root servers** know who runs each top-level domain (`.com`, `.org`, `.uk`, …).
+- The **TLD servers** for `.com` know who runs each `.com` domain.
+- A domain's **authoritative servers** hold the actual records for its names.
+
+Nobody has to know everything. Each level only points to the next.
+
+## Resolution
+
+Your laptop doesn't walk that tree itself. It asks a **recursive resolver** (run by your ISP, your router, or a public service like 1.1.1.1 or 8.8.8.8), which asks the root, then the TLD, then the authoritative server, following each **referral**, and returns the final answer. Step through a lookup, then switch to a cached answer:
+
+<DnsLookup />
+
+## Caching and TTL
+
+Every answer carries a **time to live (TTL)**, in seconds. Resolvers, operating systems and browsers keep the answer that long, so most lookups never leave your resolver. The root and TLD referrals are cached too, for a day or more. Caching is what lets DNS handle the world's traffic.
+
+It's also why DNS changes are slow: if a record had a one-hour TTL, some resolvers will keep handing out the old address for up to an hour after you change it. Before moving a website, administrators lower the TTL a day in advance.
+
+## Record types
+
+| Type | Maps a name to | Example |
+|---|---|---|
+| **A** | an IPv4 address | `203.0.113.10` |
+| **AAAA** | an IPv6 address | `2001:db8::10` |
+| **CNAME** | another name (an alias) | `www` → `decoded-demo.com` |
+| **MX** | the mail servers for a domain | `10 mail.decoded-demo.com` |
+| **NS** | the authoritative servers for a zone | `ns1.provider.net` |
+| **TXT** | free text, often for verification | `v=spf1 …` |
+
+## What a query looks like
+
+A DNS query is usually one [UDP](/courses/computer-networks/udp-and-ports) datagram to port 53: a 12-byte header and the question. Names are encoded as **labels**, each prefixed by its length:
+
+```python
+import struct
+
+def encode_name(name):
+    out = b""
+    for label in name.rstrip(".").split("."):
+        out += bytes([len(label)]) + label.encode()
+    return out + b"\x00"                     # the empty label: the root
+
+def dns_query(name, qid=0x1234, qtype=1):   # type 1 = A record
+    header = struct.pack("!HHHHHH", qid, 0x0100, 1, 0, 0, 0)  # recursion desired, 1 question
+    return header + encode_name(name) + struct.pack("!HH", qtype, 1)  # class 1 = internet
+
+q = dns_query("www.decoded-demo.com")
+print(encode_name("www.decoded-demo.com"))  # b'\x03www\x0cdecoded-demo\x03com\x00'
+print(len(q))  # 38
+print(q[:4].hex())  # 12340100
+```
+
+Send those 38 bytes to a resolver on UDP port 53 and an answer comes back in the same format, with the records appended. Tools like `dig` do exactly this.
+
+<Callout tone="orange" label="DNS is plain text by default">
+Classic DNS queries travel unencrypted, so anyone on the path can see, and on some networks rewrite, which names you look up. **DNS over HTTPS** (DoH) and **DNS over TLS** wrap queries in encryption; most browsers can use DoH.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="dig and nslookup" tool="Debugging DNS">
+`dig +trace www.example.com` performs the root → TLD → authoritative walk itself and prints each referral.
+</PracticalApplication>
+<PracticalApplication title="Hosting a site" tool="Domain registrars, Cloudflare">
+Pointing a domain at a server means creating A, AAAA or CNAME records; email needs MX records.
+</PracticalApplication>
+<PracticalApplication title="Load balancing and CDNs" tool="Route 53, Cloudflare">
+DNS servers can return different addresses to different users, sending each one to a nearby or healthy server.
+</PracticalApplication>
+<PracticalApplication title="Outages" tool="The usual suspect">
+A wrong record or an unreachable name server makes a perfectly healthy service disappear, which is why DNS is the first suspect in many outages.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+The name tree and its zones, recursive resolution through referrals, caching with TTLs, the common record types, and what a query looks like on the wire. Once the browser has an address, it opens a connection and speaks [HTTP](/courses/computer-networks/http-and-https).
+</Callout>

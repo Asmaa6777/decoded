@@ -204,7 +204,7 @@ Shared memory and message passing work for client-server systems too. Four other
 
 A **socket** is an **endpoint for communication**. Two processes talking over a network use **a pair of sockets**, one each.
 
-- A socket is identified by an **IP address** plus a **port number**: `161.25.19.8:1625` means port 1625 on host 161.25.19.8.
+- A socket is identified by an **[IP address](/courses/computer-networks/ip-addresses-and-subnets#an-ipv4-address-is-32-bits)** plus a **[port number](/courses/computer-networks/udp-and-ports#ports)**: `161.25.19.8:1625` means port 1625 on host 161.25.19.8.
 - A **server** waits for client requests by **listening** on a specific port.
 - All ports **below 1024** are **well known**, used for standard services (web servers use port 80, for example).
 - The special IP address **127.0.0.1** (**loopback**) means "this same machine", so a client and server on one host can talk.

@@ -1,0 +1,70 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { DelayCalculator } from "@/components/mdx/NetworkVisualizers";
+
+# Delay and Throughput
+
+Internet providers sell you **bandwidth**: 100 megabits, a gigabit. But a page from a server on the other side of the world loads slowly even on a gigabit line, and a game feels laggy on a fast connection. That's because how long something takes over a network has two very different parts, and money only buys you one of them.
+
+## Four kinds of delay
+
+A packet crossing one link is delayed four ways:
+
+1. **Transmission delay**: the time to push all its bits onto the link. A packet of $L$ bits on a link of $R$ bits per second takes $L / R$. A 1,500-byte packet (12,000 bits) on a 100 Mb/s link takes 120 µs.
+2. **Propagation delay**: the time for a bit to travel the length of the link. Signals in fibre and copper move at about $2 \times 10^8$ m/s, two-thirds of the speed of light in a vacuum, so the delay is $d / (2 \times 10^8)$: 5 µs per kilometre.
+3. **Queueing delay**: time spent waiting in a router's [queue](/courses/data-structures/queues-and-deques) behind other packets. Zero on an empty network, unbounded on a busy one.
+4. **Processing delay**: the router reading the header and choosing the next hop. Usually microseconds.
+
+The first two are easy to confuse. Transmission is about the **width** of the pipe: a wider pipe gets the bits onto it faster. Propagation is about its **length**: no pipe gets the first bit to the far end faster than the signal can travel.
+
+<DelayCalculator />
+
+Try a small file from London to New York: it's latency-bound. The bits go out in microseconds, then take 28 ms to cross the ocean, and 56 ms for the reply to come back. A connection 100 times faster would change almost nothing. Now try 4 GB across a city: it's bandwidth-bound.
+
+## Latency, round trips and throughput
+
+- **Latency** is the one-way delay; the **round-trip time (RTT)** is there and back. `ping` measures RTT.
+- **Throughput** is how many bits per second actually arrive, which is at most the bandwidth of the **slowest link** on the path, the **bottleneck**.
+- The **bandwidth-delay product**, bandwidth × RTT, is how many bits are "in flight" in the pipe at once. On a 1 Gb/s link with a 60 ms RTT that's 60 megabits, 7.5 MB. A sender that waits for each acknowledgement before sending more can never fill such a pipe, which is why [TCP keeps a window](/courses/computer-networks/tcp-reliable-delivery#sliding-windows) of data in flight.
+
+```python
+SPEED = 2e8                       # m/s in fibre
+
+def transfer_time(size_bytes, bandwidth_bps, distance_m):
+    transmission = size_bytes * 8 / bandwidth_bps
+    round_trip = 2 * distance_m / SPEED
+    return transmission + round_trip
+
+# a 50 KB web page from New York to London, on 100 Mb/s and on 1 Gb/s
+print(round(transfer_time(50e3, 100e6, 5.6e6) * 1000, 1))  # 60.0
+print(round(transfer_time(50e3, 1e9, 5.6e6) * 1000, 1))  # 56.4
+
+# bandwidth-delay product: bytes in flight on 1 Gb/s with a 60 ms round trip
+print(int(1e9 * 0.060 / 8))  # 7500000
+```
+
+Ten times the bandwidth saved 3.6 ms out of 60. For small transfers, which most web requests are, **round trips** are the cost that matters.
+
+<Callout tone="orange" label="Bandwidth isn't speed">
+A connection's advertised "speed" is its bandwidth. What you feel when you click is mostly latency and the number of round trips. That's why big companies put servers in many cities (a CDN), and why newer protocols work hard to save round trips, as you'll see with [TCP's handshake](/courses/computer-networks/tcp-reliable-delivery#the-three-way-handshake) and HTTPS.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="CDNs" tool="Cloudflare, Akamai, CloudFront">
+Content delivery networks copy content to servers in hundreds of cities. They can't speed light up, so they shorten the distance.
+</PracticalApplication>
+<PracticalApplication title="ping and traceroute" tool="Diagnosing a slow network">
+`ping` measures round-trip time; `traceroute` shows the RTT to each router along the path, which reveals where the delay is added.
+</PracticalApplication>
+<PracticalApplication title="Online games" tool="Matchmaking, regional servers">
+Games match you with nearby players and servers because a 150 ms round trip is noticeable in a shooter, whatever your bandwidth.
+</PracticalApplication>
+<PracticalApplication title="Bufferbloat" tool="Home routers, video calls">
+A router with too much buffer memory lets queues grow to seconds long under load, which is why a video call stutters while someone else uploads.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Four kinds of delay, the difference between bandwidth and latency, and the bandwidth-delay product that explains why senders must keep data in flight. The [quiz](/courses/computer-networks/foundations-quiz) checks the module.
+</Callout>

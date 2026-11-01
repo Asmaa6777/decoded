@@ -38,6 +38,7 @@ Decoded tries to draw that map. Every lesson answers one question:
 | [Computer Architecture](https://decoded.stack42.tech/courses/computer-architecture) | Available | 15, instruction sets, cache, virtual memory, I/O, pipelines and parallelism |
 | [Discrete Mathematics](https://decoded.stack42.tech/courses/discrete-mathematics) | Available | 23, across logic, sets, proof, counting, graphs and probability, with interactive truth tables, relations and proofs |
 | [Data Structures](https://decoded.stack42.tech/courses/data-structures) | Available | 16, from arrays and linked lists through hash maps, heaps, tries and union-find, in Python with Java and C++ |
+| [Computer Networks](https://decoded.stack42.tech/courses/computer-networks) | Available | 13, from layers and packets through subnets, routing, TCP, congestion control, DNS and HTTPS |
 | [Computer Literacy](https://decoded.stack42.tech/courses/computer-literacy) | Available | 3 |
 | [The Exam Mind](https://decoded.stack42.tech/courses/the-exam-mind) | Available | 4 |
 | Operating Systems | Coming soon | |

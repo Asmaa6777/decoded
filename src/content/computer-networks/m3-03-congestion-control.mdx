@@ -1,0 +1,80 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CongestionChart } from "@/components/mdx/NetworkVisualizers";
+
+# Congestion Control
+
+In October 1986 the link between two universities a few hundred metres apart dropped from 32 kilobits per second to 40 bits per second, a thousand times slower. Nothing was broken. Every computer was resending lost packets as fast as it could, and the resends were what filled the routers' queues and caused more loss. That **congestion collapse** led to the most consequential few lines of code on the internet: TCP's congestion control, which has every sender back off when the network is overloaded.
+
+## The problem
+
+A sender doesn't know how much capacity is free on the path. It's shared with millions of other flows that start and stop all the time. Send too slowly and the link sits idle. Send too fast and routers' [queues](/courses/data-structures/queues-and-deques) overflow, packets are dropped, retransmissions add even more load, and everyone suffers.
+
+TCP's answer is to treat **packet loss as a signal** that the network is congested, and to adjust a **congestion window** (cwnd): how many segments the sender allows itself to have in flight. Its sending rate is roughly cwnd per round-trip time.
+
+## Slow start, then additive increase
+
+- **Slow start.** A new connection starts with a small cwnd and **doubles** it every round trip (each ACK adds one segment). Despite the name, that's exponential growth, finding the right order of magnitude in a few round trips.
+- **Congestion avoidance.** Once cwnd reaches the **slow-start threshold** (ssthresh), growth becomes **additive**: one more segment per round trip, gently probing for spare capacity.
+
+## Backing off
+
+- **Three duplicate ACKs**: a segment was lost, but later ones are arriving, so the network is still delivering. TCP Reno halves cwnd and continues from there: **multiplicative decrease**.
+- **Timeout**: nothing came back at all, a sign of serious congestion. cwnd drops to 1 segment and slow start begins again, with ssthresh set to half the old window.
+
+Compare the three cases:
+
+<CongestionChart />
+
+The resulting zigzag, **additive increase, multiplicative decrease (AIMD)**, is the sawtooth you'd see in a graph of almost any long TCP transfer.
+
+## Why AIMD is fair
+
+AIMD has a surprising property: flows sharing a bottleneck converge to **equal shares**, whoever started first. When both add one per round trip, the gap between them stays the same; when both halve on loss, the gap halves. Over time the gap shrinks to nothing:
+
+```python
+def aimd(a, b, capacity=100, rounds=200):
+    for _ in range(rounds):
+        if a + b > capacity:          # the link overflowed: both see loss
+            a, b = a / 2, b / 2       # multiplicative decrease
+        else:
+            a, b = a + 1, b + 1       # additive increase
+    return a, b
+
+a, b = aimd(10, 70)                    # one flow starts with 7 times the other's rate
+print(round(b - a, 2))  # 0.23
+print(round(a), round(b))  # 31 31
+```
+
+Two flows that started at 10 and 70 end up within a quarter of a unit of each other. With additive increase and **additive** decrease instead, the gap would never close.
+
+<Callout tone="violet" label="Cooperation by convention">
+Nothing forces a sender to back off. Congestion control works because nearly every TCP implementation agrees to. A sender that ignores it gets more than its share, which is why ISPs watch for misbehaving flows and why new protocols are tested for being "TCP-friendly".
+</Callout>
+
+## Modern variants
+
+Reno is the textbook algorithm. Real systems have moved on:
+
+- **CUBIC**, Linux's default since 2006, grows cwnd along a cubic curve so it refills fast, long-distance links more quickly after a loss.
+- **BBR**, developed at Google, doesn't wait for loss at all: it estimates the bottleneck bandwidth and minimum RTT directly and paces packets to match, keeping queues short.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Large downloads" tool="Speed tests, file transfers">
+A speed test's first second is slow start ramping up; the steady rate after that is congestion avoidance holding near the bottleneck.
+</PracticalApplication>
+<PracticalApplication title="Video streaming" tool="YouTube, Netflix">
+Adaptive streaming measures the throughput congestion control achieves and switches video quality to match it.
+</PracticalApplication>
+<PracticalApplication title="Data centres" tool="DCTCP, cloud networks">
+Data centres use variants that react to queues filling up (ECN marks) before any packet is lost, keeping latency low.
+</PracticalApplication>
+<PracticalApplication title="Linux tuning" tool="sysctl net.ipv4.tcp_congestion_control">
+You can see and change a Linux machine's algorithm with one setting; servers often switch to BBR.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Why senders must slow down, slow start and additive increase, the two kinds of back-off, why AIMD shares bandwidth fairly, and the variants in use today. The [quiz](/courses/computer-networks/transport-quiz) covers the transport layer.
+</Callout>

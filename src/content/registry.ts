@@ -213,6 +213,20 @@ const DsUnionFind = lesson(() => import("@/content/data-structures/m4-01-union-f
 const DsChoosing = lesson(() => import("@/content/data-structures/m4-02-choosing-a-data-structure.mdx"));
 const DsFinalQuiz = lesson(() => import("@/content/data-structures/m4-03-final-quiz.mdx"));
 
+const NetLayers = lesson(() => import("@/content/computer-networks/m1-01-layers-and-packets.mdx"));
+const NetDelay = lesson(() => import("@/content/computer-networks/m1-02-delay-and-throughput.mdx"));
+const NetQuiz1 = lesson(() => import("@/content/computer-networks/m1-03-foundations-quiz.mdx"));
+const NetIp = lesson(() => import("@/content/computer-networks/m2-01-ip-addresses-and-subnets.mdx"));
+const NetRouting = lesson(() => import("@/content/computer-networks/m2-02-routing.mdx"));
+const NetQuiz2 = lesson(() => import("@/content/computer-networks/m2-03-network-quiz.mdx"));
+const NetUdp = lesson(() => import("@/content/computer-networks/m3-01-udp-and-ports.mdx"));
+const NetTcp = lesson(() => import("@/content/computer-networks/m3-02-tcp-reliable-delivery.mdx"));
+const NetCongestion = lesson(() => import("@/content/computer-networks/m3-03-congestion-control.mdx"));
+const NetQuiz3 = lesson(() => import("@/content/computer-networks/m3-04-transport-quiz.mdx"));
+const NetDns = lesson(() => import("@/content/computer-networks/m4-01-dns.mdx"));
+const NetHttp = lesson(() => import("@/content/computer-networks/m4-02-http-and-https.mdx"));
+const NetFinalQuiz = lesson(() => import("@/content/computer-networks/m4-03-final-quiz.mdx"));
+
 import { ahmedAlghali, asmaaFarouq, type Author } from "./authors";
 
 export type LessonKind = "theory" | "practical" | "quiz";
@@ -947,6 +961,56 @@ export const courses: Course[] = [
           { slug: "union-find", title: "Union-Find", duration: "13 min", Component: DsUnionFind },
           { slug: "choosing-a-data-structure", title: "Choosing a Data Structure", duration: "12 min", Component: DsChoosing },
           { slug: "final-quiz", title: "Quiz: Choosing and Combining", duration: "10 min", kind: "quiz", Component: DsFinalQuiz },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "computer-networks",
+    title: "Computer Networks",
+    tagline: "What happens between pressing Enter and seeing the page.",
+    description:
+      "Layers and packets, delay and bandwidth, IP addresses and subnets, routing, UDP and TCP, congestion control, DNS and HTTPS. Wrap a request in its headers, split a subnet bit by bit, watch Dijkstra fill a router's table, lose a TCP segment and see it come back, and run real sockets in Python.",
+    accent: "orange",
+    status: "available",
+    number: "15",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "How the Internet Fits Together",
+        blurb: "Packets, the four layers and encapsulation, and the delays every packet pays.",
+        lessons: [
+          { slug: "layers-and-packets", title: "Layers and Packets", duration: "14 min", Component: NetLayers },
+          { slug: "delay-and-throughput", title: "Delay and Throughput", duration: "13 min", Component: NetDelay },
+          { slug: "foundations-quiz", title: "Quiz: How the Internet Fits Together", duration: "7 min", kind: "quiz", Component: NetQuiz1 },
+        ],
+      },
+      {
+        title: "The Network Layer",
+        blurb: "IP addresses, subnets and NAT, and how routers forward and find routes.",
+        lessons: [
+          { slug: "ip-addresses-and-subnets", title: "IP Addresses and Subnets", duration: "15 min", Component: NetIp },
+          { slug: "routing", title: "Routing", duration: "16 min", Component: NetRouting },
+          { slug: "network-quiz", title: "Quiz: The Network Layer", duration: "7 min", kind: "quiz", Component: NetQuiz2 },
+        ],
+      },
+      {
+        title: "The Transport Layer",
+        blurb: "Ports and UDP, TCP's reliable byte stream, and congestion control.",
+        lessons: [
+          { slug: "udp-and-ports", title: "UDP and Ports", duration: "12 min", Component: NetUdp },
+          { slug: "tcp-reliable-delivery", title: "TCP: Reliable Delivery", duration: "16 min", Component: NetTcp },
+          { slug: "congestion-control", title: "Congestion Control", duration: "14 min", Component: NetCongestion },
+          { slug: "transport-quiz", title: "Quiz: The Transport Layer", duration: "8 min", kind: "quiz", Component: NetQuiz3 },
+        ],
+      },
+      {
+        title: "Applications",
+        blurb: "DNS, HTTP and HTTPS: the whole path of loading a web page.",
+        lessons: [
+          { slug: "dns", title: "DNS", duration: "14 min", Component: NetDns },
+          { slug: "http-and-https", title: "HTTP and HTTPS", duration: "16 min", Component: NetHttp },
+          { slug: "final-quiz", title: "Quiz: Loading a Page, End to End", duration: "10 min", kind: "quiz", Component: NetFinalQuiz },
         ],
       },
     ],

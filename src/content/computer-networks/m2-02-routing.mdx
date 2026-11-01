@@ -1,0 +1,91 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { ForwardingTableLab, LinkStateDemo } from "@/components/mdx/NetworkVisualizers";
+
+# Routing
+
+A packet from your laptop to a server abroad passes through 10 to 20 routers. None of them knows the whole route. Each one only decides "which of my links should this packet leave on?", millions of times a second, and somehow the packet arrives. That split, a fast local decision in every router plus a slower process that keeps those decisions sensible, is how the internet routes.
+
+## Forwarding and routing
+
+Two different jobs, often confused:
+
+- **Forwarding** is what a router does with each packet: look up the destination address in its **forwarding table** and send the packet out of the matching link. It takes nanoseconds and happens in hardware.
+- **Routing** is how those tables get filled in: routers exchange information and compute good paths. It takes seconds to minutes and happens in software.
+
+## Longest-prefix match
+
+A forwarding table lists [subnets](/courses/computer-networks/ip-addresses-and-subnets#network-part-and-host-part) and where to send packets for each. An address often matches several entries: a broad one for a whole organisation, a narrower one for a building, a narrower one still for a lab. The rule is **the most specific match wins**: the matching entry with the **longest prefix**. The entry `0.0.0.0/0` matches everything and acts as the **default route**: "if nothing better matches, send it upstream".
+
+<ForwardingTableLab />
+
+Routers do this lookup with a [binary trie](/courses/data-structures/tries#where-youll-meet-this) of address bits, or with special hardware (TCAM) that compares an address against every entry at once.
+
+```python
+import ipaddress
+
+table = {
+    "0.0.0.0/0": "ISP uplink",
+    "10.0.0.0/8": "campus core",
+    "10.1.0.0/16": "science building",
+    "10.1.2.0/24": "lab 2",
+}
+
+def next_hop(dest):
+    addr = ipaddress.ip_address(dest)
+    matches = [ipaddress.ip_network(p) for p in table if addr in ipaddress.ip_network(p)]
+    best = max(matches, key=lambda n: n.prefixlen)       # longest prefix wins
+    return table[str(best)]
+
+print(next_hop("10.1.2.77"))  # lab 2
+print(next_hop("10.1.40.3"))  # science building
+print(next_hop("8.8.8.8"))  # ISP uplink
+```
+
+## Link-state routing
+
+How does a router learn which link leads where cheapest? In **link-state** routing, every router tells every other router about its own links and their costs (it **floods** them). Soon each router has the same map of the whole network, and runs [Dijkstra's algorithm](/courses/advanced-algorithms/shortest-paths#dijkstras-algorithm) on it to find the cheapest path to every destination. The forwarding table only needs the **first hop** of each path.
+
+Step through it, then switch which router is computing:
+
+<LinkStateDemo />
+
+From A, every destination goes via B, even C, which A has a direct link to: A → B → C costs 3, cheaper than the direct link's 5. **OSPF**, the protocol most companies run inside their networks, works exactly this way.
+
+The alternative is **distance-vector** routing (the old RIP protocol): each router only tells its neighbours its current best cost to every destination, and they update their own estimates from that. It needs no global map, but bad news can spread slowly.
+
+## Between networks: BGP
+
+The internet is a network of about 75,000 independently run networks, called **autonomous systems** (ASes): ISPs, cloud providers, universities, large companies. Inside one, the owner runs whatever routing it likes, typically OSPF. **Between** them runs **BGP**, the Border Gateway Protocol.
+
+BGP doesn't look for the cheapest path. Each AS announces which address blocks it can reach and through which chain of ASes, and every AS chooses routes by **policy**: business agreements about who pays whom. That makes BGP the internet's most powerful protocol and its most fragile. A wrong announcement can pull traffic for an address block to the wrong place.
+
+<Callout tone="orange" label="When BGP goes wrong">
+In October 2021, a configuration change withdrew the BGP routes to Facebook's DNS servers. The rest of the internet could no longer find them, and Facebook, Instagram and WhatsApp were unreachable for about six hours. The servers were running the whole time; the routes to them had disappeared.
+</Callout>
+
+## TTL and traceroute
+
+What if a mistake makes routers send a packet round in a circle? Every IP packet carries a **time to live (TTL)**, typically starting at 64. Each router decrements it, and when it reaches 0 the router drops the packet and sends an error back to the sender. Loops waste a little capacity, but no packet circulates forever.
+
+**traceroute** turns this into a tool: it sends packets with TTL 1, then 2, then 3, and each router that drops one reveals itself in the error it sends back. The result is a list of the routers along the path, with the round-trip time to each.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="traceroute / tracert" tool="Network debugging">
+Shows each hop on the path and where delay is added, using the TTL trick above.
+</PracticalApplication>
+<PracticalApplication title="Cloud route tables" tool="AWS, Azure, GCP">
+A cloud subnet's route table is a forwarding table: 10.0.0.0/16 → local, 0.0.0.0/0 → internet gateway, longest prefix wins.
+</PracticalApplication>
+<PracticalApplication title="Anycast" tool="1.1.1.1, 8.8.8.8, CDNs">
+Many servers worldwide announce the same address block with BGP, and each user's packets go to the nearest one. That's how one IP address can be served from hundreds of cities.
+</PracticalApplication>
+<PracticalApplication title="Map routing" tool="Google Maps, OSRM">
+Road routing uses the same shortest-path algorithms on a graph of intersections, with travel times as link costs.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Forwarding versus routing, longest-prefix match, link-state routing with Dijkstra, BGP's policy routing between networks, and TTL. The [quiz](/courses/computer-networks/network-quiz) covers the module.
+</Callout>

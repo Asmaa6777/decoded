@@ -1,0 +1,80 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { EncapsulationDemo } from "@/components/mdx/NetworkVisualizers";
+
+# Layers and Packets
+
+When you open a web page, your request crosses Wi-Fi, maybe a cable under the sea, a dozen routers owned by companies you've never heard of, and arrives intact, in order, at a machine thousands of kilometres away. No single program knows how to do all of that. The internet works because the job is split into **layers**, each solving one problem and trusting the layer below it with the rest.
+
+## Packets, not phone lines
+
+The old telephone network reserved a whole circuit for each call. If you paused, the line sat idle. The internet does **packet switching** instead: data is cut into **packets** of at most a few kilobytes, each labelled with where it's going, and every link is shared by everyone's packets at once.
+
+That sharing is why the internet is cheap and robust: no reservation, and if a router fails, packets go around it. It's also why it's unpredictable: packets can be **delayed** when links are busy, **dropped** when a router's queue overflows, and **reordered** when they take different paths. Much of this course is about how the layers above cope with that.
+
+## The four layers
+
+The internet's design (the TCP/IP model) has four layers. Each one talks only to the layer directly above and below it, and to its peer layer on the other machine.
+
+| Layer | Job | Unit | Address | Examples |
+|---|---|---|---|---|
+| **Application** | what the program wants to say | message | names like `decoded.stack42.tech` | HTTP, DNS, SMTP, SSH |
+| **Transport** | get it to the right **program**, reliably if asked | segment | **port** numbers | TCP, UDP, QUIC |
+| **Network** | get it to the right **machine**, across many networks | packet | **IP address** | IP (v4 and v6) |
+| **Link** | get it across **one** physical hop | frame | **MAC address** | Ethernet, Wi-Fi |
+
+You'll also hear of the 7-layer **OSI model**. It splits the top layer into three and the bottom into two; it's a vocabulary more than a real protocol stack. When someone says "a layer 2 switch" or "a layer 7 load balancer" they're using OSI numbers: link and application.
+
+<Callout tone="violet" label="Why layering wins">
+Wi-Fi didn't exist when TCP was designed, yet TCP runs over it unchanged, because TCP only relies on "the layer below delivers packets, sometimes". Each layer can be replaced without touching the others. That's the same idea as an interface in programming, applied to a planet-sized system.
+</Callout>
+
+## Encapsulation
+
+Going down the stack on the sender, each layer **wraps** what it got from above in its own **header**, a few bytes of information for its peer layer on the other end. Going up the stack on the receiver, each layer reads its header, strips it, and passes the rest up. Step through a 500-byte web request:
+
+<EncapsulationDemo />
+
+The routers in between only open the packet as far as they need to. A router reads the link header and the IP header to decide where to send the packet next, but never looks inside the TCP segment. That's why the internet's core can stay simple and fast while new applications appear at the edges, an idea called the **end-to-end principle**.
+
+You can build and read headers yourself. Here's the 20-byte IPv4 header packed exactly as it goes on the wire:
+
+```python
+import struct, ipaddress
+
+def ipv4_header(src, dst, payload_len, ttl=64, proto=6):          # proto 6 = TCP
+    return struct.pack("!BBHHHBBH4s4s",
+        (4 << 4) | 5,          # version 4, header length 5 words = 20 bytes
+        0, 20 + payload_len,   # type of service, total length
+        0, 0,                  # identification, flags and fragment offset
+        ttl, proto, 0,         # time to live, protocol, checksum (left 0 here)
+        ipaddress.ip_address(src).packed, ipaddress.ip_address(dst).packed)
+
+h = ipv4_header("192.168.1.20", "203.0.113.10", payload_len=520)
+print(len(h))  # 20
+print(h[:4].hex())  # 4500021c
+print(h[8], h[9])  # 64 6
+print(ipaddress.ip_address(h[16:20]))  # 203.0.113.10
+```
+
+`4500021c` decodes as: version **4**, header length **5** words, and total length 0x021c = **540** bytes (520 of payload plus the 20-byte header). The `!` in the format string means "network byte order", which is big-endian: the most significant byte goes first on the wire, whatever the CPU prefers.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Wireshark" tool="Packet capture">
+Wireshark shows every captured frame as nested layers, Ethernet → IP → TCP → HTTP, exactly as in the demo above.
+</PracticalApplication>
+<PracticalApplication title="Load balancers" tool="Layer 4 vs layer 7">
+A layer 4 balancer routes by IP and port without reading the request. A layer 7 one, like nginx, reads the HTTP headers and can route by URL.
+</PracticalApplication>
+<PracticalApplication title="VPNs and tunnels" tool="WireGuard, VPNs">
+A VPN takes a whole IP packet and encapsulates it inside another packet's payload: one more layer of wrapping.
+</PracticalApplication>
+<PracticalApplication title="Firewalls" tool="iptables, cloud security groups">
+Firewall rules match on header fields at specific layers: source IP, destination port, protocol.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Why data travels as packets, the four layers and what each one addresses, and how headers wrap and unwrap a message. The [next lesson](/courses/computer-networks/delay-and-throughput) measures how long the trip takes.
+</Callout>

@@ -71,6 +71,20 @@ export const tools: Tool[] = [
     lessons: [{ course: "data-structures", lesson: "tries", mentions: "autocomplete" }],
   },
   {
+    name: "ping, traceroute and Wireshark",
+    what: "Seeing where a slow or broken connection goes wrong.",
+    lessons: [
+      { course: "computer-networks", lesson: "layers-and-packets", mentions: "Wireshark" },
+      { course: "computer-networks", lesson: "delay-and-throughput", mentions: "ping" },
+      { course: "computer-networks", lesson: "routing", mentions: "traceroute" },
+    ],
+  },
+  {
+    name: "DNS and domains",
+    what: "How a name becomes an address, and why changes take time to spread.",
+    lessons: [{ course: "computer-networks", lesson: "dns", mentions: "dig" }],
+  },
+  {
     name: "Package managers and build tools",
     what: "How npm, make and Airflow decide what runs first, and why they reject circular dependencies.",
     lessons: [
@@ -93,6 +107,7 @@ export const tools: Tool[] = [
       { course: "computational-mathematics", lesson: "primality-and-the-totient", mentions: "RSA" },
       { course: "computational-mathematics", lesson: "order-and-primitive-roots", mentions: "Diffie" },
       { course: "computational-mathematics", lesson: "modular-inverses", mentions: "RSA" },
+      { course: "computer-networks", lesson: "http-and-https", mentions: "TLS" },
     ],
   },
   {

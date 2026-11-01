@@ -112,6 +112,13 @@ const COURSE_GLYPHS: Record<string, (p: IconProps) => JSX.Element> = {
       <path d="M9 12h5M12 10l2 2-2 2" />
     </svg>
   ),
+  // a globe: one machine reaching the whole network
+  "computer-networks": ({ className }) => (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18" />
+    </svg>
+  ),
   // target
   "the-exam-mind": ({ className }) => (
     <svg {...base} className={className}>

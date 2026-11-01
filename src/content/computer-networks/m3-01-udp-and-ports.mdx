@@ -1,0 +1,87 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+
+# UDP and Ports
+
+IP gets a packet to the right machine. But that machine is running a browser, a music app, a game and a dozen background services, all using the network at once. The transport layer's first job is to get each packet to the right **program**, and its simplest protocol, UDP, does almost nothing else.
+
+## Ports
+
+A **port** is a 16-bit number, 0 to 65,535, that identifies one endpoint on a machine. A server **listens** on a well-known port; a client gets a temporary one from the operating system for each conversation.
+
+| Port | Service |
+|---|---|
+| 22 | SSH |
+| 53 | DNS |
+| 80 | HTTP |
+| 443 | HTTPS |
+| 5432 | PostgreSQL |
+
+A conversation is identified by the pair of endpoints: the source IP and port, and the destination IP and port (plus the protocol). That's how one web server on port 443 can talk to thousands of clients at once: every connection has a different source address or port. A **socket** is the operating system's handle for one such endpoint, the same idea as a file handle, used with calls like `send` and `recv` (the [IPC lesson](/courses/operating-systems/interprocess-communication#sockets) introduces them).
+
+## UDP: just ports and a checksum
+
+**UDP**, the User Datagram Protocol, adds exactly two things to IP: ports, and a **checksum** that catches corrupted data. Its header is 8 bytes. It makes no other promises:
+
+- no connection setup: the first packet carries data,
+- no guarantee of delivery: a lost datagram is just gone,
+- no ordering: datagrams can arrive in any order,
+- no slowing down when the network is congested.
+
+Each `send` is one **datagram**, delivered whole or not at all.
+
+```python
+import socket
+
+# a receiver on this machine; port 0 asks the OS for any free port
+server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server.bind(("127.0.0.1", 0))
+port = server.getsockname()[1]
+
+client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+client.sendto(b"ping 1", ("127.0.0.1", port))     # no connection, just send
+client.sendto(b"ping 2", ("127.0.0.1", port))
+
+data, sender = server.recvfrom(1024)
+print(data)  # b'ping 1'
+print(sender[0])  # 127.0.0.1
+print(server.recvfrom(1024)[0])  # b'ping 2'
+print(0 < port < 65536)  # True
+
+client.close()
+server.close()
+```
+
+On your own machine, through the loopback interface, nothing gets lost. Across a real network, either datagram could vanish, and the receiver would never know it was sent.
+
+## Why use an unreliable protocol?
+
+Because sometimes reliability costs more than it's worth:
+
+- **Speed of the first answer.** A DNS query fits in one datagram. With UDP, the answer comes back in one round trip, with no connection setup first.
+- **Late data is useless.** In a video call or an online game, a packet that's resent 200 ms later arrives after the moment it described. It's better to skip it and carry on.
+- **Building your own reliability.** **QUIC**, the protocol under HTTP/3, runs on UDP and implements its own reliable, encrypted streams in the application. That lets browsers and servers update it without waiting for every operating system's TCP to change.
+
+<Callout tone="orange" label="Reliable or fast: you choose per application">
+TCP gives you a reliable, ordered byte stream at the cost of setup and waiting for retransmissions. UDP gives you independent datagrams at the cost of handling loss yourself. Neither is better; they answer different questions.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="DNS" tool="Port 53">
+Most [DNS](/courses/computer-networks/dns) queries are a single UDP datagram each way.
+</PracticalApplication>
+<PracticalApplication title="Video calls and games" tool="Zoom, WebRTC, multiplayer games">
+Real-time media uses UDP so a lost packet causes a brief glitch rather than a frozen stream waiting for a resend.
+</PracticalApplication>
+<PracticalApplication title="HTTP/3 and QUIC" tool="Chrome, Cloudflare, YouTube">
+A large share of web traffic now travels over QUIC on UDP port 443.
+</PracticalApplication>
+<PracticalApplication title="Checking open ports" tool="ss, netstat, lsof">
+`ss -tulpn` on Linux lists which programs are listening on which TCP and UDP ports.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Ports and sockets, the endpoint pair that identifies a conversation, UDP's minimal service, and when that's the right choice. The [next lesson](/courses/computer-networks/tcp-reliable-delivery) builds reliability on top of an unreliable network.
+</Callout>
