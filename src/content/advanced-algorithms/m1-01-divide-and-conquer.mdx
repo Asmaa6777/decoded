@@ -10,11 +10,13 @@ import { FastPowerVisualizer, FibonacciMatrix, StrassenCalculator, RecurrenceExp
 2. **Conquer** the subproblems by solving them recursively.
 3. **Combine** the subproblem solutions into a solution for the whole.
 
-This lesson goes through six examples: merge sort, binary search, powering a number, Fibonacci numbers, matrix multiplication (with Strassen's trick), and laying out a circuit on a chip. Each time the pattern is the same: **write the recurrence, then solve it with the master method.**
+This lesson goes through six examples: [merge sort](/courses/advanced-algorithms/analysis-of-algorithms#merge-sort-recursion-first), binary search, powering a number, Fibonacci numbers, matrix multiplication (with Strassen's trick), and laying out a circuit on a chip. Each time the pattern is the same: **write the recurrence, then solve it with the master method.**
+
+The first look at this strategy is [merge sort](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer) in Algorithm Design and Analysis.
 
 ## The master theorem, again
 
-For a recurrence $T(n) = a\,T(n/b) + f(n)$:
+For a [recurrence](/courses/advanced-algorithms/solving-recurrences) $T(n) = a\,T(n/b) + f(n)$:
 
 | Case | Condition on $f(n)$ | Result |
 | --- | --- | --- |
@@ -242,7 +244,7 @@ $$
 L(n) = 2\,L(n/4) + \Theta(1) = \Theta(\sqrt n)
 $$
 
-(Master method: $n^{\log_4 2} = n^{1/2}$, Case 1.)
+([Master method](/courses/advanced-algorithms/solving-recurrences#four-methods-for-solving-recurrences): $n^{\log_4 2} = n^{1/2}$, Case 1.)
 
 $$
 \text{Area} = L(n)^2 = \Theta(n)

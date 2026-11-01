@@ -101,7 +101,7 @@ Two steps:
 
 To prove $T(n) = O(g(n))$:
 
-- **Induction goal:** $T(n) \le d\,g(n)$ for some constant $d > 0$ and all $n \ge n_0$. That's just the definition of Big-O.
+- **Induction goal:** $T(n) \le d\,g(n)$ for some constant $d > 0$ and all $n \ge n_0$. That's just the definition of [Big-O](/courses/advanced-algorithms/asymptotic-notation#big-o).
 - **Induction hypothesis:** $T(k) \le d\,g(k)$ for all $k < n$. (This is *strong* induction: we assume it for every smaller value.)
 - **Prove the goal:** plug the hypothesis into the recurrence and find values of $d$ and $n_0$ that make it work.
 
@@ -156,7 +156,7 @@ Convert the recurrence into a tree:
 - Each **node** is the cost of one call, *not counting* its own recursive calls.
 - **Add up each level**, then add up the levels.
 
-The tree is mainly used to **guess** a solution, which you can then prove with substitution. You saw it for merge sort in the first lesson: $\lg n$ levels that each cost $cn$, so $\Theta(n \lg n)$ in total.
+The tree is mainly used to **guess** a solution, which you can then prove with substitution. You saw it for [merge sort](/courses/advanced-algorithms/analysis-of-algorithms#merge-sort-recursion-first) in the first lesson: $\lg n$ levels that each cost $cn$, so $\Theta(n \lg n)$ in total.
 
 Pick a recurrence below and look at the level costs. Each level costs the same fixed multiple $a / b^k$ of the level above it. Three things can happen:
 

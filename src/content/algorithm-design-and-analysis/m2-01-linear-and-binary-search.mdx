@@ -25,7 +25,7 @@ It's hard to make an algorithm simpler. Linear search works on **any** array, so
 
 Now suppose the array is **sorted**. Look at the **middle** element. If it's the target, you're done. If it's smaller than the target, the target can't be anywhere on the left, because everything there is even smaller, so throw away the entire left half. If it's bigger, throw away the right half. Repeat on what's left.
 
-Each comparison cuts the search space in half. It's divide and conquer again, with only one half to recurse into.
+Each comparison cuts the search space in half. It's [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer) again, with only one half to recurse into.
 
 <SearchVisualizer algorithm="binary" target={58} />
 

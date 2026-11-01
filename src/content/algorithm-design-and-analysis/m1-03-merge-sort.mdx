@@ -3,7 +3,7 @@ import { SortVisualizer, LeetCodeProblems, MergeSortTree } from "@/components/md
 
 # Divide and Conquer: Merge Sort
 
-Selection, bubble and insertion sort all work the same basic way: fix one element at a time, and to fix each one, look at (almost) everything else. That's where the $n^2$ comes from: $n$ elements, $n$ work each.
+Selection, bubble and [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea) all work the same basic way: fix one element at a time, and to fix each one, look at (almost) everything else. That's where the $n^2$ comes from: $n$ elements, $n$ work each.
 
 A cleverer loop won't beat $n^2$. You need a different *strategy*, and the first one we'll study is the most important design idea in this course.
 
@@ -53,13 +53,15 @@ Merge sort *always* splits exactly in half, whatever the data looks like, so bes
 Go back to the [growth table](/courses/algorithm-design-and-analysis/counting-steps) and compare $n^2$ with $n \log n$ at a million. One takes hours and the other a fraction of a second.
 
 <Callout tone="orange" label="The price">
-Merge sort is **not in place**. The merge step needs a temporary array as big as the piece being merged, which is $O(n)$ extra memory. When memory is tight, that matters. (Quick sort, next lesson, avoids it.)
+Merge sort is **not in place**. The merge step needs a temporary array as big as the piece being merged, which is $O(n)$ extra memory. When memory is tight, that matters. ([Quick sort](/courses/algorithm-design-and-analysis/quick-sort#the-idea), next lesson, avoids it.)
 </Callout>
 
 Two more properties:
 
 - **Stable.** When the two fronts are equal, the merge takes from the *left* half first (`a[i] <= a[j]`). Equal elements keep their original order.
 - **Great for huge data.** Merging only ever reads each list front to back, so it works even when the data is too big for memory and lives on disk.
+
+Advanced Algorithms applies the same strategy to powering numbers and multiplying matrices, in [divide and conquer](/courses/advanced-algorithms/divide-and-conquer).
 
 ## Where this shows up today
 

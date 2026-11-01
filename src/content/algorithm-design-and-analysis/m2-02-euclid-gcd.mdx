@@ -14,7 +14,7 @@ Some examples you can check by hand:
 - $\gcd(24, 54) = 6$
 - $\gcd(18, 42) = 6$
 - $\gcd(45, 210) = 15$
-- $\gcd(97, 20) = 1$. Numbers like these, with no common divisor except 1, are called *coprime*.
+- $\gcd(97, 20) = 1$. Numbers like these, with no common divisor except 1, are called *[coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor)*.
 
 ## The obvious way
 
@@ -79,7 +79,7 @@ static int gcd(int m, int n) {
 
 Every two steps, the remainder drops to **less than half** of what it was. (If $n \le m/2$, then $m \bmod n \lt n \le m/2$. If $n \gt m/2$, then $m \bmod n = m - n \lt m/2$.)
 
-Halving every two steps means the number of steps is at most about $2 \log_2 n$. Euclid's algorithm is **$O(\log n)$**, the same growth as binary search. For two 10-digit numbers, that's a few dozen divisions instead of billions.
+Halving every two steps means the number of steps is at most about $2 \log_2 n$. Euclid's algorithm is **$O(\log n)$**, the same growth as [binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half). For two 10-digit numbers, that's a few dozen divisions instead of billions.
 
 <Callout tone="sky" label="Order doesn't matter">
 What if $m \lt n$, like $\gcd(45, 210)$? The first step computes $45 \bmod 210 = 45$, so the pair becomes $(210, 45)$. Euclid swaps them for you, for the price of one division.

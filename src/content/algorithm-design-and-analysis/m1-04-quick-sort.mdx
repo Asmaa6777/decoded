@@ -3,7 +3,7 @@ import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualize
 
 # Quick Sort: Pick a Pivot
 
-Merge sort does the easy part first (split blindly down the middle) and the hard part last (merge carefully). Quick sort reverses that order. It does the careful work **up front**, so afterwards there's nothing left to combine.
+[Merge sort](/courses/algorithm-design-and-analysis/merge-sort#merge-sort-in-one-paragraph) does the easy part first (split blindly down the middle) and the hard part last (merge carefully). Quick sort reverses that order. It does the careful work **up front**, so afterwards there's nothing left to combine.
 
 ## The idea
 
@@ -13,7 +13,7 @@ Merge sort does the easy part first (split blindly down the middle) and the hard
 
 There's no combine step. Once both sides are sorted the whole array is sorted, because everything on the left is smaller than the pivot and everything on the right is bigger. All the work happens in partitioning.
 
-It's still divide and conquer: divide is "partition," conquer is "recurse," and combine is empty.
+It's still [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer): divide is "partition," conquer is "recurse," and combine is empty.
 
 ## Partitioning with two pointers
 
@@ -42,7 +42,7 @@ $$
 
 With a last-element pivot, this happens on data that's **already sorted**, because every pivot is the largest remaining element. Reverse-sorted data is just as bad, since the pivots keep landing at one end or the other. Try `1, 2, 3, 4, 5, 6, 7, 8` in the visualizer and watch every partition peel off just one element.
 
-So the input that's best for insertion sort is the worst for naive quick sort.
+So the input that's best for [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea) is the worst for naive quick sort.
 
 ### Picking a better pivot
 
@@ -54,14 +54,16 @@ The fix is to choose the pivot more carefully. Common choices:
 - **Median of three**: the median of the first, middle and last elements. A cheap way to avoid bad pivots.
 
 <Callout tone="violet" label="Quick sort vs merge sort">
-Merge sort is always $O(n \log n)$ and stable, but needs $O(n)$ extra memory. Quick sort is $O(n \log n)$ on average and $O(n^2)$ in the worst case, and it isn't stable. It sorts **in place**, though, and is usually faster in practice because it moves less data around and uses the CPU cache well.
+Merge sort is always $O(n \log n)$ and [stable](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#stability), but needs $O(n)$ extra memory. Quick sort is $O(n \log n)$ on average and $O(n^2)$ in the worst case, and it isn't stable. It sorts **in place**, though, and is usually faster in practice because it moves less data around and uses the CPU cache well.
 </Callout>
 
 ## Strengths and weaknesses
 
-Quick sort is often the fastest general-purpose sort in practice. It sorts in place, using only $O(\log n)$ extra space on average for the recursion stack. It's also easy to parallelize, since after partitioning the two sides are completely independent.
+Quick sort is often the fastest general-purpose sort in practice. It sorts in place, using only $O(\log n)$ extra space on average for the [recursion stack](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too). It's also easy to parallelize, since after partitioning the two sides are completely independent.
 
 Against that, its worst case is $O(n^2)$, and it isn't stable: the long-distance swaps can reorder equal elements.
+
+Advanced Algorithms proves the expected running time when the pivot is chosen at random, in [randomized quicksort](/courses/advanced-algorithms/quicksort#randomized-quicksort).
 
 ## Where this shows up today
 

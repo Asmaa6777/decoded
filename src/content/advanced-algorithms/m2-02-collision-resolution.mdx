@@ -3,7 +3,7 @@ import { HashTableVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
 # Collisions: Chaining and Open Addressing
 
-However good the hash function is, two different keys will sometimes land in the **same slot**. That's a **collision**. There are two families of solutions:
+However good the [hash function](/courses/advanced-algorithms/hashing) is, two different keys will sometimes land in the **same slot**. That's a **collision**. There are two families of solutions:
 
 - **Separate chaining** (also called *open hashing*): each slot holds a **list** of all the keys that hash there.
 - **Open addressing** (also called *closed hashing*): every key lives **in the table itself**. On a collision, you go looking for another free slot.
@@ -93,13 +93,13 @@ So when the table gets too full, **double its size** and **hash every key again*
 3. Create a new array of a larger size, typically double.
 4. Insert every element into the new array, using the new hash function, and make it the bucket array.
 
-Each rehash costs $O(n)$, but as the previous lesson's amortized analysis showed, doubling keeps the cost of $n$ inserts at $O(n)$ overall.
+Each rehash costs $O(n)$, but as the previous lesson's [amortized analysis](/courses/advanced-algorithms/hashing#amortized-analysis) showed, doubling keeps the cost of $n$ inserts at $O(n)$ overall.
 
 ## Open addressing
 
 Like separate chaining, **open addressing** is a way of handling collisions, but:
 
-- there's **no chaining** and **no pointers**: all items are stored in the hash table itself,
+- there's **no chaining** and **no pointers**: all items are stored in the [hash table](/courses/advanced-algorithms/lab-hashing) itself,
 - there's **one item per slot**, so the table size must always be $\ge$ the number of keys.
 
 ### Probing
@@ -282,7 +282,7 @@ $$
 \frac{1}{1 - \alpha}
 $$
 
-assuming uniform hashing (every probe sequence is equally likely).
+assuming uniform [hashing](/courses/advanced-algorithms/hashing) (every probe sequence is equally likely).
 </Callout>
 
 **Why:** the first probe always happens. With probability about $\alpha$ the slot is occupied and we need a second probe. With probability about $\alpha^2$ we need a third, and so on:

@@ -92,6 +92,8 @@ Total: **$O(V + E)$** for both, with an adjacency list. Space is $O(V)$ for the 
 In BFS, mark a vertex visited the moment you **add it to the queue**, not when you take it out. Otherwise different neighbours can add the same vertex several times before it's processed. The result is still correct, but the wasted work is a common cause of "time limit exceeded."
 </Callout>
 
+Advanced Algorithms takes this further, from BFS on unweighted graphs to weighted ones, in [shortest paths](/courses/advanced-algorithms/shortest-paths#unweighted-graphs).
+
 ## Where this shows up today
 
 <ApplicationsGrid>

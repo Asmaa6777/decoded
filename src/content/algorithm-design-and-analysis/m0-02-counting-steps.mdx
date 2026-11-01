@@ -24,7 +24,7 @@ That function, $T(n)$, is the algorithm's **time complexity**. It doesn't depend
 - A **fixed part** that doesn't depend on the input: the code itself and a few simple variables like `i`, `max`, `temp`.
 - A **variable part** that grows with the input: extra arrays you allocate and, easy to forget, the **recursion stack**. Every recursive call that hasn't returned yet takes up memory.
 
-This course mostly measures time, but watch memory as well. Merge sort, coming up in module 1, gets its speed by using extra memory.
+This course mostly measures time, but watch memory as well. [Merge sort](/courses/algorithm-design-and-analysis/merge-sort#merge-sort-in-one-paragraph), coming up in module 1, gets its speed by using extra memory.
 
 ## Best, worst and average case
 
@@ -82,6 +82,8 @@ $$
 <Callout tone="violet" label="The everyday version">
 In practice, people say "Big-O" for everything and mean "how it grows in the worst case." That's fine in conversation. On an exam, be precise: O is ≤, Ω is ≥, Θ is both.
 </Callout>
+
+Advanced Algorithms makes this precise, with formal definitions and proofs, in [asymptotic notation](/courses/advanced-algorithms/asymptotic-notation#big-o) and [counting the basic operation](/courses/advanced-algorithms/counting-the-basic-operation).
 
 ## Getting the Big-O without the algebra
 

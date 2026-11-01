@@ -4,7 +4,7 @@ import { DijkstraVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
 # Shortest Paths: Dijkstra's Algorithm
 
-Every map app answers the same question millions of times a second: **what's the cheapest way from here to there?** This lesson defines shortest paths properly, then solves the problem with **Dijkstra's algorithm**, a greedy algorithm, and proves that it's correct.
+Every map app answers the same question millions of times a second: **what's the cheapest way from here to there?** This lesson defines shortest paths properly, then solves the problem with **Dijkstra's algorithm**, a [greedy algorithm](/courses/advanced-algorithms/greedy-algorithms#a-short-list-of-algorithm-types), and proves that it's correct.
 
 ## Paths in graphs
 
@@ -137,7 +137,7 @@ So $d[v] < d[u] + w(u, v)$, which contradicts $d[v] = d[u] + w(u, v)$. ∎
 Let $u$ be $v$'s predecessor on a shortest path from $s$ to $v$. If $d[u] = \delta(s, u)$ and the edge $(u, v)$ is relaxed, then $d[v] = \delta(s, v)$ after the relaxation.
 </Callout>
 
-**Proof.** Observe that $\delta(s, v) = \delta(s, u) + w(u, v)$, by optimal substructure. Suppose $d[v] > \delta(s, v)$ before the relaxation (otherwise we're done). Then the test $d[v] > d[u] + w(u, v)$ succeeds, because
+**Proof.** Observe that $\delta(s, v) = \delta(s, u) + w(u, v)$, by [optimal substructure](/courses/advanced-algorithms/huffman-and-activity-selection#steps-in-designing-a-greedy-algorithm). Suppose $d[v] > \delta(s, v)$ before the relaxation (otherwise we're done). Then the test $d[v] > d[u] + w(u, v)$ succeeds, because
 
 $$
 d[v] > \delta(s, v) = \delta(s, u) + w(u, v) = d[u] + w(u, v)

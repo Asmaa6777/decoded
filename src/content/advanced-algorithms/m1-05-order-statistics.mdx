@@ -33,7 +33,7 @@ $$
 \underbrace{\boxed{\;\le A[r]\;}}_{k - 1 \text{ elements}}\;\underset{r}{\boxed{A[r]}}\;\boxed{\;\ge A[r]\;}
 $$
 
-So $A[r]$ has rank $k$ in this piece. If $k = i$, we're done. Otherwise the answer is on **one** side only, so recurse into that side and **throw the other side away**. That's the difference from quicksort, which recurses into **both** sides.
+So $A[r]$ has rank $k$ in this piece. If $k = i$, we're done. Otherwise the answer is on **one** side only, so recurse into that side and **throw the other side away**. That's the difference from [quicksort](/courses/advanced-algorithms/quicksort#divide-and-conquer), which recurses into **both** sides.
 
 When we go right, the $k$ elements we skipped are all smaller, so we look for rank $i - k$ in the upper part.
 
@@ -178,7 +178,7 @@ So whichever side step 4 recurses into, it throws away at least $3\lfloor n/10 \
 
 - For $n \ge 50$, we have $3\lfloor n/10 \rfloor \ge n/4$.
 - So for $n \ge 50$, the recursive call in step 4 is on **at most $3n/4$** elements.
-- That means the recurrence can assume step 4 takes time $T(3n/4)$ in the worst case.
+- That means the [recurrence](/courses/advanced-algorithms/solving-recurrences) can assume step 4 takes time $T(3n/4)$ in the worst case.
 - For $n < 50$, the worst-case time is $T(n) = \Theta(1)$.
 
 ### Developing the recurrence

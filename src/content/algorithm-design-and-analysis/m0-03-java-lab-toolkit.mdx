@@ -151,9 +151,9 @@ Both are $O(n)$: one pass, constant work per element.
 
 ## The real experiment
 
-This is where the stopwatch earns its place. Once you have selection sort (next lesson), run it at sizes 1,000, 2,000, 4,000 and 8,000 and write the times down.
+This is where the stopwatch earns its place. Once you have [selection sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#selection-sort-find-the-smallest-put-it-first) (next lesson), run it at sizes 1,000, 2,000, 4,000 and 8,000 and write the times down.
 
-If an algorithm is $O(n^2)$, doubling $n$ should roughly **quadruple** the time. If it's $O(n)$, doubling $n$ should roughly double it. When your own measurements match the math, Big-O becomes a prediction you can check.
+If an algorithm is $O(n^2)$, doubling $n$ should roughly **quadruple** the time. If it's $O(n)$, doubling $n$ should roughly double it. When your own measurements match the math, [Big-O](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations) becomes a prediction you can check.
 
 <Callout tone="sky" label="Make it fair">
 Use `.clone()` so every algorithm sorts the same input. Run each size a few times and take the middle value, since the first run is often slow while the JVM warms up.

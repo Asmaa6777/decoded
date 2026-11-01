@@ -4,7 +4,7 @@ import { RecursionTreeDiagram, GaussMultiply, RecurrenceExplorer } from "@/compo
 
 # Lab: Recursion Trees and Gauss Multiplication
 
-This lab has two parts. Part I practises **recursion trees**, including recurrences the master method can't handle. Part II uses divide and conquer to multiply big numbers faster than the method from school, and the lab work is to implement it.
+This lab has two parts. Part I practises **recursion trees**, including [recurrences](/courses/advanced-algorithms/solving-recurrences) the [master method](/courses/advanced-algorithms/solving-recurrences#four-methods-for-solving-recurrences) can't handle. Part II uses [divide and conquer](/courses/advanced-algorithms/divide-and-conquer) to multiply big numbers faster than the method from school, and the lab work is to implement it.
 
 ## Part I: Analysis with recursion trees
 
@@ -217,7 +217,7 @@ Practice problems for home. They aren't submitted.
 - **B** solves a problem of size $n$ by recursively solving **two** subproblems of size $n - 1$, then combining in constant time.
 - **C** divides a problem into **nine** subproblems of size $n/3$, solves each recursively, and combines in $O(n^2)$ time.
 
-What are their running times, in Big-O? Which would you choose?
+What are their running times, in [Big-O](/courses/advanced-algorithms/asymptotic-notation#big-o)? Which would you choose?
 
 <details>
 <summary>Show the answer</summary>
@@ -235,7 +235,7 @@ What are their running times, in Big-O? Which would you choose?
 <details>
 <summary>Hint</summary>
 
-Sort first with merge sort, in $O(n \log n)$. Equal elements end up next to each other, so a single $O(n)$ pass that keeps an element only when it differs from the previous one removes every duplicate.
+Sort first with [merge sort](/courses/advanced-algorithms/analysis-of-algorithms#merge-sort-recursion-first), in $O(n \log n)$. Equal elements end up next to each other, so a single $O(n)$ pass that keeps an element only when it differs from the previous one removes every duplicate.
 
 </details>
 

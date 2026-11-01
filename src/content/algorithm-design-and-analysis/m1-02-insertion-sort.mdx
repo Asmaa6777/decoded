@@ -20,7 +20,7 @@ Each step takes the first element of the right side, the **key**, and inserts it
 
 Watch the purple **key** chip. While it's "in your hand," the bars bigger than it slide right one by one and leave a gap. When the loop finds an element that isn't bigger, or runs off the left end, the key drops into the gap.
 
-Insertion sort **shifts** where bubble sort swaps, so each move costs one assignment instead of three. That small detail makes it quicker than bubble sort in practice, even though both have the same Big-O.
+Insertion sort **shifts** where [bubble sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#bubble-sort-fix-the-neighbours) swaps, so each move costs one assignment instead of three. That small detail makes it quicker than bubble sort in practice, even though both have the same [Big-O](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations).
 
 ## Analysis
 
@@ -83,7 +83,7 @@ public static void insertionSort(int[] array) {
 
 Watch the order in the `while` condition: `j >= 0` must come **before** `array[j] > key`. Java's `&&` stops at the first false, so when `j` reaches `-1` it never tries to read `array[-1]`. Swap the order and the program crashes on the first key that belongs at the very front.
 
-Time it against selection sort on a random array of 5,000 numbers. Then sort the array first and time both again. Selection sort's time barely changes, while insertion sort's drops to almost nothing.
+Time it against [selection sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#selection-sort-find-the-smallest-put-it-first) on a random array of 5,000 numbers. Then sort the array first and time both again. Selection sort's time barely changes, while insertion sort's drops to almost nothing.
 
 <LeetCodeProblems
   problems={[

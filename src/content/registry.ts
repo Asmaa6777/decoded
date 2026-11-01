@@ -40,7 +40,7 @@ const AdaGreedy = lesson(() => import("@/content/algorithm-design-and-analysis/m
 const AdaDynamic = lesson(() => import("@/content/algorithm-design-and-analysis/m4-02-dynamic-programming.mdx"));
 const AdaFinalQuiz = lesson(() => import("@/content/algorithm-design-and-analysis/m4-03-final-quiz.mdx"));
 const AaAnalysis = lesson(() => import("@/content/advanced-algorithms/m0-01-analysis-of-algorithms.mdx"));
-const AaCountingOperations = lesson(() => import("@/content/advanced-algorithms/m0-02-every-worst-average-best.mdx"));
+const AaCountingOperations = lesson(() => import("@/content/advanced-algorithms/m0-02-counting-the-basic-operation.mdx"));
 const AaAsymptotic = lesson(() => import("@/content/advanced-algorithms/m0-03-asymptotic-notation.mdx"));
 const AaRecurrences = lesson(() => import("@/content/advanced-algorithms/m0-04-solving-recurrences.mdx"));
 const AaLabBits = lesson(() => import("@/content/advanced-algorithms/m0-05-lab-bit-manipulation.mdx"));

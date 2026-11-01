@@ -4,7 +4,7 @@ import { HuffmanVisualizer, ActivitySelector } from "@/components/mdx/AdvancedVi
 
 # Greedy Choice: Huffman Codes and Activity Selection
 
-*Greed is good (some of the time).* A greedy algorithm makes the choice that looks best **right now**. This lesson asks *when* that's safe, and proves it for two famous problems.
+*Greed is good (some of the time).* A [greedy algorithm](/courses/advanced-algorithms/greedy-algorithms#a-short-list-of-algorithm-types) makes the choice that looks best **right now**. This lesson asks *when* that's safe, and proves it for two famous problems.
 
 Greedy algorithms **do not always** give optimal solutions. When they do, it's because the problem has two properties.
 
@@ -15,7 +15,7 @@ A globally optimal solution can be reached by making a **locally optimal (greedy
 </Callout>
 
 <Callout tone="sky" label="2. Optimal substructure">
-A problem has optimal substructure if an optimal solution to the problem **contains optimal solutions to its subproblems**. This property matters for both greedy algorithms and dynamic programming.
+A problem has optimal substructure if an optimal solution to the problem **contains optimal solutions to its subproblems**. This property matters for both greedy algorithms and [dynamic programming](/courses/advanced-algorithms/dynamic-programming).
 </Callout>
 
 ## Greedy algorithms vs. dynamic programming
@@ -37,7 +37,7 @@ A problem has optimal substructure if an optimal solution to the problem **conta
 
 ### The shortcut
 
-1. Set up the optimization problem so that after one choice is made, there's **only one subproblem** left to solve.
+1. Set up the [optimization problem](/courses/advanced-algorithms/greedy-algorithms#optimization-problems) so that after one choice is made, there's **only one subproblem** left to solve.
 2. Prove there's always an optimal solution to the original problem that **makes the greedy choice**, so the greedy choice is always safe.
 3. Show that once the greedy choice is made, what's left is a subproblem with this property: combining an optimal solution to it with the greedy choice gives an **optimal solution** to the original problem.
 

@@ -4,7 +4,7 @@ import { FastPowerVisualizer, MinMaxVisualizer, RecurrenceExplorer } from "@/com
 
 # Lab: Analyzing Algorithms with Recurrences
 
-This lab practises the skill from the last lesson: **write down the recurrence** for an algorithm, then **solve it**. We'll use two problems, computing a power and sorting, and then a lab task where we need the *exact* number of comparisons, not just the Big-O.
+This lab practises the skill from the last lesson: **write down the recurrence** for an algorithm, then **solve it**. We'll use two problems, computing a power and sorting, and then a lab task where we need the *exact* number of comparisons, not just the [Big-O](/courses/advanced-algorithms/asymptotic-notation#big-o).
 
 ## Part I: Analysis and recurrence relations
 
@@ -56,7 +56,7 @@ $$
 T(b) = T(\lfloor b/2 \rfloor) + 1 \quad\approx\quad T(b) = T(b/2) + 1
 $$
 
-(Dropping the floor doesn't change the answer.) The master method gives $T(b) = O(\log b)$.
+(Dropping the floor doesn't change the answer.) The [master method](/courses/advanced-algorithms/solving-recurrences#four-methods-for-solving-recurrences) gives $T(b) = O(\log b)$.
 
 <Callout tone="violet" label="Two ways to number the master method's cases">
 This lab writes the master method with $f(n) = O(n^d)$ and compares $a$ with $b^d$:
@@ -91,7 +91,7 @@ $$
 T(n) = T(n-1) + O(n)
 $$
 
-The master method **can't** solve this: the problem shrinks by *subtracting* 1, not by dividing. It also can't solve recurrences with different-sized pieces, like $T(n) = 2T(n/4) + T(n/2) + O(n)$.
+The master method **can't** solve this: the problem shrinks by *subtracting* 1, not by dividing. It also can't solve [recurrences](/courses/advanced-algorithms/solving-recurrences) with different-sized pieces, like $T(n) = 2T(n/4) + T(n/2) + O(n)$.
 
 But **substitution** works well here. Start from $n$ and work backwards. It's like induction in reverse:
 
@@ -177,7 +177,7 @@ $$
 2n + 3n + \dots + kn = n\,(2 + 3 + \dots + k) = n\left(\frac{k(k+1)}{2} - 1\right) = \Theta(nk^2)
 $$
 
-*Can you do better?* Merge the arrays **in pairs**, like merge sort does. There are $\log k$ rounds, and each round touches all $kn$ elements, so it's $O(nk \log k)$.
+*Can you do better?* Merge the arrays **in pairs**, like [merge sort](/courses/advanced-algorithms/analysis-of-algorithms#merge-sort-recursion-first) does. There are $\log k$ rounds, and each round touches all $kn$ elements, so it's $O(nk \log k)$.
 
 ## Part III: Lab task
 

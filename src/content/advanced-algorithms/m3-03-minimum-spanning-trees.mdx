@@ -3,7 +3,9 @@ import { MstVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizer
 
 # Minimum Spanning Trees: Prim and Kruskal
 
-This lesson proves that greedy algorithms **really do** find a minimum spanning tree, and builds the two classic ones: **Prim's** and **Kruskal's**.
+This lesson proves that [greedy algorithms](/courses/advanced-algorithms/greedy-algorithms#a-short-list-of-algorithm-types) **really do** find a minimum spanning tree, and builds the two classic ones: **Prim's** and **Kruskal's**.
+
+[Minimum spanning trees](/courses/algorithm-design-and-analysis/greedy-and-mst#minimum-spanning-trees) are introduced without these proofs in Algorithm Design and Analysis.
 
 ## Graphs (review)
 
@@ -77,7 +79,7 @@ Similarly for $T_2$.
 
 **Proof (cut and paste):** $w(T) = w(u, v) + w(T_1) + w(T_2)$. If $T_1'$ were a lower-weight spanning tree than $T_1$ for $G_1$, then $T' = \{(u, v)\} \cup T_1' \cup T_2$ would be a lower-weight spanning tree than $T$ for $G$, which is impossible. ∎
 
-**Do we also have overlapping subproblems?** Yes. Great, then dynamic programming may work! But MSTs have **another powerful property** that leads to an even more efficient algorithm.
+**Do we also have overlapping subproblems?** Yes. Great, then [dynamic programming](/courses/advanced-algorithms/dynamic-programming) may work! But MSTs have **another powerful property** that leads to an even more efficient algorithm.
 
 ## The hallmark of greedy algorithms
 

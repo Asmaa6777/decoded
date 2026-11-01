@@ -4,7 +4,7 @@ import { SkipListVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
 # Skip Lists
 
-Red-black trees guarantee $O(\lg n)$, but they're fiddly to code: four delete cases, rotations, colors. **Skip lists** get the same expected performance from a much simpler idea, a sorted linked list with **express lanes**, plus some coin flips.
+[Red-black trees](/courses/advanced-algorithms/balanced-search-trees) guarantee $O(\lg n)$, but they're fiddly to code: four delete cases, rotations, colors. **Skip lists** get the same expected performance from a much simpler idea, a sorted linked list with **express lanes**, plus some coin flips.
 
 ## Linked lists: benefits and drawbacks
 
@@ -15,7 +15,7 @@ Red-black trees guarantee $O(\lg n)$, but they're fiddly to code: four delete ca
 
 **Drawbacks:**
 
-- Hard to search in less than $O(n)$ time. Binary search doesn't work, because there's no way to jump straight to the middle.
+- Hard to search in less than $O(n)$ time. [Binary search](/courses/advanced-algorithms/divide-and-conquer#binary-search) doesn't work, because there's no way to jump straight to the middle.
 
 **Skip lists fix these drawbacks**, and they make a good data structure for a **dictionary**.
 
@@ -104,7 +104,7 @@ Step through **insert 87** (watch the coin flips) and then **delete 87** on a ra
 - The level structure of a skip list is **independent of the keys** you insert.
 - Therefore there are **no "bad" key sequences** that lead to degenerate skip lists.
 
-Compare: inserting sorted keys into a plain BST *always* builds a chain. With a skip list, only bad luck with the coin can hurt you, never the input. That's the same advantage randomized quicksort has over plain quicksort.
+Compare: inserting sorted keys into a plain BST *always* builds a chain. With a skip list, only bad luck with the coin can hurt you, never the input. That's the same advantage randomized [quicksort](/courses/advanced-algorithms/quicksort#divide-and-conquer) has over plain quicksort.
 
 ## Skip list analysis
 

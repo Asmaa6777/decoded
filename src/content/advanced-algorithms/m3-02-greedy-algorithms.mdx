@@ -4,14 +4,16 @@ import { CoinChangeGreedy, JobScheduling, HuffmanVisualizer } from "@/components
 
 # Greedy Algorithms
 
+[The greedy approach](/courses/algorithm-design-and-analysis/greedy-and-mst#the-greedy-approach) in Algorithm Design and Analysis is the gentler introduction to this idea.
+
 ## A short list of algorithm types
 
 Most algorithms you'll meet fall into a few families:
 
 - simple recursive algorithms,
 - backtracking algorithms,
-- divide and conquer algorithms,
-- dynamic programming algorithms,
+- [divide and conquer](/courses/advanced-algorithms/divide-and-conquer) algorithms,
+- [dynamic programming](/courses/advanced-algorithms/dynamic-programming) algorithms,
 - **greedy algorithms**,
 - branch and bound algorithms,
 - brute force algorithms,
@@ -76,7 +78,7 @@ Better solutions do exist. Switch to **Best possible** above: 34 minutes.
 - This solution is **clearly optimal**. Why? The jobs add up to $102$ minutes, and three processors can't do 102 minutes of work in less than $102 / 3 = 34$ minutes.
 - There are clearly **other** optimal solutions too. Why? You can swap jobs between processors, or swap processors, without changing the finish time.
 
-**How do we find such a solution?** One way is to try **all possible assignments** of jobs to processors. Unfortunately, that can take **exponential time**: $3^9 = 19{,}683$ assignments here, and $3^n$ in general. (It's actually an NP-hard problem. See the last module.)
+**How do we find such a solution?** One way is to try **all possible assignments** of jobs to processors. Unfortunately, that can take **exponential time**: $3^9 = 19{,}683$ assignments here, and $3^n$ in general. (It's actually an [NP-hard](/courses/advanced-algorithms/p-and-np#np-hard) problem. See the last module.)
 
 ## Huffman encoding
 

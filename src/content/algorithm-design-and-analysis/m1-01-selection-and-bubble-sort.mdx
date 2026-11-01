@@ -43,7 +43,7 @@ That's $\Theta(n^2)$, and it's the same number **whatever the input looks like**
 
 Where selection sort does well is **swaps**: at most $n - 1$ of them, one per pass. If writing to memory is expensive, as on flash storage that wears out, that's a real advantage.
 
-It's also **in place**. It needs no extra array, only a couple of index variables, so its space complexity is $O(1)$.
+It's also **in place**. It needs no extra array, only a couple of index variables, so its [space complexity](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too) is $O(1)$.
 
 ## Bubble sort: fix the neighbours
 
@@ -86,7 +86,7 @@ Here's why that matters. Sort a list of students by name, then sort it again by 
 
 <ApplicationsGrid>
   <PracticalApplication title="Tiny arrays inside fast sorts" tool="LIBRARIES">
-    Production sorting routines switch to a simple quadratic sort for very small pieces, where low overhead beats a clever algorithm. They usually pick insertion sort, which is the next lesson.
+    Production sorting routines switch to a simple quadratic sort for very small pieces, where low overhead beats a clever algorithm. They usually pick [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea), which is the next lesson.
   </PracticalApplication>
   <PracticalApplication title="Top-k selection" tool="DATA">
     "Give me the 3 cheapest flights" doesn't need a full sort. Three passes of selection sort find them in $O(kn)$.
