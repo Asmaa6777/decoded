@@ -1,0 +1,98 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { TcpTimeline } from "@/components/mdx/NetworkVisualizers";
+
+# TCP: Reliable Delivery
+
+The network underneath loses packets, duplicates them and delivers them out of order. Yet when you download a file, every byte arrives, once, in order. TCP, the Transmission Control Protocol, builds that guarantee out of an unreliable network with three ideas: number everything, acknowledge what arrived, and resend what didn't.
+
+## A reliable byte stream
+
+TCP gives two programs a **connection**: a two-way stream of bytes that arrives complete and in order, or the connection reports an error. It doesn't preserve message boundaries. Two `send` calls of 5 and 6 bytes may be read as one 11-byte chunk, or as three pieces. Protocols built on TCP, like HTTP, mark where each message ends themselves.
+
+```python
+import socket
+
+server = socket.create_server(("127.0.0.1", 0))        # TCP, any free port
+client = socket.create_connection(server.getsockname())  # three-way handshake happens here
+conn, _ = server.accept()
+
+client.sendall(b"hello")
+client.sendall(b" world")
+client.shutdown(socket.SHUT_WR)                          # send FIN: no more data from us
+
+received = b""
+while chunk := conn.recv(4):                             # read in small pieces until FIN
+    received += chunk
+print(received)  # b'hello world'
+print(len(received))  # 11
+
+for s in (conn, client, server):
+    s.close()
+```
+
+The receiver had no idea there were two sends. It saw a stream of 11 bytes, and an empty read (end of file) once the sender closed its side.
+
+## Sequence numbers and acknowledgements
+
+Every byte in each direction has a **sequence number**. A segment carries the number of its first byte. The receiver replies with an **acknowledgement number**: the number of the **next byte it expects**, which also says "I have everything before this". That's a **cumulative ACK**.
+
+## The three-way handshake
+
+Before any data, the two sides agree on starting sequence numbers:
+
+1. Client → server: **SYN**, "my bytes start at x".
+2. Server → client: **SYN-ACK**, "my bytes start at y, and I expect your x + 1 next".
+3. Client → server: **ACK**, "I expect your y + 1 next".
+
+Each side picks a random starting number, so segments from an old connection, or forged ones, are unlikely to fit. The handshake costs one round trip before the first byte of data, which over long distances is a cost you [feel](/courses/computer-networks/delay-and-throughput#latency-round-trips-and-throughput).
+
+## Retransmission
+
+If a segment is lost, its bytes are never acknowledged. TCP notices in two ways:
+
+- **Timeout.** The sender starts a timer for unacknowledged data, set a little above the measured round-trip time. If it expires, the data is resent.
+- **Fast retransmit.** If later segments arrive but one is missing, the receiver keeps sending the same ACK number, "I still need byte 104". Three **duplicate ACKs** tell the sender exactly which segment to resend, without waiting for the timer.
+
+The receiver holds the out-of-order bytes and delivers everything to the application only once the gap is filled. Step through a connection, with and without a lost segment:
+
+<TcpTimeline />
+
+## Sliding windows
+
+Waiting for an acknowledgement after every segment would waste most of a long link, as the [bandwidth-delay product](/courses/computer-networks/delay-and-throughput#latency-round-trips-and-throughput) showed. Instead the sender keeps a **window** of segments in flight: it may have that many bytes sent but not yet acknowledged. As ACKs arrive, the window **slides** forward and more can be sent.
+
+Two limits set the window's size:
+
+- **Flow control**: the receiver advertises how much buffer space it has left, the **receive window**, so a fast sender can't swamp a slow receiver.
+- **Congestion control**: the sender also limits itself so it doesn't swamp the **network**. That's the [next lesson](/courses/computer-networks/congestion-control).
+
+The sender uses whichever is smaller.
+
+## Closing
+
+Each direction closes separately: a **FIN** says "no more data from me", and is acknowledged like data. A side that has sent its FIN can still receive until the other side sends its own. That's what `shutdown(SHUT_WR)` did in the example above.
+
+<Callout tone="orange" label="A RST isn't a FIN">
+A **RST** (reset) aborts a connection immediately, for example when a packet arrives for a port nobody's listening on. "Connection refused" and "connection reset by peer" errors are RSTs, not normal closes.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Almost everything" tool="HTTP/1.1, HTTP/2, SSH, SMTP, databases">
+Web pages (before HTTP/3), remote shells, email and database connections all run over TCP.
+</PracticalApplication>
+<PracticalApplication title="Connection pools" tool="Database drivers, HTTP clients">
+Opening a TCP connection costs a round trip (and more for TLS), so clients keep connections open and reuse them.
+</PracticalApplication>
+<PracticalApplication title="Head-of-line blocking" tool="HTTP/2 vs HTTP/3">
+Because TCP delivers bytes in order, one lost segment stalls everything behind it, including unrelated requests sharing the connection. QUIC avoids this by keeping each stream separate.
+</PracticalApplication>
+<PracticalApplication title="Debugging" tool="Wireshark, tcpdump">
+Retransmissions and duplicate ACKs in a packet capture are the first sign of a lossy link.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+TCP's byte stream, sequence numbers and cumulative ACKs, the handshake, timeouts and fast retransmit, sliding windows and flow control, and closing. Next: how TCP decides how fast to send, [congestion control](/courses/computer-networks/congestion-control).
+</Callout>

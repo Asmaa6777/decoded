@@ -27,12 +27,19 @@ export const learningPaths: LearningPath[] = [
     description: "The theory behind regex engines, parsers and compilers.",
     courses: ["discrete-mathematics", "theory-of-computation", "microprocessors"],
   },
+  {
+    slug: "systems",
+    title: "From one machine to the internet",
+    description: "How a computer runs programs, how the OS shares it between them, and how machines talk across the world.",
+    courses: ["computer-organization", "operating-systems", "computer-networks"],
+  },
 ];
 
 /** Courses that make a course easier. Nothing is locked; these are only suggestions. */
 export const prerequisites: Record<string, string[]> = {
   "advanced-algorithms": ["algorithm-design-and-analysis", "discrete-mathematics", "data-structures"],
   "theory-of-computation": ["discrete-mathematics"],
+  "distributed-systems": ["operating-systems", "computer-networks"],
   "computer-organization": ["computer-literacy"],
   microprocessors: ["logic-design", "computer-organization"],
   "computer-architecture": ["computer-organization", "microprocessors"],

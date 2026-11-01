@@ -1,0 +1,76 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { SubnetCalculator } from "@/components/mdx/NetworkVisualizers";
+
+# IP Addresses and Subnets
+
+Every device on the internet needs an address that routers anywhere can use to find it. There are billions of devices and no router could list them all. The trick is the same one postcodes use: an address has a part that says **which network** and a part that says **which device on it**, and routers only need to know about networks.
+
+## An IPv4 address is 32 bits
+
+An IPv4 address like `192.168.1.130` is 32 bits written as four bytes in decimal, separated by dots. That gives $2^{32} \approx 4.3$ billion addresses, which ran out years ago (more on that below).
+
+## Network part and host part
+
+A **subnet** is a block of addresses that share their leading bits. The notation `192.168.1.130/26` is **CIDR** (classless inter-domain routing): the first **26 bits** are the **network** part, and the remaining $32 - 26 = 6$ bits number the **hosts** within it.
+
+The same split is often written as a **subnet mask**, 26 one-bits followed by 6 zero-bits: `255.255.255.192`. An address AND its mask gives the **network address**.
+
+In each subnet two addresses are set aside: all host bits 0 is the **network address**, and all host bits 1 is the **broadcast address**. So a /26 has $2^6 - 2 = 62$ usable host addresses. Try a few:
+
+<SubnetCalculator />
+
+The question at the bottom is the one your computer asks before sending every packet. If the destination is on its own subnet, it delivers directly over the link. If not, it sends the packet to its **default gateway**, the router.
+
+```python
+import ipaddress
+
+net = ipaddress.ip_network("192.168.1.130/26", strict=False)
+print(net)  # 192.168.1.128/26
+print(net.netmask)  # 255.255.255.192
+print(net.broadcast_address)  # 192.168.1.191
+print(net.num_addresses - 2)  # 62
+print(ipaddress.ip_address("192.168.1.200") in net)  # False
+
+# carving a /24 into four /26 subnets, one per department
+for sub in ipaddress.ip_network("10.20.30.0/24").subnets(new_prefix=26):
+    print(sub)  # 10.20.30.0/26
+    break
+print(len(list(ipaddress.ip_network("10.20.30.0/24").subnets(new_prefix=26))))  # 4
+```
+
+Each extra bit of prefix halves the block: a /24 is 256 addresses, a /25 is 128, a /26 is 64. So a /24 splits into exactly four /26 subnets.
+
+## Private addresses and NAT
+
+Three ranges are reserved for **private** networks, never routed on the public internet: `10.0.0.0/8`, `172.16.0.0/12` and `192.168.0.0/16`. Your laptop at home almost certainly has one of these.
+
+So how does it reach the internet? Your router does **network address translation (NAT)**: it rewrites outgoing packets to use its one public address, picks a port to remember which device each connection belongs to, and rewrites the replies back. A whole household, or a whole mobile network, shares one public IPv4 address this way. NAT is the main reason the internet survived running out of IPv4 addresses.
+
+<Callout tone="orange" label="NAT isn't a firewall, but it acts a bit like one">
+Because the router only knows where to send replies to connections someone inside started, unsolicited connections from outside have nowhere to go. That's a side effect, not security by design, and it's why hosting a game server at home needs port forwarding.
+</Callout>
+
+## IPv6
+
+**IPv6** addresses are 128 bits, written as eight groups of four hex digits, like `2001:db8::8a2e:370:7334` (`::` stands for a run of zeros). That's $2^{128} \approx 3.4 \times 10^{38}$ addresses: enough for every device to have its own public address with no NAT. Subnetting works the same way, and a typical home network gets a whole /64. Most phones and many home connections already use IPv6 alongside IPv4.
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Cloud networks" tool="AWS VPC, Azure, GCP">
+Creating a cloud network means picking a CIDR block such as 10.0.0.0/16 and carving it into /24 subnets for each zone and tier.
+</PracticalApplication>
+<PracticalApplication title="Home routers" tool="DHCP, NAT">
+Your router hands out 192.168.x.x addresses with DHCP and translates them to its single public address with NAT.
+</PracticalApplication>
+<PracticalApplication title="Firewall rules" tool="Allow lists, security groups">
+Rules such as "allow 203.0.113.0/24 on port 22" are CIDR blocks: one line covers 256 addresses.
+</PracticalApplication>
+<PracticalApplication title="Docker and Kubernetes" tool="Container networking">
+Each container network gets its own private subnet, and pods get addresses carved out of a cluster CIDR.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Addresses as 32 bits, the network and host split, masks, network and broadcast addresses, private ranges with NAT, and IPv6. The [next lesson](/courses/computer-networks/routing) shows how routers use the network part to forward packets across the world.
+</Callout>
