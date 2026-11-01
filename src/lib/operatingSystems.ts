@@ -1379,3 +1379,237 @@ export function utilization(n: number, memFrames = 60, wss = 12) {
   if (demand <= memFrames) return busy;
   return busy * (memFrames / demand) ** 4; // not enough frames for everyone's locality: thrashing
 }
+
+/* ------------------------------ bounded waiting ------------------------------ */
+
+export type BwState = {
+  mode: "simple" | "bounded";
+  waiting: boolean[];
+  lock: boolean;
+  inside: number | null;
+  /** the j values the leaving process looked at, in order */
+  scanned: number[];
+  handedTo: number | null;
+  /** turns each process has waited in its current request: entries by others since it asked */
+  waited: number[];
+  /** the longest any process has waited, over the whole run */
+  worst: number;
+  entries: number[];
+};
+
+export const BOUNDED_WAITING_CODE = [
+  "waiting[i] = true;  key = true;",
+  "while (waiting[i] && key)",
+  "    key = test_and_set(&lock);",
+  "waiting[i] = false;",
+  "    /* critical section */",
+  "j = (i + 1) % n;",
+  "while ((j != i) && !waiting[j])",
+  "    j = (j + 1) % n;",
+  "if (j == i)  lock = false;",
+  "else         waiting[j] = false;",
+];
+
+export const SIMPLE_TAS_CODE = ["key = true;", "while (key)", "    key = test_and_set(&lock);", "    /* critical section */", "lock = false;"];
+
+/**
+ * Four processes share one lock. "simple" releases with lock = false, and the
+ * next process whose test_and_set happens to run first wins; "bounded" scans
+ * from i + 1 and hands the critical section to the next waiting process.
+ */
+export function boundedWaitingFrames(mode: "simple" | "bounded", n = 4): Frame<BwState>[] {
+  const st: BwState = { mode, waiting: Array(n).fill(false), lock: false, inside: null, scanned: [], handedTo: null, waited: Array(n).fill(0), worst: 0, entries: Array(n).fill(0) };
+  const names = (ks: number[]) => (ks.length < 2 ? ks.map((k) => `P${k}`).join("") : `${ks.slice(0, -1).map((k) => `P${k}`).join(", ")} and P${ks[ks.length - 1]}`);
+  const turns = (k: number) => `${k} turn${k === 1 ? "" : "s"}`;
+  const frames: Frame<BwState>[] = [];
+  const snap = (line: number, message: string) =>
+    frames.push({ state: { ...st, waiting: [...st.waiting], scanned: [...st.scanned], waited: [...st.waited], entries: [...st.entries] }, line, message, stats: { "longest wait": st.worst } });
+  const enter = (i: number) => {
+    st.inside = i;
+    st.waiting[i] = false;
+    st.entries[i]++;
+    st.waited[i] = 0;
+    st.waiting.forEach((w, k) => {
+      if (w && k !== i) st.waited[k]++;
+    });
+    st.worst = Math.max(st.worst, ...st.waited);
+  };
+  // P2 starts in its remainder section, so the scan has something to skip
+  [0, 1, 3].forEach((i) => (st.waiting[i] = true));
+  snap(0, "P0, P1 and P3 want the critical section: each sets waiting[i] = true. P2 is busy in its remainder section.");
+  st.lock = true;
+  enter(0);
+  snap(3, "P0's test_and_set runs first. It returns false (the lock was free) and sets lock = true, so P0 enters. P1 and P3 keep spinning: their test_and_set now returns true.");
+  const rounds = mode === "bounded" ? 6 : 7;
+  for (let r = 0; r < rounds; r++) {
+    const i = st.inside!;
+    if (r === 1) st.waiting[2] = true; // P2 asks to come in a little late
+    if (mode === "bounded") {
+      st.scanned = [];
+      let j = (i + 1) % n;
+      while (j !== i && !st.waiting[j]) {
+        st.scanned.push(j);
+        j = (j + 1) % n;
+      }
+      st.scanned.push(j);
+      const skipped = st.scanned.slice(0, -1);
+      if (j === i) {
+        st.lock = false;
+        st.inside = null;
+        st.handedTo = null;
+        snap(8, `P${i} leaves and scans ${names(st.scanned)}: nobody is waiting, so it releases the lock (lock = false).`);
+        break;
+      }
+      st.handedTo = j;
+      snap(9, `P${i} leaves and scans from P${(i + 1) % n}${skipped.length ? `, skipping ${names(skipped)} (not waiting)` : ""}. P${j} is waiting, so P${i} sets waiting[${j}] = false. The lock stays true: it is handed straight to P${j}.`);
+      st.handedTo = null;
+      st.scanned = [];
+      enter(j);
+      st.waiting[i] = r < 4; // the leaver wants back in, until near the end
+      snap(4, `P${j}'s loop sees waiting[${j}] == false and stops spinning: it enters.${st.waiting[i] ? ` P${i} wants in again and joins the back of the order.` : ` P${i} is done for now.`}`);
+      if (r >= 4) st.waiting = st.waiting.map((w, k) => (k === st.inside ? w : false));
+    } else {
+      st.lock = false;
+      st.inside = null;
+      st.waiting[i] = true; // it wants straight back in
+      snap(4, `P${i} leaves with lock = false and immediately wants in again. Every waiting process races to run test_and_set first.`);
+      // the race goes to whoever runs first; here the scheduler happens to favour P0 and P1
+      const winner = [0, 1].find((k) => k !== i && st.waiting[k]) ?? st.waiting.findIndex(Boolean);
+      st.lock = true;
+      enter(winner);
+      const losers = st.waiting.map((w, k) => (w ? k : -1)).filter((k) => k >= 0);
+      snap(3, `P${winner} wins the race. ${names(losers)} lose again. So far ${[2, 3].filter((k) => st.waiting[k]).map((k) => `P${k} has waited ${turns(st.waited[k])}`).join(" and ")}, and nothing stops this going on for ever.`);
+    }
+  }
+  if (mode === "bounded" && st.inside !== null) {
+    const i = st.inside;
+    st.scanned = [1, 2, 3].map((d) => (i + d) % n).concat(i);
+    st.lock = false;
+    st.inside = null;
+    snap(8, `P${i} leaves and scans everyone: nobody is waiting, so this time it really releases the lock (lock = false).`);
+  }
+  snap(mode === "bounded" ? 8 : 2, mode === "bounded" ? `Done. The longest anyone waited was ${turns(st.worst)}, and it can never be more than n − 1 = ${n - 1}: each leaving process hands over in order, so a waiting process is at most n − 1 places from the front. That's bounded waiting.` : `P2 and P3 have waited ${st.waited[2]} and ${st.waited[3]} turns and are still spinning. Mutual exclusion holds, but waiting isn't bounded.`);
+  return frames;
+}
+
+/* ------------------------------ ordinary pipes ------------------------------ */
+
+export type PipeState = {
+  buf: string[];
+  cap: number;
+  writeOpen: boolean;
+  readOpen: boolean;
+  /** bytes a blocked write() still has to put in */
+  pending: string[];
+  /** how many bytes a blocked read() asked for, or 0 if the reader isn't blocked */
+  readerWants: number;
+  received: string;
+  eof: boolean;
+  broken: boolean;
+  note: string;
+};
+
+export const pipeStart = (cap = 8): PipeState => ({
+  buf: [],
+  cap,
+  writeOpen: true,
+  readOpen: true,
+  pending: [],
+  readerWants: 0,
+  received: "",
+  eof: false,
+  broken: false,
+  note: "pipe(fd) made a pipe in the kernel, then fork() gave the child a copy of both ends. The parent writes to fd[1]; the child reads from fd[0].",
+});
+
+/** Move blocked writer bytes into the buffer, and let a blocked reader take what's there. */
+function settlePipe(s: PipeState): PipeState {
+  const buf = [...s.buf];
+  const pending = [...s.pending];
+  let received = s.received;
+  let wants = s.readerWants;
+  let note = "";
+  for (let guard = 0; guard < 100; guard++) {
+    let moved = false;
+    while (pending.length && buf.length < s.cap) {
+      buf.push(pending.shift()!);
+      moved = true;
+    }
+    if (wants && buf.length) {
+      const got = buf.splice(0, wants);
+      received += got.join("");
+      note += ` The blocked read() wakes up and gets "${got.join("")}".`;
+      wants = 0;
+      moved = true;
+    }
+    if (!moved) break;
+  }
+  return { ...s, buf, pending, received, readerWants: wants, note: s.note + note };
+}
+
+export function pipeWrite(s: PipeState, text: string): PipeState {
+  if (s.pending.length || !s.writeOpen) return s;
+  if (!s.readOpen) return { ...s, broken: true, note: `write("${text}") fails: nobody can ever read it, because the read end is closed. The kernel sends the writer SIGPIPE, which kills it unless it's handled. That's the "Broken pipe" error.` };
+  const room = s.cap - s.buf.length;
+  const chars = [...text];
+  const fits = chars.slice(0, room);
+  const rest = chars.slice(room);
+  const note = rest.length
+    ? `write("${text}") puts "${fits.join("")}" in and the pipe is full. The parent blocks inside write() until the child reads and makes room for "${rest.join("")}".`
+    : `write("${text}") copies ${chars.length} byte${chars.length === 1 ? "" : "s"} into the kernel's buffer and returns at once.`;
+  return settlePipe({ ...s, buf: [...s.buf, ...fits], pending: rest, note });
+}
+
+export function pipeRead(s: PipeState, n: number): PipeState {
+  if (s.readerWants || s.eof || !s.readOpen) return s;
+  if (s.buf.length) {
+    const got = s.buf.slice(0, n);
+    const more = s.pending.length ? ` That made room, so the parent's blocked write() carries on.` : "";
+    return settlePipe({ ...s, buf: s.buf.slice(n), received: s.received + got.join(""), note: `read(fd[0], buf, ${n}) returns ${got.length}: "${got.join("")}". A read takes what's there, up to ${n} bytes; it doesn't wait for exactly ${n}.${more}` });
+  }
+  if (s.writeOpen) return { ...s, readerWants: n, note: `read() finds the pipe empty while the write end is still open, so more data might come. The child blocks inside read().` };
+  return { ...s, eof: true, note: "read() finds the pipe empty and the write end closed: no data can ever arrive. It returns 0, which means end of file, and the child's loop finishes." };
+}
+
+export function pipeCloseWrite(s: PipeState): PipeState {
+  if (!s.writeOpen || s.pending.length) return s;
+  const wakes = s.readerWants && !s.buf.length;
+  return {
+    ...s,
+    writeOpen: false,
+    readerWants: wakes ? 0 : s.readerWants,
+    eof: wakes ? true : s.eof,
+    note: wakes
+      ? "The parent calls close(fd[1]). The child was blocked in read() on an empty pipe; now no writer is left, so read() returns 0: end of file."
+      : `The parent calls close(fd[1]). Bytes already in the pipe${s.buf.length ? ` ("${s.buf.join("")}")` : ""} can still be read; after that, read() returns 0.`,
+  };
+}
+
+export function pipeCloseRead(s: PipeState): PipeState {
+  if (!s.readOpen) return s;
+  if (s.pending.length) return { ...s, readOpen: false, pending: [], broken: true, note: "The child calls close(fd[0]) while the parent is blocked writing. That write can never finish, so the kernel sends the parent SIGPIPE: \"Broken pipe\"." };
+  return { ...s, readOpen: false, readerWants: 0, note: "The child calls close(fd[0]). Nothing can read from this pipe any more, so the next write() will fail with SIGPIPE." };
+}
+
+/* ------------------------------ trace-driven simulation ------------------------------ */
+
+/**
+ * A made-up trace in the shape real ones have: most CPU bursts are short, a few
+ * are long, and processes arrive a few time units apart.
+ */
+export function randomTrace(seed: number, n = 7): Proc[] {
+  const rand = seeded(seed * 7919 + 13);
+  let t = 0;
+  return Array.from({ length: n }, (_, i) => {
+    const arrival = i === 0 ? 0 : (t += Math.floor(rand() * 5));
+    const burst = rand() < 0.7 ? 1 + Math.floor(rand() * 5) : 8 + Math.floor(rand() * 13);
+    return { name: `P${i + 1}`, arrival, burst };
+  });
+}
+
+export const SIM_ALGOS: Algo[] = ["fcfs", "sjf", "srtf", "rr"];
+
+/** Every algorithm on one trace, the way a simulator gathers its statistics. */
+export function compareSchedulers(procs: Proc[], quantum: number) {
+  return SIM_ALGOS.map((algo) => ({ algo, ...schedule(procs, algo, quantum) }));
+}

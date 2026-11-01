@@ -1,5 +1,5 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { RaceCondition, PetersonDemo, SpinlockDemo } from "@/components/mdx/OsVisualizers";
+import { RaceCondition, PetersonDemo, SpinlockDemo, BoundedWaitingDemo } from "@/components/mdx/OsVisualizers";
 
 # Race Conditions and the Critical-Section Problem
 
@@ -243,6 +243,10 @@ do {
         /* remainder section */
 } while (true);
 ```
+
+Step through it with four processes. Switch to **Plain test_and_set** to see the problem it solves: there, whoever's instruction runs first wins, and P2 and P3 can lose every single race. With the scan, the lock goes round in order, so nobody waits more than $n - 1 = 3$ turns.
+
+<BoundedWaitingDemo />
 
 ## Mutex locks
 
