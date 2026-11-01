@@ -104,6 +104,14 @@ const COURSE_GLYPHS: Record<string, (p: IconProps) => JSX.Element> = {
       <path d="M12 6.2a6.5 6.5 0 010 11.6a6.5 6.5 0 010-11.6z" fill="currentColor" stroke="none" />
     </svg>
   ),
+  // a node pointing to the next: the linked list every structure starts from
+  "data-structures": ({ className }) => (
+    <svg {...base} className={className}>
+      <rect x="2" y="8" width="7" height="8" />
+      <rect x="15" y="8" width="7" height="8" />
+      <path d="M9 12h5M12 10l2 2-2 2" />
+    </svg>
+  ),
   // target
   "the-exam-mind": ({ className }) => (
     <svg {...base} className={className}>

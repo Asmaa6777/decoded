@@ -1,0 +1,123 @@
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { RingQueueLab } from "@/components/mdx/DataStructureVisualizers";
+
+# Queues and Deques
+
+Print jobs, web requests waiting for a server, messages between services, the processes waiting for the CPU: all of them are served in the order they arrived. That's a queue, the fair opposite of a stack. It's also the first structure in this course where the obvious implementation is quietly slow.
+
+## The interface
+
+A **queue** lets you add at one end and remove from the other:
+
+- **enqueue(x)**: add x at the **back** (the tail).
+- **dequeue()**: remove and return the item at the **front** (the head).
+- **peek()** and **is_empty()**.
+
+The rule is **FIFO**: first in, first out. All operations should be O(1).
+
+## The slow way
+
+The tempting implementation is a list: append at the end, remove from index 0. But removing index 0 of an [array](/courses/data-structures/arrays-and-memory#what-arrays-are-good-and-bad-at) shifts every remaining item down one slot: O(n) per dequeue. A queue of a million waiting requests would do a million moves to serve one.
+
+You could use a [linked list](/courses/data-structures/linked-lists) with head and tail pointers instead: O(1) at both ends. But there's a way to keep the array and lose the shifting.
+
+## The ring buffer
+
+Don't move the items; move the **front**. Keep an array of fixed capacity plus two numbers, **head** (where the front item is) and **size**. The back is at `(head + size) mod capacity`. When either end runs off the end of the array, it **wraps around** to slot 0, as if the array were bent into a ring.
+
+Enqueue and dequeue a few items, and keep going until the tail wraps:
+
+<RingQueueLab />
+
+Nothing ever shifts, so both operations are O(1). When the ring is full, a growable version allocates a bigger array and copies the items over in order, the same doubling trick as the [dynamic array](/courses/data-structures/dynamic-arrays#why-doubling-is-o1-per-append), so it's still O(1) amortized. The same ring is how operating systems solve the [producer-consumer problem](/courses/operating-systems/interprocess-communication#the-producer-consumer-problem), passing data between processes through a shared buffer.
+
+## Deques
+
+A **deque** ("deck", double-ended queue) allows push and pop at **both** ends, all O(1). A ring buffer gives you this for free: move head backwards to push at the front. A deque can act as a stack, a queue, or both at once, which is why it's usually the right tool whenever you need either.
+
+<CodeTabs>
+
+```python
+from collections import deque
+
+q = deque()
+q.append("job1")         # enqueue at the back
+q.append("job2")
+q.append("job3")
+print(q.popleft())  # job1
+print(q[0])  # job2
+
+q.appendleft("urgent")   # a deque can push at the front too
+print(list(q))  # ['urgent', 'job2', 'job3']
+
+# don't do this for a queue: list.pop(0) shifts every item, O(n)
+slow = ["a", "b", "c"]
+print(slow.pop(0))  # a
+```
+
+```java
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+public class Main {
+    public static void main(String[] args) {
+        Deque<String> q = new ArrayDeque<>();   // a growable ring buffer
+        q.offerLast("job1");                    // enqueue
+        q.offerLast("job2");
+        q.offerLast("job3");
+        System.out.println(q.pollFirst());  // job1
+        System.out.println(q.peekFirst());  // job2
+
+        q.offerFirst("urgent");                 // push at the front
+        System.out.println(q);  // [urgent, job2, job3]
+    }
+}
+```
+
+```cpp
+#include <deque>
+#include <iostream>
+#include <queue>
+#include <string>
+
+int main() {
+    std::queue<std::string> q;           // a std::deque underneath
+    q.push("job1");
+    q.push("job2");
+    q.push("job3");
+    std::cout << q.front() << "\n";  // job1
+    q.pop();
+    std::cout << q.front() << "\n";  // job2
+
+    std::deque<std::string> d = {"job2", "job3"};
+    d.push_front("urgent");
+    std::cout << d.front() << " " << d.back() << "\n";  // urgent job3
+}
+```
+
+</CodeTabs>
+
+<Callout tone="sky" label="Queues are how BFS spreads out">
+[Breadth-first search](/courses/algorithm-design-and-analysis/bfs-and-dfs#breadth-first-search-ripples-in-a-pond) keeps a queue of places to visit next. Swap the queue for a stack and the same code does depth-first search instead. The data structure decides the order of exploration.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="Message queues" tool="RabbitMQ, Kafka, SQS">
+Services hand work to each other through queues, so a burst of requests waits its turn instead of overwhelming the receiver.
+</PracticalApplication>
+<PracticalApplication title="Scheduling" tool="OS ready queue, print spoolers">
+The [round-robin scheduler](/courses/operating-systems/round-robin-and-beyond#round-robin-rr) keeps runnable processes in a FIFO queue.
+</PracticalApplication>
+<PracticalApplication title="Streaming buffers" tool="Audio, video, network cards">
+Audio and network drivers use ring buffers: the producer writes ahead while the consumer reads behind, with no allocation at all.
+</PracticalApplication>
+<PracticalApplication title="Sliding windows" tool="Rate limiters, interview problems">
+A deque holding the last k items, or the useful ones among them, answers "maximum over the last k values" in O(1) per step.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+First-in-first-out queues, why `list.pop(0)` is the wrong way to build one, the ring buffer that makes both ends O(1), and the deque that does stack and queue at once. Next: the structure that finds anything in O(1), the [hash map](/courses/data-structures/hash-maps).
+</Callout>

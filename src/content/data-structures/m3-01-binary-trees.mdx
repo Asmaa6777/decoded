@@ -1,0 +1,137 @@
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { TraversalDemo } from "@/components/mdx/DataStructureVisualizers";
+
+# Binary Trees and Traversals
+
+Arrays, lists, stacks and queues are all lines: every item has at most one before it and one after it. Files in folders, HTML elements inside other elements, and the structure of `2 + 3 * 4` aren't lines. They branch. Trees are the structure for branching data, and visiting every node of one, in the right order, is the first thing you need to know how to do.
+
+## Nodes with two children
+
+A [rooted tree](/courses/discrete-mathematics/trees#rooted-trees) has one **root**, and every other node has exactly one **parent**. In a **binary tree**, each node has at most two children, called **left** and **right**. A node with no children is a **leaf**.
+
+In code it's the [linked list's](/courses/data-structures/linked-lists#nodes-and-pointers) node with one more pointer:
+
+<CodeTabs>
+
+```python
+class Node:
+    def __init__(self, key, left=None, right=None):
+        self.key, self.left, self.right = key, left, right
+
+#        4
+#      /   \
+#     2     6
+#    / \   / \
+#   1   3 5   7
+root = Node(4, Node(2, Node(1), Node(3)), Node(6, Node(5), Node(7)))
+
+def size(n):
+    return 0 if n is None else 1 + size(n.left) + size(n.right)
+
+def height(n):                      # edges on the longest root-to-leaf path
+    return -1 if n is None else 1 + max(height(n.left), height(n.right))
+
+print(size(root))  # 7
+print(height(root))  # 2
+```
+
+```java
+public class Main {
+    record Node(int key, Node left, Node right) {
+        Node(int key) { this(key, null, null); }
+    }
+
+    static int size(Node n) { return n == null ? 0 : 1 + size(n.left()) + size(n.right()); }
+    static int height(Node n) { return n == null ? -1 : 1 + Math.max(height(n.left()), height(n.right())); }
+
+    public static void main(String[] args) {
+        Node root = new Node(4,
+            new Node(2, new Node(1), new Node(3)),
+            new Node(6, new Node(5), new Node(7)));
+        System.out.println(size(root));  // 7
+        System.out.println(height(root));  // 2
+    }
+}
+```
+
+```cpp
+#include <algorithm>
+#include <iostream>
+#include <memory>
+
+struct Node {
+    int key;
+    std::unique_ptr<Node> left, right;
+};
+
+std::unique_ptr<Node> leaf(int k) { return std::make_unique<Node>(Node{k, nullptr, nullptr}); }
+std::unique_ptr<Node> node(int k, std::unique_ptr<Node> l, std::unique_ptr<Node> r) {
+    return std::make_unique<Node>(Node{k, std::move(l), std::move(r)});
+}
+
+int size(const Node* n) { return n ? 1 + size(n->left.get()) + size(n->right.get()) : 0; }
+int height(const Node* n) { return n ? 1 + std::max(height(n->left.get()), height(n->right.get())) : -1; }
+
+int main() {
+    auto root = node(4, node(2, leaf(1), leaf(3)), node(6, leaf(5), leaf(7)));
+    std::cout << size(root.get()) << "\n";  // 7
+    std::cout << height(root.get()) << "\n";  // 2
+}
+```
+
+</CodeTabs>
+
+`size` and `height` show the pattern behind nearly every tree algorithm: handle the empty tree, then combine the answers for the left and right subtrees. That's [structural induction](/courses/discrete-mathematics/induction#recursion-is-induction): if it's right for the subtrees, it's right for the whole.
+
+## Four orders to visit every node
+
+A **traversal** visits every node once. Three of them are the same recursion, differing only in **when** you visit the node itself relative to its two subtrees:
+
+- **Preorder**: node, then left, then right. A parent is always seen before its children.
+- **Inorder**: left, then node, then right. On a [binary search tree](/courses/data-structures/binary-search-trees) this gives the keys in sorted order.
+- **Postorder**: left, then right, then node. Children are always finished before their parent.
+
+The fourth uses a [queue](/courses/data-structures/queues-and-deques) instead of recursion:
+
+- **Level order**: the root, then everything at depth 1, then depth 2, and so on. It's [breadth-first search](/courses/algorithm-design-and-analysis/bfs-and-dfs#breadth-first-search-ripples-in-a-pond) on a tree.
+
+Switch between them on the same tree:
+
+<TraversalDemo />
+
+Each traversal visits every node once and does O(1) work per node: **O(n)**. The recursive ones use stack space proportional to the height, which is $\log_2 n$ for a balanced tree and $n$ for a tree that's degenerated into a chain.
+
+## Which order for which job
+
+| Job | Order | Why |
+|---|---|---|
+| Copy or serialise a tree | Preorder | You need the parent before you can attach its children |
+| Print a search tree's keys in order | Inorder | Left subtree < node < right subtree |
+| Delete a tree, compute folder sizes | Postorder | Children must be finished first |
+| Evaluate `(2 + 3) * 4` from its tree | Postorder | Compute both operands before applying the operator |
+| Find the nearest node, print by level | Level order | It reaches everything at depth $d$ before depth $d + 1$ |
+
+<Callout tone="sky" label="Postorder is reverse Polish">
+Write an expression tree in postorder and you get **reverse Polish notation**: `2 3 + 4 *`. That's how stack-based calculators and the Java virtual machine evaluate expressions: push operands, and let each operator pop two and push the result.
+</Callout>
+
+## Where you'll meet this
+
+<ApplicationsGrid>
+<PracticalApplication title="The DOM" tool="Browsers, React">
+A web page is a tree of elements. `querySelectorAll` walks it in preorder (document order), and React's reconciliation compares two such trees.
+</PracticalApplication>
+<PracticalApplication title="Syntax trees" tool="Compilers, linters, Prettier">
+Every compiler parses code into an abstract syntax tree, then walks it: type checking, optimisation and code generation are traversals.
+</PracticalApplication>
+<PracticalApplication title="File systems" tool="du, rm -r, find">
+`du` totals folder sizes in postorder; `find` lists paths in preorder; `rm -r` deletes in postorder.
+</PracticalApplication>
+<PracticalApplication title="Decision trees" tool="scikit-learn, XGBoost">
+A decision tree classifies an input by walking from the root, choosing left or right at each test, down to a leaf.
+</PracticalApplication>
+</ApplicationsGrid>
+
+<Callout tone="mint" label="What you now have">
+Binary tree nodes, the recursive pattern for computing anything about a tree, and four traversals with a job each. The [next lesson](/courses/data-structures/binary-search-trees) adds an ordering rule that turns a binary tree into a fast search structure.
+</Callout>

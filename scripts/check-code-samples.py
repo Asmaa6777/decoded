@@ -13,6 +13,11 @@ order, like a reader's MATLAB session, with the displayed output (an `x =` or
 printed so you can compare it with what the lesson shows; only errors fail.
 Octave lacks two MATLAB functions the lessons use, so this script supplies
 stand-ins for `round(x, n)` and `powermod`.
+
+Java and C++: each block is a whole program. Every print statement that ends
+in a `// value` comment declares one line of expected output, in order, so
+keep such prints out of loops. Java runs with `java File.java` (JDK 11+), C++
+with g++ -std=c++20; a language whose compiler is missing is skipped.
 """
 import os
 import re
@@ -63,6 +68,32 @@ def run_python(code):
     return None if r.returncode == 0 else r.stderr.strip().splitlines()[-1]
 
 
+COMPILED_PRINT = re.compile(r"^\s*(System\.out\.print(ln)?\(|(std::)?cout\s*<<|printf\().*;\s*//\s*(.+?)\s*$")
+
+
+def run_compiled(lang, code):
+    """Compile and run one Java or C++ program; compare its output with the // comments."""
+    expected = [m[4] for m in map(COMPILED_PRINT.match, code.split("\n")) if m]
+    with tempfile.TemporaryDirectory() as d:
+        if lang == "java":
+            src = os.path.join(d, "Sample.java")
+            open(src, "w").write(code)
+            r = subprocess.run(["java", src], capture_output=True, text=True, timeout=120)
+        else:
+            src, exe = os.path.join(d, "sample.cpp"), os.path.join(d, "sample")
+            open(src, "w").write(code)
+            c = subprocess.run(["g++", "-std=c++20", "-Wall", "-o", exe, src], capture_output=True, text=True, timeout=120)
+            if c.returncode != 0:
+                return "does not compile: " + c.stderr.strip().splitlines()[0]
+            r = subprocess.run([exe], capture_output=True, text=True, timeout=60)
+    if r.returncode != 0:
+        return "exits with an error: " + (r.stderr.strip().splitlines() or ["?"])[-1]
+    got = r.stdout.rstrip("\n").split("\n") if r.stdout.strip() else []
+    if got != expected:
+        return f"printed {got!r}, comments say {expected!r}"
+    return None
+
+
 def matlab_code(code):
     """Keep the code, drop the displayed output."""
     out, in_output = [], False
@@ -98,7 +129,7 @@ def run_octave(name, mat, shim_dir):
 def main(paths):
     octave = shutil.which("octave")
     if not octave:
-        print("Octave not found: checking Python only.")
+        print("Octave not found: skipping MATLAB.")
     failed = 0
     with tempfile.TemporaryDirectory() as shim_dir:
         for file, body in SHIMS.items():
@@ -111,6 +142,10 @@ def main(paths):
                 if "python" in b and (err := run_python(b["python"])):
                     failed += 1
                     print(f"PYTHON FAIL {name} block {i}: {err}")
+                for lang, tool in (("java", "java"), ("cpp", "g++")):
+                    if lang in b and shutil.which(tool) and (err := run_compiled(lang, b[lang])):
+                        failed += 1
+                        print(f"{lang.upper()} FAIL {name} block {i}: {err}")
                 if "matlab" in b:
                     mat.append((i, matlab_code(b["matlab"]), "error:" in b["matlab"]))
             if octave and mat:

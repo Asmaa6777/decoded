@@ -32,6 +32,7 @@ export const tools: Tool[] = [
       { course: "advanced-algorithms", lesson: "lab-hashing", mentions: "hash" },
       { course: "discrete-mathematics", lesson: "pigeonhole-principle", mentions: "hash table" },
       { course: "discrete-mathematics", lesson: "birthday-problem", mentions: "hash table" },
+      { course: "data-structures", lesson: "hash-maps", mentions: "load factor" },
     ],
   },
   {
@@ -40,6 +41,7 @@ export const tools: Tool[] = [
     lessons: [
       { course: "algorithm-design-and-analysis", lesson: "linear-and-binary-search", mentions: "index" },
       { course: "advanced-algorithms", lesson: "balanced-search-trees", mentions: "B-tree" },
+      { course: "data-structures", lesson: "binary-search-trees", mentions: "B-tree" },
     ],
   },
   {
@@ -54,6 +56,19 @@ export const tools: Tool[] = [
       { course: "advanced-algorithms", lesson: "huffman-and-activity-selection", mentions: "Huffman" },
       { course: "discrete-mathematics", lesson: "pigeonhole-principle", mentions: "gzip" },
     ],
+  },
+  {
+    name: "Python lists, ArrayList and vector",
+    what: "Why appending is fast, inserting at the front is slow, and what happens when the list fills up.",
+    lessons: [
+      { course: "data-structures", lesson: "arrays-and-memory", mentions: "cache" },
+      { course: "data-structures", lesson: "dynamic-arrays", mentions: "ArrayList" },
+    ],
+  },
+  {
+    name: "Autocomplete and search boxes",
+    what: "How suggestions appear as you type, one step per letter.",
+    lessons: [{ course: "data-structures", lesson: "tries", mentions: "autocomplete" }],
   },
   {
     name: "Package managers and build tools",
