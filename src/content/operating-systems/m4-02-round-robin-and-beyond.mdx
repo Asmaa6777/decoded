@@ -1,5 +1,5 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { CpuScheduler, QuantumSwitches, MlfqDemo, LittlesLaw, SchedulerSimulation } from "@/components/mdx/OsVisualizers";
+import { CpuScheduler, QuantumSwitches, MlfqDemo, LittlesLaw } from "@/components/mdx/OsVisualizers";
 
 # Round Robin, Multilevel Queues and Choosing a Scheduler
 
@@ -204,10 +204,6 @@ The data to drive a simulation comes from:
 - a **random-number generator**, following probabilities,
 - distributions defined **mathematically** or **empirically**,
 - **trace tapes**: recordings of sequences of **real events** on real systems, replayed through each algorithm.
-
-Here's a small simulator. Each trace is a list of arrivals and CPU bursts, mostly short with a few long ones, like real workloads. The same trace is replayed through every algorithm, and the statistics are gathered side by side:
-
-<SchedulerSimulation />
 
 ### Implementation
 

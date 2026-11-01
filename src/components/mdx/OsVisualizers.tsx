@@ -1,18 +1,6 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import {
-  BOUNDED_WAITING_CODE,
-  boundedWaitingFrames,
-  SIMPLE_TAS_CODE,
-  pipeCloseRead,
-  pipeCloseWrite,
-  pipeRead,
-  pipeStart,
-  pipeWrite,
-  type PipeState,
-  compareSchedulers,
-  randomTrace,
-  type BwState,
   DEMO_JOBS,
   DUAL_MODE_CODE,
   dualModeFrames,
@@ -248,7 +236,7 @@ const LANE_TONE: Record<string, string> = {
 function TimelineLane({ label, lane, t, length }: { label: string; lane: Lane; t: number; length: number }) {
   return (
     <div className="flex items-center gap-3">
-      <div className="w-16 sm:w-24 shrink-0 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="w-24 shrink-0 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
       <div className="relative flex-1 h-7 rounded-sm bg-background/60 border border-border overflow-hidden">
         {lane.map((s, i) => {
           const end = Math.min(s.to, t);
@@ -278,11 +266,11 @@ export function InterruptTimeline() {
       codeLabel="What happens"
       legend={[["bg-sky", "user process"], ["bg-orange", "interrupt handling"], ["bg-violet", "I/O transfer"], ["bg-muted", "idle"]]}
       render={(s) => (
-        <div className="flex flex-col gap-3 min-w-[300px]">
+        <div className="flex flex-col gap-3 min-w-[420px]">
           <TimelineLane label="CPU" lane={cpu} t={s.t} length={length} />
           <TimelineLane label="I/O device" lane={io} t={s.t} length={length} />
           <div className="flex items-center gap-3">
-            <div className="w-16 sm:w-24 shrink-0" />
+            <div className="w-24 shrink-0" />
             <div className="relative flex-1 h-6">
               <div className="absolute top-0 h-6 w-0.5 bg-foreground transition-all duration-500" style={{ left: `${(s.t / length) * 100}%` }} />
               {s.flash && (
@@ -716,7 +704,7 @@ export function ParameterPassing() {
   const [count, setCount] = useState(3);
   const params = Array.from({ length: count }, (_, i) => `p${i + 1}`);
   const r = paramPassing(method, params);
-  const box = "rounded-sm border border-border p-3 min-h-[64px] sm:min-h-[120px] flex flex-col gap-1";
+  const box = "rounded-sm border border-border p-3 min-h-[120px] flex flex-col gap-1";
   const cell = (v: string, tone: string) => (
     <div key={v} className={`font-mono text-xs px-2 py-1 rounded-sm ${tone} animate-in fade-in slide-in-from-left-2 duration-300`}>
       {v}
@@ -745,7 +733,7 @@ export function ParameterPassing() {
           <span className="w-4">{count}</span>
         </label>
       </div>
-      <div key={method} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div key={method} className="grid grid-cols-3 gap-3">
         <div className={box}>
           <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">CPU registers</div>
           {r.registers.map((v) => cell(v, "bg-sky/20"))}
@@ -854,9 +842,9 @@ export function BootSequence() {
       code={BOOT_CODE}
       codeLabel="What happens"
       render={(s: BootState) => (
-        <div className="flex flex-col sm:flex-row sm:flex-wrap items-center gap-1 sm:gap-2">
+        <div className="flex flex-wrap items-center gap-2 min-w-[300px]">
           {BOOT_STAGES.map((name, i) => (
-            <div key={name} className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+            <div key={name} className="flex items-center gap-2">
               <div
                 className={`rounded-sm border-2 px-3 py-2 text-xs sm:text-sm font-display font-bold transition-all duration-500 ${
                   i < s.stage ? "border-mint/60 bg-mint/10 opacity-70" : i === s.stage ? "border-mint bg-mint/25 scale-110 shadow-lg" : "border-dashed border-border opacity-40"
@@ -864,14 +852,9 @@ export function BootSequence() {
               >
                 {i === 0 && "⏻ "}
                 {name}
-                {i === BOOT_STAGES.length - 1 && i === s.stage && " ✓"}
+                {i === BOOT_STAGES.length - 1 && i === s.stage && " 🎉"}
               </div>
-              {i < BOOT_STAGES.length - 1 && (
-                <span className={`font-mono transition-opacity duration-500 ${i < s.stage ? "opacity-100" : "opacity-20"}`}>
-                  <span className="sm:hidden">↓</span>
-                  <span className="hidden sm:inline">→</span>
-                </span>
-              )}
+              {i < BOOT_STAGES.length - 1 && <span className={`transition-opacity duration-500 ${i < s.stage ? "opacity-100" : "opacity-20"}`}>→</span>}
             </div>
           ))}
         </div>
@@ -1092,27 +1075,7 @@ export function ProcessMemory() {
 
 /* ------------------------------ state machines ------------------------------ */
 
-/** `shift` nudges the label away from a neighbour's: [dx, dy] on desktop, halved on phones. */
-type SmEdge<S extends string> = { from: S; to: S; label: string; bend?: number; shift?: [number, number] };
-
-/** The width of an element in CSS pixels, kept up to date as it resizes (0 until measured, e.g. in tests). */
-function useWidth<T extends HTMLElement>(): [React.RefObject<T>, number] {
-  const ref = useRef<T>(null);
-  const [w, setW] = useState(0);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    setW(el.clientWidth);
-    if (typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(([e]) => setW(e.contentRect.width));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  return [ref, w];
-}
-
-/** Below this width a diagram switches to its phone layout, so its text isn't scaled down to a few pixels. */
-const NARROW = 480;
+type SmEdge<S extends string> = { from: S; to: S; label: string; bend?: number };
 
 /** A clickable state diagram: only the transitions out of the current state are enabled. */
 function StateMachine<S extends string>({
@@ -1123,7 +1086,6 @@ function StateMachine<S extends string>({
   initial,
   height = 310,
   resetLabel,
-  narrowLayout,
 }: {
   title: string;
   positions: Record<S, [number, number]>;
@@ -1132,14 +1094,7 @@ function StateMachine<S extends string>({
   initial: S;
   height?: number;
   resetLabel: string;
-  /** a portrait arrangement for phones, drawn 360 units wide */
-  narrowLayout?: { positions: Record<S, [number, number]>; height: number; bendScale?: number };
 }) {
-  const [box, width] = useWidth<HTMLDivElement>();
-  const narrow = !!narrowLayout && width > 0 && width < NARROW;
-  const pos = narrow ? narrowLayout!.positions : positions;
-  const H = narrow ? narrowLayout!.height : height;
-  const bendScale = narrow ? narrowLayout!.bendScale ?? 0.6 : 1;
   const [s, setS] = useState<S>(initial);
   const [last, setLast] = useState<number | null>(null);
   const [trail, setTrail] = useState<S[]>([initial]);
@@ -1150,8 +1105,8 @@ function StateMachine<S extends string>({
     setTrail((t) => [...t, edges[i].to].slice(-8));
   };
   const curve = (from: S, to: S, bend = 0) => {
-    const [x1, y1] = pos[from];
-    const [x2, y2] = pos[to];
+    const [x1, y1] = positions[from];
+    const [x2, y2] = positions[to];
     const len = Math.hypot(x2 - x1, y2 - y1);
     const ux = (x2 - x1) / len;
     const uy = (y2 - y1) / len;
@@ -1159,14 +1114,13 @@ function StateMachine<S extends string>({
     const sy = y1 + uy * 24;
     const ex = x2 - ux * 50;
     const ey = y2 - uy * 24;
-    const mx = (sx + ex) / 2 - uy * bend * bendScale;
-    const my = (sy + ey) / 2 + ux * bend * bendScale;
+    const mx = (sx + ex) / 2 - uy * bend;
+    const my = (sy + ey) / 2 + ux * bend;
     return { d: `M${sx},${sy} Q${mx},${my} ${ex},${ey}`, lx: (sx + 2 * mx + ex) / 4, ly: (sy + 2 * my + ey) / 4 };
   };
   return (
     <Panel title={title}>
-      <div ref={box}>
-      <svg viewBox={`0 0 ${narrow ? 360 : 600} ${H}`} className="w-full h-auto max-w-[640px] mx-auto block" role="img" aria-label={title}>
+      <svg viewBox={`0 0 600 ${height}`} className="w-full h-auto max-w-[640px] mx-auto" role="img" aria-label={title}>
         <defs>
           {(["cold", "hot"] as const).map((k) => (
             <marker key={k} id={`${uid}-${k}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -1177,34 +1131,29 @@ function StateMachine<S extends string>({
         {edges.map((e, i) => {
           const g = curve(e.from, e.to, e.bend);
           const hot = last === i && s === e.to;
-          // on a phone, label only the moves that matter now, so the labels have room
-          const labelled = !narrow || hot || e.from === s;
           return (
             <g key={`${e.from}-${e.to}`}>
               <path d={g.d} fill="none" strokeWidth={hot ? 3 : 1.5} className={`transition-all duration-300 ${hot ? "stroke-mint" : "stroke-muted-foreground"}`} markerEnd={`url(#${uid}-${hot ? "hot" : "cold"})`} />
-              {labelled && (
-                <text x={g.lx + (e.shift?.[0] ?? 0) * (narrow ? 0.5 : 1)} y={g.ly - 6 + (e.shift?.[1] ?? 0) * (narrow ? 0.5 : 1)} textAnchor="middle" paintOrder="stroke" strokeWidth={5} strokeLinejoin="round" className={`stroke-card font-mono ${narrow ? "text-[13px]" : "text-[11px]"} ${hot ? "fill-mint font-bold" : "fill-muted-foreground"}`}>
-                  {e.label}
-                </text>
-              )}
+              <text x={g.lx} y={g.ly - 6} textAnchor="middle" className={`font-mono text-[11px] ${hot ? "fill-mint font-bold" : "fill-muted-foreground"}`}>
+                {e.label}
+              </text>
             </g>
           );
         })}
-        {(Object.keys(pos) as S[]).map((k) => {
-          const [x, y] = pos[k];
+        {(Object.keys(positions) as S[]).map((k) => {
+          const [x, y] = positions[k];
           const on = k === s;
           return (
             <g key={k}>
               {on && <ellipse cx={x} cy={y} rx={60} ry={30} className="fill-mint/20 animate-pulse" />}
               <ellipse cx={x} cy={y} rx={50} ry={24} strokeWidth={on ? 3 : 1.5} className={`transition-all duration-300 ${on ? "fill-mint/30 stroke-mint" : "fill-card stroke-border"}`} />
-              <text x={x} y={y + 5} textAnchor="middle" className={`font-display ${narrow ? "text-[16px]" : "text-[14px]"} font-bold ${on ? "fill-foreground" : "fill-muted-foreground"}`}>
+              <text x={x} y={y + 4} textAnchor="middle" className={`font-display text-[14px] font-bold ${on ? "fill-foreground" : "fill-muted-foreground"}`}>
                 {k}
               </text>
             </g>
           );
         })}
       </svg>
-      </div>
       <p aria-live="polite" className="text-sm min-h-[2.5em]">
         {notes[s]}
       </p>
@@ -1229,12 +1178,7 @@ export function ProcessStateDiagram() {
     <StateMachine<PState>
       title="Diagram of process state"
       positions={{ new: [80, 50], terminated: [520, 50], ready: [170, 170], running: [430, 170], waiting: [300, 265] }}
-      edges={PROCESS_TRANSITIONS.map((t) => ({
-        ...t,
-        bend: t.event === "dispatch" || t.event === "interrupt" ? -40 : 0,
-        // the two I/O labels sit side by side under the ready–running pair; push them apart
-        shift: t.event === "complete" ? ([-62, 14] as [number, number]) : t.event === "wait" ? ([62, 14] as [number, number]) : undefined,
-      }))}
+      edges={PROCESS_TRANSITIONS.map((t) => ({ ...t, bend: t.event === "dispatch" || t.event === "interrupt" ? -40 : 0 }))}
       notes={{
         new: "new: the process is being created.",
         ready: "ready: it's waiting to be assigned to a processor.",
@@ -1244,7 +1188,6 @@ export function ProcessStateDiagram() {
       }}
       initial="new"
       resetLabel="new process"
-      narrowLayout={{ positions: { new: [75, 45], terminated: [285, 45], ready: [75, 200], running: [285, 200], waiting: [180, 345] }, height: 390 }}
     />
   );
 }
@@ -1252,13 +1195,11 @@ export function ProcessStateDiagram() {
 /** The lab's Java thread lifecycle. */
 export function JavaThreadLifecycle() {
   const bend: Record<string, number> = { "Runnable-Running": 30, "Running-Runnable": 30, "Blocked-Runnable": -120, "New-Dead": -30 };
-  // keep the labels between Runnable and Running apart, and resume() clear of the Running node
-  const shift: Record<string, [number, number]> = { "Runnable-Running": [-34, 4], "Running-Runnable": [34, 4], "Blocked-Runnable": [-56, 0] };
   return (
     <StateMachine<JState>
       title="The thread lifecycle in Java"
       positions={{ New: [220, 40], Runnable: [220, 135], Running: [220, 235], Blocked: [220, 330], Dead: [500, 185] }}
-      edges={JAVA_TRANSITIONS.map((t) => ({ ...t, bend: bend[`${t.from}-${t.to}`] ?? 0, shift: shift[`${t.from}-${t.to}`] }))}
+      edges={JAVA_TRANSITIONS.map((t) => ({ ...t, bend: bend[`${t.from}-${t.to}`] ?? 0 }))}
       notes={{
         New: "New: the Thread object exists, but start() hasn't been called yet.",
         Runnable: "Runnable: started and ready to go. It's waiting for the scheduler to give it the CPU.",
@@ -1269,7 +1210,6 @@ export function JavaThreadLifecycle() {
       initial="New"
       height={370}
       resetLabel="new Thread()"
-      narrowLayout={{ positions: { New: [125, 40], Runnable: [125, 140], Running: [125, 240], Blocked: [125, 340], Dead: [290, 190] }, height: 380, bendScale: 0.5 }}
     />
   );
 }
@@ -1353,8 +1293,7 @@ export function ForkTree() {
   const depth = (k: ForkNode): number => (k.parent === null ? 0 : 1 + depth(nodes[k.parent]));
   const { pos, leaves } = layoutTree(nodes, (k) => k.id, (k) => k.parent, depth);
   const maxDepth = Math.max(...nodes.map(depth));
-  // size the drawing to the tree, so a node keeps the same size whether there are 1 or 16 of them
-  const W = Math.max(300, leaves * 46 + 40);
+  const W = 560;
   const H = 70 + maxDepth * 70;
   const X = (x: number) => 30 + (leaves === 1 ? (W - 60) / 2 : (x / (leaves - 1)) * (W - 60));
   const Y = (y: number) => 30 + y * 70;
@@ -1379,8 +1318,7 @@ export function ForkTree() {
           </div>
         </div>
       </div>
-      <div className="overflow-x-auto">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto mx-auto block" style={{ maxWidth: W * 1.25, minWidth: Math.min(W * 0.8, 600) }} role="img" aria-label="tree of processes created by fork">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="tree of processes created by fork">
         {nodes.map((k) => {
           if (k.parent === null) return null;
           const a = pos.get(k.parent)!;
@@ -1391,15 +1329,14 @@ export function ForkTree() {
           const p = pos.get(k.id)!;
           return (
             <g key={`${n}-${k.id}`} className="animate-in zoom-in-50 fade-in duration-500" style={{ transformOrigin: `${X(p.x)}px ${Y(p.y)}px`, animationDelay: `${k.bornAt * 150}ms`, animationFillMode: "both" }}>
-              <circle cx={X(p.x)} cy={Y(p.y)} r={17} className={tone[k.bornAt]} />
-              <text x={X(p.x)} y={Y(p.y) + 4.5} textAnchor="middle" className="fill-background font-mono text-[13px] font-bold">
+              <circle cx={X(p.x)} cy={Y(p.y)} r={14} className={tone[k.bornAt]} />
+              <text x={X(p.x)} y={Y(p.y) + 4} textAnchor="middle" className="fill-background font-mono text-[10px] font-bold">
                 P{k.id}
               </text>
             </g>
           );
         })}
       </svg>
-      </div>
       <p className="text-xs text-muted-foreground leading-relaxed">
         fork() creates a child that is a copy of the parent, and <i>both</i> continue from the next line. So at every fork() call, every process that exists splits in two.
       </p>
@@ -1427,37 +1364,8 @@ export function LinuxProcessTree() {
   const X = (x: number) => 45 + (x / (leaves - 1)) * (W - 90);
   const Y = (y: number) => 30 + y * 70;
   const [hover, setHover] = useState<number | null>(null);
-  const [box, width] = useWidth<HTMLDivElement>();
-  const narrow = width > 0 && width < NARROW;
-  // the same tree as `pstree -p` prints it, which fits a phone screen
-  const lines: { pid: number; prefix: string }[] = [];
-  const walk = (pid: number, prefix: string, childPrefix: string) => {
-    lines.push({ pid, prefix });
-    const kids = LINUX_TREE.filter((q) => q.parent === pid);
-    kids.forEach((k, i) => {
-      const last = i === kids.length - 1;
-      walk(k.pid, childPrefix + (last ? "└─ " : "├─ "), childPrefix + (last ? "   " : "│  "));
-    });
-  };
-  LINUX_TREE.filter((q) => q.parent === null).forEach((r) => walk(r.pid, "", ""));
   return (
     <Panel title="A tree of processes in Linux">
-      <div ref={box}>
-      {narrow ? (
-        <div className="font-mono text-[13px] leading-[1.7] bg-background/50 border border-border rounded-sm px-3 py-2 overflow-x-auto" role="img" aria-label="Linux process tree">
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">$ pstree -p</div>
-          {lines.map(({ pid, prefix }) => {
-            const p = LINUX_TREE.find((q) => q.pid === pid)!;
-            return (
-              <div key={pid} className="whitespace-pre">
-                <span className="text-muted-foreground">{prefix}</span>
-                <b>{p.name}</b>
-                <span className="text-muted-foreground">({pid})</span>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
       <svg viewBox={`0 0 ${W} 260`} className="w-full h-auto" role="img" aria-label="Linux process tree">
         {LINUX_TREE.map((p) => {
           if (p.parent === null) return null;
@@ -1481,8 +1389,6 @@ export function LinuxProcessTree() {
           );
         })}
       </svg>
-      )}
-      </div>
       <p className="text-xs text-muted-foreground leading-relaxed">
         <b>init</b> (pid 1) is the root of every user process. A user logged in through <b>login</b> got a <b>bash</b> shell, and every command typed in that shell, like <b>ps</b> or <b>emacs</b>, became bash's child.
       </p>
@@ -1526,7 +1432,7 @@ export function BoundedBuffer({ size = 8 }: { size?: number }) {
   return (
     <Panel title="Bounded buffer in shared memory" legend={[["bg-mint", "item"], ["bg-sky", "in (producer)"], ["bg-orange", "out (consumer)"]]}>
       <div className="grid sm:grid-cols-[260px_1fr] gap-4 items-center">
-        <svg viewBox="-12 -12 284 284" className="w-full max-w-[280px] h-auto mx-auto" role="img" aria-label="circular buffer">
+        <svg viewBox="0 0 260 260" className="w-full max-w-[260px] h-auto mx-auto" role="img" aria-label="circular buffer">
           {r.buf.map((v, i) => {
             const [x, y] = pt(i, R);
             return (
@@ -1544,27 +1450,15 @@ export function BoundedBuffer({ size = 8 }: { size?: number }) {
           {(["in", "out"] as const).map((k) => {
             const idx = k === "in" ? r.in : r.out;
             const [x, y] = pt(idx, R - 40);
-            // label just inside the slot it points at; when in == out, one label says so
-            const same = r.in === r.out;
-            if (same && k === "out") return <line key={k} x1={C} y1={C} x2={x} y2={y} strokeWidth={2} strokeDasharray="4 3" className="stroke-orange transition-all duration-300" />;
-            // beside the pointer, not on it: step sideways (perpendicular to the line)
-            const [mx, my] = pt(idx, R - 62);
-            const px = -Math.sin(angle(idx));
-            const py = Math.cos(angle(idx));
-            const side = k === "out" ? -1 : 1;
-            const lx = mx + side * px * 9;
-            const ly = my + side * py * 9;
-            const anchor = Math.abs(side * px) < 0.3 ? "middle" : side * px > 0 ? "start" : "end";
             return (
               <g key={k} style={{ transition: "transform 300ms" }}>
                 <line x1={C} y1={C} x2={x} y2={y} strokeWidth={k === "in" ? 3 : 2} strokeDasharray={k === "out" ? "4 3" : undefined} className={`transition-all duration-300 ${k === "in" ? "stroke-sky" : "stroke-orange"}`} />
-                <text x={lx} y={ly + 4 + (anchor === "middle" ? side * py * 6 : 0)} textAnchor={anchor} className={`font-mono text-[11px] font-bold ${same ? "fill-foreground" : k === "in" ? "fill-sky" : "fill-orange"}`}>
-                  {same ? "in = out" : k}
+                <text x={(C + x) / 2 + (k === "in" ? 8 : -8)} y={(C + y) / 2} textAnchor="middle" className={`font-mono text-[10px] font-bold ${k === "in" ? "fill-sky" : "fill-orange"}`}>
+                  {k}
                 </text>
               </g>
             );
           })}
-          <circle cx={C} cy={C} r={17} className="fill-card stroke-border" />
           <text x={C} y={C + 4} textAnchor="middle" className="fill-muted-foreground font-mono text-[11px]">
             {ringCount(r)}/{size - 1}
           </text>
@@ -2527,18 +2421,9 @@ const PROC_FILL = ["bg-sky", "bg-violet", "bg-orange", "bg-mint", "bg-neon", "bg
 /** A Gantt chart revealed up to time t, with the slice boundaries labelled underneath. */
 function Gantt({ slices, t, names }: { slices: { name: string | null; from: number; to: number; level?: number }[]; t: number; names: string[] }) {
   const total = slices.length ? slices[slices.length - 1].to : 1;
-  // label every boundary, except ones so close to the last label that the numbers would collide
-  const ticks: number[] = [];
-  for (const x of [...new Set(slices.flatMap((s) => [s.from, s.to]))].sort((a, b) => a - b)) {
-    const prev = ticks[ticks.length - 1];
-    if (prev !== undefined && (x - prev) / total < 0.045) {
-      if (x === total) ticks[ticks.length - 1] = x; // always keep the end
-      continue;
-    }
-    ticks.push(x);
-  }
+  const ticks = [...new Set(slices.flatMap((s) => [s.from, s.to]))];
   return (
-    <div className="min-w-[320px]">
+    <div className="min-w-[420px]">
       <div className="relative h-10 rounded-sm border border-border bg-background/60 overflow-hidden">
         {slices.map((s, i) => {
           const end = Math.min(s.to, t);
@@ -2557,7 +2442,7 @@ function Gantt({ slices, t, names }: { slices: { name: string | null; from: numb
       </div>
       <div className="relative h-5">
         {ticks.map((x) => (
-          <span key={x} className={`absolute ${x === 0 ? "" : x === total ? "-translate-x-full" : "-translate-x-1/2"} font-mono text-[10px] transition-opacity ${x <= t ? "text-foreground" : "text-muted-foreground/40"}`} style={{ left: `${(x / total) * 100}%` }}>
+          <span key={x} className={`absolute -translate-x-1/2 font-mono text-[10px] transition-opacity ${x <= t ? "text-foreground" : "text-muted-foreground/40"}`} style={{ left: `${(x / total) * 100}%` }}>
             {x}
           </span>
         ))}
@@ -2736,8 +2621,7 @@ export function BurstPrediction() {
   const [alpha, setAlpha] = useState(0.5);
   const tau0 = 10;
   const tau = expAverage(BURST_SAMPLE, alpha, tau0);
-  const [box, width] = useWidth<HTMLDivElement>();
-  const W = width > 0 && width < NARROW ? Math.max(300, width) : 520;
+  const W = 520;
   const H = 220;
   const steps = BURST_SAMPLE.length + 1;
   const X = (i: number) => 40 + (i / steps) * (W - 60);
@@ -2748,10 +2632,9 @@ export function BurstPrediction() {
       <label className="flex flex-wrap items-center gap-3 font-mono text-xs">
         <span className="uppercase tracking-widest text-muted-foreground">α</span>
         <input type="range" min={0} max={1} step={0.05} value={alpha} onChange={(e) => setAlpha(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="alpha" />
-        <span className="w-12 shrink-0 font-display text-lg font-bold">{alpha.toFixed(2)}</span>
+        <span className="w-10 font-display text-lg font-bold">{alpha.toFixed(2)}</span>
         <span className="text-muted-foreground">τ₀ = {tau0}</span>
       </label>
-      <div ref={box}>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-w-[600px]" role="img" aria-label="actual and predicted CPU bursts">
         {[0, 2, 4, 6, 8, 10, 12].map((v) => (
           <g key={v}>
@@ -2774,7 +2657,6 @@ export function BurstPrediction() {
           </text>
         ))}
       </svg>
-      </div>
       <p className="text-xs text-muted-foreground leading-relaxed">
         {alpha === 0 ? "α = 0: the prediction never changes. Recent history doesn't count." : alpha === 1 ? "α = 1: the prediction is just the last actual burst. Only the most recent history counts." : "With α in between, the prediction follows the real bursts but smooths out sudden jumps. Commonly α = ½."}
       </p>
@@ -3406,7 +3288,7 @@ export function PageFaultSteps() {
       codeLabel="What happens"
       legend={[["bg-mint", "valid (in memory)"], ["bg-orange", "invalid / faulting"]]}
       render={(s: PfState) => (
-        <div className="grid grid-cols-2 sm:grid-cols-[auto_auto_1fr] gap-4 items-start">
+        <div className="grid grid-cols-[auto_auto_1fr] gap-4 items-start min-w-[420px]">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">page table</div>
             {pages.map((p, i) => {
@@ -3432,12 +3314,12 @@ export function PageFaultSteps() {
               </div>
             ))}
           </div>
-          <div className="col-span-2 sm:col-span-1 flex flex-col gap-3">
+          <div className="flex flex-col gap-3">
             <div className={`rounded-sm border-2 px-3 py-2 font-mono text-xs transition-all duration-300 ${s.stage === 1 || s.stage === 2 ? "border-orange bg-orange/15 scale-[1.03]" : "border-border"}`}>
               ⚙ operating system {s.stage === 1 && <span className="font-bold">← trap!</span>}
             </div>
             <div className={`rounded-sm border-2 px-3 py-2 font-mono text-xs transition-all duration-300 ${s.stage === 4 ? "border-sky bg-sky/15 scale-[1.03]" : "border-border"}`}>
-              backing store: A B C <b className={s.stage === 4 ? "text-sky" : ""}>D</b> E F {s.stage === 4 && <span className="animate-pulse">→ frame 2</span>}
+              💽 backing store: A B C <b className={s.stage === 4 ? "text-sky" : ""}>D</b> E F {s.stage === 4 && <span className="animate-pulse">→ frame 2</span>}
             </div>
             <div className={`rounded-sm border-2 px-3 py-2 font-mono text-xs transition-all duration-300 ${s.stage === 0 || s.stage === 6 ? "border-mint bg-mint/15" : "border-border"}`}>
               ▶ process: load M {s.stage === 6 && <span className="font-bold">(restarted ✓)</span>}
@@ -3558,9 +3440,9 @@ export function PageReplacement({ algos = "fifo,opt,lru,clock,lfu,mfu", initial 
           <input type="range" min={1} max={7} value={n} onChange={(e) => setN(Number(e.target.value))} aria-label="number of frames" />
           <span className="w-3">{n}</span>
         </label>
-        <label className="flex w-full items-center gap-2">
-          <span className="uppercase tracking-widest text-muted-foreground shrink-0">reference string</span>
-          <input value={text} onChange={(e) => setText(e.target.value)} className={`${inputCls} !py-1 flex-1 min-w-0`} aria-label="reference string" />
+        <label className="inline-flex flex-1 items-center gap-2 min-w-[240px]">
+          <span className="uppercase tracking-widest text-muted-foreground">reference string</span>
+          <input value={text} onChange={(e) => setText(e.target.value)} className={`${inputCls} !py-1 flex-1`} aria-label="reference string" />
         </label>
         <button type="button" className={`${btn} !px-2 !py-1`} onClick={() => setText(REF_STRING.join(","))}>
           slides
@@ -3640,8 +3522,7 @@ export function FaultsVsFrames() {
   ];
   const data = series.map(([a]) => ns.map((n) => faults(refs, n, a)));
   const max = Math.max(...data.flat());
-  const [box, width] = useWidth<HTMLDivElement>();
-  const W = width > 0 && width < NARROW ? Math.max(300, width) : 460;
+  const W = 460;
   const H = 220;
   const X = (n: number) => 40 + ((n - 1) / 6) * (W - 60);
   const Y = (v: number) => H - 30 - (v / max) * (H - 50);
@@ -3655,14 +3536,13 @@ export function FaultsVsFrames() {
           ["slides", "slides' string"],
         ]}
       />
-      <div ref={box}>
-      <svg viewBox={`0 0 ${W} ${H + 14}`} className="w-full h-auto max-w-[520px]" role="img" aria-label="page faults by number of frames">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-w-[520px]" role="img" aria-label="page faults by number of frames">
         {ns.map((n) => (
           <text key={n} x={X(n)} y={H - 10} textAnchor="middle" className="fill-muted-foreground font-mono text-[10px]">
             {n}
           </text>
         ))}
-        <text x={W / 2} y={H + 10} textAnchor="middle" className="fill-muted-foreground font-mono text-[10px]">
+        <text x={W / 2} y={H} textAnchor="middle" className="fill-muted-foreground font-mono text-[9px]">
           number of frames
         </text>
         {series.map(([a, tone], si) => (
@@ -3681,7 +3561,6 @@ export function FaultsVsFrames() {
           </g>
         ))}
       </svg>
-      </div>
       <p className="text-xs text-muted-foreground leading-relaxed">
         {refsName === "belady"
           ? "Look at FIFO between 3 and 4 frames: 9 faults becomes 10. More memory, more faults! That's Belady's anomaly. LRU and Optimal never do this."
@@ -3705,7 +3584,7 @@ export function FrameAllocation() {
       <div className="flex h-8 rounded-sm overflow-hidden border border-border">
         {vals.map((v, i) => (
           <div key={i} className={`flex items-center justify-center font-mono text-[11px] font-bold text-background transition-all duration-500 ${i ? "bg-violet" : "bg-sky"}`} style={{ width: `${(v / m) * 100}%` }}>
-            {(v / m) * 100 >= 18 ? `P${i + 1}: ${fmt(Math.round(v * 100) / 100)}` : ""}
+            {v >= 3 ? `P${i + 1}: ${fmt(Math.round(v * 10) / 10)}` : ""}
           </div>
         ))}
       </div>
@@ -3738,8 +3617,7 @@ export function FrameAllocation() {
 export function ThrashingChart() {
   const [n, setN] = useState(3);
   const ns = Array.from({ length: 12 }, (_, i) => i + 1);
-  const [box, width] = useWidth<HTMLDivElement>();
-  const W = width > 0 && width < NARROW ? Math.max(300, width) : 460;
+  const W = 460;
   const H = 210;
   const X = (k: number) => 40 + ((k - 1) / 11) * (W - 60);
   const Y = (u: number) => H - 30 - u * (H - 50);
@@ -3752,7 +3630,6 @@ export function ThrashingChart() {
         <input type="range" min={1} max={12} value={n} onChange={(e) => setN(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="degree of multiprogramming" />
         <span className="w-6 font-display text-lg font-bold">{n}</span>
       </label>
-      <div ref={box}>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-w-[520px]" role="img" aria-label="CPU utilization against degree of multiprogramming">
         <path d={ns.map((k, i) => `${i ? "L" : "M"}${X(k)},${Y(utilization(k))}`).join(" ")} fill="none" strokeWidth={2.5} className="stroke-sky" />
         <rect x={X(5.5)} y={10} width={X(12) - X(5.5)} height={H - 40} className="fill-orange/10" />
@@ -3767,7 +3644,6 @@ export function ThrashingChart() {
           degree of multiprogramming
         </text>
       </svg>
-      </div>
       <p className={`text-sm ${thrashing ? "text-orange font-bold" : ""}`}>
         {thrashing
           ? `CPU utilization ${Math.round(u * 100)}%. The processes' localities need ${n * 12} frames but only 60 exist. Everyone page-faults constantly and waits on the disk, and the CPU sits idle.`
@@ -3813,225 +3689,6 @@ export function WorkingSetDemo() {
         {"}"} <span className="font-mono text-sm text-muted-foreground">· WSS = {ws.length}</span>
       </div>
       <p className="text-xs text-muted-foreground">Click any reference to move t. With Δ = 10, the working set at t₁ is {"{1, 2, 5, 6, 7}"}, and at t₂ the program has moved to a new locality: {"{3, 4}"}.</p>
-    </Panel>
-  );
-}
-
-/* ------------------------------ bounded waiting ------------------------------ */
-
-/** Four processes and one test_and_set lock: plain release versus handing the critical section on in order. */
-export function BoundedWaitingDemo() {
-  const [mode, setMode] = useState<"simple" | "bounded">("bounded");
-  const frames = useMemo(() => boundedWaitingFrames(mode), [mode]);
-  return (
-    <Stepper
-      title="Bounded waiting with test_and_set"
-      frames={frames}
-      code={mode === "bounded" ? BOUNDED_WAITING_CODE : SIMPLE_TAS_CODE}
-      codeLabel={mode === "bounded" ? "C (the lesson's algorithm)" : "C (plain test_and_set)"}
-      legend={[["bg-mint", "in the critical section"], ["bg-orange", "spinning"], ["bg-sky", "scanned on the way out"], ["bg-neon", "handed the lock"]]}
-      inputs={
-        <Toggle<"simple" | "bounded">
-          value={mode}
-          onChange={setMode}
-          options={[
-            ["bounded", "Bounded waiting"],
-            ["simple", "Plain test_and_set"],
-          ]}
-        />
-      }
-      render={(s: BwState) => (
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
-            <span className={`px-2 py-1 rounded-sm border transition-colors duration-300 ${s.lock ? "border-orange text-orange" : "border-mint text-mint"}`}>lock = {String(s.lock)}</span>
-            {s.handedTo !== null && <span className="animate-in fade-in text-foreground">handed to P{s.handedTo} →</span>}
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-            {s.waiting.map((w, i) => {
-              const inside = s.inside === i;
-              const scanAt = s.scanned.indexOf(i);
-              const handed = s.handedTo === i;
-              return (
-                <div
-                  key={i}
-                  className={`rounded-sm border-2 p-1.5 sm:p-3 flex flex-col gap-1 transition-all duration-300 ${
-                    handed ? "border-neon bg-neon/20 scale-105" : inside ? "border-mint bg-mint/20" : scanAt >= 0 ? "border-sky bg-sky/15" : w ? "border-orange/70 bg-orange/10" : "border-border"
-                  }`}
-                  style={scanAt >= 0 ? { transitionDelay: `${scanAt * 120}ms` } : undefined}
-                >
-                  <div className="font-display font-bold text-base sm:text-lg">P{i}</div>
-                  <div className="font-mono text-[10px] sm:text-[11px] leading-tight min-h-[2.5em]">
-                    {inside ? "critical section" : w ? <span className="text-orange">spinning<span className="animate-pulse">…</span></span> : <span className="text-muted-foreground">remainder</span>}
-                  </div>
-                  <div className="font-mono text-[10px] sm:text-[11px] text-muted-foreground">
-                    waiting[{i}] = <b className={w ? "text-orange" : "text-foreground"}>{w ? "T" : "F"}</b>
-                  </div>
-                  <div className="font-mono text-[10px] sm:text-[11px] text-muted-foreground">
-                    waited <b className={s.waited[i] > 3 ? "text-orange" : "text-foreground"}>{s.waited[i]}</b>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    />
-  );
-}
-
-/* ------------------------------ ordinary pipes ------------------------------ */
-
-/** A parent writes into an ordinary pipe and its child reads from it: blocking, end of file and broken pipes. */
-export function PipeDemo() {
-  const [p, setP] = useState<PipeState>(() => pipeStart());
-  const writerBlocked = p.pending.length > 0;
-  const readerBlocked = p.readerWants > 0;
-  const status = (label: string, tone: string) => <span className={`inline-block font-mono text-[10px] uppercase tracking-widest px-1.5 py-0.5 rounded-sm animate-in zoom-in-75 ${tone}`}>{label}</span>;
-  const act = `${btn} !px-2 !py-1 !normal-case !tracking-normal`;
-  return (
-    <Panel title="An ordinary pipe between parent and child" legend={[["bg-sky", "bytes in the pipe"], ["bg-violet", "waiting to get in"], ["bg-mint", "read by the child"]]}>
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
-        <div className={`rounded-sm border-2 p-3 flex flex-col gap-2 transition-colors ${p.broken ? "border-orange bg-orange/10" : writerBlocked ? "border-violet bg-violet/10" : "border-border"}`}>
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-display font-bold">parent</span>
-            <span className="font-mono text-[11px] text-muted-foreground">writes fd[1]{p.writeOpen ? "" : " (closed)"}</span>
-          </div>
-          <div className="min-h-[22px]">
-            {p.broken ? status("killed by SIGPIPE", "bg-orange text-background") : writerBlocked ? status("blocked in write()", "bg-violet text-background") : !p.writeOpen ? status("done writing", "bg-muted") : null}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {["hi", "hello", "pipes!"].map((w) => (
-              <button key={w} type="button" className={act} disabled={!p.writeOpen || writerBlocked || p.broken} onClick={() => setP((s) => pipeWrite(s, w))}>
-                write("{w}")
-              </button>
-            ))}
-            <button type="button" className={act} disabled={!p.writeOpen || writerBlocked || p.broken} onClick={() => setP(pipeCloseWrite)}>
-              close(fd[1])
-            </button>
-          </div>
-          {writerBlocked && <div className="font-mono text-xs text-violet">still to write: "{p.pending.join("")}"</div>}
-        </div>
-        <div className="flex flex-col items-center justify-center gap-1">
-          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">kernel buffer · {p.buf.length}/{p.cap}</div>
-          <div className="flex items-center gap-1">
-            <span className="font-mono text-muted-foreground hidden sm:inline">→</span>
-            <div className={`flex rounded-sm border-2 p-1 gap-1 ${p.buf.length === p.cap ? "border-violet" : "border-border"}`}>
-              {Array.from({ length: p.cap }, (_, i) => (
-                <div key={i} className={`w-7 h-9 flex items-center justify-center font-mono text-sm rounded-[2px] transition-colors duration-300 ${p.buf[i] !== undefined ? "bg-sky/40 font-bold" : "bg-muted/30"}`}>
-                  {p.buf[i] ?? ""}
-                </div>
-              ))}
-            </div>
-            <span className="font-mono text-muted-foreground hidden sm:inline">→</span>
-          </div>
-          <div className="font-mono text-[10px] text-muted-foreground">write end {p.writeOpen ? "open" : "closed"} · read end {p.readOpen ? "open" : "closed"}</div>
-        </div>
-        <div className={`rounded-sm border-2 p-3 flex flex-col gap-2 transition-colors ${p.eof ? "border-mint bg-mint/10" : readerBlocked ? "border-orange bg-orange/10" : "border-border"}`}>
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-display font-bold">child</span>
-            <span className="font-mono text-[11px] text-muted-foreground">reads fd[0]{p.readOpen ? "" : " (closed)"}</span>
-          </div>
-          <div className="min-h-[22px]">
-            {p.eof ? status("read() returned 0: EOF", "bg-mint text-background") : readerBlocked ? status(`blocked in read(…, ${p.readerWants})`, "bg-orange text-background") : !p.readOpen ? status("stopped reading", "bg-muted") : null}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {[3, 8].map((n) => (
-              <button key={n} type="button" className={act} disabled={readerBlocked || p.eof || !p.readOpen} onClick={() => setP((s) => pipeRead(s, n))}>
-                read({n})
-              </button>
-            ))}
-            <button type="button" className={act} disabled={!p.readOpen || p.eof} onClick={() => setP(pipeCloseRead)}>
-              close(fd[0])
-            </button>
-          </div>
-          <div className="font-mono text-xs">
-            received: <span className="text-mint font-bold">"{p.received}"</span>
-          </div>
-        </div>
-      </div>
-      <p aria-live="polite" className="text-sm leading-relaxed min-h-[3em]">
-        {p.note}
-      </p>
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="button" className={`${btn} !px-2 !py-1`} onClick={() => setP(pipeStart())}>
-          ⟲ new pipe
-        </button>
-        <span className="text-xs text-muted-foreground">Try: read(3) on the empty pipe, then write. Or fill it past 8 bytes. Or close(fd[1]) and keep reading.</span>
-      </div>
-    </Panel>
-  );
-}
-
-/* ------------------------------ trace-driven simulation ------------------------------ */
-
-/** Replay one trace through every algorithm and compare the statistics, as a scheduling simulator does. */
-export function SchedulerSimulation() {
-  const [seed, setSeed] = useState(1);
-  const [q, setQ] = useState(4);
-  const procs = useMemo(() => randomTrace(seed), [seed]);
-  const runs = useMemo(() => compareSchedulers(procs, q), [procs, q]);
-  const names = procs.map((p) => p.name);
-  const cols: { key: "avgWaiting" | "avgTurnaround" | "avgResponse" | "switches"; label: string }[] = [
-    { key: "avgWaiting", label: "avg wait" },
-    { key: "avgTurnaround", label: "avg turnaround" },
-    { key: "avgResponse", label: "avg response" },
-    { key: "switches", label: "switches" },
-  ];
-  const best = Object.fromEntries(cols.map((c) => [c.key, Math.min(...runs.map((r) => r[c.key]))]));
-  return (
-    <Panel title="Simulation: one trace, every algorithm" legend={[["bg-mint", "best in its column"]]}>
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="button" className={`${btn} !px-2 !py-1`} onClick={() => setSeed((s) => s + 1)}>
-          ↻ new trace
-        </button>
-        <label className="inline-flex items-center gap-2 font-mono text-xs">
-          <span className="uppercase tracking-widest text-muted-foreground">RR quantum</span>
-          <input type="range" min={1} max={12} value={q} onChange={(e) => setQ(Number(e.target.value))} aria-label="round-robin quantum" />
-          <span className="w-5">{q}</span>
-        </label>
-      </div>
-      <div className="font-mono text-[11px] text-muted-foreground leading-relaxed">
-        trace #{seed}: {procs.map((p) => `${p.name} arrives ${p.arrival}, burst ${p.burst}`).join(" · ")}
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full font-mono text-xs border-collapse min-w-[340px]">
-          <thead>
-            <tr className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              <th className="text-left font-normal py-1 pr-2">algorithm</th>
-              {cols.map((c) => (
-                <th key={c.key} className="text-right font-normal py-1 px-1">
-                  {c.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {runs.map((r) => (
-              <tr key={r.algo} className="border-t border-border">
-                <td className="py-1.5 pr-2 whitespace-nowrap">{r.algo === "rr" ? `RR, q = ${q}` : ALGO_LABEL[r.algo].replace(" (preemptive SJF)", "")}</td>
-                {cols.map((c) => (
-                  <td key={c.key} className={`py-1.5 px-1 text-right ${r[c.key] === best[c.key] ? "text-mint font-bold" : ""}`}>
-                    {fmt(Math.round(r[c.key] * 100) / 100)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex flex-col gap-2 overflow-x-auto">
-        {runs.map((r) => (
-          <div key={r.algo} className="flex items-center gap-2">
-            <span className="w-14 shrink-0 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{r.algo === "rr" ? "RR" : r.algo}</span>
-            <div className="flex-1">
-              <Gantt slices={r.slices} t={Infinity} names={names} />
-            </div>
-          </div>
-        ))}
-      </div>
-      <p className="text-xs text-muted-foreground leading-relaxed">
-        SRTF has the lowest average wait on every trace. That's a theorem, not luck, but it needs each burst's length in advance, which a real OS can only estimate. Response time is where round robin earns its place, and it depends on the quantum: on traces like these, q = 2 gives round robin the best response time about 4 times in 5, while by q = 8 it rarely wins, because a long quantum turns round robin back into FCFS.
-      </p>
     </Panel>
   );
 }

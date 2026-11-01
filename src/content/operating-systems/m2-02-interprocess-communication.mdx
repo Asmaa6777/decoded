@@ -1,5 +1,5 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { BoundedBuffer, MessageBuffering, PipeDemo } from "@/components/mdx/OsVisualizers";
+import { BoundedBuffer, MessageBuffering } from "@/components/mdx/OsVisualizers";
 
 # Interprocess Communication
 
@@ -243,10 +243,6 @@ A **pipe** acts as a **channel** that lets two processes communicate. Pipes are 
 | **On Windows** | anonymous pipes | richer: **full-duplex**, can be on the **same or different machines**, **byte- or message-oriented** |
 
 You already used ordinary pipes in the Linux lab: in `sort file3 | uniq`, the shell creates a pipe, and `sort` writes into one end while `uniq` reads from the other.
-
-An ordinary pipe is a **bounded buffer inside the kernel**, the same producer-consumer problem as above, with the OS doing the waiting for you. `read()` on an empty pipe **blocks**, `write()` to a full one **blocks**, and once every write end is closed, `read()` returns **0**, which is how `uniq` knows `sort` has finished. Here the buffer holds 8 bytes so it fills quickly; on Linux it's 64 KB by default.
-
-<PipeDemo />
 
 ### Remote method invocation (RMI)
 
