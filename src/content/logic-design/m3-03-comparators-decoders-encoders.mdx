@@ -12,7 +12,7 @@ XNOR outputs 1 when two bits match. To compare whole numbers, put one XNOR on ea
 
 <EqualityCircuit />
 
-To find out which number is bigger, look at it the way you'd compare 742 and 751: start from the left. If the top bits differ, whichever has the 1 is greater, and you're done. If they match, move one bit to the right. A comparator chip gives three outputs: `A>B`, `A=B` and `A<B`. For $A = 0110$ and $B = 0011$, the second bit from the left decides it, so `A>B` goes high.
+To find out which number is bigger, look at it the way you'd compare 742 and 751: start from the left. If the top bits differ, whichever has the 1 is greater, and you're done. If they match, move one bit to the right. A **comparator** chip gives three outputs: `A>B`, `A=B` and `A<B`. For $A = 0110$ and $B = 0011$, the second bit from the left decides it, so `A>B` goes high.
 
 ## Decoders: pick exactly one
 
@@ -29,7 +29,7 @@ $$
 Using a NAND instead gives an **active-low** output, which sits at 1 and drops to 0 when selected. Many real chips do this, because a low signal is less easily triggered by accident.
 
 <Callout tone="neon" label="This is how memory works">
-When a CPU asks for address 5, a decoder lights up word 5 and leaves all the others alone. You'll wire this up yourself in [the memory unit lesson](/courses/logic-design/memory-unit). A CPU's [control unit](/courses/computer-architecture/control-unit) also uses decoders to turn an instruction's bits into the right control signals.
+When a CPU asks for address 5, a decoder lights up word 5 and leaves all the others alone. You'll wire this up yourself in the [memory unit lesson](/courses/logic-design/memory-unit). A CPU's [control unit](/courses/computer-architecture/control-unit) also uses decoders to turn an instruction's bits into the right control signals.
 </Callout>
 
 A common special case is the **BCD-to-7-segment decoder**, which takes one decimal digit in BCD and lights the segments of a digital display. Those are the lit bars on a microwave clock.

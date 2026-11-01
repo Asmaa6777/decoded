@@ -20,7 +20,7 @@ These two confuse nearly everyone at first, and the reason is that the bits `110
 - **Treating numbers as unsigned**: check **CF**. 200 + 100 = 300 doesn't fit in 8 bits, so CF is 1.
 - **Treating numbers as signed**: check **OF**. 100 + 50 = 150, but the largest signed 8-bit value is 127. The result reads as -106, so OF is 1.
 
-An easy way to spot overflow: adding two positives gives a negative, or adding two negatives gives a positive. If you need a refresher on why, see [the two's complement circle](/courses/logic-design/binary-arithmetic).
+An easy way to spot overflow: adding two positives gives a negative, or adding two negatives gives a positive. If you need a refresher on why, see the [two's complement circle](/courses/logic-design/binary-arithmetic).
 
 ## Control flags: how to behave
 

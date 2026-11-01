@@ -3,7 +3,7 @@ import { GatePlayground } from "@/components/mdx/CircuitVisualizers";
 
 # Logic Gates
 
-A gate is a tiny circuit that takes one or more bits in and gives one bit out. That's the only thing it does. Everything a computer does comes from wiring huge numbers of these together.
+A **gate** is a tiny circuit that takes one or more bits in and gives one bit out. That's the only thing it does. Everything a computer does comes from wiring huge numbers of these together.
 
 Inside, a gate is built from transistors, which are switches controlled by electricity. The easiest way to understand gates is to picture real switches on a wire powering a lamp. Two switches in a row (series) give you AND. Two side by side (parallel) give you OR.
 
@@ -32,9 +32,9 @@ In Boolean notation, $AB$ means AND, $A + B$ means OR and $A'$ means NOT. Don't 
 
 ## What each one is good for
 
-**AND** works as a door. Treat one input as data and the other as a control. With the control at 1, the data passes. With it at 0, the output is stuck at 0. This single idea is behind [the latch's control input](/courses/logic-design/d-latch-and-clock) and [the multiplexer](/courses/logic-design/multiplexers).
+**AND** works as a door. Treat one input as data and the other as a control. With the control at 1, the data passes. With it at 0, the output is stuck at 0. This single idea is behind the [latch's control input](/courses/logic-design/d-latch-and-clock) and the [multiplexer](/courses/logic-design/multiplexers).
 
-**XOR** is a controllable inverter: $A \oplus 0 = A$ and $A \oplus 1 = A'$. It also adds two bits while ignoring the carry, which is half of [an adder](/courses/logic-design/adders).
+**XOR** is a controllable inverter: $A \oplus 0 = A$ and $A \oplus 1 = A'$. It also adds two bits while ignoring the carry, which is half of an [adder](/courses/logic-design/adders).
 
 **XNOR** tests whether two bits are equal, so [comparators](/courses/logic-design/comparators-decoders-encoders) use it.
 

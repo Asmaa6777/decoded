@@ -13,7 +13,7 @@ NOR works the same way with the roles swapped. Tying its inputs gives NOT, NOR f
 
 ## Two ways to read the same gate
 
-De Morgan's theorem says that the same gate has two faces:
+[De Morgan's](/courses/logic-design/boolean-algebra#de-morgans-theorems) theorem says that the same gate has two faces:
 
 $$
 (AB)' = A' + B' \qquad\text{(a NAND is an OR with inverted inputs)}
@@ -29,9 +29,9 @@ $$
 X = \big((AB)'(CD)'\big)' = (AB)'' + (CD)'' = AB + CD
 $$
 
-The first layer acts as ANDs and the output gate acts as an OR. In other words, **a NAND-NAND circuit is just an AND-OR circuit in disguise**, so any sum of products translates directly: swap every gate for a NAND.
+The first layer acts as ANDs and the output gate acts as an OR. In other words, **a NAND-NAND circuit is just an AND-OR circuit in disguise**, so any [sum of products](/courses/logic-design/sop-and-pos#sum-of-products) translates directly: swap every gate for a NAND.
 
-In the same way, a NOR-NOR circuit is an OR-AND circuit, which suits product of sums:
+In the same way, a NOR-NOR circuit is an OR-AND circuit, which suits [product of sums](/courses/logic-design/sop-and-pos#product-of-sums):
 
 $$
 X = \big((A + B)'+(C + D)'\big)' = (A + B)(C + D)

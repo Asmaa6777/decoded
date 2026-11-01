@@ -6,7 +6,7 @@ Gates aren't instant. After an input changes, it takes a brief moment (the **pro
 
 ## The problem: dominoes
 
-The adder from the last lesson is a **ripple-carry adder**. Each stage can't finalise its answer until the carry arrives from the stage before. Think of a row of dominoes. Add 1 to `11111111` and the carry has to topple through all 8 stages before the top bit is right.
+The [adder](/courses/logic-design/adders) from the last lesson is a **ripple-carry adder**. Each stage can't finalise its answer until the carry arrives from the stage before. Think of a row of dominoes. Add 1 to `11111111` and the carry has to topple through all 8 stages before the top bit is right.
 
 Since a CPU can't know in advance which numbers it will get, its clock has to allow for the worst case, even if most additions finish sooner. A slow adder slows down the whole chip.
 

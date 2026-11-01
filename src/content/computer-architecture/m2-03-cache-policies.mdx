@@ -36,7 +36,7 @@ On a multicore chip, each core has its own cache. If one core uses write-back, t
 
 ## How big should a block be?
 
-A bigger block brings in more neighbours, which helps spatial locality, up to a point. Too large, and you have two problems: fewer blocks fit, so useful data gets thrown out sooner, and each miss takes longer because there's more to copy. Common sizes settle around 64 bytes.
+A bigger block brings in more neighbours, which helps [spatial locality](/courses/computer-organization/memory-hierarchy#why-such-a-small-cache-works), up to a point. Too large, and you have two problems: fewer blocks fit, so useful data gets thrown out sooner, and each miss takes longer because there's more to copy. Common sizes settle around 64 bytes.
 
 ## Putting a number on it
 

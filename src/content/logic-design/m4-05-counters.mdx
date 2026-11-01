@@ -15,7 +15,7 @@ Look at how the binary numbers go:
 
 The rightmost bit flips every step. The next bit flips every 2 steps, the next every 4, and so on. So each bit flips when all the bits to its right were 1 and roll over. It works like an odometer, where each wheel turns the next one once per revolution.
 
-A [JK flip-flop](/courses/logic-design/flip-flops) with J = K = 1 toggles on each clock edge, so a counter is just a chain of those, each toggling at the right moment.
+A [JK flip-flop](/courses/logic-design/flip-flops) with J = K = 1 toggles on each clock edge, so a **counter** is just a chain of those, each toggling at the right moment.
 
 <CounterLab />
 
@@ -32,5 +32,5 @@ In a **synchronous counter**, all flip-flops share one clock. Each stage uses an
 - **Stepping through a program**: the [Program Counter](/courses/computer-organization/machine-cycle) is a counter with load. It normally counts up to the next instruction, and a jump instruction loads a new value instead.
 
 <Callout tone="neon" label="Counting past the end">
-An $n$-bit counter counts from 0 to $2^n - 1$ and then wraps to 0. You just saw it in action with [the two's complement circle](/courses/logic-design/binary-arithmetic). That wrap-around is what a program sees as overflow.
+An $n$-bit counter counts from 0 to $2^n - 1$ and then wraps to 0. You just saw it in action with the [two's complement circle](/courses/logic-design/binary-arithmetic). That wrap-around is what a program sees as overflow.
 </Callout>
