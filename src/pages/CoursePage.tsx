@@ -37,7 +37,7 @@ export default function CoursePage() {
             <div className="flex items-center gap-3 font-mono text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-5">
               <Link to="/courses" className="hover:text-foreground transition">All tracks</Link>
               <span>/</span>
-              <span className={accentText[course.accent]}>{course.number}</span>
+              <span className={accentText[course.accent]}>{course.title}</span>
             </div>
 
             <CourseGlyph slug={course.slug} className={`h-10 w-10 mb-5 ${accentText[course.accent]}`} />

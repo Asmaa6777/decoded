@@ -256,7 +256,6 @@ export type Course = {
   description: string;
   accent: "neon" | "orange" | "sky" | "violet" | "mint";
   status: "available" | "coming-soon";
-  number: string; // "01"
   authors?: Author[];
   modules: Module[];
 };
@@ -270,7 +269,6 @@ export const courses: Course[] = [
       "Back in the 1930s mathematicians who put the first principles of this field weren't writing and shipping apps. They were asking much simpler questions, like 'what is computable?' That question produced regex, parsers, CPUs, cryptography, and the famous world of antivirus software. This small course decodes each topic in the theory of computation into the tools you are going to use or already in use.",
     accent: "neon",
     status: "available",
-    number: "01",
     authors: [ahmedAlghali],
     modules: [
       {
@@ -318,7 +316,6 @@ export const courses: Course[] = [
       "Everything about computing is interaction. The more precisely you speak to the machine, the more effective you become. That fluency has three layers: physical, language and systems. It comes from years of watching what separates fluent users from frustrated ones.",
     accent: "orange",
     status: "available",
-    number: "02",
     authors: [ahmedAlghali],
     modules: [
       {
@@ -340,7 +337,6 @@ export const courses: Course[] = [
       "Sorting, searching, graphs, greedy choices and dynamic programming. The classic university algorithms course, decoded: every algorithm is animated step by step next to its Java code, every lesson explains why it works and what it costs, and each one ends with easy LeetCode problems to lock it in.",
     accent: "sky",
     status: "available",
-    number: "03",
     authors: [ahmedAlghali],
     modules: [
       {
@@ -397,7 +393,6 @@ export const courses: Course[] = [
       "The second algorithms course, decoded. Asymptotic notation and recurrences, divide and conquer, randomized quicksort and linear-time sorting, hashing, balanced and red-black trees, skip lists, dynamic programming, greedy algorithms, shortest paths, and the P vs NP question. Every lesson follows the lectures and labs, in plain language, with step-through animations.",
     accent: "violet",
     status: "available",
-    number: "04",
     authors: [asmaaFarouq],
     modules: [
       {
@@ -464,7 +459,6 @@ export const courses: Course[] = [
       "Matrices, polynomials, number theory and the first ciphers, worked in MATLAB with NumPy, pandas and plain Python alongside. Watch matrix entries slide into place, space bend under a linear map and a cipher wheel turn, then see where each idea shows up in machine learning.",
     accent: "mint",
     status: "available",
-    number: "05",
     authors: [ahmedAlghali],
     modules: [
       {
@@ -528,7 +522,6 @@ export const courses: Course[] = [
       "A top-down tour of a computer with the history left out. Step a working CPU through a program, follow a read across the buses, cut the power on RAM, and spin a hard disk to see why it's the slowest part of the machine.",
     accent: "sky",
     status: "available",
-    number: "06",
     authors: [ahmedAlghali],
     modules: [
       {
@@ -575,7 +568,6 @@ export const courses: Course[] = [
       "Build a computer's parts from the bottom up. Flip inputs and watch signals move through real gates, simplify circuits with Karnaugh maps, add numbers with nothing but XOR and AND, and see how a loop of two gates can remember a bit.",
     accent: "neon",
     status: "available",
-    number: "07",
     authors: [ahmedAlghali],
     modules: [
       {
@@ -641,7 +633,6 @@ export const courses: Course[] = [
       "Learn a real processor from the inside: its registers, flags, segments and addressing modes. Then write assembly and step through it in the browser, watching every register, flag and stack entry change.",
     accent: "orange",
     status: "available",
-    number: "08",
     authors: [ahmedAlghali],
     modules: [
       {
@@ -690,7 +681,6 @@ export const courses: Course[] = [
       "Instruction sets, RISC and CISC, control units, cache, virtual memory, I/O, pipelines and parallelism. Run a cache simulator, cause a pipeline hazard and fix it, and take a page fault, with every abstract term shown working.",
     accent: "violet",
     status: "available",
-    number: "09",
     authors: [ahmedAlghali],
     modules: [
       {
@@ -748,7 +738,6 @@ export const courses: Course[] = [
       "What really happens between your click and the hardware. Interrupts and system calls, processes and threads, synchronization, CPU scheduling, main memory and virtual memory, plus hands-on Linux and threads labs. Every lesson follows the lectures and labs, in plain language, with animations you can step through.",
     accent: "mint",
     status: "available",
-    number: "10",
     authors: [asmaaFarouq],
     modules: [
       {
@@ -808,7 +797,6 @@ export const courses: Course[] = [
       "Consistency, availability, and the CAP theorem. This course decodes how massive systems stay synchronized across the globe, from Paxos to Raft and the tradeoffs of microservices.",
     accent: "mint",
     status: "coming-soon",
-    number: "11",
     modules: [],
   },
   {
@@ -819,7 +807,6 @@ export const courses: Course[] = [
       "Exams test mental endurance and strategy as much as knowledge. This course covers how memory works, how to plan the week before, and how to handle stress in the exam room and on the day itself.",
     accent: "sky",
     status: "available",
-    number: "12",
     authors: [ahmedAlghali],
     modules: [
       {
@@ -848,7 +835,6 @@ export const courses: Course[] = [
       "Logic, sets, proof, counting, graphs and probability: the foundation the other courses lean on. Build truth tables, turn relations into equivalence classes, watch induction climb a staircase and binary search keep its invariant, then see the same ideas run package managers, hash tables and password crackers.",
     accent: "sky",
     status: "available",
-    number: "13",
     authors: [ahmedAlghali],
     modules: [
       {
@@ -920,7 +906,6 @@ export const courses: Course[] = [
       "Arrays, linked lists, stacks, queues, hash maps, trees, heaps, tries and union-find, each built step by step and taken apart in interactive visualizers. Code comes in Python, with Java and C++ one click away, and every structure is tied to where it runs in real software: list.append, HashMap, the call stack, database indexes, autocomplete.",
     accent: "violet",
     status: "available",
-    number: "14",
     authors: [ahmedAlghali],
     modules: [
       {
@@ -973,7 +958,6 @@ export const courses: Course[] = [
       "Layers and packets, delay and bandwidth, IP addresses and subnets, routing, UDP and TCP, congestion control, DNS and HTTPS. Wrap a request in its headers, split a subnet bit by bit, watch Dijkstra fill a router's table, lose a TCP segment and see it come back, and run real sockets in Python.",
     accent: "orange",
     status: "available",
-    number: "15",
     authors: [ahmedAlghali],
     modules: [
       {

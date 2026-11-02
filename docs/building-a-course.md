@@ -44,7 +44,7 @@ Write links as ordinary markdown, `[words](/courses/<course>/<lesson>#<section>)
 
 ## Registration checklist
 
-- [ ] One `lazy()` import per lesson in `src/content/registry.ts`, and a course entry with `slug`, `title`, `tagline`, `description`, `accent`, `status`, `number`, `authors` and `modules`
+- [ ] One `lazy()` import per lesson in `src/content/registry.ts`, and a course entry with `slug`, `title`, `tagline`, `description`, `accent`, `status`, `authors` and `modules`
 - [ ] Quiz and lab lessons marked with `kind: "quiz"` or `kind: "practical"`
 - [ ] Each lesson's `#` heading matches its `title` in the registry
 - [ ] Your entry in `src/content/authors.ts`
