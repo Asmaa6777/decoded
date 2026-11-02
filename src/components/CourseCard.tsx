@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { courses, flattenLessons } from "@/content/registry";
+import { prerequisites } from "@/content/paths";
 import { useProgress } from "@/hooks/useProgress";
 import { useRegistration } from "@/hooks/useRegistration";
 import { CourseGlyph } from "@/components/brand/Glyphs";
@@ -29,6 +30,7 @@ export default function CourseCard({ slug }: { slug: string }) {
   ).length;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   const disabled = course.status === "coming-soon";
+  const required = prerequisites[course.slug]?.map((s) => courses.find((c) => c.slug === s)!.title);
 
   const Wrapper: React.ElementType = disabled ? "div" : Link;
   const wrapperProps = disabled ? {} : { to: `/courses/${course.slug}` };
@@ -55,6 +57,13 @@ export default function CourseCard({ slug }: { slug: string }) {
         <p className="text-sm text-muted-foreground italic leading-relaxed mb-5">
           {course.tagline}
         </p>
+
+        {required && (
+          <p className="text-xs text-muted-foreground mb-5">
+            <span className="font-mono uppercase tracking-widest text-[10px]">Helps to know first:</span>{" "}
+            <span className="text-foreground/80">{required.join(", ")}</span>
+          </p>
+        )}
 
         {!disabled && total > 0 && !registered && (
           <div className={`font-mono text-[10px] tracking-widest uppercase ${accentText[course.accent]}`}>

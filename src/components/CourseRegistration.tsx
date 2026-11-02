@@ -195,16 +195,22 @@ export function CoursePrerequisites({ courseSlug }: { courseSlug: string }) {
   const required = prerequisites[courseSlug];
   if (!required) return null;
   return (
-    <p className="mt-6 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-      Helps to know first:{" "}
-      {required.map((slug, i) => (
-        <span key={slug}>
-          {i > 0 && " · "}
-          <Link to={`/courses/${slug}`} className="underline underline-offset-4 hover:text-foreground">
-            {getCourse(slug)?.title}
-          </Link>
-        </span>
-      ))}
-    </p>
+    <div className="mt-8">
+      <div className="font-mono text-[11px] tracking-widest uppercase text-muted-foreground mb-3">
+        Helps to know first
+      </div>
+      <ul className="flex flex-wrap gap-2">
+        {required.map((slug) => (
+          <li key={slug}>
+            <Link
+              to={`/courses/${slug}`}
+              className="block border border-border px-3 py-2 font-display font-bold hover:border-foreground/40 transition-colors"
+            >
+              {getCourse(slug)?.title}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
