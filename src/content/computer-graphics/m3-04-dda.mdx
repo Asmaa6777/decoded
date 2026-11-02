@@ -1,5 +1,5 @@
 import { Callout, PracticalApplication } from "@/components/mdx/MdxComponents";
-import { LineStepper } from "@/components/mdx/GraphicsVisualizers";
+import { LineStepper, RoundingDrift } from "@/components/mdx/GraphicsVisualizers";
 
 # The DDA Line Algorithm
 
@@ -69,6 +69,10 @@ $\Delta x = 7$, $\Delta y = 3$, so $m = 3/7 \approx 0.429$. That's under 1, case
 <Callout tone="orange" label="Don't round the slope either">
 Many worked solutions round $m$ to 0.4 before starting. Then y goes 4, 4.4, 4.8, 5.2, 5.6, 6, 6.4, 6.8, and it never reaches the endpoint's 7; the last pixel only lands on 7 after rounding. Worse, at x = 11 it gives 6.4 → 6 instead of the true 6.571 → 7, so the drawn line is wrong. Every addition carries the rounding error forward. Keep $m$ as a fraction (3/7) or to several decimals.
 </Callout>
+
+See the drift side by side. Orange pixels are the ones the rounded slope gets wrong:
+
+<RoundingDrift />
 
 ## Example 2: a steep line, (5, 7) to (10, 15)
 

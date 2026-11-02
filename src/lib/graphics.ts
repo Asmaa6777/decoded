@@ -163,6 +163,10 @@ export type LineState = {
   plotted: Pt[];
   /** the exact (unrounded) point the algorithm is at */
   exact?: Pt;
+  /** Bresenham's two choices for the next pixel: [stay, move], the midpoint between them, and which was taken */
+  candidates?: [Pt, Pt];
+  midpoint?: Pt;
+  chosen?: 0 | 1;
   done: boolean;
 };
 
@@ -328,16 +332,21 @@ export function bresenhamFrames(from: Pt, to: Pt): Frame<LineState>[] {
     push(8, `k = ${k}: light (${x}, ${y}). p = ${p}.`, { exact: [x, y] });
     if (k === dx) break;
     const side = steep ? "x" : "y";
+    const stay: Pt = steep ? [x, y + sy] : [x + sx, y];
+    const move: Pt = steep ? [x + sx, y + sy] : [x + sx, y + sy];
+    const midpoint: Pt = [(stay[0] + move[0]) / 2, (stay[1] + move[1]) / 2];
+    const choice = { candidates: [stay, move] as [Pt, Pt], midpoint };
+    push(9, `Next pixel: stay at (${stay[0]}, ${stay[1]}) or move to (${move[0]}, ${move[1]})? The sign of p says which side of the midpoint the line passes.`, choice);
     if (p >= 0) {
       if (steep) x += sx;
       else y += sy;
       const old = p;
       p += 2 * dy - 2 * dx;
-      push(11, `p = ${old} is not negative: the line has passed the midpoint, so ${side} moves too. p = ${old} + 2·${dy} − 2·${dx} = ${p}.`);
+      push(11, `p = ${old} is not negative: the line has passed the midpoint, so ${side} moves too. p = ${old} + 2·${dy} − 2·${dx} = ${p}.`, { ...choice, chosen: 1 });
     } else {
       const old = p;
       p += 2 * dy;
-      push(13, `p = ${old} is negative: the line is still below the midpoint, so ${side} stays. p = ${old} + 2·${dy} = ${p}.`);
+      push(13, `p = ${old} is negative: the line is still below the midpoint, so ${side} stays. p = ${old} + 2·${dy} = ${p}.`, { ...choice, chosen: 0 });
     }
     if (steep) y += sy;
     else x += sx;
@@ -345,6 +354,59 @@ export function bresenhamFrames(from: Pt, to: Pt): Frame<LineState>[] {
   push(16, `Done: ${plotted.length} pixels, using only adds, subtracts and a sign check.`, { done: true });
   return frames;
 }
+
+/** DDA with the increments rounded to `decimals` places first, the shortcut many worked solutions take. */
+export function ddaRounded(from: Pt, to: Pt, decimals: number): { exact: number[]; plot: Pt[] } {
+  const [x0, y0] = from;
+  const [x1, y1] = to;
+  const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+  const r = (v: number) => Number(v.toFixed(decimals));
+  const xInc = r((x1 - x0) / steps);
+  const yInc = r((y1 - y0) / steps);
+  const exact: number[] = [];
+  const plot: Pt[] = [];
+  for (let k = 0; k <= steps; k++) {
+    const x = x0 + k * xInc;
+    const y = y0 + k * yInc;
+    exact.push(Math.abs(xInc) === 1 ? y : x);
+    plot.push([roundHalfUp(x), roundHalfUp(y)]);
+  }
+  return { exact, plot };
+}
+
+export type SlopeKind = "horizontal" | "vertical" | "gentle" | "diagonal" | "steep";
+
+/** Classify a line by its slope, which decides the direction a line algorithm steps in. */
+export function slopeKind(from: Pt, to: Pt): SlopeKind {
+  const dx = Math.abs(to[0] - from[0]);
+  const dy = Math.abs(to[1] - from[1]);
+  if (dy === 0) return "horizontal";
+  if (dx === 0) return "vertical";
+  return dy < dx ? "gentle" : dy === dx ? "diagonal" : "steep";
+}
+
+/**
+ * Fraction of backlight a twisted-nematic LCD subpixel lets through. With no voltage the
+ * crystal twists the light 90° so it passes the crossed second polarizer; full voltage
+ * untwists it and the second polarizer blocks it. Light through a polarizer at angle θ keeps cos²θ.
+ */
+export function lcdTwist(voltage: number) {
+  return 90 * (1 - Math.max(0, Math.min(1, voltage)));
+}
+export function lcdTransmission(voltage: number) {
+  const twist = (lcdTwist(voltage) * Math.PI) / 180;
+  return Math.sin(twist) ** 2;
+}
+
+/** A 6 × 6 indexed-color picture: each number is a row in the palette, not a color. */
+export const INDEXED_PICTURE = [
+  [0, 0, 0, 0, 0, 0],
+  [0, 1, 1, 0, 2, 0],
+  [0, 1, 1, 0, 0, 0],
+  [3, 3, 3, 3, 3, 3],
+  [3, 3, 3, 3, 3, 3],
+  [3, 3, 3, 3, 3, 3],
+];
 
 export const lastPlotted = (frames: Frame<LineState>[]) => frames[frames.length - 1].state.plotted;
 

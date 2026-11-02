@@ -1,5 +1,5 @@
 import { Callout } from "@/components/mdx/MdxComponents";
-import { BitDepthExplorer } from "@/components/mdx/GraphicsVisualizers";
+import { BitDepthExplorer, IndexedPalette } from "@/components/mdx/GraphicsVisualizers";
 
 # Bit Depth: How Many Shades a Pixel Holds
 
@@ -55,6 +55,10 @@ Each brightness has to snap to the nearest level the bits can store. With 2 bits
 ## Indexed color: 256 colors from a bigger palette
 
 8 bits can also mean something else. In **indexed color**, the image stores a **palette**, a table of up to 256 full colors, and each pixel holds a number from 0 to 255 that says which palette entry to use. The pixel isn't a color; it's a page number in a color book. GIF files work this way, which is why a GIF can be colorful yet limited to 256 different colors at once.
+
+Click a pixel to see the number it stores, then swap the palette:
+
+<IndexedPalette />
 
 <Callout tone="orange" label="Same 8 bits, two meanings">
 In a grayscale image, pixel value 200 means "bright gray". In an indexed image, it means "whatever color sits at row 200 of the palette", which could be bright red. The bits alone don't tell you which. That's more metadata the file has to carry.

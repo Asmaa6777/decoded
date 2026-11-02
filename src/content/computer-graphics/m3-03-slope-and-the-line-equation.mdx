@@ -1,5 +1,5 @@
 import { Callout } from "@/components/mdx/MdxComponents";
-import { LineStepper } from "@/components/mdx/GraphicsVisualizers";
+import { LineStepper, SlopeExplorer } from "@/components/mdx/GraphicsVisualizers";
 
 # Slope and the Line Equation
 
@@ -34,6 +34,10 @@ So this line rises two-thirds of a pixel for every pixel it moves right.
 | $\lvert m \rvert > 1$ | steep: moves more up than across | over 45° |
 
 The slope is also the tangent of the line's angle: $m = \tan\theta$. A 45° line has slope $\tan 45° = 1$.
+
+Move the endpoints and watch the rise, the run and the slope change. Try a horizontal line, a vertical one and a 45° one:
+
+<SlopeExplorer />
 
 <Callout tone="sky" label="The number that matters">
 For drawing lines, the most important row is the 1 boundary. Whether $\lvert m \rvert$ is below or above 1 decides which direction the algorithm should step in, as you'll see shortly.

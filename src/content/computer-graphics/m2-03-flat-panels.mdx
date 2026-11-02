@@ -1,5 +1,5 @@
 import { Callout } from "@/components/mdx/MdxComponents";
-import { SubpixelZoom, BacklightDemo } from "@/components/mdx/GraphicsVisualizers";
+import { SubpixelZoom, BacklightDemo, LcdCell } from "@/components/mdx/GraphicsVisualizers";
 
 # Flat Panels: LCD, LED and Plasma
 
@@ -20,6 +20,10 @@ An LCD doesn't make light. It controls light coming from behind:
 3. In each subpixel, a layer of liquid crystal twists that light. The voltage on the subpixel sets how much it twists.
 4. A second polarizing filter, turned 90°, lets through only light that was twisted the right amount. So the voltage decides how much light gets out: fully, partly or not at all.
 5. A **color filter** over each subpixel makes it red, green or blue.
+
+Follow the light through the layers of one red subpixel, and turn up the voltage:
+
+<LcdCell />
 
 Because the crystals only block or pass light, an LCD uses very little power, which is why it took over battery-powered devices.
 

@@ -3,7 +3,7 @@ import { btn, inputCls, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers
 import { Panel } from "@/components/mdx/MatrixVisualizers";
 import {
   aspectRatio, bitmapToBits, blend, bresenhamFrames, colorsFor, CPP_BRESENHAM, CPP_DDA, CPP_NAIVE, ddaFrames, from565, HOUSE, HOUSE_LINES, imageSize, lineCoverage,
-  naiveFrames, pixelsFor, ppiFromDiagonal, printInches, quantize, rasterDisc, rasterize, rgbTo565, screenInches, toBinary, toHex, wrap, type LineState, type Pt,
+  naiveFrames, ddaRounded, lcdTransmission, lcdTwist, slopeKind, INDEXED_PICTURE, pixelsFor, ppiFromDiagonal, printInches, quantize, rasterDisc, rasterize, rgbTo565, screenInches, toBinary, toHex, wrap, type LineState, type Pt,
 } from "@/lib/graphics";
 
 /* ============================================================
@@ -766,7 +766,21 @@ function LineGrid({ s, ox, oy, cols, rows }: { s: LineState; ox: number; oy: num
           return <rect key={`${c},${r}`} x={c * cell} y={r * cell} width={cell} height={cell} strokeWidth={0.5} className={`stroke-border ${isLatest ? "fill-neon/80" : on ? "fill-mint/70" : "fill-transparent"}`} />;
         }),
       )}
+      {s.candidates?.map(([cx, cy], i) => (
+        <rect
+          key={`cand${i}`}
+          x={X(cx) - cell / 2 + 1.5}
+          y={Y(cy) - cell / 2 + 1.5}
+          width={cell - 3}
+          height={cell - 3}
+          fill="none"
+          strokeWidth={2}
+          strokeDasharray={s.chosen === i ? undefined : "3 2"}
+          className={s.chosen === undefined ? "stroke-violet" : s.chosen === i ? "stroke-neon" : "stroke-muted-foreground/50"}
+        />
+      ))}
       <line x1={X(s.from[0])} y1={Y(s.from[1])} x2={X(s.to[0])} y2={Y(s.to[1])} className="stroke-orange" strokeWidth={1.5} />
+      {s.midpoint && <circle cx={X(s.midpoint[0])} cy={Y(s.midpoint[1])} r={3} className="fill-violet" />}
       {s.exact && <circle cx={X(s.exact[0])} cy={Y(s.exact[1])} r={3.5} className="fill-sky" />}
       {Array.from({ length: cols }, (_, c) =>
         c % every(cols) === 0 ? (
@@ -809,7 +823,7 @@ export function LineStepper({ algorithm, from = [5, 4], to = [12, 7] }: { algori
       frames={frames}
       code={[...algo.code]}
       codeLabel="C++"
-      legend={[["bg-orange", "ideal line"], ["bg-sky", "exact point"], ["bg-neon", "just lit"], ["bg-mint", "lit"]]}
+      legend={algorithm === "bresenham" ? [["bg-orange", "ideal line"], ["bg-violet", "the two choices and their midpoint"], ["bg-neon", "just lit"], ["bg-mint", "lit"]] : [["bg-orange", "ideal line"], ["bg-sky", "exact point"], ["bg-neon", "just lit"], ["bg-mint", "lit"]]}
       render={(s) => (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] items-start">
           <LineGrid s={s} ox={ox} oy={oy} cols={cols} rows={rows} />
@@ -896,6 +910,256 @@ export function InteractiveVsPassive() {
         </div>
       </div>
       <p className="text-sm text-muted-foreground">Both move. Only one listens to you. That two-way loop, input in and a new picture out, is what makes graphics interactive.</p>
+    </Panel>
+  );
+}
+
+/* ---------------------- second round of visualizers ---------------------- */
+
+/** The layers of one LCD subpixel. The voltage untwists the crystal, and the second polarizer blocks the light. */
+export function LcdCell() {
+  const [v, setV] = useState(0);
+  const twist = lcdTwist(v);
+  const out = lcdTransmission(v);
+  // angle of the light's vibration after each layer, in degrees from vertical
+  const layers: [string, string, number | null, number][] = [
+    ["Backlight", "white light, vibrating every way", null, 1],
+    ["Polarizer 1", "only vertical vibration gets through", 0, 1],
+    ["Liquid crystal", `twists the light by ${fmt(twist, 0)}°`, twist, 1],
+    ["Polarizer 2", "only horizontal vibration gets through", 90, out],
+    ["Color filter", "keeps only red for this subpixel", 90, out],
+  ];
+  return (
+    <Panel title="Inside one subpixel">
+      <div className="grid grid-cols-5 gap-2 max-w-xl">
+        {layers.map(([name, what, angle, light], i) => (
+          <div key={name} className="flex flex-col items-center gap-1 text-center">
+            <svg viewBox="0 0 60 60" className="w-full max-w-[64px]" role="img" aria-label={`${name}: ${what}`}>
+              <rect x={4} y={4} width={52} height={52} rx={3} className={i === 4 ? "fill-orange/20 stroke-orange" : "fill-transparent stroke-border"} />
+              {angle === null ? (
+                [0, 45, 90, 135].map((a) => <line key={a} x1={30} y1={12} x2={30} y2={48} transform={`rotate(${a} 30 30)`} className="stroke-foreground/60" strokeWidth={2} />)
+              ) : light > 0.02 ? (
+                <line x1={30} y1={12} x2={30} y2={48} transform={`rotate(${angle} 30 30)`} className={i === 4 ? "stroke-orange" : "stroke-sky"} strokeWidth={3} style={{ opacity: 0.25 + 0.75 * light }} />
+              ) : (
+                <text x={30} y={35} textAnchor="middle" className="fill-muted-foreground font-mono text-[10px]">blocked</text>
+              )}
+            </svg>
+            <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground leading-tight">{name}</span>
+          </div>
+        ))}
+      </div>
+      <label className="flex flex-wrap items-center gap-3">
+        <span className={label}>Voltage</span>
+        <input type="range" min={0} max={100} value={v * 100} onChange={(e) => setV(Number(e.target.value) / 100)} className={range} aria-label="Voltage on the subpixel" />
+        <span className="font-mono text-sm">{Math.round(v * 100)}%</span>
+        <span className="inline-block h-6 w-6 border border-border" style={{ background: `rgb(${Math.round(255 * out)},${Math.round(40 * out)},${Math.round(40 * out)})` }} aria-hidden />
+        <span className="font-mono text-sm">lets through {Math.round(out * 100)}%</span>
+      </label>
+      <p className="text-sm text-muted-foreground">
+        With no voltage, the crystal turns the light a full 90°, so it lines up with the second polarizer and passes. Raise the voltage and the crystal untwists, the light stays closer to vertical, and the second polarizer blocks more of it.
+      </p>
+    </Panel>
+  );
+}
+
+const PALETTES: [string, [number, number, number][]][] = [
+  ["Day", [[126, 184, 255], [255, 255, 255], [255, 214, 64], [80, 170, 90]]],
+  ["Night", [[20, 24, 60], [90, 100, 140], [245, 245, 220], [30, 70, 50]]],
+  ["Autumn", [[255, 190, 140], [255, 240, 220], [255, 120, 40], [170, 90, 40]]],
+];
+
+/** Each pixel stores a palette index. Change one palette entry and every pixel pointing at it changes. */
+export function IndexedPalette() {
+  const [palette, setPalette] = useState(PALETTES[0][1]);
+  const [pick, setPick] = useState<[number, number]>([1, 1]);
+  const css = (c: number[]) => `rgb(${c.join(",")})`;
+  const index = INDEXED_PICTURE[pick[1]][pick[0]];
+  const rows = INDEXED_PICTURE.length;
+  const cols = INDEXED_PICTURE[0].length;
+  return (
+    <Panel title="Indexed color">
+      <div className="flex flex-wrap items-start gap-8">
+        <div>
+          <div className={`${label} mb-1`}>The picture</div>
+          <PixelGrid cols={cols} rows={rows} cell={30} label="A small indexed picture" onCell={(c, r) => setPick([c, r])} fill={(c, r) => ({ color: css(palette[INDEXED_PICTURE[r][c]]) })}>
+            <rect x={pick[0] * 30 + 1} y={pick[1] * 30 + 1} width={28} height={28} fill="none" className="stroke-neon" strokeWidth={2} />
+          </PixelGrid>
+        </div>
+        <div>
+          <div className={`${label} mb-1`}>What's stored</div>
+          <div className="font-mono text-[13px] leading-[1.45]">
+            {INDEXED_PICTURE.map((row, r) => (
+              <div key={r}>
+                {row.map((v, c) => (
+                  <span key={c} className={c === pick[0] && r === pick[1] ? "text-neon" : v === index ? "text-foreground" : "text-muted-foreground"}>
+                    {v}{" "}
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className={`${label} mb-1`}>Palette</div>
+          <table className="font-mono text-xs border-collapse">
+            <tbody>
+              {palette.map((c, i) => (
+                <tr key={i} className={i === index ? "bg-neon/10" : ""}>
+                  <td className="py-0.5 pr-2">{i}</td>
+                  <td className="py-0.5 pr-2">
+                    <span className="inline-block h-4 w-6 border border-border align-middle" style={{ background: css(c) }} />
+                  </td>
+                  <td className="py-0.5">({c.join(", ")})</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={label}>Swap palette</span>
+        {PALETTES.map(([name, p]) => (
+          <button key={name} type="button" className={`${btn} ${p === palette ? "border-foreground" : ""}`} onClick={() => setPalette(p)} aria-pressed={p === palette}>
+            {name}
+          </button>
+        ))}
+      </div>
+      <p className="text-sm text-muted-foreground">
+        The picked pixel stores <span className="text-neon font-mono">{index}</span>, which is a row number. Swap the palette and the picture changes completely, but not one stored number does. Old games used this trick to fade to night or flash colors without redrawing anything.
+      </p>
+    </Panel>
+  );
+}
+
+const KIND_TEXT: Record<string, string> = {
+  horizontal: "Horizontal: Δy = 0, so m = 0. Step along x.",
+  vertical: "Vertical: Δx = 0, so m is undefined (division by zero). Step along y.",
+  gentle: "Gentle: |m| < 1, it moves more across than up. Step along x, one pixel per column.",
+  diagonal: "Diagonal: |m| = 1, a 45° line. x and y both move by 1 every step.",
+  steep: "Steep: |m| > 1, it moves more up than across. Step along y, one pixel per row.",
+};
+
+/** Pick two endpoints and read off the rise, the run, the slope and the angle. */
+export function SlopeExplorer() {
+  const size = 12;
+  const [a, setA] = useState<Pt>([2, 2]);
+  const [b, setB] = useState<Pt>([9, 6]);
+  const [next, setNext] = useState<0 | 1>(1);
+  const cell = 24;
+  const Y = (y: number) => (size - 1 - y + 0.5) * cell;
+  const X = (x: number) => (x + 0.5) * cell;
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const kind = slopeKind(a, b);
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+  const place = (c: number, r: number) => {
+    const p: Pt = [c, size - 1 - r];
+    if (next === 0) setA(p);
+    else setB(p);
+    setNext(next === 0 ? 1 : 0);
+  };
+  return (
+    <Panel title="Rise over run" legend={[["bg-mint", "run Δx"], ["bg-sky", "rise Δy"], ["bg-orange", "the line"]]}>
+      <div className="grid gap-5 md:grid-cols-[auto_1fr] items-start">
+        <svg viewBox={`0 0 ${size * cell} ${size * cell}`} className="w-full max-w-[288px] block" role="img" aria-label={`Line from (${a[0]}, ${a[1]}) to (${b[0]}, ${b[1]})`}>
+          {Array.from({ length: size }, (_, r) =>
+            Array.from({ length: size }, (_, c) => (
+              <rect key={`${c},${r}`} x={c * cell} y={r * cell} width={cell} height={cell} strokeWidth={0.8} className="stroke-border fill-background/0 hover:fill-neon/15 cursor-pointer" onClick={() => place(c, r)} />
+            )),
+          )}
+          <line x1={X(a[0])} y1={Y(a[1])} x2={X(b[0])} y2={Y(a[1])} className="stroke-mint" strokeWidth={2.5} strokeDasharray="5 3" />
+          <line x1={X(b[0])} y1={Y(a[1])} x2={X(b[0])} y2={Y(b[1])} className="stroke-sky" strokeWidth={2.5} strokeDasharray="5 3" />
+          <line x1={X(a[0])} y1={Y(a[1])} x2={X(b[0])} y2={Y(b[1])} className="stroke-orange pointer-events-none" strokeWidth={2.5} />
+          {[a, b].map(([x, y], i) => (
+            <g key={i} className="pointer-events-none">
+              <circle cx={X(x)} cy={Y(y)} r={6} className={i === next ? "fill-neon" : "fill-foreground"} />
+              <text x={x > size - 4 ? X(x) - 9 : X(x) + 9} y={y > size - 2 ? Y(y) + 16 : Y(y) - 7} textAnchor={x > size - 4 ? "end" : "start"} className="fill-foreground font-mono text-[10px]">
+                P{i + 1}({x},{y})
+              </text>
+            </g>
+          ))}
+        </svg>
+        <div className="flex flex-col gap-3">
+          <div className="font-mono text-sm leading-relaxed">
+            Δx = {b[0]} − {a[0]} = <span className="text-mint">{dx}</span>
+            <br />
+            Δy = {b[1]} − {a[1]} = <span className="text-sky">{dy}</span>
+            <br />
+            m = Δy / Δx = {dx === 0 ? <span className="text-orange">undefined</span> : <>{dy}/{dx} = <span className="text-orange">{fmt(dy / dx)}</span></>}
+            <br />
+            angle = {fmt(angle, 1)}°
+          </div>
+          <p className="text-sm">{KIND_TEXT[kind]}</p>
+          <p className="text-xs text-muted-foreground">Click the grid to move P{next + 1}, the highlighted point. Clicks alternate between the two.</p>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** The same DDA line with the slope kept exact and with it rounded to one decimal place first. */
+export function RoundingDrift() {
+  const [which, setWhich] = useState<"gentle" | "steep">("gentle");
+  const [from, to]: [Pt, Pt] = which === "gentle" ? [[5, 4], [12, 7]] : [[5, 7], [10, 15]];
+  const exact = useMemo(() => ddaFrames(from, to), [which]); // eslint-disable-line react-hooks/exhaustive-deps
+  const exactPts = exact[exact.length - 1].state.plotted;
+  const rounded = ddaRounded(from, to, 1);
+  const cols = Math.max(from[0], to[0]) + 2 - (from[0] - 1);
+  const rows = Math.max(from[1], to[1]) + 2 - (Math.min(from[1], to[1]) - 1);
+  const ox = from[0] - 1;
+  const oy = Math.min(from[1], to[1]) - 1;
+  const cell = 22;
+  const X = (x: number) => (x - ox + 0.5) * cell;
+  const Y = (y: number) => (rows - 1 - (y - oy) + 0.5) * cell;
+  const differs = (i: number) => exactPts[i][0] !== rounded.plot[i][0] || exactPts[i][1] !== rounded.plot[i][1];
+  const grid = (pts: Pt[], tone: string, title: string) => (
+    <div>
+      <div className={`${label} mb-1`}>{title}</div>
+      <svg viewBox={`0 0 ${cols * cell} ${rows * cell}`} className="w-full max-w-[260px] block" role="img" aria-label={`${title}: ${pts.map((p) => `(${p[0]}, ${p[1]})`).join(" ")}`}>
+        {Array.from({ length: rows }, (_, r) =>
+          Array.from({ length: cols }, (_, c) => {
+            const x = ox + c;
+            const y = oy + rows - 1 - r;
+            const i = pts.findIndex((p) => p[0] === x && p[1] === y);
+            return <rect key={`${c},${r}`} x={c * cell} y={r * cell} width={cell} height={cell} strokeWidth={0.5} className={`stroke-border ${i < 0 ? "fill-transparent" : differs(i) ? "fill-orange/80" : tone}`} />;
+          }),
+        )}
+        <line x1={X(from[0])} y1={Y(from[1])} x2={X(to[0])} y2={Y(to[1])} className="stroke-foreground/70" strokeWidth={1.2} />
+      </svg>
+    </div>
+  );
+  return (
+    <Panel title="Round the slope, move the line" legend={[["bg-mint", "same pixel"], ["bg-orange", "different pixel"]]}>
+      <Toggle value={which} options={[["gentle", "(5,4) → (12,7)"], ["steep", "(5,7) → (10,15)"]]} onChange={(v) => setWhich(v as typeof which)} />
+      <div className="grid grid-cols-2 gap-4 max-w-xl">
+        {grid(exactPts, "fill-mint/70", which === "gentle" ? "Exact: y += 3/7" : "Exact: x += 5/8")}
+        {grid(rounded.plot, "fill-mint/70", which === "gentle" ? "Rounded: y += 0.4" : "Rounded: x += 0.6")}
+      </div>
+      <table className="font-mono text-xs border-collapse">
+        <thead>
+          <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">
+            <th className="text-left py-1 pr-4">k</th>
+            <th className="text-left py-1 pr-4">exact</th>
+            <th className="text-left py-1">rounded</th>
+          </tr>
+        </thead>
+        <tbody>
+          {exactPts.map((p, i) => (
+            <tr key={i} className={`border-b border-border/50 ${differs(i) ? "text-orange" : ""}`}>
+              <td className="py-1 pr-4">{i}</td>
+              <td className="py-1 pr-4">
+                {fmt(exact[exact.length - 1].state.rows[i][which === "gentle" ? "y" : "x"])} → ({p[0]}, {p[1]})
+              </td>
+              <td className="py-1">
+                {fmt(rounded.exact[i])} → ({rounded.plot[i][0]}, {rounded.plot[i][1]})
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-sm text-muted-foreground">
+        The rounded increment is wrong by a little every step, and DDA adds it again and again, so the error grows along the line until a pixel flips. Longer lines drift further.
+      </p>
     </Panel>
   );
 }

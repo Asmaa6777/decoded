@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  aspectRatio, bitmapToBits, blend, bresenhamFrames, colorsFor, ddaFrames, from565, HOUSE, HOUSE_LINES, imageSize, lastPlotted, lineCoverage, naiveFrames,
+  aspectRatio, bitmapToBits, blend, bresenhamFrames, colorsFor, ddaFrames, ddaRounded, lcdTransmission, lcdTwist, slopeKind, from565, HOUSE, HOUSE_LINES, imageSize, lastPlotted, lineCoverage, naiveFrames,
   pixelsFor, ppiFromDiagonal, printInches, quantize, rasterDisc, rasterize, rgbTo565, roundHalfUp, screenInches, wrap, type Pt,
 } from "@/lib/graphics";
 
@@ -189,5 +189,38 @@ describe("Bresenham", () => {
         expect(Math.max(Math.abs(pts[i][0] - pts[i - 1][0]), Math.abs(pts[i][1] - pts[i - 1][1]))).toBe(1);
       }
     }
+  });
+});
+
+describe("second-round helpers", () => {
+  it("shows Bresenham's two choices and the midpoint at each decision", () => {
+    const frames = bresenhamFrames([20, 10], [30, 18]);
+    const first = frames.find((f) => f.state.candidates)!.state;
+    expect(first.candidates).toEqual([[21, 10], [21, 11]]);
+    expect(first.midpoint).toEqual([21, 10.5]);
+    const decided = frames.find((f) => f.state.chosen !== undefined)!.state;
+    expect(decided.chosen).toBe(1);
+    const steep = bresenhamFrames([0, 0], [2, 6]).find((f) => f.state.candidates)!.state;
+    expect(steep.candidates).toEqual([[0, 1], [1, 1]]);
+  });
+  it("reproduces the notes' rounded-slope DDA and its wrong pixel", () => {
+    const r = ddaRounded([5, 4], [12, 7], 1);
+    expect(r.exact.map((v) => Number(v.toFixed(1)))).toEqual([4, 4.4, 4.8, 5.2, 5.6, 6, 6.4, 6.8]);
+    expect(r.plot[6]).toEqual([11, 6]);
+    expect(lastPlotted(ddaFrames([5, 4], [12, 7]))[6]).toEqual([11, 7]);
+    expect(ddaRounded([5, 7], [10, 15], 1).plot[4]).toEqual([7, 11]);
+  });
+  it("classifies slopes", () => {
+    expect(slopeKind([0, 0], [5, 2])).toBe("gentle");
+    expect(slopeKind([0, 0], [3, 3])).toBe("diagonal");
+    expect(slopeKind([0, 0], [2, 7])).toBe("steep");
+    expect(slopeKind([0, 4], [6, 4])).toBe("horizontal");
+    expect(slopeKind([3, 0], [3, 5])).toBe("vertical");
+  });
+  it("passes light with no voltage and blocks it at full voltage", () => {
+    expect(lcdTransmission(0)).toBeCloseTo(1);
+    expect(lcdTransmission(1)).toBeCloseTo(0);
+    expect(lcdTransmission(0.5)).toBeCloseTo(0.5);
+    expect(lcdTwist(0.25)).toBe(67.5);
   });
 });
