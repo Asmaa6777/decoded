@@ -30,18 +30,18 @@ Decoded tries to draw that map. Every lesson answers one question:
 | --- | --- | --- |
 | [Theory of Computation](https://decoded.stack42.tech/courses/theory-of-computation) | Available | 17, across Foundations, Finite Automata and Context-Free Languages |
 | [Algorithm Design & Analysis](https://decoded.stack42.tech/courses/algorithm-design-and-analysis) | Available | 14, from Big-O through sorting, searching, graphs, greedy and DP |
-| [Advanced Algorithms & Analysis](https://decoded.stack42.tech/courses/advanced-algorithms) | Available | 25, from recurrences and hashing through red-black trees, shortest paths and P vs NP |
+| [Advanced Algorithms & Analysis](https://decoded.stack42.tech/courses/advanced-algorithms) | Available | 24, from recurrences and hashing through red-black trees, shortest paths and P vs NP |
 | [Computational Mathematics](https://decoded.stack42.tech/courses/computational-mathematics) | Available | 27, across matrices, polynomials, number theory and cryptography, in MATLAB with Python and ML links |
 | [Computer Organization](https://decoded.stack42.tech/courses/computer-organization) | Available | 10, a top-down tour of the CPU, buses, memory and storage |
 | [Logic Design](https://decoded.stack42.tech/courses/logic-design) | Available | 23, from gates and K-maps to latches, flip-flops and a memory unit, with live circuits |
 | [Microprocessors](https://decoded.stack42.tech/courses/microprocessors) | Available | 12, real 8086 assembly with a step-through simulator |
 | [Computer Architecture](https://decoded.stack42.tech/courses/computer-architecture) | Available | 15, instruction sets, cache, virtual memory, I/O, pipelines and parallelism |
+| [Operating Systems](https://decoded.stack42.tech/courses/operating-systems) | Available | 17, from system calls and processes through synchronization, CPU scheduling and virtual memory, with Linux and Java threads labs |
 | [Discrete Mathematics](https://decoded.stack42.tech/courses/discrete-mathematics) | Available | 23, across logic, sets, proof, counting, graphs and probability, with interactive truth tables, relations and proofs |
 | [Data Structures](https://decoded.stack42.tech/courses/data-structures) | Available | 16, from arrays and linked lists through hash maps, heaps, tries and union-find, in Python with Java and C++ |
 | [Computer Networks](https://decoded.stack42.tech/courses/computer-networks) | Available | 13, from layers and packets through subnets, routing, TCP, congestion control, DNS and HTTPS |
 | [Computer Literacy](https://decoded.stack42.tech/courses/computer-literacy) | Available | 3 |
 | [The Exam Mind](https://decoded.stack42.tech/courses/the-exam-mind) | Available | 4 |
-| Operating Systems | Coming soon | |
 | Distributed Systems | Coming soon | |
 
 Lessons mix reading with step-through visualizers, practicals and end-of-module quizzes. Progress is saved in your browser, and signing in with GitHub or Google is optional if you want it to follow you between devices.
