@@ -41,7 +41,7 @@ export default function Courses() {
             </section>
           )}
 
-          {mine.length === 0 && <LearningPaths />}
+          <LearningPaths />
 
           <p className="mb-6 font-mono text-xs text-muted-foreground">
             Rather start from something you already use?{" "}
