@@ -746,36 +746,39 @@ const ALGOS = {
   bresenham: { title: "Bresenham's line", frames: bresenhamFrames, code: CPP_BRESENHAM },
 } as const;
 
-function LineGrid({ s, cols, rows }: { s: LineState; cols: number; rows: number }) {
+function LineGrid({ s, ox, oy, cols, rows }: { s: LineState; ox: number; oy: number; cols: number; rows: number }) {
   const cell = Math.min(24, 420 / cols);
-  // maths convention: y grows upwards, so row 0 is drawn at the bottom
-  const Y = (y: number) => (rows - 1 - y + 0.5) * cell;
-  const X = (x: number) => (x + 0.5) * cell;
+  // maths convention: y grows upwards, so the lowest row is drawn at the bottom.
+  // The grid covers x = ox … ox + cols − 1 and y = oy … oy + rows − 1, just around the line.
+  const Y = (y: number) => (rows - 1 - (y - oy) + 0.5) * cell;
+  const X = (x: number) => (x - ox + 0.5) * cell;
   const lit = new Set(s.plotted.map(([x, y]) => `${x},${y}`));
   const latest = s.plotted[s.plotted.length - 1];
+  const every = (n: number) => (n > 16 ? 2 : 1);
   return (
     <svg viewBox={`-16 0 ${cols * cell + 16} ${rows * cell + 16}`} className="w-full block" style={{ maxWidth: cols * cell + 16 }} role="img" aria-label={`Pixels lit so far: ${s.plotted.map((p) => `(${p[0]}, ${p[1]})`).join(" ")}`}>
       {Array.from({ length: rows }, (_, r) =>
         Array.from({ length: cols }, (_, c) => {
-          const y = rows - 1 - r;
-          const on = lit.has(`${c},${y}`);
-          const isLatest = latest && latest[0] === c && latest[1] === y && !s.done;
+          const x = ox + c;
+          const y = oy + rows - 1 - r;
+          const on = lit.has(`${x},${y}`);
+          const isLatest = latest && latest[0] === x && latest[1] === y && !s.done;
           return <rect key={`${c},${r}`} x={c * cell} y={r * cell} width={cell} height={cell} strokeWidth={0.5} className={`stroke-border ${isLatest ? "fill-neon/80" : on ? "fill-mint/70" : "fill-transparent"}`} />;
         }),
       )}
       <line x1={X(s.from[0])} y1={Y(s.from[1])} x2={X(s.to[0])} y2={Y(s.to[1])} className="stroke-orange" strokeWidth={1.5} />
       {s.exact && <circle cx={X(s.exact[0])} cy={Y(s.exact[1])} r={3.5} className="fill-sky" />}
       {Array.from({ length: cols }, (_, c) =>
-        c % (cols > 16 ? 2 : 1) === 0 ? (
-          <text key={`x${c}`} x={X(c)} y={rows * cell + 11} textAnchor="middle" className="fill-muted-foreground font-mono text-[8px]">
-            {c}
+        c % every(cols) === 0 ? (
+          <text key={`x${c}`} x={X(ox + c)} y={rows * cell + 11} textAnchor="middle" className="fill-muted-foreground font-mono text-[8px]">
+            {ox + c}
           </text>
         ) : null,
       )}
-      {Array.from({ length: rows }, (_, y) =>
-        y % (rows > 16 ? 2 : 1) === 0 ? (
-          <text key={`y${y}`} x={-4} y={Y(y) + 3} textAnchor="end" className="fill-muted-foreground font-mono text-[8px]">
-            {y}
+      {Array.from({ length: rows }, (_, r) =>
+        r % every(rows) === 0 ? (
+          <text key={`y${r}`} x={-4} y={Y(oy + r) + 3} textAnchor="end" className="fill-muted-foreground font-mono text-[8px]">
+            {oy + r}
           </text>
         ) : null,
       )}
@@ -789,8 +792,11 @@ export function LineStepper({ algorithm, from = [5, 4], to = [12, 7] }: { algori
   const [pts, setPts] = useState<[Pt, Pt]>([from, to]);
   const [text, setText] = useState([from[0], from[1], to[0], to[1]].map(String));
   const frames = useMemo(() => algo.frames(pts[0], pts[1]), [algo, pts]);
-  const cols = Math.max(pts[0][0], pts[1][0]) + 2;
-  const rows = Math.max(pts[0][1], pts[1][1]) + 2;
+  // one spare pixel around the line, and never fewer than 8 across, so small lines aren't huge
+  const ox = Math.max(0, Math.min(pts[0][0], pts[1][0]) - 1);
+  const oy = Math.max(0, Math.min(pts[0][1], pts[1][1]) - 1);
+  const cols = Math.max(8, Math.max(pts[0][0], pts[1][0]) + 2 - ox);
+  const rows = Math.max(8, Math.max(pts[0][1], pts[1][1]) + 2 - oy);
   const apply = () => {
     const v = text.map(Number);
     if (v.every((n) => Number.isInteger(n) && n >= 0 && n <= 30)) setPts([[v[0], v[1]], [v[2], v[3]]]);
@@ -806,7 +812,7 @@ export function LineStepper({ algorithm, from = [5, 4], to = [12, 7] }: { algori
       legend={[["bg-orange", "ideal line"], ["bg-sky", "exact point"], ["bg-neon", "just lit"], ["bg-mint", "lit"]]}
       render={(s) => (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] items-start">
-          <LineGrid s={s} cols={cols} rows={rows} />
+          <LineGrid s={s} ox={ox} oy={oy} cols={cols} rows={rows} />
           <table className="font-mono text-xs border-collapse">
             <thead>
               <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">
