@@ -1,0 +1,65 @@
+import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { VectorVsRaster } from "@/components/mdx/GraphicsVisualizers";
+
+# Raster and Vector Images
+
+There are two fundamentally different ways to store a picture, and they mirror the two kinds of display from the [last lessons](/courses/computer-graphics/random-scan).
+
+- A **raster image** (or **bitmap**) is a grid of pixels, each with a stored color. It's a frame buffer saved to a file.
+- A **vector image** is a list of shapes described by mathematics: points, lines, curves and fills. It's a display file saved to a file.
+
+A raster circle is "these 200 pixels are green". A vector circle is "a circle with center (8, 8) and radius 8, filled green". Same picture on screen, completely different contents.
+
+## Zoom in
+
+Here's one circle stored both ways. Zoom in on its edge:
+
+<VectorVsRaster />
+
+The vector edge stays perfectly smooth at every zoom, because the computer recalculates the circle from its equation at the new size. The raster only has its 256 pixels, so zooming just makes each pixel bigger until the staircase shows.
+
+This is the whole difference in one picture: **vectors scale without losing quality; rasters don't**.
+
+## Raster images
+
+Every photo is a raster, because a camera sensor is itself a grid that records one color per pixel.
+
+**Good at:** rich detail, subtle color changes and texture, which is exactly what photos need. Any image editor can open and change them, and every pixel can be edited on its own.
+
+**Bad at:** scaling up. Enlarge a raster and it either turns blocky or gets smoothed into blur, since no new detail can appear from nowhere. And quality costs space: more pixels or more [bit depth](/courses/computer-graphics/bit-depth) means a bigger file.
+
+**Formats:** JPEG, PNG, GIF, BMP, TIFF, WebP.
+
+## Vector images
+
+A vector file stores shapes as math, like $(x - 8)^2 + (y - 8)^2 = 8^2$ for the circle, plus a color for each shape.
+
+**Good at:** scaling to any size with perfect edges, so one logo file works on a business card and a billboard. Files are usually small, since a shape takes a few numbers whatever its size. Each shape stays separate and easy to change.
+
+**Bad at:** photographs. Describing every subtle shade of a face with shapes would take an enormous number of them, so vectors suit flat colors and clean lines.
+
+**Formats:** SVG, EPS, AI, and PDF (which can hold both kinds).
+
+## Converting between them
+
+**Rasterizing**, vector to raster, is easy and happens constantly: the screen is a raster, so every vector shape is turned into pixels to be shown. That is [scan conversion](/courses/computer-graphics/crt-and-raster-scan#scan-conversion-and-the-display-processor) again, and the rest of this course is about how it's done for lines.
+
+**Vectorizing** (or **tracing**), raster to vector, is hard. Software such as Adobe Illustrator's Image Trace has to guess where the shapes are, and it works well only on simple, high-contrast pictures like logos and line art. Designers convert artwork to vectors before printing on large objects because of this one-way street.
+
+<Callout tone="orange" label="Resolution means different things">
+"Resolution" only describes rasters. A vector has no pixels, so it has no resolution until the moment it's rasterized, and then it gets whatever resolution the screen or printer has.
+</Callout>
+
+<ApplicationsGrid>
+<PracticalApplication title="Icons and logos" tool="SVG">
+Website icons and logos are SVG so they stay sharp on every screen density, from a cheap monitor to a phone.
+</PracticalApplication>
+<PracticalApplication title="Fonts" tool="TrueType, OpenType">
+Every letter you're reading is a vector outline, rasterized at whatever size and density your screen needs.
+</PracticalApplication>
+<PracticalApplication title="Photos" tool="JPEG, HEIC, PNG">
+Cameras and phones save rasters, because a sensor is a grid and photos are all subtle detail.
+</PracticalApplication>
+</ApplicationsGrid>
+
+That completes the hardware and image types. [Test yourself](/courses/computer-graphics/displays-quiz) on this module.

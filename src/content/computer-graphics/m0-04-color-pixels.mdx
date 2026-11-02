@@ -1,0 +1,67 @@
+import { Callout, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { RgbMixer, AlphaBlend } from "@/components/mdx/GraphicsVisualizers";
+
+# Color Pixels: RGB, High Color and Alpha
+
+A grayscale pixel needs one number, its brightness. A color pixel needs three, because screens make every color by mixing three lights: **red, green and blue**, or **RGB**. Full red and full green with no blue looks yellow. All three at full strength look white. All three off is black.
+
+## 24-bit true color
+
+The common format gives each of the three channels one byte, 0 to 255, so each pixel takes 3 bytes, or 24 bits. That's **24-bit true color**. Each channel has 256 levels, so the number of colors is
+
+$$
+256 \times 256 \times 256 = 2^{24} = 16{,}777{,}216
+$$
+
+Mix a pixel yourself. Each channel shows its value in decimal, binary and [hexadecimal](/courses/logic-design/number-systems#why-programmers-love-hex):
+
+<RgbMixer />
+
+The six-digit code under the swatch is the same 3 bytes written in hex, two digits per channel. That's the `#FF8040` notation you write in CSS and pick in design tools: red `FF` = 255, green `80` = 128, blue `40` = 64.
+
+## 16-bit high color: 5, 6 and 5 bits
+
+Memory used to be expensive, so many systems stored a color pixel in just 2 bytes, 16 bits. That's **high color**, with $2^{16} = 65{,}536$ colors. Sixteen bits don't split evenly into three, so the usual layout is **5-6-5**: 5 bits of red, 6 of green and 5 of blue.
+
+$$
+2^5 \times 2^6 \times 2^5 = 32 \times 64 \times 32 = 65{,}536
+$$
+
+Green gets the extra bit because human eyes are most sensitive to green, so that's where extra precision is noticed most. In the mixer above, the right-hand swatch shows your color after it's been squeezed into 5-6-5 and expanded back. Most colors return slightly off, because the low bits of each channel were thrown away.
+
+<Callout tone="orange" label="Check your arithmetic">
+65,536 is $256 \times 256$, but that's a coincidence of the numbers, not how high color works. It isn't 256 levels of two channels. It's 32 × 64 × 32 across all three.
+</Callout>
+
+## 32-bit color: adding alpha
+
+**32-bit color** is 24-bit RGB plus a fourth byte called **alpha**, which stores transparency instead of color. Alpha 255 is fully **opaque** (you can't see through it), 0 is fully **transparent** (invisible), and anything from 1 to 254 is semi-transparent.
+
+When a pixel with alpha is drawn on top of something, the result is a weighted mix of the two:
+
+$$
+\text{result} = \frac{\alpha}{255} \times \text{new color} + \left(1 - \frac{\alpha}{255}\right) \times \text{background}
+$$
+
+Drag the alpha down and watch the orange square fade into the blue one behind it:
+
+<AlphaBlend />
+
+At alpha 128, about half of each color shows through. Since a 32-bit pixel is 4 bytes, it also lines up neatly in memory, which is one reason graphics hardware likes it even when nothing is transparent.
+
+<PracticalApplication title="Transparent images and overlays" tool="PNG, CSS rgba(), video compositing">
+A PNG logo with no box around it, `rgba(0, 0, 0, 0.5)` in CSS, a subtitle drawn over video: all of them are this blend, computed for every pixel. GPUs run it billions of times a second, the same calculation on many pixels at once, which is [SIMD](/courses/computer-architecture/parallel-processing#simd-one-instruction-many-values) at its most useful.
+</PracticalApplication>
+
+## The whole family
+
+| Format | Bytes per pixel | What the bits mean |
+|---|---|---|
+| 1-bit | ⅛ | on or off |
+| 8-bit grayscale | 1 | one brightness, 0 to 255 |
+| 8-bit indexed | 1 | which of 256 palette colors |
+| 16-bit high color | 2 | red 5, green 6, blue 5 |
+| 24-bit true color | 3 | red, green, blue, a byte each |
+| 32-bit true color + alpha | 4 | red, green, blue, alpha |
+
+That middle column is the key to the [next lesson](/courses/computer-graphics/image-size): multiply it by the number of pixels and you have the size of the image.

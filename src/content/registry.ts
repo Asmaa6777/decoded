@@ -226,6 +226,26 @@ const NetQuiz3 = lesson(() => import("@/content/computer-networks/m3-04-transpor
 const NetDns = lesson(() => import("@/content/computer-networks/m4-01-dns.mdx"));
 const NetHttp = lesson(() => import("@/content/computer-networks/m4-02-http-and-https.mdx"));
 const NetFinalQuiz = lesson(() => import("@/content/computer-networks/m4-03-final-quiz.mdx"));
+const CgIntro = lesson(() => import("@/content/computer-graphics/m0-01-what-is-computer-graphics.mdx"));
+const CgGrid = lesson(() => import("@/content/computer-graphics/m0-02-pixels-and-the-image-grid.mdx"));
+const CgDepth = lesson(() => import("@/content/computer-graphics/m0-03-bit-depth.mdx"));
+const CgColor = lesson(() => import("@/content/computer-graphics/m0-04-color-pixels.mdx"));
+const CgSize = lesson(() => import("@/content/computer-graphics/m0-05-image-size.mdx"));
+const CgImagesQuiz = lesson(() => import("@/content/computer-graphics/m0-06-images-quiz.mdx"));
+const CgPpi = lesson(() => import("@/content/computer-graphics/m1-01-ppi-and-dpi.mdx"));
+const CgScreens = lesson(() => import("@/content/computer-graphics/m1-02-screen-resolution.mdx"));
+const CgResolutionQuiz = lesson(() => import("@/content/computer-graphics/m1-03-resolution-quiz.mdx"));
+const CgCrt = lesson(() => import("@/content/computer-graphics/m2-01-crt-and-raster-scan.mdx"));
+const CgRandom = lesson(() => import("@/content/computer-graphics/m2-02-random-scan.mdx"));
+const CgPanels = lesson(() => import("@/content/computer-graphics/m2-03-flat-panels.mdx"));
+const CgRasterVector = lesson(() => import("@/content/computer-graphics/m2-04-raster-and-vector-images.mdx"));
+const CgDisplaysQuiz = lesson(() => import("@/content/computer-graphics/m2-05-displays-quiz.mdx"));
+const CgCoords = lesson(() => import("@/content/computer-graphics/m3-01-pixel-coordinates.mdx"));
+const CgAliasing = lesson(() => import("@/content/computer-graphics/m3-02-aliasing.mdx"));
+const CgSlope = lesson(() => import("@/content/computer-graphics/m3-03-slope-and-the-line-equation.mdx"));
+const CgDda = lesson(() => import("@/content/computer-graphics/m3-04-dda.mdx"));
+const CgBresenham = lesson(() => import("@/content/computer-graphics/m3-05-bresenham.mdx"));
+const CgLinesQuiz = lesson(() => import("@/content/computer-graphics/m3-06-lines-quiz.mdx"));
 
 import { ahmedAlghali, asmaaFarouq, type Author } from "./authors";
 
@@ -995,6 +1015,62 @@ export const courses: Course[] = [
           { slug: "dns", title: "DNS", duration: "14 min", Component: NetDns },
           { slug: "http-and-https", title: "HTTP and HTTPS", duration: "16 min", Component: NetHttp },
           { slug: "final-quiz", title: "Quiz: Loading a Page, End to End", duration: "10 min", kind: "quiz", Component: NetFinalQuiz },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "computer-graphics",
+    title: "Computer Graphics",
+    tagline: "How a screen turns numbers into pictures, one pixel at a time.",
+    description:
+      "Pixels, color depth and image size, resolution and pixel density, how CRT, LCD and LED displays light a picture, raster against vector images, and the algorithms that decide which pixels a straight line should light. Sweep a CRT beam, mix a pixel's bytes, zoom into jaggies and step through DDA and Bresenham pixel by pixel.",
+    accent: "sky",
+    status: "available",
+    authors: [ahmedAlghali],
+    modules: [
+      {
+        title: "Pixels and Color",
+        blurb: "What an image is made of, how many colors a pixel can hold, and how much memory that takes.",
+        lessons: [
+          { slug: "what-is-computer-graphics", title: "What Computer Graphics Is", duration: "8 min", Component: CgIntro },
+          { slug: "pixels-and-the-image-grid", title: "Pixels and the Image Grid", duration: "9 min", Component: CgGrid },
+          { slug: "bit-depth", title: "Bit Depth: How Many Shades a Pixel Holds", duration: "11 min", Component: CgDepth },
+          { slug: "color-pixels", title: "Color Pixels: RGB, High Color and Alpha", duration: "11 min", Component: CgColor },
+          { slug: "image-size", title: "How Much Memory an Image Needs", duration: "10 min", Component: CgSize },
+          { slug: "images-quiz", title: "Quiz: Pixels and Color", duration: "8 min", kind: "quiz", Component: CgImagesQuiz },
+        ],
+      },
+      {
+        title: "Resolution",
+        blurb: "Pixels per inch on paper and on screens, and why the same image can be a postcard or a poster.",
+        lessons: [
+          { slug: "ppi-and-dpi", title: "Resolution: PPI and DPI", duration: "9 min", Component: CgPpi },
+          { slug: "screen-resolution", title: "Screen Resolution and Pixel Density", duration: "10 min", Component: CgScreens },
+          { slug: "resolution-quiz", title: "Quiz: Resolution", duration: "6 min", kind: "quiz", Component: CgResolutionQuiz },
+        ],
+      },
+      {
+        title: "Displays and Image Types",
+        blurb: "How CRTs, LCDs, LEDs and plasma light pixels, and the two ways to store a picture.",
+        lessons: [
+          { slug: "crt-and-raster-scan", title: "The CRT and the Raster Scan", duration: "12 min", Component: CgCrt },
+          { slug: "random-scan", title: "Random Scan Displays", duration: "8 min", Component: CgRandom },
+          { slug: "flat-panels", title: "Flat Panels: LCD, LED and Plasma", duration: "11 min", Component: CgPanels },
+          { slug: "raster-and-vector-images", title: "Raster and Vector Images", duration: "10 min", Component: CgRasterVector },
+          { slug: "displays-quiz", title: "Quiz: Displays and Image Types", duration: "8 min", kind: "quiz", Component: CgDisplaysQuiz },
+        ],
+      },
+      {
+        title: "Drawing Lines",
+        blurb: "Naming pixels, why diagonal lines get jagged, and three algorithms that choose a line's pixels.",
+        lessons: [
+          { slug: "pixel-coordinates", title: "Pixel Coordinates", duration: "8 min", Component: CgCoords },
+          { slug: "aliasing", title: "Aliasing and Antialiasing", duration: "10 min", Component: CgAliasing },
+          { slug: "slope-and-the-line-equation", title: "Slope and the Line Equation", duration: "12 min", Component: CgSlope },
+          { slug: "dda", title: "The DDA Line Algorithm", duration: "14 min", Component: CgDda },
+          { slug: "bresenham", title: "Bresenham's Line Algorithm", duration: "14 min", Component: CgBresenham },
+          { slug: "lines-quiz", title: "Quiz: Drawing Lines", duration: "12 min", kind: "quiz", Component: CgLinesQuiz },
         ],
       },
     ],

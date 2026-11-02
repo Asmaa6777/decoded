@@ -1,0 +1,58 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { SubpixelZoom, BacklightDemo } from "@/components/mdx/GraphicsVisualizers";
+
+# Flat Panels: LCD, LED and Plasma
+
+A CRT is deep and heavy because the electron beam needs room to travel and bend. Flat panels drop the beam altogether. Every pixel sits in a fixed spot and is switched directly. The four display types you need to know are the CRT from the [earlier lesson](/courses/computer-graphics/crt-and-raster-scan), and the three below.
+
+All of them make color the same way: each pixel is split into three **subpixels**, red, green and blue, set to different brightnesses. They're too small to see one by one, so your eye blends them into a single color.
+
+<SubpixelZoom />
+
+## LCD: liquid crystal display
+
+A **liquid crystal** is a strange material: it flows like a liquid, but its molecules line up in an orderly pattern like a crystal. And an electric voltage can change how they line up.
+
+An LCD doesn't make light. It controls light coming from behind:
+
+1. A **backlight** shines white light at the back of the panel.
+2. A polarizing filter lets through only light waves vibrating in one direction.
+3. In each subpixel, a layer of liquid crystal twists that light. The voltage on the subpixel sets how much it twists.
+4. A second polarizing filter, turned 90°, lets through only light that was twisted the right amount. So the voltage decides how much light gets out: fully, partly or not at all.
+5. A **color filter** over each subpixel makes it red, green or blue.
+
+Because the crystals only block or pass light, an LCD uses very little power, which is why it took over battery-powered devices.
+
+## "LED" screens are LCDs
+
+Here's the part notes often blur. Most screens sold as **"LED TVs"** are LCDs that use **light-emitting diodes** as their backlight instead of older fluorescent tubes. An LED is a small semiconductor that emits light when current passes through it. There are two ways to arrange them behind an LCD panel:
+
+- **Edge LED**: a row of LEDs along the edges of the screen, with a light guide that spreads their light across the back of the panel. Thin and cheap.
+- **Direct LED**: LEDs spread in a grid directly behind the panel. Thicker, but zones can be dimmed separately (**local dimming**), so dark parts of the picture get dark backlight.
+
+Switch between them on a night scene with a bright moon:
+
+<BacklightDemo />
+
+The liquid crystals can't block all the light behind them. With edge lighting, the whole panel is lit, so black areas glow gray. Direct lighting turns down the LEDs behind the dark sky and gets much deeper blacks.
+
+<Callout tone="orange" label="Watch the claims">
+"LED uses more power than LCD" is a mix-up. An LED-backlit LCD usually uses less power than the old fluorescent-backlit kind. Screens where every pixel is its own LED, with no backlight at all, are a different technology: **OLED** in phones and TVs, and large LED video walls in stadiums. Those can switch a pixel fully off for perfect black.
+</Callout>
+
+## Plasma
+
+A **plasma display** (also called a **gas-discharge display**) is a flat panel made of millions of tiny sealed cells, each holding a little neon and xenon gas. A voltage across a cell turns its gas into plasma, which gives off ultraviolet light. That ultraviolet hits a red, green or blue phosphor coating inside the cell, and the phosphor glows. It's the same glowing phosphor as a CRT, lit by gas instead of a beam. Each pixel is three such cells.
+
+Plasma screens made their own light, so they had deep blacks and wide viewing angles. They were also heavy, power-hungry and hard to make small, and LCD and OLED have replaced them.
+
+## Side by side
+
+| | Makes its own light? | Strengths | Weaknesses |
+|---|---|---|---|
+| CRT | yes (phosphor) | fast response, deep blacks | deep, heavy, flickers |
+| LCD | no, needs a backlight | thin, low power, cheap | blacks glow gray, narrower viewing angles |
+| LED-backlit LCD | no, LED backlight | thinner, local dimming (direct) | still an LCD |
+| Plasma | yes (gas + phosphor) | deep blacks, wide angles | heavy, high power, discontinued |
+
+Every one of these is a raster display: a grid of pixels refreshed from a frame buffer. The [next lesson](/courses/computer-graphics/raster-and-vector-images) turns from screens to the two ways of storing the images they show.

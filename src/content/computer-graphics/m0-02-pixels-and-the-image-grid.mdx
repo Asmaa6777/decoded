@@ -1,0 +1,52 @@
+import { Callout, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { RowWidth } from "@/components/mdx/GraphicsVisualizers";
+
+# Pixels and the Image Grid
+
+A digital image is a rectangle of pixels, arranged in rows and columns like squares on graph paper. Each pixel holds a number (or a few numbers) that says what color it is. That's the whole idea. This lesson is about the two questions it raises: how big is the grid, and how does a computer know where one row ends?
+
+## Dimensions: width × height
+
+An image's size in pixels is written **width × height**, columns first. A 640 × 480 image has 640 pixels in every row and 480 rows. Multiply them to get the total:
+
+$$
+640 \times 480 = 307{,}200 \text{ pixels}
+$$
+
+Cameras quote the total in **megapixels**, millions of pixels. A 2048 × 1536 photo has $2048 \times 1536 = 3{,}145{,}728$ pixels, so it's sold as 3.1 megapixels.
+
+<Callout tone="sky" label="Pixels don't have a size">
+A pixel is a position in a grid, not a length. A 640 × 480 image looks small on a sharp phone and big on an old monitor, because each device draws its pixels at a different size. How many pixels fit in an inch is called resolution, and it gets [its own lesson](/courses/computer-graphics/ppi-and-dpi).
+</Callout>
+
+## A bitmap
+
+The simplest way to store an image is to write down the value of every pixel in order. This is called a **bitmap** (or **raster image**): a matrix of tiny dots, one entry per pixel. A grayscale photo is literally a [matrix](/courses/computational-mathematics/matrices-and-matlab) of brightness numbers.
+
+Memory, though, isn't a grid. It's [one long row of bytes](/courses/data-structures/arrays-and-memory#memory-is-one-long-array). So the grid gets flattened: the first row of pixels, then the second row straight after it, and so on. This is **row-major order**, the same layout a [two-dimensional array](/courses/data-structures/arrays-and-memory#two-dimensional-arrays) uses.
+
+To find pixel (x, y) in that long line, skip y whole rows and then x more pixels:
+
+$$
+\text{position} = y \times \text{width} + x
+$$
+
+## Why the file must store its dimensions
+
+Here's the catch. Once the grid is flattened, the pixel values alone don't say where each row ends. The file needs extra information about itself, called **metadata** ("data about data"): at least the width and height, and also the format and the number of bits per pixel.
+
+Without the right width, the picture still has all the right pixels, just in the wrong places. Below is a one-bit image of a house, stored as 144 bits. Change the width and watch what happens to the same bits:
+
+<RowWidth />
+
+At 12 pixels per row, the true width, the house appears. At 11, each row takes one pixel too few, so every row starts one pixel earlier than it should and the picture slides sideways into a slant. At 13 it slants the other way. Nothing in the data changed. Only the instruction for reading it did.
+
+<Callout tone="orange" label="You've seen this bug">
+A video or image that shows up as diagonal stripes or a sheared, smeared mess is usually this exact mistake: a program reading pixels with the wrong row width. Some formats also pad each row to a multiple of 4 bytes, and forgetting the padding causes the same slant.
+</Callout>
+
+<PracticalApplication title="Image editing" tool="Every image library">
+When code asks for `image[y][x]` or `pixels[y * width + x]`, it's doing the row-major arithmetic above. Filters like blur or brightness are loops over that array.
+</PracticalApplication>
+
+So far each pixel has been on or off. The [next lesson](/courses/computer-graphics/bit-depth) asks how many shades a pixel can hold, and what that costs.

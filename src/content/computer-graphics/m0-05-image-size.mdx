@@ -1,0 +1,88 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { ImageSizeCalculator } from "@/components/mdx/GraphicsVisualizers";
+
+# How Much Memory an Image Needs
+
+Every pixel takes a fixed number of bits, so the size of an uncompressed image is just multiplication. This is one of the most common exam calculations in the subject, and it's easy once you do it in the same order every time.
+
+## The method
+
+1. **Count the pixels:** width × height.
+2. **Count the bits:** pixels × bits per pixel.
+3. **Convert to bytes:** divide by 8.
+4. **Convert to kilobytes:** divide by 1024.
+5. **Convert to megabytes:** divide by 1024 again.
+
+Why 1024 and not 1000? Memory sizes go up in [powers of two](/courses/computer-organization/bits-and-bytes#how-much-is-a-lot), and $2^{10} = 1024$ is the closest one to a thousand. Use 1024 unless a question tells you otherwise.
+
+Steps 2 and 3 are often combined. For a 24-bit image you can go straight to bytes with "pixels × 3", since 24 bits is 3 bytes. That's the shortcut many notes use, but it only works when the bit depth is a whole number of bytes.
+
+## Worked example: one picture, four depths
+
+Take a 640 × 480 image. It has $640 \times 480 = 307{,}200$ pixels.
+
+**1-bit (binary):**
+
+$$
+307{,}200 \text{ bits} \div 8 = 38{,}400 \text{ bytes} \div 1024 = 37.5 \text{ KB}
+$$
+
+**8-bit (grayscale):** one byte per pixel.
+
+$$
+307{,}200 \text{ bytes} \div 1024 = 300 \text{ KB}
+$$
+
+**24-bit (true color):** three bytes per pixel.
+
+$$
+307{,}200 \times 3 = 921{,}600 \text{ bytes} \div 1024 = 900 \text{ KB}
+$$
+
+**32-bit (true color with alpha):** four bytes per pixel.
+
+$$
+307{,}200 \times 4 = 1{,}228{,}800 \text{ bytes} \div 1024 = 1200 \text{ KB}
+$$
+
+Notice the pattern: the 8-bit image is 8 times the 1-bit one, and the 24-bit image is 3 times the 8-bit one. Size grows in direct proportion to bit depth.
+
+## Worked example: a camera photo
+
+A photo 1200 pixels wide and 800 high, in true color:
+
+$$
+\begin{aligned}
+1200 \times 800 &= 960{,}000 \text{ pixels} \\
+960{,}000 \times 3 &= 2{,}880{,}000 \text{ bytes} \\
+2{,}880{,}000 \div 1024 &= 2812.5 \text{ KB} \\
+2812.5 \div 1024 &\approx 2.75 \text{ MB}
+\end{aligned}
+$$
+
+And a big one, 4700 × 3133:
+
+$$
+\begin{aligned}
+4700 \times 3133 &= 14{,}725{,}100 \text{ pixels} \\
+14{,}725{,}100 \times 3 &= 44{,}175{,}300 \text{ bytes} \\
+44{,}175{,}300 \div 1024 &\approx 43{,}140 \text{ KB} \\
+43{,}140 \div 1024 &\approx 42.13 \text{ MB}
+\end{aligned}
+$$
+
+<Callout tone="orange" label="Round at the end">
+Keep full precision until the last step. Rounding 43,139.94 KB down to 43,140 early is harmless here, but chopping numbers mid-calculation is how answers drift. The exact result, 42.129 MB, rounds to 42.13, not 42.12.
+</Callout>
+
+## Try your own
+
+Pick a preset or type a size. Every step of the method is shown, so you can check your working line by line:
+
+<ImageSizeCalculator />
+
+## Uncompressed means "before compression"
+
+These numbers are what the image takes in memory while it's being displayed or edited, and in uncompressed formats like BMP. A JPEG or PNG of the same photo is usually much smaller on disk, because those formats compress the pixel data. But the screen can't show compressed pixels: before it's drawn, the file gets decoded back to the full size you calculated here. That memory has to exist somewhere, and the [frame buffer](/courses/computer-graphics/crt-and-raster-scan#the-frame-buffer) is where it lives.
+
+That ends the pixels-and-color module. [Test yourself](/courses/computer-graphics/images-quiz) before moving on to resolution.

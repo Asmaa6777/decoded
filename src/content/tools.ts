@@ -137,4 +137,14 @@ export const tools: Tool[] = [
       { course: "microprocessors", lesson: "stack-and-procedures", mentions: "stack" },
     ],
   },
+  {
+    name: "Images, screens and game graphics",
+    what: "Why a photo takes megabytes, what 1080p and PPI mean, why SVG logos stay sharp and what MSAA does.",
+    lessons: [
+      { course: "computer-graphics", lesson: "image-size", mentions: "JPEG" },
+      { course: "computer-graphics", lesson: "screen-resolution", mentions: "1080p" },
+      { course: "computer-graphics", lesson: "raster-and-vector-images", mentions: "SVG" },
+      { course: "computer-graphics", lesson: "aliasing", mentions: "MSAA" },
+    ],
+  },
 ];

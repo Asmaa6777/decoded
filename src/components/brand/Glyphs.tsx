@@ -119,6 +119,13 @@ const COURSE_GLYPHS: Record<string, (p: IconProps) => JSX.Element> = {
       <path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18" />
     </svg>
   ),
+  // a diagonal line drawn as pixel steps
+  "computer-graphics": ({ className }) => (
+    <svg {...base} className={className}>
+      <rect x="3" y="3" width="18" height="18" rx="1" />
+      <path d="M6 18h3v-3h3v-3h3V9h3V6" />
+    </svg>
+  ),
   // target
   "the-exam-mind": ({ className }) => (
     <svg {...base} className={className}>

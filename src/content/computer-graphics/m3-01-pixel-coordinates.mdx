@@ -1,0 +1,49 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { CoordinatePicker } from "@/components/mdx/GraphicsVisualizers";
+
+# Pixel Coordinates
+
+To draw anything, a program has to name pixels: "color this one". It does that with a **coordinate system**, a rule that matches each pair of numbers to a point. In two dimensions, every point gets two numbers, its **x-coordinate** and **y-coordinate**, written (x, y).
+
+## Naming a pixel
+
+A digital image is rows and columns of pixels, so the natural name for a pixel is the column it's in and the row it's in:
+
+- **x is the column number.** Columns are counted left to right, starting at 0.
+- **y is the row number.** Rows are counted from 0 too, but from which edge depends on the system.
+
+So pixel (3, 5) is in column 3 and row 5. Column first, always: it's (x, y), not (row, column).
+
+## Two conventions for y
+
+Most graphics systems, including web pages, HTML canvas, Windows and image files, put **(0, 0) at the top-left corner** with y growing *downwards*. It matches the way a screen is scanned and the way text is read: top row first.
+
+Mathematics, and graphics libraries such as **OpenGL**, put **(0, 0) at the bottom-left** with y growing *upwards*, like the graphs you drew at school.
+
+Click a pixel, then switch conventions. The pixel stays put; its name changes:
+
+<CoordinatePicker />
+
+In a grid H rows tall, converting between the two is one subtraction:
+
+$$
+y_{\text{up}} = (H - 1) - y_{\text{down}}
+$$
+
+In the 7-row grid above, row 5 counting down is row $(7 - 1) - 5 = 1$ counting up.
+
+<Callout tone="orange" label="The classic upside-down bug">
+Load an image with a library that counts rows from the top, hand it to one that counts from the bottom, and the picture comes out upside down. Textures in OpenGL are the famous case, and the fix is that one subtraction, or a flip flag. Before you trust a coordinate, find out which convention it's in.
+</Callout>
+
+## Is a pixel a point or a square?
+
+There's one more subtlety. A pixel is a small square, but a coordinate is a point with no size. So which point of the square does (3, 5) mean?
+
+Systems differ. In some, integer coordinates are the **centers** of pixels. In others, such as HTML canvas, integer coordinates are the **grid lines between** pixels, and the center of a pixel is at a half: pixel (3, 5) covers the square from (3, 5) to (4, 6), with its center at (3.5, 5.5).
+
+This matters when you draw a line one pixel wide. On canvas, a horizontal line from (100, 100) to (120, 100) runs exactly along a grid line, so half its width falls in the row above and half in the row below. The result is a two-pixel-tall gray smear instead of a crisp black line. Draw it from (100.5, 100.5) to (120.5, 100.5) instead and it runs down the middle of one row, which comes out sharp and black. The [next lesson](/courses/computer-graphics/aliasing) explains where the gray comes from.
+
+<Callout tone="sky" label="In this course">
+The line-drawing lessons use the maths convention, y growing upwards, with integer coordinates at pixel centers, because that's how line algorithms are usually taught and how the worked examples are drawn.
+</Callout>

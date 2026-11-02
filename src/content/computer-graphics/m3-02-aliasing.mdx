@@ -1,0 +1,49 @@
+import { Callout, PracticalApplication } from "@/components/mdx/MdxComponents";
+import { AntialiasDemo } from "@/components/mdx/GraphicsVisualizers";
+
+# Aliasing and Antialiasing
+
+Suppose you want a straight line one pixel wide. A mathematical line has no thickness at all, so it would be invisible; what you really mean is a thin strip, one pixel across. If the strip is horizontal or vertical, it fills a row or column of pixels exactly. But tilt it, and it covers some pixels completely, some halfway, some just at a corner.
+
+A pixel can't be half black. So what do you do with the pixels the line only partly covers?
+
+## Aliasing: all or nothing
+
+The simplest rule is to test each pixel once, at its center: if the center is inside the line, color it black; if not, leave it white. Every pixel is all or nothing. Tilt the line below and watch the result:
+
+<AntialiasDemo />
+
+The diagonal line turns into a staircase. Each time the line crosses from one row of pixels to the next, it jumps a whole pixel, leaving a step called a **dogleg**. These stair steps are called **jaggies**, and the effect is called **aliasing** (or stair-stepping). You see it on diagonal lines, around curves, on the edges of letters, and along any boundary between two colors that isn't horizontal or vertical.
+
+The name comes from the fact that the ideal picture uses real-number coordinates, but the screen has only whole pixels. Many different real points get rounded to the same pixel, so they all become "aliases", different names for one pixel.
+
+## Antialiasing: partial coverage, partial color
+
+**Antialiasing** is any technique that makes the jaggies less visible. The idea: when a shape only partly covers a pixel, color the pixel with a *mix* of the shape's color and the background's, in proportion to how much is covered. A black line on white that covers 40% of a pixel makes that pixel 40% gray.
+
+Switch the demo above to **Antialiased**. Now each pixel is tested at 16 evenly spaced points instead of one, and its darkness is the fraction of those points inside the line. Up close the line looks blurry and gray at the edges. From a normal distance, your eye averages those grays into a smooth, straight edge.
+
+Calculating the exact covered area for every pixel would be slow, so real systems approximate it. Sampling several points per pixel and averaging, as above, is called **supersampling**.
+
+<Callout tone="orange" label="Antialiasing doesn't fix the cause">
+Antialiasing doesn't add pixels or detail. It trades crisp, jagged edges for slightly soft, smooth-looking ones. The line is still made of whole pixels; they're just shaded more cleverly. Look closely enough and you'll always see them.
+</Callout>
+
+## Back to the canvas line
+
+This explains the puzzle at the end of the [last lesson](/courses/computer-graphics/pixel-coordinates). On HTML canvas, which antialiases, a one-pixel horizontal line drawn along a grid line covers half of two rows. Each of those pixels is 50% covered, so both rows turn 50% gray: a fuzzy two-pixel line. Shift the line half a pixel so it runs down the middle of one row, and that row is 100% covered and comes out solid black. (The pixels at the very ends are still gray, because the line only reaches halfway into them.)
+
+## Three ways to fight jaggies
+
+1. **Raise the resolution.** Smaller pixels make smaller steps. This is why text on a phone at 400+ PPI hardly needs antialiasing, while the same text on an old 90 PPI monitor does.
+2. **Antialias while drawing.** Shade partly covered pixels by coverage, as above.
+3. **Filter afterwards.** Blur the finished image slightly, for example with a Gaussian blur, to soften the steps. Cheap, but it softens everything else too.
+
+<PracticalApplication title="Games" tool="MSAA, FXAA, TAA">
+The antialiasing options in a game's settings are these ideas at speed. MSAA tests several sample points per pixel along edges (supersampling, done selectively). FXAA and TAA are post-processing filters that find edges in the finished frame and smooth them, cheaper but blurrier.
+</PracticalApplication>
+<PracticalApplication title="Text" tool="Font rendering">
+Every font on your screen is antialiased. Some systems go further and set the red, green and blue [subpixels](/courses/computer-graphics/flat-panels) separately, tripling the horizontal detail for letter edges.
+</PracticalApplication>
+
+Antialiasing decides how to shade pixels. But first something has to decide *which* pixels a line passes through. That's the job of a line-drawing algorithm, and the [next lesson](/courses/computer-graphics/slope-and-the-line-equation) builds the first one from the equation of a line.
