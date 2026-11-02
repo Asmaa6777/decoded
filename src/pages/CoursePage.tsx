@@ -51,9 +51,10 @@ export default function CoursePage() {
               {course.description}
             </p>
 
-            {course.authors && <CourseAuthors authors={course.authors} />}
-
-            <CoursePrerequisites courseSlug={course.slug} />
+            <div className="mt-8 grid gap-6 sm:grid-cols-[auto_1fr] sm:gap-x-14 empty:hidden">
+              {course.authors && <CourseAuthors authors={course.authors} />}
+              <CoursePrerequisites courseSlug={course.slug} />
+            </div>
             {total > 0 && <CourseRegistration course={course} />}
           </div>
         </header>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { SignInDialog } from "@/components/AccountButton";
+import { CourseGlyph } from "@/components/brand/Glyphs";
 import { ProgressBackup } from "@/components/ProgressBackup";
 import {
   AlertDialog,
@@ -23,6 +24,10 @@ import { leaveCourse, registerForCourse } from "@/lib/progressSync";
 
 const accentBg: Record<string, string> = {
   neon: "bg-neon", orange: "bg-orange", sky: "bg-sky", violet: "bg-violet", mint: "bg-mint",
+};
+
+const accentText: Record<string, string> = {
+  neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
 };
 
 const REGISTER_PARAM = "register";
@@ -195,21 +200,24 @@ export function CoursePrerequisites({ courseSlug }: { courseSlug: string }) {
   const required = prerequisites[courseSlug];
   if (!required) return null;
   return (
-    <div className="mt-8">
+    <div>
       <div className="font-mono text-[11px] tracking-widest uppercase text-muted-foreground mb-3">
         Helps to know first
       </div>
-      <ul className="flex flex-wrap gap-2">
-        {required.map((slug) => (
-          <li key={slug}>
-            <Link
-              to={`/courses/${slug}`}
-              className="block border border-border px-3 py-2 font-display font-bold hover:border-foreground/40 transition-colors"
-            >
-              {getCourse(slug)?.title}
-            </Link>
-          </li>
-        ))}
+      <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 min-h-10">
+        {required.map((slug) => {
+          const course = getCourse(slug);
+          return (
+            <li key={slug}>
+              <Link to={`/courses/${slug}`} className="group flex items-center gap-2 font-body text-[15px] text-foreground/90">
+                <CourseGlyph slug={slug} className={`h-4 w-4 shrink-0 ${accentText[course?.accent]}`} />
+                <span className="underline decoration-border underline-offset-4 group-hover:decoration-foreground transition-colors">
+                  {course?.title}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

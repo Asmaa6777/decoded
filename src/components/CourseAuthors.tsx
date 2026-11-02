@@ -2,7 +2,7 @@ import type { Author } from "@/content/authors";
 
 export function CourseAuthors({ authors }: { authors: Author[] }) {
   return (
-    <div className="mt-8">
+    <div>
       <div className="font-mono text-[11px] tracking-widest uppercase text-muted-foreground mb-3">
         Authored by
       </div>
