@@ -29,12 +29,23 @@ Switch between the two modes and compare. The raster beam crosses every position
 | Beam path | every row, top to bottom, every frame | only along the lines in the picture |
 | Stores | a frame buffer: one value per pixel | a display file: a list of line commands |
 | Lines look | jagged on diagonals (stair steps) | perfectly smooth |
-| Can show | anything: photos, shading, filled areas | lines only, no realistic shaded scenes |
+| Can show | anything: realistic images, millions of colors, shading and shadows | lines only, no realistic shaded scenes |
 | Refresh time | fixed, whatever is on screen | grows with the number of lines |
-| Resolution | limited by the frame buffer | high, since lines are drawn directly |
-| Cost | cheap, uses TV technology | expensive |
+| Resolution | lower, limited by the frame buffer | high, since lines are drawn directly |
+| Memory | a whole frame buffer | only the display file |
 
 The key trade-off: **random scan draws lines beautifully but can't fill areas**, so it can't show a photo or a realistic scene. A very complicated drawing also has so many lines that the beam can't trace them all fast enough, and the picture flickers. Raster scan can show anything, at the cost of jagged diagonal edges.
+
+As exam answers, the usual lists are:
+
+- **Raster, advantages:** realistic images, millions of colors, shadows and shaded scenes are possible.
+- **Raster, disadvantages:** lower resolution, and expensive.
+- **Random, advantages:** the beam goes only where the picture is, smooth line drawings, high resolution.
+- **Random, disadvantages:** can't display realistic shaded scenes.
+
+<Callout tone="orange" label="Which one is expensive?">
+Raster is listed as expensive because of its frame buffer: one value for every pixel on the screen was a lot of memory when memory was costly. A random-scan display stores only a short list of lines, but needs precise, fast beam-steering hardware, so each was expensive for a different reason. Once memory got cheap, raster became the cheap option, since the rest of it is ordinary TV technology.
+</Callout>
 
 <Callout tone="sky" label="Why raster won">
 Real pictures are full of filled areas, shading and texture, and memory got cheap. Once a frame buffer was affordable, raster could do everything vector could and much more, so random-scan displays survive only in history and in the oscilloscope on a lab bench. The idea didn't die, though: a display file is a [vector image](/courses/computer-graphics/raster-and-vector-images), and those are everywhere.

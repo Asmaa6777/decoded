@@ -98,6 +98,30 @@ Reverse it, (8, 10) to (3, 5): now $\Delta x = \Delta y = -5$, so both increment
 
 $\Delta y = 0$, so $m = 0$. There are 7 steps, x goes up by 1 and y by 0: (2, 2), (3, 2), … (9, 2), 8 pixels in all. A vertical line works the same way with the roles swapped, which the naive algorithm couldn't do at all.
 
+## Example 5: (2, 2) to (8, 5), and a homework line
+
+Some notes present this exact method under the name "naive line-drawing algorithm": find $\Delta x$ and $\Delta y$, take $\text{steps} = \max(\lvert\Delta x\rvert, \lvert\Delta y\rvert)$, divide to get the increments, and keep adding them. Whatever the name, it's DDA, and it's worked the same way.
+
+From (2, 2) to (8, 5): $\Delta x = 6$, $\Delta y = 3$, so 6 steps, $x_{\text{inc}} = 6/6 = 1$ and $y_{\text{inc}} = 3/6 = 0.5$.
+
+| k | x | y (exact) | pixel |
+|---|---|---|---|
+| 0 | 2 | 2 | (2, 2) |
+| 1 | 3 | 2.5 | (3, 3) |
+| 2 | 4 | 3 | (4, 3) |
+| 3 | 5 | 3.5 | (5, 4) |
+| 4 | 6 | 4 | (6, 4) |
+| 5 | 7 | 4.5 | (7, 5) |
+| 6 | 8 | 5 | (8, 5) |
+
+<Callout tone="orange" label="A point is not a pixel">
+Listing the answer as (3, 2.5), (5, 3.5) and so on gives points on the true line, not pixels: there is no pixel at y = 2.5. The last step is always to round each point to the pixel you light. With halves rounded up, (3, 2.5) becomes (3, 3).
+</Callout>
+
+Now try (3, 1) to (9, 6) yourself before reading on, or enter `3 1 9 6` in the stepper above.
+
+$\Delta x = 6$ and $\Delta y = 5$, so 6 steps, $x_{\text{inc}} = 1$ and $y_{\text{inc}} = 5/6 \approx 0.833$. The y values are 1, 1.833, 2.667, 3.5, 4.333, 5.167 and 6, so the pixels are (3, 1), (4, 2), (5, 3), (6, 4), (7, 4), (8, 5) and (9, 6).
+
 ## What DDA still gets wrong
 
 DDA is simple and gap-free, but it isn't perfect:

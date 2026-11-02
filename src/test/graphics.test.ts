@@ -160,6 +160,9 @@ describe("DDA, the five practice problems", () => {
     expect(frames[frames.length - 1].state.rows.map((r) => r.y)).toEqual([2, 2.5, 3, 3.5, 4, 4.5, 5]);
     expect(ys(lastPlotted(frames))).toEqual([2, 3, 3, 4, 4, 5, 5]);
   });
+  it("the homework line from the notes, (3,1) to (9,6)", () => {
+    expect(lastPlotted(ddaFrames([3, 1], [9, 6]))).toEqual([[3, 1], [4, 2], [5, 3], [6, 4], [7, 4], [8, 5], [9, 6]]);
+  });
   it("a single point", () => {
     expect(lastPlotted(ddaFrames([4, 4], [4, 4]))).toEqual([[4, 4]]);
   });
