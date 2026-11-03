@@ -5,7 +5,7 @@ import { SubpixelZoom, BacklightDemo, LcdCell } from "@/components/mdx/GraphicsV
 
 A CRT is deep and heavy because the electron beam needs room to travel and bend. Flat panels drop the beam altogether. Every pixel sits in a fixed spot and is switched directly. The four display types you need to know are the CRT from the [earlier lesson](/courses/computer-graphics/crt-and-raster-scan), and the three below.
 
-All of them make color the same way: each pixel is split into three **subpixels**, red, green and blue, set to different brightnesses. They're too small to see one by one, so your eye blends them into a single color.
+All of them make color the same way: each pixel is split into three **subpixels**, red, green and blue, set to different brightnesses. They're too small to see one by one, so your eye blends them into a single color. A 1920 × 1080 screen has $1920 \times 1080 = 2{,}073{,}600$ pixels, so $2{,}073{,}600 \times 3 = 6{,}220{,}800$ subpixels, each set separately.
 
 <SubpixelZoom />
 
@@ -16,7 +16,7 @@ A **liquid crystal** is a strange material: it flows like a liquid, but its mole
 An LCD doesn't make light. It controls light coming from behind:
 
 1. A **backlight** shines white light at the back of the panel.
-2. A polarizing filter lets through only light waves vibrating in one direction.
+2. A **polarizing filter** lets through only light waves vibrating in one direction. Picture a fence with vertical slots: a rope shaken up and down passes through, a rope shaken side to side doesn't.
 3. In each subpixel, a layer of liquid crystal twists that light. The voltage on the subpixel sets how much it twists.
 4. A second polarizing filter, turned 90°, lets through only light that was twisted the right amount. So the voltage decides how much light gets out: fully, partly or not at all.
 5. A **color filter** over each subpixel makes it red, green or blue.
@@ -29,7 +29,7 @@ Because the crystals only block or pass light, an LCD uses very little power, wh
 
 ## "LED" screens are LCDs
 
-Here's the part notes often blur. Most screens sold as **"LED TVs"** are LCDs that use **light-emitting diodes** as their backlight instead of older fluorescent tubes. An LED is a small semiconductor that emits light when current passes through it. LEDs are tiny, so a display can be built by arranging many of them, which is why they're used in TVs, phones and traffic lights. Behind an LCD, there are two ways to arrange them behind an LCD panel:
+Here's the part notes often blur. Most screens sold as **"LED TVs"** are LCDs that use **light-emitting diodes** as their backlight instead of older fluorescent tubes. An LED is a small **semiconductor**, a material like the silicon in chips whose electrical behavior can be controlled, that emits light when current passes through it. LEDs are tiny, so a display can be built by arranging many of them, which is why they're used in TVs, phones and traffic lights. There are two ways to arrange them behind an LCD panel:
 
 - **Edge LED**: a row of LEDs along the edges of the screen, with a light guide that spreads their light across the back of the panel. Thin and cheap.
 - **Direct LED**: LEDs spread in a grid directly behind the panel. Thicker, but zones can be dimmed separately (**local dimming**), so dark parts of the picture get dark backlight.
@@ -46,9 +46,9 @@ The liquid crystals can't block all the light behind them. With edge lighting, t
 
 ## Plasma
 
-A **plasma display** (also called a **gas-discharge display**) is a flat panel made of millions of tiny sealed cells, each holding a little neon and xenon gas. A voltage across a cell turns its gas into plasma, which gives off ultraviolet light. That ultraviolet hits a red, green or blue phosphor coating inside the cell, and the phosphor glows. It's the same glowing phosphor as a CRT, lit by gas instead of a beam. Each pixel is three such cells.
+A **plasma display** (also called a **gas-discharge display**) is a flat panel made of millions of tiny sealed cells, each holding a little neon and xenon gas. A voltage across a cell turns its gas into **plasma**, gas so energized that it conducts electricity and gives off light, here mostly **ultraviolet**, light just beyond violet that our eyes can't see. That ultraviolet hits a red, green or blue phosphor coating inside the cell, and the phosphor glows. It's the same glowing phosphor as a CRT, lit by gas instead of a beam. Each pixel is three such cells.
 
-Plasma screens made their own light, so they had deep blacks and wide viewing angles. They were also heavy, power-hungry and hard to make small, and LCD and OLED have replaced them.
+Plasma screens made their own light, so they had deep blacks and wide **viewing angles**: the picture kept its colors even when seen from far to the side. They were also heavy, power-hungry and hard to make small, and LCD and OLED have replaced them.
 
 ## Side by side
 

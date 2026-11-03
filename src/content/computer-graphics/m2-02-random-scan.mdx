@@ -11,7 +11,7 @@ A raster display sweeps every row whether there's anything there or not. A **ran
 
 A random-scan system doesn't store pixels. It stores a list of drawing commands, called the **display file** (or display list): "line from (2, 13) to (13, 13)", "line from (13, 13) to (13, 6)", and so on.
 
-1. The application program describes the picture to a graphics package.
+1. The application program describes the picture to a **graphics package**, a library of ready-made drawing functions.
 2. The graphics package translates it into line commands and stores them as the display file in memory.
 3. The **display processor** reads the display file, one command at a time, and steers the beam along each line.
 4. When it reaches the end of the list, it jumps back to the first command and traces everything again, to refresh the phosphor.
@@ -48,7 +48,7 @@ Raster is listed as expensive because of its frame buffer: one value for every p
 </Callout>
 
 <Callout tone="sky" label="Why raster won">
-Real pictures are full of filled areas, shading and texture, and memory got cheap. Once a frame buffer was affordable, raster could do everything vector could and much more, so random-scan displays survive only in history and in the oscilloscope on a lab bench. The idea didn't die, though: a display file is a [vector image](/courses/computer-graphics/raster-and-vector-images), and those are everywhere.
+Real pictures are full of filled areas, shading and texture, and memory got cheap. Once a frame buffer was affordable, raster could do everything vector could and much more, so random-scan displays survive only in history and in the **oscilloscope**, a lab instrument that draws an electrical signal as a moving line. The idea didn't die, though: a display file is a [vector image](/courses/computer-graphics/raster-and-vector-images), and those are everywhere.
 </Callout>
 
 The [next lesson](/courses/computer-graphics/flat-panels) leaves the tube behind for the flat screens that replaced it.

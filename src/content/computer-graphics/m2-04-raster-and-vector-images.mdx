@@ -10,6 +10,8 @@ There are two fundamentally different ways to store a picture, and they mirror t
 
 A raster circle is "these 200 pixels are green". A vector circle is "a circle with center (8, 8) and radius 8, filled green". Same picture on screen, completely different contents.
 
+The sizes show the difference. Stored as a 16 × 16 true-color raster, the circle takes $16 \times 16 \times 3 = 768$ bytes. To print it sharply 1600 pixels across, the raster needs $1600 \times 1600 \times 3 = 7{,}680{,}000$ bytes, about 7.3 MB. The vector is the same few numbers, a center, a radius and a color, whatever size it's drawn.
+
 ## Zoom in
 
 Here's one circle stored both ways. Zoom in on its edge:
@@ -38,16 +40,18 @@ A vector file stores shapes as math, like $(x - 8)^2 + (y - 8)^2 = 8^2$ for the 
 
 **Bad at:** photographs. Describing every subtle shade of a face with shapes would take an enormous number of them, so vectors suit flat colors and clean lines.
 
-**Formats:** SVG, EPS, AI, and PDF (which can hold both kinds).
+**Formats:** SVG (Scalable Vector Graphics, the web's format), EPS (Encapsulated PostScript, an older print format), AI (Adobe Illustrator's own files), and PDF, which can hold both kinds.
 
 ## Converting between them
 
 **Rasterizing**, vector to raster, is easy: in a design tool it's just exporting the drawing as a PNG or JPEG. It also happens constantly on its own: the screen is a raster, so every vector shape is turned into pixels to be shown. That is [scan conversion](/courses/computer-graphics/crt-and-raster-scan#scan-conversion-and-the-display-processor) again, and the rest of this course is about how it's done for lines.
 
-**Vectorizing** (or **tracing**), raster to vector, is hard. Software such as Adobe Illustrator's Image Trace has to guess where the shapes are, and it works well only on simple, high-contrast pictures like logos and line art. Designers convert artwork to vectors before printing on large objects because of this one-way street.
+**Vectorizing** (or **tracing**), raster to vector, is hard. Software such as Adobe Illustrator's Image Trace has to guess where the shapes are, and it works well only on simple, high-contrast pictures like logos and line art. Because tracing is so unreliable, designers keep logos as vectors from the start, and convert any artwork to vectors before printing it on something large.
 
 <Callout tone="orange" label="Resolution means different things">
 "Resolution" only describes rasters. A vector has no pixels, so it has no resolution until the moment it's rasterized, and then it gets whatever resolution the screen or printer has.
+
+And saving a photo as SVG or PDF doesn't make it a vector. Those files can simply wrap the same pixels, which blur just as much when enlarged.
 </Callout>
 
 <ApplicationsGrid>

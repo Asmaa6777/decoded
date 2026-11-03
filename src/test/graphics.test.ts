@@ -273,3 +273,17 @@ describe("the Module 1 worked examples added for depth", () => {
     expect(aspectRatio(3840, 2160)).toEqual([16, 9]);
   });
 });
+
+describe("the Module 2 worked examples added for depth", () => {
+  it("sizes a 1080p frame buffer and times a 60 Hz frame", () => {
+    expect(imageSize(1920, 1080, 32).bytes).toBe(8_294_400);
+    expect(imageSize(1920, 1080, 32).mb.toFixed(1)).toBe("7.9");
+    expect((1000 / 60).toFixed(1)).toBe("16.7");
+  });
+  it("counts subpixels and compares raster with vector size", () => {
+    expect(1920 * 1080 * 3).toBe(6_220_800);
+    expect(imageSize(16, 16, 24).bytes).toBe(768);
+    expect(imageSize(1600, 1600, 24).bytes).toBe(7_680_000);
+    expect(imageSize(1600, 1600, 24).mb.toFixed(1)).toBe("7.3");
+  });
+});
