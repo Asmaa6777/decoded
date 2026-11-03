@@ -42,7 +42,7 @@ A vector file stores shapes as math, like $(x - 8)^2 + (y - 8)^2 = 8^2$ for the 
 
 ## Converting between them
 
-**Rasterizing**, vector to raster, is easy and happens constantly: the screen is a raster, so every vector shape is turned into pixels to be shown. That is [scan conversion](/courses/computer-graphics/crt-and-raster-scan#scan-conversion-and-the-display-processor) again, and the rest of this course is about how it's done for lines.
+**Rasterizing**, vector to raster, is easy: in a design tool it's just exporting the drawing as a PNG or JPEG. It also happens constantly on its own: the screen is a raster, so every vector shape is turned into pixels to be shown. That is [scan conversion](/courses/computer-graphics/crt-and-raster-scan#scan-conversion-and-the-display-processor) again, and the rest of this course is about how it's done for lines.
 
 **Vectorizing** (or **tracing**), raster to vector, is hard. Software such as Adobe Illustrator's Image Trace has to guess where the shapes are, and it works well only on simple, high-contrast pictures like logos and line art. Designers convert artwork to vectors before printing on large objects because of this one-way street.
 

@@ -5,12 +5,14 @@ import { ScanDisplay } from "@/components/mdx/GraphicsVisualizers";
 
 Flat screens replaced them long ago, but the **cathode-ray tube (CRT)** is still where graphics courses start, because the way it drew a picture, one row at a time from top to bottom, became the way every display since is fed. Learn the CRT and the vocabulary of every modern screen falls out of it.
 
+Whatever its technology, the screen part of a computer is called the **display**, the **monitor** or the **video display unit (VDU)**. There are four types to know: the CRT in this lesson, and the LCD, LED and plasma panels in [a later one](/courses/computer-graphics/flat-panels).
+
 ## Inside the tube
 
 A CRT is a large sealed glass bottle with the air pumped out. Three things matter:
 
 1. **An electron gun** at the narrow back end fires a thin, focused beam of electrons. A color CRT has three guns, one each for red, green and blue.
-2. **Deflection coils** around the neck make magnetic fields that bend the beam up, down and sideways, so it can be aimed at any point on the screen.
+2. **Deflection coils** around the neck make magnetic fields that bend the beam up, down and sideways, so it can be aimed at any point on the screen. Some tubes bend it with electric fields from metal plates instead, called **electrostatic deflection**; TVs and computer monitors mostly used magnetic coils.
 3. **The screen** at the wide front end is coated on the inside with **phosphor**, a material that glows when electrons hit it. A color screen has tiny red, green and blue phosphor dots grouped together; each group is one pixel.
 
 Where the beam strikes, the phosphor lights up. Fire the beam harder and the spot glows brighter.
@@ -20,6 +22,13 @@ Where the beam strikes, the phosphor lights up. Fire the beam harder and the spo
 Phosphor doesn't glow forever. It fades within a fraction of a second after the beam leaves. How long it keeps glowing is called its **persistence**.
 
 So the picture can't be drawn once and left. The beam has to keep going back over it, redrawing it before it fades. This is **refreshing** the screen, and the number of complete redraws per second is the **refresh rate**, measured in frames per second or hertz (Hz). CRTs typically refreshed 60 to 85 times a second.
+
+Two rates describe the sweep, and notes often name both:
+
+- The **vertical refresh rate** is how many complete frames are drawn per second, top to bottom. This is the refresh rate above, such as 60 Hz.
+- The **horizontal refresh rate** (or scan rate) is how many rows are drawn per second, left to right. It's far higher, because every frame has hundreds of rows: 480 visible rows at 60 Hz is already $480 \times 60 = 28{,}800$ rows a second, and the standard 640 × 480 display ran at about 31,500, because the retrace time counts as rows too.
+
+Both rates are set together by the monitor and the graphics card driving it. Bigger, sharper screens need a faster vertical rate to stay flicker-free, so a common recommendation was at least 60 Hz at 640 × 480 and at least 85 Hz at 1600 × 1200.
 
 Too slow a refresh, and the picture visibly **flickers** as the phosphor fades between visits, which tires the eyes. Larger screens and higher resolutions need faster refresh to cover the whole surface in time.
 
@@ -55,7 +64,7 @@ The frame buffer's size follows straight from the [image size calculation](/cour
 
 A program doesn't usually think in pixels. It says "draw a line from here to there" or "fill this circle". Something has to turn those shapes into the right pixel values in the frame buffer. That conversion is called **scan conversion** (or **rasterization**), and the [line-drawing algorithms](/courses/computer-graphics/dda) at the end of this course are exactly that.
 
-To save the CPU from doing all of this, systems add a **display processor** (or graphics controller) whose whole job is scan conversion and related work: line styles, filling areas with color, and reading input devices. Today's GPU is the enormous descendant of that idea.
+To save the CPU from doing all of this, systems add a **display processor** (also called a display processing unit or graphics controller) whose whole job is scan conversion and related work: line styles, filling areas with color, and reading input devices. Today's GPU is the enormous descendant of that idea.
 
 <PracticalApplication title="Modern screens" tool="LCD, OLED, HDMI">
 Flat panels have no beam, but they're still fed exactly like this: the graphics card sends the frame buffer out one row at a time, top to bottom, 60 or more times a second. "60 Hz" on a monitor is the refresh rate, and the short gap between frames is still called vertical blanking, after the CRT's retrace. Screen tearing in games happens when the frame buffer is updated halfway through that top-to-bottom read.
