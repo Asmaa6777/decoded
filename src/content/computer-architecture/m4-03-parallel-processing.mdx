@@ -29,7 +29,7 @@ There are two common designs. An **array processor** has many processing element
 - **Multiprocessor**: several chips in one computer. In **symmetric** systems they're all equal, while in **asymmetric** systems one is in charge.
 - **Cluster**: many separate computers connected by a network. There's no shared memory, so they send messages to each other.
 
-**Hyper-threading** (simultaneous multithreading) is a cheaper trick. One physical core keeps two sets of registers, so it can look like two cores. When one thread is waiting on memory, the other can use the idle hardware. An Intel Core i7 with 8 cores can run 16 threads this way.
+**Hyper-threading** (simultaneous multithreading) is a cheaper trick. One physical core keeps two sets of registers, so it can look like two cores. When one [thread](/courses/operating-systems/lab-java-threads#programs-processes-and-threads) is waiting on memory, the other can use the idle hardware. An Intel Core i7 with 8 cores can run 16 threads this way.
 
 ## Levels of parallelism
 

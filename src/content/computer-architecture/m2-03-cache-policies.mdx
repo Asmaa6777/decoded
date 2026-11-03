@@ -9,7 +9,7 @@ import { ReplacementLab, WritePolicyLab, AmatCalculator } from "@/components/mdx
 
 When a set is full, something has to go. In a direct-mapped cache there's no choice, but in the others there is.
 
-- **LRU** (least recently used): throw out whatever hasn't been used for the longest. It's like clearing your desk of whatever you haven't touched lately.
+- **LRU** (least recently used): throw out whatever hasn't been used for the longest. It's like clearing your desk of whatever you haven't touched lately. Operating systems use the same rule for [page replacement](/courses/operating-systems/page-replacement-and-thrashing#least-recently-used-lru).
 - **FIFO** (first in, first out): throw out whatever has been there the longest, even if you're using it constantly.
 - **Random**: pick one at random. It's the cheapest to build, and it's surprisingly close to LRU.
 

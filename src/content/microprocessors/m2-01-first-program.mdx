@@ -13,7 +13,7 @@ Labels and comments are optional. Anything after a `;` is ignored.
 
 ## Hello, world
 
-Printing text is a job for the operating system, so we ask DOS to do it using an **interrupt** instruction. Before making the call, we leave a note in the registers saying what we want.
+Printing text is a job for the operating system, so we make a [system call](/courses/operating-systems/services-and-system-calls#system-calls): we ask DOS to do it using an **interrupt** instruction. Before making the call, we leave a note in the registers saying what we want.
 
 <AsmRunner source={`msg db "Hello, World$"
 LEA DX, msg      ; DX = where the text starts

@@ -3,7 +3,7 @@ import { MemoryPyramid, CacheSearch } from "@/components/mdx/OrganizationVisuali
 
 # The Memory Hierarchy and Cache
 
-Everyone wants memory that's huge, fast and cheap. Physics and economics let you pick two. As capacity goes up, the cost per bit goes down and the access time gets longer. So instead of one kind of memory, computers use several, in layers.
+Everyone wants memory that's huge, fast and cheap. Physics and economics let you pick two. As capacity goes up, the cost per bit goes down and the access time gets longer. So instead of one kind of memory, computers use several, in layers, called the **memory hierarchy**.
 
 Think about where you keep things. What you're using is on your desk. What you used last week is on a shelf. The rest is in boxes in the attic. It's quick to reach the desk, but the desk is small.
 
@@ -23,7 +23,7 @@ The CPU searches from the top down: L1, then L2, then RAM, then disk. When it fi
 
 ## Why such a small cache works
 
-A cache of a few megabytes can serve a program using gigabytes, and it can hit over 90% of the time. That sounds too good to be true, but it works because programs are predictable in two ways:
+A cache of a few megabytes can serve a program using gigabytes, and it can hit over 90% of the time. That sounds too good to be true, but it works because programs are predictable in two ways, together called **locality of reference**:
 
 - **Temporal locality**: what you just used, you'll probably use again. Think of a loop counter.
 - **Spatial locality**: what's next to what you used, you'll probably use next. Think of walking through an array.
@@ -36,4 +36,4 @@ How does a cache decide where to put things, and what to throw out when full? Th
 
 ## Using disk as extra memory
 
-Most operating systems also use a technique called **virtual memory**, which treats part of the disk as an extension of RAM. It lets you run more than fits in RAM, but it's slow when it's used heavily. That's the [virtual memory lesson](/courses/computer-architecture/virtual-memory).
+Most operating systems also use a technique called **virtual memory**, which treats part of the disk as an extension of RAM. It lets you run more than fits in RAM, but it's slow when it's used heavily. That's the [virtual memory lesson](/courses/computer-architecture/virtual-memory), and Operating Systems shows how the OS decides [which pages stay in RAM](/courses/operating-systems/page-replacement-and-thrashing#page-replacement).

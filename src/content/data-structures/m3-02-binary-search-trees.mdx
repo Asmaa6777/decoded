@@ -115,7 +115,7 @@ int main() {
 A B-tree index answers `WHERE date BETWEEN …` and `ORDER BY` without sorting the table, by walking a balanced search tree.
 </PracticalApplication>
 <PracticalApplication title="The Linux scheduler" tool="CFS, EEVDF">
-Linux kept runnable tasks in a red-black tree ordered by how much CPU time each had used, and picked the leftmost (the one owed most time) next.
+Linux kept runnable tasks (its [ready queue](/courses/operating-systems/processes#process-scheduling)) in a red-black tree ordered by how much CPU time each had used, and picked the leftmost (the one owed most time) next.
 </PracticalApplication>
 <PracticalApplication title="Leaderboards and order books" tool="Trading engines, games">
 Prices or scores kept in a tree give the best one in O(log n) and support "everything between these two values" directly.
