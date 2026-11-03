@@ -19,7 +19,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
-          bun-version: latest
+          bun-version: "1.4.4" # pinned: "latest" downloads have returned 403 (#37); bump on purpose
 
       - name: Install dependencies
         run: bun install
