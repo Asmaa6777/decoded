@@ -41,6 +41,7 @@ export const prerequisites: Record<string, string[]> = {
   "theory-of-computation": ["discrete-mathematics"],
   "distributed-systems": ["operating-systems", "computer-networks"],
   "computer-organization": ["computer-literacy"],
+  "operating-systems": ["computer-organization", "data-structures"],
   "computer-graphics": ["computer-organization"],
   microprocessors: ["logic-design", "computer-organization"],
   "computer-architecture": ["computer-organization", "microprocessors"],

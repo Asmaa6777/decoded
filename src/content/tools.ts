@@ -129,6 +129,43 @@ export const tools: Tool[] = [
     ],
   },
   {
+    name: "Task Manager and top",
+    what: "The list of everything your computer is running, and how it decides which one gets the CPU.",
+    lessons: [
+      { course: "operating-systems", lesson: "processes", mentions: "Task Manager" },
+      { course: "operating-systems", lesson: "cpu-scheduling-basics", mentions: "Task Manager" },
+      { course: "operating-systems", lesson: "os-design-and-structure", mentions: "`top`" },
+    ],
+  },
+  {
+    name: "The Linux terminal",
+    what: "Typing commands instead of clicking, and what the shell asks the OS to do for you.",
+    lessons: [
+      { course: "operating-systems", lesson: "lab-linux-commands", mentions: "bash" },
+      { course: "operating-systems", lesson: "services-and-system-calls", mentions: "bash" },
+      { course: "operating-systems", lesson: "interprocess-communication", mentions: "pipe" },
+    ],
+  },
+  {
+    name: "Threads and locks",
+    what: "Why two threads adding to the same number can lose updates, and the locks that stop it.",
+    lessons: [
+      { course: "operating-systems", lesson: "lab-java-threads", mentions: "Thread" },
+      { course: "operating-systems", lesson: "critical-section-problem", mentions: "mutex" },
+      { course: "operating-systems", lesson: "semaphores-and-classic-problems", mentions: "semaphore" },
+      { course: "operating-systems", lesson: "lab-java-synchronization", mentions: "synchronized" },
+    ],
+  },
+  {
+    name: "Swap and running out of RAM",
+    what: "How your computer keeps going with more programs open than fit in memory, and why it slows to a crawl.",
+    lessons: [
+      { course: "operating-systems", lesson: "memory-allocation", mentions: "swap" },
+      { course: "operating-systems", lesson: "virtual-memory", mentions: "swap space" },
+      { course: "operating-systems", lesson: "page-replacement-and-thrashing", mentions: "thrashing" },
+    ],
+  },
+  {
     name: "Assembly and debuggers",
     what: "What's left of your program by the time the processor runs it.",
     lessons: [
