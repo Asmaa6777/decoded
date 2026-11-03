@@ -90,6 +90,10 @@ const CmStream = lesson(() => import("@/content/computational-mathematics/m3-02-
 const CmShift = lesson(() => import("@/content/computational-mathematics/m3-03-caesar-and-shift-ciphers.mdx"));
 const CmAffine = lesson(() => import("@/content/computational-mathematics/m3-04-affine-ciphers.mdx"));
 const CmFinalQuiz = lesson(() => import("@/content/computational-mathematics/m3-05-final-quiz.mdx"));
+const CmSound = lesson(() => import("@/content/computational-mathematics/m4-01-sound-and-sampling.mdx"));
+const CmNoise = lesson(() => import("@/content/computational-mathematics/m4-02-noise-and-averaging.mdx"));
+const CmAvgConv = lesson(() => import("@/content/computational-mathematics/m4-03-averaging-is-convolution.mdx"));
+const CmTradeOff = lesson(() => import("@/content/computational-mathematics/m4-04-measuring-the-trade-off.mdx"));
 const LdSignals = lesson(() => import("@/content/logic-design/m0-01-signals.mdx"));
 const LdNumbers = lesson(() => import("@/content/logic-design/m1-01-number-systems.mdx"));
 const LdArithmetic = lesson(() => import("@/content/logic-design/m1-02-binary-arithmetic.mdx"));
@@ -530,6 +534,16 @@ export const courses: Course[] = [
           { slug: "caesar-and-shift-ciphers", title: "Caesar and Shift Ciphers", duration: "14 min", Component: CmShift },
           { slug: "affine-ciphers", title: "Affine Ciphers", duration: "16 min", Component: CmAffine },
           { slug: "final-quiz", title: "Quiz: Cryptography", duration: "8 min", kind: "quiz", Component: CmFinalQuiz },
+        ],
+      },
+      {
+        title: "Project: Signals From Zero",
+        blurb: "Clean the noise out of a voice recording with a moving-average convolution, and measure what it costs the voice.",
+        lessons: [
+          { slug: "sound-and-sampling", title: "Project: Sound and Sampling", duration: "14 min", kind: "practical", Component: CmSound },
+          { slug: "noise-and-averaging", title: "Project: Noise and Why Averaging Works", duration: "12 min", kind: "practical", Component: CmNoise },
+          { slug: "averaging-is-convolution", title: "Project: Averaging Is Convolution", duration: "15 min", kind: "practical", Component: CmAvgConv },
+          { slug: "measuring-the-trade-off", title: "Project: Measuring the Trade-off", duration: "18 min", kind: "practical", Component: CmTradeOff },
         ],
       },
     ],

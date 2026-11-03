@@ -1,0 +1,120 @@
+import { Callout, CodeTabs } from "@/components/mdx/MdxComponents";
+import { ConvolutionStepper } from "@/components/mdx/SignalVisualizers";
+
+# Project: Averaging Is Convolution
+
+"Convolution" sounds like a big idea, but it's three small ones stacked on top of each other. Take them one at a time.
+
+## Step 1: multiply and add
+
+You already do this when you work out a course grade. Say the exam counts 50%, the project 30% and quizzes 20%, and you scored 80, 90 and 70:
+
+$$
+0.5 \cdot 80 + 0.3 \cdot 90 + 0.2 \cdot 70 = 40 + 27 + 14 = 81
+$$
+
+Each number gets a weight saying how much it counts. Multiply each number by its weight, then add everything up. This is a **weighted sum**, and it's the [dot product](/courses/computational-mathematics/transpose-and-products#the-dot-product) of the scores with the weights. A linear regression model's prediction, $w \cdot x$, is exactly this.
+
+The list of weights, here $[0.5,\ 0.3,\ 0.2]$, is what convolution calls the **kernel**.
+
+## Step 2: an average is a weighted sum
+
+The average of 3, 1 and 3 is $(3 + 1 + 3)/3$. Dividing by 3 at the end is the same as giving each number a weight of $\tfrac13$ first:
+
+$$
+\frac{3 + 1 + 3}{3} = \tfrac13 \cdot 3 + \tfrac13 \cdot 1 + \tfrac13 \cdot 3 \approx 2.33
+$$
+
+So "take the average of 3 numbers" is a weighted sum with the kernel $[\tfrac13,\ \tfrac13,\ \tfrac13]$, where every number counts equally.
+
+## Step 3: a window that slides
+
+A signal is a long list of numbers, but the kernel has only 3 weights. So look at 3 numbers at a time, through a **window**. Take the weighted sum of what's inside, write down the answer, move the window one step and do it again, all the way along.
+
+Each window position gives one output number. The full list of outputs is the **convolution** of the signal with the kernel. At the two ends, the window hangs off the edge of the signal, so we pretend the missing numbers are zeros (the dashed cells).
+
+Step through it on the recording from the [last lesson](/courses/computational-mathematics/noise-and-averaging#a-five-sample-example), then try the other kernels and the other signal:
+
+<ConvolutionStepper />
+
+That's all of it: **convolution slides a window along the signal and, at every stop, takes a weighted sum using the kernel's weights**. The kernel decides what the convolution does. The average smooths, the centre-heavy kernel smooths more gently, and $[0\ 1\ 0]$ just copies the signal.
+
+## What just happened
+
+**Noisy constant.** The truth hiding under $[3\ 1\ 3\ 1\ 3]$ is 2. Before averaging, each middle number was 1 away from 2. After averaging, the middle outputs are 2.33, 1.67 and 2.33, only 0.33 away: the noise there got three times smaller, which is what we want. The two end outputs, 1.33, improved less, because the window counts a zero past the edge as one of its three numbers.
+
+**Sharp spike.** Now switch to $[0\ 0\ 6\ 0\ 0]$. The 6 becomes 2, 2, 2. That spike was real, not noise, but averaging flattened it anyway, which is what we *don't* want.
+
+<Callout tone="orange" label="The catch">
+Averaging can't tell noise from a real, sudden change. It smooths both. In speech, the sudden changes are consonants like "s", "t" and "k", so too much averaging makes a voice sound muffled. The [last lesson](/courses/computational-mathematics/measuring-the-trade-off) measures this trade-off.
+</Callout>
+
+## The formula
+
+For the 3-number average, the output at position $n$ is the average of $x$ at $n$ and its two neighbours:
+
+$$
+y(n) = \tfrac13 x(n-1) + \tfrac13 x(n) + \tfrac13 x(n+1)
+$$
+
+Check it with the stepper: $y(2) = \tfrac13 \cdot 3 + \tfrac13 \cdot 1 + \tfrac13 \cdot 3 \approx 2.33$.
+
+Textbooks write one formula that works for any kernel $h$:
+
+$$
+y(n) = \sum_k h(k)\, x(n - k)
+$$
+
+It says the same thing: for each weight $h(k)$, multiply it by the signal value it lines up with, $x(n-k)$, and add them all up. The minus sign means the kernel is read backwards. Our kernels read the same both ways, so it makes no difference here.
+
+This is the same formula as [multiplying polynomials](/courses/computational-mathematics/multiplying-and-dividing#convolution): `conv([1 2], [1 3])` gives `[1 5 6]`, because $(s + 2)(s + 3) = s^2 + 5s + 6$. Smoothing a recording and multiplying polynomials are one operation.
+
+## In code
+
+MATLAB's `conv` does all of this in one call, on 5 numbers or on all 132,300 of a recording. The option `'same'` returns an output the same length as the input, using the zeros-at-the-edges rule from the stepper.
+
+<CodeTabs>
+
+```matlab
+h = ones(1, 3) / 3;              % the kernel [1/3 1/3 1/3]
+conv([3 1 3 1 3], h, 'same')
+
+ans =
+    1.3333    2.3333    1.6667    2.3333    1.3333
+
+conv([1 2], [1 3])               % polynomial multiplication
+
+ans =
+     1     5     6
+
+% on the whole recording, with an M-sample average:
+% x_hat = conv(y, ones(1, M) / M, 'same');
+```
+
+```python
+import numpy as np
+
+def conv_same(x, h):
+    """MATLAB's conv(x, h, 'same'): the centre of the full result."""
+    start = len(h) // 2
+    return np.convolve(x, h)[start:start + len(x)]
+
+h = np.ones(3) / 3               # the kernel [1/3 1/3 1/3]
+print(np.round(conv_same([3, 1, 3, 1, 3], h), 4).tolist())  # [1.3333, 2.3333, 1.6667, 2.3333, 1.3333]
+print(np.convolve([1, 2], [1, 3]).tolist())  # [1, 5, 6]
+
+# on the whole recording, with an M-sample average:
+# x_hat = conv_same(y, np.ones(M) / M)
+```
+
+</CodeTabs>
+
+<Callout tone="orange" label="NumPy's 'same' isn't MATLAB's">
+`np.convolve(x, h, mode="same")` exists, but for kernels of even length it keeps a different slice than MATLAB, so the output is shifted by one sample. The small `conv_same` above copies MATLAB exactly for any kernel length, which matters when the two languages must agree.
+</Callout>
+
+<Callout tone="sky" label="The same operation, learned">
+A **convolutional neural network** does exactly this, with one difference: nobody chooses the kernel. The network learns the weights from data. A 1D convolution layer in a speech or audio model slides learned kernels along the samples just as `conv` does here, and the first layers often end up learning smoothing and edge-finding kernels much like the ones in the stepper.
+</Callout>
+
+One question is left: how much better is the cleaned signal, as a number? The [next lesson](/courses/computational-mathematics/measuring-the-trade-off) measures it.

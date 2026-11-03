@@ -1,0 +1,86 @@
+import { Callout, CodeTabs } from "@/components/mdx/MdxComponents";
+import { NoiseAdd, NoiseAveraging } from "@/components/mdx/SignalVisualizers";
+
+# Project: Noise and Why Averaging Works
+
+**Noise** is everything in a recording you didn't want: hiss from a cheap microphone, a fan, electrical hum. This project uses the simplest model of it, the **additive noise model**: the noise is added to the clean voice, sample by sample.
+
+$$
+y(n) = x(n) + e(n)
+$$
+
+Here $x$ is the clean voice, $e$ is the noise and $y$ is what the microphone records. All three are vectors of the same length, and this is plain [vector addition](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting).
+
+<NoiseAdd />
+
+We only ever hear the bottom row. The task for the whole project is to get from $y$ back as close to $x$ as possible.
+
+## A five-sample example
+
+Big recordings hide what's going on, so here's a tiny one. The clean value is always 2, and the noise alternates +1 and −1:
+
+| n | clean x(n) | noise e(n) | recorded y(n) |
+|---|---|---|---|
+| 1 | 2 | +1 | 3 |
+| 2 | 2 | −1 | 1 |
+| 3 | 2 | +1 | 3 |
+| 4 | 2 | −1 | 1 |
+| 5 | 2 | +1 | 3 |
+
+This example comes back in the next two lessons, so keep it in mind: **the truth is [2 2 2 2 2] and we recorded [3 1 3 1 3]**.
+
+Real noise isn't a neat ±1. It's random, and the usual model draws each $e(n)$ from a **normal distribution** with mean 0 and some spread $\sigma$ (sigma), the noise strength. To make an experiment repeatable, fix the random seed, so every run gets exactly the same "random" noise:
+
+<CodeTabs>
+
+```matlab
+x = 2 * ones(1, 5);              % the clean signal
+e = [1 -1 1 -1 1];               % the noise in the example
+y = x + e
+
+y =
+     3     1     3     1     3
+
+% realistic noise: random, but the same every run
+rng(42);                         % fix the seed
+sigma = 0.2;
+e = sigma * randn(size(x));      % normal noise, spread sigma
+y = x + e;
+```
+
+```python
+import numpy as np
+
+x = np.full(5, 2)                # the clean signal
+e = np.array([1, -1, 1, -1, 1])  # the noise in the example
+y = x + e
+print(y.tolist())  # [3, 1, 3, 1, 3]
+
+# realistic noise: random, but the same every run
+rng = np.random.default_rng(42)  # fix the seed
+sigma = 0.2
+e = sigma * rng.standard_normal(x.shape)
+y = x + e
+```
+
+</CodeTabs>
+
+<Callout tone="orange" label="Same seed, different numbers">
+MATLAB's `rng(42)` and NumPy's `default_rng(42)` use different generators, so they give different noise. Each is repeatable on its own, but don't expect the two languages, or the interactive pictures here, to match number for number.
+</Callout>
+
+## Why averaging neighbours removes noise
+
+Two neighbouring samples are only 22.7 microseconds apart. In that time a voice barely moves, so **neighbours have almost the same value**. Random noise is drawn fresh at every sample, so it jumps up and down with no pattern.
+
+So average a few neighbours. The voice values are nearly equal, so their average is still the voice. The noise values are random pluses and minuses, so they partly cancel. Watch it on pure noise:
+
+<NoiseAveraging />
+
+There's a rule for how much: **averaging $M$ independent random samples shrinks their typical size by a factor of $\sqrt{M}$**. Averaging 9 gives about 3 times less noise; averaging 100 gives about 10 times less. The square root is why it gets expensive: to halve the noise again you need four times as many samples.
+
+<Callout tone="sky" label="The same rule, in machine learning">
+This √M law is everywhere data is noisy. Averaging the predictions of M independent models, an ensemble, shrinks their random errors the same way, and averaging gradients over a mini-batch of M examples makes each training step about √M times less noisy. In the other direction, diffusion models, the AI behind image generators, are trained on exactly $y = x + e$: add Gaussian noise to a clean image, and teach a network to take it back out.
+</Callout>
+
+Averaging has a catch, though, and so does the √M rule: it assumes the thing you're averaging doesn't change between neighbours. The [next lesson](/courses/computational-mathematics/averaging-is-convolution) turns averaging into a convolution and finds out what happens when the voice *does* change quickly.
