@@ -31,6 +31,7 @@ export default function Team() {
             <CreatorCard
               name={asmaaFarouq.name}
               role="Course Author"
+              bio="The best way to predict the future is to invent it."
               image={asmaaFarouq.image}
               href={asmaaFarouq.href}
             />
