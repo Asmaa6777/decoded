@@ -93,6 +93,15 @@ Three rules keep the rounds honest:
 
 Run them in order the first time. After that, run whichever round the latest feedback points at.
 
+### Tracking the rounds
+
+Each course has one GitHub issue that tracks its rounds, labelled [`course-iteration`](https://github.com/STACK-42/decoded/issues?q=label%3Acourse-iteration), with a checklist of every round and, for the per-module rounds, every module. [#56](https://github.com/STACK-42/decoded/issues/56) is the one for Computer Graphics; copy it for a new course.
+
+- **Open it right after the skeleton,** with round 1 ticked.
+- **Post each round's report as a comment** on the issue, so what was found but not fixed isn't lost in a chat.
+- **Say `Part of #N` in each round's commits or pull request,** and tick the box when the round's bar is met. The change that finishes the last round says `Fixes #N`.
+- **See where every course stands** with `gh issue list --label course-iteration`.
+
 Some rounds a course may also need:
 
 - **Exam preparation:** practice problems in the style of past exams, with full worked solutions.
