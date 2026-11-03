@@ -10,8 +10,8 @@ Times are Qatar time (UTC+3).
 
 | Run | Time | Job |
 | --- | --- | --- |
-| A | 06:10 | **Course work:** the next step in the course queue |
-| B | 10:40 | **Course work:** the next step in the course queue |
+| A | 06:10 | **Exam work:** the next phase in the exam queue |
+| B | 10:40 | **Exam work:** the next phase in the exam queue |
 | C | 14:50 | **Quality work:** the top item in the quality queue |
 
 If the job's queue is empty, take the top item in the other queue. If both are empty, log that and stop.
@@ -20,7 +20,7 @@ If the job's queue is empty, take the top item in the other queue. If both are e
 
 - **2026-11-02 (day 1):** the run merges its own pull request once CI passes.
 - **From 2026-11-03:** open the pull request and leave it for the owner to review and merge. Don't merge.
-- A **course** pull request is merged only when the course is complete (every planned module is done). Until then, it stays a draft and each course run adds to the same branch.
+- **Exam phases stack.** If the previous phase's PR isn't merged yet, branch from its branch and open the new PR against it, saying so in the PR description, so the owner can review them in order.
 - Never push straight to `main`. Never force-push a branch someone else has pushed to.
 
 ## Rules for every run
@@ -34,18 +34,25 @@ If the job's queue is empty, take the top item in the other queue. If both are e
    - open: `gh api repos/STACK-42/decoded/pulls -f title=... -f head=<branch> -f base=main -f body=... -F draft=true`
    - merge: `gh api -X PUT repos/STACK-42/decoded/pulls/<n>/merge -f merge_method=merge`
    - CI: `gh api repos/STACK-42/decoded/commits/<sha>/check-runs`
-   If CI fails in the "Setup Bun" step with a 403, that's issue #37 and not your code. Re-run the job once.
-7. **Branches:** `autopilot/course-<slug>` for a course, and `autopilot/<short-task-name>` for anything else.
+   If CI fails in the "Setup Bun" step with a 403, that's issue #37 (fixed by PR #51 once merged) and not your code. Re-run the job once.
+7. **Branches:** `autopilot/exams-<phase-number>-<short-name>` for an exam phase, and `autopilot/<short-task-name>` for anything else.
 8. **Finish by updating this file** on your branch: tick off what you did, add anything new you noticed to the quality queue, and add a line to the run log.
 
-## Course queue
+## Exam queue
 
-Adding courses is the top priority. Build one course at a time, **one module per run**, on one branch with one draft pull request. The first run on a new course writes its module and lesson plan into this file (under the course) before writing lessons, then builds module 1. Credit new courses to Ahmed Alghali (`ahmedAlghali` in `src/content/authors.ts`) unless this file says otherwise.
+The owner's priority since 2026-11-03: proper exam practice. The design, decisions and phases are in [`docs/exams.md`](exams.md); follow it, and update it if a phase teaches you something that changes the plan. One phase per run.
 
-1. **Distributed Systems** (`distributed-systems`). Already in the registry as "coming soon" with no modules. Make it available. Scope from its description: time and clocks, replication, consistency, CAP, consensus (Paxos, Raft), and how microservices trade these off. Visualizers are the center: a step-through Raft election, and a network partition you can cut and heal.
-2. **Compilers.** Lexing, parsing, ASTs, semantic analysis, intermediate code, optimization, code generation. Builds directly on Theory of Computation (regex → lexers, CFGs and PDAs → parsers), so link heavily.
-3. **Databases.** Relational model, SQL, normalization, indexing (B-trees, hashing), transactions and isolation, query planning.
-4. **Computer Security.** Threat models, memory safety, web security, authentication, applied cryptography. Link to the cryptography module in Computational Mathematics instead of re-teaching it.
+- [ ] 1. Question bank: move the 259 quiz questions into per-course `questions.ts`, quizzes read from it, no visible change.
+- [ ] 2. Course exam page at `/courses/<course>/exam`.
+- [ ] 3. Review queue (Leitner) at `/review`, with "N due" on the Dashboard.
+- [ ] 4. Question banks for Operating Systems and Advanced Algorithms, then at least 4 questions per taught lesson everywhere.
+- [ ] 5. Generated questions (subnets, scheduling, Big-O first).
+- [ ] 6. Account sync for review cards and exam attempts.
+
+## Parked
+
+- **New courses** are on hold until the exam work is done.
+- **Distributed Systems:** modules 1 and 2 (9 lessons) are complete on branch `autopilot/course-distributed-systems`; PR #49 is closed, not merged. The plan for modules 3 and 4 is in `docs/autopilot.md` on that branch. Reopen #49 to continue or to ship the two finished modules.
 
 ## Quality queue
 
@@ -57,7 +64,7 @@ Linking, broken visualizations, and rework of anything that isn't good enough. T
 4. ~~**Issue #42, linking: Operating Systems.** Zero links out across 17 lessons.~~ Done before this queue was written; checked 2026-11-02: 72 links out, in all 17 lessons.
 5. ~~**Issue #38:** README course table.~~ Done 2026-11-02 (run C): Operating Systems row added, Advanced Algorithms count fixed (24, not 25); every other row matches `registry.ts`.
 6. **Visualizer audit.** Open every visualizer at phone width in light and dark themes (Playwright is installed) and log anything broken, cramped or confusing as its own item here. Fix the worst one in the same run.
-7. **Issue #37:** pin the Bun version in `.github/workflows/ci.yml` and `deploy.yml` so a 403 on the "latest" download stops failing CI.
+7. ~~**Issue #37:** pin the Bun version.~~ PR #51 (pinned to 1.4.4), waiting for review.
 8. **Issue #42, the rest:** Advanced Algorithms, Algorithm Design and Analysis, Computer Literacy, The Exam Mind, then the generic-preview fixes (bold definitions) in the courses marked "previews only".
 
 ## Blocked
@@ -68,5 +75,6 @@ Nothing yet.
 
 Newest first. One line per run: date and run, what was done, PR link, merged or open.
 
+- 2026-11-03 (owner request): new direction. Distributed Systems parked (#49 closed, branch kept; M2 had been added by run A that morning). Bun pinned (#51, open). Exam plan written in `docs/exams.md` and queued here (#52, open). Runs A and B switched from course work to exam work.
 - 2026-11-02 14:50 (run C): quality items 1-4 were already done on main (issue #42's checklist is stale), so took item 5: README course table (#38). PR #50, merged.
 - 2026-11-02 01:10 (setup): wrote this file. Baseline: 2,104 tests pass, lint 0 errors, CI green on `main` (82faa87).
