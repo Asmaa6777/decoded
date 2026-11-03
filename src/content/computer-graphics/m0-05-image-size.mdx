@@ -15,6 +15,10 @@ Every pixel takes a fixed number of bits, so the size of an uncompressed image i
 
 Why 1024 and not 1000? Memory sizes go up in [powers of two](/courses/computer-organization/bits-and-bytes#how-much-is-a-lot), and $2^{10} = 1024$ is the closest one to a thousand. Use 1024 unless a question tells you otherwise.
 
+<Callout tone="orange" label="Two classic slips">
+Forgetting step 3 gives an answer 8 times too big, because it's still in bits. And step 2 multiplies by the **bits** per pixel, 24 for true color, never by the number of colors, 16,777,216.
+</Callout>
+
 Steps 2 and 3 are often combined. For a 24-bit image you can go straight to bytes with "pixels × 3", since 24 bits is 3 bytes. That's the shortcut many notes use, but it only works when the bit depth is a whole number of bytes.
 
 ## Worked example: one picture, four depths
@@ -31,6 +35,12 @@ $$
 
 $$
 307{,}200 \text{ bytes} \div 1024 = 300 \text{ KB}
+$$
+
+**16-bit (high color):** two bytes per pixel.
+
+$$
+307{,}200 \times 2 = 614{,}400 \text{ bytes} \div 1024 = 600 \text{ KB}
 $$
 
 **24-bit (true color):** three bytes per pixel.

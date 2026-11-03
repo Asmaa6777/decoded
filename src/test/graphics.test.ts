@@ -234,3 +234,28 @@ describe("truncating instead of rounding, as the notes' C++ table does", () => {
     expect([5, 6, 7, 8, 9, 10, 11].map((x) => Math.trunc(0.666 * x + 7))).toEqual(truncated);
   });
 });
+
+describe("the Module 0 worked examples added for depth", () => {
+  it("finds a pixel's position in row-major order", () => {
+    expect(2 * 640 + 3).toBe(1283);
+  });
+  it("needs the smallest power of 2 that is big enough", () => {
+    const bitsFor = (colors: number) => Math.ceil(Math.log2(colors));
+    expect(bitsFor(256)).toBe(8);
+    expect(bitsFor(100)).toBe(7);
+    expect(colorsFor(24) / colorsFor(8)).toBe(65_536);
+  });
+  it("snaps 67 to level 1 at 2 bits", () => {
+    expect(Math.round(67 / 85)).toBe(1);
+    expect(quantize(67, 2)).toBe(85);
+  });
+  it("blends the lesson's orange over blue at alpha 128", () => {
+    expect(blend([255, 107, 53], [126, 184, 255], 128)).toEqual([191, 145, 154]);
+  });
+  it("sizes a 16-bit 640 × 480 image", () => {
+    expect(imageSize(640, 480, 16).kb).toBe(600);
+  });
+  it("pads a 3-pixel 24-bit BMP row to 12 bytes", () => {
+    expect(Math.ceil((3 * 3) / 4) * 4).toBe(12);
+  });
+});

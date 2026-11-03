@@ -13,7 +13,11 @@ $$
 640 \times 480 = 307{,}200 \text{ pixels}
 $$
 
-Cameras quote the total in **megapixels**, millions of pixels. A 2048 × 1536 photo has $2048 \times 1536 = 3{,}145{,}728$ pixels, so it's sold as 3.1 megapixels.
+Cameras quote the total in **megapixels**, millions of pixels. A 2048 × 1536 photo has $2048 \times 1536 = 3{,}145{,}728$ pixels, and $3{,}145{,}728 \div 1{,}000{,}000 \approx 3.1$, so it's sold as 3.1 megapixels.
+
+<Callout tone="orange" label="Two easy slips">
+Width always comes first. 1920 × 1080 means 1920 columns and 1080 rows; written the other way round, it would describe a tall, narrow picture. And a megapixel is an ordinary million, 1,000,000, not $2^{20}$: memory sizes use powers of two, pixel counts don't.
+</Callout>
 
 <Callout tone="sky" label="Pixels don't have a size">
 A pixel is a position in a grid, not a length. A 640 × 480 image looks small on a sharp phone and big on an old monitor, because each device draws its pixels at a different size. How many pixels fit in an inch is called resolution, and it gets [its own lesson](/courses/computer-graphics/ppi-and-dpi).
@@ -21,15 +25,23 @@ A pixel is a position in a grid, not a length. A 640 × 480 image looks small on
 
 ## A bitmap
 
-The simplest way to store an image is to write down the value of every pixel in order. This is called a **bitmap** (or **raster image**): a matrix of tiny dots, one entry per pixel. A grayscale photo is literally a [matrix](/courses/computational-mathematics/matrices-and-matlab) of brightness numbers.
+The simplest way to store an image is to write down the value of every pixel in order. This is called a **bitmap** (or **raster image**): a matrix of tiny dots, one entry per pixel. The name comes from the first images, where every pixel was a single bit, so the image was literally a map of bits. Today it means a grid of pixels at any depth. A grayscale photo is literally a [matrix](/courses/computational-mathematics/matrices-and-matlab) of brightness numbers.
 
 Memory, though, isn't a grid. It's [one long row of bytes](/courses/data-structures/arrays-and-memory#memory-is-one-long-array). So the grid gets flattened: the first row of pixels, then the second row straight after it, and so on. This is **row-major order**, the same layout a [two-dimensional array](/courses/data-structures/arrays-and-memory#two-dimensional-arrays) uses.
 
-To find pixel (x, y) in that long line, skip y whole rows and then x more pixels:
+Write a pixel's place as (x, y): x is its column and y is its row, both counted from 0, starting at the top-left corner. (The [coordinates lesson](/courses/computer-graphics/pixel-coordinates) has more on this.) To find pixel (x, y) in the long line, skip y whole rows and then x more pixels:
 
 $$
 \text{position} = y \times \text{width} + x
 $$
+
+For example, in an image 640 pixels wide, pixel (3, 2) is in row 2, the third row. Skip the two full rows before it, $2 \times 640 = 1280$ pixels, then 3 more:
+
+$$
+2 \times 640 + 3 = 1283
+$$
+
+Positions count from 0 too, so that's the 1,284th pixel in the file.
 
 ## Why the file must store its dimensions
 
@@ -42,7 +54,7 @@ Without the right width, the picture still has all the right pixels, just in the
 At 12 pixels per row, the true width, the house appears. At 11, each row takes one pixel too few, so every row starts one pixel earlier than it should, and the picture leans over to one side. At 13 it leans the other way. Nothing in the data changed. Only the instruction for reading it did.
 
 <Callout tone="orange" label="You've seen this bug">
-A video or image that shows up as diagonal stripes or a tilted, smeared mess is usually this exact mistake: a program reading pixels with the wrong row width. Some formats also pad each row to a multiple of 4 bytes, and forgetting the padding makes the picture lean the same way.
+A video or image that shows up as diagonal stripes or a tilted, smeared mess is usually this exact mistake: a program reading pixels with the wrong row width. Some formats also add **padding**: a few unused bytes at the end of each row, so every row starts at a tidy place in memory. BMP files pad each row to a multiple of 4 bytes, so a 24-bit row 3 pixels wide takes 9 bytes plus 3 bytes of padding, 12 in all. A program that forgets the padding reads those 3 bytes as the start of the next row, and the picture leans the same way.
 </Callout>
 
 <PracticalApplication title="Image editing" tool="Every image library">
