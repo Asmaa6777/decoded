@@ -3,7 +3,7 @@ import { BitDepthExplorer, IndexedPalette } from "@/components/mdx/GraphicsVisua
 
 # Bit Depth: How Many Shades a Pixel Holds
 
-A pixel stores its color as a number, and a number in a computer is a fixed count of [bits](/courses/computer-organization/bits-and-bytes). The number of bits used for each pixel is called the **bit depth** (or **color depth**), measured in **bits per pixel (bpp)**. It decides how many different colors or shades the image can use.
+A pixel stores its color as a number, and a number in a computer is a fixed count of [bits](/courses/computer-organization/bits-and-bytes). The number of bits used for each pixel is called the **bit depth** (or **color depth**), measured in **bits per pixel (bpp)**. It decides how many different colors or shades the image can use. The usual kinds, 1-bit, 8-bit, 16-bit, 24-bit and 32-bit, are sometimes called the **image data types** or image color formats.
 
 ## The rule: n bits give 2ⁿ values
 
@@ -23,7 +23,7 @@ That one formula answers most bit-depth questions:
 | 8 | $2^8 = 256$ | grayscale, or indexed color |
 | 16 | $2^{16} = 65{,}536$ | high color |
 | 24 | $2^{24} = 16{,}777{,}216$ | true color |
-| 32 | 16,777,216 colors + transparency | true color with alpha |
+| 32 | $2^{32} = 4{,}294{,}967{,}296$ combinations: 16,777,216 colors × 256 levels of transparency | true color with alpha |
 | 48 | $2^{48} \approx 281$ trillion | high dynamic range (16 bits per channel) |
 
 Early PCs climbed this table one row at a time as memory got cheaper. Each step came with a new **graphics adapter**, the card inside the computer that holds the frame buffer and sends the picture to the monitor. Each card was a standard with its own name:
@@ -45,7 +45,7 @@ With 1 bit per pixel, each pixel is 0 or 1, off or on, usually black or white. S
 
 ## 8-bit images: grayscale
 
-Give each pixel one whole [byte](/courses/computer-organization/bits-and-bytes#the-byte), 8 bits, and it can hold $2^8 = 256$ values, from 0 to 255. In a **grayscale** image, that value is a brightness: 0 is black (no light), 255 is white (full light), and everything between is a shade of gray. A dark pixel might be 15; a bright one 240.
+Give each pixel one whole [byte](/courses/computer-organization/bits-and-bytes#the-byte), 8 bits, and it can hold $2^8 = 256$ values, from 0 to 255. In a **grayscale** (or **gray-level**) image, that value is a brightness: 0 is black (no light), 255 is white (full light), and everything between is a shade of gray. A dark pixel might be 15; a bright one 240.
 
 For example, a pixel stored as the byte `01000011` has the value
 
@@ -77,7 +77,7 @@ In a grayscale image, pixel value 200 means "bright gray". In an indexed image, 
 
 ## More depth costs more memory
 
-More bits per pixel give more accurate color and smoother gradients, but every pixel gets bigger, so the whole image does too. A document of black text gains nothing from 24-bit color, so storing it at 1 bit per pixel saves a lot of space. Choosing the depth is a trade between quality and size, and the [image size lesson](/courses/computer-graphics/image-size) puts numbers on it.
+More bits per pixel give more accurate color and smoother gradients, but every pixel gets bigger, so the whole image does too. A document of black text gains nothing from 24-bit color, so storing it at 1 bit per pixel saves a lot of space. Bigger images also take longer to send over a network, which is why images with a high bit depth are usually compressed. Choosing the depth is a trade between quality and size, and the [image size lesson](/courses/computer-graphics/image-size) puts numbers on it.
 
 People can tell apart roughly ten million colors, which is why 24-bit true color, at about 16.7 million, is enough for almost any picture and gets called "true".
 
