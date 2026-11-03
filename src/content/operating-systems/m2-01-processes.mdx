@@ -29,7 +29,7 @@ A process is made of several parts:
 | --- | --- |
 | **Text section** | the **program code** |
 | **Current activity** | the **program counter** and the **processor registers** |
-| **Stack** | temporary data: **function parameters**, **return addresses**, **local variables** |
+| **[Stack](/courses/data-structures/stacks#the-call-stack)** | temporary data: **function parameters**, **return addresses**, **local variables** |
 | **Data section** | **global variables** |
 | **Heap** | memory **dynamically allocated** while the process runs |
 
@@ -83,7 +83,7 @@ The **process scheduler** selects which available process runs next on the CPU. 
 | **Ready queue** | the processes in **main memory**, **ready** and waiting to run |
 | **Device queues** | the processes **waiting for an I/O device** (one queue per device) |
 
-Processes **migrate** among the queues. A **queuing diagram** shows this: a process sits in the ready queue until it's dispatched to the CPU. Then one of these happens:
+Processes **migrate** among the queues. The one that matters most is the **ready queue**: the processes in main memory that are ready and waiting for the CPU. A **queuing diagram** shows this: a process sits in the ready queue until it's dispatched to the CPU. Then one of these happens:
 
 - it issues an **I/O request** and goes into an I/O queue,
 - its **time slice expires** and it goes back to the ready queue,
@@ -99,7 +99,7 @@ Each path eventually leads back to the ready queue, until the process terminates
 | **Long-term** (job scheduler) | which processes are brought **into the ready queue** | very **infrequently** (seconds, minutes) | may be slow |
 | **Short-term** (CPU scheduler) | which process **runs next** on the CPU | very **frequently** (milliseconds) | must be fast |
 
-- The short-term scheduler is sometimes the **only** scheduler in a system.
+- The **short-term scheduler** (CPU scheduler) picks which process in the ready queue runs next. It runs every few milliseconds, so it must be fast, and it's sometimes the **only** scheduler in a system.
 - The **long-term** scheduler controls the **degree of [multiprogramming](/courses/operating-systems/os-architecture-and-operations#multiprogramming)**: how many processes are in memory.
 
 Processes can be described as either:

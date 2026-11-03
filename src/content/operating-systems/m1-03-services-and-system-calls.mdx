@@ -106,9 +106,9 @@ Follow `open()` from a program all the way into the kernel. Then switch to `prin
 
 Often a system call needs **more information** than just its number. The exact type and amount varies with the OS and the call. There are **three general methods** to pass parameters:
 
-1. **In registers.** The simplest. But sometimes there are **more parameters than registers**.
+1. **In [registers](/courses/computer-organization/inside-the-cpu#the-registers-that-matter-most).** The simplest. But sometimes there are **more parameters than registers**.
 2. **In a block (table) in memory**, and pass the **block's address** in a register. Linux and Solaris use this.
-3. **On the stack**: the program **pushes** the parameters and the OS **pops** them off.
+3. **On the [stack](/courses/data-structures/stacks#the-interface)**: the program **pushes** the parameters and the OS **pops** them off.
 
 The **block** and **stack** methods **don't limit** the number or length of the parameters.
 

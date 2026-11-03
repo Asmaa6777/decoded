@@ -167,8 +167,8 @@ Even two-level paging isn't enough for 64 bits:
 
 Common in address spaces **larger than 32 bits**.
 
-- The **virtual page number is hashed** into a page table.
-- Each table slot holds a **chain** of elements that hash to the same location.
+- The **virtual page number is [hashed](/courses/data-structures/hash-maps#keys-into-indexes)** into a page table.
+- Each table slot holds a **[chain](/courses/advanced-algorithms/collision-resolution#separate-chaining)** of elements that hash to the same location.
 - Each element contains: **(1)** the virtual page number, **(2)** the mapped page frame, **(3)** a pointer to the next element.
 - Virtual page numbers in the chain are **compared** until a match is found; then its **physical frame** is used.
 

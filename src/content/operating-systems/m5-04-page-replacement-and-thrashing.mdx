@@ -85,6 +85,7 @@ Use **past** knowledge instead of the future: **replace the page that hasn't bee
 - Associate the **time of last use** with each page.
 - **12 faults**: better than FIFO but worse than OPT.
 - **Generally a good algorithm, and frequently used.** But how do we implement it?
+- CPU caches pick which block to throw out with the same [LRU](/courses/computer-architecture/cache-policies#what-gets-thrown-out) rule.
 
 ### Implementing LRU
 
@@ -98,7 +99,7 @@ Use **past** knowledge instead of the future: **replace the page that hasn't bee
 
 - keep a **stack of page numbers**; whenever a page is referenced, it's **moved to the top**,
 - the least recently used page is always at the **bottom**,
-- use a **doubly linked list** with head and tail pointers,
+- use a **[doubly linked list](/courses/data-structures/linked-lists#doubly-linked-lists)** with head and tail pointers,
 - each update is more expensive (up to **6 pointers** change), but there's **no search** to find the victim.
 
 For example, with the stack holding 2, 1, 0, 7, 4 (top first) and a reference to 7: 7 is pulled out of the middle and put on top, giving 7, 2, 1, 0, 4. The victim is always the bottom, 4.

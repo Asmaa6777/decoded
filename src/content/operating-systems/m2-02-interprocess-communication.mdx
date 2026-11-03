@@ -38,7 +38,7 @@ A classic pattern for cooperating processes: a **producer** process produces inf
 To let them run **at the same time**, put a **buffer** of items between them, in **shared memory**. The producer fills it and the consumer empties it.
 
 - An **unbounded buffer** has no practical limit on its size.
-- A **bounded buffer** has a **fixed size**.
+- A **bounded buffer** has a **fixed size**. In code it's usually a [ring buffer](/courses/data-structures/queues-and-deques#the-ring-buffer), an array whose ends wrap around.
 
 ### Bounded buffer: the shared-memory solution
 

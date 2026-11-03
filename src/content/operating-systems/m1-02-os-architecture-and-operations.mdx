@@ -74,7 +74,7 @@ A single user can't keep the CPU and I/O devices busy all the time. While your p
 
 ## Operating-system operations
 
-The OS is **interrupt driven**:
+The OS is **[interrupt](/courses/microprocessors/interrupts) driven**:
 
 - **Hardware** sends interrupts (a key press, a finished disk read).
 - A **software error or request** creates an **exception** or **trap**: division by zero, or a request for an OS service.
@@ -160,9 +160,9 @@ The OS gives a **uniform, logical view** of stored information. It hides the phy
 ### Cache management
 
 - Information moves between the levels of the [storage hierarchy](/courses/operating-systems/what-an-os-does#the-storage-hierarchy), either **explicitly** (the OS moves it) or **implicitly** (the hardware moves it).
-- Choosing the **cache size** and **replacement policy** carefully can make a huge difference to performance.
+- Choosing the **cache size** and **[replacement policy](/courses/computer-architecture/cache-policies#what-gets-thrown-out)** carefully can make a huge difference to performance.
 - In a **multitasking** environment, every process must use the **most recent value** of a piece of data, wherever it is stored.
-- In a **multiprocessor** environment, the hardware must provide **cache coherency**, so that all CPUs see the most recent value in their caches.
+- In a **multiprocessor** environment, the hardware must provide **[cache coherency](/courses/computer-architecture/cache-policies#what-happens-on-a-write)**, so that all CPUs see the most recent value in their caches.
 - In a **distributed** environment it's even harder, because several copies of the same data can exist on different machines.
 
 ### The I/O subsystem
