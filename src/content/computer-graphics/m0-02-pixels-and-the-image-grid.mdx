@@ -39,10 +39,10 @@ Without the right width, the picture still has all the right pixels, just in the
 
 <RowWidth />
 
-At 12 pixels per row, the true width, the house appears. At 11, each row takes one pixel too few, so every row starts one pixel earlier than it should and the picture slides sideways into a slant. At 13 it slants the other way. Nothing in the data changed. Only the instruction for reading it did.
+At 12 pixels per row, the true width, the house appears. At 11, each row takes one pixel too few, so every row starts one pixel earlier than it should, and the picture leans over to one side. At 13 it leans the other way. Nothing in the data changed. Only the instruction for reading it did.
 
 <Callout tone="orange" label="You've seen this bug">
-A video or image that shows up as diagonal stripes or a sheared, smeared mess is usually this exact mistake: a program reading pixels with the wrong row width. Some formats also pad each row to a multiple of 4 bytes, and forgetting the padding causes the same slant.
+A video or image that shows up as diagonal stripes or a tilted, smeared mess is usually this exact mistake: a program reading pixels with the wrong row width. Some formats also pad each row to a multiple of 4 bytes, and forgetting the padding makes the picture lean the same way.
 </Callout>
 
 <PracticalApplication title="Image editing" tool="Every image library">

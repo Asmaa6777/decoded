@@ -143,7 +143,7 @@ export function RowWidth() {
 
 /* ---------------------------- color depth ---------------------------- */
 
-/** A smooth ramp from black to white, stored with fewer and fewer bits. */
+/** A bar fading from black to white, stored with fewer and fewer bits. */
 export function BitDepthExplorer() {
   const [bits, setBits] = useState(2);
   const [pick, setPick] = useState(67);
@@ -155,7 +155,7 @@ export function BitDepthExplorer() {
   const gray = (v: number) => `rgb(${v},${v},${v})`;
   return (
     <Panel title="Bit depth">
-      <PixelGrid cols={n} rows={2} cell={14} gridLines={false} label="A grey ramp, smooth on top and stored at the chosen depth below" fill={(c, r) => ({ color: gray(r === 0 ? values[c] : quantize(values[c], bits)) })} />
+      <PixelGrid cols={n} rows={2} cell={14} gridLines={false} label="A bar fading from black to white, smooth on top and stored at the chosen depth below" fill={(c, r) => ({ color: gray(r === 0 ? values[c] : quantize(values[c], bits)) })} />
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Stat k="Bits per pixel" v={bits} />
         <Stat k="Shades" v={`2^${bits} = ${num(levels)}`} tone="text-mint" />
@@ -178,7 +178,7 @@ export function BitDepthExplorer() {
         </span>
       </div>
       <p className="text-sm text-muted-foreground">
-        The top strip is the brightness you wanted; the bottom strip is what {bits} bit{bits > 1 ? "s" : ""} can store. Every value snaps to the nearest of {num(levels)} shades, which is why low depths show visible bands.
+        The top row is the brightness you wanted; the bottom row is what {bits} bit{bits > 1 ? "s" : ""} can store. Every value snaps to the nearest of {num(levels)} shades, which is why low depths show visible bands.
       </p>
     </Panel>
   );
