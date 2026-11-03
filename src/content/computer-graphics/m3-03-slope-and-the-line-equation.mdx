@@ -87,6 +87,22 @@ The result:
 It's tempting to round $c = 6.667$ to 7 "since pixels are whole numbers". Don't. That moves the entire line up by a third of a pixel, and with $y = 0.666x + 7$ you get pixels (7, 12) and (10, 14) instead of (7, 11) and (10, 13), and the line doesn't even start at (5, 10) exactly. Keep $m$ and $c$ as exact as you can, and round only y, only at the moment you light the pixel.
 </Callout>
 
+### Rounding or truncating?
+
+Some worked solutions don't round y at all. They store it in a C++ `int`, which **truncates**: it drops the fraction instead of going to the nearest whole number, so 10.996 becomes 10 and 13.66 becomes 13. Truncating this line gives:
+
+| x | exact y | rounded | truncated |
+|---|---|---|---|
+| 5 | 10 | 10 | 10 |
+| 6 | 10.667 | 11 | 10 |
+| 7 | 11.333 | 11 | 11 |
+| 8 | 12 | 12 | 12 |
+| 9 | 12.667 | 13 | 12 |
+| 10 | 13.333 | 13 | 13 |
+| 11 | 14 | 14 | 14 |
+
+Truncating always goes down, so its pixels sit up to a whole pixel below the true line; rounding keeps every pixel within half a pixel of it. Both draw a connected line, but they light different pixels at x = 6 and x = 9. If a question or a program truncates, follow it, and say which you're doing. In C++, `(int)(y + 0.5)` or `round(y)` rounds a positive y instead of truncating it.
+
 ## Where the naive algorithm breaks
 
 Now try a steep line. Enter `2 1 4 9` (from (2, 1) to (4, 9)) in the boxes above and press **Draw**.

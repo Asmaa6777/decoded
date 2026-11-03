@@ -224,3 +224,13 @@ describe("second-round helpers", () => {
     expect(lcdTwist(0.25)).toBe(67.5);
   });
 });
+
+describe("truncating instead of rounding, as the notes' C++ table does", () => {
+  it("matches the notes' pixels for P1(5,10) to P2(11,14)", () => {
+    const m = 2 / 3;
+    const c = 10 - m * 5;
+    const truncated = [5, 6, 7, 8, 9, 10, 11].map((x) => Math.trunc(Number((m * x + c).toFixed(9))));
+    expect(truncated).toEqual([10, 10, 11, 12, 12, 13, 14]);
+    expect([5, 6, 7, 8, 9, 10, 11].map((x) => Math.trunc(0.666 * x + 7))).toEqual(truncated);
+  });
+});

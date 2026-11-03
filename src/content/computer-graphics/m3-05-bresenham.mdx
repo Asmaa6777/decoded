@@ -93,6 +93,8 @@ Memorize three formulas: $p_0 = 2\Delta y - \Delta x$; if $p < 0$ add $2\Delta y
 | Error | grows on long lines as rounding adds up | none: the decision is exact |
 | Ease | simpler to understand | needs the decision parameter |
 
+Lists of line algorithms often add a fourth, the **Gupta-Sproull algorithm**. It's Bresenham's algorithm with [antialiasing](/courses/computer-graphics/aliasing#antialiasing-partial-coverage-partial-color) added: as it steps, it also shades the pixels just above and below the line by how far each one is from it, so the line comes out smooth instead of jagged.
+
 <PracticalApplication title="Everywhere a line is drawn" tool="Plotters, printers, graphics libraries">
 Bresenham's algorithm was written for a pen plotter, and it's still how many graphics libraries, printers and embedded displays draw lines. The same decision-parameter trick extends to circles (the midpoint circle algorithm) and ellipses.
 </PracticalApplication>
