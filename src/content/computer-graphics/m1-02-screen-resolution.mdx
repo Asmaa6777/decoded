@@ -3,7 +3,7 @@ import { ScreenDensity } from "@/components/mdx/GraphicsVisualizers";
 
 # Screen Resolution and Pixel Density
 
-A screen is a physical grid of pixels. Its **display resolution** (or **screen resolution**) is how many pixels it has, written like an image's dimensions: columns × rows, width first.
+A screen is a physical grid of pixels. Its **display resolution** (or **screen resolution**) is how many pixels it has, written like an image's dimensions: columns × rows, width first. The grid a screen physically has is its **native resolution**, and it's the most it can show; a lower setting has to stretch each pixel of the picture over more than one of the screen's.
 
 ## Reading a resolution
 
@@ -13,7 +13,7 @@ $$
 1920 \times 1080 = 2{,}073{,}600 \text{ pixels}
 $$
 
-about 2.1 million. Each of those is a tiny light the computer can set to any color, and together they make the picture.
+about 2.1 million, or 2.1 megapixels, counted the same way as a [camera's megapixels](/courses/computer-graphics/pixels-and-the-image-grid#dimensions-width--height). Each of those is a tiny light the computer can set to any color, and together they make the picture.
 
 Some common resolutions:
 
@@ -41,7 +41,7 @@ Old monitors and TVs were 4:3, nearly square. Today's are mostly 16:9 widescreen
 
 ## Pixel density
 
-A screen's size is sold as its **diagonal** in inches, corner to corner. **Pixel density** is how many pixels sit in one inch of that screen, in PPI. Higher density means smaller pixels, so text and edges look crisper.
+A screen's size is sold as its **diagonal** in inches, corner to corner. **Pixel density** is how many pixels sit in one inch of that screen, usually given in PPI. Printers and scanners were measured in DPI first, and for screens a "dot" just means a pixel, so you'll see screen density given in DPI too: the two are used interchangeably. Higher density means smaller pixels, so text and edges look crisper.
 
 The cleanest way to compute it uses the diagonal on both sides. Find how many pixels lie along the diagonal with Pythagoras, then divide by the diagonal's length:
 
