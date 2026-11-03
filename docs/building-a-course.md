@@ -1,6 +1,6 @@
 # Building a Course
 
-How Decoded courses get made, what you need before you start, and a prompt you can give a coding agent to do the work with you. You can follow the same steps by hand.
+How Decoded courses get made, what you need before you start, how to improve a course in rounds, and prompts you can give a coding agent to do the work with you. You can follow the same steps by hand.
 
 ## What you need
 
@@ -62,11 +62,55 @@ Write links as ordinary markdown, `[words](/courses/<course>/<lesson>#<section>)
 - [ ] Every idea a lesson uses but doesn't explain links to the lesson that does, and older lessons that use your new ideas link to them
 - [ ] No source files, teacher names or institution names are in the diff
 
-## The prompt
+## Build in iterations
 
-Fill in the brackets, then paste this into a coding agent such as Claude Code, started from the root of the repository.
+A course is never finished in one pass. Treat the first build as a skeleton and improve it in rounds, each with one job.
+
+This matters most when an agent does the writing. An agent is trained to finish the task it was given, and a whole course is a big task. It spreads its attention over twenty lessons, and the result is complete but thin. Every lesson exists and the tests pass, but details a student needs get flattened: terms the notes use differently, examples that weren't worked through, ideas that were only named. Those checks measure "the course exists", not "a student understands it", and an agent aiming for the checks stops there. Machine learning calls this specification gaming, or Goodhart's law: once a measure becomes the target, it stops being a good measure.
+
+Three rules keep the rounds honest:
+
+- **One iteration per session, on a small scope.** Run each round on one module, or even one lesson, not the whole course. A smaller task gets more attention per lesson.
+- **Review in a fresh session.** The session that built something is invested in it being done. Start a new one for every review round, and tell it to look for problems, not to confirm the work is good.
+- **Name the bar before the round starts.** Each iteration below has its own definition of done. Hold the agent to that, not to "the tests pass".
+
+> [!IMPORTANT]
+> Every iteration ends with a report: what changed, what it found but didn't fix, and what it couldn't check. Read it before starting the next round. The things that slip through usually show up as one line in that report.
+
+### The iterations
+
+| # | Iteration | Scope | Done when |
+| --- | --- | --- | --- |
+| 1 | **Skeleton** | whole course | Every lesson exists, the course is registered, every hard idea has one visualization, and lint, tests and build pass. It is allowed to be thin. |
+| 2 | **Source fidelity** | one module | Every topic, term, worked example and exercise in the notes is covered. Where the notes use a different name for something, the lesson gives both names. Source errors are listed and corrected. |
+| 3 | **Depth** | one module | Every term is defined in plain words before it's used, every example is worked step by step, and each lesson names the mistake students usually make. |
+| 4 | **Plain language** | one module | No unexplained jargon, short sentences, nothing a non-native speaker would have to look up twice. Run the text through the humanizer. |
+| 5 | **Visualizations** | one module | Every idea that's still only text has been judged: does a reader need something to drag or step through? Every visualization works at phone width, in light and dark themes, and with reduced motion. |
+| 6 | **Practice** | one module | The quiz covers every lesson and asks the kinds of questions the source's exams ask. Hand calculations have answers to check against. |
+| 7 | **Connections** | whole course | Every idea used but not taught links to the lesson that teaches it, older lessons link back, and paths, prerequisites and tools are set. |
+| 8 | **Student read-through** | one module | A fresh session reads each lesson as a student meeting the subject for the first time and lists every place it got confused, stuck or bored. A separate session then fixes that list. |
+| 9 | **Real readers** | whole course | People studying the subject use the course and report what didn't work. This is the round that can't be gamed, so it outranks all the others. |
+
+Run them in order the first time. After that, run whichever round the latest feedback points at.
+
+Some rounds a course may also need:
+
+- **Exam preparation:** practice problems in the style of past exams, with full worked solutions.
+- **Projects:** a practical lesson where the reader builds something real with the course's ideas, like the [Signals From Zero project](https://decoded.stack42.tech/courses/computational-mathematics/sound-and-sampling).
+- **Real-world material:** real images, real recordings or real data in place of drawn examples.
+- **Accessibility:** keyboard use, screen-reader labels and color contrast for every visualization.
+
+## Prompts
+
+Fill in the brackets, then paste a prompt into a coding agent such as Claude Code, started from the root of the repository. Start a new session for each one.
+
+### Iteration 1: the skeleton
 
 ```text
+This is iteration 1 of building a course, the skeleton, as described in
+"Build in iterations" in docs/building-a-course.md. Later iterations will deepen
+it, so aim for complete and correct, not polished.
+
 Build a new Decoded course on [SUBJECT]. My source material is in
 _sources/[COURSE-SLUG]/. The readers are [WHO THEY ARE AND WHAT THEY ALREADY
 KNOW]. Credit the course to [NAME] (github.com/[USERNAME]).
@@ -107,6 +151,37 @@ Follow the steps in docs/building-a-course.md, and:
    open every lesson at phone width in a browser. Fix what you find.
 
 When you finish, report what you built, what you decided and why, the source
-errors you found, and anything you couldn't verify. Don't push or open a pull
+errors you found, and anything you couldn't verify. Then suggest which later
+iteration each module needs most, and why. Don't push or open a pull
 request until I've reviewed the result and asked you to.
 ```
+
+### Iterations 2 to 8
+
+Use this frame for every later round, with the round's own instructions in the middle.
+
+```text
+This is iteration [NUMBER], [NAME], of the [COURSE] course, as described in
+"Build in iterations" in docs/building-a-course.md. Read that section first.
+Work only on [MODULE OR LESSONS]. The source material is in _sources/[SLUG]/.
+
+You did not build this course. Your job is to find what is missing or wrong,
+not to confirm it is good. Assume there are problems until you have looked.
+
+[THE ROUND'S INSTRUCTIONS, BELOW]
+
+Fix what you find, keeping the site's style (CLAUDE.md, docs/brand.md). Run
+lint, tests and the build. End with a report: what you changed, what you found
+but didn't fix, what you couldn't check, and which iteration this module
+needs next. Commit, but don't push until I ask.
+```
+
+The middle part for each round:
+
+- **2, Source fidelity:** "Go through the source section by section. For each topic, term, worked example and exercise, say where the course covers it. Where the source calls something by a different name than the course does, give both names in the lesson. Rework every example the source works, and list each source error you find."
+- **3, Depth:** "Read each lesson as if you'd never met the subject. Find every term used before it's defined, every step skipped in an example and every claim with no reason given. Add the missing definitions, steps and reasons, and add the mistake students usually make on each idea."
+- **4, Plain language:** "Find jargon, long sentences and words a non-native English speaker would struggle with. Use the simplest word that is still accurate, and keep a technical term only when it is the right name, explained the first time. Then run the prose through the humanizer skill."
+- **5, Visualizations:** "List every idea that is still only explained in text, and decide for each whether a reader needs something to drag, click or step through. Build the ones that do, with logic and tests in src/lib/. Then check every visualization in a browser at phone width, in light and dark themes, and with reduced motion."
+- **6, Practice:** "Check the quiz covers every lesson. Add questions in the style of the source's exams and exercises, including hand calculations, and make sure each explanation says why the wrong answers are wrong."
+- **7, Connections:** "Find every idea a lesson uses but doesn't teach, and link it to the lesson that does, in this course or another. Search the other courses for places that should link to this one. Check the learning paths, prerequisites and tools entries."
+- **8, Student read-through:** "Don't fix anything. Read each lesson in order as a student meeting the subject for the first time, who has only the earlier lessons. List every place you were confused, stuck, bored or unsure what to do, quoting the sentence. A separate session will fix the list."
