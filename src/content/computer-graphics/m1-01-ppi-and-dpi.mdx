@@ -34,7 +34,7 @@ $$
 \frac{1200}{300} = 4 \text{ in wide}, \qquad \frac{800}{300} \approx 2.667 \text{ in tall}
 $$
 
-Raising the PPI shrank the print to a quarter of the width. It's the same file, just with its pixels pushed closer together. Try it:
+Raising the PPI from 72 to 300 shrank the print to about a quarter of the width, since $300 \div 72 \approx 4.2$. It's the same file, just with its pixels pushed closer together. If a question wants centimetres, multiply inches by 2.54: 4 inches is 10.16 cm. Try it:
 
 <PrintSizeCalculator />
 
@@ -52,7 +52,21 @@ $$
 240 \times 4 = 960 \text{ pixels wide}, \qquad 240 \times 6 = 1440 \text{ pixels tall}
 $$
 
-A smaller image will either print smaller or get stretched, and stretching shows as blur.
+A smaller image will either print smaller or get stretched. Stretching shows as blur, because the software has to invent the missing pixels by averaging their neighbors, and averages are softer than real detail.
+
+## The third question: what PPI will I get?
+
+Sometimes you know both the pixels and the print size, and need the quality. Divide pixels by inches:
+
+$$
+\text{PPI} = \frac{\text{pixels}}{\text{inches}}
+$$
+
+A 1200-pixel-wide photo printed 8 inches wide comes out at $1200 \div 8 = 150$ PPI, fine for a poster seen from across a room but soft up close. So the one formula answers three questions, depending on which two numbers you already have.
+
+<Callout tone="orange" label="More PPI isn't more detail">
+Typing a bigger PPI into an image's settings doesn't make it sharper. Without new pixels it only makes the print smaller. Real detail comes from the pixel count; PPI just decides how tightly that detail is packed.
+</Callout>
 
 ## DPI: dots per inch
 
@@ -69,7 +83,7 @@ Plenty of software, and plenty of notes, say "DPI" when they mean PPI, especiall
 </Callout>
 
 <PracticalApplication title="Design and printing" tool="Photoshop's Image Size, print shops">
-A print shop asks for "300 DPI" files. What they need is enough pixels for 300 per inch at the final size. Changing the number in Photoshop's Image Size dialog without resampling changes only the printed size, exactly as in the calculator above.
+A print shop asks for "300 DPI" files. What they need is enough pixels for 300 per inch at the final size. Changing the number in Photoshop's Image Size dialog without **resampling** (adding or removing pixels) changes only the printed size, exactly as in the calculator above.
 </PracticalApplication>
 
 The [next lesson](/courses/computer-graphics/screen-resolution) applies the same idea to screens, where the size in inches is fixed and the question is how many pixels it holds.

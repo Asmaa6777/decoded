@@ -259,3 +259,17 @@ describe("the Module 0 worked examples added for depth", () => {
     expect(Math.ceil((3 * 3) / 4) * 4).toBe(12);
   });
 });
+
+describe("the Module 1 worked examples added for depth", () => {
+  it("answers the third PPI question and converts to centimetres", () => {
+    expect(1200 / 8).toBe(150);
+    expect(Number((4 * 2.54).toFixed(2))).toBe(10.16);
+  });
+  it("finds 16:9 by Euclid and the 1080p diagonal", () => {
+    expect([1920 % 1080, 1080 % 840, 840 % 240, 240 % 120]).toEqual([840, 240, 120, 0]);
+    expect(1920 ** 2 + 1080 ** 2).toBe(4_852_800);
+    expect(Math.round(Math.sqrt(4_852_800))).toBe(2203);
+    expect(Math.round((15 * 4) / 5)).toBe(12);
+    expect(aspectRatio(3840, 2160)).toEqual([16, 9]);
+  });
+});

@@ -7,7 +7,7 @@ A screen is a physical grid of pixels. Its **display resolution** (or **screen r
 
 ## Reading a resolution
 
-"1080p" means a screen 1920 pixels wide and 1080 tall. Multiply to count the pixels:
+"1080p" means a screen 1920 pixels wide and 1080 tall. The number is the rows, and the **p** stands for **progressive**: every row is drawn in every frame. (The older alternative, **interlaced** or 1080i, drew the odd rows in one frame and the even rows in the next.) Multiply to count the pixels:
 
 $$
 1920 \times 1080 = 2{,}073{,}600 \text{ pixels}
@@ -25,11 +25,11 @@ Some common resolutions:
 | QHD (1440p) | 2560 × 1440 | 3,686,400 |
 | 4K UHD | 3840 × 2160 | 8,294,400 |
 
-4K has exactly four times the pixels of 1080p: twice as many columns and twice as many rows.
+4K is named for its width, roughly 4,000 columns. It has exactly four times the pixels of 1080p: twice as many columns and twice as many rows, and $2 \times 2 = 4$.
 
 ## Aspect ratio
 
-The **aspect ratio** is the shape of the screen: width compared with height. Divide both numbers by their [greatest common divisor](/courses/computational-mathematics/divisibility-and-euclid) to reduce it:
+The **aspect ratio** is the shape of the screen: width compared with height. Divide both numbers by their [greatest common divisor](/courses/computational-mathematics/divisibility-and-euclid), the biggest number that divides both exactly, to reduce it. For 1920 and 1080 that's 120, which Euclid's algorithm finds by taking remainders: $1920 \bmod 1080 = 840$, $1080 \bmod 840 = 240$, $840 \bmod 240 = 120$, $240 \bmod 120 = 0$, so the answer is the last non-zero remainder, 120.
 
 $$
 1920 : 1080 \;\xrightarrow{\;\div 120\;}\; 16 : 9
@@ -38,6 +38,8 @@ $$
 $$
 
 Old monitors and TVs were 4:3, nearly square. Today's are mostly 16:9 widescreen. A phone held upright is tall and narrow, around 9:19.5.
+
+An aspect ratio is a shape, not a size. A 1366 × 768 laptop and a 3840 × 2160 TV are both about 16:9, and a 4:3 screen can be any size at all.
 
 ## Pixel density
 
@@ -52,7 +54,7 @@ $$
 For a 24-inch 1080p monitor:
 
 $$
-\frac{\sqrt{1920^2 + 1080^2}}{24} = \frac{2203}{24} \approx 92 \text{ PPI}
+\frac{\sqrt{1920^2 + 1080^2}}{24} = \frac{\sqrt{3{,}686{,}400 + 1{,}166{,}400}}{24} = \frac{\sqrt{4{,}852{,}800}}{24} \approx \frac{2203}{24} \approx 92 \text{ PPI}
 $$
 
 If you know the physical width instead, you can divide along one side, which gives the same answer because pixels are square:
@@ -65,7 +67,7 @@ $$
 A common slip is "1920 ÷ 24 = 80 PPI". That divides horizontal pixels by a diagonal length, mixing two directions. Pair pixels and inches along the same line: diagonal with diagonal, or width with width.
 </Callout>
 
-A classic example: an old 15-inch 640 × 480 monitor. Its diagonal is 800 pixels ($\sqrt{640^2+480^2}$), so its density is $800 \div 15 \approx 53$ PPI, often rounded to "about 50". That same 4:3 screen is 12 inches wide, and $640 \div 12$ gives the same 53.
+A classic example: an old 15-inch 640 × 480 monitor. Its diagonal is 800 pixels ($\sqrt{640^2+480^2}$), so its density is $800 \div 15 \approx 53$ PPI, often rounded to "about 50". That same screen's width follows from its shape: a 4:3 screen's width, height and diagonal are in the ratio 4 : 3 : 5, like the 3-4-5 triangle, so a 15-inch diagonal means $15 \times \tfrac{4}{5} = 12$ inches wide. And $640 \div 12$ gives the same 53.
 
 Compare some real screens:
 
@@ -74,7 +76,7 @@ Compare some real screens:
 The phone has fewer pixels than the 27-inch monitor but more than four times its density, because it packs them into a much smaller space. Phones and tablets typically sit between 200 and 500+ PPI, monitors around 90 to 160.
 
 <Callout tone="sky" label="Why your phone's pixels are invisible">
-From normal viewing distance, the eye stops resolving individual pixels at around 300 PPI for a phone held close. Past that, extra density makes little visible difference, which is why phone makers stopped racing on PPI.
+From normal viewing distance, the eye can no longer tell individual pixels apart at around 300 PPI for a phone held close. Past that, extra density makes little visible difference, which is why phone makers stopped racing on PPI.
 </Callout>
 
 That's resolution. [Check yourself](/courses/computer-graphics/resolution-quiz) before moving on to the hardware that lights these pixels.
