@@ -7,7 +7,25 @@ Most algorithms courses open with a definition that sounds obvious and then move
 
 > An **algorithm** is a well-defined procedure that takes some input and turns it into some output in a finite number of steps.
 
+Put another way, an algorithm is a **sequence of computational steps that transform the input into the output**.
+
 That describes a recipe too. "Take flour, eggs and milk, whisk, pour, flip when bubbles appear, stop after five pancakes" has input, steps, output and an end. What makes something an *algorithm* is how strictly we read each of those words, and the rest of the course depends on that strictness, so it's worth a few minutes here.
+
+## Problems and instances
+
+An algorithm is a tool for solving a **computational problem**. The problem and the algorithm do different jobs:
+
+- The **problem** says *what* we want: which inputs are allowed, and what output each one should get. This is the input/output relationship.
+- The **algorithm** says *how* to get there: one specific step-by-step procedure that produces that output.
+
+Here is the sorting problem, written the way textbooks state it:
+
+- **Input:** a sequence of $n$ numbers $\langle a_1, a_2, \ldots, a_n \rangle$.
+- **Output:** a permutation (a reordering) $\langle a'_1, a'_2, \ldots, a'_n \rangle$ of those same numbers, such that $a'_1 \le a'_2 \le \cdots \le a'_n$.
+
+One particular input is called an **instance** of the problem. $\langle 8, 1, 4, 9, 3, 7 \rangle$ is an instance of sorting, and the right output for it is $\langle 1, 3, 4, 7, 8, 9 \rangle$. A problem has infinitely many instances. An algorithm has to handle all of them.
+
+Notice that the problem doesn't say *how* to sort. Selection sort, merge sort and quick sort are three different algorithms for this one problem, and module 1 covers each of them.
 
 ## What "well-defined" demands
 
@@ -21,15 +39,57 @@ A procedure counts as an algorithm only if it has all of these:
 
 We also want it to be *efficient* (it doesn't waste time or memory) and *understandable* (someone else can read it and trust it). Those two are where design and analysis come in.
 
+Many course notes list these **properties of an algorithm** in plain sentences instead of one-word names. They are the same ideas:
+
+| How notes often say it | The name used above |
+| --- | --- |
+| Takes zero or more inputs | Input |
+| Results in one or more outputs | Output |
+| Each step can be easily understood by someone reading it | Definiteness |
+| Must terminate after a finite number of steps | Finiteness |
+| All operations can be carried out in a finite amount of time | Effectiveness |
+| Should be efficient and flexible, and use as little memory as possible | Efficiency |
+| Should be concise and compact, so its correctness is easy to check | Understandable |
+
+"Flexible" means it works for the whole range of inputs, not only the example in front of you. The next section calls that *generality*.
+
+## What design and analysis aim for
+
+The course is called design *and* analysis because there are two jobs:
+
+- **Design:** find an algorithm that solves the problem at the lowest cost.
+- **Analysis:** predict that cost before running anything: how much **time** and **memory** the algorithm will need, and how that grows as the input grows.
+
+A good algorithm is judged on five things:
+
+- **Efficiency:** time and space. Most of this course is about measuring this.
+- **Simplicity:** a simpler algorithm is easier to understand, prove and code, and has fewer places for bugs to hide.
+- **Generality:** it handles the full range of inputs, including the special cases: an empty array, one element, all values equal.
+- **Optimality:** no other algorithm for the same problem can do better. For example, no sort that works by comparing elements can beat about $n \log n$ comparisons in the worst case, so merge sort is optimal in that sense. Advanced Algorithms [proves this lower bound](/courses/advanced-algorithms/sorting-lower-bounds#the-lower-bound).
+- **Coding:** how the algorithm's objects and operations will be represented in the programming language you choose. An algorithm that needs "the smallest remaining item" quickly needs a data structure that can give it.
+
+The same list appears as the **basic issues** of the subject: how to design algorithms, how to express them, how to prove them correct, how to analyze their efficiency, and whether they are optimal.
+
 ## Correctness
 
-An algorithm is **correct** if, for *every* valid input, it stops and gives the right output.
+An algorithm is **correct** if, for *every* valid input instance, it halts (stops) and gives the right output.
 
 That means every input, not just the three examples you tried. A sorting algorithm that works on 99.9% of arrays and silently scrambles the rest is wrong. This is why algorithm courses spend time on traces and proofs: testing can show that a bug exists, but only reasoning can show that one doesn't. For loops, that reasoning is a [loop invariant](/courses/discrete-mathematics/loop-invariants#what-a-loop-invariant-is).
 
 <Callout tone="orange" label="Why this matters at work">
 Most production incidents aren't caused by a slow algorithm. They come from an algorithm that was wrong on an input nobody thought about: an empty list, a duplicate, a negative number, a value right at the edge. Asking "does this work for *every* input?" catches those before users do.
 </Callout>
+
+## There's no single best algorithm
+
+Several correct algorithms usually exist for one problem, and which one is best depends on the situation. For sorting, it depends on:
+
+1. **How many items there are.** For 20 items a simple quadratic sort is fine. For 20 million it isn't.
+2. **Restrictions on the values.** If every value is a whole number from 0 to 100, you can sort by counting how many times each value appears, without comparing items at all.
+3. **Where the data is stored:** main memory, disks or tapes. Data on a disk is slow to jump around in, so you want an algorithm that reads it in order, which is why [merge sort is used for data too big for memory](/courses/algorithm-design-and-analysis/merge-sort#where-this-shows-up-today).
+4. **How sorted the items already are.** On a nearly sorted array, [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#why-its-the-best-of-the-simple-sorts) runs in close to linear time.
+
+So "which sort is best?" has no answer by itself. "Which sort is best for 10 million nearly sorted records on disk?" does.
 
 ## Algorithm vs. program
 
@@ -48,17 +108,17 @@ This course writes everything in **Java**, because that's what most university l
 
 ## How an algorithm gets made
 
-Designing an algorithm is a loop, and typing comes at the end of it:
+Designing an algorithm is a loop, and typing comes at the end of it. This is the **algorithm design and analysis process**:
 
 <Diagram
   direction="TB"
   nodes={[
     { id: "a", label: "Understand the problem", type: "source" },
-    { id: "b", label: "Choose your tools" },
-    { id: "c", label: "Design the algorithm" },
-    { id: "d", label: "Prove it's correct" },
-    { id: "e", label: "Analyze its cost" },
-    { id: "f", label: "Code it", type: "sink" },
+    { id: "b", label: "Decide on the approach" },
+    { id: "c", label: "Design an algorithm" },
+    { id: "d", label: "Prove correctness" },
+    { id: "e", label: "Analyze the algorithm" },
+    { id: "f", label: "Code the algorithm", type: "sink" },
   ]}
   edges={[
     { from: "a", to: "b" },
@@ -66,34 +126,65 @@ Designing an algorithm is a loop, and typing comes at the end of it:
     { from: "c", to: "d" },
     { from: "d", to: "e" },
     { from: "e", to: "f" },
-    { from: "e", to: "c", label: "too slow", back: true },
+    { from: "d", to: "c", back: true, side: "left", offset: 30 },
+    { from: "d", to: "b", back: true, side: "left", offset: 60 },
+    { from: "e", to: "c", back: true, offset: 30 },
+    { from: "e", to: "b", back: true, offset: 60 },
   ]}
 />
 
-1. **Understand the problem.** What exactly is the input? What counts as a right answer? What are the weird cases?
-2. **Choose your tools.** Do you need the exact answer or a good-enough one? Which data structures? Which strategy: brute force, [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer), greedy, or [dynamic programming](/courses/algorithm-design-and-analysis/dynamic-programming)? (You'll learn all four here.)
-3. **Design** the steps.
-4. **Prove** it's correct, or at least convince yourself carefully.
-5. **Analyze** how much time and memory it needs. If it's too slow, go back to step 3.
-6. **Code** it.
+1. **Understand the problem.** What exactly is the input? What counts as a right answer? What are the weird cases? Work a few small instances by hand.
+2. **Decide on the approach.** The full name of this box is "Decide on: computational means, exact vs. approximate solving, algorithm design technique", three things to settle before designing anything:
+   - **The computational means:** what kind of machine runs it. Almost everything in this course assumes an ordinary computer that does one step at a time; a machine that runs many steps in parallel needs different algorithms. How much speed and memory you have counts here too.
+   - **Exact or approximate solving:** do you need the exact best answer, or is a good-enough one acceptable? For the hard problems below, exact answers can take too long, so people settle for close ones.
+   - **The algorithm design technique:** brute force, [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer), greedy, or [dynamic programming](/courses/algorithm-design-and-analysis/dynamic-programming). You'll learn all four here. This is also when you pick your data structures.
+3. **Design an algorithm:** write the steps.
+4. **Prove correctness:** show it gives the right output for every input, or at least convince yourself carefully.
+5. **Analyze the algorithm:** how much time and memory does it need?
+6. **Code the algorithm** in a programming language.
+
+The arrows going back up are the important part. If the proof fails, or the analysis says it's too slow, you return to step 3 and redesign. If no design with your current technique works, you go back further to step 2 and pick a different technique or settle for an approximate answer.
 
 Coding is *last*. If you jump straight to step 6, you end up doing steps 3 to 5 by trial and error in a debugger at 2 a.m.
 
 <Callout tone="sky" label="Exam tip">
-"Draw the flowchart of the algorithm design and analysis process" is a common exam question. The answer is the six boxes above, in order, with an arrow back from "analyze" to "design."
+"Draw the flowchart of the algorithm design and analysis process" is a common exam question. Draw the six boxes above, top to bottom, with "Decide on" written out in full: *computational means, exact vs. approximate solving, algorithm design technique*. Then draw the feedback arrows: from "Prove correctness" back to "Design" and to "Decide on", and from "Analyze" back to "Design" and to "Decide on". Students often draw only the straight line down and lose marks for the loops.
 </Callout>
 
 ## The kinds of problems algorithms solve
 
-Most problems you'll meet fall into a few families, and this course covers most of them:
+Most problems fall into a few families. Exams often ask you to list them with an example of each, so here is the full list, with where this course covers each one:
 
-- **Sorting:** put things in order (module 1).
-- **Searching:** find one thing among many (module 2).
-- **Numerical:** the greatest common divisor (module 2).
-- **Graph problems:** routes, networks, connections (module 3).
-- **Optimization:** the best choice under constraints (module 4, greedy and dynamic programming).
+| Problem type | Examples | In this course |
+| --- | --- | --- |
+| **Numerical** | Solving equations (Newton-Raphson method), numerical integration, the greatest common divisor | [Euclid's GCD](/courses/algorithm-design-and-analysis/euclid-gcd), module 2 |
+| **Sorting** | Sorting a list of numbers, putting names in alphabetical order | Module 1 |
+| **Searching** | Linear search in an array, binary search in a sorted list | Module 2 |
+| **String processing** | Finding a word in a document, spell-checking | (not covered) |
+| **Graph** | Finding the shortest path (Dijkstra's algorithm), detecting cycles | Module 3 |
+| **Optimization** | Keeping costs as low as possible when sharing out resources, making as much profit as possible | Module 4 |
+| **Dynamic programming** | Computing Fibonacci numbers, the knapsack problem | [Dynamic programming](/courses/algorithm-design-and-analysis/dynamic-programming), module 4 |
+| **Machine learning** | Classification (is this email spam?), regression (predict a house price) | (not covered) |
+| **Data compression** | Huffman coding, run-length encoding | [Huffman codes](/courses/advanced-algorithms/huffman-and-activity-selection#huffman-codes) in Advanced Algorithms |
+| **Cryptography** | RSA for sending data securely, AES for encrypting data | (not covered) |
+| **Game theory** | The minimax algorithm for playing games such as chess | (not covered) |
 
-Then there are the **hard problems**: the Traveling Salesman Problem (shortest route through every city), the Knapsack Problem (most value that fits in a bag), and Graph Coloring. Nobody knows a fast algorithm for any of them; they belong to the *NP-complete* class. At the end of the course you'll solve a small version of knapsack and see where the difficulty comes from.
+Sorting, searching, string processing, graph and numerical problems are often called the **important problem types**, because so many other algorithms use them as building blocks.
+
+Then there are the **hard problems**: the Traveling Salesman Problem (the shortest route that visits every city once and comes home), the Knapsack Problem (the most value that fits in a bag), and Graph Coloring. Nobody knows a fast algorithm for any of them; they belong to the *NP-complete* class, which [Advanced Algorithms defines](/courses/advanced-algorithms/p-and-np#np-complete).
+
+Two things in that list look like contradictions, and exams like to test them:
+
+- **Shortest path is not a hard problem.** Some notes list "the shortest path" next to the Traveling Salesman Problem as hard. Finding the shortest path between two places is fast: [Dijkstra's algorithm](/courses/advanced-algorithms/shortest-paths#dijkstras-algorithm) does it in polynomial time, which is why the table above lists it as an ordinary graph problem. The hard one is the shortest *tour* that has to pass through every city.
+- **Knapsack appears twice.** It is NP-complete, and dynamic programming also solves it. Both are true: the dynamic programming solution is only fast while the bag's capacity is a small number, as the [knapsack analysis](/courses/algorithm-design-and-analysis/dynamic-programming#analysis) explains.
+
+## Data structures
+
+Algorithms work on data, and the way the data is stored changes how fast the algorithm can be.
+
+> A **data structure** is a way to store and organize data so that it can be accessed and changed easily.
+
+An array is the simplest one: items side by side, each reachable by its index in one step. Others (linked lists, stacks, queues, trees, hash tables) make different operations fast. Finding an item in an unsorted array takes a pass over every item, while a hash table can usually find it in one step. Choosing the data structure is part of step 2 of the design process above. The [Data Structures course](/courses/data-structures/arrays-and-memory) covers them one by one, starting with arrays.
 
 ## Where this shows up today
 
