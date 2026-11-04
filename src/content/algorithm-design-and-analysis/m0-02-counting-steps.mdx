@@ -5,24 +5,39 @@ import { GrowthTable, SearchVisualizer, LeetCodeProblems } from "@/components/md
 
 Two programs give exactly the same answer. One finishes in a blink and the other takes an afternoon, and neither has a bug. The difference is the *algorithm*, and **analysis** is how you see that difference before you run anything.
 
+The goal of analysis is to **compare algorithms**, mainly by running time, but also by memory and by how much effort they take a programmer to write and get right. *Running time analysis* means one specific question: how does the running time increase as the problem gets bigger?
+
 ## Why not just time it?
 
 You could time both programs with a stopwatch, and you'll do exactly that in the next lesson. But a stopwatch measures your laptop, your JVM, whatever else is running, and the one input you happened to try. On a faster machine the numbers change even though the *algorithm* stayed the same.
 
 So instead of seconds, we count **steps**:
 
-- **Input size, $n$.** How big is the problem? For an array, its length. For a graph, the number of vertices and edges. For a number, sometimes how many digits it has.
-- **The basic operation.** The step that does the real work and runs most often, usually a comparison (`a[j] < a[min]`) or an assignment inside the innermost loop.
+- **Input size, $n$.** How big is the problem? It depends on the problem:
+  - for an array, the number of elements;
+  - for a polynomial, its degree;
+  - for a matrix, the number of elements in it;
+  - for a graph, the number of vertices and edges;
+  - for a single number, such as when testing whether it's prime, the number of bits in its binary representation.
+- **The basic operation** (also called the **key operation**). The operation that contributes most to the running time: the step that does the real work and runs most often. In a sorting algorithm it's usually a comparison (`a[j] < a[min]`); otherwise it's often an assignment inside the innermost loop.
 - **Count how many times the basic operation runs, as a function of $n$.**
 
-That function, $T(n)$, is the algorithm's **time complexity**. It doesn't depend on the hardware or the language, so it describes the algorithm itself.
+That function is the algorithm's **time complexity**. This course writes it $T(n)$; many notes write $f(n)$ and call it the **complexity of the algorithm**, the running time or memory it needs in terms of the input size $n$. It doesn't depend on the hardware or the language, so it describes the algorithm itself.
 
 ## Space is a cost too
 
 **Space complexity** is how much memory the algorithm needs, also as a function of $n$. It has two parts:
 
 - A **fixed part** that doesn't depend on the input: the code itself and a few simple variables like `i`, `max`, `temp`.
-- A **variable part** that grows with the input: extra arrays you allocate and, easy to forget, the **recursion stack**. Every recursive call that hasn't returned yet takes up memory.
+- A **variable part** that grows with the input: extra arrays you allocate while running (dynamic memory allocation) and, easy to forget, the **recursion stack**. Every recursive call that hasn't returned yet takes up memory.
+
+Written as a formula, the space needed by an algorithm $X$ is
+
+$$
+S(X) = C + S(I)
+$$
+
+where $C$ is the fixed part and $S(I)$ is the variable part, which depends on $I$, the *instance characteristics* (the size of this particular input). For `findMax` from the last lesson, $S(I)$ is zero: it only ever needs `max` and `i`, however long the array is. A recursive version that calls itself once per element would keep $n$ calls on the stack at once, so its $S(I)$ grows like $n$.
 
 This course mostly measures time, but watch memory as well. [Merge sort](/courses/algorithm-design-and-analysis/merge-sort#merge-sort-in-one-paragraph), coming up in module 1, gets its speed by using extra memory.
 
@@ -43,13 +58,30 @@ How many comparisons does it make? Even for a fixed size $n$, *it depends on the
 
 - **Best case:** `x` is the very first element. **1** comparison.
 - **Worst case:** `x` is last, or not there at all. **$n$** comparisons.
-- **Average case:** if `x` is equally likely to be anywhere, you check about half the array, roughly **$n/2$** comparisons.
+- **Average case:** the expected number of comparisons, averaged over all possible inputs of size $n$. It needs a calculation, worked out below.
 
 Pick a case and step through it, watching the comparison counter:
 
 <SearchVisualizer algorithm="linear" array={[34, 7, 23, 32, 5, 62, 14, 48, 19]} target={34} cases />
 
-We usually report the **worst case**, because it's a *guarantee*: whatever input you give it, it won't be slower than this. The best case is nice to know, but you can't count on it. The average case is often the most realistic, but it needs assumptions about what inputs look like.
+The worst case gives an **upper bound** on the running time, and the best case gives a **lower bound**. To find either, you have to know which input causes the most (or fewest) operations. For linear search, the best case needs a constant number of comparisons whatever $n$ is, written $\Omega(1)$, and the worst case needs $n$, written $O(n)$.
+
+### Working out the average case
+
+Assume every case is equally likely: `x` is at position 1, or position 2, …, or position $n$, or not in the array at all. That's $n + 1$ cases. Count the comparisons in each, add them up, and divide by $n + 1$:
+
+- `x` at position $i$ takes $i$ comparisons. Positions 1 to $n$ together take $1 + 2 + \cdots + n = \frac{n(n+1)}{2}$.
+- `x` missing takes $n$ comparisons.
+
+$$
+\text{average} = \frac{\frac{n(n+1)}{2} + n}{n + 1} = \frac{n}{2} + \frac{n}{n+1}
+$$
+
+The second term is always just under 1, so the average is a little under $\frac{n}{2} + 1$. For the 9-element array above: $\frac{45 + 9}{10} = 5.4$ comparisons. It still grows in proportion to $n$, so the average case is linear too.
+
+The common mistake is to divide by $n$ and forget the "not found" case. The question says *all* cases, and "not there" is one of them.
+
+We usually report the **worst case**, because it's a *guarantee*: whatever input you give it, it won't be slower than this. The best case is nice to know, but you can't count on it. The average case is often the most realistic, but it needs assumptions about what inputs look like, like "every case is equally likely" above.
 
 ## Growth is what matters
 
@@ -63,7 +95,11 @@ This table is why analysis exists. At a million items, the gap between an $O(n^2
 
 ## The three notations
 
-We need a way to say "grows like," and there are three. Exams ask for all of them.
+We need a way to say "grows like."
+
+> **Asymptotic notations** are mathematical tools for describing how efficient an algorithm is, in time or in space, as the input size grows. The three most common are **Big-O**, **Omega** and **Theta** notation.
+
+"Asymptotic" means "as $n$ gets very large". These notations ignore what happens for small inputs and describe the trend. Exams ask for all three.
 
 **Big-O is an upper bound.** $T(n) = O(g(n))$ means that, for large enough $n$, $T(n)$ is at most some constant times $g(n)$:
 
@@ -72,6 +108,8 @@ T(n) \le c \cdot g(n) \quad \text{for all } n \ge n_0
 $$
 
 Read it as *"it grows no faster than $g$."* People use Big-O for the **worst case**.
+
+Big-O is the notation you'll use most, for three reasons. It lets you **compare algorithms** and pick the most efficient one for a problem. It **predicts performance** on large inputs you haven't tried. And it **classifies** algorithms into the groups in the table further down.
 
 **Omega (Ω) is a lower bound.** $T(n) = \Omega(g(n))$ means $T(n)$ is at least $c \cdot g(n)$ for large $n$: *"it grows at least as fast as $g$."* It's often used for the **best case**.
 
@@ -87,6 +125,10 @@ $$
 In practice, people say "Big-O" for everything and mean "how it grows in the worst case." That's fine in conversation. On an exam, be precise: O is ≤, Ω is ≥, Θ is both.
 </Callout>
 
+<Callout tone="orange" label="Notations are not cases">
+Many notes define the three by pairing each with a case: Big-O "provides the worst case", Omega "provides the best case", and Theta "is used for the average case". If an exam asks for those definitions, that is the expected answer. But the pairing is a habit, not the meaning. Each notation is a bound on a function, and you can bound any case with any of them. Linear search's worst case is $n$ comparisons, which is $O(n)$, $\Omega(n)$ and $\Theta(n)$ all at once. Its best case is $\Theta(1)$. Theta just says the bound is tight from both sides; it has nothing to do with averages.
+</Callout>
+
 Advanced Algorithms makes this precise, with formal definitions and proofs, in [asymptotic notation](/courses/advanced-algorithms/asymptotic-notation#big-o) and [counting the basic operation](/courses/advanced-algorithms/counting-the-basic-operation).
 
 ## Getting the Big-O without the algebra
@@ -97,6 +139,25 @@ You rarely need the formal definition to find the answer. Three rules cover almo
 2. **Keep only the biggest term.** $n^2 + 100n + 7$ is $O(n^2)$.
 3. **Loops multiply, sequences add.** A loop of $n$ inside a loop of $n$ is $n \times n = O(n^2)$. One loop of $n$ followed by another loop of $n$ is $n + n = O(n)$.
 
+To see the rules at work, write the cost of each line next to it. Statements that run once cost a constant, written $c_0, c_1, \ldots$; a constant is $O(1)$, so $O(c) = O(1)$. A loop header runs about $n$ times.
+
+```java
+int sum = 0;                  // c0     runs once
+for (int i = 0; i < n; i++)   // n      loop runs n times
+    sum += i;                 // c1     runs n times
+```
+
+$T(n) = c_0 + c_1 n$. Drop the constant and the smaller term: **$O(n)$**.
+
+```java
+int count = 0;                    // c0
+for (int i = 0; i < n; i++)       // n
+    for (int j = 0; j < n; j++)   // n, for each i
+        count++;                  // c1, runs n × n times
+```
+
+$T(n) = c_0 + c_1 n^2$, so **$O(n^2)$**.
+
 The common classes, from fastest to slowest:
 
 | Class | Name | Typical example |
@@ -106,24 +167,29 @@ The common classes, from fastest to slowest:
 | $O(n)$ | linear | linear search, find the max |
 | $O(n \log n)$ | linearithmic | merge sort, quick sort (average) |
 | $O(n^2)$ | quadratic | selection sort, bubble sort |
+| $O(n^3)$ | cubic | three nested loops, such as multiplying two $n \times n$ matrices the schoolbook way |
 | $O(2^n)$ | exponential | trying every subset (brute-force knapsack) |
+| $O(n!)$ | factorial | trying every order (brute-force Traveling Salesman) |
 
 "Linear" means the running time grows **in direct proportion** to the input. Double the input and you double the time.
 
 ## A worked example
 
-Exams love algorithms written as numbered steps. What does this one output, and what's its Big-O?
+Exams love algorithms written as numbered steps. What does this one output, and what's its Big-O, and what type is it?
 
 ```text
 Step 1: Declare N and F as integers.
 Step 2: Set F = 1. Read N.
-Step 3: If N > 0, repeat: F = F * N, then N = N - 1, until N = 0.
-Step 4: Print F.
+Step 3: If N > 0 is false, F stays 1.
+Step 4: If N > 0, repeat: F = F * N, then N = N - 1, until N = 0.
+Step 5: Print F.
 ```
 
 Trace it with $N = 4$: F becomes $1 \cdot 4 = 4$, then $4 \cdot 3 = 12$, then $12 \cdot 2 = 24$, then $24 \cdot 1 = 24$. It prints **24**, which is $4!$, so the algorithm computes the **factorial**.
 
-The loop body runs once for each value of N from N down to 1. That's $N$ multiplications, so it's **$O(n)$, linear**.
+If $N$ is 0 (or negative), the loop never runs and it prints **1**, which matches $0! = 1$.
+
+The loop body runs once for each value of N from N down to 1. That's $N$ multiplications, so it's **$O(n)$**, and its type is **linear time complexity**.
 
 In Java:
 
@@ -138,8 +204,41 @@ static long factorial(int n) {
 }
 ```
 
+## A loop that depends on the outer loop
+
+A common homework question: what's the Big-O of this?
+
+```java
+int x = 1;
+for (int i = 1; i <= n; i++) {
+    sum = 1;
+    for (int j = 1; j <= i; j++) {
+        x = i + j;     // basic operation
+        y = x + 3;
+    }
+}
+```
+
+The inner loop doesn't run $n$ times every time. It runs $i$ times, and $i$ changes. Make a table for $n = 4$:
+
+| $i$ | inner loop runs |
+| --- | --- |
+| 1 | 1 |
+| 2 | 2 |
+| 3 | 3 |
+| 4 | 4 |
+| **total** | **10** |
+
+In general the total is
+
+$$
+1 + 2 + 3 + \cdots + n = \frac{n(n+1)}{2} = \frac{n^2}{2} + \frac{n}{2}
+$$
+
+and for $n = 4$ that's $\frac{4 \cdot 5}{2} = 10$, matching the table. Each inner run does two assignments, so there are $n(n+1)$ of them, plus $n$ runs of `sum = 1` and one `x = 1`. Keep the biggest term and drop the constant $\frac{1}{2}$: **$O(n^2)$**, quadratic. The inner loop only does about half the work of a full $n \times n$ loop, but half of $n^2$ still grows like $n^2$.
+
 <Callout tone="orange" label="A classic mistake">
-Nested loops aren't always $O(n^2)$. If the inner loop runs a fixed number of times, say always 3, the total is $3n = O(n)$. Count how many times the inner loop *actually* runs instead of counting brackets.
+Nested loops aren't always $O(n^2)$. If the inner loop runs a fixed number of times, say always 3, the total is $3n = O(n)$. And the reverse trap: an inner loop that runs "only" up to $i$ is still $O(n^2)$, as above. Count how many times the inner loop *actually* runs instead of counting brackets.
 </Callout>
 
 <LeetCodeProblems

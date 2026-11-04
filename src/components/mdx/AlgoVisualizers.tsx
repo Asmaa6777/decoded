@@ -910,7 +910,7 @@ export function SearchVisualizer({
               </div>
               <div className="basis-full font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                 n = <span className="text-foreground">{n}</span> · best <span className="text-foreground">1</span> · worst{" "}
-                <span className="text-foreground">{n}</span> · average ≈ <span className="text-foreground">{n / 2}</span> comparisons
+                <span className="text-foreground">{n}</span> · average <span className="text-foreground">{+((n * (n + 1) / 2 + n) / (n + 1)).toFixed(1)}</span> comparisons
               </div>
             </>
           )}
