@@ -17,6 +17,18 @@ int b[];              // C-style, also legal
 int[] c = new int[10]; // declare and allocate 10 slots, all 0
 ```
 
+The third line is called **instantiation**: `new` creates the array in memory. If you already know the values, you can declare and fill the array in one go with an **initializer list**:
+
+```java
+int[] a2 = {12, 24, 16};          // length 3, decided by the list
+a = new int[] {10, 20, 30, 40};   // give an existing variable a new array
+System.out.println(a[0]);         // 10
+System.out.println(a2[2]);        // 16, the third element
+System.out.println(a.length);     // 4
+```
+
+The short form `{12, 24, 16}` only works on the line where the array is declared. Anywhere else you need `new int[] {...}`.
+
 A few facts that matter for algorithms:
 
 - An array has a **fixed size**, set when you create it. `c.length` gives it, with no parentheses, because it's a field and not a method.
@@ -29,7 +41,24 @@ Two-dimensional arrays work the same way, as an array of arrays:
 int[][] grid = new int[3][4];   // 3 rows, 4 columns
 grid[1][2] = 7;
 int rows = grid.length, cols = grid[0].length;
+
+int[][] small = {{1, 2}, {4, 5}};   // initializer list: two rows of two
 ```
+
+To print a 2D array, loop over the rows, and inside that over the columns of each row:
+
+```java
+for (int i = 0; i < small.length; i++) {
+    System.out.print("row " + i + ": ");
+    for (int j = 0; j < small[i].length; j++)
+        System.out.print(small[i][j] + " ");
+    System.out.println();
+}
+// row 0: 1 2
+// row 1: 4 5
+```
+
+Use `small[i].length` for the inner loop, not `small[0].length`. In Java each row is its own array, and rows are allowed to have different lengths.
 
 Printing in reverse is a loop that counts down:
 
@@ -109,6 +138,8 @@ System.out.println("Took " + (end - start) + " ms");
 - Use `System.nanoTime()` instead. It counts nanoseconds and is meant for measuring durations.
 - Make the array bigger. Analysis is about *large* $n$ anyway.
 
+Put **only** the algorithm between the two clock readings. Some lab handouts time a loop that fills an array *and* prints every element. Printing to the screen is far slower than filling the array, so that measures `System.out.print`, not the algorithm.
+
 ## Putting it together
 
 ```java
@@ -134,7 +165,7 @@ public static void main(String[] args) {
 
 These are the usual first-lab exercises. Write them yourself before peeking.
 
-**1. Print the largest number in a random array.** (You saw the idea in lesson 1.)
+**1. Print the largest number in a random array.** (You saw the idea in [the first lesson](/courses/algorithm-design-and-analysis/what-is-an-algorithm#a-first-algorithm-three-ways).)
 
 **2. Print the sum of all the items in a random array.**
 
@@ -147,7 +178,22 @@ static long sum(int[] a) {
 }
 ```
 
-Both are $O(n)$: one pass, constant work per element.
+**3. Print every position where a value `x` appears.** Unlike a normal search, don't stop at the first match: the array is random, so `x` may appear several times, or not at all.
+
+```java
+static void printPositions(int[] a, int x) {
+    boolean found = false;
+    for (int i = 0; i < a.length; i++) {
+        if (a[i] == x) {
+            System.out.println(x + " is at index " + i);
+            found = true;
+        }
+    }
+    if (!found) System.out.println(x + " is not in the array");
+}
+```
+
+All three are $O(n)$: one pass, constant work per element. The third always looks at every element, so its best case is $n$ comparisons as well. That's different from the [linear search](/courses/algorithm-design-and-analysis/counting-steps#best-worst-and-average-case) that stops at the first match.
 
 ## The real experiment
 
