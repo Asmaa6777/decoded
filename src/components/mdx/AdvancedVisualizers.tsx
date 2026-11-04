@@ -1191,6 +1191,7 @@ export function DijkstraVisualizer({ graph = "lecture" }: { graph?: keyof typeof
 const COIN_SYSTEMS = {
   us: { label: "US money (cents)", coins: [1, 5, 10, 25, 100, 500], amount: 639, fmt: (c: number) => (c >= 100 ? `$${c / 100}` : `${c}¢`) },
   kron: { label: "Krons (1, 7, 10)", coins: [1, 7, 10], amount: 15, fmt: (c: number) => `${c} kron` },
+  small: { label: "Coins 1, 3, 4", coins: [1, 3, 4], amount: 6, fmt: (c: number) => `${c}` },
 };
 
 /** Greedy change-making against the true minimum, for a coin system that works and one that doesn't. */
@@ -1214,6 +1215,7 @@ export function CoinChangeGreedy({ system: sys0 = "us" }: { system?: keyof typeo
           options={[
             ["us", "US money"],
             ["kron", "Krons"],
+            ["small", "1, 3, 4"],
           ]}
         />
         <label className="inline-flex items-center gap-2 font-mono text-xs">

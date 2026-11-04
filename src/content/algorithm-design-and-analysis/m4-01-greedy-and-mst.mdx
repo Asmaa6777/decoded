@@ -1,5 +1,6 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { MstVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { CoinChangeGreedy } from "@/components/mdx/AdvancedVisualizers";
 
 # Greedy Algorithms: Prim and Kruskal
 
@@ -22,6 +23,10 @@ Make change for 6 using as few coins as possible. Coins come in values 1, 3 and 
 The greedy cashier always picks the biggest coin that fits: **4**, leaving 2. Then **1**, then **1**, for three coins: 4 + 1 + 1.
 
 But **3 + 3** is only two coins. Grabbing the 4 looked best at that moment and turned out to be a mistake, and greedy never takes a choice back.
+
+<CoinChangeGreedy system="small" />
+
+Try other amounts with 1, 3 and 4 (10 and 14 fail too), then switch to US money, where greedy never loses.
 
 (With real coin systems such as 1, 5, 10, 25, greedy always gives the optimal answer, because those values were designed that way.)
 
