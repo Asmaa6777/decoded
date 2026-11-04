@@ -1,5 +1,5 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { SortVisualizer, StabilityCompare, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Selection Sort and Bubble Sort
 
@@ -68,6 +68,12 @@ Neither, really, since both are $O(n^2)$ on typical input. Selection sort does f
 ## Stability
 
 A sort is **stable** if equal elements keep the relative order they started in. Bubble sort is stable: it only swaps neighbours that are *strictly* out of order, so two equal values never jump over each other. Selection sort is **not** stable, because its long-distance swap can move an element past an equal one.
+
+The selection sort example at the top of this lesson has two 5s, tagged 5ᵃ and 5ᵇ in the order they start. Here is where each algorithm leaves them:
+
+<StabilityCompare initial={[3, 7, 8, 5, 2, 1, 9, 5, 4]} />
+
+Step through the first visualizer to see the moment it happens: in pass 4, swapping the minimum 4 into index 3 throws 5ᵃ to the far end, behind 5ᵇ.
 
 Here's why that matters. Sort a list of students by name, then sort it again by grade with a stable sort, and students with the same grade stay in alphabetical order. An unstable sort can scramble that first ordering.
 

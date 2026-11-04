@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { SortVisualizer, SearchVisualizer, GraphTraversal, MstVisualizer, KnapsackTable, EuclidVisualizer, GrowthTable } from "@/components/mdx/AlgoVisualizers";
+import { SortVisualizer, SearchVisualizer, StabilityCompare, GraphTraversal, MstVisualizer, KnapsackTable, EuclidVisualizer, GrowthTable } from "@/components/mdx/AlgoVisualizers";
 
 beforeAll(() => {
   // ReactFlow (used by <Diagram>) needs ResizeObserver, which jsdom lacks.
@@ -76,6 +76,12 @@ describe("visualizers step all the way through", () => {
     const { container } = render(<SearchVisualizer algorithm="binary" target={58} />);
     stepToEnd(container);
     expect(screen.getByText(/Found it/)).toBeDefined();
+  });
+
+  it("stability comparison flags selection sort, not bubble sort", () => {
+    render(<StabilityCompare initial={[3, 7, 8, 5, 2, 1, 9, 5, 4]} />);
+    expect(screen.getAllByText(/not stable/)).toHaveLength(1);
+    expect(screen.getAllByText(/: stable$/)).toHaveLength(1);
   });
 
   it("graph traversal toggles between BFS and DFS", () => {

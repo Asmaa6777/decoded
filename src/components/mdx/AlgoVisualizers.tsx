@@ -15,6 +15,8 @@ import {
   GROWTH,
   humanTime,
   formatOps,
+  equalTags,
+  keptEqualOrder,
   type Frame,
   type ArrayState,
   type SortAlgorithm,
@@ -380,6 +382,7 @@ function PointerRow({ s, count }: { s: ArrayState; count: number }) {
 }
 
 export function ArrayBars({ s }: { s: ArrayState }) {
+  const tags = equalTags(s); // 5ᵃ, 5ᵇ: shows whether equal values keep their order
   const max = Math.max(1, ...s.array);
   const n = s.array.length;
   const cols = { gridTemplateColumns: `repeat(${n}, minmax(26px, 1fr))` };
@@ -408,6 +411,7 @@ export function ArrayBars({ s }: { s: ArrayState }) {
         {s.array.map((v, i) => (
           <div key={i} className={`text-center font-mono text-[11px] ${inRange(i, s) ? "text-foreground" : "text-muted-foreground/50"}`}>
             {v}
+            {tags[i] && <sup className="text-violet font-semibold">{tags[i]}</sup>}
           </div>
         ))}
         <PointerRow s={s} count={n} />
@@ -799,6 +803,46 @@ export function SortVisualizer({ algorithm, initial = [38, 27, 43, 3, 9, 82, 10]
         </div>
       }
     />
+  );
+}
+
+/** One input, sorted by selection and by bubble sort: did equal values keep their order? */
+export function StabilityCompare({ initial = [3, 7, 8, 5, 2, 1, 9, 5, 4] }: { initial?: number[] }) {
+  const start = sortFrames("bubble", initial)[0].state;
+  const rows: [string, ArrayState][] = [["start", start]];
+  for (const algo of ["selection", "bubble"] as const) {
+    const frames = sortFrames(algo, initial);
+    rows.push([SORT_TITLES[algo].toLowerCase(), frames[frames.length - 1].state]);
+  }
+  return (
+    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
+      <div className="px-5 pt-4 eyebrow text-sky">Stable or not?</div>
+      <div className="p-5 overflow-x-auto flex flex-col gap-4">
+        {rows.map(([label, s], r) => {
+          const tags = equalTags(s);
+          const kept = keptEqualOrder(s);
+          const cols = { gridTemplateColumns: `repeat(${s.array.length}, minmax(34px, 1fr))` };
+          return (
+            <div key={label} className="min-w-fit">
+              <div className="mb-1 flex flex-wrap items-baseline gap-x-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                {label}
+                {r > 0 && kept !== null && (
+                  <span className={kept ? "text-mint" : "text-orange"}>{kept ? "equal values kept their order: stable" : "equal values swapped order: not stable"}</span>
+                )}
+              </div>
+              <div className="grid gap-1" style={cols}>
+                {s.array.map((v, i) => (
+                  <div key={i} className={`h-11 flex items-center justify-center font-mono text-sm border rounded-sm ${tags[i] ? cellBorder.violet : "border-border"}`}>
+                    {v}
+                    {tags[i] && <sup className="text-violet font-semibold">{tags[i]}</sup>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

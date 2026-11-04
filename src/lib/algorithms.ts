@@ -164,12 +164,12 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
   const writeLabel = algorithm === "insertion" || algorithm === "merge" ? "writes" : "swaps";
   const sorted = new Set<number>();
 
-  // insertion and merge sort track which element sits in each slot so the view can slide them around
-  const ids = algorithm === "insertion" || algorithm === "merge" || algorithm === "quick" ? range(0, n - 1) : undefined;
+  // track which element sits in each slot, so views can slide elements around and tell equal values apart
+  const ids = range(0, n - 1);
 
   const push = (line: number, message: string, s: Omit<ArrayState, "array" | "sorted"> = {}) => {
     frames.push({
-      state: { ...s, array: [...a], sorted: [...sorted], ...(ids && { ids: [...ids] }) },
+      state: { ...s, array: [...a], sorted: [...sorted], ids: [...ids] },
       line,
       message,
       stats: { comparisons: stats.comparisons, [writeLabel]: stats.writes },
@@ -179,7 +179,7 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
     const t = a[i];
     a[i] = a[j];
     a[j] = t;
-    if (ids) [ids[i], ids[j]] = [ids[j], ids[i]];
+    [ids[i], ids[j]] = [ids[j], ids[i]];
     stats.writes++;
   };
 
@@ -237,7 +237,7 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
   if (algorithm === "insertion") {
     for (let i = 1; i < n; i++) {
       const key = a[i];
-      const held = { label: "key", value: key, id: ids![i] };
+      const held = { label: "key", value: key, id: ids[i] };
       const split = i + 1;
       let j = i - 1;
       push(2, `Pick up ${key}. Everything to its left is already in order.`, { held, gap: i, split, pointers: { i } });
@@ -247,13 +247,13 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
         push(4, `Is ${a[j]} bigger than ${key}? ${bigger ? "Yes — it has to move." : "No — the gap is here."}`, { compare: [j], held, gap: j + 1, split, pointers: { i, j } });
         if (!bigger) break;
         a[j + 1] = a[j];
-        ids![j + 1] = ids![j];
+        ids[j + 1] = ids[j];
         stats.writes++;
         push(5, `Shift ${a[j]} one step right.`, { write: [j + 1], held, gap: j, split, pointers: { i, j } });
         j--;
       }
       a[j + 1] = key;
-      ids![j + 1] = held.id;
+      ids[j + 1] = held.id;
       stats.writes++;
       push(8, `Drop ${key} into index ${j + 1}.`, { write: [j + 1], split, pointers: { i } });
     }
@@ -287,7 +287,7 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
       const merging = () => ({ ...at(), aux: [...tmp], auxIds: [...tmpIds], holes: [...holes] });
       const take = (from: number) => {
         tmp[k] = a[from];
-        tmpIds[k] = ids![from];
+        tmpIds[k] = ids[from];
         holes.push(from);
         k++;
         stats.writes++;
@@ -307,7 +307,7 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
       push(15, `One side ran out — copy the leftovers straight across.`, { ...merging(), auxWrite: range(left, hi - lo) });
       for (let t = 0; t < tmp.length; t++) {
         a[lo + t] = tmp[t] as number;
-        ids![lo + t] = tmpIds[t] as number;
+        ids[lo + t] = tmpIds[t] as number;
       }
       cuts.delete(mid + 1);
       push(17, `Copy the merged run back: [${a.slice(lo, hi + 1).join(", ")}].`, { ...at(), write: range(lo, hi) });
@@ -388,6 +388,33 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
 
   push(JAVA_SORT[algorithm].length - 1, `Sorted. ${stats.comparisons} comparisons, ${stats.writes} ${writeLabel}.`);
   return frames;
+}
+
+/**
+ * A letter for each slot whose value appears more than once (5ᵃ, 5ᵇ), lettered by where the
+ * element started, so a view can show whether equal values kept their order. Empty strings
+ * for values that appear once.
+ */
+export function equalTags(s: ArrayState): string[] {
+  const ids = s.ids ?? s.array.map((_, i) => i);
+  return s.array.map((v, i) => {
+    const same = ids.filter((_, k) => s.array[k] === v).sort((x, y) => x - y);
+    return same.length > 1 ? String.fromCharCode(97 + same.indexOf(ids[i])) : "";
+  });
+}
+
+/** Did every group of equal values end in the order it started? null if there are no equal values. */
+export function keptEqualOrder(s: ArrayState): boolean | null {
+  const ids = s.ids ?? s.array.map((_, i) => i);
+  let any = false;
+  for (let i = 0; i < s.array.length; i++) {
+    for (let j = i + 1; j < s.array.length; j++) {
+      if (s.array[i] !== s.array[j]) continue;
+      any = true;
+      if (ids[i] > ids[j]) return false;
+    }
+  }
+  return any ? true : null;
 }
 
 export function searchFrames(algorithm: SearchAlgorithm, input: number[], target: number): Frame<ArrayState>[] {

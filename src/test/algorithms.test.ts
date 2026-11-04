@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   sortFrames,
+  equalTags,
+  keptEqualOrder,
   searchFrames,
   gcdFrames,
   traversalFrames,
@@ -53,6 +55,27 @@ describe("sortFrames", () => {
   it("selection sort always makes n(n-1)/2 comparisons", () => {
     const frames = sortFrames("selection", [1, 2, 3, 4, 5, 6]);
     expect(frames[frames.length - 1].stats.comparisons).toBe(15);
+  });
+});
+
+describe("equal values (stability)", () => {
+  const last = (algo: "selection" | "bubble" | "insertion" | "merge") => {
+    const f = sortFrames(algo, [3, 7, 8, 5, 2, 1, 9, 5, 4]);
+    return f[f.length - 1].state;
+  };
+
+  it("letters equal values by where they started", () => {
+    expect(equalTags(sortFrames("bubble", [5, 1, 5])[0].state)).toEqual(["a", "", "b"]);
+  });
+
+  it("selection sort scrambles the two 5s; the stable sorts keep them", () => {
+    expect(keptEqualOrder(last("selection"))).toBe(false);
+    expect(equalTags(last("selection")).filter(Boolean)).toEqual(["b", "a"]);
+    for (const algo of ["bubble", "insertion", "merge"] as const) expect(keptEqualOrder(last(algo))).toBe(true);
+  });
+
+  it("returns null when no values repeat", () => {
+    expect(keptEqualOrder(sortFrames("selection", [3, 1, 2])[0].state)).toBeNull();
   });
 });
 
