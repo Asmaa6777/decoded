@@ -78,6 +78,17 @@ describe("visualizers step all the way through", () => {
     expect(screen.getByText(/Found it/)).toBeDefined();
   });
 
+  it("linear search presets hit the best and worst case", () => {
+    const { container } = render(<SearchVisualizer algorithm="linear" array={[34, 7, 23, 32]} target={7} cases />);
+    fireEvent.click(screen.getByRole("button", { name: /best: first/ }));
+    stepToEnd(container);
+    expect(container.textContent).toMatch(/comparisons\s*1/);
+    fireEvent.click(screen.getByRole("button", { name: /worst: missing/ }));
+    stepToEnd(container);
+    expect(container.textContent).toMatch(/comparisons\s*4/);
+    expect(screen.getByText(/isn't here/)).toBeDefined();
+  });
+
   it("stability comparison flags selection sort, not bubble sort", () => {
     render(<StabilityCompare initial={[3, 7, 8, 5, 2, 1, 9, 5, 4]} />);
     expect(screen.getAllByText(/not stable/)).toHaveLength(1);

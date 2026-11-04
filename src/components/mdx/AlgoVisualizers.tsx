@@ -850,14 +850,27 @@ export function SearchVisualizer({
   algorithm,
   array = [3, 8, 12, 17, 21, 29, 34, 40, 46, 51, 58, 63, 70, 77, 85],
   target = 58,
+  cases = false,
 }: {
   algorithm: SearchAlgorithm;
   array?: number[];
   target?: number;
+  /** linear search only: buttons for the best and worst case, and the comparison count of each */
+  cases?: boolean;
 }) {
   const [t, setT] = useState(target);
   const [text, setText] = useState(String(target));
   const frames = useMemo(() => searchFrames(algorithm, array, t), [algorithm, array, t]);
+  const pick = (v: number) => {
+    setT(v);
+    setText(String(v));
+  };
+  const n = array.length;
+  const presets: [string, number][] = [
+    ["best: first", array[0]],
+    ["worst: last", array[n - 1]],
+    ["worst: missing", Math.max(...array) + 1],
+  ];
   return (
     <Stepper
       title={algorithm === "binary" ? "Binary search" : "Linear search"}
@@ -886,6 +899,21 @@ export function SearchVisualizer({
             }}
           />
           <span className="text-xs text-muted-foreground">Try a number that isn't in the array, too.</span>
+          {cases && (
+            <>
+              <div className="basis-full flex flex-wrap gap-2">
+                {presets.map(([label, v]) => (
+                  <button key={label} type="button" className={`${btn} ${t === v ? "border-foreground" : ""}`} onClick={() => pick(v)}>
+                    {label} ({v})
+                  </button>
+                ))}
+              </div>
+              <div className="basis-full font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                n = <span className="text-foreground">{n}</span> · best <span className="text-foreground">1</span> · worst{" "}
+                <span className="text-foreground">{n}</span> · average ≈ <span className="text-foreground">{n / 2}</span> comparisons
+              </div>
+            </>
+          )}
         </div>
       }
     />

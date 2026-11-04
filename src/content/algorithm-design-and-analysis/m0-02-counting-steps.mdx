@@ -1,5 +1,5 @@
 import { Callout } from "@/components/mdx/MdxComponents";
-import { GrowthTable, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { GrowthTable, SearchVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Counting Steps: Big-O, Omega and Theta
 
@@ -44,6 +44,10 @@ How many comparisons does it make? Even for a fixed size $n$, *it depends on the
 - **Best case:** `x` is the very first element. **1** comparison.
 - **Worst case:** `x` is last, or not there at all. **$n$** comparisons.
 - **Average case:** if `x` is equally likely to be anywhere, you check about half the array, roughly **$n/2$** comparisons.
+
+Pick a case and step through it, watching the comparison counter:
+
+<SearchVisualizer algorithm="linear" array={[34, 7, 23, 32, 5, 62, 14, 48, 19]} target={34} cases />
 
 We usually report the **worst case**, because it's a *guarantee*: whatever input you give it, it won't be slower than this. The best case is nice to know, but you can't count on it. The average case is often the most realistic, but it needs assumptions about what inputs look like.
 
