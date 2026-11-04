@@ -287,3 +287,23 @@ describe("the Module 2 worked examples added for depth", () => {
     expect(imageSize(1600, 1600, 24).mb.toFixed(1)).toBe("7.3");
   });
 });
+
+describe("the Module 3 worked examples added for depth", () => {
+  it("turns coverage into a gray value", () => {
+    expect(255 * (1 - 0.4)).toBeCloseTo(153);
+    expect(Math.round(255 * (1 - 6 / 16))).toBe(159);
+  });
+  it("gives the slope's angle and its sign", () => {
+    expect(((Math.atan(2 / 3) * 180) / Math.PI).toFixed(1)).toBe("33.7");
+    expect((10 - 14) / (5 - 11)).toBeCloseTo(2 / 3);
+    expect((14 - 10) / (5 - 11)).toBeCloseTo(-2 / 3);
+  });
+  it("derives p0 = 2Δy − Δx from the line through the first endpoint", () => {
+    const [x0, y0, x1, y1] = [20, 10, 30, 18];
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const c = y0 - (dy / dx) * x0;
+    const b = 2 * dy + dx * (2 * c - 1);
+    expect(2 * dy * x0 - 2 * dx * y0 + b).toBeCloseTo(2 * dy - dx);
+  });
+});

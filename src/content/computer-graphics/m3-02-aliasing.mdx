@@ -15,13 +15,15 @@ The simplest rule is to test each pixel once, at its center: if the center is in
 
 The diagonal line turns into a staircase. Each time the line crosses from one row of pixels to the next, it jumps a whole pixel, leaving a step called a **dogleg**. These stair steps are called **jaggies**, and the effect is called **aliasing** (or stair-stepping). You see it on diagonal lines, around curves, on the edges of letters, and along any boundary between two colors that isn't horizontal or vertical.
 
-The name comes from the fact that the ideal picture uses real-number coordinates, but the screen has only whole pixels. Many different real points get rounded to the same pixel, so they all become "aliases", different names for one pixel.
+The name comes from the fact that the ideal picture uses real-number coordinates, numbers with fractions like 3.7, but the screen has only whole pixels. Many different real points get rounded to the same pixel, so they all become "aliases", different names for one pixel.
 
 ## Antialiasing: partial coverage, partial color
 
 **Antialiasing** is any technique that makes the jaggies less visible. The idea: when a shape only partly covers a pixel, color the pixel with a *mix* of the shape's color and the background's, in proportion to how much is covered. A black line on white that covers 40% of a pixel makes that pixel 40% gray.
 
-Switch the demo above to **Antialiased**. Now each pixel is tested at 16 evenly spaced points instead of one, and its darkness is the fraction of those points inside the line. Up close the line looks blurry and gray at the edges. From a normal distance, your eye averages those grays into a smooth, straight edge.
+In numbers: white is 255 and black is 0, so a pixel's brightness is $255 \times (1 - \text{coverage})$. At 40% coverage that's $255 \times 0.6 = 153$, a light gray. At 50% it's $127.5$, which rounds to 128, the middle gray.
+
+Switch the demo above to **Antialiased**. Now each pixel is tested at 16 evenly spaced points, a 4 × 4 grid, instead of one, and its darkness is the fraction of those points inside the line. If 6 of the 16 points are inside, the coverage is $6 \div 16 = 37.5\%$, so the brightness is $255 \times 0.625 \approx 159$. Up close the line looks blurry and gray at the edges. From a normal distance, your eye averages those grays into a smooth, straight edge.
 
 Calculating the exact covered area for every pixel would be slow, so real systems approximate it. Sampling several points per pixel and averaging, as above, is called **supersampling**.
 
@@ -37,10 +39,10 @@ This explains the puzzle at the end of the [last lesson](/courses/computer-graph
 
 1. **Raise the resolution.** Smaller pixels make smaller steps. This is why text on a phone at 400+ PPI hardly needs antialiasing, while the same text on an old 90 PPI monitor does.
 2. **Antialias while drawing.** Shade partly covered pixels by coverage, as above.
-3. **Filter afterwards.** Blur the finished image slightly, for example with a Gaussian blur, to soften the steps. Cheap, but it softens everything else too.
+3. **Filter afterwards.** Blur the finished image slightly, for example with a **Gaussian blur**, which averages each pixel with its neighbors, nearer ones counting more, to soften the steps. Cheap, but it softens everything else too.
 
 <PracticalApplication title="Games" tool="MSAA, FXAA, TAA">
-The antialiasing options in a game's settings are these ideas at speed. MSAA tests several sample points per pixel along edges (supersampling, done selectively). FXAA and TAA are post-processing filters that find edges in the finished frame and smooth them, cheaper but blurrier.
+The antialiasing options in a game's settings are these ideas at speed. MSAA (multisample antialiasing) tests several sample points per pixel along edges: supersampling, done only where it's needed. FXAA (fast approximate) and TAA (temporal, which also uses earlier frames) are **post-processing** filters, run on the finished frame after it's drawn: they find edges and smooth them, which is cheaper but blurrier.
 </PracticalApplication>
 <PracticalApplication title="Text" tool="Font rendering">
 Every font on your screen is antialiased. Some systems go further and set the red, green and blue [subpixels](/courses/computer-graphics/flat-panels) separately, tripling the horizontal detail for letter edges.

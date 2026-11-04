@@ -39,7 +39,31 @@ $$
 d_1 = y - y_k \qquad d_2 = (y_k + 1) - y
 $$
 
-Move up if $d_1 - d_2 \ge 0$, that is, if the line is closer to the upper pixel. Now, $d_1 - d_2 = 2m(x_k + 1) - 2y_k + 2c - 1$ contains the fraction $m = \Delta y / \Delta x$. Multiply the whole thing by $\Delta x$, which is positive, so the sign doesn't change, and the fraction disappears. That product is $p_k$. Working out how it changes from one step to the next gives exactly the two update rules above. The algorithm keeps DDA's decision but scales it so it never needs a fraction.
+Move up if $d_1 - d_2 \ge 0$, that is, if the line is closer to the upper pixel. Subtracting:
+
+$$
+d_1 - d_2 = (y - y_k) - (y_k + 1 - y) = 2y - 2y_k - 1 = 2m(x_k + 1) - 2y_k + 2c - 1
+$$
+
+That still contains the fraction $m = \Delta y / \Delta x$. Multiply the whole thing by $\Delta x$, which is positive, so the sign doesn't change, and the fraction disappears. That product is the decision parameter:
+
+$$
+p_k = \Delta x\,(d_1 - d_2) = 2\Delta y \cdot x_k - 2\Delta x \cdot y_k + b
+$$
+
+where $b = 2\Delta y + \Delta x(2c - 1)$ is the same at every step, so it never needs computing.
+
+**The update rules.** Subtract $p_k$ from $p_{k+1}$. The constant $b$ cancels, and $x$ always goes up by exactly 1:
+
+$$
+p_{k+1} - p_k = 2\Delta y\,(x_{k+1} - x_k) - 2\Delta x\,(y_{k+1} - y_k) = 2\Delta y - 2\Delta x\,(y_{k+1} - y_k)
+$$
+
+If the pixel stayed on its row, $y_{k+1} - y_k = 0$ and $p$ grows by $2\Delta y$. If it moved up, $y_{k+1} - y_k = 1$ and $p$ grows by $2\Delta y - 2\Delta x$. Those are the two rules.
+
+**The starting value.** The first endpoint $(x_0, y_0)$ is on the line, so $c = y_0 - m x_0$. Putting that into $p_0$, everything except two terms cancels, leaving $p_0 = 2\Delta y - \Delta x$.
+
+The algorithm keeps DDA's decision, but scales it so it never needs a fraction.
 
 ## Worked example: (20, 10) to (30, 18)
 

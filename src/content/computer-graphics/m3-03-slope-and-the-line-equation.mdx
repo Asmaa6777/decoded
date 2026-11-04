@@ -21,6 +21,10 @@ $$
 
 So this line rises two-thirds of a pixel for every pixel it moves right.
 
+<Callout tone="orange" label="Up over across, same order on top and bottom">
+Slope is the change in y divided by the change in x, never the other way round: $4/6$ here, not $6/4$. And subtract the points in the same order on top and bottom. $(14 - 10)/(11 - 5)$ and $(10 - 14)/(5 - 11)$ both give $2/3$, but mixing them, $(14 - 10)/(5 - 11)$, gives $-2/3$, a line sloping the wrong way.
+</Callout>
+
 ## What the slope tells you
 
 | Slope | The line | Angle with the x-axis |
@@ -33,7 +37,7 @@ So this line rises two-thirds of a pixel for every pixel it moves right.
 | $\lvert m \rvert = 1$ | exactly diagonal | 45° |
 | $\lvert m \rvert > 1$ | steep: moves more up than across | over 45° |
 
-The slope is also the tangent of the line's angle: $m = \tan\theta$. A 45° line has slope $\tan 45° = 1$.
+The slope is also the tangent of the line's angle with the x-axis: $m = \tan\theta$. A 45° line has slope $\tan 45° = 1$. Going the other way, the line above has $\theta = \tan^{-1}(2/3) \approx 33.7°$, under 45° because its slope is under 1.
 
 Move the endpoints and watch the rise, the run and the slope change. Try a horizontal line, a vertical one and a 45° one:
 
@@ -111,6 +115,6 @@ The line rises 8 rows but only crosses 3 columns. The algorithm lights exactly o
 
 Enter `3 1 3 6` for a vertical line, and the algorithm can't even start, because $\Delta x = 0$ makes the slope a division by zero.
 
-There's a second, quieter problem: **speed**. Every pixel costs a floating-point multiplication ($m \times x$) and an addition, plus a rounding. Multiplication used to be expensive, and a screen draws an enormous number of line pixels.
+There's a second, quieter problem: **speed**. Every pixel costs a **floating-point** multiplication ($m \times x$) and an addition, plus a rounding. Floating-point numbers are the ones with a fractional part, like 0.667, and processors handle them more slowly than whole numbers. Multiplication used to be expensive, and a screen draws an enormous number of line pixels.
 
 The [next lesson](/courses/computer-graphics/dda) fixes both problems with one idea.

@@ -18,7 +18,7 @@ So pixel (3, 5) is in column 3 and row 5. Column first, always: it's (x, y), not
 
 Most graphics systems, including web pages, HTML canvas, Windows and image files, put **(0, 0) at the top-left corner** with y growing *downwards*. It matches the way a screen is scanned and the way text is read: top row first.
 
-Mathematics, and graphics libraries such as **OpenGL**, put **(0, 0) at the bottom-left** with y growing *upwards*, like the graphs you drew at school.
+Mathematics, and graphics libraries such as **OpenGL** (a widely used library for drawing 2D and 3D graphics on the GPU), put **(0, 0) at the bottom-left** with y growing *upwards*, like the graphs you drew at school.
 
 Click a pixel, then switch conventions. The pixel stays put; its name changes:
 
@@ -33,7 +33,7 @@ $$
 In the 7-row grid above, row 5 counting down is row $(7 - 1) - 5 = 1$ counting up.
 
 <Callout tone="orange" label="The classic upside-down bug">
-Load an image with a library that counts rows from the top, hand it to one that counts from the bottom, and the picture comes out upside down. Textures in OpenGL are the famous case, and the fix is that one subtraction, or a flip flag. Before you trust a coordinate, find out which convention it's in.
+Load an image with a library that counts rows from the top, hand it to one that counts from the bottom, and the picture comes out upside down. **Textures**, images wrapped onto the surfaces of 3D shapes, are the famous case in OpenGL, and the fix is that one subtraction, or a flip flag. Before you trust a coordinate, find out which convention it's in.
 </Callout>
 
 ## Is a pixel a point or a square?
