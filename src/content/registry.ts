@@ -367,9 +367,9 @@ export const courses: Course[] = [
         title: "Foundations",
         blurb: "What an algorithm is, how we measure one, and the Java toolkit every lab uses.",
         lessons: [
-          { slug: "what-is-an-algorithm", title: "Recipes, Programs, and Proof", duration: "9 min", Component: AdaWhatIsAnAlgorithm },
-          { slug: "counting-steps", title: "Counting Steps: Big-O, Omega and Theta", duration: "13 min", Component: AdaCountingSteps },
-          { slug: "java-lab-toolkit", title: "Practical: Arrays, Swaps and a Stopwatch", duration: "10 min", kind: "practical", Component: AdaJavaLabToolkit },
+          { slug: "what-is-an-algorithm", title: "Recipes, Programs, and Proof", duration: "17 min", Component: AdaWhatIsAnAlgorithm },
+          { slug: "counting-steps", title: "Counting Steps: Big-O, Omega and Theta", duration: "19 min", Component: AdaCountingSteps },
+          { slug: "java-lab-toolkit", title: "Practical: Arrays, Swaps and a Stopwatch", duration: "13 min", kind: "practical", Component: AdaJavaLabToolkit },
         ],
       },
       {
