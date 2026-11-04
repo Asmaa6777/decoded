@@ -802,6 +802,10 @@ type DiagramEdge = {
   to: string;
   label?: string;
   back?: boolean;
+  // Back edges loop around the right side unless told otherwise; give
+  // two loops on the same side different offsets so they don't overlap.
+  side?: "left" | "right";
+  offset?: number;
 };
 
 type DiagramProps = {
@@ -840,6 +844,8 @@ function DiagramBaseNode({
         <>
           <Handle id="loop-out" type="source" position={Position.Right} />
           <Handle id="loop-in" type="target" position={Position.Right} />
+          <Handle id="loop-out-left" type="source" position={Position.Left} />
+          <Handle id="loop-in-left" type="target" position={Position.Left} />
         </>
       )}
     </div>
@@ -897,9 +903,9 @@ export function Diagram({ nodes, edges, direction = "LR" }: DiagramProps) {
     target: e.to,
     label: e.label,
     type: e.back ? "smoothstep" : "default",
-    sourceHandle: e.back ? "loop-out" : undefined,
-    targetHandle: e.back ? "loop-in" : undefined,
-    ...(e.back ? { pathOptions: { offset: 60 } } : {}),
+    sourceHandle: e.back ? (e.side === "left" ? "loop-out-left" : "loop-out") : undefined,
+    targetHandle: e.back ? (e.side === "left" ? "loop-in-left" : "loop-in") : undefined,
+    ...(e.back ? { pathOptions: { offset: e.offset ?? 60 } } : {}),
     markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--foreground))" },
     labelBgPadding: [6, 3],
     labelBgBorderRadius: 2,
