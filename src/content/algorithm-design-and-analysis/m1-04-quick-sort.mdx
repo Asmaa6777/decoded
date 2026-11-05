@@ -70,7 +70,9 @@ if l < r
 
 Partitioning a piece of size $n$ takes $O(n)$: each pointer step does one comparison, and together the pointers cross the piece once. The running time depends on *how evenly* the pivot splits the array.
 
-**Good case: the pivot lands near the middle.** Each partition cuts the problem roughly in half. As with merge sort, that gives about $\log_2 n$ levels of $O(n)$ work each, so **$O(n \log n)$**. This is what usually happens on random data, so the **average case is $O(n \log n)$**.
+**Good case: the pivot lands near the middle.** Each partition cuts the problem roughly in half. As with merge sort, that gives about $\log_2 n$ levels of $O(n)$ work each, so **$O(n \log n)$**.
+
+This is what usually happens on random data, so the **average case is $O(n \log n)$**. The pivot doesn't have to hit the exact middle. Even a lopsided split such as a quarter on one side and three quarters on the other still shrinks every piece by a fixed fraction, so the number of levels still grows like $\log n$; only the constant gets bigger. On random data, at least half of all possible pivots give a split at least that good. Advanced Algorithms [proves the average](/courses/advanced-algorithms/quicksort#randomized-quicksort).
 
 **Bad case: the pivot is always the smallest or biggest element.** Then one side is empty and the other has $n - 1$ elements, so $O(n)$ work has made the problem only one element smaller. Do that $n$ times:
 
@@ -81,6 +83,10 @@ $$
 With a first-element pivot, this happens on data that's **already sorted in ascending order**, which is the case the notes name: every pivot is the smallest remaining element, so `right` walks all the way down and the left side is empty. Reverse-sorted data is just as bad, since every pivot is then the largest. Try `1, 2, 3, 4, 5, 6, 7, 8` in the visualizer and watch every partition peel off just one element.
 
 The notes write the worst case as $f(n) = n \times (n-1)$. The exact count is the sum above, about $n^2/2$, but both are $O(n^2)$, which is the answer that matters. Likewise their best case, $f(n) = n \times \log_2 n$, describes the ideal where every pivot splits its piece exactly in half.
+
+<Callout tone="orange" label="Common mistake: thinking one partition sorts the sides">
+After a partition, everything left of the pivot is smaller and everything right of it is bigger, but each side is still in any order: 25 10 30 15 20 28 partitions to 15 10 20 **25** 30 28, and 15 10 20 isn't sorted. Only the pivot is in its final place. That's why quick sort has to recurse on both sides.
+</Callout>
 
 So the input that's best for [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea) is the worst for naive quick sort.
 
@@ -94,7 +100,7 @@ The fix is to choose the pivot more carefully. Common choices:
 - **Median of three**: the median of the first, middle and last elements. A cheap way to avoid bad pivots.
 
 <Callout tone="violet" label="Quick sort vs merge sort">
-Merge sort is always $O(n \log n)$ and [stable](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#stability), but needs $O(n)$ extra memory. Quick sort is $O(n \log n)$ on average and $O(n^2)$ in the worst case, and it isn't stable. It sorts **in place**, though, and is usually faster in practice because it moves less data around and uses the CPU cache well.
+Merge sort is always $O(n \log n)$ and [stable](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#stability), but needs $O(n)$ extra memory. Quick sort is $O(n \log n)$ on average and $O(n^2)$ in the worst case, and it isn't stable. It sorts **in place**, though, and is usually faster in practice because it moves less data around and uses the CPU cache well. (The **cache** is a small, very fast memory inside the processor. Reading neighbouring array slots one after another, as both pointers do, keeps the data in the cache.)
 </Callout>
 
 ## Strengths and weaknesses
