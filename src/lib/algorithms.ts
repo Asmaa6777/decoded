@@ -506,7 +506,7 @@ export function gcdFrames(m0: number, n0: number): Frame<GcdState>[] {
 
 /* ----------------------------- graphs ----------------------------- */
 
-export type GraphNode = { id: number; x: number; y: number };
+export type GraphNode = { id: number; x: number; y: number; label?: string }; // label replaces the id when drawn, e.g. the notes' letters
 export type GraphEdge = { from: number; to: number; weight?: number };
 
 export type TraversalState = {
@@ -677,7 +677,8 @@ export const JAVA_MST = {
   ],
 };
 
-export function mstFrames(kind: "prim" | "kruskal", nodeCount: number, edges: GraphEdge[]): Frame<MstState>[] {
+export function mstFrames(kind: "prim" | "kruskal", nodeCount: number, edges: GraphEdge[], names: string[] = []): Frame<MstState>[] {
+  const nm = (v: number) => names[v] ?? String(v);
   const frames: Frame<MstState>[] = [];
   const accepted: number[] = [];
   const rejected: number[] = [];
@@ -695,19 +696,19 @@ export function mstFrames(kind: "prim" | "kruskal", nodeCount: number, edges: Gr
 
   if (kind === "prim") {
     inTree.add(0);
-    push(3, `Start the tree at node 0.`);
+    push(3, `Start the tree at node ${nm(0)}.`);
     while (inTree.size < nodeCount) {
       const crossing = edges.map((_, i) => i).filter((i) => inTree.has(edges[i].from) !== inTree.has(edges[i].to));
       if (!crossing.length) break;
       looked += crossing.length;
-      push(9, `Edges leaving the tree: ${crossing.map((i) => `${edges[i].from}–${edges[i].to} (${w(i)})`).join(", ")}.`, crossing);
+      push(9, `Edges leaving the tree: ${crossing.map((i) => `${nm(edges[i].from)}–${nm(edges[i].to)} (${w(i)})`).join(", ")}.`, crossing);
       const best = crossing.reduce((b, i) => (w(i) < w(b) ? i : b), crossing[0]);
       const e = edges[best];
       const newNode = inTree.has(e.from) ? e.to : e.from;
       accepted.push(best);
       inTree.add(newNode);
       total += w(best);
-      push(11, `Cheapest is ${e.from}–${e.to} with weight ${w(best)}. Take it; node ${newNode} joins the tree.`, [], best);
+      push(11, `Cheapest is ${nm(e.from)}–${nm(e.to)} with weight ${w(best)}. Take it; node ${nm(newNode)} joins the tree.`, [], best);
     }
     push(14, `Every node is connected. Minimum spanning tree weight = ${total}.`);
   } else {
@@ -722,7 +723,7 @@ export function mstFrames(kind: "prim" | "kruskal", nodeCount: number, edges: Gr
       if (accepted.length === nodeCount - 1) break;
       const e = edges[i];
       looked++;
-      push(6, `Next cheapest: ${e.from}–${e.to} (${w(i)}). Are ${e.from} and ${e.to} already connected?`, [], i);
+      push(6, `Next cheapest: ${nm(e.from)}–${nm(e.to)} (${w(i)}). Are ${nm(e.from)} and ${nm(e.to)} already connected?`, [], i);
       const ru = find(e.from);
       const rv = find(e.to);
       if (ru === rv) {

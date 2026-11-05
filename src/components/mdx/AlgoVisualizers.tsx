@@ -1043,7 +1043,7 @@ export function GraphSvg({
         <g key={n.id}>
           <circle cx={n.x} cy={n.y} r={18} strokeWidth={2} className={`transition-colors ${nodeClass(n.id)}`} />
           <text x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" fontSize={13} className="font-mono fill-current font-bold">
-            {n.id}
+            {n.label ?? n.id}
           </text>
         </g>
       ))}
@@ -1183,7 +1183,11 @@ export function MstVisualizer({
   edges?: GraphEdge[];
 }) {
   const [kind, setKind] = useState(algorithm);
-  const frames = useMemo(() => mstFrames(kind, nodes.length, edges), [kind, nodes, edges]);
+  const frames = useMemo(() => {
+    const names: string[] = [];
+    for (const n of nodes) names[n.id] = n.label ?? String(n.id);
+    return mstFrames(kind, nodes.length, edges, names);
+  }, [kind, nodes, edges]);
   return (
     <Stepper
       title={kind === "prim" ? "Prim's algorithm" : "Kruskal's algorithm"}
