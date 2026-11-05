@@ -75,11 +75,11 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the five 
       options: [
         { id: "a", text: "Selection sort, because it makes the fewest swaps" },
         { id: "b", text: "Insertion sort, because each element only shifts a few places" },
-        { id: "c", text: "Quick sort with the last element as pivot" },
+        { id: "c", text: "Quick sort with the first element as pivot" },
         { id: "d", text: "They are all exactly the same" },
       ],
       correctOptionId: "b",
-      explanation: "Insertion sort's work depends on how far elements are from their final places, so it's close to O(n) on nearly sorted data. Selection sort always does n(n−1)/2 comparisons, and a last-element-pivot quick sort is at its worst on sorted data.",
+      explanation: "Insertion sort's work depends on how far elements are from their final places, so it's close to O(n) on nearly sorted data. Selection sort always does n(n−1)/2 comparisons, and a first-element-pivot quick sort is at its worst on sorted data.",
     },
     {
       id: "q7",
@@ -95,10 +95,10 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the five 
     },
     {
       id: "q8",
-      prompt: "Quick sort always picks the last element as the pivot. Why is it O(n²) on an array that is already sorted?",
+      prompt: "Quick sort always picks the first element as the pivot, as in the lab. Why is it O(n²) on an array that is already sorted?",
       options: [
         { id: "a", text: "Partitioning a sorted array takes O(n²) time" },
-        { id: "b", text: "The pivot is always the largest element, so each split leaves n − 1 elements on one side" },
+        { id: "b", text: "The pivot is always the smallest element, so each split leaves n − 1 elements on one side" },
         { id: "c", text: "Quick sort has to un-sort the array first" },
         { id: "d", text: "It isn't; quick sort is always O(n log n)" },
       ],
