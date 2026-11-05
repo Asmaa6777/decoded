@@ -50,11 +50,15 @@ static void addEdge(List<List<Integer>> adj, int u, int v) {
 }
 ```
 
-The alternative is an **adjacency matrix**: an `n × n` grid of booleans where `matrix[u][v]` says whether the edge exists. It answers "are u and v connected?" in $O(1)$, but it uses $O(n^2)$ memory even when the graph has hardly any edges. Adjacency lists use $O(n + m)$.
+`List<List<Integer>>` reads from the inside out: a `List<Integer>` is one vertex's list of neighbours, and the outer list holds one of those per vertex, so `adj.get(3)` is vertex 3's neighbours. For the triangle 0–1, 1–2, 2–0, `adj` is `[[1, 2], [0, 2], [1, 0]]`: each edge appears twice, once in each end's list.
+
+The alternative is an **adjacency matrix**: an `n × n` grid of booleans where `matrix[u][v]` says whether the edge exists. It answers "are u and v connected?" in $O(1)$, but it uses $O(n^2)$ memory even when the graph has hardly any edges. Adjacency lists use $O(n + m)$: one list per vertex, plus one entry per edge end. A road map of 10,000 towns, each with about 4 roads, needs 100 million matrix cells but only about 40,000 list entries (20,000 roads, each listed at both ends).
 
 ## Traversal: visit everything, once
 
 **Traversing** a graph means visiting every vertex reachable from a starting point, **each exactly once**. The "once" is the hard part. Unlike an array, a graph can have cycles, and a naive walk would go round and round forever. The fix is always to keep a `visited` array and never enter a vertex twice.
+
+Here's what goes wrong without it. Take the triangle A–B, B–C, C–A and start a DFS at A with no record of what's been seen. A goes to B, B goes to its first neighbour A, A goes to B again, and so on forever, until Java runs out of stack and throws `StackOverflowError`. With `visited`, B sees that A is already done and moves on to C.
 
 The notes put it as: mark each vertex as visited while avoiding cycles. A vertex is either **visited** or **not visited**.
 
@@ -141,6 +145,10 @@ Both algorithms do the same amount of work, just in a different order:
 
 Total: **$O(V + E)$** for both (the notes give this for each algorithm), with an adjacency list. Space is $O(V)$ for the `visited` array plus the queue or stack.
 
+<Callout tone="orange" label="Common mistake: O(V × E)">
+The loop structure (for each vertex, loop over its neighbours) looks like nested loops, so students often answer $O(V \times E)$. But the inner loop doesn't run over *all* $E$ edges for every vertex. It runs over that vertex's own neighbours only. Add those up over every vertex and you get each edge twice, $2E$ in total. The two loops share out the edges between them; they don't multiply.
+</Callout>
+
 (With an adjacency matrix, finding a vertex's neighbours means scanning a whole row, so both become $O(V^2)$.)
 
 | | BFS | DFS |
@@ -181,7 +189,7 @@ Advanced Algorithms takes this further, from BFS on unweighted graphs to weighte
     Search engines discover pages by BFS over links: visit a page, queue up every link on it, never fetch the same URL twice.
   </PracticalApplication>
   <PracticalApplication title="Build tools and package managers" tool="DFS">
-    Maven, Gradle and npm order dependencies with a DFS-based topological sort, and detect circular dependencies when DFS finds a cycle.
+    Maven, Gradle and npm order dependencies with a DFS-based **topological sort** (an order where everything comes after the things it depends on), and detect circular dependencies when DFS finds a cycle.
   </PracticalApplication>
   <PracticalApplication title="Flood fill and garbage collection" tool="DFS">
     The paint-bucket tool in an image editor is DFS over neighbouring pixels. Java's garbage collector traverses the graph of objects reachable from your variables; whatever it doesn't reach is freed.
