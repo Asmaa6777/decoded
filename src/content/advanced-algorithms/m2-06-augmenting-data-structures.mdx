@@ -99,6 +99,10 @@ y->size = size(y->left) + size(y->right) + 1;   // the same as x's old size
 
 So RB-INSERT and RB-DELETE still run in **$O(\lg n)$** time.
 
+<Callout tone="orange" label="The usual slip">
+Updating the two sizes after a rotation in the wrong order. After the rotation, the node that moved **down** is now a child of the other one, so its size must be recomputed **first**; the new parent's size is then its children's sizes plus 1. Do it the other way round and the parent adds up the child's *old* size. The same goes for forgetting the sizes altogether during RB-INSERT's rotations: OS-SELECT then quietly returns the wrong key.
+</Callout>
+
 ## The methodology
 
 That example is a recipe you can reuse:

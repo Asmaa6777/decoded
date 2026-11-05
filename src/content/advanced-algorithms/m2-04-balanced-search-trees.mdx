@@ -59,7 +59,16 @@ $$
 n + 1 \ge 2^{h'} \;\Longrightarrow\; \lg(n + 1) \ge h' \ge h/2 \;\Longrightarrow\; h \le 2\lg(n + 1)
 $$
 
-**The induction proof** (as in the textbook). First show by induction that **the subtree rooted at any node $x$ contains at least $2^{bh(x)} - 1$ internal nodes**. Then, at the root:
+**The induction proof** (as in the textbook). First show by induction on the height of $x$ that **the subtree rooted at any node $x$ contains at least $2^{bh(x)} - 1$ internal nodes** (nodes that hold keys).
+
+- **Base:** if $x$ is a NIL leaf, $bh(x) = 0$ and the subtree has $2^0 - 1 = 0$ internal nodes. ✓
+- **Step:** if $x$ holds a key, it has two children. Each child has black-height $bh(x)$ if it's red, or $bh(x) - 1$ if it's black, so at least $bh(x) - 1$ either way. By the hypothesis each child's subtree has at least $2^{bh(x)-1} - 1$ internal nodes. Add both children and $x$ itself:
+
+$$
+2\left(2^{bh(x)-1} - 1\right) + 1 = 2^{bh(x)} - 1 \;✓
+$$
+
+Then, at the root:
 
 $$
 \begin{aligned}
@@ -71,6 +80,10 @@ h &\le 2\lg(n + 1)
 $$
 
 So $h = O(\lg n)$.
+
+<Callout tone="orange" label="The usual slip">
+"Balanced" doesn't mean every path has the same length. A red-black tree only promises that no path is more than **twice** as long as another: the shortest path can be all black, and the longest can alternate black, red, black, red. Check the example above: 7 → 3 → NIL is 2 steps, while 7 → 18 → 10 → 8 → NIL is 4. Both pass the same number of black nodes, so both are allowed.
+</Callout>
 
 ## Query operations
 

@@ -132,6 +132,10 @@ The probe sequence follows $h(k, i) = (h_1(k) + i \cdot h_2(k)) \bmod m$:
 
 </details>
 
+<Callout tone="orange" label="Why h₂ has a 1 +">
+It's tempting to use $h_2(k) = k \bmod m'$. But then $h_2(22) = 22 \bmod 11 = 0$, every probe is $h_1(22) + i \cdot 0$, and the search tries the **same slot forever**. Adding 1 makes the step at least 1. The step also must not share a factor with $m$, or the probes cycle through only part of the table; making $m$ prime (here 13) guarantees that.
+</Callout>
+
 ## Good hash functions
 
 A good hash function (approximately) satisfies **simple uniform hashing**: each key is equally likely to hash to any of the $m$ slots, independently of where any other key hashes.

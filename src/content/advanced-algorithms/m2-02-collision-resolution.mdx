@@ -200,6 +200,10 @@ Look at the search for 62 after 18 is deleted. Probe 0 (slot 7) holds 7, which i
 
 **Disadvantage: primary clustering.** The main problem is that occupied slots form long **runs** (clusters). Any key that hashes anywhere into a cluster has to walk to its end, and then makes the cluster even longer. While the table is big enough a free slot can always be found, but finding it can take a long time.
 
+<Callout tone="orange" label="The usual slip">
+Forgetting the **mod m** at the end of the table. With $k \bmod 11$, a key that lands on slot 10 and finds it full goes next to slot $(10 + 1) \bmod 11 = 0$, back at the **start**, not to a slot 11 that doesn't exist. When tracing by hand, the probe sequence wraps around; in code, leaving out `% m` reads past the end of the array.
+</Callout>
+
 ## Quadratic probing
 
 On a collision, jump by **squares**: $1^2$, then $2^2$, then $3^2$ slots from the start. Here $f(i) = i^2$:

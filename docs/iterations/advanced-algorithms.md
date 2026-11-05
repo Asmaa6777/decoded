@@ -14,7 +14,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
 - [ ] 3. Depth
   - [x] M0
   - [x] M1
-  - [ ] M2
+  - [x] M2
   - [ ] M3
   - [ ] M4
 - [ ] 4. Plain language
@@ -189,5 +189,24 @@ Read m1-01 to m1-05 as a first-time reader. Only m1-04 had a common-mistake call
 **Checked and left as is:** the master theorem uses, the Fibonacci matrix proof, Strassen's r check, the H-tree recurrence, the recursion-tree problems, the quicksort expectation proof, the decision-tree bound and median of medians already give their reasons step by step.
 
 **Found but not fixed:** m1-02's problem 2 shows O(n log n) but not the matching lower bound (the shortest branch has log₃ n full levels); round 6 could ask for it. m1-03 is long; round 4 should check it.
+
+**Not checked:** no browser check; no visualizers changed.
+
+### Round 3, depth: M2 Hashing and Search Trees
+
+Read m2-01 to m2-07 as a first-time reader. Only m2-04 had a common-mistake callout (added in round 2).
+
+**Changed:**
+- m2-01: a worked mid-square example (4567² = 20857489 → 57), which round 2 found missing. The potential method's "comes out to 3" now shows the arithmetic for both a cheap and an expensive insertion, and why Φ ≥ 0. A callout on growing by a fixed amount instead of doubling (Θ(n²) total).
+- m2-02: a callout on wrapping round with mod m.
+- m2-03: why h₂ has "1 +" (h₂(22) = 0 would probe one slot forever) and why m should be prime.
+- m2-04: the induction step of the 2^bh − 1 bound, which was stated but not shown. A callout that "balanced" allows one path twice as long as another, shown on the lecture's tree.
+- m2-05: a callout on coloring the new node black, and on using x's sibling instead of the uncle.
+- m2-06: a callout on the order of size updates after a rotation.
+- m2-07: a callout that O(log n) is expected, not worst case, and why no input can force the bad case.
+
+**Checked and left as is:** the aggregate and accounting methods, chaining's 1 + α, open addressing's 1/(1 − α), the deletion marker, the insertion cases, the black-token deletion table, OS-SELECT/OS-RANK, interval-search correctness and the backwards analysis of skip lists already give their reasons.
+
+**Found but not fixed:** none.
 
 **Not checked:** no browser check; no visualizers changed.

@@ -51,6 +51,11 @@ x = x->p->p;
 
 This "pushes" the grandparent's black down onto its two children. Every downward path still has the same black-height, so property 4 holds. But the grandparent is now red, and *its* parent might be red too. So **recurse**: the loop continues with the grandparent as the new $x$. Case 1 does the same thing whether $x$ is a left or a right child.
 
+<Callout tone="orange" label="Two usual slips">
+- **Coloring the new node black.** It seems safer, but a black node adds one to the black count on just one path, which breaks property 4 everywhere above it, and that's much harder to fix. A red node can only break property 3, and only locally.
+- **Looking at the wrong relative.** Cases 1 to 3 depend on the **uncle** (the parent's sibling), not on $x$'s sibling. Find the grandparent first, then take its other child.
+</Callout>
+
 ### Case 2: the uncle $y$ is black, and $x$ is an *inner* child
 
 Here $x$ is a right child whose parent is a left child (or the mirror image). The path from the grandparent to $x$ **bends**.

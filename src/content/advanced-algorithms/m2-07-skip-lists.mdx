@@ -143,6 +143,10 @@ $$
 Search, insert and delete in a skip list all take **$O(\log n)$ expected time**, and the expected space is $O(n)$: about $n + \frac n2 + \frac n4 + \dots = 2n$ pointers.
 </Callout>
 
+<Callout tone="orange" label="The usual slip">
+Saying a skip list's search is $O(\log n)$ **in the worst case**. It's $O(\log n)$ **expected**, over the coin flips. If every flip came up tails, the skip list would be a plain linked list and a search would take $O(n)$. That's extremely unlikely, and, unlike quicksort with a fixed pivot, no particular *input* can cause it: the flips don't depend on the keys. A red-black tree, by contrast, guarantees $O(\lg n)$ every time.
+</Callout>
+
 ## Implementation notes
 
 - Node structures have **variable size**.
