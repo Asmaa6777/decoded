@@ -52,7 +52,7 @@ x = x->p->p;
 This "pushes" the grandparent's black down onto its two children. Every downward path still has the same black-height, so property 4 holds. But the grandparent is now red, and *its* parent might be red too. So **recurse**: the loop continues with the grandparent as the new $x$. Case 1 does the same thing whether $x$ is a left or a right child.
 
 <Callout tone="orange" label="Two usual slips">
-- **Coloring the new node black.** It seems safer, but a black node adds one to the black count on just one path, which breaks property 4 everywhere above it, and that's much harder to fix. A red node can only break property 3, and only locally.
+- **Coloring the new node black.** It seems safer, but a black node adds one to the black count on just one path. That breaks property 4 everywhere above it, which is much harder to fix. A red node can only break property 3, and only locally.
 - **Looking at the wrong relative.** Cases 1 to 3 depend on the **uncle** (the parent's sibling), not on $x$'s sibling. Find the grandparent first, then take its other child.
 </Callout>
 
@@ -136,7 +136,7 @@ The tree-fix algorithm treats $x$ as carrying an **extra black token**. That mak
 
 The token is **pushed up the tree** until:
 
-- it reaches a **red** node, which is then simply colored black, or
+- it reaches a **red** node, which is then colored black, or
 - it reaches the **root**, where it can just be dropped, or
 - it can be removed by **rotating and recoloring**.
 
@@ -153,7 +153,7 @@ In cases (2) and (4), the second picture is the mirror image: when $x$ is a righ
 
 ### The lecture's three deletion examples
 
-All three start from the tree built in [Another insertion example](#another-insertion-example): 47 at the root, 32 on the left, and the red 71 on the right with 65, 87, 82 and 93 below it.
+All three start from the tree built in [Another insertion example](#another-insertion-example). It has 47 at the root and 32 on the left. On the right is the red 71, with 65, 87, 82 and 93 below it.
 
 **Example 1: delete 87.** 87 has two children, so its key is replaced by its predecessor, 82, and 82's old node is removed instead. That node was **red**, so nothing breaks. No fix-up at all.
 

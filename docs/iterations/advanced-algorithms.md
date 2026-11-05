@@ -20,7 +20,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
 - [ ] 4. Plain language
   - [x] M0
   - [x] M1
-  - [ ] M2
+  - [x] M2
   - [ ] M3
   - [ ] M4
 - [ ] 5. Visualizations
@@ -269,6 +269,18 @@ Same method as M0: a script flagged sentences over 28 words and stock hard words
 **Changed (16 edits):** split the long sentences in the Strassen slide note and the 8-vs-7 count (m1-01), the H-tree side length (m1-01), the recursion-tree pattern, the odd-n shift slip, the lab hint and the local-minimum exercise (m1-02), the divide step, the PARTITION result and the `std::sort` note (m1-03), the radix-sort history (m1-04, also dropping "simply"), and the "− k" slip and the median-of-medians argument (m1-05).
 
 **Checked and left as is:** pivot, partition, recurrence, decision tree, stable, order statistic and the other technical terms are explained where they first appear; the proofs are already broken into short steps.
+
+**Couldn't do:** the humanizer skill isn't installed here.
+
+**Not checked:** no browser check.
+
+### Round 4, plain language: M2 Hashing and Search Trees
+
+Same method: a script flagged sentences over 28 words and stock hard words in m2-01 to m2-07, then I rewrote the flagged lines by hand.
+
+**Changed (20 edits):** split the long sentences in the potential-method note (m2-01); the AVL definition, rehashing, the wrap-round slip, the stuck quadratic example and open-addressing rehashing (m2-02); simple uniform hashing and the probe totals (m2-03); the black-height count, the minimum black-height, the "twice as long" promise and the root-update slip (m2-04); the black-new-node slip and the deletion examples' starting tree (m2-05); the rotation-order slip (m2-06). Dropped four filler "simply"s. Added "like express lanes" to the skip-list name (m2-07).
+
+**Checked and left as is:** load factor, probe sequence, black-height, rotation, augmenting and the other technical terms are explained where they first appear. The red-black case tables are already short.
 
 **Couldn't do:** the humanizer skill isn't installed here.
 

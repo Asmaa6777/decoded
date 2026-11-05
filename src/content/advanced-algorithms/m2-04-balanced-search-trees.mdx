@@ -26,13 +26,13 @@ A red-black tree is a BST with **one extra bit per node**: its **color**, red or
 
 Some books list five properties: they split property 2 into "every leaf (NIL) is black" and "the root is black". Note that NIL leaves count as real (black) leaves, so every key-holding node has **two** children.
 
-Here's the example from the lecture. Turn on the NIL leaves to check property 4: from the root, every path down to a NIL passes through the same number of black nodes. Not counting the root itself, but counting the NIL at the end, that's 2: for example 7 → 3 → NIL, or 7 → 18 → 10 → 8 → NIL.
+Here's the example from the lecture. Turn on the NIL leaves to check property 4: from the root, every path down to a NIL passes through the same number of black nodes. That number is 2, if you count the NIL at the end but not the root itself: for example 7 → 3 → NIL, or 7 → 18 → 10 → 8 → NIL.
 
 <RBTreeVisualizer start={[7, 3, 18, 10, 22, 8, 11, 26]} />
 
 **Black-height** counts the black nodes on a path from a node down to a leaf, not counting the node itself but counting the NIL leaf. A NIL leaf itself has $bh = 0$.
 
-**What's the minimum black-height of a node with height $h$?** Red nodes can never be next to each other (property 3), so at least half the nodes on any path down are black. A node of height $h$ therefore has **black-height $\ge h/2$**.
+**What's the minimum black-height of a node with height $h$?** Red nodes can never be next to each other (property 3). So at least half the nodes on any path down are black. A node of height $h$ therefore has **black-height $\ge h/2$**.
 
 ## The height of a red-black tree
 
@@ -82,7 +82,7 @@ $$
 So $h = O(\lg n)$.
 
 <Callout tone="orange" label="The usual slip">
-"Balanced" doesn't mean every path has the same length. A red-black tree only promises that no path is more than **twice** as long as another: the shortest path can be all black, and the longest can alternate black, red, black, red. Check the example above: 7 → 3 → NIL is 2 steps, while 7 → 18 → 10 → 8 → NIL is 4. Both pass the same number of black nodes, so both are allowed.
+"Balanced" doesn't mean every path has the same length. A red-black tree only promises that no path is more than **twice** as long as another. The shortest path can be all black, and the longest can alternate black, red, black, red. Check the example above: 7 → 3 → NIL is 2 steps, while 7 → 18 → 10 → 8 → NIL is 4. Both pass the same number of black nodes, so both are allowed.
 </Callout>
 
 ## Query operations
@@ -145,7 +145,7 @@ Node* leftRotate(Node* root, Node* x) {
 `rightRotate` is the mirror image: swap every `left` and `right`.
 
 <Callout tone="orange" label="Watch the root update">
-Only set `root = z` when $x$ **was** the root. Some printed versions of this code (in Java) run `root = z;` after the `if`, on every call. Then rotating any node deep in the tree would report that node as the new root of the whole tree, and the rest of the tree would be lost.
+Only set `root = z` when $x$ **was** the root. Some printed versions of this code (in Java) run `root = z;` after the `if`, on every call. Then rotating any node deep in the tree would make that node the new root of the whole tree. The rest of the tree would be lost.
 </Callout>
 
 **What is the running time?** A fixed number of pointer changes, whatever the size of the tree: **$O(1)$**.

@@ -136,7 +136,7 @@ The solution is a **dynamic array**: grow the table whenever it becomes full.
 2. **Copy** the contents of the old table into the new one.
 3. **Free** the old table.
 
-If there's space left, simply insert the new item into a free slot.
+If there's space left, insert the new item into a free slot.
 
 **What is the time complexity of $n$ insertions?**
 
@@ -197,7 +197,7 @@ The amortized cost of an operation is its **real cost plus the change in $\Phi$*
 - **Cheap** (there's a free slot): the real cost is 1. One more item raises $\Phi$ by 2. Amortized cost $= 1 + 2 = 3$.
 - **Expensive** (the table is full, with $m$ items in $m$ slots): the real cost is $m + 1$, copying $m$ items and writing the new one. Before, $\Phi = 2m - m = m$. After, there are $m + 1$ items in $2m$ slots, so $\Phi = 2(m + 1) - 2m = 2$. The change is $2 - m$. Amortized cost $= (m + 1) + (2 - m) = 3$.
 
-So every insertion costs 3, just like the accounting method. The potential that built up during the cheap insertions is exactly what pays for the copy. (Right after a doubling the table is half full, so $\Phi \ge 0$ from then on, which is what makes the total amortized cost an upper bound on the real cost.)
+So every insertion costs 3, just like the accounting method. The potential that built up during the cheap insertions is exactly what pays for the copy. (Right after a doubling the table is half full, so $\Phi \ge 0$ from then on. That is what makes the total amortized cost an upper bound on the real cost.)
 
 <Callout tone="orange" label="The usual slip">
 Growing the table by a **fixed amount**, say 10 more slots each time, instead of doubling it. Then a copy happens every 10 insertions, and the copies cost $10 + 20 + 30 + \dots$ up to $n$, which is about $\frac{n^2}{20}$: $\Theta(n^2)$ in total, $\Theta(n)$ per insertion. It's the **growth factor** that makes the copies rare enough, not the copying itself.

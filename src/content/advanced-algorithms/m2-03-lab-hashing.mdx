@@ -138,7 +138,7 @@ It's tempting to use $h_2(k) = k \bmod m'$. But then $h_2(22) = 22 \bmod 11 = 0$
 
 ## Good hash functions
 
-A good hash function (approximately) satisfies **simple uniform hashing**: each key is equally likely to hash to any of the $m$ slots, independently of where any other key hashes.
+A good hash function comes close to **simple uniform hashing**. That means each key is equally likely to hash to any of the $m$ slots, independently of where any other key hashes.
 
 Properties of a good hash function:
 
@@ -194,7 +194,7 @@ The final tables:
 | double | 22 | | 59 | 17 | 4 | 15 | 28 | 88 | | 31 | 10 |
 
 <Callout tone="sky" label="Compare the probe counts">
-Add up the probes as you step through each run (every slot tried counts, including the one the key lands in): 16 for linear probing, 23 for quadratic and 16 for double hashing. With only 9 keys the totals are close, so the difference is in the *shape*. Linear probing piles keys into one long run in slots 4–8, so the next key that lands anywhere in that run has to walk to its end. Double hashing scatters them, with free slots at 1 and 8, so future keys won't hit long runs. Quadratic probing's 23 comes almost all from 88, which kept jumping back to the same few slots.
+Add up the probes as you step through each run. Every slot tried counts, including the one the key lands in. The totals are 16 for linear probing, 23 for quadratic and 16 for double hashing. With only 9 keys the totals are close, so the difference is in the *shape*. Linear probing piles keys into one long run in slots 4–8, so the next key that lands anywhere in that run has to walk to its end. Double hashing scatters them, with free slots at 1 and 8, so future keys won't hit long runs. Quadratic probing's 23 comes almost all from 88, which kept jumping back to the same few slots.
 </Callout>
 
 <LeetCodeProblems

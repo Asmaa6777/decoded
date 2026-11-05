@@ -31,7 +31,7 @@ import { SkipListVisualizer } from "@/components/mdx/AdvancedVisualizers";
 - Each higher level contains **half** the elements of the level below it.
 - A **header** node and a **sentinel** node ($\infty$) are on every level.
 
-Nodes have **variable size**: each holds between 1 and $O(\log n)$ pointers, one per level it reaches. (The pictures draw the pointers horizontally for clarity, but each one points to the start of the next node.) They're called *skip* lists because the higher levels let you **skip over many items** at once.
+Nodes have **variable size**: each holds between 1 and $O(\log n)$ pointers, one per level it reaches. (The pictures draw the pointers horizontally for clarity, but each one points to the start of the next node.) They're called *skip* lists because the higher levels let you **skip over many items** at once. (The higher levels are like express lanes.)
 
 ### Searching
 
