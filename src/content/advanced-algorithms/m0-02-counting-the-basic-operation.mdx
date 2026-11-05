@@ -89,6 +89,8 @@ Both answer the same question, but look at the comparisons they need in the wors
 
 Every time the array doubles, sequential search does twice the work, but binary search does only **one more** comparison. That's the difference between $n$ and $\lg n$.
 
+Where do 8, 11, 21 and 33 come from? Each comparison halves what's left, so after $k$ comparisons at most $n / 2^k$ keys remain. For $n = 1024 = 2^{10}$ it takes 10 halvings to get down to one key, plus **one more** comparison to look at that last key: $\lg n + 1 = 11$. The same gives $7 + 1 = 8$ for $128 = 2^7$, $20 + 1 = 21$ for $2^{20}$, and $32 + 1 = 33$ for $2^{32}$.
+
 <SearchVisualizer algorithm="binary" />
 
 ## Every-case time complexity
@@ -102,6 +104,10 @@ For some algorithms, the basic operation runs the **same number of times for eve
 | Matrix multiplication | multiplication in the inner loop | $n \times n \times n = n^3$ |
 
 The contents of the input don't matter. Exchange sort compares every pair even if the array is already sorted.
+
+<Callout tone="orange" label="The usual slip">
+Count the **basic operation**, not every line. For exchange sort the answer is the number of comparisons, $\frac{(n-1)n}{2}$. The number of *swaps* does depend on the input (0 for a sorted array), but swaps aren't the basic operation, so exchange sort still has an every-case complexity. Mixing the two up leads to answers like "exchange sort's best case is 0".
+</Callout>
 
 ## When there is no every-case
 
@@ -164,7 +170,13 @@ It looks perfect, but count the calls it makes:
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | calls | 1 | 1 | 3 | 5 | 9 | 15 | 25 |
 
-If you draw the call tree, `fib(n-2)` is computed inside `fib(n-1)` *and again* on its own. The number of calls $T(n)$ more than doubles every time $n$ grows by 2:
+If you draw the call tree, `fib(n-2)` is computed inside `fib(n-1)` *and again* on its own. Count the calls: `fib(n)` is one call, plus everything `fib(n-1)` does, plus everything `fib(n-2)` does:
+
+$$
+T(n) = 1 + T(n-1) + T(n-2)
+$$
+
+Check it on the table: $T(4) = 1 + 5 + 3 = 9$. Since $T(n-1)$ is bigger than $T(n-2)$, we can replace it by $T(n-2)$ and the right side only gets smaller: $T(n) > T(n-2) + T(n-2) = 2\,T(n-2)$. So the number of calls more than doubles every time $n$ grows by 2:
 
 $$
 T(n) > 2\,T(n-2) > 2 \cdot 2\,T(n-4) > \dots > \underbrace{2 \cdot 2 \cdots 2}_{n/2 \text{ times}}\, T(0)

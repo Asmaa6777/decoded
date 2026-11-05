@@ -70,6 +70,10 @@ This lab writes the master method with $f(n) = O(n^d)$ and compares $a$ with $b^
 It's the same theorem: $a$ vs. $b^d$ is the same comparison as $\log_b a$ vs. $d$. Only the case numbers differ. For $T(b) = T(b/2) + 1$ we have $a = 1$, $b = 2$, $d = 0$, so $a = b^d = 1$: the lab's Case 1, the lecture's Case 2, and the answer is $O(\log b)$ either way.
 </Callout>
 
+<Callout tone="orange" label="The usual slip">
+Writing `return fastPower(a, b / 2) * fastPower(a, b / 2);` looks the same, but it makes **two** recursive calls for the same number. The recurrence becomes $T(b) = 2T(b/2) + 1$, which is $\Theta(b)$: no faster than the slow version. Compute the half power **once**, store it, and square it (or square the base first, as `fastPower` does).
+</Callout>
+
 ### Problem 2.1: insertion sort
 
 ```text
@@ -206,6 +210,8 @@ $$
 Step through it on the lab's 16 numbers:
 
 <MinMaxVisualizer input={[11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1]} />
+
+**What if $n$ is odd?** One number has no partner. Pair up the other $n - 1$, then let the leftover number join both searches: it's compared with the smallest of the small ones and the largest of the big ones. That's $\frac{n-1}{2}$ pair comparisons plus $\frac{n-1}{2}$ for the minimum and $\frac{n-1}{2}$ for the maximum, $\frac{3(n-1)}{2}$ in all. For $n = 5$: 2 + 2 + 2 = 6. Forgetting the leftover number is the usual bug: the loop `for i in 0 to n/2 − 1` simply skips the last element.
 
 ### Algorithm 2: merge the pairs
 

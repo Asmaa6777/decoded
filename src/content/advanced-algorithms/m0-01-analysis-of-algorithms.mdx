@@ -17,7 +17,7 @@ So why spend a whole course on performance?
 
 - **It tells you whether a program will scale.** Code that's fine on 100 items can be useless on 10 million.
 - **It's often the line between possible and impossible.** Some problems can only be solved at all because someone found a fast algorithm.
-- **It gives us a language.** "This is $\Theta(n^2)$" says a lot in a few characters.
+- **It gives us a language.** "This is $\Theta(n^2)$" (say "theta of n squared": the running time grows like $n^2$) says a lot in a few characters. The notation is explained properly below.
 - **Performance is the currency of computing.** You can "spend" speed to buy other things, like nicer features or simpler code. You can only spend what you have.
 - **The ideas carry over** to other resources: memory, network traffic, battery.
 
@@ -65,7 +65,7 @@ The same run, one row per pass of the outer loop:
 
 The running time **depends on the input**:
 
-- An array that's already sorted is easier: the key never has to move.
+- An array that's already sorted is easier: the key never has to move. Each pass makes one comparison, finds the key already in place, and stops.
 - A longer array takes longer than a short one. So we describe the running time as a function of the **input size** $n$, written $T(n)$.
 
 We usually want an **upper bound**, because everyone likes a guarantee: "this will never take longer than…".
@@ -105,6 +105,10 @@ $$
 
 When $n$ is big enough, the $n^3$ term is so much bigger than the others that they stop mattering. That's why, once $n$ is large enough, a $\Theta(n^2)$ algorithm **always** beats a $\Theta(n^3)$ algorithm, whatever the constants are.
 
+<Callout tone="orange" label="The usual slip">
+Keep **only** the fastest-growing term, and drop its constant too: $3n^3 + 90n^2 = \Theta(n^3)$. Writing $\Theta(3n^3)$ or $\Theta(n^3 + n^2)$ isn't wrong, but it says nothing extra, and in an exam it shows you haven't simplified. "Fastest-growing" is not "biggest coefficient": in $5000n + 0.001n^2$, the $n^2$ term wins, so it's $\Theta(n^2)$.
+</Callout>
+
 That doesn't mean we throw slower algorithms away. In real projects, a "slower" algorithm can still be the right choice for small inputs or simpler code. Asymptotic analysis is a tool to **organise your thinking**, not a rule that replaces it.
 
 ## Insertion sort analysis
@@ -115,6 +119,8 @@ $$
 T(n) = \sum_{j=2}^{n} \Theta(j) = \Theta(n^2) \qquad \text{(an arithmetic series)}
 $$
 
+Why $n^2$? Add up the steps: $2 + 3 + \dots + n = \frac{n(n+1)}{2} - 1$. For $n = 1000$ that's 500,499, about half of $1000^2$. The half is a constant, and $\Theta$ ignores constants.
+
 **Average case: every order is equally likely.** On average a key only travels halfway, so each insertion costs about $j/2$:
 
 $$
@@ -122,6 +128,8 @@ T(n) = \sum_{j=2}^{n} \Theta(j/2) = \Theta(n^2)
 $$
 
 Half the work is still $n^2$, because constants don't change the growth.
+
+**Best case: the input is already sorted.** Every key is compared once with its left neighbour and stays put, so $T(n) = \Theta(n)$. That's why insertion sort is a good choice for data that's *almost* sorted.
 
 So is insertion sort fast? **Moderately, for small $n$. Not at all for large $n$.**
 

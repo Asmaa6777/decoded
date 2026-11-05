@@ -72,7 +72,7 @@ T(n) &= c + T(n/2) && T(n/2) = c + T(n/4) \\
 \end{aligned}
 $$
 
-Assume $n = 2^k$. After $k$ steps you reach $T(1)$:
+Assume $n = 2^k$, so that halving always gives a whole number all the way down (for other $n$, the rounding changes only the constant, not the growth). Then $k = \lg n$, and after $k$ steps you reach $T(1)$:
 
 $$
 T(n) = \underbrace{c + c + \dots + c}_{k \text{ times}} + T(1) = c \lg n + T(1) = \Theta(\lg n)
@@ -116,6 +116,8 @@ T(n) = T(n/2) + 1 \le c \lg(n/2) + 1 = c \lg n - c + 1 \le c \lg n
 $$
 
 The last step needs $-c + 1 \le 0$, which means $c \ge 1$. ✓
+
+**Don't forget the base case.** Induction also needs a starting point, and $n = 1$ doesn't work here: $T(1) = 1$, but $c \lg 1 = 0$. That's what $n_0$ is for. Start at $n_0 = 2$: $T(2) = 1 + T(1) = 2 \le c \lg 2 = c$ holds for $c \ge 2$. With $c = 2$ both the base case and the step work, so $T(n) \le 2 \lg n$ for all $n \ge 2$.
 
 **Example: $T(n) = T(n-1) + n$.** Guess $T(n) = O(n^2)$.
 
@@ -197,6 +199,12 @@ It means: split the problem into $a$ subproblems of size $n/b$, and spend $f(n)$
 **$T(n) = 3T(n/4) + n \lg n$.** $a = 3$, $b = 4$, $\log_4 3 \approx 0.793$. Compare $n^{0.793}$ with $n \lg n$: $f(n) = \Omega(n^{\log_4 3 + \varepsilon})$, so it looks like **Case 3**. Check regularity: $3 \cdot \frac{n}{4}\lg\frac{n}{4} \le \frac34\, n \lg n = c\,f(n)$ with $c = \frac34$. ✓ So $T(n) = \Theta(n \lg n)$.
 
 **$T(n) = 2T(n/2) + n \lg n$.** Compare $n$ with $n \lg n$. It *seems* like Case 3 should apply, but $f(n)$ must be bigger by a **polynomial** factor $n^\varepsilon$. Here it's only bigger by a factor of $\lg n$, which grows slower than any $n^\varepsilon$. So **the master method doesn't apply.** It falls into the gap between Case 2 and Case 3. (Use a recursion tree instead: you get $\Theta(n \lg^2 n)$.) Try it as the last preset in the explorer above.
+
+<Callout tone="orange" label="Three usual slips with the master method">
+- **Mixing up $a$ and $b$.** In $T(n) = 4T(n/2) + n$, $a = 4$ (how many calls) and $b = 2$ (how much smaller each one is). So $n^{\log_b a} = n^{\log_2 4} = n^2$, which beats $f(n) = n$: Case 1, $\Theta(n^2)$. Swapping them gives $\log_4 2 = \frac12$ and a wrong answer.
+- **Skipping the regularity check in Case 3.** It's part of the case. It usually holds, but you have to say so.
+- **Calling a log factor "polynomially bigger".** $n \lg n$ is bigger than $n$, but not by any $n^\varepsilon$, so neither Case 1 nor Case 3 applies (the last worked example above).
+</Callout>
 
 <Callout tone="sky" label="When the master method can't help">
 It only works for the exact shape $aT(n/b) + f(n)$. It can't solve:

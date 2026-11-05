@@ -156,6 +156,10 @@ We use Big-O for the **worst-case** time. Saying "the worst-case time of algorit
 
 **Example 2.** Show $f(n) = 3n^2 + 20 \in O(n^2)$. Take $n_0 = 5$ and $c = 4$: we need $3n^2 + 20 \le 4n^2$, which means $20 \le n^2$. That's true for $n \ge 5$. ✓
 
+<Callout tone="orange" label="The usual slip">
+Big-O is only an **upper** bound. $3n + 2 \le 5n^2$ for every $n \ge 1$, so $3n + 2$ is also $O(n^2)$, and $O(n^3)$, and $O(2^n)$. All true, just not tight. So "this algorithm is $O(n^2)$" does **not** mean it takes about $n^2$ steps; it means no more than that. When you want to say "grows exactly like", the word is $\Theta$, below.
+</Callout>
+
 Try other values. Shrink $c$ until the proof breaks, then raise $n_0$ to rescue it:
 
 <BigOWitness />

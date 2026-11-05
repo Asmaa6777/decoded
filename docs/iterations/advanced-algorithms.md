@@ -12,7 +12,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M3
   - [x] M4
 - [ ] 3. Depth
-  - [ ] M0
+  - [x] M0
   - [ ] M1
   - [ ] M2
   - [ ] M3
@@ -156,3 +156,21 @@ Checked lecture 20 against lesson m4-01.
 **Not checked:** no browser check.
 
 Round 2 is complete for all modules. Next: round 3, depth, starting with M0.
+
+### Round 3, depth: M0 Foundations
+
+Read m0-01 to m0-06 as someone meeting the subject for the first time, looking for terms used before they're defined, skipped steps, claims with no reason, and ideas with no common mistake.
+
+**Changed:**
+- m0-01: Θ(n²) was used in the first section before any explanation; it now says how to read it. Insertion sort had no best case; added Θ(n) with the reason (one comparison per pass). The worst case's "arithmetic series" now shows the sum and its value at n = 1000. A callout on simplifying Θ (keep only the fastest-growing term, drop its constant; 5000n + 0.001n² is Θ(n²)).
+- m0-02: where the binary search counts 8, 11, 21, 33 come from (lg n + 1). Why fib's call count more than doubles: T(n) = 1 + T(n−1) + T(n−2), checked against the table. A callout on counting the basic operation, not swaps, for exchange sort.
+- m0-03: a callout that Big-O is only an upper bound (3n + 2 is also O(n²)).
+- m0-04: the binary search substitution proof now has its base case (n₀ = 2, c = 2), which was the gap round 2 found. Why the iteration method assumes n = 2ᵏ. A callout with three master-method slips (mixing up a and b, shown on 4T(n/2) + n; skipping regularity; treating a log factor as polynomial).
+- m0-05: a callout on C's precedence trap (`x & 1 == 0` is always false) and on shifting past bit 31.
+- m0-06: the two-call FastPower bug that turns Θ(log b) into Θ(b), and the min-max task for odd n (3(n − 1)/2 comparisons), with the skipped-last-element bug.
+
+**Checked and left as is:** the master method's cases, the substitution examples other than binary search, the recursion-tree level argument, the term-contribution experiments, the 1.5n − 2 derivations, and the binary-file functions already give their reasons.
+
+**Found but not fixed:** m0-03 is long (maths revision plus all of asymptotic notation); round 4 should check it reads in order.
+
+**Not checked:** no browser check; no visualizers changed.
