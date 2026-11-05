@@ -38,7 +38,7 @@ The notes put `else return −1` **inside** the loop. Then the first element tha
 - **Worst case:** the target is last or missing, so you check all $n$ elements. **$O(n)$.**
 - **Average case:** about $n/2$ comparisons. **$O(n)$.** (The [counting steps lesson](/courses/algorithm-design-and-analysis/counting-steps) works this out exactly.)
 
-The notes compare it with binary search and hash tables, which both search much faster. Linear search pays for its simplicity in speed.
+The notes compare it with binary search and **hash tables**, which both search much faster. (A hash table computes where a value should be stored from the value itself, so a lookup usually goes straight to the right slot instead of walking the array. The [Data Structures course](/courses/data-structures/arrays-and-memory) covers it.) Linear search pays for its simplicity in speed.
 
 ## Binary search: throw away half
 
@@ -68,7 +68,7 @@ Try a target that isn't in the array, like `30`. Watch `low` and `high` close in
 
 ### Analysis
 
-How many times can you halve $n$ before only one element is left? About $\log_2 n$ times.
+How many times can you halve $n$ before only one element is left? About $\log_2 n$ times. Each comparison is one halving, so that's also the number of comparisons. A million needs about 20 because $2^{20} = 1{,}048{,}576$: twenty halvings take a million down to one. The notes' 13-element example needs at most 4, since $2^3 = 8 \lt 13 \le 16 = 2^4$; searching for 70 happened to take 3.
 
 | Array size $n$ | Linear search (worst) | Binary search (worst) |
 | --- | --- | --- |
@@ -111,6 +111,10 @@ static int binarySearch(int[] a, int x) {
     return -1;
 }
 ```
+
+<Callout tone="orange" label="Common mistake: binary search on unsorted data">
+Binary search on an unsorted array doesn't crash. It quietly gives wrong answers. Search for 9 in 4, 9, 1, 7, 3: the middle is 1, and since 9 > 1 it throws away the left half, which is where the 9 was. It returns −1 for a value that's right there. If the data might not be sorted, sort it first or use linear search.
+</Callout>
 
 Binary search is easy to describe and easy to get *slightly* wrong. Check these three details every time:
 
