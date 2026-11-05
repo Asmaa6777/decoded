@@ -17,16 +17,54 @@ It's still [divide and conquer](/courses/algorithm-design-and-analysis/merge-sor
 
 ## Partitioning with two pointers
 
-There are several ways to partition. This one uses the **last element as the pivot** and two pointers walking towards each other:
+There are several ways to partition. The lab uses the **first element as the pivot** and two pointers walking towards each other:
 
-- `left` starts at the beginning and moves right **while** its element is ≤ the pivot (that element is already on the correct side).
-- `right` starts at the end and moves left **while** its element is ≥ the pivot.
-- When both have stopped, `left` is on something too big for the left side and `right` is on something too small for the right side. **Swap them**, which puts both on the correct side, and keep going.
-- When the pointers meet, swap the pivot into the meeting point.
+- `right` starts at the end and moves left **while** its element is ≥ the pivot (that element is already on the correct side).
+- Then `left` starts at the beginning and moves right **while** its element is ≤ the pivot. Its first step passes over the pivot itself.
+- When both have stopped, `right` is on something too small for the right side and `left` is on something too big for the left side. **Swap them**, which puts both on the correct side, and keep going.
+- When the pointers meet, swap the pivot from the front into the meeting point.
 
-<SortVisualizer algorithm="quick" initial={[24, 9, 29, 14, 19, 27, 5, 21]} />
+<SortVisualizer algorithm="quick" initial={[25, 10, 30, 15, 20, 28]} />
 
 The purple bar is the pivot. Each partition ends with one bar turning mint, meaning that pivot is locked into its final spot. Then the window shrinks to one side and the same thing happens on a smaller piece.
+
+### Why `right` has to move first
+
+At the end, the pivot swaps with whatever sits where the pointers met. That value goes to the front, onto the left side, so it must be **no bigger than the pivot**. Moving `right` first guarantees it: `right` only stops on a value smaller than the pivot, and if it runs into `left` instead, `left` is standing on the pivot or on a small value it already swapped in.
+
+Move `left` first and it can stop on a big value with nothing left for `right` to do, so the final swap throws that big value to the front. With [25, 10, 30], `left` walks past 25 and 10 and stops on 30, where it meets `right`. The swap gives 30, 10, 25: the 30 ended up left of 25. That's the bug students most often write. (With a **last**-element pivot it's the other way round: `left` moves first.)
+
+### The notes' version: loc, left and right
+
+The notes trace a different two-pointer method on the array 25, 10, 30, 15, 20, 28. Here the pivot doesn't wait at the front. It **moves with every swap**, and `loc` always points at it. Whichever pointer isn't on the pivot does the walking:
+
+- When `loc` = `left`, walk `right` leftwards while `a[loc] < a[right]`. When `a[loc] > a[right]`, swap them, and `loc` moves to `right`.
+- When `loc` = `right`, walk `left` rightwards while `a[left] < a[loc]`. When `a[left] > a[loc]`, swap them, and `loc` moves to `left`.
+- Stop when `loc`, `left` and `right` all point at the same place.
+
+| Step | What happens | Array | loc, left, right |
+| --- | --- | --- | --- |
+| start | pivot 25 is at the front | **25** 10 30 15 20 28 | 0, 0, 5 |
+| 1 | 25 < 28, move `right` | **25** 10 30 15 20 28 | 0, 0, 4 |
+| 2 | 25 > 20, swap; pivot goes right | 20 10 30 15 **25** 28 | 4, 0, 4 |
+| 3 | 20 < 25, move `left` | 20 10 30 15 **25** 28 | 4, 1, 4 |
+| 4 | 10 < 25, move `left` | 20 10 30 15 **25** 28 | 4, 2, 4 |
+| 5 | 30 > 25, swap; pivot goes left | 20 10 **25** 15 30 28 | 2, 2, 4 |
+| 6 | 25 < 30, move `right` | 20 10 **25** 15 30 28 | 2, 2, 3 |
+| 7 | 25 > 15, swap; pivot goes right | 20 10 15 **25** 30 28 | 3, 2, 3 |
+| 8 | 15 < 25, move `left` | 20 10 15 **25** 30 28 | 3, 3, 3 |
+
+All three meet at index 3, so 25 is in its final place, with 20, 10, 15 on its left and 30, 28 on its right. The lab's method, in the visualizer above, also puts 25 at index 3, but leaves the left side as 15, 10, 20. Both are correct: partitioning only promises which **side** each element is on, not the order within a side.
+
+The notes also give the textbook's pseudocode for the same idea, named **Hoare partition** after Tony Hoare, who invented quick sort. It is the lab's two-pointer method written with `repeat … until` loops. Here is the textbook's top level, where `s` is the **split position**, the pivot's final index:
+
+```text
+ALGORITHM Quicksort(A[l..r])
+if l < r
+    s ← Partition(A[l..r])     // s is a split position
+    Quicksort(A[l..s − 1])
+    Quicksort(A[s + 1..r])
+```
 
 ## Analysis: it depends on the pivot
 
@@ -40,7 +78,9 @@ $$
 n + (n-1) + (n-2) + \dots + 1 = O(n^2)
 $$
 
-With a last-element pivot, this happens on data that's **already sorted**, because every pivot is the largest remaining element. Reverse-sorted data is just as bad, since the pivots keep landing at one end or the other. Try `1, 2, 3, 4, 5, 6, 7, 8` in the visualizer and watch every partition peel off just one element.
+With a first-element pivot, this happens on data that's **already sorted in ascending order**, which is the case the notes name: every pivot is the smallest remaining element, so `right` walks all the way down and the left side is empty. Reverse-sorted data is just as bad, since every pivot is then the largest. Try `1, 2, 3, 4, 5, 6, 7, 8` in the visualizer and watch every partition peel off just one element.
+
+The notes write the worst case as $f(n) = n \times (n-1)$. The exact count is the sum above, about $n^2/2$, but both are $O(n^2)$, which is the answer that matters. Likewise their best case, $f(n) = n \times \log_2 n$, describes the ideal where every pivot splits its piece exactly in half.
 
 So the input that's best for [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea) is the worst for naive quick sort.
 
@@ -48,7 +88,7 @@ So the input that's best for [insertion sort](/courses/algorithm-design-and-anal
 
 The fix is to choose the pivot more carefully. Common choices:
 
-- **First** or **last** element: simple, but bad on sorted input.
+- **First** or **last** element: simple, but bad on sorted input. The lab uses the first.
 - **Middle** element: handles sorted input well.
 - **Random** element: makes the worst case extremely unlikely on *any* input.
 - **Median of three**: the median of the first, middle and last elements. A cheap way to avoid bad pivots.
@@ -59,7 +99,7 @@ Merge sort is always $O(n \log n)$ and [stable](/courses/algorithm-design-and-an
 
 ## Strengths and weaknesses
 
-Quick sort is often the fastest general-purpose sort in practice. It sorts in place, using only $O(\log n)$ extra space on average for the [recursion stack](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too). It's also easy to parallelize, since after partitioning the two sides are completely independent.
+Quick sort is often the fastest general-purpose sort in practice. It sorts in place. The notes say it needs "no temporary memory", meaning no second array like merge sort's; it still uses $O(\log n)$ extra space on average for the [recursion stack](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too). It's also easy to parallelize, since after partitioning the two sides are completely independent.
 
 Against that, its worst case is $O(n^2)$, and it isn't stable: the long-distance swaps can reorder equal elements.
 
@@ -82,25 +122,25 @@ Advanced Algorithms proves the expected running time when the pivot is chosen at
 public static void quickSort(int[] array, int lowIndex, int highIndex) {
     if (lowIndex >= highIndex) return;
 
-    int pivotIndex = partition(array, lowIndex, highIndex);
+    int pivot = array[lowIndex];
+    int pivotIndex = partition(array, lowIndex, highIndex, pivot);
     quickSort(array, lowIndex, pivotIndex - 1);
     quickSort(array, pivotIndex + 1, highIndex);
 }
 
-private static int partition(int[] array, int lowIndex, int highIndex) {
-    int pivot = array[highIndex];
+public static int partition(int[] array, int lowIndex, int highIndex, int pivot) {
     int leftPointer = lowIndex;
     int rightPointer = highIndex;
 
     while (leftPointer < rightPointer) {
-        while (array[leftPointer] <= pivot && leftPointer < rightPointer)
-            leftPointer++;
         while (array[rightPointer] >= pivot && leftPointer < rightPointer)
             rightPointer--;
+        while (array[leftPointer] <= pivot && leftPointer < rightPointer)
+            leftPointer++;
         swap(array, leftPointer, rightPointer);
     }
-    swap(array, leftPointer, highIndex);
-    return leftPointer;
+    swap(array, lowIndex, rightPointer);
+    return rightPointer;  // pivot's final index
 }
 ```
 

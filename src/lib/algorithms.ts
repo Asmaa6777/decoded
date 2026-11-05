@@ -114,15 +114,15 @@ export const JAVA_SORT: Record<SortAlgorithm, string[]> = {
     "}",
     "",
     "static int partition(int[] a, int lo, int hi) {",
-    "    int pivot = a[hi];                    // last element is the pivot",
+    "    int pivot = a[lo];                    // first element is the pivot",
     "    int left = lo, right = hi;",
     "    while (left < right) {",
-    "        while (a[left] <= pivot && left < right) left++;",
     "        while (a[right] >= pivot && left < right) right--;",
+    "        while (a[left] <= pivot && left < right) left++;",
     "        swap(a, left, right);",
     "    }",
-    "    swap(a, left, hi);                    // pivot lands in its final spot",
-    "    return left;",
+    "    swap(a, lo, right);                   // pivot lands in its final spot",
+    "    return right;",
     "}",
   ],
 };
@@ -327,44 +327,47 @@ export function sortFrames(algorithm: SortAlgorithm, input: number[]): Frame<Arr
       stack: stack.map(([l, h]) => [l, h] as [number, number]),
     });
     const partition = (lo: number, hi: number) => {
-      const pivot = a[hi];
+      // the lab's version: the first element is the pivot, and the right pointer moves first,
+      // so wherever the pointers meet holds a value no bigger than the pivot
+      const pivot = a[lo];
       let left = lo;
       let right = hi;
       // what each pointer has already walked past and confirmed
       const sides = () => ({
         marks: [
-          ...(left > lo ? [{ from: lo, to: left - 1, label: `≤ ${pivot}` }] : []),
-          ...(right < hi - 1 ? [{ from: right + 1, to: hi - 1, label: `≥ ${pivot}` }] : []),
+          ...(left > lo + 1 ? [{ from: lo + 1, to: left - 1, label: `≤ ${pivot}` }] : []),
+          ...(right < hi ? [{ from: right + 1, to: hi, label: `≥ ${pivot}` }] : []),
         ],
       });
-      const st = () => ({ ...at(lo, hi), ...sides(), pivot: hi, pointers: { left, right } });
-      push(8, `Partition [${a.slice(lo, hi + 1).join(", ")}] around pivot ${pivot}.`, st());
+      const st = () => ({ ...at(lo, hi), ...sides(), pivot: lo, pointers: { left, right } });
+      push(8, `Partition [${a.slice(lo, hi + 1).join(", ")}] around the first element, pivot ${pivot}.`, st());
       while (left < right) {
         while (left < right) {
           stats.comparisons++;
-          const ok = a[left] <= pivot;
-          push(11, `${a[left]} ≤ ${pivot}? ${ok ? "Yes, it belongs on the left — move on." : "No, it's too big for the left side. Stop."}`, { ...st(), compare: [left] });
+          const ok = a[right] >= pivot;
+          push(11, `${a[right]} ≥ ${pivot}? ${ok ? "Yes, it belongs on the right — move on." : "No, it's too small for the right side. Stop."}`, { ...st(), compare: [right] });
           if (!ok) break;
-          left++;
+          right--;
         }
         while (left < right) {
           stats.comparisons++;
-          const ok = a[right] >= pivot;
-          push(12, `${a[right]} ≥ ${pivot}? ${ok ? "Yes, it belongs on the right — move on." : "No, it's too small for the right side. Stop."}`, { ...st(), compare: [right] });
+          const ok = a[left] <= pivot;
+          const self = left === lo ? " (that's the pivot itself)" : "";
+          push(12, `${a[left]} ≤ ${pivot}?${self} ${ok ? "Yes, it belongs on the left — move on." : "No, it's too big for the left side. Stop."}`, { ...st(), compare: [left] });
           if (!ok) break;
-          right--;
+          left++;
         }
         if (left !== right) {
           swap(left, right);
           push(13, `Swap ${a[right]} and ${a[left]} — each goes to the side it belongs on.`, { ...st(), write: [left, right] });
         }
       }
-      if (left !== hi) swap(left, hi);
-      sorted.add(left);
-      if (left > 0) cuts.add(left);
-      if (left < n - 1) cuts.add(left + 1);
-      push(15, `Pointers met. Pivot ${pivot} goes to index ${left}: smaller on its left, bigger on its right. It never moves again.`, { ...at(lo, hi), write: [left, hi], pointers: { p: left } });
-      return left;
+      if (right !== lo) swap(lo, right);
+      sorted.add(right);
+      if (right > 0) cuts.add(right);
+      if (right < n - 1) cuts.add(right + 1);
+      push(15, `Pointers met at index ${right}. Pivot ${pivot} swaps into it: smaller on its left, bigger on its right. It never moves again.`, { ...at(lo, hi), write: [lo, right], pointers: { p: right } });
+      return right;
     };
     const rec = (lo: number, hi: number) => {
       if (lo >= hi) {

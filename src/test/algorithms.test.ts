@@ -52,6 +52,13 @@ describe("sortFrames", () => {
     expect(frames[frames.length - 1].stats.comparisons).toBe(5);
   });
 
+  it("quick sort partitions around the first element like the lab", () => {
+    const frames = sortFrames("quick", [25, 10, 30, 15, 20, 28]);
+    const placed = frames.find((f) => f.line === 15)!;
+    expect(placed.state.array).toEqual([15, 10, 20, 25, 30, 28]);
+    expect(placed.state.pointers).toEqual({ p: 3 });
+  });
+
   it("selection sort always makes n(n-1)/2 comparisons", () => {
     const frames = sortFrames("selection", [1, 2, 3, 4, 5, 6]);
     expect(frames[frames.length - 1].stats.comparisons).toBe(15);
