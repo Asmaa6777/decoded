@@ -65,6 +65,10 @@ Row 0 (no items) and column 0 (no capacity) are all **zero**, because there's no
 
 Every cell depends only on cells in the row **above** it. If you fill the table top to bottom and left to right, every value you need is already there.
 
+<Callout tone="orange" label="Common mistake: reading from the same row">
+The "take" option reads $V[i-1, w - w_i]$, from the row **above**. Students often write $V[i, w - w_i]$, from the same row. That cell may already include item $i$, so the formula can take item $i$ a second time. That solves a different problem, where you have unlimited copies of each item. In the notes' example it fills the corner with **200**: five copies of item 4, each weighing 1 and worth 40, where the right answer is 140.
+</Callout>
+
 ## Watch the table fill
 
 The notes' example: four items, capacity $W = 5$.
@@ -111,6 +115,8 @@ The table holds the best *value*, not the items. To recover them, **backtrack** 
 - If $V[i, w] = V[i-1, w]$, item $i$ didn't change anything, so it was **skipped**. Move up one row.
 - Otherwise item $i$ was **taken**. Move up one row *and* left by $w_i$ (the capacity it used).
 - Stop when $i$ or $w$ reaches 0.
+
+When you take an item, remember to subtract its weight before comparing the next row. Forgetting that compares the wrong column, and the backtrack can "take" items that don't fit.
 
 On the notes' table:
 
