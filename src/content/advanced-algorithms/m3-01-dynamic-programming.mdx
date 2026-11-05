@@ -60,6 +60,10 @@ $$
 
 <DPVisualizer problem="coins" coins={[5, 1, 2, 10, 6, 2]} />
 
+<Callout tone="orange" label="Why not just grab the biggest coin?">
+A greedy rule, "take the largest coin left, then cross out its neighbours", fails. On `2 10 11 10` it takes 11, which knocks out both 10s, then takes 2: total 13. The DP finds $10 + 10 = 20$. Taking one coin changes what its neighbours are worth, and only the table keeps track of that.
+</Callout>
+
 | | |
 | --- | --- |
 | **Max amount** | $F(6) = 17$ |
@@ -131,6 +135,10 @@ where $c_{ij} = 1$ if there's a coin in cell $(i, j)$ and 0 otherwise, and $F(0,
 A **subsequence** of a string $S$ is what you get by deleting zero or more symbols from $S$. Some subsequences of "president" are *pred*, *sdn* and *predent*. The letters of a subsequence appear **in order** in $S$, but they don't have to be **consecutive**.
 
 The **longest common subsequence problem** is to find a longest subsequence that two sequences have in common.
+
+<Callout tone="orange" label="Subsequence is not substring">
+A **substring** must be consecutive; a **subsequence** need not be. "side" is a substring of "president"; "pred" and "sdn" are only subsequences. "president" and "providence" share no common substring longer than 4 letters ("iden"), yet their longest common subsequence, "priden", has 6.
+</Callout>
 
 - "president" and "providence": the LCS is **priden**.
 - "algorithm" and "alignment": one LCS is **algm**. (There can be more than one. The backtrace below finds *algt*, which is just as long.)

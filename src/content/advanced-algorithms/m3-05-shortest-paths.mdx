@@ -167,6 +167,10 @@ But $u$ was chosen by EXTRACT-MIN, so $d[u] \le d[y]$. **Contradiction.** ∎
 
 This is exactly where **non-negative weights** are needed. With a negative edge further along the path, $\delta(s, y)$ could be *bigger* than $\delta(s, u)$, and the argument breaks.
 
+<Callout tone="orange" label="The usual slip: negative edges">
+Running Dijkstra on a graph with a negative edge. Take $A \xrightarrow{1} B$, $A \xrightarrow{3} C$, $C \xrightarrow{-3} B$, $B \xrightarrow{1} D$. Dijkstra finishes $B$ at 1, then $D$ at 2, and only then looks at $C$. The edge $C \to B$ lowers $d[B]$ to 0, but $D$ has already been finished and is never fixed. It reports $d[D] = 2$, while the real shortest path $A \to C \to B \to D$ costs $3 - 3 + 1 = 1$. With negative edges, use the Bellman–Ford algorithm instead.
+</Callout>
+
 ## Analysis of Dijkstra
 
 - The `while` loop runs $|V|$ times, each with one EXTRACT-MIN.

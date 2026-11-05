@@ -15,7 +15,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M0
   - [x] M1
   - [x] M2
-  - [ ] M3
+  - [x] M3
   - [ ] M4
 - [ ] 4. Plain language
   - [ ] M0
@@ -208,5 +208,23 @@ Read m2-01 to m2-07 as a first-time reader. Only m2-04 had a common-mistake call
 **Checked and left as is:** the aggregate and accounting methods, chaining's 1 + α, open addressing's 1/(1 − α), the deletion marker, the insertion cases, the black-token deletion table, OS-SELECT/OS-RANK, interval-search correctness and the backwards analysis of skip lists already give their reasons.
 
 **Found but not fixed:** none.
+
+**Not checked:** no browser check; no visualizers changed.
+
+### Round 3, depth: M3 Design Strategies
+
+Read m3-01 to m3-05 as a first-time reader. Only m3-02 had a common-mistake callout (greedy coin change).
+
+**Changed:**
+- m3-01: why greedy fails on the coin row (2 10 11 10: greedy 13, DP 20), and subsequence vs. substring ("president"/"providence" share at most "iden" as a substring but "priden" as a subsequence).
+- m3-03: Prim's "cheapest edge anywhere" and Kruskal's missing cycle check, both on the lecture's graph; what happens with equal weights (the MST may not be unique).
+- m3-04: the two greedy rules that look right for activity selection and fail (shortest first, earliest start), each with a three-activity counterexample.
+- m3-05: Dijkstra on a negative edge, a four-vertex example where it reports 2 for a distance of 1.
+
+All counterexamples were checked by brute force in Python. While checking, I caught two wrong claims in my own draft (that the longest common substring was "den", and that "pred" is a substring of "president") and fixed them before committing.
+
+**Checked and left as is:** the DP recurrences each give the "with or without the last item" reason; the MST cut-and-paste proofs, the Huffman exchange and substructure proofs, the activity-selection exchange proof and Dijkstra's three-part correctness proof are complete.
+
+**Found but not fixed:** Bellman–Ford is named in the new m3-05 callout but no lesson teaches it; round 7 could link it to another course if one covers it.
 
 **Not checked:** no browser check; no visualizers changed.

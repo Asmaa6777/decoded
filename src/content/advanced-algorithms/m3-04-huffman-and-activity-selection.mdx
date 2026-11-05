@@ -183,6 +183,13 @@ Consider any nonempty subproblem $S_{ij}$, and let $a_m$ be the activity in $S_{
 
 So the **greedy solution** is: take the activity that **finishes first**, throw away everything that clashes with it, and repeat on what's left.
 
+<Callout tone="orange" label="Other greedy rules that look right but fail">
+- **Shortest activity first.** With $[1, 5)$, $[4, 7)$, $[6, 10)$, the shortest is $[4, 7)$, and it clashes with both others: 1 activity. Taking $[1, 5)$ and $[6, 10)$ gives 2.
+- **Earliest start first.** With $[0, 10)$, $[1, 2)$, $[3, 4)$, the first to start is $[0, 10)$, which blocks the rest: 1 activity instead of 2.
+
+Only "earliest **finish**" has the exchange proof above. A greedy rule is only as good as its proof.
+</Callout>
+
 ### Recursive and iterative algorithms
 
 ```text
