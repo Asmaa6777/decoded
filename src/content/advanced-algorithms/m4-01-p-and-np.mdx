@@ -86,6 +86,8 @@ Trying every order of the cities means $N!$ tours:
 
 Even checking a billion tours per second, 25 cities would take hundreds of millions of years.
 
+The table counts every **ordering** of the cities, $N!$. Many orderings are the same tour: you can start at any of the $N$ cities and go either way round, so there are really $\frac{(N-1)!}{2}$ different tours. For 25 cities that's still about $3 \times 10^{23}$. Dividing by $2N$ doesn't change the picture: the count still grows faster than any exponential.
+
 ### The clique problem
 
 A **clique** is a set of vertices that are **all connected to each other**: a complete subgraph. The clique problem is to find cliques in a graph.
@@ -153,6 +155,15 @@ Yes: any assignment with $a = $ TRUE works, whatever $b$ is.
 
 **SAT with 2 clauses and 3 variables:** $(a \vee b) \wedge (b \vee \neg c)$. Click the second preset above to fill in its table, and find all the satisfying assignments.
 
+<details>
+<summary>Answer</summary>
+
+Five of the eight rows satisfy it: $(a, b, c) =$ TTT, TTF, TFF, FTT and FTF. The row TFT fails because $b \vee \neg c$ is F ∨ F. The rows FFT and FFF fail because $a \vee b$ is false.
+
+Some copies of this slide print $(a \vee b) \wedge (b \vee \neg c)$ but fill the table in for $(a \vee b) \wedge (a \vee \neg c)$. That formula also has five satisfying rows, but a different five: TTT, TTF, TFT, TFF and FTF. If your table doesn't match, check which second clause it uses.
+
+</details>
+
 Checking one row is quick. The problem is that $n$ variables give $2^n$ rows: the 6-variable formula above already has 64, 100 variables give about $10^{30}$, and 300 variables would give more rows than there are atoms in the universe.
 
 ## A reduction example: 3-CNF SAT to CLIQUE
@@ -188,6 +199,8 @@ So **3-CNF SAT reduces to CLIQUE**. Since 3-CNF SAT is NP-complete, CLIQUE is NP
 The lecture's example is $(x_1 \vee \neg x_2 \vee x_3) \wedge (\neg x_1 \vee x_2) \wedge (\neg x_2 \vee x_3)$, with 3 clauses. What if the graph has a clique of size 3?
 
 <SatToClique formula="(x1 ∨ ¬x2 ∨ x3) ∧ (¬x1 ∨ x2) ∧ (¬x2 ∨ x3)" />
+
+**Answer:** yes. Pick $x_3$ from clause 1, $x_2$ from clause 2 and $x_3$ from clause 3. They come from different clauses and none is the negation of another, so all three are connected: a clique of size 3. Reading it back gives the assignment $x_2 = x_3 = $ TRUE (and $x_1$ can be anything), which satisfies all three clauses. Notice too that clauses 2 and 3 have only two literals: "3-CNF" here means *at most* 3 per clause.
 
 Edit the formula to try your own. Add a clause like $(\neg x_3)$ and see whether a clique of the new size still exists.
 

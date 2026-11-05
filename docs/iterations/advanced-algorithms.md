@@ -5,12 +5,12 @@ Tracks the Advanced Algorithms & Analysis course through the rounds in [Build in
 Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** Hashing and Search Trees · **M3** Design Strategies · **M4** P and NP
 
 - [x] 1. Skeleton (whole course)
-- [ ] 2. Source fidelity
+- [x] 2. Source fidelity
   - [x] M0
   - [x] M1
   - [x] M2
   - [x] M3
-  - [ ] M4
+  - [x] M4
 - [ ] 3. Depth
   - [ ] M0
   - [ ] M1
@@ -134,3 +134,25 @@ Checked lectures 14 to 19 against lessons m3-01 to m3-05 (lecture 19 is only a D
 **Found but not fixed (round 5):** `GraphTraversal` can't draw directed graphs or letter labels in its queue, so the BFS example has a table but no visualizer. The robot DP visualizer's board wasn't compared with the slide images (slides 17 to 19 are pictures).
 
 **Not checked:** no browser check of the new MST graph layout.
+
+### Round 2, source fidelity: M4 P and NP
+
+Checked lecture 20 against lesson m4-01.
+
+**Already covered:** problem, search space and brute force; O, Ω and Θ; the complexity-vs-input-length table; P with its examples; NP with the verification definition the slides lack; TSP and its search-space table; clique; P vs. NP and the prize; NP-hard and NP-complete; reduction with the LCM/GCD and linear/quadratic examples; SAT with the 11-clause formula and both small formulas; 3-CNF SAT to CLIQUE, decision vs. optimization, and the lecture's three-clause example.
+
+**Changed:**
+- the 2-clause, 3-variable SAT formula now has its answer (five satisfying rows), and a note that the slide's table is filled in for (a ∨ ¬c), not the printed (b ∨ ¬c). Both tables checked in Python.
+- the TSP table counts orderings (N!); added that there are (N − 1)!/2 different tours, and that the growth is the same.
+- answered the lecture's question about the clique of size 3 (x₃, x₂, x₃ → x₂ = x₃ = TRUE), and said why two-literal clauses still count as 3-CNF.
+
+**Source errors:**
+- the 3-variable SAT slide prints one formula and tabulates another.
+- the NP slide says there is "no way" to find the optimum other than searching; that's unknown, not proven, and NP is really about verifying. (The lesson already said so.)
+- the NP-hard slide lists NP-complete properties under NP-hard. (The lesson already moved them.)
+
+**Found but not fixed:** none.
+
+**Not checked:** no browser check.
+
+Round 2 is complete for all modules. Next: round 3, depth, starting with M0.
