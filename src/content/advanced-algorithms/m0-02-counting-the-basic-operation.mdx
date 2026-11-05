@@ -4,7 +4,7 @@ import { FibonacciCalls } from "@/components/mdx/AdvancedVisualizers";
 
 # Counting the Basic Operation
 
-To analyze an algorithm without a stopwatch, we pick its **basic operation** (the instruction that does the real work, like a comparison) and count how many times it runs for an input of size $n$. In this lesson we do that for a handful of classic algorithms, then see that the count isn't always a single number.
+To analyze an algorithm without a stopwatch, we pick its **basic operation**: the instruction that does the real work, like a comparison. Then we count how many times it runs for an input of size $n$. In this lesson we do that for a handful of classic algorithms, then see that the count isn't always a single number.
 
 [Best, worst and average case](/courses/algorithm-design-and-analysis/counting-steps#best-worst-and-average-case) are introduced more gently in Algorithm Design and Analysis.
 
@@ -33,7 +33,7 @@ number sum(int n, const number S[]) {
 }
 ```
 
-**Exchange sort.** Sort `n` keys into nondecreasing order: compare each position with every position after it and swap if they're out of order.
+**Exchange sort.** Sort `n` keys into **nondecreasing** order (each key is less than or equal to the next: ascending, with equal keys allowed): compare each position with every position after it and swap if they're out of order.
 
 ```cpp
 void exchangesort(int n, keytype S[]) {
@@ -58,7 +58,7 @@ void matrixmult(int n, const number A[][N], const number B[][N], number C[][N]) 
 ```
 
 <Callout tone="sky" label="Two typos in some printed versions">
-Copies of exchange sort and matrix multiplication sometimes show `j = i + l` (the letter l) instead of `j = i + 1`, and an outer loop `for (i = 1; j <= n; j++)`, which tests and increments the wrong variable. The code above is corrected: each loop tests and increments its own index.
+Some copies of exchange sort show `j = i + l` (the letter l) instead of `j = i + 1`. Some copies of matrix multiplication show the outer loop as `for (i = 1; j <= n; j++)`, which tests and increments the wrong variable. The code above is corrected: each loop tests and increments its own index.
 </Callout>
 
 **Binary search.** If the array is *sorted*, look at the middle. If `x` is smaller, throw away the right half, and if it's bigger, throw away the left half. Repeat.
@@ -129,7 +129,7 @@ $$
 
 On average you look through about half the array.
 
-**What if `x` might be missing?** Say `x` is in the array with probability $p$, and then equally likely to be in any slot, so slot $k$ has probability $p/n$. With probability $1 - p$ it's missing, and the search makes all $n$ comparisons:
+**What if `x` might be missing?** Say `x` is in the array with probability $p$. If it is there, it's equally likely to be in any slot, so slot $k$ has probability $p/n$. With probability $1 - p$ it's missing, and the search makes all $n$ comparisons:
 
 $$
 A(n) = \sum_{k=1}^{n} k \cdot \frac{p}{n} + n(1 - p) = \frac{p\,(n+1)}{2} + n(1 - p)

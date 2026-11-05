@@ -211,7 +211,7 @@ Step through it on the lab's 16 numbers:
 
 <MinMaxVisualizer input={[11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1]} />
 
-**What if $n$ is odd?** One number has no partner. Pair up the other $n - 1$, then let the leftover number join both searches: it's compared with the smallest of the small ones and the largest of the big ones. That's $\frac{n-1}{2}$ pair comparisons plus $\frac{n-1}{2}$ for the minimum and $\frac{n-1}{2}$ for the maximum, $\frac{3(n-1)}{2}$ in all. For $n = 5$: 2 + 2 + 2 = 6. Forgetting the leftover number is the usual bug: the loop `for i in 0 to n/2 − 1` simply skips the last element.
+**What if $n$ is odd?** One number has no partner. Pair up the other $n - 1$. Then the leftover number joins both searches: it's compared with the smallest of the small ones, and with the largest of the big ones. That's $\frac{n-1}{2}$ pair comparisons plus $\frac{n-1}{2}$ for the minimum and $\frac{n-1}{2}$ for the maximum, $\frac{3(n-1)}{2}$ in all. For $n = 5$: 2 + 2 + 2 = 6. Forgetting the leftover number is the usual bug: the loop `for i in 0 to n/2 − 1` skips the last element.
 
 ### Algorithm 2: merge the pairs
 

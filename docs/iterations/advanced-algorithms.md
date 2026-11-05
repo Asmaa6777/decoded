@@ -18,7 +18,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M3
   - [x] M4
 - [ ] 4. Plain language
-  - [ ] M0
+  - [x] M0
   - [ ] M1
   - [ ] M2
   - [ ] M3
@@ -245,3 +245,19 @@ Read m4-01 as a first-time reader. It had no common-mistake callout.
 **Not checked:** no browser check.
 
 Round 3 is complete for all modules. Next: round 4, plain language, starting with M0.
+
+### Round 4, plain language: M0 Foundations
+
+Scanned m0-01 to m0-06 with a script for sentences over 28 words and for stock hard words (utilize, thereby, in terms of, i.e., hence, simply and so on), skipping code, maths and tables, then read the flagged lines and rewrote them by hand.
+
+**Changed (16 edits):**
+- split the long sentences: the merge example, the basic-operation opening, the lecture-typo callout, the missing-key probability, the easy/hard/unsolvable problems, the Big-O promise, the log-factor slip, the `1 << 31` slip, the XOR identity and the odd-n min-max step.
+- replaced "in terms of" (an idiom non-native readers trip on) with "using" in the recurrence definitions.
+- explained two terms on first use: "subroutine" (a helper step) and "nondecreasing" (ascending, with equal keys allowed).
+- dropped a filler "simply".
+
+**Checked and left as is:** the lessons were already mostly short sentences. Technical terms that stay (asymptotic, recurrence, regularity condition, polynomial factor) are the right names and are explained where they first appear.
+
+**Couldn't do:** the round's guide says to run the text through the humanizer skill; that skill isn't installed here, so the rewriting was done by hand.
+
+**Not checked:** no browser check.

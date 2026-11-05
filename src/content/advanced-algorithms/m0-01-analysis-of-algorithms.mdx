@@ -142,7 +142,7 @@ MERGE-SORT(A[1 . . n])
   3. "Merge" the two sorted lists.
 ```
 
-The key subroutine is **MERGE**. Picture two sorted piles of cards, smallest on top. Compare the two top cards, take the smaller one, and repeat. In the lecture's example the piles are `2 7 13 20` and `1 9 11 12`, and the output comes out as `1 2 7 9 11 12 13 20`.
+The key helper step (a **subroutine**) is **MERGE**. Picture two sorted piles of cards, smallest on top. Compare the two top cards, take the smaller one, and repeat. In the lecture's example the piles are `2 7 13 20` and `1 9 11 12`. The output is `1 2 7 9 11 12 13 20`.
 
 Each comparison places exactly one element, so merging $n$ elements in total takes $\Theta(n)$ time: **linear time**.
 
@@ -162,7 +162,7 @@ Let $T(n)$ be the time to merge sort $n$ elements, and price each line:
 | 2. Sort the two halves recursively. | $2T(n/2)$ |
 | 3. Merge the two sorted halves. | $\Theta(n)$ |
 
-Strictly, step 2 costs $T(\lceil n/2 \rceil) + T(\lfloor n/2 \rfloor)$, but rounding up or down turns out not to matter for the growth rate. That gives a **recurrence**, an equation that defines $T$ in terms of itself on smaller inputs:
+Strictly, step 2 costs $T(\lceil n/2 \rceil) + T(\lfloor n/2 \rfloor)$, but rounding up or down turns out not to matter for the growth rate. That gives a **recurrence**, an equation that defines $T$ using its own values on smaller inputs:
 
 $$
 T(n) =

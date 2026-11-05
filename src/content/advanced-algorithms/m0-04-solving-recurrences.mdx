@@ -4,7 +4,7 @@ import { RecurrenceExplorer } from "@/components/mdx/AdvancedVisualizers";
 
 # Solving Recurrences
 
-A **recurrence** is an equation (or inequality) that describes a function in terms of its value on smaller inputs:
+A **recurrence** is an equation (or inequality) that describes a function using its own values on smaller inputs:
 
 $$
 T(n) = T(n-1) + n
@@ -59,7 +59,7 @@ $$
 Turn the recurrence into a summation, then bound it using a series you know.
 
 - **Iterate** (expand) the recurrence until you hit the initial condition.
-- **Back-substitute** to write it in terms of $n$ and the base case.
+- **Back-substitute** to write it using only $n$ and the base case.
 
 **Example: $T(n) = c + T(n/2)$.** Apply the same rule to $T(n/2)$, then to $T(n/4)$, and so on:
 
@@ -203,7 +203,7 @@ It means: split the problem into $a$ subproblems of size $n/b$, and spend $f(n)$
 <Callout tone="orange" label="Three usual slips with the master method">
 - **Mixing up $a$ and $b$.** In $T(n) = 4T(n/2) + n$, $a = 4$ (how many calls) and $b = 2$ (how much smaller each one is). So $n^{\log_b a} = n^{\log_2 4} = n^2$, which beats $f(n) = n$: Case 1, $\Theta(n^2)$. Swapping them gives $\log_4 2 = \frac12$ and a wrong answer.
 - **Skipping the regularity check in Case 3.** It's part of the case. It usually holds, but you have to say so.
-- **Calling a log factor "polynomially bigger".** $n \lg n$ is bigger than $n$, but not by any $n^\varepsilon$, so neither Case 1 nor Case 3 applies (the last worked example above).
+- **Calling a log factor "polynomially bigger".** $n \lg n$ is bigger than $n$, but not by any $n^\varepsilon$. So neither Case 1 nor Case 3 applies (see the last worked example above).
 </Callout>
 
 <Callout tone="sky" label="When the master method can't help">

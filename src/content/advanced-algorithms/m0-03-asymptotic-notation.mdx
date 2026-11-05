@@ -70,7 +70,7 @@ An **algorithm** is a finite sequence of instructions that, if followed, accompl
 
 ### Problems and instances
 
-We use algorithms to solve **problems**: sorting a list, searching for a key, finding the shortest route between two cities. Some problems are easy, some are hard because they take a huge amount of time, and some can't be solved at all because no algorithm for them can exist.
+We use algorithms to solve **problems**: sorting a list, searching for a key, finding the shortest route between two cities. Some problems are easy. Some are hard, because they take a huge amount of time. And some can't be solved at all, because no algorithm for them can exist.
 
 Keep two words apart:
 
@@ -150,7 +150,7 @@ $$
 We say $f(n)$ is **Big-O of $g(n)$**, or that $g(n)$ is an **asymptotic upper bound** for $f(n)$.
 </Callout>
 
-We use Big-O for the **worst-case** time. Saying "the worst-case time of algorithm A is $O(n^2)$" means: *we don't know the exact time, but we can promise that once the input size passes $n_0$, it's never more than $cn^2$.*
+We use Big-O for the **worst-case** time. Saying "the worst-case time of algorithm A is $O(n^2)$" means this: *we don't know the exact time, but once the input size passes $n_0$, it's never more than $cn^2$.*
 
 **Example 1.** Prove $f(n) = 3n + 2 \in O(n)$. We need $c > 0$ and $n_0 > 0$ with $0 \le 3n + 2 \le cn$. Take $n_0 = 1$ and $c = 5$: for $n \ge 1$, $3n + 2 \le 3n + 2n = 5n$. ✓
 
