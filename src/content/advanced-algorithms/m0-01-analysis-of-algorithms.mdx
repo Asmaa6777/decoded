@@ -50,6 +50,17 @@ Step through it on the lecture's example. Watch the sky-coloured "sorted" part o
 
 <SortVisualizer algorithm="insertion" initial={[8, 2, 4, 9, 3, 6]} />
 
+The same run, one row per pass of the outer loop:
+
+| $j$ | key | array after the pass | what happened |
+| ---: | ---: | --- | --- |
+| | | `8 2 4 9 3 6` | start |
+| 2 | 2 | `2 8 4 9 3 6` | 8 slides right, 2 goes to the front |
+| 3 | 4 | `2 4 8 9 3 6` | 8 slides right |
+| 4 | 9 | `2 4 8 9 3 6` | nothing moves: 9 is already bigger than 8 |
+| 5 | 3 | `2 3 4 8 9 6` | 9, 8 and 4 slide right |
+| 6 | 6 | `2 3 4 6 8 9` | 9 and 8 slide right. Done. |
+
 ## How do we measure running time?
 
 The running time **depends on the input**:
@@ -71,7 +82,12 @@ Why is best case bogus? You can cheat with it. Take a terribly slow algorithm, a
 
 ## Machine-independent time
 
-What is insertion sort's worst-case time? In seconds, it depends on the computer: a fast laptop beats a ten-year-old one. That's useless for comparing *algorithms*.
+What is insertion sort's worst-case time? In seconds, it depends on the computer, in two ways:
+
+- **relative speed**: how two programs compare when run on the *same* machine,
+- **absolute speed**: how one program's time changes from one machine to *another*. A fast laptop beats a ten-year-old one.
+
+Seconds are useless for comparing *algorithms*.
 
 <Callout tone="violet" label="The big idea">
 **Ignore machine-dependent constants**, and look at how $T(n)$ **grows** as $n \to \infty$.

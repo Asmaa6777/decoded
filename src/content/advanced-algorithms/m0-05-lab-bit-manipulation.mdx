@@ -284,6 +284,16 @@ The three new functions:
   - `SEEK_CUR`: count from the **current** position,
   - `SEEK_END`: count from the **end** (so use a negative offset).
 
+<Callout tone="orange" label="If you're comparing with the lab sheet">
+The code in this lesson fixes five slips in the printed version:
+
+- **Right shift** fills with zeros on the **left** (the high end), not "at the end". The bits on the right fall off.
+- **`rightRotate` and `leftRotate`** have one `(` too many, and use a signed `int`. On a negative `int`, `>>` copies the sign bit, so the rotation goes wrong. Use `unsigned`.
+- **`count_one`** never sets `count = 0`, so it starts from whatever garbage is in memory.
+- **`check(int N)`** uses `i` without taking it as a parameter. It needs `check(int N, int i)`.
+- **`fopen("junk", "w")`** opens the file in text mode. On Windows, text mode changes byte 10 into bytes 13 10 on the way out, which breaks the record sizes. Binary files need `"wb"`, `"rb"` and `"r+b"`.
+</Callout>
+
 <ApplicationsGrid>
   <PracticalApplication title="Permissions and flags" tool="LINUX · CHMOD">
     `chmod 755` is three groups of 3 bits (read, write, execute). Checking "can the owner write?" is just `mode & 0200`.
