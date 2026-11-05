@@ -38,7 +38,7 @@ The rest of this lesson is about a problem where greedy provably finds the best 
 
 You're laying cable to connect six buildings. Some pairs of buildings can be connected, each at a known cost. Every building must be connected, directly or indirectly, and you want to spend as little as possible.
 
-In graph terms, this is a connected, weighted, undirected graph. A **spanning tree** is a subset of edges that connects **every** vertex with **no cycles** (a cycle would mean paying for a cable you don't need). With $n$ vertices, every spanning tree has exactly $n - 1$ edges. The **minimum spanning tree (MST)** is the spanning tree with the smallest total weight.
+In graph terms, this is a connected, weighted, undirected graph. A **spanning tree** is a subset of edges that connects **every** vertex with **no cycles** (a cycle would mean paying for a cable you don't need). With $n$ vertices, every spanning tree has exactly $n - 1$ edges. To see why, build it one edge at a time. Start with $n$ separate vertices, $n$ pieces. Each edge that doesn't close a cycle joins two pieces into one, so it lowers the count by exactly 1. Getting from $n$ pieces to 1 takes $n - 1$ edges; one more would have to join two vertices already connected, which makes a cycle. The **minimum spanning tree (MST)** is the spanning tree with the smallest total weight.
 
 There are two classic greedy algorithms for it. Both always find the true minimum.
 
@@ -144,14 +144,20 @@ Total weight $2 + 2 + 3 + 3 + 4 = 14$. Every tie gives a different tree, but eac
 
 ## Why does greedy work here?
 
-The reason is the **cut property**. Split the vertices into any two groups. The cheapest edge crossing between the groups is always safe to include in some minimum spanning tree. Prim applies this to "tree vs. everything else." Kruskal applies it to "this edge's tree vs. everything else." So every greedy choice is one that some optimal solution also makes, and that's what greedy needs to be correct.
+The reason is the **cut property**. A **cut** splits the vertices into two groups. The cheapest edge crossing between the groups is always safe to include in some minimum spanning tree. Why: a spanning tree has to cross the cut somewhere, or the two groups wouldn't be connected. If a tree crosses it with a more expensive edge, swap that edge for the cheapest crossing one; everything stays connected and the total goes down (or stays equal). So some minimum tree uses the cheapest crossing edge. Prim applies this to "tree vs. everything else." Kruskal applies it to "this edge's tree vs. everything else." So every greedy choice is one that some optimal solution also makes, and that's what greedy needs to be correct.
 
 ## Analysis
 
 - **Prim**, simple version (matrix, scan for the cheapest crossing edge each time): $O(V^2)$. With a [priority queue](/courses/data-structures/heaps#the-interface): $O(E \log V)$.
-- **Kruskal**: sorting the edges dominates, $O(E \log E)$. The "same tree?" check uses a **union–find** structure, which is nearly $O(1)$ per check with the standard optimizations.
+- **Kruskal**: sorting the edges dominates, $O(E \log E)$. The "same tree?" check uses a **union–find** structure: each vertex points towards a representative of its tree, `find` follows the pointers to that representative, and two vertices are in the same tree when they reach the same one. Accepting an edge points one representative at the other, which joins the trees (the `find` and `parent` in the Java below). With two standard improvements, which keep the pointer chains short, each check is nearly $O(1)$.
 
-Rule of thumb: Prim for dense graphs (lots of edges), Kruskal for sparse ones.
+Rule of thumb: Prim for **dense** graphs, where the number of edges is close to the maximum $V(V-1)/2$, and Kruskal for **sparse** ones, where it's closer to $V$. Kruskal's sorting cost grows with $E$, so few edges help it most.
+
+<Callout tone="orange" label="Common mistakes with Prim and Kruskal">
+**Mixing them up in Prim:** Prim's next edge must touch the tree built so far. Picking the cheapest edge *anywhere* in the graph is Kruskal's rule, and in a Prim trace it gives the wrong order. On the a to f example, after a–b, Prim takes b–c (1), and only later f–e (2), even though f–e is cheaper than a–b; f–e doesn't touch the tree until f joins it.
+
+**Skipping the cycle check in Kruskal:** on the notes' graph, c–f (4) is the next cheapest edge after b–f, and accepting it would close the loop b–c–f. Before accepting each edge, ask whether its two ends are already connected.
+</Callout>
 
 Advanced Algorithms proves these results, in [greedy algorithms](/courses/advanced-algorithms/greedy-algorithms#optimization-problems) and [minimum spanning trees](/courses/advanced-algorithms/minimum-spanning-trees#optimal-substructure).
 
