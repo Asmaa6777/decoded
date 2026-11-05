@@ -17,13 +17,19 @@ Three steps:
 
 If that sounds like recursion, it is. Divide and conquer is recursion where you make the problem smaller *in a way that makes combining cheap*.
 
+The notes describe it twice. Once as two parts, **divide** (split into subproblems and solve them recursively) and **conquer** (build the answer from the sub-answers), and once as the three steps above. The two-part version folds "solve" into divide and calls the combine step "conquer". If an exam asks for the steps, give the three: divide, conquer, combine.
+
+The notes list three places the strategy is used: the **maximum and minimum problem** (find the largest and smallest of each half, then compare the two winners), [binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half), and sorting, with merge sort and quick sort.
+
 ## Merge sort in one paragraph
 
 To sort an array: split it in half, sort the left half, sort the right half, then **merge** the two sorted halves into one sorted array. How do you sort each half? The same way: split it, sort the halves, merge. Keep splitting until the pieces have one element each. A one-element array is already sorted, so that's the base case, and everything else is merging.
 
-Here's what that looks like for `38, 27, 43, 3, 9, 82, 10`:
+Here's the notes' example, `30, 20, 40, 5, 90, 80, 10`:
 
-<MergeSortTree input={[38, 27, 43, 3, 9, 82, 10]} />
+<MergeSortTree input={[30, 20, 40, 5, 90, 80, 10]} />
+
+With an odd number of elements, one half gets the extra one. The notes put it on the left (4 and 3), and the lab code below puts it on the right (3 and 4, because `n / 2` rounds down). Either works, and the final answer is the same.
 
 The top half of the picture is *divide*. The bottom half is *combine*. All the actual sorting happens on the way back up.
 
@@ -31,11 +37,46 @@ The top half of the picture is *divide*. The bottom half is *combine*. All the a
 
 Merging two sorted lists is easy, and it's where merge sort does its work. Think of two sorted piles of exam papers, smallest on top. Look at the top paper of each pile, take the smaller one, and put it on the output pile. Repeat. When one pile runs out, put the rest of the other pile on top, since it's already sorted.
 
-Each comparison places exactly one element, so merging two halves with $n$ elements in total takes **$O(n)$** time.
+Each comparison places exactly one element, so merging two halves with $n$ elements in total takes **$O(n)$** time. (The notes write $\Theta(n)$: the merge fills all $n$ output slots, so it can't take less either.)
+
+The notes merge `L = 2, 6, 11` and `R = 4, 5, 7` into `A` with three indexes: `i` for the left list, `j` for the right, `k` for the output.
+
+| Step | Compare | Take | A so far | i, j, k after |
+| --- | --- | --- | --- | --- |
+| 1 | 2 vs 4 | 2 | 2 | 1, 0, 1 |
+| 2 | 6 vs 4 | 4 | 2 4 | 1, 1, 2 |
+| 3 | 6 vs 5 | 5 | 2 4 5 | 1, 2, 3 |
+| 4 | 6 vs 7 | 6 | 2 4 5 6 | 2, 2, 4 |
+| 5 | 11 vs 7 | 7 | 2 4 5 6 7 | 2, 3, 5 |
+| 6 | R is empty | 11 | 2 4 5 6 7 11 | 3, 3, 6 |
+
+At step 6 the right list has run out, so the rest of the left list (just 11) is copied over without comparing. That's safe because the left list is already sorted.
+
+The notes give the textbook's pseudocode for the merge. A past exam asked for exactly this, so it's worth being able to write it:
+
+```text
+ALGORITHM Merge(B[0..p − 1], C[0..q − 1], A[0..p + q − 1])
+// merges two sorted arrays B and C into one sorted array A
+i ← 0; j ← 0; k ← 0
+while i < p and j < q do
+    if B[i] ≤ C[j]
+        A[k] ← B[i]; i ← i + 1
+    else
+        A[k] ← C[j]; j ← j + 1
+    k ← k + 1
+if i = p
+    copy C[j..q − 1] to A[k..p + q − 1]
+else
+    copy B[i..p − 1] to A[k..p + q − 1]
+```
+
+`B` has $p$ elements and `C` has $q$. When `i = p`, `B` is used up, so the rest of `C` goes to the end; otherwise the rest of `B` does.
 
 The sky-coloured window below is the piece being worked on, and the orange buffer under the bars is `tmp`, which fills up as the two fronts are compared.
 
-<SortVisualizer algorithm="merge" />
+<SortVisualizer algorithm="merge" initial={[8, 3, 2, 9, 7, 1, 5, 4]} />
+
+That's the notes' second example, 8, 3, 2, 9, 7, 1, 5, 4. By levels: the pairs merge to 3 8, 2 9, 1 7, 4 5; then the fours to 2 3 8 9 and 1 4 5 7; then the whole to 1 2 3 4 5 7 8 9.
 
 ## Analysis: where $n \log n$ comes from
 
@@ -107,6 +148,8 @@ private static void merge(int[] input, int[] left, int[] right) {
     while (j < right.length) input[k++] = right[j++];
 }
 ```
+
+The lab sheet's `main` calls `printArray(array1)` **before** `generateRandomArray`, so the first line it prints is 100 zeros, not the input. Move the print below the call to see the numbers you're about to sort.
 
 Run it on 100,000 random numbers and time it. Then try insertion sort on the same 100,000, and go make a cup of tea while it runs.
 
