@@ -52,6 +52,8 @@ A problem is **polynomial-time solvable** if there's an algorithm that correctly
 - finding a path between two points in a graph,
 - testing whether a number is **prime**: IsPrime(12) → No, IsPrime(1009) → Yes. (A polynomial algorithm for this was only found in 2002, in terms of the number of *digits*.)
 
+**Why "input length" matters.** The obvious primality test tries every divisor up to $\sqrt N$. For $N = 1009$ that's about 31 tries, which sounds fast. But the input is the number's **digits**, not its value. A number with $d$ digits is about $10^d$, so trying divisors up to $\sqrt N$ takes about $10^{d/2}$ steps: **exponential** in the input length. A 100-digit number would need around $10^{50}$ tries. That's why primality wasn't known to be in P until 2002, even though trial division had been around for thousands of years.
+
 ## The class NP
 
 - **NP** stands for **non-deterministic polynomial**.
@@ -66,6 +68,10 @@ A problem is **polynomial-time solvable** if there's an algorithm that correctly
 - the Hamiltonian path problem.
 
 Every problem in P is also in NP: if you can *solve* it quickly, you can certainly *check* an answer quickly.
+
+<Callout tone="orange" label="The usual slip">
+**NP does not mean "not polynomial".** It means *non-deterministic* polynomial: an answer can be **checked** in polynomial time. Sorting is in NP (checking a sorted list takes one pass), and so is every other problem in P. "This problem is in NP" says it's *at most* that hard, not that it's hard.
+</Callout>
 
 ### The traveling salesman problem (TSP)
 
@@ -130,6 +136,10 @@ So when you meet a new problem and prove it's NP-complete, you've learned someth
 A problem $R$ can be **reduced** to another problem $Q$ if any instance of $R$ can be **rephrased** as an instance of $Q$, and the solution to that instance gives a solution to the instance of $R$. The rephrasing is called a **transformation**.
 
 **Intuitively:** if $R$ reduces to $Q$ in polynomial time, then $R$ is **"no harder to solve" than $Q$**. A fast algorithm for $Q$ gives you a fast algorithm for $R$.
+
+<Callout tone="orange" label="The usual slip: the direction">
+To show a **new** problem $Q$ is hard, reduce a **known** hard problem **to** $Q$. That says "if $Q$ were easy, the known hard problem would be easy too". Reducing $Q$ to a hard problem proves nothing: anything can be rephrased as a harder problem. The 3-CNF SAT → CLIQUE example below goes the right way: SAT is known to be hard, so CLIQUE must be at least as hard.
+</Callout>
 
 **Example:** $\text{LCM}(m, n) = \dfrac{m \cdot n}{\text{GCD}(m, n)}$. So the LCM problem reduces to the GCD problem: compute the GCD with Euclid's algorithm, then do one multiplication and one division.
 

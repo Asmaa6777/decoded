@@ -11,12 +11,12 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M2
   - [x] M3
   - [x] M4
-- [ ] 3. Depth
+- [x] 3. Depth
   - [x] M0
   - [x] M1
   - [x] M2
   - [x] M3
-  - [ ] M4
+  - [x] M4
 - [ ] 4. Plain language
   - [ ] M0
   - [ ] M1
@@ -228,3 +228,20 @@ All counterexamples were checked by brute force in Python. While checking, I cau
 **Found but not fixed:** Bellman–Ford is named in the new m3-05 callout but no lesson teaches it; round 7 could link it to another course if one covers it.
 
 **Not checked:** no browser check; no visualizers changed.
+
+### Round 3, depth: M4 P and NP
+
+Read m4-01 as a first-time reader. It had no common-mistake callout.
+
+**Changed:**
+- why "input length" means digits, not value: trial division up to √N is about 10^(d/2) steps for a d-digit number, which is why primality was only placed in P in 2002.
+- a callout that NP doesn't mean "not polynomial" (sorting is in NP).
+- a callout on the direction of a reduction: reduce the known hard problem to the new one, as SAT → CLIQUE does.
+
+**Checked and left as is:** the verification meaning of NP, P ⊆ NP, the NP-hard/NP-complete definitions, the LCM and linear-equation reductions, the 2ⁿ rows argument for SAT and the clique construction's "why it works" already give their reasons. The SAT and clique answers were added in round 2.
+
+**Found but not fixed:** none.
+
+**Not checked:** no browser check.
+
+Round 3 is complete for all modules. Next: round 4, plain language, starting with M0.
