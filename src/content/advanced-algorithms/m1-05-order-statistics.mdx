@@ -37,6 +37,10 @@ So $A[r]$ has rank $k$ in this piece. If $k = i$, we're done. Otherwise the answ
 
 When we go right, the $k$ elements we skipped are all smaller, so we look for rank $i - k$ in the upper part.
 
+<Callout tone="orange" label="The usual slip">
+Forgetting the $- k$. In the example below, the upper part `8 13 10 11` has only 4 elements, so asking it for its 7th smallest makes no sense: the code runs off the end or returns garbage. Ranks are always **relative to the piece you're looking at**. Going left keeps $i$, because nothing smaller was thrown away.
+</Callout>
+
 ### Example
 
 Select the $i = 7$th smallest of `6 10 13 5 8 3 2 11`. Partition around the pivot 6: it lands with rank $k = 4$. Since $7 > 4$, select the $7 - 4 = 3$rd smallest of the upper part recursively.

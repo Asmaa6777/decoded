@@ -151,6 +151,8 @@ Counting sort is a **stable** sort: it keeps the input order among equal element
 - Hollerith's original (bad) idea was to sort on the **most**-significant digit first.
 - The good idea is to sort on the **least**-significant digit first, using an auxiliary **stable** sort.
 
+Why is most-significant-first bad? Sorting on the first digit splits the cards into 10 piles, and each pile must then be sorted on its own, **without mixing it with the others**. Each of those splits into 10 more, so a 3-digit sort needs up to $10 + 100 + 1000$ separate piles to keep track of. Least-significant-first keeps the whole deck as **one** pile: each pass deals it into 10 bins and stacks them back up in order. Stability is what makes that safe.
+
 Step through the lecture's example. Each pass sorts on one column, from right to left:
 
 <RadixSortVisualizer input={[329, 457, 657, 839, 436, 720, 355]} />

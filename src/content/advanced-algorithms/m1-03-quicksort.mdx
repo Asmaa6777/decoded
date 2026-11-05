@@ -92,6 +92,10 @@ The first call is `QUICKSORT(A, 1, n)`.
 ## Analysis of quicksort
 
 - Assume all the input elements are **distinct**. (When there can be duplicates, better partitioning algorithms exist in practice.)
+
+<Callout tone="orange" label="Why duplicates matter">
+Run this PARTITION on `5 5 5 5 5`. Every `A[j] ≤ x` is true, so every element goes to the "small" side and the pivot ends up at the far right: a $4 : 0$ split. Every level does the same, so an array of equal keys costs $\Theta(n^2)$, exactly like sorted input. Real libraries use a **three-way partition** (less than, equal to, greater than the pivot) so that equal keys are finished in one pass.
+</Callout>
 - Let $T(n)$ be the **worst-case** running time on an array of $n$ elements.
 
 ### Worst case

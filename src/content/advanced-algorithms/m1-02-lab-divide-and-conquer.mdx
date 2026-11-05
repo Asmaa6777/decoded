@@ -163,6 +163,23 @@ $$
 T(n) = 3T(n/2) + O(n) \quad\Longrightarrow\quad T(n) = O(n^{\log_2 3}) \approx O(n^{1.59})
 $$
 
+**Worked example: $1234 \times 5678$.** Here $n = 4$, so split into halves of 2 digits: $a_L = 12$, $a_R = 34$, $b_L = 56$, $b_R = 78$.
+
+| step | value |
+| --- | ---: |
+| $x_1 = a_L b_L = 12 \times 56$ | 672 |
+| $x_2 = a_R b_R = 34 \times 78$ | 2,652 |
+| $x_3 = (12 + 34)(56 + 78) = 46 \times 134$ | 6,164 |
+| middle $= x_3 - x_1 - x_2 = 6164 - 672 - 2652$ | 2,840 |
+| $ab = 672 \cdot 10^4 + 2840 \cdot 10^2 + 2652$ | **7,006,652** |
+
+Three multiplications of 2-digit numbers instead of four, and the answer matches $1234 \times 5678$ done the school way.
+
+<Callout tone="orange" label="Two usual slips">
+- **The sums can be one digit longer.** $56 + 78 = 134$ has 3 digits, not 2. Your code must handle that, for example by splitting on the length of the *longer* number each time, instead of assuming every piece has exactly $n/2$ digits.
+- **Shift by what you split.** If $n$ is odd, say 5 digits split as 2 and 3, the shifts are $10^{2 \cdot 3}$ and $10^3$ (twice the size of the low half, and the low half), not $10^5$ and $10^{2.5}$.
+</Callout>
+
 <GaussMultiply a={1234} b={5678} />
 
 <RecurrenceExplorer a={3} b={2} k={1} />

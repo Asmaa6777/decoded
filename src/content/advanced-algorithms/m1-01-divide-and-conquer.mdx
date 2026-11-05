@@ -80,6 +80,10 @@ $$
 T(n) = T(n/2) + \Theta(1) \quad\Longrightarrow\quad T(n) = \Theta(\lg n)
 $$
 
+<Callout tone="orange" label="The usual slip">
+Writing `power(a, n/2) * power(a, n/2)` computes the same half **twice**. That's two subproblems, $T(n) = 2T(n/2) + \Theta(1) = \Theta(n)$, and all the gain is gone. Compute it once, keep it in a variable, and square that.
+</Callout>
+
 You met this in the lab as `fastPower`, which squares the base first. It's the same idea, organised slightly differently. Cryptography does it modulo a number, reading the exponent's bits one by one, which is [square and multiply](/courses/computational-mathematics/fast-exponentiation#square-and-multiply):
 
 <FastPowerVisualizer a={2} b={21} />
@@ -217,7 +221,7 @@ $$
 
 $n^{\log_b a} = n^{\log_2 7} \approx n^{2.81}$. That's Case 1, so $T(n) = \Theta(n^{\lg 7})$.
 
-2.81 might not look much smaller than 3, but the difference is in the **exponent**, so it matters a lot for large $n$. In practice Strassen beats the ordinary algorithm for $n \ge 32$ or so. The best bound known today is about $\Theta(n^{2.376})$, but that algorithm is only of theoretical interest.
+2.81 might not look much smaller than 3, but the difference is in the **exponent**, so it matters a lot for large $n$. For $n = 1024 = 2^{10}$, splitting all the way down takes 10 levels. With 8 multiplications per split that's $8^{10} \approx 1.07$ billion multiplications of single numbers; with 7 it's $7^{10} \approx 282$ million, almost 4 times fewer, and the gap grows with every extra level. In practice Strassen beats the ordinary algorithm for $n \ge 32$ or so. The best bound known today is about $\Theta(n^{2.376})$, but that algorithm is only of theoretical interest.
 
 Compare the two recurrences with the "matrix D&C" and "Strassen" presets:
 

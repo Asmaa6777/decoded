@@ -13,7 +13,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M4
 - [ ] 3. Depth
   - [x] M0
-  - [ ] M1
+  - [x] M1
   - [ ] M2
   - [ ] M3
   - [ ] M4
@@ -172,5 +172,22 @@ Read m0-01 to m0-06 as someone meeting the subject for the first time, looking f
 **Checked and left as is:** the master method's cases, the substitution examples other than binary search, the recursion-tree level argument, the term-contribution experiments, the 1.5n − 2 derivations, and the binary-file functions already give their reasons.
 
 **Found but not fixed:** m0-03 is long (maths revision plus all of asymptotic notation); round 4 should check it reads in order.
+
+**Not checked:** no browser check; no visualizers changed.
+
+### Round 3, depth: M1 Divide and Conquer
+
+Read m1-01 to m1-05 as a first-time reader. Only m1-04 had a common-mistake callout.
+
+**Changed:**
+- m1-01: the two-call power bug (Θ(n) instead of Θ(lg n)); what 2.81 vs 3 means in numbers (8¹⁰ ≈ 1.07 billion vs 7¹⁰ ≈ 282 million multiplications at n = 1024).
+- m1-02: the Gauss method worked by hand on 1234 × 5678 (672, 2652, 6164, middle 2840, product 7,006,652, checked in Python), with two coding slips: sums one digit longer, and shifts when n is odd.
+- m1-03: why equal keys are a worst case for this PARTITION (5 5 5 5 5 splits 4 : 0), and the three-way partition libraries use.
+- m1-04: why most-significant-digit-first radix sort is bad (piles that must be kept apart), which round 2 left open.
+- m1-05: the forgotten "− k" when going right, shown on the lesson's example.
+
+**Checked and left as is:** the master theorem uses, the Fibonacci matrix proof, Strassen's r check, the H-tree recurrence, the recursion-tree problems, the quicksort expectation proof, the decision-tree bound and median of medians already give their reasons step by step.
+
+**Found but not fixed:** m1-02's problem 2 shows O(n log n) but not the matching lower bound (the shortest branch has log₃ n full levels); round 6 could ask for it. m1-03 is long; round 4 should check it.
 
 **Not checked:** no browser check; no visualizers changed.
