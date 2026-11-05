@@ -21,7 +21,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M0
   - [x] M1
   - [x] M2
-  - [ ] M3
+  - [x] M3
   - [ ] M4
 - [ ] 5. Visualizations
   - [ ] M0
@@ -281,6 +281,20 @@ Same method: a script flagged sentences over 28 words and stock hard words in m2
 **Changed (20 edits):** split the long sentences in the potential-method note (m2-01); the AVL definition, rehashing, the wrap-round slip, the stuck quadratic example and open-addressing rehashing (m2-02); simple uniform hashing and the probe totals (m2-03); the black-height count, the minimum black-height, the "twice as long" promise and the root-update slip (m2-04); the black-new-node slip and the deletion examples' starting tree (m2-05); the rotation-order slip (m2-06). Dropped four filler "simply"s. Added "like express lanes" to the skip-list name (m2-07).
 
 **Checked and left as is:** load factor, probe sequence, black-height, rotation, augmenting and the other technical terms are explained where they first appear. The red-black case tables are already short.
+
+**Couldn't do:** the humanizer skill isn't installed here.
+
+**Not checked:** no browser check.
+
+### Round 4, plain language: M3 Design Strategies
+
+Same method: a script flagged sentences over 28 words and stock hard words in m3-01 to m3-05, then I rewrote the flagged lines by hand.
+
+**Changed (19 edits):** split the long sentences in the coin-row rule (m3-01); the scheduling setup, the MST step and the robot exercise (m3-02); the Kruskal safety argument and the Prim slip (m3-03); the design steps, the full-binary-tree induction step and the optimal-substructure statement (m3-04); the lesson opening, the paper table, the correctness proof and the BFS result (m3-05). Replaced "clearly", "arbitrary", "in terms of" and "thus".
+
+In m3-02 the "clearly optimal" bullets had their reasons repeated after a "Why?"; they now say each point once. My first draft of the "other optimal solutions" example (swap the 10 and the 11) was wrong (33 and 35), so it now uses 20 + 14, 18 + 10 + 6, 15 + 11 + 5 + 3, checked in Python.
+
+**Checked and left as is:** recurrence, optimal substructure, greedy choice, cut, light edge, prefix code, relaxation and the other technical terms are explained where they first appear.
 
 **Couldn't do:** the humanizer skill isn't installed here.
 

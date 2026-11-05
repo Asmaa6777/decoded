@@ -4,7 +4,7 @@ import { DijkstraVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
 # Shortest Paths: Dijkstra's Algorithm
 
-Every map app answers the same question millions of times a second: **what's the cheapest way from here to there?** This lesson defines shortest paths properly, then solves the problem with **Dijkstra's algorithm**, a [greedy algorithm](/courses/advanced-algorithms/greedy-algorithms#a-short-list-of-algorithm-types), and proves that it's correct.
+Every map app answers the same question millions of times a second: **what's the cheapest way from here to there?** This lesson defines shortest paths properly. Then it solves the problem with **Dijkstra's algorithm**, a [greedy algorithm](/courses/advanced-algorithms/greedy-algorithms#a-short-list-of-algorithm-types), and proves that it's correct.
 
 ## Paths in graphs
 
@@ -98,7 +98,7 @@ The number above each vertex is its current estimate $d[v]$. The purple edges ar
 
 ### A worked table
 
-Here's another example, an undirected graph on vertices A to G. Writing out a table like this, one row per extraction and one column per vertex, with a blank once a vertex is finished, is the standard way to run Dijkstra on paper:
+Here's another example, an undirected graph on vertices A to G. A table like this is the standard way to run Dijkstra on paper. It has one row per extraction and one column per vertex, with a blank once a vertex is finished:
 
 <DijkstraVisualizer graph="table" />
 
@@ -153,7 +153,7 @@ Dijkstra's algorithm terminates with $d[v] = \delta(s, v)$ for all $v \in V$.
 
 **Proof.** It's enough to show that $d[v] = \delta(s, v)$ for every $v \in V$ **at the moment $v$ is added to $S$**, because by Part I, estimates never go below the true distance afterwards.
 
-Suppose $u$ is the **first** vertex added to $S$ with $d[u] > \delta(s, u)$. Let $y$ be the first vertex in $V - S$ along a shortest path from $s$ to $u$, and let $x$ be its predecessor on that path, which is in $S$. Look at the moment just before $u$ is added to $S$.
+Suppose $u$ is the **first** vertex added to $S$ with $d[u] > \delta(s, u)$. Let $y$ be the first vertex in $V - S$ along a shortest path from $s$ to $u$. Let $x$ be the vertex just before $y$ on that path; $x$ is in $S$. Look at the moment just before $u$ is added to $S$.
 
 - Since $u$ is the first violation, $d[x] = \delta(s, x)$.
 - When $x$ was added to $S$, the edge $(x, y)$ was relaxed, so by Part II, $d[y] = \delta(s, y)$.
@@ -226,7 +226,7 @@ Start at $a$ with $d[a] = 0$. Each vertex that comes off the queue gives distanc
 | $i$ (3) | $h = 4$ | `f h` |
 | $f$ (4), $h$ (4) | none | empty |
 
-The vertices come out in the order `a b d c e g i f h`, with distances 0, 1, 1, 2, 2, 3, 3, 4, 4: never going down, exactly as Dijkstra would take them. Note that $f$ is at distance 4 even though the edge $f \to d$ touches $d$: edges only count in their own direction.
+The vertices come out in the order `a b d c e g i f h`, with distances 0, 1, 1, 2, 2, 3, 3, 4, 4. The distances never go down, exactly as Dijkstra would take them. Note that $f$ is at distance 4 even though the edge $f \to d$ touches $d$: edges only count in their own direction.
 
 You met BFS in the first algorithms course. Here it is again. Its level-by-level order is Dijkstra's order, when every edge weighs 1:
 

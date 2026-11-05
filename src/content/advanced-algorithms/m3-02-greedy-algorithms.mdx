@@ -61,7 +61,7 @@ Switch between the systems and try other amounts. With krons, try 14 or 21 too.
 
 ## A scheduling problem
 
-You have to run **nine jobs**, with running times of 3, 5, 6, 10, 11, 14, 15, 18 and 20 minutes, and you have **three processors** to run them on.
+You have to run **nine jobs**, with running times of 3, 5, 6, 10, 11, 14, 15, 18 and 20 minutes. You have **three processors** to run them on.
 
 **Greedy idea 1: longest-running jobs first,** each on whichever processor is free. Time to completion: $18 + 11 + 6 = 35$ minutes. Not bad, but we might be able to do better.
 
@@ -75,8 +75,8 @@ Note, though, that **the greedy algorithm itself is fast**. At each stage, all w
 
 Better solutions do exist. Switch to **Best possible** above: 34 minutes.
 
-- This solution is **clearly optimal**. Why? The jobs add up to $102$ minutes, and three processors can't do 102 minutes of work in less than $102 / 3 = 34$ minutes.
-- There are clearly **other** optimal solutions too. Why? You can swap jobs between processors, or swap processors, without changing the finish time.
+- This solution is **optimal**. The jobs add up to 102 minutes, and three processors can't do 102 minutes of work in less than $102 / 3 = 34$ minutes.
+- There are **other** optimal solutions too. Swapping which processor is called 1, 2 or 3 changes nothing, and different groupings also work: 20 + 14, 18 + 10 + 6 and 15 + 11 + 5 + 3 each add up to 34.
 
 **How do we find such a solution?** One way is to try **all possible assignments** of jobs to processors. Unfortunately, that can take **exponential time**: $3^9 = 19{,}683$ assignments here, and $3^n$ in general. (It's actually an [NP-hard](/courses/advanced-algorithms/p-and-np#np-hard) problem. See the last module.)
 
@@ -103,7 +103,7 @@ That's less than the 3 bits a fixed-length code for 6 characters would need. **T
 A **minimum spanning tree** is a least-cost subset of the edges of a graph that **connects all the nodes**. A greedy way to build one:
 
 - Start by picking any node and adding it to the tree.
-- **Repeatedly:** pick any least-cost edge from a node *in* the tree to a node *not in* the tree, and add that edge and the new node to the tree.
+- **Repeatedly:** pick any least-cost edge from a node *in* the tree to a node *not in* the tree. Add that edge and the new node to the tree.
 - Stop when all the nodes have been added.
 
 **If you think some other edge should be in the spanning tree:**
@@ -162,7 +162,7 @@ A greedy rule that **does** always work: connect the 1st white from the left to 
 <details>
 <summary>Answer</summary>
 
-Send the robots out one at a time. Each robot goes row by row: in its current row it moves right to the **last** coin still left at or to the right of its column, collecting everything on the way, then goes down one row. When a robot reaches the bottom, send the next one, until no coins are left.
+Send the robots out one at a time. Each robot goes row by row. In each row, it moves right to the **last** coin still left at or to the right of its column, collecting everything on the way. Then it goes down one row. When a robot reaches the bottom, send the next one, until no coins are left.
 
 This greedy rule is optimal: each robot takes every coin it could possibly reach without giving up a later one. We checked it by brute force against the best possible answer on 300 random boards.
 

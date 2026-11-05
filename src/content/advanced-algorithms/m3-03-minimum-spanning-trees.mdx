@@ -126,7 +126,7 @@ Both algorithms below are just two ways of picking light edges.
 
 ## Prim's algorithm
 
-Prim's algorithm keeps the edges in $A$ as **one single tree**. The tree starts from an arbitrary root and grows until it spans all the vertices. At each step it adds a **light edge** connecting the tree to a vertex not yet in it.
+Prim's algorithm keeps the edges in $A$ as **one single tree**. The tree starts from any root you like and grows until it spans all the vertices. At each step it adds a **light edge** connecting the tree to a vertex not yet in it.
 
 **Idea:** maintain $V - A$ as a **priority queue** $Q$. Key each vertex in $Q$ with the weight of the least-weight edge connecting it to a vertex in $A$.
 
@@ -171,7 +171,7 @@ Kruskal's algorithm builds a **forest** of trees and keeps joining them:
 - Start with every vertex as its own tiny tree.
 - Repeatedly **connect two trees**, always choosing the **least-weight** edge that does so, until all the nodes are covered.
 
-If $C_1$ and $C_2$ are the two trees joined by $(u, v)$, then $(u, v)$ is a light edge connecting $C_1$ to some other tree, so by the corollary it's **safe**. Kruskal's is a greedy algorithm because at each step it adds the edge of **least possible weight**.
+If $C_1$ and $C_2$ are the two trees joined by $(u, v)$, then $(u, v)$ is a light edge connecting $C_1$ to some other tree. So by the corollary it's **safe**. Kruskal's is a greedy algorithm because at each step it adds the edge of **least possible weight**.
 
 ```text
 MST-KRUSKAL(G, w)
@@ -193,7 +193,7 @@ On the same graph, Kruskal takes the edges in order of weight: e–h (3), b–c 
 <MstVisualizer algorithm="kruskal" nodes={[{ id: 0, x: 296, y: 152, label: "f" }, { id: 1, x: 173, y: 30, label: "a" }, { id: 2, x: 50, y: 91, label: "b" }, { id: 3, x: 296, y: 91, label: "c" }, { id: 4, x: 420, y: 91, label: "d" }, { id: 5, x: 50, y: 152, label: "e" }, { id: 6, x: 420, y: 152, label: "g" }, { id: 7, x: 173, y: 210, label: "h" }]} edges={[{ from: 1, to: 2, weight: 6 }, { from: 1, to: 3, weight: 12 }, { from: 2, to: 3, weight: 5 }, { from: 3, to: 4, weight: 9 }, { from: 2, to: 5, weight: 14 }, { from: 2, to: 7, weight: 8 }, { from: 5, to: 7, weight: 3 }, { from: 3, to: 0, weight: 7 }, { from: 0, to: 6, weight: 15 }, { from: 0, to: 7, weight: 10 }]} />
 
 <Callout tone="orange" label="Two usual slips">
-- **Prim: taking the cheapest edge anywhere.** Prim only looks at edges with **one end in the tree**. In the example, $e$–$h$ (3) is the cheapest edge in the whole graph, but Prim from $f$ can't take it until $h$ is in the tree; it takes $f$–$c$ (7) first. Taking cheap edges anywhere is Kruskal's rule, and then you need a cycle check.
+- **Prim: taking the cheapest edge anywhere.** Prim only looks at edges with **one end in the tree**. In the example, $e$–$h$ (3) is the cheapest edge in the whole graph, but Prim from $f$ can't take it until $h$ is in the tree. It takes $f$–$c$ (7) first. Taking cheap edges anywhere is Kruskal's rule, and then you need a cycle check.
 - **Kruskal: skipping the cycle check.** After $e$–$h$, $b$–$c$, $a$–$b$, $c$–$f$ and $b$–$h$, the next edge is $f$–$h$ (10). Both ends are already in the same tree ($f$–$c$–$b$–$h$), so adding it would close a cycle. Without the FIND-SET test it gets added, and the result isn't a tree.
 </Callout>
 

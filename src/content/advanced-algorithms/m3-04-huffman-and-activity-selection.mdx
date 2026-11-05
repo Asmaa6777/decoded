@@ -39,7 +39,7 @@ A problem has optimal substructure if an optimal solution to the problem **conta
 
 1. Set up the [optimization problem](/courses/advanced-algorithms/greedy-algorithms#optimization-problems) so that after one choice is made, there's **only one subproblem** left to solve.
 2. Prove there's always an optimal solution to the original problem that **makes the greedy choice**, so the greedy choice is always safe.
-3. Show that once the greedy choice is made, what's left is a subproblem with this property: combining an optimal solution to it with the greedy choice gives an **optimal solution** to the original problem.
+3. Show that once the greedy choice is made, what's left is a smaller subproblem. Then show that an optimal solution to that subproblem, plus the greedy choice, gives an **optimal solution** to the original problem.
 
 MSTs were the first example (previous lesson). Here are two more.
 
@@ -72,7 +72,7 @@ If $C$ is the alphabet and all the frequencies are positive, the tree for an opt
 
 - **$|C| = 1$:** one letter needs 1 leaf node and 0 internal nodes. ✓
 - **Hypothesis:** for $|C| < n$, the full binary tree for an optimal prefix code has $|C|$ leaves and $|C| - 1$ internal nodes.
-- **Step:** take a full binary tree $T$ for $|C|$ letters and add another leaf $L$ in one of two ways: either add a **new root** $R$ with $L$ and the old root as its children, or replace a leaf $N$ by an **internal node** with $L$ and $N$ as its children. Either way the tree now has $|C| + 1$ leaves and $|C|$ internal nodes. ✓
+- **Step:** take a full binary tree $T$ for $|C|$ letters and add another leaf $L$. There are two ways. Either add a **new root** $R$ with $L$ and the old root as its children. Or replace a leaf $N$ by an **internal node** with $L$ and $N$ as its children. Either way the tree now has $|C| + 1$ leaves and $|C|$ internal nodes. ✓
 
 ### Creating a Huffman code
 
@@ -125,16 +125,16 @@ So merging the two smallest first is **safe**.
 ### The optimal-substructure property of Huffman codes
 
 <Callout tone="sky" label="Lemma">
-Let $x$ and $y$ be two characters in $C$ with minimum frequency. Let $C' = C - \{x, y\} \cup \{z\}$, where $z$ is a new character with $f[z] = f[x] + f[y]$. Let $T'$ be any tree for an optimal prefix code for $C'$. Then the tree $T$, obtained from $T'$ by replacing the leaf $z$ with an internal node whose children are $x$ and $y$, is an optimal prefix code for $C$.
+Let $x$ and $y$ be two characters in $C$ with minimum frequency. Let $C' = C - \{x, y\} \cup \{z\}$, where $z$ is a new character with $f[z] = f[x] + f[y]$. Let $T'$ be any tree for an optimal prefix code for $C'$. Build a tree $T$ from $T'$: replace the leaf $z$ with an internal node whose children are $x$ and $y$. Then $T$ is an optimal prefix code for $C$.
 </Callout>
 
-**Proof.** First, write $B(T)$ in terms of $B(T')$. For every $c \in C - \{x, y\}$, $d_T(c) = d_{T'}(c)$, so those terms are the same. And $d_T(x) = d_T(y) = d_{T'}(z) + 1$, so
+**Proof.** First, write $B(T)$ using $B(T')$. For every $c \in C - \{x, y\}$, $d_T(c) = d_{T'}(c)$, so those terms are the same. And $d_T(x) = d_T(y) = d_{T'}(z) + 1$, so
 
 $$
 f[x]\, d_T(x) + f[y]\, d_T(y) = \big(f[x] + f[y]\big)\big(d_{T'}(z) + 1\big) = f[z]\, d_{T'}(z) + f[x] + f[y]
 $$
 
-Thus $B(T) = B(T') + f[x] + f[y]$, or equivalently $B(T') = B(T) - f[x] - f[y]$.
+So $B(T) = B(T') + f[x] + f[y]$, or equivalently $B(T') = B(T) - f[x] - f[y]$.
 
 **Now by contradiction.** Suppose $T$ is *not* optimal for $C$. Then there's a tree $T''$ with $B(T'') < B(T)$. By the previous lemma, we can assume without loss of generality that $x$ and $y$ are siblings in $T''$. Let $T'''$ be $T''$ with the common parent of $x$ and $y$ replaced by a leaf $z$ with $f[z] = f[x] + f[y]$. Then
 
