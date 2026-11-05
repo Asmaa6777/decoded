@@ -56,9 +56,13 @@ $$
 
 That's $\Theta(n^2)$, and it's the same number **whatever the input looks like**. An already sorted array still costs $n(n-1)/2$ comparisons, because selection sort never checks whether it could stop early. Best, average and worst case are all $O(n^2)$. (Step through the visualizer with `1, 2, 3, 4, 5` to watch it do all that useless work.)
 
+<Callout tone="orange" label="Common mistake: swapping too early">
+Students often swap every time they find something smaller than `A[i]`, instead of only remembering its index in `min` and swapping once at the end of the pass. The array still ends up sorted, but it's no longer selection sort: it does many swaps per pass instead of one, and an exam trace of it won't match the expected answer. Each pass of selection sort ends with **exactly one** swap (sometimes of an element with itself).
+</Callout>
+
 Where selection sort does well is **swaps**: at most $n - 1$ of them, one per pass. If writing to memory is expensive, as on flash storage that wears out, that's a real advantage.
 
-It's also **in place**. It needs no extra array, only a couple of index variables, so its [space complexity](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too) is $O(1)$.
+It's also **in place**, which means it sorts inside the original array instead of building a sorted copy somewhere else. It needs no extra array, only a couple of index variables, so its [space complexity](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too) is $O(1)$.
 
 ## Bubble sort: fix the neighbours
 
@@ -95,9 +99,13 @@ That pseudocode always runs all $n - 1$ passes, even when the array is sorted af
 
 ### Analysis
 
-- **Worst case** (reverse-sorted input): every comparison causes a swap. $n(n-1)/2$ comparisons and $n(n-1)/2$ swaps. $O(n^2)$.
+- **Worst case** (reverse-sorted input): every pair of elements is in the wrong order, and each swap fixes exactly one such pair, so every comparison causes a swap. $n(n-1)/2$ comparisons and $n(n-1)/2$ swaps. $O(n^2)$.
 - **Best case** (already sorted, with the `swapped` flag): one pass of $n - 1$ comparisons, zero swaps, stop. **$O(n)$.**
 - **Average case:** the notes reason that it needs about $n/2$ passes of $O(n)$ comparisons each, and $n/2 \times n$ is still $O(n^2)$.
+
+<Callout tone="orange" label="Common mistake: the inner loop's last index">
+The inner loop compares `A[j]` with `A[j + 1]`, so `j` must stop one short of the last index it could reach. In Java that's `j < array.length - 1 - i`. Write `j < array.length - i` and on the first pass `j + 1` reaches `array.length`, which throws `ArrayIndexOutOfBoundsException`.
+</Callout>
 
 Without the flag, bubble sort is $O(n^2)$ even in the best case. The notes give the best case as $O(n)$ right after the pseudocode without the flag, and that pseudocode can't stop early, so it does $n(n-1)/2$ comparisons on sorted input too. The $O(n)$ answer belongs to the optimized version. On "what is the best case of bubble sort?", mentioning the flag is what gets full marks.
 
@@ -135,7 +143,7 @@ Here's why that matters. Sort a list of students by name, then sort it again by 
     Production sorting routines switch to a simple quadratic sort for very small pieces, where low overhead beats a clever algorithm. They usually pick [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea), which is the next lesson.
   </PracticalApplication>
   <PracticalApplication title="Top-k selection" tool="DATA">
-    "Give me the 3 cheapest flights" doesn't need a full sort. Three passes of selection sort find them in $O(kn)$.
+    "Give me the 3 cheapest flights" doesn't need a full sort. Three passes of selection sort find them. For the $k$ cheapest of $n$, that's $k$ passes of at most $n$ comparisons, $O(kn)$, which beats sorting everything when $k$ is small.
   </PracticalApplication>
 </ApplicationsGrid>
 
