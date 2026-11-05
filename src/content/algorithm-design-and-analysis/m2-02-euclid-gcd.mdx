@@ -9,7 +9,7 @@ Around 300 BC, Euclid wrote down a method for finding the greatest common diviso
 
 The **greatest common divisor** of two non-negative integers $m$ and $n$ (not both zero), written $\gcd(m, n)$, is the largest integer that divides both of them **evenly**, with remainder zero.
 
-Some examples you can check by hand:
+The notes ask you to find these "by inspection", meaning by looking at the numbers and their divisors rather than running an algorithm:
 
 - $\gcd(24, 54) = 6$
 - $\gcd(18, 42) = 6$
@@ -44,6 +44,14 @@ where $m \bmod n$ is the remainder when you divide $m$ by $n$ (`m % n` in Java).
 
 $(n, r)$ is also a smaller problem, because $r$ is always less than $n$. Keep applying the rule and the numbers keep shrinking until the second one becomes **0**. Since every number divides 0, $\gcd(m, 0) = m$, and that's the answer.
 
+The notes' example shows the whole chain on one line:
+
+$$
+\gcd(60, 24) = \gcd(24, 12) = \gcd(12, 0) = 12
+$$
+
+$60 \bmod 24 = 12$ (since $60 = 2 \times 24 + 12$), then $24 \bmod 12 = 0$, and the second number is 0, so the answer is 12.
+
 ## Watch it run
 
 <EuclidVisualizer m={210} n={45} />
@@ -55,6 +63,54 @@ As steps:
 1. If $n = 0$, return $m$ and stop.
 2. Divide $m$ by $n$ and call the remainder $r$.
 3. Set $m \leftarrow n$ and $n \leftarrow r$. Go back to step 1.
+
+And in the notes' pseudocode, where `!=` means "not equal":
+
+```text
+ALGORITHM Euclid(m, n)
+// input: two non-negative, not-both-zero integers m and n
+while n != 0 do
+    r ← m mod n
+    m ← n
+    n ← r
+return m
+```
+
+### The homework: gcd(31415, 14142)
+
+The notes set this one by Euclid's algorithm. Each row divides $m$ by $n$, writing $m = q \times n + r$, and the next row moves $n$ and $r$ one column left:
+
+| m | n | m = q × n + r | r |
+| --- | --- | --- | --- |
+| 31415 | 14142 | 31415 = 2 × 14142 + 3131 | 3131 |
+| 14142 | 3131 | 14142 = 4 × 3131 + 1618 | 1618 |
+| 3131 | 1618 | 3131 = 1 × 1618 + 1513 | 1513 |
+| 1618 | 1513 | 1618 = 1 × 1513 + 105 | 105 |
+| 1513 | 105 | 1513 = 14 × 105 + 43 | 43 |
+| 105 | 43 | 105 = 2 × 43 + 19 | 19 |
+| 43 | 19 | 43 = 2 × 19 + 5 | 5 |
+| 19 | 5 | 19 = 3 × 5 + 4 | 4 |
+| 5 | 4 | 5 = 1 × 4 + 1 | 1 |
+| 4 | 1 | 4 = 4 × 1 + 0 | 0 |
+| 1 | 0 | stop | |
+
+So $\gcd(31415, 14142) = 1$: the two numbers are coprime. Ten divisions settled it, where counting down from 14142 would have taken 14,142 tries. You can check any row in the visualizer above by typing the two numbers in.
+
+The lab writes it as a `void` method that prints the answer:
+
+```java
+public static void GCD(int m, int n) {
+    int r = 0;
+    while (n != 0) {
+        r = m % n;
+        m = n;
+        n = r;
+    }
+    System.out.println("The GCD is " + m);
+}
+```
+
+Its `main` calls `GCD(45, 210)` and prints 15. Printing inside the method works for the lab, but you can't use the answer anywhere else, for example to [simplify a fraction](#where-this-shows-up-today). Returning it is more useful:
 
 ```java
 static int gcd(int m, int n) {
