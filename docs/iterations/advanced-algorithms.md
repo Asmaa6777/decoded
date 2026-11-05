@@ -1,6 +1,6 @@
 # Advanced Algorithms & Analysis: iteration rounds
 
-Tracks the Advanced Algorithms & Analysis course through the rounds in [Build in iterations](../building-a-course.md#build-in-iterations). Each round is committed on its own, ticks its box here, and adds its report below.
+Tracked on GitHub as [STACK-42/decoded#65](https://github.com/STACK-42/decoded/issues/65). Tracks the Advanced Algorithms & Analysis course through the rounds in [Build in iterations](../building-a-course.md#build-in-iterations). Each round is committed on its own, ticks its box here, and adds its report below.
 
 Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** Hashing and Search Trees · **M3** Design Strategies · **M4** P and NP
 
@@ -19,7 +19,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M4
 - [ ] 4. Plain language
   - [x] M0
-  - [ ] M1
+  - [x] M1
   - [ ] M2
   - [ ] M3
   - [ ] M4
@@ -259,5 +259,17 @@ Scanned m0-01 to m0-06 with a script for sentences over 28 words and for stock h
 **Checked and left as is:** the lessons were already mostly short sentences. Technical terms that stay (asymptotic, recurrence, regularity condition, polynomial factor) are the right names and are explained where they first appear.
 
 **Couldn't do:** the round's guide says to run the text through the humanizer skill; that skill isn't installed here, so the rewriting was done by hand.
+
+**Not checked:** no browser check.
+
+### Round 4, plain language: M1 Divide and Conquer
+
+Same method as M0: a script flagged sentences over 28 words and stock hard words in m1-01 to m1-05, then I rewrote the flagged lines by hand.
+
+**Changed (16 edits):** split the long sentences in the Strassen slide note and the 8-vs-7 count (m1-01), the H-tree side length (m1-01), the recursion-tree pattern, the odd-n shift slip, the lab hint and the local-minimum exercise (m1-02), the divide step, the PARTITION result and the `std::sort` note (m1-03), the radix-sort history (m1-04, also dropping "simply"), and the "− k" slip and the median-of-medians argument (m1-05).
+
+**Checked and left as is:** pivot, partition, recurrence, decision tree, stable, order statistic and the other technical terms are explained where they first appear; the proofs are already broken into short steps.
+
+**Couldn't do:** the humanizer skill isn't installed here.
 
 **Not checked:** no browser check.

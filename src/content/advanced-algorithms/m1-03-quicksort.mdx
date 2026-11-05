@@ -17,7 +17,7 @@ Its worst case is bad, $\Theta(n^2)$, but it's fast "on average". This lesson ex
 
 To quicksort an $n$-element array:
 
-1. **Divide:** partition the array into two subarrays around a **pivot** $x$, so that every element in the lower subarray is $\le x$ and every element in the upper subarray is $\ge x$.
+1. **Divide:** partition the array into two subarrays around a **pivot** $x$. Every element in the lower subarray is $\le x$ and every element in the upper subarray is $\ge x$.
 
    $$
    \boxed{\;\le x\;} \;\; \boxed{\;x\;} \;\; \boxed{\;\ge x\;}
@@ -71,7 +71,7 @@ The same run on paper. The pivot is $x = 6$. Only the steps where `A[j] ≤ 6` c
 | 11 is bigger | | nothing moves | 4 |
 | last line: swap $A[1] \leftrightarrow A[4]$ | | `2 5 3 6 8 13 10 11` | 4 |
 
-(Positions count from 1, as in the pseudocode.) PARTITION returns 4: the pivot 6 is in its final place, with `2 5 3` on its left and `8 13 10 11` on its right.
+(Positions count from 1, as in the pseudocode.) PARTITION returns 4. The pivot 6 is now in its final place, with `2 5 3` on its left and `8 13 10 11` on its right.
 
 <Callout tone="sky" label="Two partition schemes, two names">
 This PARTITION, with one pointer `i` that marks the end of the small part, is usually called **Lomuto's partition**. Quicksort's inventor, Hoare, used a different one: two pointers that start at both ends and walk towards each other, swapping pairs that are on the wrong side. Algorithm Design and Analysis teaches [that version](/courses/algorithm-design-and-analysis/quick-sort#partitioning-with-two-pointers). Both run in $\Theta(n)$ and both work with quicksort; Hoare's makes fewer swaps.
@@ -267,7 +267,7 @@ Randomized quicksort runs in **expected time $\Theta(n \lg n)$** on **every** in
 
 <ApplicationsGrid>
   <PracticalApplication title="C++ std::sort" tool="INTROSORT">
-    `std::sort` is quicksort with tuning. It uses a median-of-three pivot and insertion sort for tiny pieces, and it **switches to heapsort** if the recursion gets too deep, so the worst case is $O(n \log n)$ anyway.
+    `std::sort` is quicksort with tuning. It uses a median-of-three pivot and insertion sort for tiny pieces, and it **switches to heapsort** if the recursion gets too deep. So the worst case is $O(n \log n)$ anyway.
   </PracticalApplication>
   <PracticalApplication title="Defending against attack inputs" tool="RANDOMIZATION">
     A server that sorts user data with a fixed pivot rule can be slowed to a crawl by a carefully built "sorted-looking" input. Random pivots make that attack impossible.

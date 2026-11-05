@@ -102,7 +102,7 @@ $$
 </details>
 
 <Callout tone="sky" label="The pattern">
-When each level's cost is a **fixed fraction less than 1** of the level above it, the total is a geometric series, and **the root's cost decides the answer**. When each level costs the **same**, multiply by the number of levels. That's where the $\log n$ comes from.
+When each level's cost is a **fixed fraction less than 1** of the level above it, the total is a geometric series. Then **the root's cost decides the answer**. When each level costs the **same**, multiply by the number of levels. That's where the $\log n$ comes from.
 </Callout>
 
 ## Part II: Divide and conquer
@@ -177,7 +177,7 @@ Three multiplications of 2-digit numbers instead of four, and the answer matches
 
 <Callout tone="orange" label="Two usual slips">
 - **The sums can be one digit longer.** $56 + 78 = 134$ has 3 digits, not 2. Your code must handle that, for example by splitting on the length of the *longer* number each time, instead of assuming every piece has exactly $n/2$ digits.
-- **Shift by what you split.** If $n$ is odd, say 5 digits split as 2 and 3, the shifts are $10^{2 \cdot 3}$ and $10^3$ (twice the size of the low half, and the low half), not $10^5$ and $10^{2.5}$.
+- **Shift by what you split.** If $n$ is odd, say 5 digits split as 2 and 3, the shifts are $10^{2 \cdot 3}$ and $10^3$ (twice the size of the low half, then the low half). They are not $10^5$ and $10^{2.5}$.
 </Callout>
 
 <GaussMultiply a={1234} b={5678} />
@@ -188,7 +188,7 @@ Three multiplications of 2-digit numbers instead of four, and the answer matches
 
 **Task 1:** implement the Gauss algorithm for multiplying two numbers. (The lab sheet says "two real numbers", but splitting into halves of digits only works on **integers**. A number with a decimal point can be scaled to an integer first: 1.25 × 3.5 = 125 × 35 / 1000.)
 
-*Hint:* you can get the left and right halves with division and mod (`a / p` and `a % p`, where `p` is $10^{\text{half}}$), or with shift operators if you split in binary instead of decimal.
+*Hint:* get the left and right halves with division and mod (`a / p` and `a % p`, where `p` is $10^{\text{half}}$). If you split in binary instead of decimal, use shift operators instead.
 
 ```cpp
 #include <iostream>
@@ -258,7 +258,7 @@ Sort first with [merge sort](/courses/advanced-algorithms/analysis-of-algorithms
 
 </details>
 
-**3.** You're given an $n \times n$ grid of distinct numbers. A number is a **local minimum** if it's smaller than all its neighbours. (A neighbour is the number directly above, below, left or right. Most numbers have four neighbours, numbers on the edge have three, and the four corners have two.) Use divide and conquer to find a local minimum with only $O(n)$ comparisons.
+**3.** You're given an $n \times n$ grid of distinct numbers. A number is a **local minimum** if it's smaller than all its neighbours. (A neighbour is the number directly above, below, left or right. Most numbers have four neighbours. Numbers on the edge have three, and the four corners have two.) Use divide and conquer to find a local minimum with only $O(n)$ comparisons.
 
 *Note:* there are $n^2$ numbers, so you can't even afford to look at all of them!
 

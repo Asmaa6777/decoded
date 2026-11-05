@@ -243,7 +243,7 @@ In practice, radix sort is **fast for large inputs**, and simple to code and mai
 - The operator drops the card into that bin and closes the lid.
 - When all the cards are processed, the front panel is opened and the cards are collected in bin order. That's **one pass of a stable sort**.
 
-**Origin of radix sort.** Hollerith's 1889 patent describes a **most**-significant-digit-first sort: sort the cards by the first item, then re-sort each group by the second item, and so on. **Least**-significant-digit-first radix sort seems to have been a folk invention by the machine operators. They found that collecting the bins in order after each pass and simply running the whole deck through again, one column at a time from the right, was far simpler than juggling lots of separate groups.
+**Origin of radix sort.** Hollerith's 1889 patent describes a **most**-significant-digit-first sort: sort the cards by the first item, then re-sort each group by the second item, and so on. **Least**-significant-digit-first radix sort seems to have been a folk invention by the machine operators. They found an easier way. After each pass, they collected the bins in order and ran the whole deck through again, one column at a time from the right. That was far simpler than juggling lots of separate groups.
 
 **The "modern" IBM card** had one character per column and 80 columns. *That's why text windows and terminals traditionally have 80 columns!*
 

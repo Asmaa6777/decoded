@@ -166,7 +166,7 @@ u &= cf + dh
 \end{aligned}
 $$
 
-(Some copies of these slides have a frame showing $t = ce + dh$ and $u = cf + dg$. That's a leftover from the animation: row $t$ uses $c$ and $d$ from the bottom row of $A$, so it pairs $c$ with $e$ and $d$ with $g$, which gives $t = ce + dg$.)
+(Some copies of these slides have a frame showing $t = ce + dh$ and $u = cf + dg$. That's a leftover from the animation. Row $t$ uses $c$ and $d$ from the bottom row of $A$. So it pairs $c$ with $e$ and $d$ with $g$, which gives $t = ce + dg$.)
 
 That's **8 multiplications** of $(n/2) \times (n/2)$ submatrices, done recursively, plus **4 additions** of $(n/2) \times (n/2)$ submatrices. Adding two such matrices touches each of their $n^2/4$ entries once, so the additions cost $\Theta(n^2)$.
 
@@ -221,7 +221,7 @@ $$
 
 $n^{\log_b a} = n^{\log_2 7} \approx n^{2.81}$. That's Case 1, so $T(n) = \Theta(n^{\lg 7})$.
 
-2.81 might not look much smaller than 3, but the difference is in the **exponent**, so it matters a lot for large $n$. For $n = 1024 = 2^{10}$, splitting all the way down takes 10 levels. With 8 multiplications per split that's $8^{10} \approx 1.07$ billion multiplications of single numbers; with 7 it's $7^{10} \approx 282$ million, almost 4 times fewer, and the gap grows with every extra level. In practice Strassen beats the ordinary algorithm for $n \ge 32$ or so. The best bound known today is about $\Theta(n^{2.376})$, but that algorithm is only of theoretical interest.
+2.81 might not look much smaller than 3, but the difference is in the **exponent**, so it matters a lot for large $n$. For $n = 1024 = 2^{10}$, splitting all the way down takes 10 levels. With 8 multiplications per split that's $8^{10} \approx 1.07$ billion multiplications of single numbers. With 7 it's $7^{10} \approx 282$ million, almost 4 times fewer. The gap grows with every extra level. In practice Strassen beats the ordinary algorithm for $n \ge 32$ or so. The best bound known today is about $\Theta(n^{2.376})$, but that algorithm is only of theoretical interest.
 
 Compare the two recurrences with the "matrix D&C" and "Strassen" presets:
 
@@ -244,7 +244,7 @@ $$
 
 ### The H-tree
 
-Lay the tree out in the shape of a letter **H**, recursively. Each H has a smaller H at each of its four corners. The square has side length $L(n)$, which is made of two smaller squares of side $L(n/4)$ (each holding a quarter of the leaves) plus a constant gap between them:
+Lay the tree out in the shape of a letter **H**, recursively. Each H has a smaller H at each of its four corners. The square has side length $L(n)$, which is made of two smaller squares of side $L(n/4)$ plus a constant gap between them. Each smaller square holds a quarter of the leaves:
 
 $$
 L(n) = 2\,L(n/4) + \Theta(1) = \Theta(\sqrt n)

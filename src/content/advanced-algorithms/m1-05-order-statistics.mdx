@@ -38,7 +38,7 @@ So $A[r]$ has rank $k$ in this piece. If $k = i$, we're done. Otherwise the answ
 When we go right, the $k$ elements we skipped are all smaller, so we look for rank $i - k$ in the upper part.
 
 <Callout tone="orange" label="The usual slip">
-Forgetting the $- k$. In the example below, the upper part `8 13 10 11` has only 4 elements, so asking it for its 7th smallest makes no sense: the code runs off the end or returns garbage. Ranks are always **relative to the piece you're looking at**. Going left keeps $i$, because nothing smaller was thrown away.
+Forgetting the $- k$. In the example below, the upper part `8 13 10 11` has only 4 elements. Asking it for its 7th smallest makes no sense, so the code runs off the end or returns garbage. Ranks are always **relative to the piece you're looking at**. Going left keeps $i$, because nothing smaller was thrown away.
 </Callout>
 
 ### Example
@@ -219,7 +219,7 @@ This holds if $c$ is chosen large enough to handle both the $\Theta(n)$ and the 
 
 ## Conclusions
 
-- Since the work at each level of recursion is a **constant fraction ($\frac{19}{20}$) smaller**, the work per level is a geometric series dominated by the linear work at the root.
+- Since the work at each level of recursion is a **constant fraction ($\frac{19}{20}$) smaller**, the work per level forms a geometric series. The linear work at the root dominates it.
 - In practice this algorithm runs **slowly**, because the constant in front of $n$ is large.
 - The **randomized algorithm is far more practical**.
 
