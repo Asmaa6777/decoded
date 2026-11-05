@@ -131,6 +131,10 @@ Node* leftRotate(Node* root, Node* x) {
 
 `rightRotate` is the mirror image: swap every `left` and `right`.
 
+<Callout tone="orange" label="Watch the root update">
+Only set `root = z` when $x$ **was** the root. Some printed versions of this code (in Java) run `root = z;` after the `if`, on every call. Then rotating any node deep in the tree would report that node as the new root of the whole tree, and the rest of the tree would be lost.
+</Callout>
+
 **What is the running time?** A fixed number of pointer changes, whatever the size of the tree: **$O(1)$**.
 
 <ApplicationsGrid>

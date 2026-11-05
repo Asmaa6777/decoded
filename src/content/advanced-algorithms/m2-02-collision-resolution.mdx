@@ -228,7 +228,7 @@ Worse, quadratic probing can **fail to insert a key even though the table has ro
 
 <HashTableVisualizer mode="quadratic" m={10} ops={[2, 12, 22, 32, 42, 52, 62].map((key) => ({ op: "insert", key }))} title="Quadratic probing that gets stuck" />
 
-62 can't be inserted, even though 3 slots are free. So with quadratic probing:
+62 can't be inserted, even though 4 slots (0, 4, 5 and 9) are free. The squares $i^2 \bmod 10$ only take the values 0, 1, 4, 9, 6 and 5, so from slot 2 the probes only reach slots 2, 3, 6, 1, 8 and 7, and all six are taken. So with quadratic probing:
 
 - the table should be **at most half full**, and
 - the table size must be **prime**,
@@ -298,6 +298,34 @@ $$
 - If the table is **90% full**, the expected number of probes is $\frac{1}{1 - 0.9} = 10$.
 
 That's why open-addressed tables rehash at a load factor like 0.5 or 0.75: performance drops off sharply as $\alpha \to 1$.
+
+### Rehashing an open-addressed table
+
+When the table is too full, make a new table whose size is the **prime closest to $2m$** (prime, because quadratic probing needs it), compute each key's new hash value, and insert it into the new table. Rehash:
+
+- when the table is **half full** ($\alpha = 0.5$),
+- when an **insertion fails**, or
+- when some chosen load factor is reached.
+
+## Separate chaining vs. open addressing
+
+| | Separate chaining | Open addressing |
+| --- | --- | --- |
+| Implementing | simpler | needs more computation |
+| Can the table fill up? | never: chains just grow | yes |
+| Sensitivity | less sensitive to the hash function and load factor | needs care to avoid clustering |
+| Used when | you don't know how many keys will come, or how often they are inserted and deleted | the number of keys and how often they arrive is known |
+| Cache performance | poor: keys are in linked lists | good: everything is in one array |
+| Space | some slots are never used, and links take extra space | a slot can be used even by a key that didn't hash to it; no links |
+| Deleting | easy | hard (the "deleted" marker) |
+
+**Which to use:**
+
+- If you use open addressing, prefer **double hashing** to quadratic probing.
+- If there is plenty of memory and the data won't grow, **linear probing** is the simplest.
+- If you don't know how many keys will be inserted, use **separate chaining**.
+- If you need to delete, use **separate chaining**.
+- When in doubt, use **separate chaining**.
 
 <ApplicationsGrid>
   <PracticalApplication title="Fast open-addressed maps" tool="PYTHON DICT · ABSEIL · RUST">

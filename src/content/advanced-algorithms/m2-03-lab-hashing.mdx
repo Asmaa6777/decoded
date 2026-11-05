@@ -190,7 +190,7 @@ The final tables:
 | double | 22 | | 59 | 17 | 4 | 15 | 28 | 88 | | 31 | 10 |
 
 <Callout tone="sky" label="Compare the probe counts">
-Look at the **probes** counter at the end of each run. Linear probing piles keys into one long run around slots 4–8. Double hashing scatters them, so on average each key needs fewer probes.
+Add up the probes as you step through each run (every slot tried counts, including the one the key lands in): 16 for linear probing, 23 for quadratic and 16 for double hashing. With only 9 keys the totals are close, so the difference is in the *shape*. Linear probing piles keys into one long run in slots 4–8, so the next key that lands anywhere in that run has to walk to its end. Double hashing scatters them, with free slots at 1 and 8, so future keys won't hit long runs. Quadratic probing's 23 comes almost all from 88, which kept jumping back to the same few slots.
 </Callout>
 
 <LeetCodeProblems

@@ -8,7 +8,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
 - [ ] 2. Source fidelity
   - [x] M0
   - [x] M1
-  - [ ] M2
+  - [x] M2
   - [ ] M3
   - [ ] M4
 - [ ] 3. Depth
@@ -94,3 +94,25 @@ Checked lectures 4 to 7 and lab 4 against lessons m1-01 to m1-05.
 **Found but not fixed:** m1-04 says Hollerith's most-significant-digit-first idea was bad but not why (round 3). m1-05's example uses the first element as pivot although RAND-SELECT picks at random; the slides do the same.
 
 **Not checked:** no browser check; no visualizers changed.
+
+### Round 2, source fidelity: M2 Hashing and Search Trees
+
+Checked lectures 8 to 13 and labs 5.1 and 5.2 against lessons m2-01 to m2-07.
+
+**Already covered:** direct hashing; the division (with the mod 4 vs mod 7 example), multiplication (k = 123 and 150), mid-square and folding methods; amortized analysis by the aggregate, accounting and potential methods; separate chaining with its load-factor analysis, the BST-per-slot extension and AVL; open addressing with HASH-INSERT/SEARCH, "deleted" markers, linear (7, 36, 18, 62, 51), quadratic (including the stuck 2 … 62 mod 10 example) and double hashing (37, 90, 45, 22, 17, 49, 55); the 1/(1 − α) theorem. Lab 5: direct-address tables, the Mia/Ada/Ted example, double hashing of 14 and the 22/27 task, good hash functions, and all three extra exercises (final tables rechecked in Python). Red-black properties, the height proof, rotations, the three insertion cases with the insert-15 example and the 47 … 93 build, deletion with the black token. OS-SELECT/OS-RANK, maintenance under rotations, the methodology, interval trees with both searches and the correctness proof. Skip lists: perfect and randomized, search rule, insert/delete 87, backwards analysis.
+
+**Changed:**
+- m2-02: the stuck quadratic example said 3 free slots; there are 4 (0, 4, 5, 9), now with the reason. Added rehashing an open-addressed table (next prime near 2m, and when), the lecture's separate chaining vs. open addressing table, and its "which to use" advice.
+- m2-03: the callout claimed double hashing needs fewer probes on the extra exercise and pointed at a probe counter that doesn't exist. The real totals are 16, 23 and 16; the callout now says that, and that the difference is the layout.
+- m2-05: the lecture's three deletion examples (delete 87; delete 71 with 51 added; delete 32 through cases 2, 3 and 1), each with a visualizer, read from the slide images. A new test checks the visualizer's code ends with the lecture's exact trees.
+- m2-04: a callout on the root update in `leftRotate`.
+
+**Source errors:**
+- Lecture 11: the Java `leftRotate` runs `root = z;` on every call, not only when x was the root.
+- Lecture 8: quadratic probing is described as "f is a linear function of i"; mid-square says "r = 1 bit" for digits.
+- Lecture 13: the Find 71 and Find 96 figures mix in keys (76, 87, 91) from another slide.
+- Lab 5.2: the printed answer tables drop the empty slots, so keys look shifted.
+
+**Found but not fixed:** the mid-square method has no worked example in the notes or the lesson (round 3 could add one). The hash visualizer has no running probe total, which the comparison exercise would use (round 5).
+
+**Not checked:** no browser check of the new visualizer instances.

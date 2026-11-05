@@ -146,6 +146,28 @@ Let $w$ be $x$'s **sibling**. The **nephews** are $w$'s children.
 
 In cases (2) and (4), the second picture is the mirror image: when $x$ is a right child, swap left and right.
 
+### The lecture's three deletion examples
+
+All three start from the tree built in [Another insertion example](#another-insertion-example): 47 at the root, 32 on the left, and the red 71 on the right with 65, 87, 82 and 93 below it.
+
+**Example 1: delete 87.** 87 has two children, so its key is replaced by its predecessor, 82, and 82's old node is removed instead. That node was **red**, so nothing breaks. No fix-up at all.
+
+<RBTreeVisualizer start={[47, 32, 71, 65, 82, 87, 93]} ops={[{ op: "delete", key: 87 }]} />
+
+**Example 2: delete 71**, from the same tree with 51 added (a red left child of 65). 71 has two children, so its key is replaced by its predecessor, 65. 65's old node was **black**, and its child 51 takes its place. 51 is **red**, so case (1): color 51 black. Done.
+
+<RBTreeVisualizer start={[47, 32, 71, 65, 82, 87, 93, 51]} ops={[{ op: "delete", key: 71 }]} />
+
+**Example 3: delete 32.** 32 is black and has no children, so its place is taken by a NIL "pretend" node $x$ that carries the extra black token.
+
+1. $x$'s sibling is the red 71: **case (2)**. Make 71 black and the parent 47 red, then left-rotate at 47. 71 is now the root.
+2. $x$'s new sibling is 65, which is black with two black (NIL) children: **case (3)**. Color 65 red and pass the token up to the parent, 47.
+3. 47 is **red**, so **case (1)**: color it black. Done.
+
+The result is 71 at the root, with 47 (and its red right child 65) on the left and 87 (with red 82 and 93) on the right.
+
+<RBTreeVisualizer start={[47, 32, 71, 65, 82, 87, 93]} ops={[{ op: "delete", key: 32 }]} />
+
 ### Deletion example
 
 Start from a tree with ten keys, then delete 25, 5, 80 and 10. Between them these four deletions hit every fix-up case. Watch the case label, and look for **Replace with predecessor** when a deleted node has two children.
