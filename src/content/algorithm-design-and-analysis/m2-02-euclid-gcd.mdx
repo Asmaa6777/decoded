@@ -42,7 +42,7 @@ where $m \bmod n$ is the remainder when you divide $m$ by $n$ (`m % n` in Java).
 
 **Why is that true?** Write $m = q \cdot n + r$, where $r$ is the remainder. Any number that divides both $m$ and $n$ also divides $r = m - q \cdot n$. And any number that divides both $n$ and $r$ also divides $m = q \cdot n + r$. So the pairs $(m, n)$ and $(n, r)$ have exactly the same common divisors, and therefore the same *greatest* one.
 
-$(n, r)$ is also a smaller problem, because $r$ is always less than $n$. Keep applying the rule and the numbers keep shrinking until the second one becomes **0**. Since every number divides 0, $\gcd(m, 0) = m$, and that's the answer.
+$(n, r)$ is also a smaller problem, because $r$ is always less than $n$. Keep applying the rule and the numbers keep shrinking until the second one becomes **0**. Every number divides 0 (because $0 = 0 \times m$, remainder zero), so the common divisors of $m$ and 0 are just the divisors of $m$, and the greatest of those is $m$ itself. So $\gcd(m, 0) = m$, and that's the answer.
 
 The notes' example shows the whole chain on one line:
 
@@ -56,7 +56,7 @@ $60 \bmod 24 = 12$ (since $60 = 2 \times 24 + 12$), then $24 \bmod 12 = 0$, and 
 
 <EuclidVisualizer m={210} n={45} />
 
-The table is how you'd write it on an exam: one row per division, with $m$ and $n$ sliding one column left each time. Try your own numbers, including two consecutive Fibonacci numbers like $89$ and $55$, which are the slowest possible input for Euclid.
+The table is how you'd write it on an exam: one row per division, with $m$ and $n$ sliding one column left each time. Try your own numbers, including two consecutive Fibonacci numbers like $89$ and $55$, which are the slowest possible input for Euclid. Each division of one Fibonacci number by the one before it goes in only **once**, so the remainder is the next Fibonacci number down, and the pair shrinks as slowly as it possibly can: $(89, 55) \to (55, 34) \to (34, 21) \to \cdots$
 
 As steps:
 
@@ -122,6 +122,10 @@ static int gcd(int m, int n) {
     return m;
 }
 ```
+
+<Callout tone="orange" label="Common mistake: updating in the wrong order">
+The two assignments `m = n;` and `n = r;` must happen in that order. Write `n = r;` first and the old value of `n` is gone before `m` can take it, so `m` gets the remainder instead. On gcd(60, 24) that gives $m = 12, n = 12$, then $m = 0, n = 0$, and the loop returns 0. When you trace by hand, write each new row from the **previous** row's values, never from half-updated ones.
+</Callout>
 
 Or recursively, which reads almost exactly like the equality:
 
