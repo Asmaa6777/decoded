@@ -31,9 +31,24 @@ That input is the kind of list exam questions ask you to sort "in steps." The an
 
 Nine elements take eight passes. After pass 8 the last element is already in place, since there's nothing left to compare it with.
 
+The notes use a smaller example, 6, 2, 11, 7, 5. Pass 1 finds 2 and swaps it with 6, giving 2, 6, 11, 7, 5. Pass 2 finds 5 and swaps it with 6, giving 2, 5, 11, 7, 6. Pass 3 swaps 6 with 11, giving 2, 5, 6, 7, 11. Pass 4 finds that 7 is already the smaller of 7 and 11, so nothing moves.
+
+The notes write the algorithm in the textbook's pseudocode, where `←` means "gets" (assignment) and `A[0..n − 1]` is an array of $n$ elements:
+
+```text
+ALGORITHM SelectionSort(A[0..n − 1])
+for i ← 0 to n − 2 do
+    min ← i
+    for j ← i + 1 to n − 1 do
+        if A[j] < A[min]  min ← j
+    swap A[i] and A[min]
+```
+
+The outer loop stops at $n - 2$, the second-to-last index, for the reason above: by then the last element has nowhere else to go.
+
 ### Analysis
 
-The basic operation is the comparison `a[j] < a[min]`. On pass 1 it runs $n - 1$ times, on pass 2 it runs $n - 2$ times, and so on down to 1:
+The input size is $n$, the number of elements. The basic operation is the **key comparison** `A[j] < A[min]`. How often it runs depends only on $n$, not on the values. On pass 1 it runs $n - 1$ times, on pass 2 it runs $n - 2$ times, and so on down to 1:
 
 $$
 (n-1) + (n-2) + \dots + 1 = \frac{n(n-1)}{2}
@@ -47,19 +62,44 @@ It's also **in place**. It needs no extra array, only a couple of index variable
 
 ## Bubble sort: fix the neighbours
 
-Bubble sort only ever looks at **two neighbours at a time**. If they're in the wrong order, it swaps them. One walk across the array carries the biggest element all the way to the end (it "bubbles up"). Then it does the same for the next biggest, and so on.
+Bubble sort only ever looks at **two neighbours at a time**. If they're in the wrong order, it swaps them. One walk across the array, called a **pass** (the notes also say a **scan**), carries the biggest element all the way to the end. People say it "bubbles up"; the notes say it "bubbles down" to its correct position. Both mean the same move. Then the next pass does the same for the next biggest, and so on.
+
+Here is the notes' example, 6, 2, 11, 7, 5. On each pass `i`, the index `j` walks from 0 and compares `A[j]` with `A[j + 1]`:
+
+| Pass | j | Compare | Array after |
+| --- | --- | --- | --- |
+| i = 0 | 0 | 6 > 2, swap | 2 6 11 7 5 |
+| | 1 | 6 < 11, no swap | 2 6 11 7 5 |
+| | 2 | 11 > 7, swap | 2 6 7 11 5 |
+| | 3 | 11 > 5, swap | 2 6 7 5 **11** |
+| i = 1 | 0, 1 | 2 < 6, 6 < 7 | 2 6 7 5 **11** |
+| | 2 | 7 > 5, swap | 2 6 5 **7 11** |
+| i = 2 | 0 | 2 < 6 | 2 6 5 **7 11** |
+| | 1 | 6 > 5, swap | 2 5 **6 7 11** |
+| i = 3 | 0 | 2 < 5, no swap | **2 5 6 7 11** |
+
+Each pass compares one pair fewer, because the end of the array is already done: 4 + 3 + 2 + 1 = 10 comparisons and 4 swaps. Pass `i = 3` swaps nothing, since 2 and 5 are already in place.
+
+The notes' pseudocode:
+
+```text
+ALGORITHM BubbleSort(A[0..n − 1])
+for i ← 0 to n − 2 do
+    for j ← 0 to n − 2 − i do
+        if A[j + 1] < A[j]  swap A[j] and A[j + 1]
+```
 
 <SortVisualizer algorithm="bubble" initial={[5, 1, 4, 2, 8, 3]} />
 
-The version above adds a `swapped` flag. If a full pass makes **no swaps at all**, every neighbour is in order, so the whole array is sorted and we can stop. Try it with `1, 2, 3, 4, 5, 6` and watch it quit after one pass.
+That pseudocode always runs all $n - 1$ passes, even when the array is sorted after the first one. The notes call the fix the **optimization of bubble sort**, and the visualizer uses it: a `swapped` flag. If a full pass makes **no swaps at all**, every neighbour is in order, so the whole array is sorted and we can stop. Try it with `1, 2, 3, 4, 5, 6` and watch it quit after one pass.
 
 ### Analysis
 
 - **Worst case** (reverse-sorted input): every comparison causes a swap. $n(n-1)/2$ comparisons and $n(n-1)/2$ swaps. $O(n^2)$.
 - **Best case** (already sorted, with the `swapped` flag): one pass of $n - 1$ comparisons, zero swaps, stop. **$O(n)$.**
-- **Average case:** $O(n^2)$.
+- **Average case:** the notes reason that it needs about $n/2$ passes of $O(n)$ comparisons each, and $n/2 \times n$ is still $O(n^2)$.
 
-Without the flag, bubble sort is $O(n^2)$ even in the best case. On "what is the best case of bubble sort?", mentioning the flag is what gets full marks.
+Without the flag, bubble sort is $O(n^2)$ even in the best case. The notes give the best case as $O(n)$ right after the pseudocode without the flag, and that pseudocode can't stop early, so it does $n(n-1)/2$ comparisons on sorted input too. The $O(n)$ answer belongs to the optimized version. On "what is the best case of bubble sort?", mentioning the flag is what gets full marks.
 
 <Callout tone="orange" label="Which one is better?">
 Neither, really, since both are $O(n^2)$ on typical input. Selection sort does far fewer swaps, and bubble sort can stop early on nearly sorted data. Real code uses `Arrays.sort` instead of either. You learn them because they make the cost of an algorithm easy to see.
@@ -127,7 +167,13 @@ public static void bubbleSort(int[] array) {
 }
 ```
 
+The lab sorts **the same** random numbers with both: it fills `array_1`, makes `array_2 = array_1.clone()`, and times each sort with `System.currentTimeMillis()`. Without the copy, the second sort would get an array the first one had already sorted, and bubble sort would look unfairly fast.
+
 Then run the experiment: time both at 2,000 and 4,000 elements. Doubling $n$ should roughly quadruple both times.
+
+<Callout tone="orange" label="Errors in the lab sheet">
+The lab's `main` calls `Selection_Sort(array_1)`, but the method is named `SelectionSort`, so it won't compile until the names match. Its `BubbleSort` loops `i <= array.length - 1`, one pass more than needed: the last pass compares nothing, so the result is still right. Its `swap` takes `(x, y, array)`, with the array last. The version above uses the toolkit's `swap(array, i, j)`.
+</Callout>
 
 <LeetCodeProblems
   problems={[
