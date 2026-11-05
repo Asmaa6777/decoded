@@ -10,7 +10,7 @@ import { SelectVisualizer, MedianOfMediansGrid, RecursionTreeDiagram } from "@/c
 - $i = n$: the **maximum**.
 - $i = \lfloor (n+1)/2 \rfloor$ or $\lceil (n+1)/2 \rceil$: the **median**.
 
-**Naive algorithm:** sort, then index the $i$-th element. The worst-case running time is $\Theta(n \lg n) + \Theta(1) = \Theta(n \lg n)$.
+**Naive algorithm:** sort, then index the $i$-th element. The worst-case running time is $\Theta(n \lg n) + \Theta(1) = \Theta(n \lg n)$, using merge sort or heapsort. Not quicksort: its worst case is $\Theta(n^2)$.
 
 Sorting does far more work than we need: it puts *every* element in order, when we only want one. This lesson finds the $i$-th smallest in **linear time**, first with randomization and then in the worst case.
 
@@ -40,6 +40,8 @@ When we go right, the $k$ elements we skipped are all smaller, so we look for ra
 ### Example
 
 Select the $i = 7$th smallest of `6 10 13 5 8 3 2 11`. Partition around the pivot 6: it lands with rank $k = 4$. Since $7 > 4$, select the $7 - 4 = 3$rd smallest of the upper part recursively.
+
+The partitioned array is `2 5 3 6 8 13 10 11` (the same partition you traced in [quicksort](/courses/advanced-algorithms/quicksort#partitioning)), so the upper part is `8 13 10 11`. Its 3rd smallest is 11, and that's the answer. Check: sorted, the array is `2 3 5 6 8 10 11 13`, and the 7th number is 11.
 
 <SelectVisualizer initial={[6, 10, 13, 5, 8, 3, 2, 11]} want={7} />
 

@@ -115,6 +115,8 @@ The divide-and-conquer strategy solves a problem by:
 
 ### Example: multiplying large numbers (the Gauss method)
 
+The lab calls this the **Gauss method**, after Gauss's trick for multiplying complex numbers with three multiplications instead of four. Most books and libraries call it **Karatsuba's algorithm**, after the person who first used it on large integers. They are the same algorithm.
+
 Split each $n$-digit number into two halves of $n/2$ digits. Call the numbers $a$ and $b$. The halves of $a$ are $a_L$ (the left, or upper, half) and $a_R$ (the right, or lower, half), and the same for $b$:
 
 $$
@@ -167,7 +169,7 @@ $$
 
 ## Part III: Lab work
 
-**Task 1:** implement the Gauss algorithm for multiplying two numbers.
+**Task 1:** implement the Gauss algorithm for multiplying two numbers. (The lab sheet says "two real numbers", but splitting into halves of digits only works on **integers**. A number with a decimal point can be scaled to an integer first: 1.25 × 3.5 = 125 × 35 / 1000.)
 
 *Hint:* you can get the left and right halves with division and mod (`a / p` and `a % p`, where `p` is $10^{\text{half}}$), or with shift operators if you split in binary instead of decimal.
 

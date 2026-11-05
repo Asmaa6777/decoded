@@ -162,6 +162,8 @@ u &= cf + dh
 \end{aligned}
 $$
 
+(Some copies of these slides have a frame showing $t = ce + dh$ and $u = cf + dg$. That's a leftover from the animation: row $t$ uses $c$ and $d$ from the bottom row of $A$, so it pairs $c$ with $e$ and $d$ with $g$, which gives $t = ce + dg$.)
+
 That's **8 multiplications** of $(n/2) \times (n/2)$ submatrices, done recursively, plus **4 additions** of $(n/2) \times (n/2)$ submatrices. Adding two such matrices touches each of their $n^2/4$ entries once, so the additions cost $\Theta(n^2)$.
 
 $$

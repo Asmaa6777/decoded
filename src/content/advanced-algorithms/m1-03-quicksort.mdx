@@ -58,6 +58,25 @@ Step through the lecture's example, `6 10 13 5 8 3 2 11`. Watch the labels under
 
 <QuicksortVisualizer initial={[6, 10, 13, 5, 8, 3, 2, 11]} />
 
+The same run on paper. The pivot is $x = 6$. Only the steps where `A[j] ≤ 6` change anything:
+
+| Step | `j` sees | Array after the step | `i` |
+| --- | ---: | --- | ---: |
+| start | | `6 10 13 5 8 3 2 11` | 1 |
+| 10 and 13 are bigger | | nothing moves | 1 |
+| swap $A[2] \leftrightarrow A[4]$ | 5 | `6 5 13 10 8 3 2 11` | 2 |
+| 8 is bigger | | nothing moves | 2 |
+| swap $A[3] \leftrightarrow A[6]$ | 3 | `6 5 3 10 8 13 2 11` | 3 |
+| swap $A[4] \leftrightarrow A[7]$ | 2 | `6 5 3 2 8 13 10 11` | 4 |
+| 11 is bigger | | nothing moves | 4 |
+| last line: swap $A[1] \leftrightarrow A[4]$ | | `2 5 3 6 8 13 10 11` | 4 |
+
+(Positions count from 1, as in the pseudocode.) PARTITION returns 4: the pivot 6 is in its final place, with `2 5 3` on its left and `8 13 10 11` on its right.
+
+<Callout tone="sky" label="Two partition schemes, two names">
+This PARTITION, with one pointer `i` that marks the end of the small part, is usually called **Lomuto's partition**. Quicksort's inventor, Hoare, used a different one: two pointers that start at both ends and walk towards each other, swapping pairs that are on the wrong side. Algorithm Design and Analysis teaches [that version](/courses/algorithm-design-and-analysis/quick-sort#partitioning-with-two-pointers). Both run in $\Theta(n)$ and both work with quicksort; Hoare's makes fewer swaps.
+</Callout>
+
 ## Pseudocode for quicksort
 
 ```text

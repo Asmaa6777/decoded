@@ -7,7 +7,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
 - [x] 1. Skeleton (whole course)
 - [ ] 2. Source fidelity
   - [x] M0
-  - [ ] M1
+  - [x] M1
   - [ ] M2
   - [ ] M3
   - [ ] M4
@@ -70,5 +70,27 @@ Commit 08c1597. Checked lectures 1 to 3 and labs 1 to 3 against lessons m0-01 to
 - Lecture 2: Experiment 2's percentages are slightly off (92.34% at n = 100; correct is 92.51%); 2¹⁰⁰⁰ is given as 10³⁰⁰.
 
 **Found but not fixed:** the binary-search substitution proof needs n₀ = 2, since lg 1 = 0 (round 3).
+
+**Not checked:** no browser check; no visualizers changed.
+
+### Round 2, source fidelity: M1 Divide and Conquer
+
+Checked lectures 4 to 7 and lab 4 against lessons m1-01 to m1-05.
+
+**Already covered:** the three D&C steps; the master theorem with the lg^k n case; merge sort, binary search (find 9 in 3 5 7 8 9 12 15), powering, the four Fibonacci methods and the matrix theorem with its proof; standard, 8-multiplication and Strassen matrix multiplication with the r check; VLSI and the H-tree. Lab 4's four recursion trees, the geometric-sum derivation, Gauss multiplication and its recurrence, the lab task and all three exercises. Quicksort's PARTITION, invariant, worst/best/1:9/alternating cases, randomized quicksort and the full expectation proof. Decision trees (9, 4, 6), the n lg n lower bound with Stirling, counting sort, stability, radix sort, its correctness proof, choosing r, and the punched-card appendix. RAND-SELECT, its expected-time proof, and median of medians with the n ≥ 50 simplification.
+
+**Changed:**
+- m1-02: gave both names, Gauss method and Karatsuba's algorithm; said the lab's "two real numbers" means integers, with how to scale decimals.
+- m1-03: the partition of 6 10 13 5 8 3 2 11 written out row by row (it was only in the visualizer); named the scheme (Lomuto's) and linked Hoare's two-pointer version in Algorithm Design and Analysis.
+- m1-04: counting sort's C after each loop and loop 4 step by step; radix sort's three passes as a table, with the stable tie pointed out. Both checked in Python.
+- m1-05: why the naive method sorts with merge sort or heapsort and not quicksort; finished the select example (answer 11).
+- m1-01: noted the slide frame with t and u swapped.
+
+**Source errors:**
+- Lecture 4: one animation frame shows t = ce + dh and u = cf + dg (should be ce + dg and cf + dh).
+- Lab 4: the task says "two real numbers"; the method works on integers.
+- Lecture 5 credits quicksort to Hoare, but its PARTITION is Lomuto's scheme (not an error, but the two get confused).
+
+**Found but not fixed:** m1-04 says Hollerith's most-significant-digit-first idea was bad but not why (round 3). m1-05's example uses the first element as pivot although RAND-SELECT picks at random; the slides do the same.
 
 **Not checked:** no browser check; no visualizers changed.

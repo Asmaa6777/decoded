@@ -97,6 +97,21 @@ Step through the lecture's example, $A = \langle 4, 1, 3, 4, 3 \rangle$ with $k 
 
 <CountingSortVisualizer A={[4, 1, 3, 4, 3]} k={4} />
 
+On paper, $C = [C[1], C[2], C[3], C[4]]$ goes like this:
+
+- After loop 2 (counts): $C = [1, 0, 2, 2]$: one 1, no 2s, two 3s, two 4s.
+- After loop 3 (running totals): $C = [1, 1, 3, 5]$.
+
+Loop 4, from $j = 5$ down to 1:
+
+| $j$ | $A[j]$ | goes to $B[\,C[A[j]]\,]$ | $B$ after | $C$ after |
+| ---: | ---: | --- | --- | --- |
+| 5 | 3 | $B[3]$ | `_ _ 3 _ _` | $[1, 1, 2, 5]$ |
+| 4 | 4 | $B[5]$ | `_ _ 3 _ 4` | $[1, 1, 2, 4]$ |
+| 3 | 3 | $B[2]$ | `_ 3 3 _ 4` | $[1, 1, 1, 4]$ |
+| 2 | 1 | $B[1]$ | `1 3 3 _ 4` | $[0, 1, 1, 4]$ |
+| 1 | 4 | $B[4]$ | `1 3 3 4 4` | $[0, 1, 1, 3]$ |
+
 #### Analysis
 
 | Loop | Cost |
@@ -139,6 +154,18 @@ Counting sort is a **stable** sort: it keeps the input order among equal element
 Step through the lecture's example. Each pass sorts on one column, from right to left:
 
 <RadixSortVisualizer input={[329, 457, 657, 839, 436, 720, 355]} />
+
+| input | after the ones digit | after the tens digit | after the hundreds digit |
+| ---: | ---: | ---: | ---: |
+| 329 | 720 | 720 | 329 |
+| 457 | 355 | 329 | 355 |
+| 657 | 436 | 436 | 436 |
+| 839 | 457 | 839 | 457 |
+| 436 | 657 | 355 | 657 |
+| 720 | 329 | 457 | 720 |
+| 355 | 839 | 657 | 839 |
+
+Look at the tens pass: 720 and 329 both have tens digit 2, and 720 stays first because it was first after the ones pass. That's the stable sort at work.
 
 ### Correctness of radix sort
 
