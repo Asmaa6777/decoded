@@ -188,6 +188,24 @@ describe("mstFrames", () => {
     const k = mstFrames("kruskal", 6, edges);
     expect(k[k.length - 1].state.rejected.length).toBeGreaterThan(0);
   });
+
+  it("follows the notes' a to f example in their order, with letter names", () => {
+    // a b c d e f = 0..5; ties are listed in the order the notes break them
+    const notes = [
+      { from: 0, to: 1, weight: 3 }, { from: 1, to: 2, weight: 1 }, { from: 1, to: 5, weight: 4 },
+      { from: 2, to: 5, weight: 4 }, { from: 0, to: 5, weight: 5 }, { from: 5, to: 3, weight: 5 },
+      { from: 0, to: 4, weight: 6 }, { from: 2, to: 3, weight: 6 }, { from: 5, to: 4, weight: 2 },
+      { from: 4, to: 3, weight: 8 },
+    ];
+    const names = ["a", "b", "c", "d", "e", "f"];
+    const p = mstFrames("prim", 6, notes, names);
+    const k = mstFrames("kruskal", 6, notes, names);
+    expect(p.at(-1)!.state.total).toBe(15);
+    expect(p.at(-1)!.state.accepted).toEqual([0, 1, 2, 8, 5]); // ab, bc, bf, fe, fd
+    expect(k.at(-1)!.state.accepted).toEqual([1, 8, 0, 2, 5]); // bc, ef, ab, bf, df
+    expect(k.at(-1)!.state.rejected).toEqual([3, 4]); // cf, af
+    expect(p[0].message).toBe("Start the tree at node a.");
+  });
 });
 
 describe("knapsackFrames", () => {
@@ -203,6 +221,19 @@ describe("knapsackFrames", () => {
     expect(last.table[4][5]).toBe(37);
     expect([...last.chosen].sort()).toEqual([0, 1, 3]);
     f.forEach((fr) => expect(fr.line).toBeLessThan(JAVA_KNAPSACK.length));
+  });
+
+  it("solves the notes' example (answer 140: items 1 and 4)", () => {
+    const items = [
+      { name: "item 1", weight: 3, value: 100 },
+      { name: "item 2", weight: 2, value: 20 },
+      { name: "item 3", weight: 4, value: 60 },
+      { name: "item 4", weight: 1, value: 40 },
+    ];
+    const last = knapsackFrames(items, 5).at(-1)!.state;
+    expect(last.table[3]).toEqual([0, 0, 20, 100, 100, 120]);
+    expect(last.table[4][5]).toBe(140);
+    expect([...last.chosen].sort()).toEqual([0, 3]);
   });
 });
 
