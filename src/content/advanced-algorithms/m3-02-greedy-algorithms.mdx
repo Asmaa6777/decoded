@@ -144,6 +144,30 @@ where $\text{choice}(n)$ is the cost of making one choice among $n$ objects.
 - **Kruskal's algorithm** for a minimum spanning tree: it always tries the **lowest-cost remaining edge**.
 - **Prim's algorithm** for a minimum spanning tree: it always takes the lowest-cost edge between nodes **in** the tree and nodes **not yet** in the tree.
 
+## Two exercises
+
+**1. Connecting wires.** There are $n$ white dots and $n$ black dots, equally spaced on a line. Connect each white dot to one black dot, using as little wire in total as possible. Is there a greedy algorithm? Does it always give the best answer?
+
+<details>
+<summary>Answer</summary>
+
+The obvious greedy choice, "connect each white dot, from left to right, to the **nearest** free black dot", can fail. Take `B B W W W B` (positions 0 to 5). The first white (at 2) takes the black at 1. The second white (at 3) takes the black at 5, which is now nearer than the one at 0. The last white (at 4) has to go all the way back to 0. Total: $1 + 2 + 4 = 7$.
+
+A greedy rule that **does** always work: connect the 1st white from the left to the 1st black from the left, the 2nd to the 2nd, and so on. Here that's $2{\to}0$, $3{\to}1$, $4{\to}5$, for $2 + 2 + 1 = 5$. (If two wires cross, swapping their black ends never makes the total longer, so some best answer has no crossings, and that one pairs the dots in order.)
+
+</details>
+
+**2. Collecting coins.** A checkerboard has coins on some cells. A robot starts in the upper-left corner, can only move right or down, and collects every coin it passes on its way to the bottom-right corner. Collect all the coins with as **few robots** as possible.
+
+<details>
+<summary>Answer</summary>
+
+Send the robots out one at a time. Each robot goes row by row: in its current row it moves right to the **last** coin still left at or to the right of its column, collecting everything on the way, then goes down one row. When a robot reaches the bottom, send the next one, until no coins are left.
+
+This greedy rule is optimal: each robot takes every coin it could possibly reach without giving up a later one. We checked it by brute force against the best possible answer on 300 random boards.
+
+</details>
+
 <ApplicationsGrid>
   <PracticalApplication title="Cash registers and vending machines" tool="CHANGE-MAKING">
     Real currencies are designed so that greedy change-making is optimal. That's why a till can hand out the fewest coins without any clever computation.

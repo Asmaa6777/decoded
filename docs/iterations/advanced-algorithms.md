@@ -9,7 +9,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M0
   - [x] M1
   - [x] M2
-  - [ ] M3
+  - [x] M3
   - [ ] M4
 - [ ] 3. Depth
   - [ ] M0
@@ -116,3 +116,21 @@ Checked lectures 8 to 13 and labs 5.1 and 5.2 against lessons m2-01 to m2-07.
 **Found but not fixed:** the mid-square method has no worked example in the notes or the lesson (round 3 could add one). The hash visualizer has no running probe total, which the comparison exercise would use (round 5).
 
 **Not checked:** no browser check of the new visualizer instances.
+
+### Round 2, source fidelity: M3 Design Strategies
+
+Checked lectures 14 to 19 against lessons m3-01 to m3-05 (lecture 19 is only a Dijkstra table on A to G).
+
+**Already covered:** DP's main idea and Bellman; Fibonacci bottom-up; coin-row (5 1 2 10 6 2, answer 17, coins, time and space); binomial coefficients; the robot board; LCS (president/providence → priden, algorithm/alignment → algm); 0-1 knapsack with the pseudocode and backtracking. Greedy: the algorithm categories, counting money ($6.39, krons), the three scheduling answers (35, 40, 34), Huffman's 2.42 bits/char, MST, the travelling salesman, the analysis and other greedy algorithms. Graph representations and the handshaking lemma, optimal substructure and the greedy-choice theorem with cut-and-paste proofs, Prim with its heap table, safe and light edges, cuts, Kruskal with its O(E lg E) analysis, greedy vs. DP, the design steps, prefix codes, full binary trees, HUFFMAN with both proofs, activity selection. Dijkstra's properties, the A to E example, the A to G table, the three-part correctness proof, the analysis, and BFS as Dijkstra with a FIFO queue.
+
+**Changed:**
+- m3-01: the C(6, 3) table (answer 20) and the full knapsack table, with the slide's "?" at V[4, 2] worked out (15). Both checked in Python.
+- m3-02: the lecture's two open exercises, connecting wires and collecting coins with the fewest robots, with answers. A brute-force search found the counterexample to "nearest free dot" (B B W W W B: 7 vs 5) and confirmed the row-by-row robot rule on 300 random boards.
+- m3-03: both MST visualizers now run the lecture's Prim graph (a to h, total 53; read from the slide image) instead of a made-up one, with Prim's and Kruskal's edge orders written out. A test checks the total and both orders.
+- m3-05: the lecture's directed BFS example (a to i), dequeued step by step to `a b d c e g i f h`. A test runs the library's directed BFS on it.
+
+**Source errors:** none new in the content. Lecture 15's travelling-salesman costs (16 vs 14) and the scheduling answers were rechecked and are right.
+
+**Found but not fixed (round 5):** `GraphTraversal` can't draw directed graphs or letter labels in its queue, so the BFS example has a table but no visualizer. The robot DP visualizer's board wasn't compared with the slide images (slides 17 to 19 are pictures).
+
+**Not checked:** no browser check of the new MST graph layout.

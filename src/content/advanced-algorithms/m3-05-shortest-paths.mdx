@@ -204,6 +204,26 @@ while Q ≠ ∅
 
 **Analysis:** time $= O(V + E)$.
 
+**The lecture's example** is a *directed* graph on $a$ to $i$, with these edges:
+
+$a \to b,\ a \to d,\ b \to c,\ b \to e,\ d \to b,\ d \to e,\ e \to c,\ e \to g,\ e \to i,\ f \to d,\ f \to h,\ g \to f,\ g \to i,\ h \to g,\ i \to h$
+
+Start at $a$ with $d[a] = 0$. Each vertex that comes off the queue gives distance $d[u] + 1$ to every neighbour still at $\infty$:
+
+| dequeue $u$ | new vertices, with $d$ | queue afterwards |
+| --- | --- | --- |
+| | $a = 0$ | `a` |
+| $a$ (0) | $b = 1$, $d = 1$ | `b d` |
+| $b$ (1) | $c = 2$, $e = 2$ | `d c e` |
+| $d$ (1) | none: $b$ and $e$ already have a distance | `c e` |
+| $c$ (2) | none: $c$ has no outgoing edges | `e` |
+| $e$ (2) | $g = 3$, $i = 3$ | `g i` |
+| $g$ (3) | $f = 4$ | `i f` |
+| $i$ (3) | $h = 4$ | `f h` |
+| $f$ (4), $h$ (4) | none | empty |
+
+The vertices come out in the order `a b d c e g i f h`, with distances 0, 1, 1, 2, 2, 3, 3, 4, 4: never going down, exactly as Dijkstra would take them. Note that $f$ is at distance 4 even though the edge $f \to d$ touches $d$: edges only count in their own direction.
+
 You met BFS in the first algorithms course. Here it is again. Its level-by-level order is Dijkstra's order, when every edge weighs 1:
 
 <GraphTraversal algorithm="bfs" />
