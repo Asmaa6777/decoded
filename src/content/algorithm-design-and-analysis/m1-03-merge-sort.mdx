@@ -15,7 +15,7 @@ Three steps:
 2. **Conquer** each subproblem by solving it recursively. Once a subproblem is small enough, solve it directly. That's the **base case**.
 3. **Combine** the sub-solutions into a solution for the whole problem.
 
-If that sounds like recursion, it is. Divide and conquer is recursion where you make the problem smaller *in a way that makes combining cheap*.
+This is **recursion**: a method that solves a problem by calling itself on a smaller version of the same problem. Every recursive method needs a **base case**, an input small enough to answer directly, without calling itself again; otherwise it would call itself forever. Divide and conquer is recursion where you make the problem smaller *in a way that makes combining cheap*.
 
 The notes describe it twice. Once as two parts, **divide** (split into subproblems and solve them recursively) and **conquer** (build the answer from the sub-answers), and once as the three steps above. The two-part version folds "solve" into divide and calls the combine step "conquer". If an exam asks for the steps, give the three: divide, conquer, combine.
 
@@ -82,7 +82,7 @@ That's the notes' second example, 8, 3, 2, 9, 7, 1, 5, 4. By levels: the pairs m
 
 Look at the split diagram again as layers.
 
-- **How many layers?** Each layer halves the pieces. Starting from $n$, you can halve about $\log_2 n$ times before reaching size 1. For a million elements, that's only about 20 layers.
+- **How many layers?** Each layer halves the pieces. Starting from $n$, you can halve about $\log_2 n$ times before reaching size 1: that's what [a logarithm counts](/courses/algorithm-design-and-analysis/counting-steps#getting-the-big-o-without-the-algebra). With 8 elements, the pieces go 8 → 4 → 2 → 1, three layers, and $\log_2 8 = 3$. For a million elements, that's only about 20 layers.
 - **How much work per layer?** Every element gets merged exactly once on each layer. That's $O(n)$ work per layer.
 
 $$
@@ -95,6 +95,10 @@ Go back to the [growth table](/courses/algorithm-design-and-analysis/counting-st
 
 <Callout tone="orange" label="The price">
 Merge sort is **not in place**. The merge step needs a temporary array as big as the piece being merged, which is $O(n)$ extra memory. When memory is tight, that matters. ([Quick sort](/courses/algorithm-design-and-analysis/quick-sort#the-idea), next lesson, avoids it.)
+</Callout>
+
+<Callout tone="orange" label="Common mistakes in the merge">
+Two bugs show up in almost every first attempt. **Forgetting the leftovers:** the main loop stops when *one* half runs out, and without the two `while` loops after it, the rest of the other half is never copied. **Writing `<` instead of `<=`:** on equal values it takes from the right half first, which still sorts correctly but makes merge sort unstable.
 </Callout>
 
 Two more properties:
