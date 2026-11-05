@@ -9,7 +9,7 @@ The goal of analysis is to **compare algorithms**, mainly by running time, but a
 
 ## Why not just time it?
 
-You could time both programs with a stopwatch, and you'll do exactly that in the next lesson. But a stopwatch measures your laptop, your JVM, whatever else is running, and the one input you happened to try. On a faster machine the numbers change even though the *algorithm* stayed the same.
+You could time both programs with a stopwatch, and you'll do exactly that in the next lesson. But a stopwatch measures your laptop, your JVM (the Java Virtual Machine, the program that runs Java code), whatever else is running, and the one input you happened to try. On a faster machine the numbers change even though the *algorithm* stayed the same.
 
 So instead of seconds, we count **steps**:
 
@@ -18,7 +18,7 @@ So instead of seconds, we count **steps**:
   - for a polynomial, its degree;
   - for a matrix, the number of elements in it;
   - for a graph, the number of vertices and edges;
-  - for a single number, such as when testing whether it's prime, the number of bits in its binary representation.
+  - for a single number, such as when testing whether it's prime, the number of bits in its binary representation. The work depends on how long the number is to write down, not on its value: 1,000,000 needs 20 bits, and a number twice as long in bits is about a million times bigger.
 - **The basic operation** (also called the **key operation**). The operation that contributes most to the running time: the step that does the real work and runs most often. In a sorting algorithm it's usually a comparison (`a[j] < a[min]`); otherwise it's often an assignment inside the innermost loop.
 - **Count how many times the basic operation runs, as a function of $n$.**
 
@@ -70,11 +70,13 @@ The worst case gives an **upper bound** on the running time, and the best case g
 
 Assume every case is equally likely: `x` is at position 1, or position 2, …, or position $n$, or not in the array at all. That's $n + 1$ cases. Count the comparisons in each, add them up, and divide by $n + 1$:
 
-- `x` at position $i$ takes $i$ comparisons. Positions 1 to $n$ together take $1 + 2 + \cdots + n = \frac{n(n+1)}{2}$.
+- `x` at position $i$ takes $i$ comparisons. Positions 1 to $n$ together take $1 + 2 + \cdots + n = \frac{n(n+1)}{2}$. (Why: pair the first term with the last, $1 + n$, the second with the second-to-last, $2 + (n-1)$, and so on. Every pair adds up to $n + 1$, and there are $n/2$ pairs.)
 - `x` missing takes $n$ comparisons.
 
+Add them and divide by the $n + 1$ cases. Split the fraction into its two parts, and the first part's $(n + 1)$ cancels:
+
 $$
-\text{average} = \frac{\frac{n(n+1)}{2} + n}{n + 1} = \frac{n}{2} + \frac{n}{n+1}
+\text{average} = \frac{\frac{n(n+1)}{2} + n}{n + 1} = \frac{\frac{n(n+1)}{2}}{n+1} + \frac{n}{n+1} = \frac{n}{2} + \frac{n}{n+1}
 $$
 
 The second term is always just under 1, so the average is a little under $\frac{n}{2} + 1$. For the 9-element array above: $\frac{45 + 9}{10} = 5.4$ comparisons. It still grows in proportion to $n$, so the average case is linear too.
@@ -109,6 +111,10 @@ $$
 
 Read it as *"it grows no faster than $g$."* People use Big-O for the **worst case**.
 
+The two letters in the definition are the room it gives you. $c$ is a constant multiplier, so constant factors don't count. $n_0$ is a starting point, so small inputs don't count. To show $3n + 10 = O(n)$, find any $c$ and $n_0$ that work. Try $c = 4$: is $3n + 10 \le 4n$? Subtract $3n$ from both sides: $10 \le n$. So it holds for every $n \ge 10$, and $c = 4$, $n_0 = 10$ prove it. For $n = 5$ it fails ($25 \gt 20$), which is fine, because $n_0$ says we only care from 10 on.
+
+The same trick fails for $n^2 = O(n)$: you'd need $n^2 \le c \cdot n$, which means $n \le c$, and that breaks as soon as $n$ passes whatever $c$ you picked. No constant is big enough, so $n^2$ is **not** $O(n)$.
+
 Big-O is the notation you'll use most, for three reasons. It lets you **compare algorithms** and pick the most efficient one for a problem. It **predicts performance** on large inputs you haven't tried. And it **classifies** algorithms into the groups in the table further down.
 
 **Omega (Ω) is a lower bound.** $T(n) = \Omega(g(n))$ means $T(n)$ is at least $c \cdot g(n)$ for large $n$: *"it grows at least as fast as $g$."* It's often used for the **best case**.
@@ -119,7 +125,7 @@ $$
 c_1 \cdot g(n) \le T(n) \le c_2 \cdot g(n) \quad \text{for all } n \ge n_0
 $$
 
-*"It grows exactly like $g$."*
+*"It grows exactly like $g$."* For example, $3n + 10 = \Theta(n)$: it's at least $3n$ for every $n$ (so $c_1 = 3$) and at most $4n$ from $n = 10$ on (so $c_2 = 4$, $n_0 = 10$).
 
 <Callout tone="violet" label="The everyday version">
 In practice, people say "Big-O" for everything and mean "how it grows in the worst case." That's fine in conversation. On an exam, be precise: O is ≤, Ω is ≥, Θ is both.
@@ -158,6 +164,12 @@ for (int i = 0; i < n; i++)       // n
 
 $T(n) = c_0 + c_1 n^2$, so **$O(n^2)$**.
 
+Two of the classes below need a word first.
+
+**Logarithm.** $\log_2 n$ answers: how many times can you halve $n$ before you reach 1? $\log_2 8 = 3$, because $8 \to 4 \to 2 \to 1$ is three halvings. $\log_2 1024 = 10$, and $\log_2$ of a million is about 20. It grows extremely slowly, which is why algorithms that halve the problem at each step, like binary search, are so fast. In Big-O the base doesn't matter (changing the base only multiplies by a constant), so people just write $\log n$.
+
+**Exponential and factorial.** $2^n$ doubles every time $n$ grows by one: it's the number of subsets of $n$ items, since each item is either in or out. $n! = n \times (n-1) \times \cdots \times 1$ is the number of orders to put $n$ items in. Both explode: $2^{30}$ is over a billion, and $20!$ is over $10^{18}$.
+
 The common classes, from fastest to slowest:
 
 | Class | Name | Typical example |
@@ -172,6 +184,10 @@ The common classes, from fastest to slowest:
 | $O(n!)$ | factorial | trying every order (brute-force Traveling Salesman) |
 
 "Linear" means the running time grows **in direct proportion** to the input. Double the input and you double the time.
+
+<Callout tone="orange" label="Common mistake: leaving extra terms in">
+Answers like $O(3n)$, $O(n^2 + n)$ or $O(\frac{n}{2})$ aren't wrong as bounds, but they aren't simplified, and exams expect the simplest form: $O(n)$, $O(n^2)$, $O(n)$. The point of Big-O is to name the class from the table, so apply the two rules above until only one term is left, with no constant in front.
+</Callout>
 
 ## A worked example
 
