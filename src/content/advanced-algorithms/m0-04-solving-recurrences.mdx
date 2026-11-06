@@ -1,10 +1,10 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SearchVisualizer } from "@/components/mdx/AlgoVisualizers";
 import { RecurrenceExplorer } from "@/components/mdx/AdvancedVisualizers";
 
 # Solving Recurrences
 
-A **recurrence** is an equation (or inequality) that describes a function in terms of its value on smaller inputs:
+A **recurrence** is an equation (or inequality) that describes a function using its own values on smaller inputs:
 
 $$
 T(n) = T(n-1) + n
@@ -59,7 +59,7 @@ $$
 Turn the recurrence into a summation, then bound it using a series you know.
 
 - **Iterate** (expand) the recurrence until you hit the initial condition.
-- **Back-substitute** to write it in terms of $n$ and the base case.
+- **Back-substitute** to write it using only $n$ and the base case.
 
 **Example: $T(n) = c + T(n/2)$.** Apply the same rule to $T(n/2)$, then to $T(n/4)$, and so on:
 
@@ -72,7 +72,7 @@ T(n) &= c + T(n/2) && T(n/2) = c + T(n/4) \\
 \end{aligned}
 $$
 
-Assume $n = 2^k$. After $k$ steps you reach $T(1)$:
+Assume $n = 2^k$, so that halving always gives a whole number all the way down (for other $n$, the rounding changes only the constant, not the growth). Then $k = \lg n$, and after $k$ steps you reach $T(1)$:
 
 $$
 T(n) = \underbrace{c + c + \dots + c}_{k \text{ times}} + T(1) = c \lg n + T(1) = \Theta(\lg n)
@@ -102,7 +102,7 @@ Two steps:
 To prove $T(n) = O(g(n))$:
 
 - **Induction goal:** $T(n) \le d\,g(n)$ for some constant $d > 0$ and all $n \ge n_0$. That's just the definition of [Big-O](/courses/advanced-algorithms/asymptotic-notation#big-o).
-- **Induction hypothesis:** $T(k) \le d\,g(k)$ for all $k < n$. (This is *strong* induction: we assume it for every smaller value.)
+- **Induction hypothesis:** $T(k) \le d\,g(k)$ for all $k < n$. (This is [*strong* induction](/courses/discrete-mathematics/induction#strong-induction): we assume it for every smaller value.)
 - **Prove the goal:** plug the hypothesis into the recurrence and find values of $d$ and $n_0$ that make it work.
 
 **Example: binary search, $T(n) = 1 + T(n/2)$.** Guess $T(n) = O(\lg n)$.
@@ -116,6 +116,8 @@ T(n) = T(n/2) + 1 \le c \lg(n/2) + 1 = c \lg n - c + 1 \le c \lg n
 $$
 
 The last step needs $-c + 1 \le 0$, which means $c \ge 1$. ✓
+
+**Don't forget the base case.** Induction also needs a starting point, and $n = 1$ doesn't work here: $T(1) = 1$, but $c \lg 1 = 0$. That's what $n_0$ is for. Start at $n_0 = 2$: $T(2) = 1 + T(1) = 2 \le c \lg 2 = c$ holds for $c \ge 2$. With $c = 2$ both the base case and the step work, so $T(n) \le 2 \lg n$ for all $n \ge 2$.
 
 **Example: $T(n) = T(n-1) + n$.** Guess $T(n) = O(n^2)$.
 
@@ -198,9 +200,146 @@ It means: split the problem into $a$ subproblems of size $n/b$, and spend $f(n)$
 
 **$T(n) = 2T(n/2) + n \lg n$.** Compare $n$ with $n \lg n$. It *seems* like Case 3 should apply, but $f(n)$ must be bigger by a **polynomial** factor $n^\varepsilon$. Here it's only bigger by a factor of $\lg n$, which grows slower than any $n^\varepsilon$. So **the master method doesn't apply.** It falls into the gap between Case 2 and Case 3. (Use a recursion tree instead: you get $\Theta(n \lg^2 n)$.) Try it as the last preset in the explorer above.
 
+<Callout tone="orange" label="Three usual slips with the master method">
+- **Mixing up $a$ and $b$.** In $T(n) = 4T(n/2) + n$, $a = 4$ (how many calls) and $b = 2$ (how much smaller each one is). So $n^{\log_b a} = n^{\log_2 4} = n^2$, which beats $f(n) = n$: Case 1, $\Theta(n^2)$. Swapping them gives $\log_4 2 = \frac12$ and a wrong answer.
+- **Skipping the regularity check in Case 3.** It's part of the case. It usually holds, but you have to say so.
+- **Calling a log factor "polynomially bigger".** $n \lg n$ is bigger than $n$, but not by any $n^\varepsilon$. So neither Case 1 nor Case 3 applies (see the last worked example above).
+</Callout>
+
 <Callout tone="sky" label="When the master method can't help">
 It only works for the exact shape $aT(n/b) + f(n)$. It can't solve:
 
 - $T(n) = T(n-1) + n$, where the problem shrinks by subtraction, not division. Use iteration.
 - $T(n) = 2T(n/4) + T(n/2) + n$, where the subproblems have different sizes. Use a recursion tree.
 </Callout>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterms 2016, 2017, 2018, 2024; also asked on finals)* Use the master method to solve:
+(a) $T(n) = 4T(n/2) + n$, (b) $T(n) = 4T(n/2) + n^2$, (c) $T(n) = 4T(n/2) + n^3$.
+
+<ModelAnswer>
+In all three, $a = 4$ and $b = 2$, so $n^{\log_b a} = n^{\log_2 4} = n^2$.
+
+- (a) $f(n) = n = O(n^{2 - \varepsilon})$ with $\varepsilon = 1$: **Case 1**, $T(n) = \Theta(n^2)$.
+- (b) $f(n) = n^2 = \Theta(n^2)$: **Case 2**, $T(n) = \Theta(n^2 \lg n)$.
+- (c) $f(n) = n^3 = \Omega(n^{2 + \varepsilon})$ with $\varepsilon = 1$, and regularity holds: $4(n/2)^3 = \frac12 n^3 \le c\,n^3$ with $c = \frac12$. **Case 3**, $T(n) = \Theta(n^3)$.
+
+(Some papers write $2n$ instead of $n$ in (a); the constant doesn't change the answer.)
+</ModelAnswer>
+
+**2.** *(Midterms 2019, 2020, and an undated one)* Solve: (a) $T(n) = T(n/2) + n$, (b) $T(n) = T(n/2) + 1$, (c) $T(n) = 4T(n/4) + 1$, (d) $T(n) = 4T(n/4) + n$, (e) $T(n) = 2T(n/2) + n$.
+
+<ModelAnswer>
+| | $a$, $b$ | $n^{\log_b a}$ | $f(n)$ | case | $T(n)$ |
+| --- | --- | --- | --- | --- | --- |
+| (a) | 1, 2 | $1$ | $n$ | 3 (regularity: $\frac{n}{2} \le \frac12 n$) | $\Theta(n)$ |
+| (b) | 1, 2 | $1$ | $1$ | 2 | $\Theta(\lg n)$ |
+| (c) | 4, 4 | $n$ | $1$ | 1 | $\Theta(n)$ |
+| (d) | 4, 4 | $n$ | $n$ | 2 | $\Theta(n \lg n)$ |
+| (e) | 2, 2 | $n$ | $n$ | 2 | $\Theta(n \lg n)$ |
+
+When a paper asks for a **recursion tree** instead, the same answers come out. In (c) the level costs grow ($1, 4, 16, \dots$), so the $n$ leaves dominate. In (d) and (e) every level costs $n$, and there are $\log_4 n$ and $\lg n$ levels.
+</ModelAnswer>
+
+**3.** *(Midterm 2021)* Solve $T(n) = 2T(n/4) + \sqrt{n}$ with the master method.
+
+<ModelAnswer>
+$a = 2$ and $b = 4$, so $n^{\log_4 2} = n^{1/2} = \sqrt n$. That equals $f(n)$: **Case 2**, $T(n) = \Theta(\sqrt n \lg n)$.
+</ModelAnswer>
+
+**4.** *(Midterms 2016, 2017, 2024)* Compute $T(64)$, where $T(1) = 50$ and $T(n) = 4T(n/8) + 2n$.
+
+<ModelAnswer>
+Work up from the base case: $64 \to 8 \to 1$.
+
+- $T(8) = 4\,T(1) + 2 \cdot 8 = 4 \cdot 50 + 16 = 216$
+- $T(64) = 4\,T(8) + 2 \cdot 64 = 4 \cdot 216 + 128 = 992$
+
+**$T(64) = 992$.**
+</ModelAnswer>
+
+**5.** *(Midterm 2023)* (a) Solve $T(n) = 4T(n/2) + cn$ with a recursion tree. (b) Solve $T(n) = 2T(n/2) + 4n$ with the iteration method.
+
+<ModelAnswer>
+**(a)** Level $i$ has $4^i$ nodes of size $n/2^i$, each costing $c\,n/2^i$, so level $i$ costs $4^i \cdot \frac{cn}{2^i} = cn\,2^i$. The costs double going down, so the leaves win. With $\lg n$ levels:
+
+$$
+T(n) = cn\,(1 + 2 + 4 + \dots + 2^{\lg n}) \approx cn \cdot 2n = \Theta(n^2)
+$$
+
+**(b)** With $n = 2^k$:
+
+$$
+\begin{aligned}
+T(n) &= 4n + 2T(n/2) = 4n + 4n + 4T(n/4) = \dots \\
+     &= 4n \cdot k + 2^k T(1) = 4n \lg n + n\,T(1) = \Theta(n \lg n)
+\end{aligned}
+$$
+</ModelAnswer>
+
+**6.** *(Midterm 2022, true or false)* (a) If $T(n) = 10T(n/3) + n^3$, then $T(n) = O(n^3)$. (b) The solution of $T(n) = 4T(n/2) + O(n)$ is $\Theta(n^3)$.
+
+<ModelAnswer>
+**(a) True.** $n^{\log_3 10} \approx n^{2.096}$, and $n^3$ is polynomially bigger, so Case 3 gives $\Theta(n^3)$. Regularity: $10(n/3)^3 = \frac{10}{27}n^3$.
+
+**(b) False.** $n^{\log_2 4} = n^2$ beats $n$, so Case 1 gives $\Theta(n^2)$, not $n^3$.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+**7.** *(Final 2018, and an exam-examples sheet)* Compute $T(512)$, where $T(1) = 5$ and $T(n) = 8T(n/8) + n$.
+
+<ModelAnswer>
+$512 \to 64 \to 8 \to 1$:
+
+- $T(8) = 8 \cdot 5 + 8 = 48$
+- $T(64) = 8 \cdot 48 + 64 = 448$
+- $T(512) = 8 \cdot 448 + 512 = 4096$
+
+**$T(512) = 4096$.** A check: the master method gives $\Theta(n \lg n)$, and indeed $4096 = 512 \cdot 3 + 512 \cdot 5$, which is $n \log_8 n + n\,T(1)$.
+</ModelAnswer>
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="solving-recurrences"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final 2026) If T(n) = 3T(n/2) + n, then T(n) is:",
+      options: [
+        { id: "a", text: "Θ(n)" },
+        { id: "b", text: "Θ(n log n)" },
+        { id: "c", text: "Θ(n^(log₂ 3)), about n^1.58" },
+        { id: "d", text: "Θ(n²)" },
+      ],
+      correctOptionId: "c",
+      explanation: "n^(log₂ 3) ≈ n^1.585 is polynomially bigger than f(n) = n, so Case 1: the leaves win. This is the Gauss (Karatsuba) recurrence.",
+    },
+    {
+      id: "f2",
+      prompt: "(Final, true or false) The master method can solve every recurrence of the form T(n) = aT(n/b) + f(n).",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "b",
+      explanation: "There are gaps. T(n) = 2T(n/2) + n lg n has f(n) bigger than n, but not by a polynomial factor, so no case applies.",
+    },
+    {
+      id: "f3",
+      prompt: "(Final 2026) The master theorem is used to solve:",
+      options: [
+        { id: "a", text: "Loops" },
+        { id: "b", text: "Recurrence relations" },
+        { id: "c", text: "Sorting" },
+        { id: "d", text: "Searching" },
+      ],
+      correctOptionId: "b",
+      explanation: "It solves recurrences of the form T(n) = aT(n/b) + f(n), the shape divide-and-conquer algorithms produce.",
+    },
+  ]}
+/>

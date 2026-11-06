@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES, dijkstraFrames, parseCNF, truthTable, findClique, cliqueGraph } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, expectedProbes, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES, dijkstraFrames, parseCNF, truthTable, findClique, cliqueGraph } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -101,6 +101,49 @@ describe("analysis helpers", () => {
     const last = minMaxFrames([11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1]).at(-1)!;
     expect([last.state.min, last.state.max]).toEqual([0, 21]);
     expect(last.stats.comparisons).toBe(22);
+  });
+
+  it("runs Algorithm 2 (merge the pairs) to the lesson's corrected rows", () => {
+    const f = minMaxMergeFrames([11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1]);
+    const last = f.at(-1)!;
+    expect(last.stats.comparisons).toBe(22);
+    expect([last.state.min, last.state.max]).toEqual([0, 21]);
+    // the final row in m0-06's table, not the lab sheet's stale one
+    expect(last.state.array).toEqual([0, 7, 5, 9, 3, 5, 2, 11, 1, 8, 10, 13, 1, 4, 5, 21]);
+    for (let n = 2; n <= 64; n *= 2) {
+      const xs = Array.from({ length: n }, (_, i) => (i * 37 + 11) % 101);
+      const end = minMaxMergeFrames(xs).at(-1)!;
+      expect([end.state.min, end.state.max]).toEqual([Math.min(...xs), Math.max(...xs)]);
+      expect(end.stats.comparisons).toBe(1.5 * n - 2);
+    }
+  });
+
+  it("lays out the H-tree in Θ(n) area and the obvious tree in Θ(n lg n)", () => {
+    for (let k = 1; k <= 4; k++) {
+      const n = 4 ** k;
+      const h = hTreeLayout(k);
+      const p = plainTreeLayout(n);
+      // L(n) = 2L(n/4) + 1, leaves on distinct grid points inside the square
+      expect(h.side).toBe(2 ** (k + 1) - 1);
+      expect(new Set(h.leaves.map(([x, y]) => `${x},${y}`)).size).toBe(n);
+      expect(h.leaves.every(([x, y]) => x >= 0 && y >= 0 && x < h.side && y < h.side)).toBe(true);
+      // W(n) = 2n − 1, H(n) = lg n + 1, and n − 1 internal nodes with 2 wires each
+      expect([p.width, p.height]).toEqual([2 * n - 1, 2 * k + 1]);
+      expect(p.segs).toHaveLength(2 * (n - 1));
+      expect(h.area).toBeLessThan(p.area);
+    }
+    expect([plainTreeLayout(64).area, hTreeLayout(3).area]).toEqual([889, 225]);
+  });
+
+  it("counts the lab's probes (16, 23, 16) and the load-factor curve", () => {
+    const keys = [10, 22, 31, 4, 15, 28, 17, 88, 59].map((key) => ({ op: "insert" as const, key }));
+    const total = (cfg: HashConfig) => hashFrames(cfg, keys).at(-1)!.stats.probes;
+    expect(total({ mode: "linear", m: 11 } as HashConfig)).toBe(16);
+    expect(total({ mode: "quadratic", m: 11, c1: 1, c2: 3 } as HashConfig)).toBe(23);
+    expect(total({ mode: "double", m: 11, second: { kind: "mod", mp: 10 } } as HashConfig)).toBe(16);
+    expect(expectedProbes(0.5).open).toBeCloseTo(2);
+    expect(expectedProbes(0.9).open).toBeCloseTo(10);
+    expect(expectedProbes(0.5).chain).toBeCloseTo(1.5);
   });
 
   it("Strassen's 7 products match the usual 8", () => {

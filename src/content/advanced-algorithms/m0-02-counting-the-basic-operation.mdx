@@ -1,10 +1,10 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SearchVisualizer } from "@/components/mdx/AlgoVisualizers";
 import { FibonacciCalls } from "@/components/mdx/AdvancedVisualizers";
 
 # Counting the Basic Operation
 
-To analyze an algorithm without a stopwatch, we pick its **basic operation** (the instruction that does the real work, like a comparison) and count how many times it runs for an input of size $n$. In this lesson we do that for a handful of classic algorithms, then see that the count isn't always a single number.
+To analyze an algorithm without a stopwatch, we pick its **basic operation**: the instruction that does the real work, like a comparison. Then we count how many times it runs for an input of size $n$. In this lesson we do that for a handful of classic algorithms, then see that the count isn't always a single number.
 
 [Best, worst and average case](/courses/algorithm-design-and-analysis/counting-steps#best-worst-and-average-case) are introduced more gently in Algorithm Design and Analysis.
 
@@ -33,7 +33,7 @@ number sum(int n, const number S[]) {
 }
 ```
 
-**Exchange sort.** Sort `n` keys into nondecreasing order: compare each position with every position after it and swap if they're out of order.
+**Exchange sort.** Sort `n` keys into **nondecreasing** order (each key is less than or equal to the next: ascending, with equal keys allowed): compare each position with every position after it and swap if they're out of order.
 
 ```cpp
 void exchangesort(int n, keytype S[]) {
@@ -56,6 +56,10 @@ void matrixmult(int n, const number A[][N], const number B[][N], number C[][N]) 
         }
 }
 ```
+
+<Callout tone="sky" label="Two typos in some printed versions">
+Some copies of exchange sort show `j = i + l` (the letter l) instead of `j = i + 1`. Some copies of matrix multiplication show the outer loop as `for (i = 1; j <= n; j++)`, which tests and increments the wrong variable. The code above is corrected: each loop tests and increments its own index.
+</Callout>
 
 **Binary search.** If the array is *sorted*, look at the middle. If `x` is smaller, throw away the right half, and if it's bigger, throw away the left half. Repeat.
 
@@ -85,6 +89,8 @@ Both answer the same question, but look at the comparisons they need in the wors
 
 Every time the array doubles, sequential search does twice the work, but binary search does only **one more** comparison. That's the difference between $n$ and $\lg n$.
 
+Where do 8, 11, 21 and 33 come from? Each comparison halves what's left, so after $k$ comparisons at most $n / 2^k$ keys remain. For $n = 1024 = 2^{10}$ it takes 10 halvings to get down to one key, plus **one more** comparison to look at that last key: $\lg n + 1 = 11$. The same gives $7 + 1 = 8$ for $128 = 2^7$, $20 + 1 = 21$ for $2^{20}$, and $32 + 1 = 33$ for $2^{32}$.
+
 <SearchVisualizer algorithm="binary" />
 
 ## Every-case time complexity
@@ -99,6 +105,10 @@ For some algorithms, the basic operation runs the **same number of times for eve
 
 The contents of the input don't matter. Exchange sort compares every pair even if the array is already sorted.
 
+<Callout tone="orange" label="The usual slip">
+Count the **basic operation**, not every line. For exchange sort the answer is the number of comparisons, $\frac{(n-1)n}{2}$. The number of *swaps* does depend on the input (0 for a sorted array), but swaps aren't the basic operation, so exchange sort still has an every-case complexity. Mixing the two up leads to answers like "exchange sort's best case is 0".
+</Callout>
+
 ## When there is no every-case
 
 Sequential search is different. If `x` is in the first slot, it stops after one comparison. If `x` is missing, it checks all $n$. So we look at three separate numbers.
@@ -111,13 +121,21 @@ $$
 
 The worst case tells you the **absolute maximum** time the algorithm can take.
 
-**Average case $A(n)$.** This is the *expected* number of comparisons. Assume `x` is in the array and is equally likely to be in any of the $n$ slots, so each slot has probability $1/n$. If `x` is in slot $k$, finding it takes $k$ comparisons:
+**Average case $A(n)$.** This is the [*expected*](/courses/discrete-mathematics/probability-and-expectation#random-variables-and-expectation) number of comparisons. Assume `x` is in the array and is equally likely to be in any of the $n$ slots, so each slot has probability $1/n$. If `x` is in slot $k$, finding it takes $k$ comparisons:
 
 $$
 A(n) = \sum_{k=1}^{n} k \cdot \frac{1}{n} = \frac{1}{n} \cdot \frac{n(n+1)}{2} = \frac{n+1}{2}
 $$
 
-On average you look through about half the array. (If `x` might be missing, say it's present with probability $p$ and absent with probability $1-p$, you add $n \cdot (1-p)$ for the misses.)
+On average you look through about half the array.
+
+**What if `x` might be missing?** Say `x` is in the array with probability $p$. If it is there, it's equally likely to be in any slot, so slot $k$ has probability $p/n$. With probability $1 - p$ it's missing, and the search makes all $n$ comparisons:
+
+$$
+A(n) = \sum_{k=1}^{n} k \cdot \frac{p}{n} + n(1 - p) = \frac{p\,(n+1)}{2} + n(1 - p)
+$$
+
+Check the two ends. With $p = 1$ (always there) it gives $\frac{n+1}{2}$, as before. With $p = 0$ (never there) it gives $n$. With $p = \frac12$ it gives $\frac{n+1}{4} + \frac{n}{2} = \frac{3n+1}{4}$: about three quarters of the array.
 
 **Best case $B(n)$.** The loop runs at least once, since $n \ge 1$. If `x = S[1]`, there is exactly one pass whatever $n$ is:
 
@@ -152,7 +170,13 @@ It looks perfect, but count the calls it makes:
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | calls | 1 | 1 | 3 | 5 | 9 | 15 | 25 |
 
-If you draw the call tree, `fib(n-2)` is computed inside `fib(n-1)` *and again* on its own. The number of calls $T(n)$ more than doubles every time $n$ grows by 2:
+If you draw the call tree, `fib(n-2)` is computed inside `fib(n-1)` *and again* on its own. Count the calls: `fib(n)` is one call, plus everything `fib(n-1)` does, plus everything `fib(n-2)` does:
+
+$$
+T(n) = 1 + T(n-1) + T(n-2)
+$$
+
+Check it on the table: $T(4) = 1 + 5 + 3 = 9$. Since $T(n-1)$ is bigger than $T(n-2)$, we can replace it by $T(n-2)$ and the right side only gets smaller: $T(n) > T(n-2) + T(n-2) = 2\,T(n-2)$. So the number of calls more than doubles every time $n$ grows by 2:
 
 $$
 T(n) > 2\,T(n-2) > 2 \cdot 2\,T(n-4) > \dots > \underbrace{2 \cdot 2 \cdots 2}_{n/2 \text{ times}}\, T(0)
@@ -242,3 +266,110 @@ The most common groups, from slowest-growing to fastest-growing:
 $$
 \Theta(\lg n) \quad \Theta(n) \quad \Theta(n \lg n) \quad \Theta(n^2) \quad \Theta(n^3) \quad \Theta(2^n)
 $$
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2016)* What is the time complexity of this recursive function? Is there a way to reduce it?
+
+$$
+F(n) = n \text{ for } 0 \le n \le 3, \qquad F(n) = F(n-1) + F(n-3) \text{ for } n > 3
+$$
+
+<ModelAnswer>
+Count the calls. A call on $n$ is one call, plus all the calls of $F(n-1)$, plus all the calls of $F(n-3)$:
+
+$$
+C(n) = 1 + C(n-1) + C(n-3)
+$$
+
+Since $C(n-1) > C(n-3)$, we get $C(n) > 2\,C(n-3)$. The count more than doubles every time $n$ grows by 3, so $C(n) > 2^{n/3}$. That's **exponential**. (More precisely it grows like $1.466^n$, where 1.466 solves $x^3 = x^2 + 1$.)
+
+**Yes, it can be reduced.** The same values are computed again and again. Store each $F(i)$ in an array, bottom-up from $F(0)$ to $F(n)$. Each value then costs one addition: $O(n)$ time.
+
+```cpp
+long long F(int n) {
+    vector<long long> f(max(n + 1, 4));
+    for (int i = 0; i <= 3; i++) f[i] = i;
+    for (int i = 4; i <= n; i++) f[i] = f[i - 1] + f[i - 3];
+    return f[n];
+}
+```
+</ModelAnswer>
+
+**2.** *(Midterm 2018)* The same question for $F(n) = n$ when $0 \le n \le 2$, and $F(n) = F(n-1) + F(n-2)$ otherwise. (The printed paper says "$n > 32$", a typo for "otherwise".)
+
+<ModelAnswer>
+This is the Fibonacci recursion. As in the lesson, the number of calls more than doubles every time $n$ grows by 2, so it's more than $2^{n/2}$: **exponential** time.
+
+Reduce it the same way: keep the values in an array (dynamic programming) and compute each one once, from the two before it. That's $O(n)$ time.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="counting-the-basic-operation"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Finals, several years) What is the value of x after: x = 0; for (t = 1; t < N; t++) for (p = 1; p <= t; p++) x = x + 1;",
+      options: [
+        { id: "a", text: "x = N + 1" },
+        { id: "b", text: "x = N(N − 1)/2" },
+        { id: "c", text: "x = N(N + 1)/2" },
+        { id: "d", text: "x = N²" },
+      ],
+      correctOptionId: "b",
+      explanation: "The inner loop runs t times, for t = 1 to N − 1 (note t < N). So x = 1 + 2 + … + (N − 1) = N(N − 1)/2. Option C is the trap: it would need t ≤ N.",
+    },
+    {
+      id: "f2",
+      prompt: "(Final 2026) What is the time complexity of finding an element in an unsorted array?",
+      options: [
+        { id: "a", text: "O(1)" },
+        { id: "b", text: "O(log n)" },
+        { id: "c", text: "O(n)" },
+        { id: "d", text: "O(n log n)" },
+      ],
+      correctOptionId: "c",
+      explanation: "With no order to use, sequential search may have to look at every element: W(n) = n.",
+    },
+    {
+      id: "f3",
+      prompt: "(Final 2026) What is the best-case time complexity of linear search?",
+      options: [
+        { id: "a", text: "O(n)" },
+        { id: "b", text: "O(log n)" },
+        { id: "c", text: "O(1)" },
+        { id: "d", text: "O(n log n)" },
+      ],
+      correctOptionId: "c",
+      explanation: "If the key is in the first slot, one comparison finds it, whatever n is: B(n) = 1.",
+    },
+    {
+      id: "f4",
+      prompt: "(Final 2026) What is the time complexity of binary search?",
+      options: [
+        { id: "a", text: "O(n)" },
+        { id: "b", text: "O(n log n)" },
+        { id: "c", text: "O(log n)" },
+        { id: "d", text: "O(1)" },
+      ],
+      correctOptionId: "c",
+      explanation: "Each comparison halves what's left, so about lg n + 1 comparisons in the worst case.",
+    },
+    {
+      id: "f5",
+      prompt: "(Final, true or false) To perform a binary search, the data must be sorted.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "a",
+      explanation: "Throwing away half the array is only safe because everything on that side is known to be bigger (or smaller) than the key.",
+    },
+  ]}
+/>

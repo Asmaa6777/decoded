@@ -561,7 +561,8 @@ export function adjacency(nodeCount: number, edges: GraphEdge[], directed = fals
   return adj;
 }
 
-export function traversalFrames(kind: "bfs" | "dfs", nodeCount: number, edges: GraphEdge[], start = 0, directed = false): Frame<TraversalState>[] {
+export function traversalFrames(kind: "bfs" | "dfs", nodeCount: number, edges: GraphEdge[], start = 0, directed = false, names?: string[]): Frame<TraversalState>[] {
+  const nm = (v: number) => names?.[v] ?? String(v);
   const adj = adjacency(nodeCount, edges, directed);
   const frames: Frame<TraversalState>[] = [];
   const visited = new Set<number>();
@@ -580,47 +581,47 @@ export function traversalFrames(kind: "bfs" | "dfs", nodeCount: number, edges: G
     const queue: number[] = [];
     visited.add(start);
     queue.push(start);
-    push(4, `Mark ${start} as seen and put it in the queue.`, queue);
+    push(4, `Mark ${nm(start)} as seen and put it in the queue.`, queue);
     while (queue.length) {
       const v = queue.shift()!;
       order.push(v);
-      push(7, `Take ${v} from the front of the queue and visit it.`, queue, v);
+      push(7, `Take ${nm(v)} from the front of the queue and visit it.`, queue, v);
       for (const w of adj[v]) {
         edgeChecks++;
         if (!visited.has(w)) {
           visited.add(w);
           queue.push(w);
           treeEdges.push([v, w]);
-          push(11, `${w} is new — mark it and add it to the back of the queue.`, queue, v, [v, w]);
+          push(11, `${nm(w)} is new — mark it and add it to the back of the queue.`, queue, v, [v, w]);
         } else {
-          push(9, `${w} was already seen — skip it.`, queue, v, [v, w]);
+          push(9, `${nm(w)} was already seen — skip it.`, queue, v, [v, w]);
         }
       }
     }
-    push(15, `Queue is empty. Visit order: ${order.join(" → ")}. Notice it went level by level.`, queue);
+    push(15, `Queue is empty. Visit order: ${order.map(nm).join(" → ")}. Notice it went level by level.`, queue);
   } else {
     const stack: number[] = [];
     const rec = (v: number) => {
       visited.add(v);
       stack.push(v);
       order.push(v);
-      push(2, `Visit ${v} and push it on the call stack.`, stack, v);
+      push(2, `Visit ${nm(v)} and push it on the call stack.`, stack, v);
       for (const w of adj[v]) {
         edgeChecks++;
         if (!visited.has(w)) {
           treeEdges.push([v, w]);
-          push(5, `${w} is unvisited — go deeper into ${w} before looking at anything else.`, stack, v, [v, w]);
+          push(5, `${nm(w)} is unvisited — go deeper into ${nm(w)} before looking at anything else.`, stack, v, [v, w]);
           rec(w);
-          push(3, `Back at ${v}. Check its next neighbour.`, stack, v);
+          push(3, `Back at ${nm(v)}. Check its next neighbour.`, stack, v);
         } else {
-          push(4, `${w} is already visited — skip it.`, stack, v, [v, w]);
+          push(4, `${nm(w)} is already visited — skip it.`, stack, v, [v, w]);
         }
       }
       stack.pop();
-      push(8, `${v} has nothing new left. Pop it — backtrack${stack.length ? ` to ${stack[stack.length - 1]}` : ""}.`, stack, stack[stack.length - 1]);
+      push(8, `${nm(v)} has nothing new left. Pop it — backtrack${stack.length ? ` to ${nm(stack[stack.length - 1])}` : ""}.`, stack, stack[stack.length - 1]);
     };
     rec(start);
-    push(9, `Call stack is empty. Visit order: ${order.join(" → ")}. Notice it ran deep down one path first.`, stack);
+    push(9, `Call stack is empty. Visit order: ${order.map(nm).join(" → ")}. Notice it ran deep down one path first.`, stack);
   }
   return frames;
 }

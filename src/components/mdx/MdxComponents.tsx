@@ -1110,15 +1110,35 @@ export type QuizQuestion = {
   explanation?: string;
 };
 
+/** A written exam question's model answer, hidden behind a button so the reader can try first. */
+export function ModelAnswer({ children }: { children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="my-4">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="not-prose inline-flex items-center gap-2 px-3 py-1.5 border border-violet text-violet rounded-sm font-mono text-xs uppercase tracking-widest hover:bg-violet/10 transition-colors"
+      >
+        {open ? "Hide model answer" : "Show model answer"}
+      </button>
+      {open && <div className="mt-3 border-l-2 border-violet pl-4">{children}</div>}
+    </div>
+  );
+}
+
 export type QuizProps = {
   courseSlug: string;
   lessonSlug: string;
   questions: QuizQuestion[];
   passThreshold?: number;
+  /** Practice questions inside a lesson: don't save a score or mark the lesson complete. */
+  practice?: boolean;
 };
 
 export function Quiz(props: QuizProps) {
-  const { courseSlug, lessonSlug, questions, passThreshold = 0.8 } = props;
+  const { courseSlug, lessonSlug, questions, passThreshold = 0.8, practice = false } = props;
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState<Record<string, boolean>>({});
   const { setComplete, isComplete } = useProgress(courseSlug);
@@ -1140,10 +1160,10 @@ export function Quiz(props: QuizProps) {
 
   // Saved once per attempt; the store keeps only the best one.
   useEffect(() => {
-    if (allAnswered && questions.length > 0) {
+    if (!practice && allAnswered && questions.length > 0) {
       recordQuizScore(courseSlug, lessonSlug, { best: correctCount, total: questions.length });
     }
-  }, [allAnswered, correctCount, courseSlug, lessonSlug, questions.length]);
+  }, [practice, allAnswered, correctCount, courseSlug, lessonSlug, questions.length]);
 
   const handleRetry = useCallback(() => {
     setAnswers({});
@@ -1152,10 +1172,10 @@ export function Quiz(props: QuizProps) {
 
   // Auto-mark complete when passing
   useEffect(() => {
-    if (passed && !isComplete(lessonSlug)) {
+    if (!practice && passed && !isComplete(lessonSlug)) {
       setComplete(lessonSlug, true);
     }
-  }, [passed, lessonSlug, isComplete, setComplete]);
+  }, [practice, passed, lessonSlug, isComplete, setComplete]);
 
   const lessonSlugLocal = lessonSlug;
   const done = isComplete(lessonSlugLocal);
@@ -1214,7 +1234,13 @@ export function Quiz(props: QuizProps) {
         );
       })}
 
-      {allAnswered && (
+      {allAnswered && practice && (
+        <div className="mt-6 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          {correctCount}/{questions.length} correct
+        </div>
+      )}
+
+      {allAnswered && !practice && (
         <div className={`mt-6 font-mono text-xs uppercase tracking-widest ${
           passed ? "text-mint" : "text-orange"
         }`}>
@@ -1222,16 +1248,16 @@ export function Quiz(props: QuizProps) {
         </div>
       )}
 
-      {!passed && allAnswered && (
+      {allAnswered && (practice || !passed) && (
         <button
           onClick={handleRetry}
           className="inline-block px-4 py-2 border border-border font-mono text-xs uppercase tracking-widest hover:border-foreground transition"
         >
-          Retry quiz
+          {practice ? "Try again" : "Retry quiz"}
         </button>
       )}
 
-      {passed && done && (
+      {!practice && passed && done && (
         <div className="mt-6 inline-flex items-center gap-3 px-5 py-3 border border-mint text-mint font-mono text-xs uppercase tracking-widest">
           <span className="inline-flex h-4 w-4 items-center justify-center">✓</span>
           Quiz complete

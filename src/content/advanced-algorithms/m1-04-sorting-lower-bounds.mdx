@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { DecisionTree, CountingSortVisualizer, RadixSortVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
@@ -97,6 +97,21 @@ Step through the lecture's example, $A = \langle 4, 1, 3, 4, 3 \rangle$ with $k 
 
 <CountingSortVisualizer A={[4, 1, 3, 4, 3]} k={4} />
 
+On paper, $C = [C[1], C[2], C[3], C[4]]$ goes like this:
+
+- After loop 2 (counts): $C = [1, 0, 2, 2]$: one 1, no 2s, two 3s, two 4s.
+- After loop 3 (running totals): $C = [1, 1, 3, 5]$.
+
+Loop 4, from $j = 5$ down to 1:
+
+| $j$ | $A[j]$ | goes to $B[\,C[A[j]]\,]$ | $B$ after | $C$ after |
+| ---: | ---: | --- | --- | --- |
+| 5 | 3 | $B[3]$ | `_ _ 3 _ _` | $[1, 1, 2, 5]$ |
+| 4 | 4 | $B[5]$ | `_ _ 3 _ 4` | $[1, 1, 2, 4]$ |
+| 3 | 3 | $B[2]$ | `_ 3 3 _ 4` | $[1, 1, 1, 4]$ |
+| 2 | 1 | $B[1]$ | `1 3 3 _ 4` | $[0, 1, 1, 4]$ |
+| 1 | 4 | $B[4]$ | `1 3 3 4 4` | $[0, 1, 1, 3]$ |
+
 #### Analysis
 
 | Loop | Cost |
@@ -136,9 +151,23 @@ Counting sort is a **stable** sort: it keeps the input order among equal element
 - Hollerith's original (bad) idea was to sort on the **most**-significant digit first.
 - The good idea is to sort on the **least**-significant digit first, using an auxiliary **stable** sort.
 
+Why is most-significant-first bad? Sorting on the first digit splits the cards into 10 piles, and each pile must then be sorted on its own, **without mixing it with the others**. Each of those splits into 10 more, so a 3-digit sort needs up to $10 + 100 + 1000$ separate piles to keep track of. Least-significant-first keeps the whole deck as **one** pile: each pass deals it into 10 bins and stacks them back up in order. Stability is what makes that safe.
+
 Step through the lecture's example. Each pass sorts on one column, from right to left:
 
 <RadixSortVisualizer input={[329, 457, 657, 839, 436, 720, 355]} />
+
+| input | after the ones digit | after the tens digit | after the hundreds digit |
+| ---: | ---: | ---: | ---: |
+| 329 | 720 | 720 | 329 |
+| 457 | 355 | 329 | 355 |
+| 657 | 436 | 436 | 436 |
+| 839 | 457 | 839 | 457 |
+| 436 | 657 | 355 | 657 |
+| 720 | 329 | 457 | 720 |
+| 355 | 839 | 657 | 839 |
+
+Look at the tens pass: 720 and 329 both have tens digit 2, and 720 stays first because it was first after the ones pass. That's the stable sort at work.
 
 ### Correctness of radix sort
 
@@ -214,7 +243,7 @@ In practice, radix sort is **fast for large inputs**, and simple to code and mai
 - The operator drops the card into that bin and closes the lid.
 - When all the cards are processed, the front panel is opened and the cards are collected in bin order. That's **one pass of a stable sort**.
 
-**Origin of radix sort.** Hollerith's 1889 patent describes a **most**-significant-digit-first sort: sort the cards by the first item, then re-sort each group by the second item, and so on. **Least**-significant-digit-first radix sort seems to have been a folk invention by the machine operators. They found that collecting the bins in order after each pass and simply running the whole deck through again, one column at a time from the right, was far simpler than juggling lots of separate groups.
+**Origin of radix sort.** Hollerith's 1889 patent describes a **most**-significant-digit-first sort: sort the cards by the first item, then re-sort each group by the second item, and so on. **Least**-significant-digit-first radix sort seems to have been a folk invention by the machine operators. They found an easier way. After each pass, they collected the bins in order and ran the whole deck through again, one column at a time from the right. That was far simpler than juggling lots of separate groups.
 
 **The "modern" IBM card** had one character per column and 80 columns. *That's why text windows and terminals traditionally have 80 columns!*
 
@@ -226,3 +255,47 @@ In practice, radix sort is **fast for large inputs**, and simple to code and mai
     { id: 274, title: "H-Index", slug: "h-index", why: "The citation counts are bounded by n, so counting sort gives O(n).", difficulty: "Medium" },
   ]}
 />
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2019)* Use counting sort to sort $(8, 5, 7, 3, 6, 1, 2)$.
+
+<ModelAnswer>
+Here $k = 8$, so $C$ has slots 1 to 8.
+
+| key | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| count (loop 2) | 1 | 1 | 1 | 0 | 1 | 1 | 1 | 1 |
+| running total (loop 3) | 1 | 2 | 3 | 3 | 4 | 5 | 6 | 7 |
+
+Loop 4 walks the input from right to left, putting each key at position $C[key]$ and then lowering $C[key]$ by 1: 2 goes to position 2, 1 to 1, 6 to 5, 3 to 3, 7 to 6, 5 to 4, and 8 to 7. Output: **1 2 3 5 6 7 8**.
+
+(The answer sheet for this exam writes the output as "1 2 3 5 6 1 8", a slip: the 1 should be 7.)
+</ModelAnswer>
+
+**2.** *(Midterm 2020)* Use counting sort to sort $(1, 1, 2, 2, 3, 3, 4)$.
+
+<ModelAnswer>
+$k = 4$. Counts: $C = [2, 2, 2, 1]$. Running totals: $C = [2, 4, 6, 7]$. Walking from the right: 4 goes to position 7; the second 3 to 6, the first 3 to 5; the 2s to 4 and 3; the 1s to 2 and 1. Output: **1 1 2 2 3 3 4**, and each pair of equal keys keeps its original order. That is stability, and it's why loop 4 runs from the right.
+</ModelAnswer>
+
+**3.** *(Midterms 2016, 2017, 2018)* Give the worst-case running time of: binary search, insertion sort, merge sort, counting sort, heap sort, and the operations of a red-black tree.
+
+<ModelAnswer>
+| algorithm | worst case |
+| --- | --- |
+| binary search | $\Theta(\lg n)$ |
+| insertion sort | $\Theta(n^2)$ |
+| merge sort | $\Theta(n \lg n)$ |
+| counting sort | $\Theta(n + k)$, so $\Theta(n)$ when $k = O(n)$ |
+| heap sort | $\Theta(n \lg n)$ |
+| red-black tree search, insert, delete | $\Theta(\lg n)$ |
+
+Merge sort and heap sort meet the $\Omega(n \lg n)$ lower bound for comparison sorts. Counting sort beats it because it never compares elements.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+None of the past finals asked about decision trees, the lower bound, or counting and radix sort. The midterm questions above are the best practice.

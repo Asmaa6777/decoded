@@ -1,4 +1,4 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { HashTableVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
@@ -63,7 +63,7 @@ int hashName(const string& name, int m) {
 
 A **collision** happens when two keys $x \ne y$ hash to the same slot: $h(x) = h(y)$. There are two ways to resolve collisions:
 
-1. **Chaining:** each slot points to a linked list. Given a key $x$, insert, delete or look it up in the list $A[h(x)]$.
+1. **Chaining:** each slot points to a [linked list](/courses/data-structures/linked-lists#nodes-and-pointers). Given a key $x$, insert, delete or look it up in the list $A[h(x)]$.
 2. **Open addressing:** all keys live in the table itself, one key per slot. To insert, we **probe** (examine) slots one after another until we find an empty one. So the hash function takes the probe number as well:
 
 $$
@@ -132,9 +132,13 @@ The probe sequence follows $h(k, i) = (h_1(k) + i \cdot h_2(k)) \bmod m$:
 
 </details>
 
+<Callout tone="orange" label="Why h₂ has a 1 +">
+It's tempting to use $h_2(k) = k \bmod m'$. But then $h_2(22) = 22 \bmod 11 = 0$, every probe is $h_1(22) + i \cdot 0$, and the search tries the **same slot forever**. Adding 1 makes the step at least 1. The step also must not share a factor with $m$, or the probes cycle through only part of the table; making $m$ prime (here 13) guarantees that.
+</Callout>
+
 ## Good hash functions
 
-A good hash function (approximately) satisfies **simple uniform hashing**: each key is equally likely to hash to any of the $m$ slots, independently of where any other key hashes.
+A good hash function comes close to **simple uniform hashing**. That means each key is equally likely to hash to any of the $m$ slots, independently of where any other key hashes.
 
 Properties of a good hash function:
 
@@ -190,7 +194,7 @@ The final tables:
 | double | 22 | | 59 | 17 | 4 | 15 | 28 | 88 | | 31 | 10 |
 
 <Callout tone="sky" label="Compare the probe counts">
-Look at the **probes** counter at the end of each run. Linear probing piles keys into one long run around slots 4–8. Double hashing scatters them, so on average each key needs fewer probes.
+Look at the **probes** counter at the end of each run. It counts every slot tried, including the one the key lands in. The totals are 16 for linear probing, 23 for quadratic and 16 for double hashing. With only 9 keys the totals are close, so the difference is in the *shape*. Linear probing piles keys into one long run in slots 4–8, so the next key that lands anywhere in that run has to walk to its end. Double hashing scatters them, with free slots at 1 and 8, so future keys won't hit long runs. Quadratic probing's 23 comes almost all from 88, which kept jumping back to the same few slots.
 </Callout>
 
 <LeetCodeProblems
@@ -202,3 +206,25 @@ Look at the **probes** counter at the end of each run. Linear probing piles keys
     { id: 49, title: "Group Anagrams", slug: "group-anagrams", why: "Choose a hash key so that all anagrams collide on purpose.", difficulty: "Medium" },
   ]}
 />
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2023)* Insert $4371, 1323, 6173, 4199, 4344, 9679, 1989$ into a table of size 10 with $H(X) = X \bmod 10$, using (a) linear probing, (b) separate chaining.
+
+<ModelAnswer>
+The hash is just the last digit: $1, 3, 3, 9, 4, 9, 9$.
+
+| slot | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| (a) linear | 9679 | 4371 | 1989 | 1323 | 6173 | 4344 | | | | 4199 |
+| (b) chaining | | 4371 | | 6173 → 1323 | 4344 | | | | | 1989 → 9679 → 4199 |
+
+- **(a):** 6173 finds 3 taken and goes to 4. 4344 finds 4 taken and goes to 5. 9679 finds 9 taken and **wraps round** to 0. 1989 finds 9, 0 and 1 all taken and lands in 2.
+- **(b):** each new key goes to the front of its slot's list, as in this course's code. Writing each list in insertion order (1323 → 6173) is also correct.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+The finals' hashing questions are in the two lessons before this one. No final has a question specific to this lab.

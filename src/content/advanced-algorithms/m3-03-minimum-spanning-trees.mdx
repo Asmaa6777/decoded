@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { MstVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Minimum Spanning Trees: Prim and Kruskal
@@ -20,7 +20,7 @@ In either case, $|E| = O(V^2)$. Moreover, if $G$ is connected, then $|E| \ge |V|
 
 ### Adjacency-matrix representation
 
-The **adjacency matrix** of $G = (V, E)$, where $V = \{1, 2, \dots, n\}$, is the matrix $A[1 \dots n, 1 \dots n]$ given by
+The **adjacency matrix** (see [storing a graph](/courses/discrete-mathematics/graphs#storing-a-graph)) of $G = (V, E)$, where $V = \{1, 2, \dots, n\}$, is the matrix $A[1 \dots n, 1 \dots n]$ given by
 
 $$
 A[i, j] =
@@ -126,7 +126,7 @@ Both algorithms below are just two ways of picking light edges.
 
 ## Prim's algorithm
 
-Prim's algorithm keeps the edges in $A$ as **one single tree**. The tree starts from an arbitrary root and grows until it spans all the vertices. At each step it adds a **light edge** connecting the tree to a vertex not yet in it.
+Prim's algorithm keeps the edges in $A$ as **one single tree**. The tree starts from any root you like and grows until it spans all the vertices. At each step it adds a **light edge** connecting the tree to a vertex not yet in it.
 
 **Idea:** maintain $V - A$ as a **priority queue** $Q$. Key each vertex in $Q$ with the weight of the least-weight edge connecting it to a vertex in $A$.
 
@@ -144,7 +144,9 @@ while Q ≠ ∅
 
 At the end, $\{(v, \pi[v])\}$ forms the MST.
 
-<MstVisualizer algorithm="prim" />
+Here is the lecture's example graph, with its eight vertices named a to h. Prim starts at f (the vertex the lecture gives key 0). Each step adds the cheapest edge leaving the tree: f–c (7), c–b (5), b–a (6), b–h (8), h–e (3), c–d (9), and last f–g (15). The total is **53**.
+
+<MstVisualizer algorithm="prim" nodes={[{ id: 0, x: 296, y: 152, label: "f" }, { id: 1, x: 173, y: 30, label: "a" }, { id: 2, x: 50, y: 91, label: "b" }, { id: 3, x: 296, y: 91, label: "c" }, { id: 4, x: 420, y: 91, label: "d" }, { id: 5, x: 50, y: 152, label: "e" }, { id: 6, x: 420, y: 152, label: "g" }, { id: 7, x: 173, y: 210, label: "h" }]} edges={[{ from: 1, to: 2, weight: 6 }, { from: 1, to: 3, weight: 12 }, { from: 2, to: 3, weight: 5 }, { from: 3, to: 4, weight: 9 }, { from: 2, to: 5, weight: 14 }, { from: 2, to: 7, weight: 8 }, { from: 5, to: 7, weight: 3 }, { from: 3, to: 0, weight: 7 }, { from: 0, to: 6, weight: 15 }, { from: 0, to: 7, weight: 10 }]} />
 
 ### Analysis of Prim
 
@@ -169,7 +171,7 @@ Kruskal's algorithm builds a **forest** of trees and keeps joining them:
 - Start with every vertex as its own tiny tree.
 - Repeatedly **connect two trees**, always choosing the **least-weight** edge that does so, until all the nodes are covered.
 
-If $C_1$ and $C_2$ are the two trees joined by $(u, v)$, then $(u, v)$ is a light edge connecting $C_1$ to some other tree, so by the corollary it's **safe**. Kruskal's is a greedy algorithm because at each step it adds the edge of **least possible weight**.
+If $C_1$ and $C_2$ are the two trees joined by $(u, v)$, then $(u, v)$ is a light edge connecting $C_1$ to some other tree. So by the corollary it's **safe**. Kruskal's is a greedy algorithm because at each step it adds the edge of **least possible weight**.
 
 ```text
 MST-KRUSKAL(G, w)
@@ -186,7 +188,16 @@ MST-KRUSKAL(G, w)
 
 It uses the **disjoint-set** ([union-find](/courses/data-structures/union-find#a-forest-in-an-array)) data structure to tell whether two vertices are already in the same tree.
 
-<MstVisualizer algorithm="kruskal" />
+On the same graph, Kruskal takes the edges in order of weight: e–h (3), b–c (5), a–b (6), c–f (7), b–h (8), c–d (9). It skips f–h (10), a–c (12) and b–e (14), because each would close a cycle, and finishes with f–g (15). It ends with the same tree, total 53, but builds it in a different order.
+
+<MstVisualizer algorithm="kruskal" nodes={[{ id: 0, x: 296, y: 152, label: "f" }, { id: 1, x: 173, y: 30, label: "a" }, { id: 2, x: 50, y: 91, label: "b" }, { id: 3, x: 296, y: 91, label: "c" }, { id: 4, x: 420, y: 91, label: "d" }, { id: 5, x: 50, y: 152, label: "e" }, { id: 6, x: 420, y: 152, label: "g" }, { id: 7, x: 173, y: 210, label: "h" }]} edges={[{ from: 1, to: 2, weight: 6 }, { from: 1, to: 3, weight: 12 }, { from: 2, to: 3, weight: 5 }, { from: 3, to: 4, weight: 9 }, { from: 2, to: 5, weight: 14 }, { from: 2, to: 7, weight: 8 }, { from: 5, to: 7, weight: 3 }, { from: 3, to: 0, weight: 7 }, { from: 0, to: 6, weight: 15 }, { from: 0, to: 7, weight: 10 }]} />
+
+<Callout tone="orange" label="Two usual slips">
+- **Prim: taking the cheapest edge anywhere.** Prim only looks at edges with **one end in the tree**. In the example, $e$–$h$ (3) is the cheapest edge in the whole graph, but Prim from $f$ can't take it until $h$ is in the tree. It takes $f$–$c$ (7) first. Taking cheap edges anywhere is Kruskal's rule, and then you need a cycle check.
+- **Kruskal: skipping the cycle check.** After $e$–$h$, $b$–$c$, $a$–$b$, $c$–$f$ and $b$–$h$, the next edge is $f$–$h$ (10). Both ends are already in the same tree ($f$–$c$–$b$–$h$), so adding it would close a cycle. Without the FIND-SET test it gets added, and the result isn't a tree.
+</Callout>
+
+**What if two edges have the same weight?** Then the MST may not be **unique**: two different trees can have the same total. Prim and Kruskal still find *a* minimum spanning tree; they just may pick different ones, depending on how ties are broken.
 
 ### Analysis of Kruskal
 
@@ -217,5 +228,139 @@ So Kruskal is $O(E \lg E)$. You could also say $O(E \lg V)$, because $E \le V^2$
     { id: 1584, title: "Min Cost to Connect All Points", slug: "min-cost-to-connect-all-points", why: "An MST on a complete graph: try both Prim (array version) and Kruskal.", difficulty: "Medium" },
     { id: 1135, title: "Connecting Cities With Minimum Cost", slug: "connecting-cities-with-minimum-cost", why: "Kruskal with union-find, plus checking that the graph is connected.", difficulty: "Medium" },
     { id: 684, title: "Redundant Connection", slug: "redundant-connection", why: "The union-find test Kruskal uses: the first edge whose ends are already in the same tree.", difficulty: "Medium" },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**Midterm 2023 (questions 1 to 8).** Apply Prim's algorithm to this undirected graph, starting from node 2. The edges are: 0–1 (3), 0–2 (7), 0–4 (12), 1–2 (8), 1–3 (2), 1–4 (9), 2–3 (5), 2–5 (10), 3–4 (4), 3–5 (1), 4–5 (6). After each step, for every node $i$ not yet in $S$: $d[i]$ is the weight of the lightest edge joining $S$ to $i$, and $p[i]$ is the node in $S$ at the other end of that edge. After step 1: $S = \{2\}$, $d[0] = 7$, $d[1] = 8$, $d[3] = 5$, $d[5] = 10$. Each answer counts only the nodes with $d[i] \ne \infty$.
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="minimum-spanning-trees"
+  practice
+  questions={[
+    {
+      id: "m1",
+      prompt: "(Midterm 2023, Q1) After the 2nd step, the sum of d[i] for the nodes not in S is:",
+      options: [{ id: "a", text: "10" }, { id: "b", text: "11" }, { id: "c", text: "14" }, { id: "d", text: "16" }, { id: "e", text: "21" }],
+      correctOptionId: "c",
+      explanation: "Step 2 adds node 3 (d = 5, the smallest). Through 3: d[1] = 2, d[4] = 4, d[5] = 1, and d[0] stays 7. Sum 7 + 2 + 4 + 1 = 14.",
+    },
+    {
+      id: "m2",
+      prompt: "(Midterm 2023, Q2) After the 2nd step, the sum of p[i] is:",
+      options: [{ id: "a", text: "8" }, { id: "b", text: "9" }, { id: "c", text: "10" }, { id: "d", text: "11" }, { id: "e", text: "12" }],
+      correctOptionId: "d",
+      explanation: "p[0] = 2, p[1] = 3, p[4] = 3, p[5] = 3. Sum 2 + 3 + 3 + 3 = 11.",
+    },
+    {
+      id: "m3",
+      prompt: "(Midterm 2023, Q3) After the 3rd step, the sum of d[i] is:",
+      options: [{ id: "a", text: "11" }, { id: "b", text: "13" }, { id: "c", text: "14" }, { id: "d", text: "15" }, { id: "e", text: "19" }],
+      correctOptionId: "b",
+      explanation: "Step 3 adds node 5 (d = 1). Its edge to 4 weighs 6, which doesn't beat 4. Left: d[0] = 7, d[1] = 2, d[4] = 4, sum 13.",
+    },
+    {
+      id: "m4",
+      prompt: "(Midterm 2023, Q4) After the 3rd step, the sum of p[i] is:",
+      options: [{ id: "a", text: "7" }, { id: "b", text: "8" }, { id: "c", text: "9" }, { id: "d", text: "10" }, { id: "e", text: "11" }],
+      correctOptionId: "b",
+      explanation: "p[0] = 2, p[1] = 3, p[4] = 3. Sum 8.",
+    },
+    {
+      id: "m5",
+      prompt: "(Midterm 2023, Q5) After the 4th step, the sum of d[i] is:",
+      options: [{ id: "a", text: "7" }, { id: "b", text: "9" }, { id: "c", text: "11" }, { id: "d", text: "13" }, { id: "e", text: "15" }],
+      correctOptionId: "a",
+      explanation: "Step 4 adds node 1 (d = 2). Its edge 1–0 weighs 3 < 7, so d[0] = 3; its edge 1–4 weighs 9, which doesn't beat 4. Sum 3 + 4 = 7.",
+    },
+    {
+      id: "m6",
+      prompt: "(Midterm 2023, Q6) After the 4th step, the sum of p[i] is:",
+      options: [{ id: "a", text: "3" }, { id: "b", text: "4" }, { id: "c", text: "5" }, { id: "d", text: "6" }, { id: "e", text: "7" }],
+      correctOptionId: "b",
+      explanation: "p[0] = 1 (it changed), p[4] = 3. Sum 4.",
+    },
+    {
+      id: "m7",
+      prompt: "(Midterm 2023, Q7) After the 5th step, the sum of d[i] is:",
+      options: [{ id: "a", text: "3" }, { id: "b", text: "4" }, { id: "c", text: "5" }, { id: "d", text: "7" }, { id: "e", text: "12" }],
+      correctOptionId: "b",
+      explanation: "Step 5 adds node 0 (d = 3). Its edge 0–4 weighs 12, which doesn't beat 4. Only d[4] = 4 is left.",
+    },
+    {
+      id: "m8",
+      prompt: "(Midterm 2023, Q8) After the 5th step, the sum of p[i] is:",
+      options: [{ id: "a", text: "0" }, { id: "b", text: "2" }, { id: "c", text: "3" }, { id: "d", text: "4" }, { id: "e", text: "5" }],
+      correctOptionId: "c",
+      explanation: "Only p[4] = 3 is left. (The final tree is 2–3, 3–5, 3–1, 1–0, 3–4, total 5 + 1 + 2 + 3 + 4 = 15.)",
+    },
+  ]}
+/>
+
+### Part 2: Final exam questions
+
+**1.** *(Finals 2018, and an exam-examples sheet)* Find the MST with Prim's algorithm (from the start node $A$) and with Kruskal's algorithm. Name the nodes $A$ to $H$: $A$ top-left (start), $B$ top-middle, $C$ the inner node on the left, $D$ bottom-left, $E$ bottom-middle, $F$ top-right, $G$ the inner node on the right, $H$ bottom-right. Edges: A–B 12, A–C 2, A–D 5, B–C 9, C–D 8, C–E 7, B–E 3, D–E 1, B–F 8, B–G 1, F–G 9, F–H 11, G–H 5, E–G 3, E–H 10.
+
+<ModelAnswer>
+**Prim from A** (always the cheapest edge leaving the tree): A–C (2), A–D (5), D–E (1), E–B (3), B–G (1), G–H (5), B–F (8).
+
+**Kruskal** (edges by weight, skipping any that close a cycle): B–G (1), D–E (1), A–C (2), B–E (3), then E–G (3) is **skipped** because E and G are already joined through B. Then A–D (5), G–H (5), and finally B–F (8). Every later edge would close a cycle.
+
+Both give the same tree, with **total weight 25**. (B–E and E–G tie at 3. Taking E–G first gives a different tree with the same total, so either is accepted.)
+</ModelAnswer>
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="minimum-spanning-trees"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final, undated) Which of these is NOT a property of a minimum spanning tree?",
+      options: [
+        { id: "a", text: "It may have one or more cycles" },
+        { id: "b", text: "It has |V| − 1 edges" },
+        { id: "c", text: "It is not necessarily unique" },
+        { id: "d", text: "The sum of its edge weights is minimal" },
+      ],
+      correctOptionId: "a",
+      explanation: "A spanning tree is a tree, so it has no cycles. With equal weights there can be several minimum trees.",
+    },
+    {
+      id: "f2",
+      prompt: "(Final, true or false) In Kruskal's algorithm, we proceed node by node, adding the connecting edges to the tree.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "b",
+      explanation: "That describes Prim, which grows one tree. Kruskal goes edge by edge in order of weight, joining whatever trees of the forest the edge connects.",
+    },
+    {
+      id: "f3",
+      prompt: "(Final, undated) A directed graph G has 20 vertices. How many boolean values does its adjacency matrix need?",
+      options: [
+        { id: "a", text: "20" },
+        { id: "b", text: "40" },
+        { id: "c", text: "200" },
+        { id: "d", text: "400" },
+      ],
+      correctOptionId: "d",
+      explanation: "One entry for every ordered pair of vertices: 20 × 20 = 400. That's the Θ(V²) storage of a matrix.",
+    },
+    {
+      id: "f4",
+      prompt: "(Final, true or false) An adjacency matrix is a good choice for representing a dense graph.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "a",
+      explanation: "A dense graph has about V² edges anyway, so the matrix wastes little space and answers 'is there an edge?' in O(1).",
+    },
   ]}
 />

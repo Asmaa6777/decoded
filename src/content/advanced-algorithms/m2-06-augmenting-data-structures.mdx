@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { AugmentedTreeSearch } from "@/components/mdx/AdvancedVisualizers";
 
@@ -8,7 +8,7 @@ Most of the time you don't need a brand-new data structure. You take one you alr
 
 This lesson builds two augmented red-black trees:
 
-1. **Dynamic order statistics**: find the $i$-th smallest element, or an element's rank, in $O(\lg n)$, *while* insertions and deletions keep happening.
+1. **Dynamic order statistics**: find the $i$-th smallest element (as [SELECT](/courses/advanced-algorithms/order-statistics#randomized-divide-and-conquer) does for a fixed array), or an element's rank, in $O(\lg n)$, *while* insertions and deletions keep happening.
 2. **Interval trees**: find a stored interval that overlaps a query interval, in $O(\lg n)$.
 
 ## Dynamic order statistics
@@ -98,6 +98,10 @@ y->size = size(y->left) + size(y->right) + 1;   // the same as x's old size
 ```
 
 So RB-INSERT and RB-DELETE still run in **$O(\lg n)$** time.
+
+<Callout tone="orange" label="The usual slip">
+Updating the two sizes after a rotation in the wrong order. After the rotation, the node that moved **down** is now a child of the other one. So recompute its size **first**. Then the new parent's size is its children's sizes plus 1. Do it the other way round and the parent adds up the child's *old* size. The same goes for forgetting the sizes altogether during RB-INSERT's rotations: OS-SELECT then quietly returns the wrong key.
+</Callout>
 
 ## The methodology
 
@@ -222,3 +226,38 @@ Now suppose the search goes **left**, and assume that $\{\, i' \in L : i' \text{
     { id: 315, title: "Count of Smaller Numbers After Self", slug: "count-of-smaller-numbers-after-self", why: "OS-RANK while inserting from right to left.", difficulty: "Hard" },
   ]}
 />
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2025)* Fill in the blanks to compute the rank of node $x$ in an order-statistic red-black tree $T$:
+
+```text
+OS-RANK(T, x)
+1  r ← ________          2  y ← x
+3  while y ≠ T.root
+4      if y = y.p.right
+5          r ← ________
+6      y ← ________
+7  return r
+```
+
+<ModelAnswer>
+```text
+OS-RANK(T, x)
+1  r ← x.left.size + 1           ⊳ rank of x within its own subtree
+2  y ← x
+3  while y ≠ T.root
+4      if y = y.p.right            ⊳ coming up from a right child:
+5          r ← r + y.p.left.size + 1   ⊳ add the parent and its left subtree
+6      y ← y.p
+7  return r
+```
+
+Going up from a **left** child adds nothing: everything in the parent's right side is bigger than $x$. The walk follows one path, so it takes $O(\lg n)$.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+None of the past finals asked about augmenting data structures. The midterm question above is the best practice.

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, CPP_MIN_MAX_MERGE, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, type Seg, expectedProbes, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -473,13 +473,30 @@ export function FastPowerVisualizer({ a: a0 = 3, b: b0 = 13 }: { a?: number; b?:
 
 /* ------------------------- min and max ------------------------- */
 
-export function MinMaxVisualizer({ input = [11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1] }: { input?: number[] }) {
-  const frames = useMemo(() => minMaxFrames(input), [input]);
+export function MinMaxVisualizer({
+  input = [11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1],
+  algorithm = "pairs",
+}: {
+  input?: number[];
+  algorithm?: "pairs" | "merge";
+}) {
+  const [kind, setKind] = useState(algorithm);
+  const frames = useMemo(() => (kind === "merge" ? minMaxMergeFrames(input) : minMaxFrames(input)), [kind, input]);
   return (
     <Stepper
       title="Min and max in 1.5n − 2 comparisons"
       frames={frames}
-      code={CPP_MIN_MAX}
+      code={kind === "merge" ? CPP_MIN_MAX_MERGE : CPP_MIN_MAX}
+      inputs={
+        <Toggle<"pairs" | "merge">
+          value={kind}
+          onChange={setKind}
+          options={[
+            ["pairs", "Algorithm 1: pairs first"],
+            ["merge", "Algorithm 2: merge the pairs"],
+          ]}
+        />
+      }
       codeLabel="C++"
       legend={[["bg-neon", "comparing"], ["bg-orange", "swapped"], ["bg-mint", "min / max"]]}
       render={(s) => (
@@ -498,6 +515,178 @@ export function MinMaxVisualizer({ input = [11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 1
         </div>
       )}
     />
+  );
+}
+
+/* ---------------------------- P vs NP ---------------------------- */
+
+/** The two possible pictures of P, NP, NP-complete and NP-hard, with example problems in each region. */
+export function PvsNpDiagram({ initial = "differ" }: { initial?: "differ" | "equal" }) {
+  const [world, setWorld] = useState<"differ" | "equal">(initial);
+  const label = (x: number, y: number, text: string, cls = "fill-current", size = 13, bold = true) => (
+    <text x={x} y={y} textAnchor="middle" fontSize={size} className={`${cls} font-mono ${bold ? "font-bold" : ""}`}>
+      {text}
+    </text>
+  );
+  return (
+    <Panel title="Two possible worlds" legend={[["bg-mint", "P"], ["bg-sky", "NP"], ["bg-orange", "NP-complete"], ["bg-violet", "NP-hard"]]}>
+      <Toggle<"differ" | "equal">
+        value={world}
+        onChange={setWorld}
+        options={[
+          ["differ", "If P ≠ NP"],
+          ["equal", "If P = NP"],
+        ]}
+      />
+      <svg viewBox="0 0 560 300" className="w-full h-auto max-w-[620px] mx-auto" role="img" aria-label={world === "differ" ? "P inside NP, NP-complete at the hard edge of NP, NP-hard reaching outside NP" : "P, NP and NP-complete as one class, with NP-hard around it"}>
+        {/* NP-hard: everything at least as hard as all of NP; reaches outside NP */}
+        <path d="M 330 20 L 545 20 L 545 280 L 330 280 Z" className="fill-violet/10 stroke-violet" strokeWidth={2} strokeDasharray="6 4" />
+        {label(470, 45, "NP-hard", "fill-violet")}
+        {label(470, 255, "TSP (shortest tour)", "fill-current", 11, false)}
+        {label(470, 270, "halting problem", "fill-current", 11, false)}
+        {world === "differ" ? (
+          <>
+            <ellipse cx={250} cy={150} rx={230} ry={120} className="fill-sky/10 stroke-sky" strokeWidth={2} />
+            {label(90, 70, "NP", "fill-sky")}
+            <ellipse cx={170} cy={160} rx={110} ry={75} className="fill-mint/15 stroke-mint" strokeWidth={2} />
+            {label(170, 130, "P", "fill-mint")}
+            {label(170, 160, "sorting", "fill-current", 11, false)}
+            {label(170, 176, "shortest paths", "fill-current", 11, false)}
+            {label(170, 192, "MST, primality", "fill-current", 11, false)}
+            <ellipse cx={405} cy={150} rx={70} ry={70} className="fill-orange/15 stroke-orange" strokeWidth={2} />
+            {label(405, 125, "NP-complete", "fill-orange", 12)}
+            {label(405, 152, "SAT, CLIQUE", "fill-current", 11, false)}
+            {label(405, 168, "TSP (is there a", "fill-current", 11, false)}
+            {label(405, 182, "tour ≤ k?)", "fill-current", 11, false)}
+          </>
+        ) : (
+          <>
+            <ellipse cx={250} cy={150} rx={200} ry={110} className="fill-mint/15 stroke-mint" strokeWidth={2} />
+            {label(250, 110, "P = NP = NP-complete", "fill-mint", 14)}
+            {label(250, 145, "sorting, shortest paths, SAT, CLIQUE,", "fill-current", 11, false)}
+            {label(250, 161, "TSP (is there a tour ≤ k?)…", "fill-current", 11, false)}
+            {label(250, 190, "all solvable in polynomial time", "fill-current", 11, false)}
+          </>
+        )}
+      </svg>
+      <p className="text-sm text-muted-foreground">
+        {world === "differ"
+          ? "Most computer scientists believe this one. P sits inside NP, the NP-complete problems are the hardest part of NP, and NP-hard stretches outside NP to problems that aren't even checkable quickly."
+          : "If someone found a polynomial algorithm for one NP-complete problem, the reductions would carry it to every problem in NP, and the three classes would merge. (Strictly, the two trivial problems \"always yes\" and \"always no\" stay out of NP-complete.) NP-hard problems outside NP, like the halting problem, stay hard either way."}
+      </p>
+    </Panel>
+  );
+}
+
+/* ------------------------- load factor chart ------------------------- */
+
+/** Expected probes vs load factor: 1/(1 − α) for open addressing against 1 + α for chaining. */
+export function LoadFactorChart({ initial = 0.5 }: { initial?: number }) {
+  const [a, setA] = useState(initial);
+  const W = 520;
+  const H = 220;
+  const maxY = 20;
+  const X = (al: number) => 40 + (al / 0.95) * (W - 60);
+  const Y = (v: number) => H - 30 - (Math.min(v, maxY) / maxY) * (H - 50);
+  const pts = (f: (al: number) => number) =>
+    Array.from({ length: 96 }, (_, i) => i / 100)
+      .map((al) => `${X(al).toFixed(1)},${Y(f(al)).toFixed(1)}`)
+      .join(" ");
+  const e = expectedProbes(a);
+  return (
+    <Panel title="How full can a hash table get?" legend={[["bg-orange", "open addressing: 1/(1 − α)"], ["bg-sky", "chaining: 1 + α"]]}>
+      <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
+        <span>load factor α = {a.toFixed(2)}</span>
+        <input type="range" min={0} max={95} value={Math.round(a * 100)} onChange={(ev) => setA(Number(ev.target.value) / 100)} className="flex-1 min-w-[160px]" aria-label="load factor" />
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-w-[560px]" role="img" aria-label="Expected probes against load factor">
+        <line x1={40} y1={H - 30} x2={W - 20} y2={H - 30} className="stroke-border" />
+        <line x1={40} y1={20} x2={40} y2={H - 30} className="stroke-border" />
+        {[0, 0.25, 0.5, 0.75, 0.95].map((t) => (
+          <text key={t} x={X(t)} y={H - 12} textAnchor="middle" fontSize={10} className="fill-current font-mono">
+            {t}
+          </text>
+        ))}
+        {[1, 5, 10, 20].map((t) => (
+          <text key={t} x={32} y={Y(t) + 3} textAnchor="end" fontSize={10} className="fill-current font-mono">
+            {t}
+          </text>
+        ))}
+        <polyline points={pts((al) => expectedProbes(al).chain)} className="stroke-sky fill-none" strokeWidth={2.5} />
+        <polyline points={pts((al) => expectedProbes(al).open)} className="stroke-orange fill-none" strokeWidth={2.5} />
+        <line x1={X(a)} y1={20} x2={X(a)} y2={H - 30} className="stroke-violet" strokeDasharray="4 3" />
+      </svg>
+      <div className="flex flex-wrap gap-6 font-mono text-sm">
+        <span>
+          open addressing: <span className="text-orange font-bold">{e.open.toFixed(1)}</span> probes
+        </span>
+        <span>
+          chaining: <span className="text-sky font-bold">{e.chain.toFixed(2)}</span> probes
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Half full, open addressing needs 2 probes; 90% full, 10; 95% full, 20. Chaining barely changes. That's why open-addressed tables rehash at 0.5 to 0.75, while chaining can go above 1.
+      </p>
+    </Panel>
+  );
+}
+
+/* --------------------------- VLSI layouts --------------------------- */
+
+function GridLayout({ w, h, segs, leaves, label }: { w: number; h: number; segs: Seg[]; leaves: [number, number][]; label: string }) {
+  const u = 16;
+  return (
+    <svg viewBox={`${-u / 2} ${-u / 2} ${w * u} ${h * u}`} className="w-full h-auto" role="img" aria-label={label}>
+      <g className="stroke-border" strokeWidth={0.5}>
+        {Array.from({ length: w + 1 }, (_, i) => (
+          <line key={`v${i}`} x1={i * u - u / 2} y1={-u / 2} x2={i * u - u / 2} y2={h * u - u / 2} />
+        ))}
+        {Array.from({ length: h + 1 }, (_, i) => (
+          <line key={`h${i}`} x1={-u / 2} y1={i * u - u / 2} x2={w * u - u / 2} y2={i * u - u / 2} />
+        ))}
+      </g>
+      <g className="stroke-violet" strokeWidth={2} strokeLinecap="round">
+        {segs.map(([a, b, c, d], i) => (
+          <line key={i} x1={a * u} y1={b * u} x2={c * u} y2={d * u} />
+        ))}
+      </g>
+      {leaves.map(([x, y], i) => (
+        <circle key={i} cx={x * u} cy={y * u} r={3.5} className="fill-mint" />
+      ))}
+    </svg>
+  );
+}
+
+/** The obvious layout of a complete binary tree next to the H-tree, for n = 4, 16 or 64 leaves. */
+export function VlsiLayouts({ initialK = 2 }: { initialK?: number }) {
+  const [k, setK] = useState(initialK);
+  const n = 4 ** k;
+  const plain = useMemo(() => plainTreeLayout(n), [n]);
+  const h = useMemo(() => hTreeLayout(k), [k]);
+  return (
+    <Panel title="Laying out a binary tree on a chip" legend={[["bg-mint", "leaf"], ["bg-violet", "wire"]]}>
+      <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
+        <span>leaves n =</span>
+        <Toggle<string> value={String(k)} onChange={(v) => setK(Number(v))} options={[["1", "4"], ["2", "16"], ["3", "64"]]} />
+      </div>
+      <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
+        <div className="flex flex-col gap-2 min-w-0">
+          <div className="font-mono text-xs">
+            Obvious layout: {plain.width} wide × {plain.height} high = <span className="text-orange font-bold">{plain.area}</span> cells
+          </div>
+          <GridLayout w={plain.width} h={plain.height} segs={plain.segs} leaves={plain.leaves} label={`Binary tree with ${n} leaves laid out in rows`} />
+        </div>
+        <div className="flex flex-col gap-2 min-w-0">
+          <div className="font-mono text-xs">
+            H-tree: {h.side} × {h.side} = <span className="text-mint font-bold">{h.area}</span> cells
+          </div>
+          <GridLayout w={h.side} h={h.side} segs={h.segs} leaves={h.leaves} label={`H-tree with ${n} leaves`} />
+        </div>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Both hold {n} leaves. The obvious layout grows like n lg n; the H-tree like n. At n = 64 the H-tree needs about a quarter of the area, and the gap keeps growing.
+      </p>
+    </Panel>
   );
 }
 

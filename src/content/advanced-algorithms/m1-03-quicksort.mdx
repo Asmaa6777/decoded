@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { QuicksortVisualizer, RecursionTreeDiagram } from "@/components/mdx/AdvancedVisualizers";
 
@@ -17,7 +17,7 @@ Its worst case is bad, $\Theta(n^2)$, but it's fast "on average". This lesson ex
 
 To quicksort an $n$-element array:
 
-1. **Divide:** partition the array into two subarrays around a **pivot** $x$, so that every element in the lower subarray is $\le x$ and every element in the upper subarray is $\ge x$.
+1. **Divide:** partition the array into two subarrays around a **pivot** $x$. Every element in the lower subarray is $\le x$ and every element in the upper subarray is $\ge x$.
 
    $$
    \boxed{\;\le x\;} \;\; \boxed{\;x\;} \;\; \boxed{\;\ge x\;}
@@ -58,6 +58,25 @@ Step through the lecture's example, `6 10 13 5 8 3 2 11`. Watch the labels under
 
 <QuicksortVisualizer initial={[6, 10, 13, 5, 8, 3, 2, 11]} />
 
+The same run on paper. The pivot is $x = 6$. Only the steps where `A[j] ≤ 6` change anything:
+
+| Step | `j` sees | Array after the step | `i` |
+| --- | ---: | --- | ---: |
+| start | | `6 10 13 5 8 3 2 11` | 1 |
+| 10 and 13 are bigger | | nothing moves | 1 |
+| swap $A[2] \leftrightarrow A[4]$ | 5 | `6 5 13 10 8 3 2 11` | 2 |
+| 8 is bigger | | nothing moves | 2 |
+| swap $A[3] \leftrightarrow A[6]$ | 3 | `6 5 3 10 8 13 2 11` | 3 |
+| swap $A[4] \leftrightarrow A[7]$ | 2 | `6 5 3 2 8 13 10 11` | 4 |
+| 11 is bigger | | nothing moves | 4 |
+| last line: swap $A[1] \leftrightarrow A[4]$ | | `2 5 3 6 8 13 10 11` | 4 |
+
+(Positions count from 1, as in the pseudocode.) PARTITION returns 4. The pivot 6 is now in its final place, with `2 5 3` on its left and `8 13 10 11` on its right.
+
+<Callout tone="sky" label="Two partition schemes, two names">
+This PARTITION, with one pointer `i` that marks the end of the small part, is usually called **Lomuto's partition**. Quicksort's inventor, Hoare, used a different one: two pointers that start at both ends and walk towards each other, swapping pairs that are on the wrong side. Algorithm Design and Analysis teaches [that version](/courses/algorithm-design-and-analysis/quick-sort#partitioning-with-two-pointers). Both run in $\Theta(n)$ and both work with quicksort; Hoare's makes fewer swaps.
+</Callout>
+
 ## Pseudocode for quicksort
 
 ```text
@@ -73,6 +92,14 @@ The first call is `QUICKSORT(A, 1, n)`.
 ## Analysis of quicksort
 
 - Assume all the input elements are **distinct**. (When there can be duplicates, better partitioning algorithms exist in practice.)
+
+<Callout tone="orange" label="Why duplicates matter">
+Run this PARTITION on `5 5 5 5 5`. Every `A[j] ≤ x` is true, so every element goes to the "small" side and the pivot ends up at the far right: a $4 : 0$ split. Every level does the same, so an array of equal keys costs $\Theta(n^2)$, exactly like sorted input. Real libraries use a **three-way partition** (less than, equal to, greater than the pivot) so that equal keys are finished in one pass.
+</Callout>
+
+Step through it and count the comparisons: every pass ends with the pivot at the far right and nothing on its right side.
+
+<QuicksortVisualizer initial={[5, 5, 5, 5, 5, 5, 5, 5]} />
 - Let $T(n)$ be the **worst-case** running time on an array of $n$ elements.
 
 ### Worst case
@@ -94,7 +121,7 @@ $$
 T(n) = \Theta\!\left(\sum_{k=1}^{n} k\right) + \underbrace{n \cdot \Theta(1)}_{\text{the } T(0) \text{ leaves}} = \Theta(n^2) + \Theta(n) = \Theta(n^2)
 $$
 
-Press **Sorted input** in the visualizer above and watch the call stack get as deep as the array is long.
+Press **Sorted input** in the visualizer above and watch the [call stack](/courses/data-structures/stacks#the-call-stack) get as deep as the array is long.
 
 ### Best case (for intuition only!)
 
@@ -164,7 +191,7 @@ An adversary who hands you a sorted array can no longer hurt you. They'd have to
 
 Let $T(n)$ be the **random variable** for the running time of randomized quicksort on an input of size $n$, assuming the random numbers are independent.
 
-For $k = 0, 1, \dots, n-1$, define the **indicator random variable**
+For $k = 0, 1, \dots, n-1$, define the [**indicator random variable**](/courses/discrete-mathematics/probability-and-expectation#random-variables-and-expectation)
 
 $$
 X_k =
@@ -244,7 +271,7 @@ Randomized quicksort runs in **expected time $\Theta(n \lg n)$** on **every** in
 
 <ApplicationsGrid>
   <PracticalApplication title="C++ std::sort" tool="INTROSORT">
-    `std::sort` is quicksort with tuning. It uses a median-of-three pivot and insertion sort for tiny pieces, and it **switches to heapsort** if the recursion gets too deep, so the worst case is $O(n \log n)$ anyway.
+    `std::sort` is quicksort with tuning. It uses a median-of-three pivot and insertion sort for tiny pieces, and it **switches to heapsort** if the recursion gets too deep. So the worst case is $O(n \log n)$ anyway.
   </PracticalApplication>
   <PracticalApplication title="Defending against attack inputs" tool="RANDOMIZATION">
     A server that sorts user data with a fixed pivot rule can be slowed to a crawl by a carefully built "sorted-looking" input. Random pivots make that attack impossible.
@@ -257,5 +284,122 @@ Randomized quicksort runs in **expected time $\Theta(n \lg n)$** on **every** in
     { id: 912, title: "Sort an Array", slug: "sort-an-array", why: "Write randomized quicksort. A fixed first-element pivot times out on the sorted test cases, which is exactly the worst case from this lesson.", difficulty: "Medium" },
     { id: 75, title: "Sort Colors", slug: "sort-colors", why: "A partition with three regions (< x, = x, > x) in a single pass.", difficulty: "Medium" },
     { id: 905, title: "Sort Array By Parity", slug: "sort-array-by-parity", why: "PARTITION where the test is \"is it even?\" instead of \"is it ≤ x?\"." },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Undated midterm)* Use quicksort to sort $(5, 2, 4, 8, 0, 3, 1, 7)$. Show the array after each step.
+
+<ModelAnswer>
+Using this lesson's PARTITION (the first element is the pivot):
+
+**First partition, pivot 5,** on `5 2 4 8 0 3 1 7`. Elements $\le 5$ are swapped to the front, one by one:
+
+| `j` sees | array after the step |
+| --- | --- |
+| 2, 4 | nothing moves (they're already right after the pivot) |
+| 8 | nothing moves |
+| 0 | `5 2 4 0 8 3 1 7` |
+| 3 | `5 2 4 0 3 8 1 7` |
+| 1 | `5 2 4 0 3 1 8 7` |
+| 7 | nothing moves |
+| final swap of the pivot | `1 2 4 0 3 5 8 7` |
+
+Then each side is partitioned in turn:
+
+| partition | pivot | array afterwards |
+| --- | ---: | --- |
+| `1 2 4 0 3` | 1 | `0 1 4 2 3 5 8 7` |
+| `4 2 3` | 4 | `0 1 3 2 4 5 8 7` |
+| `3 2` | 3 | `0 1 2 3 4 5 8 7` |
+| `8 7` | 8 | `0 1 2 3 4 5 7 8` |
+
+Sorted: `0 1 2 3 4 5 7 8`.
+</ModelAnswer>
+
+**2.** *(Undated midterm)* Prove with a recursion tree that the **best** case of quicksort is $\Theta(n \lg n)$.
+
+<ModelAnswer>
+In the best case every partition splits the array evenly: $T(n) = 2T(n/2) + \Theta(n)$. Partitioning each level's pieces touches all $n$ elements, so every level costs $cn$. Halving reaches size 1 after $\lg n$ levels. Total: $cn \lg n + \Theta(n) = \Theta(n \lg n)$, exactly like merge sort.
+</ModelAnswer>
+
+**3.** *(Midterm 2019; also on an exam-examples sheet)* Using recursion trees: (a) prove that the worst case of quicksort is $\Theta(n^2)$; (b) find the complexity when every split is $\frac{1}{10} : \frac{9}{10}$; (c) find the complexity when lucky and unlucky splits alternate: $L(n) = 2U(n/2) + \Theta(n)$, $U(n) = L(n-1) + \Theta(n)$.
+
+<ModelAnswer>
+**(a)** The worst case (sorted input, or always the min or max as pivot) splits $0 : n-1$: $T(n) = T(n-1) + cn$. The tree is a single path of $n$ levels costing $cn, c(n-1), \dots, c$:
+
+$$
+T(n) = c\sum_{k=1}^{n} k = \Theta(n^2)
+$$
+
+**(b)** $T(n) = T(n/10) + T(9n/10) + cn$. Every full level costs $cn$. The shortest path (always the $\frac1{10}$ side) has $\log_{10} n$ levels and the longest (always $\frac9{10}$) has $\log_{10/9} n$. So $cn \log_{10} n \le T(n) \le cn \log_{10/9} n + O(n)$: both are $\Theta(n \lg n)$. Lucky!
+
+**(c)** Substitute $U$ into $L$:
+
+$$
+L(n) = 2\big(L(n/2 - 1) + \Theta(n/2)\big) + \Theta(n) = 2L(n/2 - 1) + \Theta(n) = \Theta(n \lg n)
+$$
+
+Even with an unlucky split every other time, quicksort stays $\Theta(n \lg n)$.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="quicksort"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final) The recurrence T(n) = T(n − 1) + Θ(n) represents the:",
+      options: [
+        { id: "a", text: "Best-case running time of quicksort" },
+        { id: "b", text: "Worst-case running time of quicksort" },
+        { id: "c", text: "Best-case running time of heapsort" },
+        { id: "d", text: "Worst-case running time of heapsort" },
+      ],
+      correctOptionId: "b",
+      explanation: "A 0 : n − 1 split leaves one side empty and recurses on n − 1 elements after a Θ(n) partition. That's quicksort's worst case, Θ(n²).",
+    },
+    {
+      id: "f2",
+      prompt: "(Finals 2022 and undated) Quicksort is an example of:",
+      options: [
+        { id: "a", text: "The greedy approach" },
+        { id: "b", text: "Improved binary search" },
+        { id: "c", text: "Dynamic programming" },
+        { id: "d", text: "Divide and conquer" },
+      ],
+      correctOptionId: "d",
+      explanation: "Divide: partition around the pivot. Conquer: sort both sides recursively. Combine: nothing to do.",
+    },
+    {
+      id: "f3",
+      prompt: "(Finals, undated) Which of these sorting algorithms has the lowest worst-case complexity?",
+      options: [
+        { id: "a", text: "Bubble sort" },
+        { id: "b", text: "Quicksort" },
+        { id: "c", text: "Merge sort" },
+        { id: "d", text: "Selection sort" },
+      ],
+      correctOptionId: "c",
+      explanation: "Merge sort is Θ(n log n) in every case. Quicksort is fast on average, but its worst case is Θ(n²), like bubble and selection sort.",
+    },
+    {
+      id: "f4",
+      prompt: "(Finals 2022 and undated) Which of these is NOT an in-place algorithm?",
+      options: [
+        { id: "a", text: "Bubble sort" },
+        { id: "b", text: "Merge sort" },
+        { id: "c", text: "Insertion sort" },
+        { id: "d", text: "All of the above" },
+      ],
+      correctOptionId: "b",
+      explanation: "Merge sort needs an extra buffer of size n to merge into. Bubble and insertion sort (and quicksort) rearrange the array itself.",
+    },
   ]}
 />

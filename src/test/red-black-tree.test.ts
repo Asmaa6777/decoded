@@ -29,6 +29,43 @@ describe("red-black tree", () => {
     for (const c of ["x red", "Sibling red", "Both nephews black", "Red nephew"]) expect(got).toContain(c);
   });
 
+  it("matches the lecture's three deletion examples", () => {
+    // preorder with colours, "-" for NIL, e.g. "47B(32B,71R(...))"
+    const shape = (s: { nodes: { id: number; key: number; color: string; left: number | null; right: number | null }[]; root: number | null }) => {
+      const byId = new Map(s.nodes.map((n) => [n.id, n]));
+      const go = (id: number | null): string => {
+        if (id === null) return "-";
+        const n = byId.get(id)!;
+        return n.left === null && n.right === null ? `${n.key}${n.color}` : `${n.key}${n.color}(${go(n.left)},${go(n.right)})`;
+      };
+      return go(s.root);
+    };
+    const end = (start: number[], key: number) => shape(rbFrames(start, [{ op: "delete", key }]).at(-1)!.state);
+    const built = [47, 32, 71, 65, 82, 87, 93];
+    expect(shape(rbFrames(built, []).at(-1)!.state)).toBe("47B(32B,71R(65B,87B(82R,93R)))");
+    // 1: delete 87, its red predecessor 82 takes its place
+    expect(end(built, 87)).toBe("47B(32B,71R(65B,82B(-,93R)))");
+    // 2: with 51 added, delete 71: 65 replaces it and 51 turns black
+    expect(end([...built, 51], 71)).toBe("47B(32B,65R(51B,87B(82R,93R)))");
+    // 3: delete 32: red sibling, then black sibling with black nephews, then stop at red 47
+    expect(end(built, 32)).toBe("71B(47B(-,65R),87B(82R,93R))");
+  });
+
+  it("solves the 2023 midterm's insert 5, 9 into 2(1, 4)", () => {
+    const keys = (st: { nodes: { id: number; key: number; color: string; left: number | null; right: number | null }[]; root: number | null }) => {
+      const byId = new Map(st.nodes.map((n) => [n.id, n]));
+      const go = (id: number | null): string => (id === null ? "-" : `${byId.get(id)!.key}${byId.get(id)!.color}(${go(byId.get(id)!.left)},${go(byId.get(id)!.right)})`);
+      return go(st.root);
+    };
+    const f = rbFrames([2, 1, 4], [5, 9].map((key) => ({ op: "insert" as const, key })));
+    expect(keys(f[0].state)).toBe("2B(1R(-,-),4R(-,-))");
+    // 5: red uncle, recolor (case 1); 9: outer child with a black uncle, rotate left at 4 (case 3)
+    expect(keys(f.at(-1)!.state)).toBe("2B(1B(-,-),5B(4R(-,-),9R(-,-)))");
+    // the 2018 final's sequence, as worked in m2-05
+    const g = rbFrames([], [5, 1, 4, 10, 9, 20, 6, 7].map((key) => ({ op: "insert" as const, key })));
+    expect(keys(g.at(-1)!.state)).toBe("4B(1B(-,-),9R(6B(5R(-,-),7R(-,-)),10B(-,20R(-,-))))");
+  });
+
   it("uses the insertion cases on the textbook example (insert 15)", () => {
     const f = rbFrames([7, 3, 18, 10, 22, 8, 11, 26], [{ op: "insert", key: 15 }]);
     const cases = f.map((x) => x.state.caseLabel).filter(Boolean);

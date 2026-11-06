@@ -1,4 +1,4 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { RecursionTreeDiagram, GaussMultiply, RecurrenceExplorer } from "@/components/mdx/AdvancedVisualizers";
 
@@ -102,7 +102,7 @@ $$
 </details>
 
 <Callout tone="sky" label="The pattern">
-When each level's cost is a **fixed fraction less than 1** of the level above it, the total is a geometric series, and **the root's cost decides the answer**. When each level costs the **same**, multiply by the number of levels. That's where the $\log n$ comes from.
+When each level's cost is a **fixed fraction less than 1** of the level above it, the total is a geometric series. Then **the root's cost decides the answer**. When each level costs the **same**, multiply by the number of levels. That's where the $\log n$ comes from.
 </Callout>
 
 ## Part II: Divide and conquer
@@ -114,6 +114,8 @@ The divide-and-conquer strategy solves a problem by:
 3. appropriately **combining** their answers.
 
 ### Example: multiplying large numbers (the Gauss method)
+
+The lab calls this the **Gauss method**, after Gauss's trick for multiplying complex numbers with three multiplications instead of four. Most books and libraries call it **Karatsuba's algorithm**, after the person who first used it on large integers. They are the same algorithm.
 
 Split each $n$-digit number into two halves of $n/2$ digits. Call the numbers $a$ and $b$. The halves of $a$ are $a_L$ (the left, or upper, half) and $a_R$ (the right, or lower, half), and the same for $b$:
 
@@ -161,15 +163,32 @@ $$
 T(n) = 3T(n/2) + O(n) \quad\Longrightarrow\quad T(n) = O(n^{\log_2 3}) \approx O(n^{1.59})
 $$
 
+**Worked example: $1234 \times 5678$.** Here $n = 4$, so split into halves of 2 digits: $a_L = 12$, $a_R = 34$, $b_L = 56$, $b_R = 78$.
+
+| step | value |
+| --- | ---: |
+| $x_1 = a_L b_L = 12 \times 56$ | 672 |
+| $x_2 = a_R b_R = 34 \times 78$ | 2,652 |
+| $x_3 = (12 + 34)(56 + 78) = 46 \times 134$ | 6,164 |
+| middle $= x_3 - x_1 - x_2 = 6164 - 672 - 2652$ | 2,840 |
+| $ab = 672 \cdot 10^4 + 2840 \cdot 10^2 + 2652$ | **7,006,652** |
+
+Three multiplications of 2-digit numbers instead of four, and the answer matches $1234 \times 5678$ done the school way.
+
+<Callout tone="orange" label="Two usual slips">
+- **The sums can be one digit longer.** $56 + 78 = 134$ has 3 digits, not 2. Your code must handle that, for example by splitting on the length of the *longer* number each time, instead of assuming every piece has exactly $n/2$ digits.
+- **Shift by what you split.** If $n$ is odd, say 5 digits split as 2 and 3, the shifts are $10^{2 \cdot 3}$ and $10^3$ (twice the size of the low half, then the low half). They are not $10^5$ and $10^{2.5}$.
+</Callout>
+
 <GaussMultiply a={1234} b={5678} />
 
 <RecurrenceExplorer a={3} b={2} k={1} />
 
 ## Part III: Lab work
 
-**Task 1:** implement the Gauss algorithm for multiplying two numbers.
+**Task 1:** implement the Gauss algorithm for multiplying two numbers. (The lab sheet says "two real numbers", but splitting into halves of digits only works on **integers**. A number with a decimal point can be scaled to an integer first: 1.25 × 3.5 = 125 × 35 / 1000.)
 
-*Hint:* you can get the left and right halves with division and mod (`a / p` and `a % p`, where `p` is $10^{\text{half}}$), or with shift operators if you split in binary instead of decimal.
+*Hint:* get the left and right halves with division and mod (`a / p` and `a % p`, where `p` is $10^{\text{half}}$). If you split in binary instead of decimal, use shift operators instead.
 
 ```cpp
 #include <iostream>
@@ -239,7 +258,7 @@ Sort first with [merge sort](/courses/advanced-algorithms/analysis-of-algorithms
 
 </details>
 
-**3.** You're given an $n \times n$ grid of distinct numbers. A number is a **local minimum** if it's smaller than all its neighbours. (A neighbour is the number directly above, below, left or right. Most numbers have four neighbours, numbers on the edge have three, and the four corners have two.) Use divide and conquer to find a local minimum with only $O(n)$ comparisons.
+**3.** You're given an $n \times n$ grid of distinct numbers. A number is a **local minimum** if it's smaller than all its neighbours. (A neighbour is the number directly above, below, left or right. Most numbers have four neighbours. Numbers on the edge have three, and the four corners have two.) Use divide and conquer to find a local minimum with only $O(n)$ comparisons.
 
 *Note:* there are $n^2$ numbers, so you can't even afford to look at all of them!
 
@@ -253,3 +272,40 @@ Sort first with [merge sort](/courses/advanced-algorithms/analysis-of-algorithms
     { id: 162, title: "Find Peak Element", slug: "find-peak-element", why: "The 1-D version of exercise 3: a local maximum in O(log n) by halving.", difficulty: "Medium" },
   ]}
 />
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2023)* Design a divide-and-conquer algorithm that computes the number of levels in a [binary tree](/courses/data-structures/binary-trees#nodes-with-two-children) (0 for the empty tree, 1 for a single node), and analyze it.
+
+<ModelAnswer>
+A tree's levels are its root plus the levels of its taller subtree:
+
+```cpp
+int levels(Node* t) {
+    if (t == nullptr) return 0;                    // empty tree
+    return 1 + max(levels(t->left), levels(t->right));
+}
+```
+
+A single node gives $1 + \max(0, 0) = 1$, as required. Each node is visited exactly once and does constant work, so the time is $\Theta(n)$ for $n$ nodes. (As a recurrence for a balanced tree, $T(n) = 2T(n/2) + \Theta(1) = \Theta(n)$, Case 1.)
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+**2.** *(Finals 2018, and an exam-examples sheet)* You are choosing between three algorithms:
+
+- **A** divides a problem into five subproblems of half the size, solves each recursively, and combines the solutions in linear time.
+- **B** solves a problem of size $n$ by solving two subproblems of size $n - 1$ and combining in constant time.
+- **C** divides a problem into nine subproblems of size $n/3$, solves each recursively, and combines in $O(n^2)$ time.
+
+What are their running times, and which would you choose?
+
+<ModelAnswer>
+- **A:** $T(n) = 5T(n/2) + O(n)$. $n^{\log_2 5} \approx n^{2.32}$ beats $n$: Case 1, $O(n^{\log_2 5}) \approx O(n^{2.32})$.
+- **B:** $T(n) = 2T(n-1) + O(1)$. The number of calls doubles each level, over $n$ levels: $O(2^n)$.
+- **C:** $T(n) = 9T(n/3) + O(n^2)$. $n^{\log_3 9} = n^2$ equals $f(n)$: Case 2, $O(n^2 \log n)$.
+
+**Choose C.** $n^2 \log n$ grows more slowly than $n^{2.32}$, and both are vastly better than $2^n$.
+</ModelAnswer>

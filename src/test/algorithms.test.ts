@@ -144,6 +144,20 @@ describe("traversalFrames", () => {
     { from: 2, to: 4 },
     { from: 2, to: 5 },
   ];
+  it("runs the shortest-paths lecture's directed BFS example in its order", () => {
+    // a b c d e f g h i = 0..8, directed edges as drawn on the slide
+    const lecture = [
+      [0, 3], [0, 1], [3, 1], [3, 4], [1, 4], [1, 2], [4, 2], [4, 6], [4, 8],
+      [5, 3], [5, 7], [6, 5], [6, 8], [7, 6], [8, 7],
+    ].map(([from, to]) => ({ from, to }));
+    const order = traversalFrames("bfs", 9, lecture, 0, true).at(-1)!.state.order;
+    expect(order.map((i) => "abcdefghi"[i]).join(" ")).toBe("a b d c e g i f h");
+    // with names, the step messages use the letters too
+    const named = traversalFrames("bfs", 9, lecture, 0, true, [..."abcdefghi"]);
+    expect(named.at(-1)!.message).toContain("a → b → d → c → e → g → i → f → h");
+    expect(named[0].message).toBe("Mark a as seen and put it in the queue.");
+  });
+
   it("BFS visits level by level", () => {
     const f = traversalFrames("bfs", 6, edges);
     expect(f[f.length - 1].state.order).toEqual([0, 1, 2, 3, 4, 5]);
@@ -187,6 +201,23 @@ describe("mstFrames", () => {
   it("Kruskal rejects the edge that would close a cycle", () => {
     const k = mstFrames("kruskal", 6, edges);
     expect(k[k.length - 1].state.rejected.length).toBeGreaterThan(0);
+  });
+
+  it("solves the Advanced Algorithms lecture's Prim example (total 53)", () => {
+    // f a b c d e g h = 0..7, as in m3-03; Prim starts at f
+    const lecture = [
+      { from: 1, to: 2, weight: 6 }, { from: 1, to: 3, weight: 12 }, { from: 2, to: 3, weight: 5 },
+      { from: 3, to: 4, weight: 9 }, { from: 2, to: 5, weight: 14 }, { from: 2, to: 7, weight: 8 },
+      { from: 5, to: 7, weight: 3 }, { from: 3, to: 0, weight: 7 }, { from: 0, to: 6, weight: 15 },
+      { from: 0, to: 7, weight: 10 },
+    ];
+    const p = mstFrames("prim", 8, lecture).at(-1)!.state;
+    const k = mstFrames("kruskal", 8, lecture).at(-1)!.state;
+    expect(p.total).toBe(53);
+    expect(k.total).toBe(53);
+    // Prim's order from f: f–c, c–b, b–a, b–h, h–e, c–d, f–g
+    expect(p.accepted.map((i) => lecture[i].weight)).toEqual([7, 5, 6, 8, 3, 9, 15]);
+    expect(k.accepted.map((i) => lecture[i].weight)).toEqual([3, 5, 6, 7, 8, 9, 15]);
   });
 
   it("follows the notes' a to f example in their order, with letter names", () => {

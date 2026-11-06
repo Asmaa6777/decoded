@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { RBTreeVisualizer, RotationDemo } from "@/components/mdx/AdvancedVisualizers";
 
 # Balanced Search Trees and Red-Black Trees
@@ -26,13 +26,13 @@ A red-black tree is a BST with **one extra bit per node**: its **color**, red or
 
 Some books list five properties: they split property 2 into "every leaf (NIL) is black" and "the root is black". Note that NIL leaves count as real (black) leaves, so every key-holding node has **two** children.
 
-Here's the example from the lecture. Turn on the NIL leaves to check property 4: from the root, every path down to a NIL passes through the same number of black nodes. Not counting the root itself, but counting the NIL at the end, that's 2: for example 7 → 3 → NIL, or 7 → 18 → 10 → 8 → NIL.
+Here's the example from the lecture. Turn on the NIL leaves to check property 4: from the root, every path down to a NIL passes through the same number of black nodes. That number is 2, if you count the NIL at the end but not the root itself: for example 7 → 3 → NIL, or 7 → 18 → 10 → 8 → NIL.
 
 <RBTreeVisualizer start={[7, 3, 18, 10, 22, 8, 11, 26]} />
 
 **Black-height** counts the black nodes on a path from a node down to a leaf, not counting the node itself but counting the NIL leaf. A NIL leaf itself has $bh = 0$.
 
-**What's the minimum black-height of a node with height $h$?** Red nodes can never be next to each other (property 3), so at least half the nodes on any path down are black. A node of height $h$ therefore has **black-height $\ge h/2$**.
+**What's the minimum black-height of a node with height $h$?** Red nodes can never be next to each other (property 3). So at least half the nodes on any path down are black. A node of height $h$ therefore has **black-height $\ge h/2$**.
 
 ## The height of a red-black tree
 
@@ -59,7 +59,16 @@ $$
 n + 1 \ge 2^{h'} \;\Longrightarrow\; \lg(n + 1) \ge h' \ge h/2 \;\Longrightarrow\; h \le 2\lg(n + 1)
 $$
 
-**The induction proof** (as in the textbook). First show by induction that **the subtree rooted at any node $x$ contains at least $2^{bh(x)} - 1$ internal nodes**. Then, at the root:
+**The induction proof** (as in the textbook). First show by induction on the height of $x$ that **the subtree rooted at any node $x$ contains at least $2^{bh(x)} - 1$ internal nodes** (nodes that hold keys).
+
+- **Base:** if $x$ is a NIL leaf, $bh(x) = 0$ and the subtree has $2^0 - 1 = 0$ internal nodes. ✓
+- **Step:** if $x$ holds a key, it has two children. Each child has black-height $bh(x)$ if it's red, or $bh(x) - 1$ if it's black, so at least $bh(x) - 1$ either way. By the hypothesis each child's subtree has at least $2^{bh(x)-1} - 1$ internal nodes. Add both children and $x$ itself:
+
+$$
+2\left(2^{bh(x)-1} - 1\right) + 1 = 2^{bh(x)} - 1 \;✓
+$$
+
+Then, at the root:
 
 $$
 \begin{aligned}
@@ -71,6 +80,10 @@ h &\le 2\lg(n + 1)
 $$
 
 So $h = O(\lg n)$.
+
+<Callout tone="orange" label="The usual slip">
+"Balanced" doesn't mean every path has the same length. A red-black tree only promises that no path is more than **twice** as long as another. The shortest path can be all black, and the longest can alternate black, red, black, red. Check the example above: 7 → 3 → NIL is 2 steps, while 7 → 18 → 10 → 8 → NIL is 4. Both pass the same number of black nodes, so both are allowed.
+</Callout>
 
 ## Query operations
 
@@ -131,6 +144,10 @@ Node* leftRotate(Node* root, Node* x) {
 
 `rightRotate` is the mirror image: swap every `left` and `right`.
 
+<Callout tone="orange" label="Watch the root update">
+Only set `root = z` when $x$ **was** the root. Some printed versions of this code (in Java) run `root = z;` after the `if`, on every call. Then rotating any node deep in the tree would make that node the new root of the whole tree. The rest of the tree would be lost.
+</Callout>
+
 **What is the running time?** A fixed number of pointer changes, whatever the size of the tree: **$O(1)$**.
 
 <ApplicationsGrid>
@@ -141,3 +158,180 @@ Node* leftRotate(Node* root, Node* x) {
     Linux's [scheduler](/courses/operating-systems/cpu-scheduling-basics#the-cpu-scheduler) keeps runnable tasks in a red-black tree ordered by how much CPU time they've had, so "pick the task that has run the least" is just "take the leftmost node".
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterms 2019, 2020, and an undated one)* What are the properties of a red-black tree? How do you find the maximum of the tree and the predecessor of any key? Write pseudocode for both.
+
+<ModelAnswer>
+**Properties:** every node is red or black; the root and the NIL leaves are black; a red node's children are black; every path from a node down to a NIL leaf has the same number of black nodes. Together they keep the height at most $2\lg(n + 1)$.
+
+**Maximum:** keep going right.
+
+```text
+TREE-MAXIMUM(x)
+    while x.right ≠ NIL
+        x ← x.right
+    return x
+```
+
+**Predecessor:** if $x$ has a left subtree, the predecessor is the maximum of that subtree. If not, go up until you arrive from a **right** child; that parent is the predecessor.
+
+```text
+PREDECESSOR(x)
+    if x.left ≠ NIL
+        return TREE-MAXIMUM(x.left)
+    y ← x.p
+    while y ≠ NIL and x = y.left
+        x ← y
+        y ← y.p
+    return y
+```
+
+Both follow one path, so they take $O(h) = O(\lg n)$. (The 2019 answer sheet gives only the first case of PREDECESSOR. A node with no left child still has a predecessor, unless it's the smallest key.)
+</ModelAnswer>
+
+**2.** *(Midterm 2025)* Prove that a red-black tree with $n$ keys has height $h \le 2\lg(n + 1)$.
+
+<ModelAnswer>
+First, by induction on height, the subtree rooted at any node $x$ has at least $2^{bh(x)} - 1$ internal nodes:
+
+- **Base:** a NIL leaf has $bh = 0$ and $2^0 - 1 = 0$ internal nodes.
+- **Step:** each child of $x$ has black-height at least $bh(x) - 1$, so it holds at least $2^{bh(x)-1} - 1$ internal nodes. Two children plus $x$ give at least $2(2^{bh(x)-1} - 1) + 1 = 2^{bh(x)} - 1$.
+
+On any path from the root down, at least half the nodes are black (no two reds in a row), so $bh(\text{root}) \ge h/2$. Then:
+
+$$
+n \ge 2^{bh(\text{root})} - 1 \ge 2^{h/2} - 1 \;\Longrightarrow\; \lg(n + 1) \ge h/2 \;\Longrightarrow\; h \le 2\lg(n + 1)
+$$
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="balanced-search-trees"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final 2026) A red-black tree is a type of:",
+      options: [
+        { id: "a", text: "Binary heap" },
+        { id: "b", text: "Balanced binary search tree" },
+        { id: "c", text: "Graph" },
+        { id: "d", text: "Trie" },
+      ],
+      correctOptionId: "b",
+      explanation: "It's an ordinary BST with one colour bit per node, and the colour rules keep its height O(log n).",
+    },
+    {
+      id: "f2",
+      prompt: "(Finals, undated and 2026) What is special about red-black trees, and what colour must the root always be?",
+      options: [
+        { id: "a", text: "Each node has a colour, red or black, and the root is always black" },
+        { id: "b", text: "Each node stores the height of its tree" },
+        { id: "c", text: "Each node has a pointer to the next node" },
+        { id: "d", text: "Each node is green or black" },
+      ],
+      correctOptionId: "a",
+      explanation: "One extra bit per node, the colour. The root is always black.",
+    },
+    {
+      id: "f3",
+      prompt: "(Final 2026) A red node cannot have a:",
+      options: [
+        { id: "a", text: "Parent" },
+        { id: "b", text: "Black child" },
+        { id: "c", text: "Red child" },
+        { id: "d", text: "Child at all" },
+      ],
+      correctOptionId: "c",
+      explanation: "Property 3: if a node is red, both its children are black. So two reds never appear in a row on a path.",
+    },
+    {
+      id: "f4",
+      prompt: "(Final 2026) Every path from a node to its NIL leaves has the same number of:",
+      options: [
+        { id: "a", text: "Red nodes" },
+        { id: "b", text: "Black nodes" },
+        { id: "c", text: "Nodes in total" },
+        { id: "d", text: "Leaves" },
+      ],
+      correctOptionId: "b",
+      explanation: "That number is the black-height. The total length can differ, by up to a factor of 2.",
+    },
+    {
+      id: "f5",
+      prompt: "(Final, undated) Why impose rules like: the root is black, every leaf is black, a red node's children are black, and all paths have the same number of black nodes?",
+      options: [
+        { id: "a", text: "To get logarithmic time" },
+        { id: "b", text: "To get linear time" },
+        { id: "c", text: "To get exponential time" },
+        { id: "d", text: "To get constant time" },
+      ],
+      correctOptionId: "a",
+      explanation: "The rules force height ≤ 2 lg(n + 1), so every operation that walks one path is O(log n).",
+    },
+    {
+      id: "f6",
+      prompt: "(Final, undated) Which operations can a red-black tree perform in O(log n) time?",
+      options: [
+        { id: "a", text: "Insertion, deletion, finding the predecessor and successor" },
+        { id: "b", text: "Only insertion" },
+        { id: "c", text: "Only finding the predecessor and successor" },
+        { id: "d", text: "Sorting" },
+      ],
+      correctOptionId: "a",
+      explanation: "Each of these follows one root-to-leaf path (plus O(1) rotations for insert and delete).",
+    },
+    {
+      id: "f7",
+      prompt: "(Final, undated) Why are red-black trees sometimes preferred over hash tables, even though hash tables have constant average time?",
+      options: [
+        { id: "a", text: "They aren't preferred" },
+        { id: "b", text: "Hash tables need resizing, and red-black trees keep the keys in order" },
+        { id: "c", text: "Because they're implemented with trees" },
+        { id: "d", text: "Because they're balanced" },
+      ],
+      correctOptionId: "b",
+      explanation: "A red-black tree gives sorted order, min, max, successor and range queries, and a guaranteed O(log n) with no resizing pauses. A hash table can do none of the ordered operations.",
+    },
+    {
+      id: "f8",
+      prompt: "(Final 2026) Which operation keeps a red-black tree balanced?",
+      options: [
+        { id: "a", text: "Swapping" },
+        { id: "b", text: "Rotations" },
+        { id: "c", text: "Sorting" },
+        { id: "d", text: "Searching" },
+      ],
+      correctOptionId: "b",
+      explanation: "Rotations (together with recolouring) restructure the tree in O(1) while keeping the in-order order of the keys.",
+    },
+    {
+      id: "f9",
+      prompt: "(Final 2026) Which tree is more strictly balanced?",
+      options: [
+        { id: "a", text: "AVL tree" },
+        { id: "b", text: "Red-black tree" },
+      ],
+      correctOptionId: "a",
+      explanation: "An AVL tree keeps the two subtree heights within 1 at every node. A red-black tree allows one path to be twice as long as another.",
+    },
+    {
+      id: "f10",
+      prompt: "(Final 2026) The leaf nodes of a red-black tree are:",
+      options: [
+        { id: "a", text: "Red" },
+        { id: "b", text: "Black keys" },
+        { id: "c", text: "NIL, and black" },
+        { id: "d", text: "Any colour" },
+      ],
+      correctOptionId: "c",
+      explanation: "The leaves are the NIL pointers, counted as black. That's why every key-holding node has two children.",
+    },
+  ]}
+/>

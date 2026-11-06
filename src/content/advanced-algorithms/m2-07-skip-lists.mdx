@@ -1,10 +1,10 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { SkipListVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
 # Skip Lists
 
-[Red-black trees](/courses/advanced-algorithms/balanced-search-trees) guarantee $O(\lg n)$, but they're fiddly to code: four delete cases, rotations, colors. **Skip lists** get the same expected performance from a much simpler idea, a sorted linked list with **express lanes**, plus some coin flips.
+[Red-black trees](/courses/advanced-algorithms/balanced-search-trees) guarantee $O(\lg n)$, but they're fiddly to code: four delete cases, rotations, colors. **Skip lists** get the same expected performance from a much simpler idea, a sorted [linked list](/courses/data-structures/linked-lists#nodes-and-pointers) with **express lanes**, plus some coin flips.
 
 ## Linked lists: benefits and drawbacks
 
@@ -31,7 +31,7 @@ import { SkipListVisualizer } from "@/components/mdx/AdvancedVisualizers";
 - Each higher level contains **half** the elements of the level below it.
 - A **header** node and a **sentinel** node ($\infty$) are on every level.
 
-Nodes have **variable size**: each holds between 1 and $O(\log n)$ pointers, one per level it reaches. (The pictures draw the pointers horizontally for clarity, but each one points to the start of the next node.) They're called *skip* lists because the higher levels let you **skip over many items** at once.
+Nodes have **variable size**: each holds between 1 and $O(\log n)$ pointers, one per level it reaches. (The pictures draw the pointers horizontally for clarity, but each one points to the start of the next node.) They're called *skip* lists because the higher levels let you **skip over many items** at once. (The higher levels are like express lanes.)
 
 ### Searching
 
@@ -143,6 +143,10 @@ $$
 Search, insert and delete in a skip list all take **$O(\log n)$ expected time**, and the expected space is $O(n)$: about $n + \frac n2 + \frac n4 + \dots = 2n$ pointers.
 </Callout>
 
+<Callout tone="orange" label="The usual slip">
+Saying a skip list's search is $O(\log n)$ **in the worst case**. It's $O(\log n)$ **expected**, over the coin flips. If every flip came up tails, the skip list would be a plain linked list and a search would take $O(n)$. That's extremely unlikely, and, unlike quicksort with a fixed pivot, no particular *input* can cause it: the flips don't depend on the keys. A red-black tree, by contrast, guarantees $O(\lg n)$ every time.
+</Callout>
+
 ## Implementation notes
 
 - Node structures have **variable size**.
@@ -191,3 +195,20 @@ bool search(Node* head, int k) {
     { id: 21, title: "Merge Two Sorted Lists", slug: "merge-two-sorted-lists", why: "Warm up on the level-0 linked list operations every skip list is built from." },
   ]}
 />
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterms 2016, 2017, 2018)* What is the main difference between a skip list and a binary search tree? Which is better?
+
+<ModelAnswer>
+- **A plain binary search tree** takes $O(\log n)$ on average, but it is **sensitive to the order of the input**. Keys that arrive sorted build a path, and every operation becomes $O(n)$.
+- **A skip list** takes $O(\log n)$ **expected** time for every input. Its shape comes from coin flips, not from the order of the keys, so no input sequence is bad. The cost is extra pointers (about $2n$ in total, on average) and the small chance of bad luck with the flips.
+
+So a skip list is the better choice over a plain BST: simple code and no bad inputs. If you need a **guaranteed** $O(\lg n)$, use a balanced tree such as a red-black tree.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+None of the past finals asked about skip lists. The midterm question above is the best practice.

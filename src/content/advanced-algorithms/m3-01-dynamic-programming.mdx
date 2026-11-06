@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { KnapsackTable, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { DPVisualizer, FibonacciCalls } from "@/components/mdx/AdvancedVisualizers";
 
@@ -43,7 +43,7 @@ $$
 
 ## The coin-row problem
 
-There's a row of $n$ coins whose values are positive integers $c_1, c_2, \dots, c_n$, not necessarily all different. The goal is to pick up the **maximum amount of money**, with the rule that **no two coins next to each other** in the row can both be picked up.
+There's a row of $n$ coins whose values are positive integers $c_1, c_2, \dots, c_n$, not necessarily all different. The goal is to pick up the **maximum amount of money**. The rule: you can't pick up **two coins that are next to each other** in the row.
 
 **Example:** for `5, 1, 2, 10, 6, 2`, the best selection is 5, 10, 2, giving the maximum amount of **17**.
 
@@ -59,6 +59,10 @@ F(n) = \max\{\, c_n + F(n-2),\; F(n-1) \,\} \quad \text{for } n > 1, \qquad F(0)
 $$
 
 <DPVisualizer problem="coins" coins={[5, 1, 2, 10, 6, 2]} />
+
+<Callout tone="orange" label="Why not just grab the biggest coin?">
+A greedy rule, "take the largest coin left, then cross out its neighbours", fails. On `2 10 11 10` it takes 11, which knocks out both 10s, then takes 2: total 13. The DP finds $10 + 10 = 20$. Taking one coin changes what its neighbours are worth, and only the table keeps track of that.
+</Callout>
 
 | | |
 | --- | --- |
@@ -88,11 +92,25 @@ $$
 C(n, k) = C(n-1, k) + C(n-1, k-1) \quad \text{for } n > k > 0, \qquad C(n, 0) = 1, \quad C(n, n) = 1
 $$
 
-The value of $C(n, k)$ can be computed by filling a table **row by row**. Each cell needs only the cell above it and the one above-left: this is **Pascal's triangle**.
+The value of $C(n, k)$ can be computed by filling a table **row by row**. Each cell needs only the cell above it and the one above-left: this is [**Pascal's triangle**](/courses/discrete-mathematics/permutations-and-combinations#pascals-triangle).
 
 **In-class exercise:** compute $C(6, 3)$ with the DP algorithm. Do it on paper first, then step through:
 
 <DPVisualizer problem="binomial" n={6} k={3} />
+
+The finished table (only columns up to $k = 3$ are needed):
+
+| $n$ \\ $k$ | 0 | 1 | 2 | 3 |
+| ---: | ---: | ---: | ---: | ---: |
+| 0 | 1 | | | |
+| 1 | 1 | 1 | | |
+| 2 | 1 | 2 | 1 | |
+| 3 | 1 | 3 | 3 | 1 |
+| 4 | 1 | 4 | 6 | 4 |
+| 5 | 1 | 5 | 10 | 10 |
+| 6 | 1 | 6 | 15 | **20** |
+
+So $C(6, 3) = C(5, 3) + C(5, 2) = 10 + 10 = 20$.
 
 **Time efficiency:** $\Theta(nk)$. **Space efficiency:** $\Theta(nk)$.
 
@@ -117,6 +135,10 @@ where $c_{ij} = 1$ if there's a coin in cell $(i, j)$ and 0 otherwise, and $F(0,
 A **subsequence** of a string $S$ is what you get by deleting zero or more symbols from $S$. Some subsequences of "president" are *pred*, *sdn* and *predent*. The letters of a subsequence appear **in order** in $S$, but they don't have to be **consecutive**.
 
 The **longest common subsequence problem** is to find a longest subsequence that two sequences have in common.
+
+<Callout tone="orange" label="Subsequence is not substring">
+A **substring** must be consecutive; a **subsequence** need not be. "side" is a substring of "president"; "pred" and "sdn" are only subsequences. "president" and "providence" share no common substring longer than 4 letters ("iden"), yet their longest common subsequence, "priden", has 6.
+</Callout>
 
 - "president" and "providence": the LCS is **priden**.
 - "algorithm" and "alignment": one LCS is **algm**. (There can be more than one. The backtrace below finds *algt*, which is just as long.)
@@ -174,6 +196,18 @@ with the initial conditions $V[0, j] = 0$ and $V[i, 0] = 0$. In words: either le
 
 <KnapsackTable />
 
+The full table, row by row:
+
+| $i$ \\ $j$ | 0 | 1 | 2 | 3 | 4 | 5 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 1 ($w_1 = 2$, $v_1 = 12$) | 0 | 0 | 12 | 12 | 12 | 12 |
+| 2 ($w_2 = 1$, $v_2 = 10$) | 0 | 10 | 12 | 22 | 22 | 22 |
+| 3 ($w_3 = 3$, $v_3 = 20$) | 0 | 10 | 12 | 22 | 30 | 32 |
+| 4 ($w_4 = 2$, $v_4 = 15$) | 0 | 10 | 15 | 25 | 30 | **37** |
+
+The slides leave $V[4, 2]$ as a question. Item 4 fits ($2 - 2 = 0 \ge 0$), so $V[4, 2] = \max\{V[3, 2],\; 15 + V[3, 0]\} = \max\{12,\; 15\} = 15$. Taking item 4 alone beats the best of the first three items in capacity 2.
+
 **Backtracing** finds the actual optimal subset. Start from the last cell, $V[4, 5] = 37$. If it equals the value **above** it, item 4 is **not** in the knapsack, so go up a row with the same $j$. Otherwise item 4 **is** in, so go up a row to $j - w_4$. Repeat for each row. Here the best subset is items 1, 2 and 4, worth \$37.
 
 ```text
@@ -209,5 +243,120 @@ Algorithm DPKnapsack(w[1..n], v[1..n], W)
     { id: 64, title: "Minimum Path Sum", slug: "minimum-path-sum", why: "The robot's board, with min instead of max.", difficulty: "Medium" },
     { id: 1143, title: "Longest Common Subsequence", slug: "longest-common-subsequence", why: "The len(i, j) table exactly.", difficulty: "Medium" },
     { id: 416, title: "Partition Equal Subset Sum", slug: "partition-equal-subset-sum", why: "A 0-1 knapsack where weight = value and the target is half the total.", difficulty: "Medium" },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+The midterms didn't ask about dynamic programming beyond Fibonacci, which is in the [Divide and Conquer](/courses/advanced-algorithms/divide-and-conquer#fibonacci-numbers) lesson's practice.
+
+### Part 2: Final exam questions
+
+**1.** *(Exam-examples sheet)* Find the maximum amount of money you can pick up from the coin row $5, 1, 2, 10, 6, 2$, with no two adjacent coins, using dynamic programming.
+
+<ModelAnswer>
+$F(n) = \max\{c_n + F(n-2),\; F(n-1)\}$, with $F(0) = 0$ and $F(1) = c_1$:
+
+| $n$ | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| coin | | 5 | 1 | 2 | 10 | 6 | 2 |
+| $F(n)$ | 0 | 5 | 5 | 7 | 15 | 15 | 17 |
+
+The maximum is **17**. Backtracking: $F(6) = 2 + F(4)$ takes coin 6; $F(4) = 10 + F(2)$ takes coin 4; $F(2) = F(1)$ skips coin 2 and takes coin 1. The coins are $5 + 10 + 2$. Time and space $\Theta(n)$.
+</ModelAnswer>
+
+**2.** *(Finals 2018, and an exam-examples sheet)* Coins are placed in cells of a $5 \times 6$ board, at (row, column) $(1,5)$, $(2,2)$, $(2,4)$, $(3,4)$, $(3,6)$, $(4,3)$, $(4,6)$, $(5,1)$ and $(5,5)$. A robot starts at the top-left cell, moves only right or down, and ends at the bottom-right cell. Design a DP algorithm for the most coins it can collect, give its time and space, and apply it to this board.
+
+<ModelAnswer>
+$F(i, j) = \max\{F(i-1, j),\; F(i, j-1)\} + c_{ij}$, where $c_{ij} = 1$ if cell $(i, j)$ has a coin, and $F = 0$ outside the board. Fill the table row by row:
+
+| | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| **1** | 0 | 0 | 0 | 0 | 1 | 1 |
+| **2** | 0 | 1 | 1 | 2 | 2 | 2 |
+| **3** | 0 | 1 | 1 | 3 | 3 | 4 |
+| **4** | 0 | 1 | 2 | 3 | 3 | 5 |
+| **5** | 1 | 1 | 2 | 3 | 4 | 5 |
+
+The robot can collect **5 coins**, for example along $(2,2) \to (2,4) \to (3,4) \to (3,6) \to (4,6)$: backtrack from $(5,6)$, each time moving to whichever neighbour (above or left) gave the maximum. Time $\Theta(nm)$, space $\Theta(nm)$.
+</ModelAnswer>
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="dynamic-programming"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final 2022) What is the objective of the knapsack problem?",
+      options: [
+        { id: "a", text: "To get the maximum total value in the knapsack" },
+        { id: "b", text: "To get the minimum total value in the knapsack" },
+        { id: "c", text: "To get the maximum weight in the knapsack" },
+        { id: "d", text: "To get the minimum weight in the knapsack" },
+      ],
+      correctOptionId: "a",
+      explanation: "Choose items of greatest total value whose total weight fits the capacity W. Weight is the limit, value is the goal.",
+    },
+    {
+      id: "f2",
+      prompt: "(Final 2022) The 0/1 knapsack problem is solved optimally with:",
+      options: [
+        { id: "a", text: "The greedy method" },
+        { id: "b", text: "Branch and bound" },
+        { id: "c", text: "Dynamic programming" },
+        { id: "d", text: "Divide and conquer" },
+      ],
+      correctOptionId: "c",
+      explanation: "The V[i, j] table gives the optimum in O(nW). Greedy by value per kilo can fail when items can't be split.",
+    },
+    {
+      id: "f3",
+      prompt: "(Final 2022) What is the time complexity of LCS for strings of lengths M and N?",
+      options: [
+        { id: "a", text: "O(M!)" },
+        { id: "b", text: "O(MN)" },
+        { id: "c", text: "O(N!)" },
+        { id: "d", text: "O(N)" },
+      ],
+      correctOptionId: "b",
+      explanation: "One table cell per pair of prefixes, (M + 1)(N + 1) cells, each filled in O(1).",
+    },
+    {
+      id: "f4",
+      prompt: "(Finals, undated) What is the name of the technique that stores computed values for later lookup, rather than recomputing them?",
+      options: [
+        { id: "a", text: "Recursion tree" },
+        { id: "b", text: "Topological sort" },
+        { id: "c", text: "Amortized analysis" },
+        { id: "d", text: "Dynamic programming" },
+      ],
+      correctOptionId: "d",
+      explanation: "Solve each smaller instance once, record it in a table, and look it up when it's needed again. (Top-down, this is called memoization.)",
+    },
+    {
+      id: "f5",
+      prompt: "(Final, undated) Bottom-up dynamic programming works by:",
+      options: [
+        { id: "a", text: "Doubling the recursive calls" },
+        { id: "b", text: "Turning the recursive calls into a loop" },
+        { id: "c", text: "Solving the same subproblem many times" },
+        { id: "d", text: "Solving larger subproblems first, then smaller ones" },
+      ],
+      correctOptionId: "b",
+      explanation: "It fills the table from the smallest subproblems up, in a loop, so every value it needs is already there. D has the order backwards.",
+    },
+    {
+      id: "f6",
+      prompt: "(Final, true or false) Dynamic programming can turn exponential-time algorithms into polynomial-time ones.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "a",
+      explanation: "Fibonacci is the classic case: exponential by plain recursion, Θ(n) with a table.",
+    },
   ]}
 />
