@@ -50,7 +50,7 @@ A problem is **polynomial-time solvable** if there's an algorithm that correctly
 - sorting,
 - replacing,
 - finding a path between two points in a graph,
-- testing whether a number is **prime**: IsPrime(12) → No, IsPrime(1009) → Yes. (A polynomial algorithm for this was only found in 2002, in terms of the number of *digits*.)
+- testing whether a number is **prime**: IsPrime(12) → No, IsPrime(1009) → Yes. (A polynomial algorithm for this was only found in 2002. "Polynomial" here means in the number of *digits*.)
 
 **Why "input length" matters.** The obvious primality test tries every divisor up to $\sqrt N$. For $N = 1009$ that's about 31 tries, which sounds fast. But the input is the number's **digits**, not its value. A number with $d$ digits is about $10^d$, so trying divisors up to $\sqrt N$ takes about $10^{d/2}$ steps: **exponential** in the input length. A 100-digit number would need around $10^{50}$ tries. That's why primality wasn't known to be in P until 2002, even though trial division had been around for thousands of years.
 
@@ -133,7 +133,7 @@ So when you meet a new problem and prove it's NP-complete, you've learned someth
 
 ## Reduction
 
-A problem $R$ can be **reduced** to another problem $Q$ if any instance of $R$ can be **rephrased** as an instance of $Q$, and the solution to that instance gives a solution to the instance of $R$. The rephrasing is called a **transformation**.
+A problem $R$ can be **reduced** to another problem $Q$ if any instance of $R$ can be **rephrased** as an instance of $Q$, and solving that instance of $Q$ also solves the instance of $R$. The rephrasing is called a **transformation**.
 
 **Intuitively:** if $R$ reduces to $Q$ in polynomial time, then $R$ is **"no harder to solve" than $Q$**. A fast algorithm for $Q$ gives you a fast algorithm for $R$.
 
@@ -174,7 +174,7 @@ Some copies of this slide print $(a \vee b) \wedge (b \vee \neg c)$ but fill the
 
 </details>
 
-Checking one row is quick. The problem is that $n$ variables give $2^n$ rows: the 6-variable formula above already has 64, 100 variables give about $10^{30}$, and 300 variables would give more rows than there are atoms in the universe.
+Checking one row is quick. The problem is that $n$ variables give $2^n$ rows. The 6-variable formula above already has 64. With 100 variables there are about $10^{30}$, and 300 variables would give more rows than there are atoms in the universe.
 
 ## A reduction example: 3-CNF SAT to CLIQUE
 
@@ -200,7 +200,7 @@ The question asked is: **is there a clique of size $k$ in this graph?** (Why can
 
 - For each **clause**, create a **vertex for each literal**.
 - **Connect** two vertices if they come from **different** clauses.
-- But even when they come from different clauses, **don't** connect them if they're **incompatible**: no variable is ever connected to its own negation ($x$ and $\neg x$ can't both be true).
+- But **don't** connect two vertices if they're **incompatible**, even when they come from different clauses. No variable is ever connected to its own negation ($x$ and $\neg x$ can't both be true).
 
 **Why it works.** A clique of size $k$ (the number of clauses) must take **exactly one vertex from each clause**, because vertices in the same clause aren't connected. All those literals are pairwise compatible, so you can make them all TRUE at once, and that satisfies every clause. In the other direction, a satisfying assignment makes at least one literal TRUE in each clause, and picking one such literal per clause gives a $k$-clique.
 

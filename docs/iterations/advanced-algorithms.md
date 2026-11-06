@@ -17,12 +17,12 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M2
   - [x] M3
   - [x] M4
-- [ ] 4. Plain language
+- [x] 4. Plain language
   - [x] M0
   - [x] M1
   - [x] M2
   - [x] M3
-  - [ ] M4
+  - [x] M4
 - [ ] 5. Visualizations
   - [ ] M0
   - [ ] M1
@@ -299,3 +299,17 @@ In m3-02 the "clearly optimal" bullets had their reasons repeated after a "Why?"
 **Couldn't do:** the humanizer skill isn't installed here.
 
 **Not checked:** no browser check.
+
+### Round 4, plain language: M4 P and NP
+
+Same method: a script flagged sentences over 28 words and stock hard words in m4-01, then I rewrote the flagged lines by hand.
+
+**Changed (5 edits):** split the 2ⁿ-rows sentence and the clique-construction rule; simplified the definition of a reduction ("solving that instance of Q also solves the instance of R"); replaced "in terms of" in the primality note.
+
+**Checked and left as is:** P, NP, NP-hard, NP-complete, certificate, reduction, CNF and clique are explained where they first appear.
+
+**Couldn't do:** the humanizer skill isn't installed here.
+
+**Not checked:** no browser check.
+
+Round 4 is complete for all modules. Next: round 5, visualizations, starting with M0.
