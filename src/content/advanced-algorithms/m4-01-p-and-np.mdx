@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { GrowthTable } from "@/components/mdx/AlgoVisualizers";
 import { SatExplorer, SatToClique, PvsNpDiagram } from "@/components/mdx/AdvancedVisualizers";
 
@@ -226,3 +226,131 @@ Edit the formula to try your own. Add a clause like $(\neg x_3)$ and see whether
     Internet security depends on problems believed to have no fast algorithm, such as factoring huge numbers. If P = NP, much of today's cryptography would break.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+The midterms come before this topic in the course, and none of them asked about P and NP.
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="p-and-np"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final, undated) Problems that can be solved in polynomial time are called:",
+      options: [
+        { id: "a", text: "Intractable" },
+        { id: "b", text: "Tractable" },
+        { id: "c", text: "Decision problems" },
+        { id: "d", text: "Complete" },
+      ],
+      correctOptionId: "b",
+      explanation: "Tractable means solvable in O(nᵏ) time for some constant k: the problems in P. Intractable problems are thought to need more than polynomial time.",
+    },
+    {
+      id: "f2",
+      prompt: "(Final, undated, true or false) The sum and the composition of two polynomials are always polynomials.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "a",
+      explanation: "That's why P is closed under 'do one polynomial step after another' and 'call a polynomial routine from a polynomial algorithm', and why polynomial reductions chain together.",
+    },
+    {
+      id: "f3",
+      prompt: "(Final, undated) ______ is the class of decision problems that can be solved by non-deterministic polynomial algorithms.",
+      options: [
+        { id: "a", text: "NP" },
+        { id: "b", text: "P" },
+        { id: "c", text: "NP-hard" },
+        { id: "d", text: "NP-complete" },
+      ],
+      correctOptionId: "a",
+      explanation: "NP stands for non-deterministic polynomial: a guessed answer can be checked in polynomial time.",
+    },
+    {
+      id: "f4",
+      prompt: "(Final, undated, true or false) A non-deterministic algorithm is non-deterministic polynomial if its verification stage runs in polynomial time.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "a",
+      explanation: "Guess a certificate, then verify it. If verifying is polynomial, the problem is in NP.",
+    },
+    {
+      id: "f5",
+      prompt: "(Final, undated) To which class does CNF-satisfiability (SAT) belong?",
+      options: [
+        { id: "a", text: "Only NP" },
+        { id: "b", text: "P" },
+        { id: "c", text: "NP-complete" },
+        { id: "d", text: "NP-hard but not NP" },
+      ],
+      correctOptionId: "c",
+      explanation: "SAT is in NP (checking an assignment is quick) and every NP problem reduces to it (Cook–Levin), so it's NP-complete. 'NP' is true too, but less precise.",
+    },
+    {
+      id: "f6",
+      prompt: "(Final, undated) Assuming P ≠ NP, which of these is true?",
+      options: [
+        { id: "a", text: "NP-complete = NP" },
+        { id: "b", text: "NP-complete ∩ P = ∅ (no NP-complete problem is in P)" },
+        { id: "c", text: "NP-hard = NP" },
+        { id: "d", text: "P = NP-complete" },
+      ],
+      correctOptionId: "b",
+      explanation: "If any NP-complete problem were in P, every NP problem would be too, and P would equal NP. So when P ≠ NP, none of them can be in P.",
+    },
+    {
+      id: "f7",
+      prompt: "(Final 2022) The Hamiltonian path problem is:",
+      options: [
+        { id: "a", text: "An NP problem, but not NP-complete" },
+        { id: "b", text: "An 'N class' problem" },
+        { id: "c", text: "A P class problem" },
+        { id: "d", text: "An NP-complete problem" },
+      ],
+      correctOptionId: "d",
+      explanation: "A proposed path is quick to check, so it's in NP, and it is also NP-hard. Together that makes it NP-complete.",
+    },
+    {
+      id: "f8",
+      prompt: "(Final 2022, true or false) TSP. Input: an undirected graph with non-negative edge costs. Output: a minimum-cost tour, a cycle that visits every vertex exactly once.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "a",
+      explanation: "That's the definition used in this lesson.",
+    },
+    {
+      id: "f9",
+      prompt: "(Final 2022) With 6 cities, the TSP search space has size:",
+      options: [
+        { id: "a", text: "120" },
+        { id: "b", text: "720" },
+        { id: "c", text: "60" },
+        { id: "d", text: "24" },
+      ],
+      correctOptionId: "b",
+      explanation: "Counting every ordering of the cities, as the lesson's table does: 6! = 720. (Only (6 − 1)!/2 = 60 of them are different tours.)",
+    },
+    {
+      id: "f10",
+      prompt: "(Final 2022, true or false) A graph on a, b, c, d, e, f, g has the edges a–b, a–c, a–d, a–g, b–c, b–d, b–f, b–g, c–d, c–e, c–f, c–g, d–f, d–g, f–g. It contains a clique of size 5.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "a",
+      explanation: "{a, b, c, d, g}: all 10 pairs are edges (a–b, a–c, a–d, a–g, b–c, b–d, b–g, c–d, c–g, d–g). Checking a proposed clique is quick, which is what puts CLIQUE in NP.",
+    },
+  ]}
+/>

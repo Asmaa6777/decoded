@@ -404,5 +404,65 @@ Shortest distances: **2 = 9, 6 = 14, 7 = 15, 3 = 32, 5 = 34, 4 = 45, t = 50**. T
       correctOptionId: "c",
       explanation: "Dijkstra assumes there are no negative edges at all. Bellman–Ford and Floyd–Warshall can report a negative cycle.",
     },
+    {
+      id: "f6",
+      prompt: "(Final 2022) Directed edges: a→b 4, a→f 5, b→c 2, b→g 1, c→g 3, c→d 10, g→a 2, g→d 2, g→f 8, g→e 4, d→e 6, e→f 1. With b as the source, what is the minimum cost to reach f?",
+      options: [
+        { id: "a", text: "8" },
+        { id: "b", text: "9" },
+        { id: "c", text: "4" },
+        { id: "d", text: "6" },
+      ],
+      correctOptionId: "d",
+      explanation: "b → g (1) → e (4) → f (1) = 6. The tempting b → g → f costs 1 + 8 = 9, and b → g → a → f costs 1 + 2 + 5 = 8.",
+    },
+    {
+      id: "f7",
+      prompt: "(Final 2022) How many times are insert and EXTRACT-MIN each performed per vertex in Dijkstra's algorithm?",
+      options: [
+        { id: "a", text: "1" },
+        { id: "b", text: "2" },
+        { id: "c", text: "3" },
+        { id: "d", text: "0" },
+      ],
+      correctOptionId: "a",
+      explanation: "Every vertex enters the queue once and leaves it once. Later improvements use DECREASE-KEY instead.",
+    },
+    {
+      id: "f8",
+      prompt: "(Final 2022) The largest possible number of DECREASE-KEY operations in Dijkstra's algorithm equals:",
+      options: [
+        { id: "a", text: "The number of vertices" },
+        { id: "b", text: "The number of edges" },
+        { id: "c", text: "The number of vertices − 1" },
+        { id: "d", text: "The number of edges − 1" },
+      ],
+      correctOptionId: "b",
+      explanation: "Each edge is relaxed once, when its tail is extracted, and each relaxation can trigger at most one DECREASE-KEY.",
+    },
+    {
+      id: "f9",
+      prompt: "(Final 2022) What is the running time of Dijkstra's algorithm with a binary min-heap?",
+      options: [
+        { id: "a", text: "O(V)" },
+        { id: "b", text: "O(V log V)" },
+        { id: "c", text: "O(E)" },
+        { id: "d", text: "O(E log V)" },
+      ],
+      correctOptionId: "d",
+      explanation: "V EXTRACT-MINs and up to E DECREASE-KEYs, each O(log V): O((V + E) log V) = O(E log V) for a connected graph.",
+    },
+    {
+      id: "f10",
+      prompt: "(Final 2022) Dijkstra's algorithm is the prime example of:",
+      options: [
+        { id: "a", text: "A greedy algorithm" },
+        { id: "b", text: "Branch and bound" },
+        { id: "c", text: "Backtracking" },
+        { id: "d", text: "Dynamic programming" },
+      ],
+      correctOptionId: "a",
+      explanation: "At each step it takes the unfinished vertex with the smallest estimate and never reconsiders it.",
+    },
   ]}
 />

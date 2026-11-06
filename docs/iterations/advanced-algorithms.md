@@ -29,12 +29,12 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M2
   - [x] M3
   - [x] M4
-- [ ] 6. Practice
+- [x] 6. Practice
   - [x] M0
   - [x] M1
   - [x] M2
   - [x] M3
-  - [ ] M4
+  - [x] M4
 - [ ] 7. Connections (whole course)
 - [ ] 8. Student read-through
   - [ ] M0
@@ -467,3 +467,15 @@ Every answer was recomputed in Python: both 2023 traces, the 2018 MST, Dijkstra,
 **Left out:** "match the following pairs" (the pairs aren't in the scan), "DP is used to find: all optimal solutions / one solution …" (ambiguous options), and the Kruskal edge-order MCQ in an undated final whose graph isn't in the text.
 
 **Not checked:** no browser check.
+
+### Round 6, practice: M4 P and NP
+
+**Added:** m4-01 now ends with past-exam practice. No midterm asked about P and NP (the topic comes after them), and the section says so. Part 2 has 10 final MCQs: tractable, closure of polynomials, NP as non-deterministic polynomial, the verification stage, SAT is NP-complete, "assuming P ≠ NP" (NP-complete ∩ P = ∅, rebuilt from a garbled option), Hamiltonian path, the TSP definition, the 6-city search space (720 orderings, 60 tours), and the size-5 clique {a, b, c, d, g}, read from the figure with all 10 edges listed.
+
+**Also added while reading these finals:** 3 coin-change MCQs to m3-02 (greedy 1, 3, 4 fails at 6; coin change needs DP; O(S · N)) and 5 Dijkstra MCQs to m3-05 (Final 2022: the b-to-f cost of 6 rebuilt from the figure and checked in Python; one insert and EXTRACT-MIN per vertex; at most E DECREASE-KEYs; O(E log V) with a binary heap; Dijkstra is greedy).
+
+**Left out:** Final 2022's minimum-tour question, whose hand-drawn figure has an edge weight that could read as 4 or 1 (giving 13 or 10).
+
+**Not checked:** no browser check.
+
+Round 6 is complete for all modules. Next: round 7, connections (whole course).
