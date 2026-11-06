@@ -518,6 +518,66 @@ export function MinMaxVisualizer({
   );
 }
 
+/* ---------------------------- P vs NP ---------------------------- */
+
+/** The two possible pictures of P, NP, NP-complete and NP-hard, with example problems in each region. */
+export function PvsNpDiagram({ initial = "differ" }: { initial?: "differ" | "equal" }) {
+  const [world, setWorld] = useState<"differ" | "equal">(initial);
+  const label = (x: number, y: number, text: string, cls = "fill-current", size = 13, bold = true) => (
+    <text x={x} y={y} textAnchor="middle" fontSize={size} className={`${cls} font-mono ${bold ? "font-bold" : ""}`}>
+      {text}
+    </text>
+  );
+  return (
+    <Panel title="Two possible worlds" legend={[["bg-mint", "P"], ["bg-sky", "NP"], ["bg-orange", "NP-complete"], ["bg-violet", "NP-hard"]]}>
+      <Toggle<"differ" | "equal">
+        value={world}
+        onChange={setWorld}
+        options={[
+          ["differ", "If P ≠ NP"],
+          ["equal", "If P = NP"],
+        ]}
+      />
+      <svg viewBox="0 0 560 300" className="w-full h-auto max-w-[620px] mx-auto" role="img" aria-label={world === "differ" ? "P inside NP, NP-complete at the hard edge of NP, NP-hard reaching outside NP" : "P, NP and NP-complete as one class, with NP-hard around it"}>
+        {/* NP-hard: everything at least as hard as all of NP; reaches outside NP */}
+        <path d="M 330 20 L 545 20 L 545 280 L 330 280 Z" className="fill-violet/10 stroke-violet" strokeWidth={2} strokeDasharray="6 4" />
+        {label(470, 45, "NP-hard", "fill-violet")}
+        {label(470, 255, "TSP (shortest tour)", "fill-current", 11, false)}
+        {label(470, 270, "halting problem", "fill-current", 11, false)}
+        {world === "differ" ? (
+          <>
+            <ellipse cx={250} cy={150} rx={230} ry={120} className="fill-sky/10 stroke-sky" strokeWidth={2} />
+            {label(90, 70, "NP", "fill-sky")}
+            <ellipse cx={170} cy={160} rx={110} ry={75} className="fill-mint/15 stroke-mint" strokeWidth={2} />
+            {label(170, 130, "P", "fill-mint")}
+            {label(170, 160, "sorting", "fill-current", 11, false)}
+            {label(170, 176, "shortest paths", "fill-current", 11, false)}
+            {label(170, 192, "MST, primality", "fill-current", 11, false)}
+            <ellipse cx={405} cy={150} rx={70} ry={70} className="fill-orange/15 stroke-orange" strokeWidth={2} />
+            {label(405, 125, "NP-complete", "fill-orange", 12)}
+            {label(405, 152, "SAT, CLIQUE", "fill-current", 11, false)}
+            {label(405, 168, "TSP (is there a", "fill-current", 11, false)}
+            {label(405, 182, "tour ≤ k?)", "fill-current", 11, false)}
+          </>
+        ) : (
+          <>
+            <ellipse cx={250} cy={150} rx={200} ry={110} className="fill-mint/15 stroke-mint" strokeWidth={2} />
+            {label(250, 110, "P = NP = NP-complete", "fill-mint", 14)}
+            {label(250, 145, "sorting, shortest paths, SAT, CLIQUE,", "fill-current", 11, false)}
+            {label(250, 161, "TSP (is there a tour ≤ k?)…", "fill-current", 11, false)}
+            {label(250, 190, "all solvable in polynomial time", "fill-current", 11, false)}
+          </>
+        )}
+      </svg>
+      <p className="text-sm text-muted-foreground">
+        {world === "differ"
+          ? "Most computer scientists believe this one. P sits inside NP, the NP-complete problems are the hardest part of NP, and NP-hard stretches outside NP to problems that aren't even checkable quickly."
+          : "If someone found a polynomial algorithm for one NP-complete problem, the reductions would carry it to every problem in NP, and the three classes would merge. (Strictly, the two trivial problems \"always yes\" and \"always no\" stay out of NP-complete.) NP-hard problems outside NP, like the halting problem, stay hard either way."}
+      </p>
+    </Panel>
+  );
+}
+
 /* ------------------------- load factor chart ------------------------- */
 
 /** Expected probes vs load factor: 1/(1 − α) for open addressing against 1 + α for chaining. */

@@ -23,12 +23,12 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M2
   - [x] M3
   - [x] M4
-- [ ] 5. Visualizations
+- [x] 5. Visualizations
   - [x] M0
   - [x] M1
   - [x] M2
   - [x] M3
-  - [ ] M4
+  - [x] M4
 - [ ] 6. Practice
   - [ ] M0
   - [ ] M1
@@ -368,3 +368,19 @@ Listed every idea in m3-01 to m3-05 that is still only text and judged whether a
 **Phone width, dark theme, reduced motion (code audit):** the arrowheads use the same theme classes as their edges (`fill-` for `stroke-`) and the graph SVG already scales to its container; nothing new animates beyond the existing colour transition.
 
 **Couldn't check:** no browser automation is installed, so the arrow placement wasn't looked at in a real browser.
+
+### Round 5, visualizations: M4 P and NP
+
+Listed every idea in m4-01 that is still only text and judged whether a reader needs something to see or play with.
+
+**Built:** `PvsNpDiagram`, the lecture's "two possible worlds" picture, with a toggle between P ≠ NP and P = NP and example problems in each region (sorting, shortest paths, MST and primality in P; SAT, CLIQUE and decision TSP in NP-complete; shortest-tour TSP and the halting problem in NP-hard only). NP-hard is drawn as its own region reaching outside NP, the point students most often draw wrong. A geometry check confirmed the NP-complete region lies inside both NP and NP-hard. It's a static picture with no algorithm, so there's no library logic to test; the lesson render test covers it.
+
+**Checked:** the SAT explorer's second preset is (a ∨ b) ∧ (b ∨ ¬c), as the lesson tells readers.
+
+**Judged and left as text:** the reduction definition and the LCM/GCD and linear/quadratic examples (one line each), the TSP table (the growth table covers the shape), and the input-length argument for primality. The growth table, SAT explorer and SAT-to-CLIQUE builder already cover the rest.
+
+**Phone width, dark theme, reduced motion (code audit):** the SVG scales with `w-full h-auto`, uses theme classes only, and doesn't animate.
+
+**Couldn't check:** no browser automation is installed, so the label placement wasn't looked at in a real browser.
+
+Round 5 is complete for all modules. Next: round 6, practice, starting with M0. Check upstream PR #63 (an 80-question Advanced Algorithms question bank) first, so the work isn't duplicated.

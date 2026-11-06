@@ -1,6 +1,6 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { GrowthTable } from "@/components/mdx/AlgoVisualizers";
-import { SatExplorer, SatToClique } from "@/components/mdx/AdvancedVisualizers";
+import { SatExplorer, SatToClique, PvsNpDiagram } from "@/components/mdx/AdvancedVisualizers";
 
 # P, NP, NP-Hard and NP-Complete
 
@@ -108,6 +108,10 @@ There are **two possibilities**:
 
 - **P ≠ NP:** P is a smaller set inside NP. Some problems are easy to *check* but truly hard to *solve*.
 - **P = NP:** the two classes are the same. Every problem whose answer can be checked quickly can also be solved quickly.
+
+Switch between the two worlds. NP-hard is drawn on its own because it reaches **outside** NP: it includes problems that can't even be checked quickly.
+
+<PvsNpDiagram />
 
 <Callout tone="violet" label="The big open question">
 **No one knows whether P = NP.** It's one of the seven Millennium Prize Problems, and solving it is worth **a million dollars**. Most computer scientists believe P ≠ NP.
