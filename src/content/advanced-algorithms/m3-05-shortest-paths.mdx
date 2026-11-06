@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { GraphTraversal, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { DijkstraVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
@@ -247,5 +247,162 @@ You met BFS in the first algorithms course, on undirected graphs. Here it runs o
     { id: 743, title: "Network Delay Time", slug: "network-delay-time", why: "Single-source shortest paths with Dijkstra and a priority_queue.", difficulty: "Medium" },
     { id: 1514, title: "Path with Maximum Probability", slug: "path-with-maximum-probability", why: "Dijkstra where you multiply probabilities and take the maximum.", difficulty: "Medium" },
     { id: 1091, title: "Shortest Path in Binary Matrix", slug: "shortest-path-in-binary-matrix", why: "Every step costs 1, so BFS is enough.", difficulty: "Medium" },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**Midterm 2023 (questions 9 to 16).** Apply Dijkstra's algorithm to this directed graph to find the shortest paths from node 2. The edges are: 2→0 (4), 2→1 (8), 2→3 (5), 2→5 (2), 0→1 (3), 0→4 (5), 1→4 (1), 3→1 (2), 3→4 (5), 5→3 (1), 5→4 (5). After each step, for every node $i$ not yet in $S$: $d[i]$ is the shortest distance from 2 to $i$ using only nodes in $S$ on the way, and $p[i]$ is the node just before $i$ on that path. After step 1: $S = \{2\}$, $d[0] = 4$, $d[1] = 8$, $d[3] = 5$, $d[5] = 2$. Each answer counts only the nodes with $d[i] \ne \infty$.
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="shortest-paths"
+  practice
+  questions={[
+    {
+      id: "m9",
+      prompt: "(Midterm 2023, Q9) After the 2nd step, the sum of d[i] for the nodes not in S is:",
+      options: [{ id: "a", text: "15" }, { id: "b", text: "17" }, { id: "c", text: "19" }, { id: "d", text: "22" }, { id: "e", text: "24" }],
+      correctOptionId: "d",
+      explanation: "Step 2 adds node 5 (d = 2). Relax: d[3] = 2 + 1 = 3, d[4] = 2 + 5 = 7. With d[0] = 4 and d[1] = 8: 4 + 8 + 3 + 7 = 22.",
+    },
+    {
+      id: "m10",
+      prompt: "(Midterm 2023, Q10) After the 2nd step, the sum of p[i] is:",
+      options: [{ id: "a", text: "6" }, { id: "b", text: "9" }, { id: "c", text: "11" }, { id: "d", text: "14" }, { id: "e", text: "15" }],
+      correctOptionId: "d",
+      explanation: "p[0] = 2, p[1] = 2, p[3] = 5, p[4] = 5. Sum 14.",
+    },
+    {
+      id: "m11",
+      prompt: "(Midterm 2023, Q11) After the 3rd step, the sum of d[i] is:",
+      options: [{ id: "a", text: "9" }, { id: "b", text: "12" }, { id: "c", text: "15" }, { id: "d", text: "16" }, { id: "e", text: "19" }],
+      correctOptionId: "d",
+      explanation: "Step 3 adds node 3 (d = 3). Relax: d[1] = 3 + 2 = 5 (better than 8); d[4] = 3 + 5 = 8 doesn't beat 7. Sum 4 + 5 + 7 = 16.",
+    },
+    {
+      id: "m12",
+      prompt: "(Midterm 2023, Q12) After the 3rd step, the sum of p[i] is:",
+      options: [{ id: "a", text: "4" }, { id: "b", text: "5" }, { id: "c", text: "6" }, { id: "d", text: "9" }, { id: "e", text: "10" }],
+      correctOptionId: "e",
+      explanation: "p[0] = 2, p[1] = 3 (changed), p[4] = 5. Sum 10.",
+    },
+    {
+      id: "m13",
+      prompt: "(Midterm 2023, Q13) After the 4th step, the sum of d[i] is:",
+      options: [{ id: "a", text: "7" }, { id: "b", text: "8" }, { id: "c", text: "9" }, { id: "d", text: "11" }, { id: "e", text: "12" }],
+      correctOptionId: "e",
+      explanation: "Step 4 adds node 0 (d = 4). Relax: 4 + 3 = 7 doesn't beat d[1] = 5, and 4 + 5 = 9 doesn't beat d[4] = 7. Sum 5 + 7 = 12.",
+    },
+    {
+      id: "m14",
+      prompt: "(Midterm 2023, Q14) After the 4th step, the sum of p[i] is:",
+      options: [{ id: "a", text: "4" }, { id: "b", text: "5" }, { id: "c", text: "6" }, { id: "d", text: "7" }, { id: "e", text: "8" }],
+      correctOptionId: "e",
+      explanation: "p[1] = 3, p[4] = 5. Sum 8.",
+    },
+    {
+      id: "m15",
+      prompt: "(Midterm 2023, Q15) After the 5th step, the sum of d[i] is:",
+      options: [{ id: "a", text: "3" }, { id: "b", text: "4" }, { id: "c", text: "5" }, { id: "d", text: "6" }, { id: "e", text: "7" }],
+      correctOptionId: "d",
+      explanation: "Step 5 adds node 1 (d = 5). Relax: d[4] = 5 + 1 = 6, better than 7. Only d[4] = 6 is left.",
+    },
+    {
+      id: "m16",
+      prompt: "(Midterm 2023, Q16) After the 5th step, the sum of p[i] is:",
+      options: [{ id: "a", text: "0" }, { id: "b", text: "1" }, { id: "c", text: "2" }, { id: "d", text: "3" }, { id: "e", text: "5" }],
+      correctOptionId: "b",
+      explanation: "p[4] = 1 now (the path 2 → 5 → 3 → 1 → 4 of length 6). Sum 1.",
+    },
+  ]}
+/>
+
+### Part 2: Final exam questions
+
+**1.** *(Final 2018)* Find the shortest paths from $s$ to every node with Dijkstra's algorithm. Edges: s→2 (9), s→6 (14), s→7 (15), 2→3 (24), 6→3 (18), 6→5 (30), 6→7 (5), 7→5 (20), 7→t (44), 3→5 (2), 3→t (19), 5→4 (11), 5→t (16), 4→3 (6), 4→t (6).
+
+<ModelAnswer>
+| extract | $d$ | relaxations that improve something |
+| --- | ---: | --- |
+| s | 0 | 2 = 9, 6 = 14, 7 = 15 |
+| 2 | 9 | 3 = 9 + 24 = 33 |
+| 6 | 14 | 3 = 14 + 18 = 32; 5 = 44 (7: 14 + 5 = 19 doesn't beat 15) |
+| 7 | 15 | 5 = 15 + 20 = 35; t = 15 + 44 = 59 |
+| 3 | 32 | 5 = 32 + 2 = 34; t = 32 + 19 = 51 |
+| 5 | 34 | 4 = 34 + 11 = 45; t = 34 + 16 = 50 |
+| 4 | 45 | nothing (45 + 6 = 51 doesn't beat t = 50) |
+| t | 50 | done |
+
+Shortest distances: **2 = 9, 6 = 14, 7 = 15, 3 = 32, 5 = 34, 4 = 45, t = 50**. The path to $t$ is $s \to 6 \to 3 \to 5 \to t$.
+</ModelAnswer>
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="shortest-paths"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Finals, undated) Dijkstra's algorithm solves which problem?",
+      options: [
+        { id: "a", text: "All-pairs shortest paths" },
+        { id: "b", text: "Single-source shortest paths" },
+        { id: "c", text: "Network flow" },
+        { id: "d", text: "Sorting" },
+      ],
+      correctOptionId: "b",
+      explanation: "From one source s, it finds the shortest distance to every other vertex.",
+    },
+    {
+      id: "f2",
+      prompt: "(Finals, undated) What is the time complexity of Dijkstra's algorithm (with an array as the priority queue)?",
+      options: [
+        { id: "a", text: "O(N)" },
+        { id: "b", text: "O(N³)" },
+        { id: "c", text: "O(N²)" },
+        { id: "d", text: "O(log N)" },
+      ],
+      correctOptionId: "c",
+      explanation: "V extractions at O(V) each, plus E O(1) decrease-keys: O(V²). With a binary heap it's O(E lg V).",
+    },
+    {
+      id: "f3",
+      prompt: "(Finals, undated) Dijkstra's algorithm cannot be applied to:",
+      options: [
+        { id: "a", text: "Directed, weighted graphs" },
+        { id: "b", text: "Graphs with negative edge weights" },
+        { id: "c", text: "Unweighted graphs" },
+        { id: "d", text: "Undirected, unweighted graphs" },
+      ],
+      correctOptionId: "b",
+      explanation: "Once a vertex is finished, Dijkstra never revisits it. A negative edge found later could have made it shorter (see the example in this lesson).",
+    },
+    {
+      id: "f4",
+      prompt: "(Finals, undated) How many different priority queue operations does Dijkstra's algorithm use?",
+      options: [
+        { id: "a", text: "1" },
+        { id: "b", text: "3" },
+        { id: "c", text: "2" },
+        { id: "d", text: "4" },
+      ],
+      correctOptionId: "b",
+      explanation: "Insert (to build Q), EXTRACT-MIN (to pick the next vertex) and DECREASE-KEY (when a relaxation succeeds).",
+    },
+    {
+      id: "f5",
+      prompt: "(Finals 2022 and undated) Which shortest-path algorithm cannot detect a negative-weight cycle?",
+      options: [
+        { id: "a", text: "Bellman–Ford" },
+        { id: "b", text: "Floyd–Warshall" },
+        { id: "c", text: "Dijkstra" },
+        { id: "d", text: "None of them" },
+      ],
+      correctOptionId: "c",
+      explanation: "Dijkstra assumes there are no negative edges at all. Bellman–Ford and Floyd–Warshall can report a negative cycle.",
+    },
   ]}
 />

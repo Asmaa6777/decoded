@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { HuffmanVisualizer, ActivitySelector } from "@/components/mdx/AdvancedVisualizers";
 
@@ -235,5 +235,76 @@ Step through the textbook's 11 activities:
     { id: 435, title: "Non-overlapping Intervals", slug: "non-overlapping-intervals", why: "Activity selection: keep the most, remove the rest. Sort by end time.", difficulty: "Medium" },
     { id: 452, title: "Minimum Number of Arrows to Burst Balloons", slug: "minimum-number-of-arrows-to-burst-balloons", why: "The same earliest-finish greedy choice, in disguise.", difficulty: "Medium" },
     { id: 1167, title: "Minimum Cost to Connect Sticks", slug: "minimum-cost-to-connect-sticks", why: "Huffman's merge-the-two-smallest loop, where the cost is B(T).", difficulty: "Medium" },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2024, retake)* Give a greedy $O(n \log n)$ algorithm for the Huffman codes of the characters of a string, trace it on "aabcaaadbcddaa", and prove it correct.
+
+<ModelAnswer>
+**Algorithm:** count each character, put the counts in a min-heap, and repeat $n - 1$ times: take out the two smallest, join them under a new node whose count is their sum, and put that node back. Reading 0 for left and 1 for right on the path to each leaf gives the codes. Building the heap is $O(n)$, and each of the $n - 1$ rounds costs $O(\log n)$: $O(n \log n)$.
+
+**Trace.** The string has 14 characters: a × 7, d × 3, b × 2, c × 2.
+
+| round | take the two smallest | new node |
+| --- | --- | --- |
+| 1 | b (2), c (2) | 4 |
+| 2 | d (3), 4 | 7 |
+| 3 | a (7), 7 | 14 (the root) |
+
+Codes: **a = 0, d = 10, b = 110, c = 111**. Total $7 \cdot 1 + 3 \cdot 2 + 2 \cdot 3 + 2 \cdot 3 = 25$ bits, against $14 \cdot 2 = 28$ for a fixed 2-bit code. (Breaking the ties differently swaps some 0s and 1s, but the lengths stay the same.)
+
+**Correctness**, as in this lesson:
+
+- **Greedy choice:** some optimal tree has the two rarest characters as sibling leaves at the deepest level. Swap them into the deepest pair; that never increases the cost.
+- **Optimal substructure:** after merging $x$ and $y$ into $z$ with $f[z] = f[x] + f[y]$, $B(T) = B(T') + f[x] + f[y]$. So an optimal tree for the smaller alphabet gives an optimal tree for the original.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+**2.** *(Final 2018)* Construct a variable-length Huffman code for A = 20, B = 30, C = 15, D = 5, E = 8, F = 22.
+
+<ModelAnswer>
+| round | merge | new node |
+| --- | --- | --- |
+| 1 | D (5), E (8) | 13 |
+| 2 | 13, C (15) | 28 |
+| 3 | A (20), F (22) | 42 |
+| 4 | 28, B (30) | 58 |
+| 5 | 42, 58 | 100 (the root) |
+
+Codes: **A = 00, F = 01, B = 11, C = 101, D = 1000, E = 1001**. Total bits: $20 \cdot 2 + 22 \cdot 2 + 30 \cdot 2 + 15 \cdot 3 + 5 \cdot 4 + 8 \cdot 4 = 241$, against $100 \cdot 3 = 300$ with a fixed 3-bit code.
+</ModelAnswer>
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="huffman-and-activity-selection"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Finals, several years) What is the Huffman code for a, b, c, d, e with probabilities 1/2, 1/4, 1/8, 1/16, 1/32?",
+      options: [
+        { id: "a", text: "0, 10, 110, 1110, 1111" },
+        { id: "b", text: "10, 011, 11, 001, 010" },
+        { id: "c", text: "10, 01, 0001, 100, 1010" },
+        { id: "d", text: "100, 110, 001, 000, 010" },
+      ],
+      correctOptionId: "a",
+      explanation: "Merging the two smallest each time builds a chain: e and d first, then c, then b, then a. Each character's code is one bit longer than the one before. Options B to D aren't even prefix codes, or give the most common letter a long code.",
+    },
+    {
+      id: "f2",
+      prompt: "(Final, true or false) Huffman encoding uses a dynamic programming strategy to compress data.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "b",
+      explanation: "Huffman is greedy: it always merges the two least frequent nodes and never reconsiders a choice.",
+    },
   ]}
 />

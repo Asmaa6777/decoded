@@ -211,6 +211,26 @@ Use **Insert** and **Delete** above on your own keys. Whatever you do, the tree 
 
 ### Part 2: Final exam questions
 
+**2.** *(Final 2018)* Insert $5, 1, 4, 10, 9, 20, 6, 7$ into an empty red-black tree. Show each step, with each node's colour and black-height.
+
+<ModelAnswer>
+| insert | what happens | tree afterwards (B = black, R = red) |
+| --- | --- | --- |
+| 5 | the root is coloured black | 5B |
+| 1 | red under a black parent, no fix | 5B(1R, –) |
+| 4 | right of the red 1, uncle NIL (black), **inner** child: Case 2 (rotate left at 1), then Case 3 (rotate right at 5, recolour) | 4B(1R, 5R) |
+| 10 | parent 5 red, uncle 1 red: Case 1, recolour 1 and 5 black and 4 red; the root goes back to black | 4B(1B, 5B(–, 10R)) |
+| 9 | left of the red 10, uncle NIL, inner: Case 2 (rotate right at 10), then Case 3 (rotate left at 5) | 4B(1B, 9B(5R, 10R)) |
+| 20 | parent 10 red, uncle 5 red: Case 1, recolour; 9 turns red, and its parent 4 is black, so stop | 4B(1B, 9R(5B, 10B(–, 20R))) |
+| 6 | right of the black 5, no fix | 4B(1B, 9R(5B(–, 6R), 10B(–, 20R))) |
+| 7 | right of the red 6, uncle NIL, **outer** child: Case 3 (rotate left at 5, recolour) | 4B(1B, 9R(6B(5R, 7R), 10B(–, 20R))) |
+
+**Black-heights** in the final tree (counting the black nodes below, NIL included): the root 4 has bh = 2. Node 9 has 2, and 1, 6 and 10 have 1. The red leaves 5, 7 and 20 have bh = 1, and every NIL has 0.
+
+<RBTreeVisualizer ops={[5, 1, 4, 10, 9, 20, 6, 7].map((key) => ({ op: "insert", key }))} />
+</ModelAnswer>
+
+
 <Quiz
   courseSlug="advanced-algorithms"
   lessonSlug="red-black-insert-delete"

@@ -61,6 +61,9 @@ describe("red-black tree", () => {
     expect(keys(f[0].state)).toBe("2B(1R(-,-),4R(-,-))");
     // 5: red uncle, recolor (case 1); 9: outer child with a black uncle, rotate left at 4 (case 3)
     expect(keys(f.at(-1)!.state)).toBe("2B(1B(-,-),5B(4R(-,-),9R(-,-)))");
+    // the 2018 final's sequence, as worked in m2-05
+    const g = rbFrames([], [5, 1, 4, 10, 9, 20, 6, 7].map((key) => ({ op: "insert" as const, key })));
+    expect(keys(g.at(-1)!.state)).toBe("4B(1B(-,-),9R(6B(5R(-,-),7R(-,-)),10B(-,20R(-,-))))");
   });
 
   it("uses the insertion cases on the textbook example (insert 15)", () => {

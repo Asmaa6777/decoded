@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { CoinChangeGreedy, JobScheduling, HuffmanVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
@@ -183,5 +183,57 @@ This greedy rule is optimal: each robot takes every coin it could possibly reach
     { id: 322, title: "Coin Change", slug: "coin-change", why: "Greedy fails here, just like with krons. Solve it with DP.", difficulty: "Medium" },
     { id: 455, title: "Assign Cookies", slug: "assign-cookies", why: "A greedy choice that is provably optimal: sort both lists and match them up." },
     { id: 1046, title: "Last Stone Weight", slug: "last-stone-weight", why: "Repeatedly take the two largest with a heap, the mirror image of Huffman's loop." },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+No midterm has asked about greedy algorithms in general. Prim, Dijkstra and Huffman questions are in the next three lessons.
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="greedy-algorithms"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final 2022) Which strategy builds up a solution by choosing the option that looks best at every step?",
+      options: [
+        { id: "a", text: "The greedy method" },
+        { id: "b", text: "Branch and bound" },
+        { id: "c", text: "Dynamic programming" },
+        { id: "d", text: "Divide and conquer" },
+      ],
+      correctOptionId: "a",
+      explanation: "Take the best you can get right now, without regard for future consequences. That is the definition of greedy.",
+    },
+    {
+      id: "f2",
+      prompt: "(Finals, undated) Greedy algorithms make ______ optimal choices, hoping to reach ______ optimal solutions.",
+      options: [
+        { id: "a", text: "Globally, locally" },
+        { id: "b", text: "Top-down, bottom-up" },
+        { id: "c", text: "Locally, globally" },
+        { id: "d", text: "Bottom-up, top-down" },
+      ],
+      correctOptionId: "c",
+      explanation: "Each step picks the local optimum, in the hope that the choices add up to the global optimum. They do for problems with the greedy-choice property, but not always.",
+    },
+    {
+      id: "f3",
+      prompt: "(Final 2022) Items as {value, weight}: {60, 20}, {50, 25}, {20, 5}. Capacity 40. What is the best value if items can be divided, and if they can't?",
+      options: [
+        { id: "a", text: "100 and 80" },
+        { id: "b", text: "110 and 70" },
+        { id: "c", text: "130 and 110" },
+        { id: "d", text: "110 and 80" },
+      ],
+      correctOptionId: "d",
+      explanation: "Divisible: greedy by value per kilo (4, 3, 2) takes all of {20, 5} and {60, 20}, then 15 kg of {50, 25} worth 30, for 110. Not divisible: {60, 20} + {20, 5} = 80 beats {50, 25} + {20, 5} = 70, and the first two together weigh 45, too much. That's why 0/1 knapsack needs DP.",
+    },
   ]}
 />

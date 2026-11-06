@@ -33,7 +33,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M0
   - [x] M1
   - [x] M2
-  - [ ] M3
+  - [x] M3
   - [ ] M4
 - [ ] 7. Connections (whole course)
 - [ ] 8. Student read-through
@@ -445,5 +445,25 @@ All tables were recomputed in Python and match the 2021 and 2022 answer sheets. 
 **Source errors:** the 2019 answer sheet's PREDECESSOR handles only the case with a left subtree.
 
 **Left out:** the undated final's "which is not a technique to avoid a collision" (its options are arguable) and its universal-hashing true/false (universal hashing isn't taught here). Final 2026 questions whose options were too garbled in the scan to rebuild with confidence were skipped.
+
+**Not checked:** no browser check.
+
+### Round 6, practice: M3 Design Strategies
+
+Same format: every lesson ends with past-exam practice, Part 1 midterms and Part 2 finals.
+
+**Added:**
+- m3-01: the coin row 5 1 2 10 6 2 (17) and the 5 × 6 robot board from two finals, with the full DP table (5 coins); 6 final MCQs (knapsack's goal, 0/1 knapsack by DP, LCS O(MN), storing computed values, bottom-up DP, exponential to polynomial).
+- m3-02: 3 final MCQs, including the 2022 knapsack {60,20}, {50,25}, {20,5}, W = 40 (110 divisible, 80 not).
+- m3-03: **all 8 Prim MCQs from the 2023 midterm**, rebuilt from the scanned graph, each explanation giving the state after that step; Prim and Kruskal on the 2018 finals' 8-node graph (total 25, with the weight-3 tie explained); 4 final MCQs.
+- m3-04: Huffman for "aabcaaadbcddaa" with the greedy algorithm, trace and correctness proof (2024 retake); Huffman for A = 20 … F = 22 (2018, 241 bits); 2 final MCQs.
+- m3-05: **all 8 Dijkstra MCQs from the 2023 midterm**, rebuilt from the scan; Dijkstra on the 2018 final's s-to-t graph (t = 50, step table); 5 final MCQs.
+- m2-05 (from the 2018 final, found while reading it): insert 5, 1, 4, 10, 9, 20, 6, 7 into a red-black tree, with each step's case, the final colours and black-heights, and a visualizer; a test pins the final tree.
+
+Every answer was recomputed in Python: both 2023 traces, the 2018 MST, Dijkstra, Huffman and robot board, and the red-black sequence through the course's own code.
+
+**Source errors:** the pen marks on the scanned 2023 midterm are a student's answers, not a key, and some are wrong (for example Q5 is 7, option A, not 9).
+
+**Left out:** "match the following pairs" (the pairs aren't in the scan), "DP is used to find: all optimal solutions / one solution …" (ambiguous options), and the Kruskal edge-order MCQ in an undated final whose graph isn't in the text.
 
 **Not checked:** no browser check.
