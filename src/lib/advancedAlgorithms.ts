@@ -1470,6 +1470,11 @@ export function probeText(k: number, i: number, cfg: HashConfig): string {
 }
 
 /** Run a list of insert / search / delete operations on a hash table and record every probe. */
+/** Expected probes for an unsuccessful search at load factor α: open addressing (uniform hashing) 1/(1 − α), chaining 1 + α. */
+export function expectedProbes(alpha: number) {
+  return { open: alpha >= 1 ? Infinity : 1 / (1 - alpha), chain: 1 + alpha };
+}
+
 export function hashFrames(cfg: HashConfig, ops: HashOp[], initial: Record<number, number> = {}): Frame<HashState>[] {
   const slots: Slot[] = Array(cfg.m).fill(null);
   const chains: number[][] = Array.from({ length: cfg.m }, () => []);

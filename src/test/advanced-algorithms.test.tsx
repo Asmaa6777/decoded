@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES, dijkstraFrames, parseCNF, truthTable, findClique, cliqueGraph } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, expectedProbes, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES, dijkstraFrames, parseCNF, truthTable, findClique, cliqueGraph } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -133,6 +133,17 @@ describe("analysis helpers", () => {
       expect(h.area).toBeLessThan(p.area);
     }
     expect([plainTreeLayout(64).area, hTreeLayout(3).area]).toEqual([889, 225]);
+  });
+
+  it("counts the lab's probes (16, 23, 16) and the load-factor curve", () => {
+    const keys = [10, 22, 31, 4, 15, 28, 17, 88, 59].map((key) => ({ op: "insert" as const, key }));
+    const total = (cfg: HashConfig) => hashFrames(cfg, keys).at(-1)!.stats.probes;
+    expect(total({ mode: "linear", m: 11 } as HashConfig)).toBe(16);
+    expect(total({ mode: "quadratic", m: 11, c1: 1, c2: 3 } as HashConfig)).toBe(23);
+    expect(total({ mode: "double", m: 11, second: { kind: "mod", mp: 10 } } as HashConfig)).toBe(16);
+    expect(expectedProbes(0.5).open).toBeCloseTo(2);
+    expect(expectedProbes(0.9).open).toBeCloseTo(10);
+    expect(expectedProbes(0.5).chain).toBeCloseTo(1.5);
   });
 
   it("Strassen's 7 products match the usual 8", () => {

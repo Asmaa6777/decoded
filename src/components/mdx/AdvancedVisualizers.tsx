@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, CPP_MIN_MAX_MERGE, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, type Seg, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, CPP_MIN_MAX_MERGE, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, type Seg, expectedProbes, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -515,6 +515,59 @@ export function MinMaxVisualizer({
         </div>
       )}
     />
+  );
+}
+
+/* ------------------------- load factor chart ------------------------- */
+
+/** Expected probes vs load factor: 1/(1 − α) for open addressing against 1 + α for chaining. */
+export function LoadFactorChart({ initial = 0.5 }: { initial?: number }) {
+  const [a, setA] = useState(initial);
+  const W = 520;
+  const H = 220;
+  const maxY = 20;
+  const X = (al: number) => 40 + (al / 0.95) * (W - 60);
+  const Y = (v: number) => H - 30 - (Math.min(v, maxY) / maxY) * (H - 50);
+  const pts = (f: (al: number) => number) =>
+    Array.from({ length: 96 }, (_, i) => i / 100)
+      .map((al) => `${X(al).toFixed(1)},${Y(f(al)).toFixed(1)}`)
+      .join(" ");
+  const e = expectedProbes(a);
+  return (
+    <Panel title="How full can a hash table get?" legend={[["bg-orange", "open addressing: 1/(1 − α)"], ["bg-sky", "chaining: 1 + α"]]}>
+      <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
+        <span>load factor α = {a.toFixed(2)}</span>
+        <input type="range" min={0} max={95} value={Math.round(a * 100)} onChange={(ev) => setA(Number(ev.target.value) / 100)} className="flex-1 min-w-[160px]" aria-label="load factor" />
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto max-w-[560px]" role="img" aria-label="Expected probes against load factor">
+        <line x1={40} y1={H - 30} x2={W - 20} y2={H - 30} className="stroke-border" />
+        <line x1={40} y1={20} x2={40} y2={H - 30} className="stroke-border" />
+        {[0, 0.25, 0.5, 0.75, 0.95].map((t) => (
+          <text key={t} x={X(t)} y={H - 12} textAnchor="middle" fontSize={10} className="fill-current font-mono">
+            {t}
+          </text>
+        ))}
+        {[1, 5, 10, 20].map((t) => (
+          <text key={t} x={32} y={Y(t) + 3} textAnchor="end" fontSize={10} className="fill-current font-mono">
+            {t}
+          </text>
+        ))}
+        <polyline points={pts((al) => expectedProbes(al).chain)} className="stroke-sky fill-none" strokeWidth={2.5} />
+        <polyline points={pts((al) => expectedProbes(al).open)} className="stroke-orange fill-none" strokeWidth={2.5} />
+        <line x1={X(a)} y1={20} x2={X(a)} y2={H - 30} className="stroke-violet" strokeDasharray="4 3" />
+      </svg>
+      <div className="flex flex-wrap gap-6 font-mono text-sm">
+        <span>
+          open addressing: <span className="text-orange font-bold">{e.open.toFixed(1)}</span> probes
+        </span>
+        <span>
+          chaining: <span className="text-sky font-bold">{e.chain.toFixed(2)}</span> probes
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Half full, open addressing needs 2 probes; 90% full, 10; 95% full, 20. Chaining barely changes. That's why open-addressed tables rehash at 0.5 to 0.75, while chaining can go above 1.
+      </p>
+    </Panel>
   );
 }
 

@@ -26,7 +26,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
 - [ ] 5. Visualizations
   - [x] M0
   - [x] M1
-  - [ ] M2
+  - [x] M2
   - [ ] M3
   - [ ] M4
 - [ ] 6. Practice
@@ -340,5 +340,19 @@ Listed every idea in m1-01 to m1-05 that is still only text and judged whether a
 **Judged and left as text:** the master theorem's lg^k n case (the recurrence explorer covers it), the Fibonacci matrix proof, the expected-time proofs, the Ω(n lg n) decision-tree argument and the median-of-medians recurrence. Merge sort, binary search, fast power, Strassen, Gauss multiplication, recursion trees, partition, decision trees, counting and radix sort, select and median of medians already have visualizers.
 
 **Phone width, dark theme, reduced motion (code audit):** the new SVGs scale with `w-full h-auto` and stack into one column below the `md` breakpoint; they use theme classes only (`stroke-violet`, `fill-mint`, `stroke-border`) and have no animation.
+
+**Couldn't check:** no browser automation is installed, so nothing was looked at in a real browser.
+
+### Round 5, visualizations: M2 Hashing and Search Trees
+
+Listed every idea in m2-01 to m2-07 that is still only text and judged whether a reader needs something to step through.
+
+**Built:** `LoadFactorChart` (m2-02), a slider for the load factor α with both curves, 1/(1 − α) for open addressing and 1 + α for chaining, and the probe counts at the chosen α. The lesson had only the 0.5 and 0.9 values in text. Logic in `expectedProbes`; tested at 0.5 and 0.9.
+
+**Correction to round 2:** round 2 said the hash-table visualizer had no probe counter and rewrote an m2-03 callout around that. It does: the frames carry a running `probes` stat, which the stepper shows. Round 2 had only searched the component file, not the library. The callout points at the counter again, and a new test checks the counter gives the lesson's 16, 23 and 16 on the extra exercise.
+
+**Judged and left as text:** the BST-per-slot extension (the cases are best read as a list), the potential method's arithmetic, the red-black height proof, OS-RANK's walk up the tree (OS-SELECT has a stepper and RANK is its mirror), and the skip-list backwards analysis. Hash functions, doubling cost, every probing scheme, red-black insert and delete (including the lecture's three deletions), rotations, OS-SELECT, interval search and skip lists already have visualizers.
+
+**Phone width, dark theme, reduced motion (code audit):** the new chart scales with `w-full h-auto`, uses theme classes only, and doesn't animate.
 
 **Couldn't check:** no browser automation is installed, so nothing was looked at in a real browser.

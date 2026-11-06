@@ -1,5 +1,5 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { HashTableVisualizer } from "@/components/mdx/AdvancedVisualizers";
+import { HashTableVisualizer, LoadFactorChart } from "@/components/mdx/AdvancedVisualizers";
 
 # Collisions: Chaining and Open Addressing
 
@@ -302,6 +302,10 @@ $$
 - If the table is **90% full**, the expected number of probes is $\frac{1}{1 - 0.9} = 10$.
 
 That's why open-addressed tables rehash at a load factor like 0.5 or 0.75: performance drops off sharply as $\alpha \to 1$.
+
+Drag the load factor and watch the two curves:
+
+<LoadFactorChart initial={0.5} />
 
 ### Rehashing an open-addressed table
 
