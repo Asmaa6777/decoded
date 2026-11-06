@@ -14,11 +14,11 @@ import { recordQuizScore } from "@/lib/progressSync";
 type Tone = "neon" | "orange" | "sky" | "violet" | "mint";
 
 const toneMap: Record<Tone, { bar: string; text: string; bg: string }> = {
-  neon:   { bar: "bg-neon",   text: "text-neon",   bg: "bg-neon/10" },
-  orange: { bar: "bg-orange", text: "text-orange", bg: "bg-orange/10" },
-  sky:    { bar: "bg-sky",    text: "text-sky",    bg: "bg-sky/10" },
-  violet: { bar: "bg-violet", text: "text-violet", bg: "bg-violet/10" },
-  mint:   { bar: "bg-mint",   text: "text-mint",   bg: "bg-mint/10" },
+  neon:   { bar: "bg-neon",   text: "text-neon",   bg: "bg-neon/[0.07]" },
+  orange: { bar: "bg-orange", text: "text-orange", bg: "bg-orange/[0.07]" },
+  sky:    { bar: "bg-sky",    text: "text-sky",    bg: "bg-sky/[0.07]" },
+  violet: { bar: "bg-violet", text: "text-violet", bg: "bg-violet/[0.07]" },
+  mint:   { bar: "bg-mint",   text: "text-mint",   bg: "bg-mint/[0.07]" },
 };
 
 /* ============================================================
@@ -174,7 +174,7 @@ export function Callout({
 }) {
   const t = toneMap[tone];
   return (
-    <aside className={`my-8 border-l-2 pl-5 py-4 ${t.bg}`} style={{ borderColor: `hsl(var(--${tone === "neon" ? "neon" : tone}))` }}>
+    <aside className={`my-8 border-l-[3px] rounded-r-xl px-5 py-4 ${t.bg}`} style={{ borderColor: `hsl(var(--${tone === "neon" ? "neon" : tone}) / 0.6)` }}>
       {label && (
         <div className={`eyebrow mb-2 ${t.text}`}>{label}</div>
       )}
@@ -195,10 +195,10 @@ export function PracticalApplication({
   children: ReactNode;
 }) {
   return (
-    <div className="my-4 rounded-sm border border-border bg-card p-5 transition hover:border-foreground/30">
+    <div className="my-4 rounded-2xl border border-border/70 bg-card p-5 shadow-sm transition-all duration-200 hover:border-violet/40 hover:shadow-md motion-safe:hover:-translate-y-0.5">
       <div className="flex items-baseline justify-between gap-3 mb-2 flex-wrap">
-        <h4 className="font-display text-lg font-bold leading-tight">{title}</h4>
-        {tool && <span className="eyebrow text-orange">{tool}</span>}
+        <h4 className="font-display text-lg font-semibold leading-tight">{title}</h4>
+        {tool && <span className="rounded-full bg-orange/10 px-2.5 py-0.5 font-mono text-xs text-orange">{tool}</span>}
       </div>
       <div className="text-sm text-muted-foreground leading-relaxed [&>p:last-child]:mb-0">
         {children}
@@ -235,7 +235,7 @@ export function Pillar({
 }
 
 export function ApplicationsGrid({ children }: { children: ReactNode }) {
-  return <div className="my-6 grid gap-3 md:grid-cols-2">{children}</div>;
+  return <div className="my-6 grid gap-4 md:grid-cols-2">{children}</div>;
 }
 
 /* ============================================================
@@ -1119,11 +1119,12 @@ export function ModelAnswer({ children }: { children: ReactNode }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="not-prose inline-flex items-center gap-2 px-3 py-1.5 border border-violet text-violet rounded-sm font-mono text-xs uppercase tracking-widest hover:bg-violet/10 transition-colors"
+        className="not-prose inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-violet/40 bg-violet/[0.06] text-violet font-mono text-xs hover:bg-violet/[0.12] transition-colors"
       >
+        <span aria-hidden="true" className={`inline-block transition-transform duration-200 ${open ? "rotate-90" : ""}`}>▸</span>
         {open ? "Hide model answer" : "Show model answer"}
       </button>
-      {open && <div className="mt-3 border-l-2 border-violet pl-4">{children}</div>}
+      {open && <div className="mt-3 rounded-r-xl border-l-[3px] border-violet/50 bg-violet/[0.04] px-5 py-3 [&>p:last-child]:mb-0">{children}</div>}
     </div>
   );
 }
@@ -1188,25 +1189,28 @@ export function Quiz(props: QuizProps) {
         const isCorrect = selectedOptionId === question.correctOptionId;
 
         return (
-          <div key={question.id} className="border border-border bg-card rounded-sm overflow-hidden">
-            <div className="p-5 border-b border-border">
-              <p className="font-semibold">{question.prompt}</p>
+          <div key={question.id} className="rounded-2xl border border-border/70 bg-card shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-border/60 bg-gradient-to-r from-violet/[0.07] to-transparent">
+              <p className="font-medium leading-relaxed">{question.prompt}</p>
             </div>
-            <div className="p-5 space-y-3">
-              {question.options.map((option) => {
+            <div className="p-5 space-y-2.5">
+              {question.options.map((option, oi) => {
                 const isSelected = selectedOptionId === option.id;
                 let borderClass = "border-border";
                 let bgClass = "";
+                let badge = "bg-secondary text-muted-foreground";
+                let mark = "";
                 if (isAnswered) {
-                  if (isSelected && isCorrect) {
-                    borderClass = "border-mint";
+                  if (option.id === question.correctOptionId) {
+                    borderClass = "border-mint/60";
                     bgClass = "bg-mint/10";
-                  } else if (isSelected && !isCorrect) {
-                    borderClass = "border-orange";
+                    badge = "bg-mint text-white";
+                    mark = "✓";
+                  } else if (isSelected) {
+                    borderClass = "border-orange/60";
                     bgClass = "bg-orange/10";
-                  } else if (option.id === question.correctOptionId) {
-                    borderClass = "border-mint";
-                    bgClass = "bg-mint/10";
+                    badge = "bg-orange text-white";
+                    mark = "✗";
                   }
                 }
 
@@ -1215,17 +1219,20 @@ export function Quiz(props: QuizProps) {
                     key={option.id}
                     onClick={() => selectAnswer(question.id, option.id)}
                     disabled={isAnswered}
-                    className={`w-full text-left px-4 py-3 border transition ${borderClass} ${bgClass} ${
-                      isAnswered ? "cursor-default" : "hover:border-foreground/40 cursor-pointer"
-                    } font-mono text-sm`}
+                    className={`w-full flex items-center gap-3 text-left px-4 py-3 rounded-xl border transition-colors ${borderClass} ${bgClass} ${
+                      isAnswered ? "cursor-default" : "hover:border-violet/50 hover:bg-violet/[0.04] cursor-pointer"
+                    } text-[15px]`}
                   >
-                    {option.text}
+                    <span aria-hidden="true" className={`shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full font-mono text-xs transition-colors ${badge}`}>
+                      {mark || String.fromCharCode(65 + oi)}
+                    </span>
+                    <span>{option.text}</span>
                   </button>
                 );
               })}
 
               {isAnswered && question.explanation && (
-                <div className="mt-3 px-3 py-2 bg-background border border-border text-xs text-muted-foreground font-mono">
+                <div className="mt-3 rounded-xl border-l-[3px] border-violet/50 bg-violet/[0.05] px-4 py-3 text-sm leading-relaxed text-foreground/85">
                   {question.explanation}
                 </div>
               )}
@@ -1235,14 +1242,14 @@ export function Quiz(props: QuizProps) {
       })}
 
       {allAnswered && practice && (
-        <div className="mt-6 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+        <div className="mt-6 inline-flex rounded-full bg-secondary px-4 py-1.5 font-mono text-sm text-muted-foreground">
           {correctCount}/{questions.length} correct
         </div>
       )}
 
       {allAnswered && !practice && (
-        <div className={`mt-6 font-mono text-xs uppercase tracking-widest ${
-          passed ? "text-mint" : "text-orange"
+        <div className={`mt-6 inline-flex rounded-full px-4 py-1.5 font-mono text-sm ${
+          passed ? "bg-mint/10 text-mint" : "bg-orange/10 text-orange"
         }`}>
           {correctCount}/{questions.length} correct — {passed ? "PASSED" : `NEED ${Math.ceil(questions.length * passThreshold)}/${questions.length}`}
         </div>
@@ -1251,14 +1258,14 @@ export function Quiz(props: QuizProps) {
       {allAnswered && (practice || !passed) && (
         <button
           onClick={handleRetry}
-          className="inline-block px-4 py-2 border border-border font-mono text-xs uppercase tracking-widest hover:border-foreground transition"
+          className="block px-4 py-2 rounded-full border border-border font-mono text-xs hover:border-violet/60 hover:bg-violet/[0.06] transition-colors"
         >
           {practice ? "Try again" : "Retry quiz"}
         </button>
       )}
 
       {!practice && passed && done && (
-        <div className="mt-6 inline-flex items-center gap-3 px-5 py-3 border border-mint text-mint font-mono text-xs uppercase tracking-widest">
+        <div className="mt-6 inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-mint/10 ring-1 ring-mint/40 text-mint font-mono text-sm">
           <span className="inline-flex h-4 w-4 items-center justify-center">✓</span>
           Quiz complete
         </div>
