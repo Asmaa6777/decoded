@@ -47,7 +47,7 @@
     --neon: 67 100% 42%;               /* #6b8c00 darker yellow for light bg */
     --orange: 14 100% 48%;             /* #c64500 darker orange for light bg */
     --sky: 213 100% 52%;               /* #0066ff darker sky for light bg */
-    --violet: 263 100% 52%;            /* #6600ff darker violet for light bg */
+    --violet: 280 35% 40%;             /* #72428a soft plum: calmer on the cream page than a saturated violet */
     --mint: 165 100% 42%;              /* #009966 darker mint for light bg */
 
     /* Typography */
