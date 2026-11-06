@@ -30,7 +30,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M3
   - [x] M4
 - [ ] 6. Practice
-  - [ ] M0
+  - [x] M0
   - [ ] M1
   - [ ] M2
   - [ ] M3
@@ -384,3 +384,26 @@ Listed every idea in m4-01 that is still only text and judged whether a reader n
 **Couldn't check:** no browser automation is installed, so the label placement wasn't looked at in a real browser.
 
 Round 5 is complete for all modules. Next: round 6, practice, starting with M0. Check upstream PR #63 (an 80-question Advanced Algorithms question bank) first, so the work isn't duplicated.
+
+### Round 6, practice: M0 Foundations
+
+**How this round works (your instructions, 2026-11-06):** every lesson ends with a **Practice from past exams** section built from the past midterms and finals. **Part 1** holds midterm questions and **Part 2** final-exam questions. Multiple-choice questions use the quiz style; written questions show the question with a **Show model answer** button. A question asked in several years appears once, labelled with every year. Questions are labelled only by exam and year, with no names. Upstream PR #63 (an 80-question bank in `questions.ts`) is a separate format and isn't touched.
+
+**Built for this:**
+- `ModelAnswer` (`MdxComponents.tsx`): a button that shows and hides a written question's model answer.
+- `Quiz` got a `practice` flag. A practice quiz doesn't save a score or mark the lesson complete (otherwise two quizzes in one lesson would overwrite each other's score and silently complete the lesson). It shows "x/y correct" and a "Try again" button.
+- `src/test/practice-questions.test.tsx` tests both, and that a normal quiz still saves its score. CLAUDE.md documents them.
+
+**Added (from 8 midterms, 6 finals and an exam-examples sheet):**
+- m0-01: insertion vs. merge crossover (2 ≤ n ≤ 43); merge sort's every case by recursion tree; 6 final MCQs (merge sort cases, merging m + n and m + n + p, efficiency measures, worst case, n¹⁰⁰ vs 10ⁿ).
+- m0-02: F(n − 1) + F(n − 3) is exponential (about 1.466ⁿ) and becomes O(n) with an array; the Fibonacci version; 5 final MCQs (the x = N(N − 1)/2 loop, search cases, binary search).
+- m0-03: growth-rate orders (increasing and decreasing); the nested-loop question asked in five papers, with every variant (÷2, ÷3, ÷4, j = n²); sum 1..n two ways; n^2.1 vs n² log n; 6 final MCQs (including the halving loop that is O(n), not O(n log n)).
+- m0-04: the master-method trio asked in four papers; five more recurrences in a table; 2T(n/4) + √n; T(64) = 992 and T(512) = 4096 computed step by step; recursion tree and iteration; two true/false; 3 final MCQs.
+- m0-05: no exam has asked about this lab; the section says so.
+- m0-06: fast power, k-way merge (Θ(nk²)), unimodal maximum and A[i] = i by binary search, a^b with the master method, min and max in 1.5n − 2, 3-way merge sort, 1 MCQ.
+
+All numeric answers were checked in Python (crossover, 1.466 root, both recurrence values, the halving loop, 9! > 4⁹, the x loop).
+
+**Source errors:** the 2018 midterm prints "n > 32" for the Fibonacci case; one final's "T(1) = 5, T(n) = 5T(n/4) + n, n = 32" isn't solvable (32 isn't a power of 4), so it was left out; the 2019 answer sheet's counting-sort table has slips (for round 6 M1).
+
+**Not checked:** no browser check of the new button and quiz layout.

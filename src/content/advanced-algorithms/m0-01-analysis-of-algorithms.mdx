@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SortVisualizer, MergeSortTree } from "@/components/mdx/AlgoVisualizers";
 
 # What Is Analysis of Algorithms?
@@ -205,3 +205,111 @@ The notation gets its full definitions in [asymptotic notation](/courses/advance
     Engineers estimate "will this still work with 100× more users?" from the growth rate alone, long before any benchmark exists.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2021)* On the same machine, insertion sort runs in $8n^2$ steps and merge sort in $64 n \lg n$ steps. For which values of $n$ does insertion sort beat merge sort?
+
+<ModelAnswer>
+Insertion sort is faster when $8n^2 < 64\,n \lg n$. Divide both sides by $8n$: $n < 8 \lg n$.
+
+Try values near the crossover. At $n = 43$, $8 \lg 43 \approx 43.4$, so $43 < 43.4$ holds. At $n = 44$, $8 \lg 44 \approx 43.7$, so $44 < 43.7$ fails.
+
+**Insertion sort wins for $2 \le n \le 43$.** From $n = 44$ on, merge sort wins. Use $\lg = \log_2$; taking base 10 gives a wrong crossover.
+</ModelAnswer>
+
+**2.** *(Midterm 2020)* Use a recursion tree to prove that **every** case of merge sort is $\Theta(n \lg n)$.
+
+<ModelAnswer>
+Merge sort always splits the array in half and always merges all $n$ elements, whatever their order. So best, worst and average case share one recurrence: $T(n) = 2T(n/2) + cn$.
+
+In the recursion tree, level $i$ has $2^i$ calls of size $n/2^i$, each costing $c\,n/2^i$, so every level costs $cn$. Halving reaches size 1 after $\lg n$ levels, and the $n$ leaves cost $cn$ together:
+
+$$
+T(n) = cn \lg n + cn = \Theta(n \lg n)
+$$
+
+Nothing in the tree depends on the input order. That's the difference from insertion sort, whose best and worst cases differ.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="analysis-of-algorithms"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final 2022) What is the worst-case time complexity of merge sort?",
+      options: [
+        { id: "a", text: "O(n log n)" },
+        { id: "b", text: "O(n²)" },
+        { id: "c", text: "O(log n)" },
+        { id: "d", text: "O(log log n)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Merge sort always splits in half and merges n elements per level, so every case, the worst included, is Θ(n log n).",
+    },
+    {
+      id: "f2",
+      prompt: "(Final 2022) What is the time needed to merge two sorted lists of sizes m and n?",
+      options: [
+        { id: "a", text: "Θ(m · n)" },
+        { id: "b", text: "Θ(m + n)" },
+        { id: "c", text: "Θ(m log n)" },
+        { id: "d", text: "Θ(n log m)" },
+      ],
+      correctOptionId: "b",
+      explanation: "Each comparison places one element in the output, so merging takes at most m + n − 1 comparisons: linear in the total size.",
+    },
+    {
+      id: "f3",
+      prompt: "(Finals, several years) What is the time complexity of merging three sorted lists of sizes m, n and p?",
+      options: [
+        { id: "a", text: "Θ(m + n + p)" },
+        { id: "b", text: "Θ(min(m, n, p))" },
+        { id: "c", text: "Θ(max(m, n, p))" },
+        { id: "d", text: "Θ(m · n · p)" },
+      ],
+      correctOptionId: "a",
+      explanation: "A three-way merge still places one element per step (comparing three fronts instead of two), so it touches every element once.",
+    },
+    {
+      id: "f4",
+      prompt: "(Final 2022) The two main measures of an algorithm's efficiency are: 1) time, 2) space, 3) lines of code.",
+      options: [
+        { id: "a", text: "1 and 2" },
+        { id: "b", text: "2 and 3" },
+        { id: "c", text: "1 and 3" },
+        { id: "d", text: "None of them" },
+      ],
+      correctOptionId: "a",
+      explanation: "Efficiency is about resources: running time and memory. Lines of code say nothing about how fast or how big the program is.",
+    },
+    {
+      id: "f5",
+      prompt: "(Final 2026) Which case is usually used to analyze an algorithm?",
+      options: [
+        { id: "a", text: "Best case" },
+        { id: "b", text: "Average case" },
+        { id: "c", text: "Worst case" },
+        { id: "d", text: "Random case" },
+      ],
+      correctOptionId: "c",
+      explanation: "The worst case is a guarantee for every input. The average case needs an assumption about the input, and the best case can be faked.",
+    },
+    {
+      id: "f6",
+      prompt: "(Final, true or false) For two algorithms A and B with O(A) = n¹⁰⁰ and O(B) = 10ⁿ, algorithm A is the better choice.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "a",
+      explanation: "Any polynomial is eventually beaten by any exponential, so for large inputs n¹⁰⁰ is far smaller than 10ⁿ.",
+    },
+  ]}
+/>

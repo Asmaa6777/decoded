@@ -1,4 +1,4 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { FastPowerVisualizer, MinMaxVisualizer, RecurrenceExplorer } from "@/components/mdx/AdvancedVisualizers";
 
@@ -271,5 +271,104 @@ Practice problems for home. They aren't submitted.
     { id: 50, title: "Pow(x, n)", slug: "powx-n", why: "FastPower, plus handling negative exponents.", difficulty: "Medium" },
     { id: 852, title: "Peak Index in a Mountain Array", slug: "peak-index-in-a-mountain-array", why: "Exercise 1: binary search on a unimodal array.", difficulty: "Medium" },
     { id: 23, title: "Merge k Sorted Lists", slug: "merge-k-sorted-lists", why: "Problem 3's faster version: merge in pairs for O(nk log k).", difficulty: "Hard" },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterms 2021, 2022)* How would you compute $p^k$ as fast as possible, where $k$ is a non-negative integer? What is the complexity?
+
+<ModelAnswer>
+Use divide and conquer, as in `fastPower`: $p^k = (p^{k/2})^2$ when $k$ is even, and $p \cdot (p^{(k-1)/2})^2$ when $k$ is odd. Compute the half power **once** and square it.
+
+$$
+T(k) = T(k/2) + \Theta(1) \;\Longrightarrow\; T(k) = \Theta(\lg k)
+$$
+
+(Master method: $a = 1$, $b = 2$, $f(k) = 1 = \Theta(k^{\log_2 1})$, Case 2.)
+</ModelAnswer>
+
+**2.** *(Midterm 2017; also a final)* You have $k$ sorted arrays of $n$ elements each. Merge the first two, then merge the third into the result, then the fourth, and so on. What is the running time, as a function of $k$ and $n$?
+
+<ModelAnswer>
+The merges handle $2n$, then $3n$, and so on up to $kn$ elements:
+
+$$
+2n + 3n + \dots + kn = n\left(\frac{k(k+1)}{2} - 1\right) = \Theta(nk^2)
+$$
+
+(Merging in pairs, like merge sort, would be $\Theta(nk \lg k)$.)
+</ModelAnswer>
+
+**3.** *(Midterms 2017, 2018)* A **unimodal** array of $n$ distinct elements increases up to its maximum, then decreases. Give an $O(\log n)$ algorithm to find the maximum.
+
+<ModelAnswer>
+Binary search on the **slope**. Look at the middle element and its right neighbour:
+
+- if $A[mid] < A[mid + 1]$, we're still going up, so the maximum is to the right: search $A[mid+1 \dots r]$;
+- otherwise we're going down (or at the peak), so the maximum is at $mid$ or to its left: search $A[l \dots mid]$.
+
+Stop when $l = r$; that's the maximum. Each step halves the range: $T(n) = T(n/2) + O(1) = O(\log n)$.
+</ModelAnswer>
+
+**4.** *(Midterm 2022)* $A[1 \dots n]$ holds distinct integers in increasing order. Decide whether there is an index $i$ with $A[i] = i$.
+
+<ModelAnswer>
+Binary search again. Look at $A[mid]$:
+
+- if $A[mid] = mid$, you're done;
+- if $A[mid] > mid$, the answer can only be to the **left**. The integers are distinct and increasing, so each step right raises $A[j]$ by at least 1, just as it raises $j$ by 1. So $A[j] > j$ stays true from here on;
+- if $A[mid] < mid$, by the same argument the answer can only be to the right.
+
+$O(\log n)$ time.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+**5.** *(Final 2019)* Write a recursive function that computes $a^b$ for positive integers $a$ and $b$, and find its complexity with the master method.
+
+<ModelAnswer>
+```cpp
+long long power(long long a, int b) {
+    if (b == 1) return a;
+    long long half = power(a, b / 2);   // computed once
+    return (b % 2 == 0) ? half * half : half * half * a;
+}
+```
+
+One recursive call on $b/2$, plus constant work: $T(b) = T(b/2) + 1$. Master method: $a = 1$, $b = 2$, $f(b) = 1 = \Theta(b^0)$, Case 2, so $T(b) = \Theta(\lg b)$.
+</ModelAnswer>
+
+**6.** *(Final 2019)* Write an algorithm that finds both the smallest and the largest of $n$ numbers with fewer than $2n$ comparisons.
+
+<ModelAnswer>
+Use Algorithm 1 from this lab. Compare the numbers in pairs ($\frac n2$ comparisons), then find the minimum among the smaller ones and the maximum among the bigger ones ($\frac n2 - 1$ each). The total is $1.5n - 2$. For odd $n$, the leftover number joins both searches: $\frac{3(n-1)}{2}$.
+</ModelAnswer>
+
+**7.** *(Final 2018, and an exam-examples sheet)* Merge sort that splits into **thirds**, sorts each third, and merges them with a three-way merge. What is its running time?
+
+<ModelAnswer>
+The three-way merge still takes $O(n)$, and splitting into thirds gives $\log_3 n$ levels: $T(n) = 3T(n/3) + O(n) = O(n \log_3 n) = O(n \log n)$. The base of the log is only a constant factor.
+</ModelAnswer>
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="lab-algorithm-analysis"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final) Merging k sorted arrays of n elements one at a time (the first two, then the third into the result, and so on) takes:",
+      options: [
+        { id: "a", text: "nk" },
+        { id: "b", text: "n²k" },
+        { id: "c", text: "nk²" },
+        { id: "d", text: "1" },
+      ],
+      correctOptionId: "c",
+      explanation: "The merges handle 2n, 3n, …, kn elements, which adds up to about nk²/2.",
+    },
   ]}
 />

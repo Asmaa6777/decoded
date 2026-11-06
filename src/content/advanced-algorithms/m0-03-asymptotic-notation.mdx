@@ -1,4 +1,4 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { GrowthTable } from "@/components/mdx/AlgoVisualizers";
 import { TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
@@ -269,3 +269,144 @@ The two Ω examples in the widget above show this. For instance, $5n^2 + 100n \g
 ## Try it
 
 **Exercise.** Find the time complexity of finding the $k$-th smallest integer in an unordered array of integers, taking comparison as the [basic operation](/courses/advanced-algorithms/counting-the-basic-operation). (Hint: one simple way is to find and remove the minimum $k$ times. How many comparisons is that? We'll see a much faster method in the Order Statistics lesson.)
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2017)* Arrange in increasing order of growth rate: $n^2 \log n$, $2^n$, $2^{2^n}$, $n \log n$, $n^2$.
+
+<ModelAnswer>
+$$
+n \log n \;<\; n^2 \;<\; n^2 \log n \;<\; 2^n \;<\; 2^{2^n}
+$$
+
+$\log n$ grows slower than $n$, so $n \log n < n^2$. Multiplying $n^2$ by the growing $\log n$ makes it bigger. Any polynomial is eventually beaten by $2^n$. And $2^{2^n}$ has the exponent $2^n$, which is far bigger than $n$.
+</ModelAnswer>
+
+**2.** *(Midterm 2023)* Arrange in **decreasing** order of growth rate: $n!$, $n^3$, $2^{2n}$, $2^n$, $\lg^2 n$.
+
+<ModelAnswer>
+$$
+n! \;>\; 2^{2n} \;>\; 2^n \;>\; n^3 \;>\; \lg^2 n
+$$
+
+$2^{2n} = 4^n$, which beats $2^n$. And $n!$ beats $4^n$: each new factor of $n!$ is $n$, while $4^n$ only multiplies by 4. From $n = 9$ on, $n! > 4^n$ ($9! = 362{,}880 > 4^9 = 262{,}144$). Both exponentials beat the polynomial $n^3$, which beats the squared logarithm.
+</ModelAnswer>
+
+**3.** *(Midterms 2016, 2018, 2019, 2020, and an undated one)* What is the time complexity of these nested loops? Assume $n$ is a power of 2 (or of 3, or of 4, to match the division).
+
+```cpp
+for (i = 1; i <= n; i++) {
+    j = n;                 // one paper starts at j = n * n
+    while (j >= 1) {
+        // body: Θ(1)
+        j = j / 2;         // other papers divide by 3 or by 4
+    }
+}
+```
+
+<ModelAnswer>
+The inner loop starts at $j = n$ and divides by 2 until $j < 1$. For $n = 2^k$ it runs for $j = 2^k, 2^{k-1}, \dots, 1$: that's $k + 1 = \lg n + 1$ times. The outer loop repeats it $n$ times:
+
+$$
+T(n) = n(\lg n + 1) = \Theta(n \lg n)
+$$
+
+Dividing by 3 or by 4 gives $\log_3 n + 1$ or $\log_4 n + 1$ inner steps. That's still $\Theta(n \log n)$, because logs to different bases differ only by a constant. Starting at $j = n^2$ gives $\lg n^2 + 1 = 2\lg n + 1$ steps, also $\Theta(n \lg n)$.
+</ModelAnswer>
+
+**4.** *(Midterm 2025)* Compute the sum $1 + 2 + \dots + n$ in two different ways, and give the time complexity of each.
+
+<ModelAnswer>
+- **A loop:** `sum = 0; for (i = 1; i <= n; i++) sum += i;` does $n$ additions: $\Theta(n)$.
+- **The formula:** `sum = n * (n + 1) / 2;` does a fixed number of operations whatever $n$ is: $\Theta(1)$.
+
+(A third way from the lecture, two nested loops adding 1, takes $\frac{n(n+1)}{2}$ steps: $\Theta(n^2)$.)
+</ModelAnswer>
+
+**5.** *(Midterm 2022, true or false)* $n^{2.1} = O(n^2 \log n)$.
+
+<ModelAnswer>
+**False.** Divide both sides by $n^2$: the question becomes whether $n^{0.1} = O(\log n)$. Any positive power of $n$, however small, eventually beats $\log n$, so no constant $c$ can make $n^{0.1} \le c \log n$ for all large $n$.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="asymptotic-notation"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Finals, several years) Select the correct asymptotic notation for f(n) = n³ + 1000 − 100n² − 100n.",
+      options: [
+        { id: "a", text: "Θ(n³)" },
+        { id: "b", text: "O(n³)" },
+        { id: "c", text: "O(n lg n)" },
+        { id: "d", text: "Ω(2ⁿ)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Keep the fastest-growing term and drop its constant: Θ(n³). O(n³) is also true, but it's only an upper bound; Θ says it grows exactly like n³. O(n lg n) is too small and Ω(2ⁿ) far too big.",
+    },
+    {
+      id: "f2",
+      prompt: "(Final 2022) What is the time complexity of: count = 0; for (i = n; i > 0; i /= 2) for (j = 0; j < i; j++) count += 1;",
+      options: [
+        { id: "a", text: "O(n log n)" },
+        { id: "b", text: "O(n²)" },
+        { id: "c", text: "O(n)" },
+        { id: "d", text: "O(log n)" },
+      ],
+      correctOptionId: "c",
+      explanation: "The inner loop runs i times, and i halves each round: n + n/2 + n/4 + … < 2n. A geometric series, so O(n). Answering O(n log n) assumes every inner loop runs n times.",
+    },
+    {
+      id: "f3",
+      prompt: "(Final) What is the smallest n for which an algorithm taking n² steps is slower than one taking 3n + 1 steps?",
+      options: [
+        { id: "a", text: "2" },
+        { id: "b", text: "25" },
+        { id: "c", text: "4" },
+        { id: "d", text: "15" },
+      ],
+      correctOptionId: "c",
+      explanation: "At n = 3: 9 < 10, so n² is still faster. At n = 4: 16 > 13, so from here on n² is slower.",
+    },
+    {
+      id: "f4",
+      prompt: "(Final) An algorithm that takes constant time is represented by:",
+      options: [
+        { id: "a", text: "Ω(0)" },
+        { id: "b", text: "Ω(g(n))" },
+        { id: "c", text: "Θ(n)" },
+        { id: "d", text: "Θ(1)" },
+      ],
+      correctOptionId: "d",
+      explanation: "Θ(1) means bounded above and below by constants, whatever the input size.",
+    },
+    {
+      id: "f5",
+      prompt: "(Final 2026) Big-O ignores:",
+      options: [
+        { id: "a", text: "Constants" },
+        { id: "b", text: "Lower-order terms" },
+        { id: "c", text: "Both constants and lower-order terms" },
+        { id: "d", text: "Neither" },
+      ],
+      correctOptionId: "c",
+      explanation: "Drop the low-order terms and ignore the leading constant: 3n² + 8n + 10 is O(n²).",
+    },
+    {
+      id: "f6",
+      prompt: "(Final, true or false) There is a significant difference between the running times f(n) = n and g(n) = lg n.",
+      options: [
+        { id: "a", text: "True" },
+        { id: "b", text: "False" },
+      ],
+      correctOptionId: "a",
+      explanation: "For n = 1,048,576, n is a million but lg n is only 20. The gap keeps growing.",
+    },
+  ]}
+/>
