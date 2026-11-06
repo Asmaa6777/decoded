@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { HashTableVisualizer, LoadFactorChart } from "@/components/mdx/AdvancedVisualizers";
 
 # Collisions: Chaining and Open Addressing
@@ -343,3 +343,153 @@ When the table is too full, make a new table whose size is the **prime closest t
     If attackers can predict your hash function, they can send thousands of keys that all collide, turning $O(1)$ into $O(n)$. That's why modern languages add a random seed to their string hash.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2021)* Insert $0, 30, 1, 55, 16, 28, 13, 9, 26$ into a hash table of size 10 with $h(k) = k \bmod 10$, using (a) linear probing, (b) quadratic probing, (c) double hashing with $h_2(k) = 5 - (k \bmod 5)$, (d) chaining.
+
+<ModelAnswer>
+| slot | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| (a) linear | 0 | 30 | 1 | 13 | | 55 | 16 | 26 | 28 | 9 |
+| (b) quadratic | 0 | 30 | 1 | 13 | | 55 | 16 | 26 | 28 | 9 |
+| (c) double | 0 | 1 | | 13 | 26 | 30 | 16 | | 28 | 9 |
+| (d) chaining | 0 → 30 | 1 | | 13 | | 55 | 16 → 26 | | 28 | 9 |
+
+- **(a), (b):** 30 lands on 0, which is taken, so it goes to 1. Then 1 lands on 1, which is now taken, so it goes to 2. 26 lands on 6 and goes to 7. Linear and quadratic agree here, because every collision is solved by the first probe, where $+1$ and $+1^2$ are the same.
+- **(c):** 30 collides at 0, and $h_2(30) = 5$, so it goes to slot 5. Then **55 can't be inserted**: $h_1(55) = 5$ is taken, and the step $h_2(55) = 5$ only ever visits slots 5 and 0, both full. That's the danger when the step shares a factor with the table size ($\gcd(5, 10) = 5$). With a prime table size, every step reaches every slot. 26 collides at 6, and $h_2(26) = 4$ gives $6 + 4 = 10 \to 0$, which is taken, then $6 + 8 = 14 \to 4$, which is free.
+- **(d):** keys that hash to the same slot share a list. The table writes each list in insertion order; this course's code adds new keys at the front (30 → 0, 26 → 16), which is also correct.
+</ModelAnswer>
+
+**2.** *(Midterm 2022)* The same keys, with a table of size 11, $h(k) = k \bmod 11$, and $h_2(k) = 7 - (k \bmod 7)$ for double hashing.
+
+<ModelAnswer>
+| slot | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| linear | 0 | 1 | 55 | 13 | 26 | 16 | 28 | | 30 | 9 | |
+| quadratic | 0 | 1 | 13 | | 55 | 16 | 28 | 26 | 30 | 9 | |
+| double | 0 | 1 | 55 | 13 | 26 | 16 | 28 | | 30 | 9 | |
+| chaining | 0 → 55 | 1 | 13 | | 26 | 16 | 28 | | 30 | 9 | |
+
+The quadratic row is where the methods differ. 55 tries slots 0, 1, then $0 + 4 = 4$. 26 tries 4, 5, 8, 2 and 9, all taken, then $4 + 25 = 29 \to 7$. Double hashing happens to match linear probing here: $h_2(55) = 1$ and $h_2(13) = 1$ step by one slot, just like linear probing.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="collision-resolution"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final, undated) With chaining, what is the retrieval time when all n keys hash to the same slot?",
+      options: [
+        { id: "a", text: "Θ(n)" },
+        { id: "b", text: "Θ(n²)" },
+        { id: "c", text: "Θ(n log n)" },
+        { id: "d", text: "O(n²)" },
+      ],
+      correctOptionId: "a",
+      explanation: "All n keys are in one list, so a search may walk the whole list: the worst case of chaining.",
+    },
+    {
+      id: "f2",
+      prompt: "(Finals, undated and 2026) The load factor α of a hash table is:",
+      options: [
+        { id: "a", text: "The number of keys divided by the table size, the average chain length" },
+        { id: "b", text: "The average key size" },
+        { id: "c", text: "The average array size" },
+        { id: "d", text: "The table size divided by the number of keys" },
+      ],
+      correctOptionId: "a",
+      explanation: "α = n / m. With chaining it is the expected length of a chain.",
+    },
+    {
+      id: "f3",
+      prompt: "(Final 2026) Which of these is NOT a collision resolution technique?",
+      options: [
+        { id: "a", text: "Linear probing" },
+        { id: "b", text: "Quadratic probing" },
+        { id: "c", text: "Double hashing" },
+        { id: "d", text: "Binary search" },
+      ],
+      correctOptionId: "d",
+      explanation: "Binary search finds a key in a sorted array. The other three choose the next slot to try after a collision.",
+    },
+    {
+      id: "f4",
+      prompt: "(Final 2026) What problem is most common with linear probing?",
+      options: [
+        { id: "a", text: "Secondary clustering" },
+        { id: "b", text: "Primary clustering" },
+        { id: "c", text: "No clustering at all" },
+        { id: "d", text: "It can't handle collisions" },
+      ],
+      correctOptionId: "b",
+      explanation: "Full slots form long runs, and any key that lands in a run has to walk to its end, which makes the run longer still.",
+    },
+    {
+      id: "f5",
+      prompt: "(Final 2026) Quadratic probing reduces:",
+      options: [
+        { id: "a", text: "Primary clustering" },
+        { id: "b", text: "Secondary clustering" },
+        { id: "c", text: "Both" },
+        { id: "d", text: "Neither" },
+      ],
+      correctOptionId: "a",
+      explanation: "Jumping by 1, 4, 9, … breaks up long runs. But keys with the same first slot still follow the same sequence, so secondary clustering remains.",
+    },
+    {
+      id: "f6",
+      prompt: "(Final 2026) A drawback of quadratic probing is:",
+      options: [
+        { id: "a", text: "Primary clustering" },
+        { id: "b", text: "Secondary clustering" },
+        { id: "c", text: "High memory use" },
+        { id: "d", text: "It cannot handle collisions" },
+      ],
+      correctOptionId: "b",
+      explanation: "h(k₁, 0) = h(k₂, 0) means the whole probe sequences are the same. It can also fail to find a free slot unless the table is at most half full and its size is prime.",
+    },
+    {
+      id: "f7",
+      prompt: "(Final 2026) Double hashing uses:",
+      options: [
+        { id: "a", text: "One hash function" },
+        { id: "b", text: "Two hash functions" },
+        { id: "c", text: "Three hash functions" },
+        { id: "d", text: "No hash function" },
+      ],
+      correctOptionId: "b",
+      explanation: "h₁ picks the first slot and h₂ picks the step: h(k, i) = (h₁(k) + i·h₂(k)) mod m.",
+    },
+    {
+      id: "f8",
+      prompt: "(Final 2026) Double hashing avoids:",
+      options: [
+        { id: "a", text: "Only primary clustering" },
+        { id: "b", text: "Only secondary clustering" },
+        { id: "c", text: "Both primary and secondary clustering" },
+        { id: "d", text: "Collisions entirely" },
+      ],
+      correctOptionId: "c",
+      explanation: "Two keys with the same first slot usually get different steps, so their sequences split apart. Collisions still happen; they're just resolved without clustering.",
+    },
+    {
+      id: "f9",
+      prompt: "(Final 2026) Separate chaining stores colliding elements:",
+      options: [
+        { id: "a", text: "In adjacent table cells" },
+        { id: "b", text: "In linked lists" },
+        { id: "c", text: "In another hash table" },
+        { id: "d", text: "In arrays" },
+      ],
+      correctOptionId: "b",
+      explanation: "Each slot points to a linked list of all the keys that hash to it. Adjacent cells are open addressing.",
+    },
+  ]}
+/>

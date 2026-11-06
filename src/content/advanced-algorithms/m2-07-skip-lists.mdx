@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { SkipListVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
@@ -195,3 +195,20 @@ bool search(Node* head, int k) {
     { id: 21, title: "Merge Two Sorted Lists", slug: "merge-two-sorted-lists", why: "Warm up on the level-0 linked list operations every skip list is built from." },
   ]}
 />
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterms 2016, 2017, 2018)* What is the main difference between a skip list and a binary search tree? Which is better?
+
+<ModelAnswer>
+- **A plain binary search tree** takes $O(\log n)$ on average, but it is **sensitive to the order of the input**. Keys that arrive sorted build a path, and every operation becomes $O(n)$.
+- **A skip list** takes $O(\log n)$ **expected** time for every input. Its shape comes from coin flips, not from the order of the keys, so no input sequence is bad. The cost is extra pointers (about $2n$ in total, on average) and the small chance of bad luck with the flips.
+
+So a skip list is the better choice over a plain BST: simple code and no bad inputs. If you need a **guaranteed** $O(\lg n)$, use a balanced tree such as a red-black tree.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+None of the past finals asked about skip lists. The midterm question above is the best practice.

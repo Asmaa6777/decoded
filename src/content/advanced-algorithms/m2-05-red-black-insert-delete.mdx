@@ -1,4 +1,4 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { RBTreeVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
@@ -190,5 +190,55 @@ Use **Insert** and **Delete** above on your own keys. Whatever you do, the tree 
     { id: 450, title: "Delete Node in a BST", slug: "delete-node-in-a-bst", why: "Step 1 of RB-DELETE: the two-children case with a predecessor or successor.", difficulty: "Medium" },
     { id: 110, title: "Balanced Binary Tree", slug: "balanced-binary-tree", why: "Check the AVL balance condition, the cousin of the red-black rules." },
     { id: 1382, title: "Balance a Binary Search Tree", slug: "balance-a-binary-search-tree", why: "Rebuild a skewed BST into a balanced one, all at once instead of with rotations.", difficulty: "Medium" },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2023)* Insert 5, then 9, into this red-black tree: root 2 (black), with children 1 and 4 (both red).
+
+<ModelAnswer>
+**Insert 5.** It goes to the right of 4 and is coloured red. Its parent 4 is red, and its uncle 1 is red too: **Case 1**. Recolour: 4 and 1 become black, and 2 becomes red. 2 is the root, so it is coloured black again. The tree is now 2 (black) with children 1 and 4 (black), and 5 (red) under 4.
+
+**Insert 9.** It goes to the right of 5 and is red. Its parent 5 is red, and its uncle (4's left child) is NIL, which is black. 9 is an **outer** child (right of a right child): **Case 3**. Rotate left at 4, then swap the colours of 5 and 4.
+
+**Result:** 2 (black) at the root, with 1 (black) on the left and 5 (black) on the right; 5 has children 4 and 9, both red.
+
+<RBTreeVisualizer start={[2, 1, 4]} ops={[{ op: "insert", key: 5 }, { op: "insert", key: 9 }]} />
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="red-black-insert-delete"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final, undated) What does this code do? redblack(root, pt): if root == NULL return pt; if pt.data < root.data { root.left = redblack(root.left, pt); root.left.parent = root } else if pt.data > root.data { root.right = redblack(root.right, pt); root.right.parent = root }; return root",
+      options: [
+        { id: "a", text: "Inserts a new node" },
+        { id: "b", text: "Deletes a node" },
+        { id: "c", text: "Searches for a node" },
+        { id: "d", text: "Counts the nodes" },
+      ],
+      correctOptionId: "a",
+      explanation: "It walks down like a BST search and hangs pt where it finds NULL. That's the ordinary BST insert, step 1 of RB-INSERT, before the colour fix-up.",
+    },
+    {
+      id: "f2",
+      prompt: "(Final 2026) What is the time complexity of insertion into a red-black tree?",
+      options: [
+        { id: "a", text: "O(n)" },
+        { id: "b", text: "O(log n)" },
+        { id: "c", text: "O(n log n)" },
+        { id: "d", text: "O(1)" },
+      ],
+      correctOptionId: "b",
+      explanation: "The BST insert follows one path of height O(log n), and the fix-up recolours up the tree and does at most 2 rotations.",
+    },
   ]}
 />

@@ -51,6 +51,18 @@ describe("red-black tree", () => {
     expect(end(built, 32)).toBe("71B(47B(-,65R),87B(82R,93R))");
   });
 
+  it("solves the 2023 midterm's insert 5, 9 into 2(1, 4)", () => {
+    const keys = (st: { nodes: { id: number; key: number; color: string; left: number | null; right: number | null }[]; root: number | null }) => {
+      const byId = new Map(st.nodes.map((n) => [n.id, n]));
+      const go = (id: number | null): string => (id === null ? "-" : `${byId.get(id)!.key}${byId.get(id)!.color}(${go(byId.get(id)!.left)},${go(byId.get(id)!.right)})`);
+      return go(st.root);
+    };
+    const f = rbFrames([2, 1, 4], [5, 9].map((key) => ({ op: "insert" as const, key })));
+    expect(keys(f[0].state)).toBe("2B(1R(-,-),4R(-,-))");
+    // 5: red uncle, recolor (case 1); 9: outer child with a black uncle, rotate left at 4 (case 3)
+    expect(keys(f.at(-1)!.state)).toBe("2B(1B(-,-),5B(4R(-,-),9R(-,-)))");
+  });
+
   it("uses the insertion cases on the textbook example (insert 15)", () => {
     const f = rbFrames([7, 3, 18, 10, 22, 8, 11, 26], [{ op: "insert", key: 15 }]);
     const cases = f.map((x) => x.state.caseLabel).filter(Boolean);

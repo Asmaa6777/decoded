@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { HashFunctions, DoublingCostChart } from "@/components/mdx/AdvancedVisualizers";
 
 # Hashing and Amortized Analysis
@@ -211,3 +211,137 @@ Growing the table by a **fixed amount**, say 10 more slots each time, instead of
     Real hash maps double their bucket array when they get too full and move every key across. Inserts stay $O(1)$ amortized for exactly the same reason.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2018)* Use the aggregate method to give the amortized cost of inserting into a dynamic hash table that starts with size 1 and doubles (1, 2, 4, 8, …) whenever it is full.
+
+<ModelAnswer>
+Insertion $i$ costs 1 to write the item, plus $i - 1$ to copy the old items when the table was full, which happens when $i - 1$ is a power of 2. Add up $n$ insertions:
+
+$$
+\sum_{i=1}^{n} c_i \;\le\; n + \underbrace{(1 + 2 + 4 + \dots + 2^{\lfloor \lg(n-1) \rfloor})}_{\text{copies: a geometric series} \;<\; 2n} \;<\; 3n
+$$
+
+So $n$ insertions cost less than $3n$ in total, and each one costs **$O(1)$ amortized** (at most 3), even though a single insertion can cost $\Theta(n)$.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="hashing"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final, undated) What is a hash table?",
+      options: [
+        { id: "a", text: "A structure that maps values to keys" },
+        { id: "b", text: "A structure that maps keys to values" },
+        { id: "c", text: "A structure used for storage" },
+        { id: "d", text: "A structure used to implement stacks and queues" },
+      ],
+      correctOptionId: "b",
+      explanation: "You give it a key and it finds the value stored with that key, in O(1) time on average.",
+    },
+    {
+      id: "f2",
+      prompt: "(Finals, undated and 2026) If several keys compete for the same slot of a hash table, it is called:",
+      options: [
+        { id: "a", text: "Diffusion" },
+        { id: "b", text: "Replication" },
+        { id: "c", text: "Collision" },
+        { id: "d", text: "Duplication" },
+      ],
+      correctOptionId: "c",
+      explanation: "A collision is two different keys hashing to the same slot.",
+    },
+    {
+      id: "f3",
+      prompt: "(Final, undated) What is the hash function in the division method?",
+      options: [
+        { id: "a", text: "h(k) = k / m" },
+        { id: "b", text: "h(k) = k mod m" },
+        { id: "c", text: "h(k) = m / k" },
+        { id: "d", text: "h(k) = m mod k" },
+      ],
+      correctOptionId: "b",
+      explanation: "Divide the key by the table size m and keep the remainder, which is always between 0 and m − 1.",
+    },
+    {
+      id: "f4",
+      prompt: "(Final, undated) What is a good value for m in the division method?",
+      options: [
+        { id: "a", text: "A prime number" },
+        { id: "b", text: "An even number" },
+        { id: "c", text: "2ᵖ − 1" },
+        { id: "d", text: "2ᵖ" },
+      ],
+      correctOptionId: "a",
+      explanation: "A prime shares no factor with patterns in the keys (like all multiples of 10). A power of 2 just keeps the key's lowest bits.",
+    },
+    {
+      id: "f5",
+      prompt: "(Final, undated) With the division method and a table of size 157, at which position is the key 172 placed?",
+      options: [
+        { id: "a", text: "19" },
+        { id: "b", text: "72" },
+        { id: "c", text: "15" },
+        { id: "d", text: "17" },
+      ],
+      correctOptionId: "c",
+      explanation: "172 mod 157 = 172 − 157 = 15.",
+    },
+    {
+      id: "f6",
+      prompt: "(Final, undated) In the multiplication method, the table size is m = 2ᵖ. What is the table size when p = 7?",
+      options: [
+        { id: "a", text: "14" },
+        { id: "b", text: "128" },
+        { id: "c", text: "49" },
+        { id: "d", text: "127" },
+      ],
+      correctOptionId: "b",
+      explanation: "2⁷ = 128. Unlike the division method, the multiplication method works well with a power of 2.",
+    },
+    {
+      id: "f7",
+      prompt: "(Final, undated) What is direct addressing?",
+      options: [
+        { id: "a", text: "A distinct array position for every possible key" },
+        { id: "b", text: "Fewer array positions than keys" },
+        { id: "c", text: "Fewer keys than array positions" },
+        { id: "d", text: "The same array position for all keys" },
+      ],
+      correctOptionId: "a",
+      explanation: "h(K) = K: the key is the address. That gives O(1) operations but needs a slot for every possible key.",
+    },
+    {
+      id: "f8",
+      prompt: "(Final, undated) What is the search time with direct addressing?",
+      options: [
+        { id: "a", text: "O(n)" },
+        { id: "b", text: "O(log n)" },
+        { id: "c", text: "O(n log n)" },
+        { id: "d", text: "O(1)" },
+      ],
+      correctOptionId: "d",
+      explanation: "The key itself is the index, so one array access answers the question.",
+    },
+    {
+      id: "f9",
+      prompt: "(Final 2026) What is hashing mainly used for?",
+      options: [
+        { id: "a", text: "Sorting data" },
+        { id: "b", text: "Searching data efficiently" },
+        { id: "c", text: "Compressing data" },
+        { id: "d", text: "Encrypting data" },
+      ],
+      correctOptionId: "b",
+      explanation: "Hash tables give O(1) average-time insert, delete and lookup. They don't keep keys in order, so they don't help with sorting.",
+    },
+  ]}
+/>

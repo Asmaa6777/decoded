@@ -32,7 +32,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
 - [ ] 6. Practice
   - [x] M0
   - [x] M1
-  - [ ] M2
+  - [x] M2
   - [ ] M3
   - [ ] M4
 - [ ] 7. Connections (whole course)
@@ -424,5 +424,26 @@ Every trace and count was checked in Python.
 **Source errors:** the 2019 counting-sort answer sheet gives the output as "1 2 3 5 6 1 8" (should be 1 2 3 5 6 7 8); its recursive-squaring code declares `int x[2][3]` for a 2 × 2 matrix.
 
 **Left out:** the 2024 retake's top-down min-heap question and the 2024 build-heap proof, because heaps aren't taught in this course. One final's "purpose of randomized quicksort" MCQ was left out because its options are ambiguous (randomizing doesn't lower the worst case; it makes the expected time Θ(n lg n) on every input).
+
+**Not checked:** no browser check.
+
+### Round 6, practice: M2 Hashing and Search Trees
+
+Same format: every lesson ends with past-exam practice, Part 1 midterms and Part 2 finals.
+
+**Added:**
+- m2-01: amortized doubling by the aggregate method (< 3n); 9 final MCQs (what a hash table is, collision, division method and a good m, 172 mod 157 = 15, multiplication method's m = 2⁷, direct addressing and its O(1), what hashing is for).
+- m2-02: the 2021 table (size 10, all four methods, including why 55 can't be inserted with h₂ = 5 − k mod 5: gcd(5, 10) = 5) and the 2022 table (size 11); 9 final MCQs on chaining's worst case, load factor, probing and clustering.
+- m2-03: the 2023 table {4371, …, 1989}, linear probing (with the wrap round) and chaining.
+- m2-04: red-black properties with TREE-MAXIMUM and PREDECESSOR (both cases), the 2 lg(n + 1) height proof; 10 final MCQs.
+- m2-05: insert 5 then 9 into 2(1, 4) from the 2023 midterm (figure read from the scan: 1 and 4 red), Case 1 then Case 3, with a visualizer and a new test that checks the final tree; 2 final MCQs.
+- m2-06: OS-RANK fill-in-the-blanks from 2025.
+- m2-07: skip list vs. binary search tree, asked in three midterms.
+
+All tables were recomputed in Python and match the 2021 and 2022 answer sheets. Lessons with no final questions say so.
+
+**Source errors:** the 2019 answer sheet's PREDECESSOR handles only the case with a left subtree.
+
+**Left out:** the undated final's "which is not a technique to avoid a collision" (its options are arguable) and its universal-hashing true/false (universal hashing isn't taught here). Final 2026 questions whose options were too garbled in the scan to rebuild with confidence were skipped.
 
 **Not checked:** no browser check.
