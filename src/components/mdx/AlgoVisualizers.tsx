@@ -1003,18 +1003,35 @@ const DEFAULT_EDGES: GraphEdge[] = [
 const sameEdge = (e: GraphEdge, pair?: [number, number]) =>
   !!pair && ((e.from === pair[0] && e.to === pair[1]) || (e.from === pair[1] && e.to === pair[0]));
 
+/** A small triangle just outside the target node's circle (r = 18), pointing along the edge. */
+function Arrowhead({ from, to, className }: { from: { x: number; y: number }; to: { x: number; y: number }; className: string }) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const tipX = to.x - ux * 19;
+  const tipY = to.y - uy * 19;
+  const bx = tipX - ux * 10;
+  const by = tipY - uy * 10;
+  const pts = `${tipX},${tipY} ${bx - uy * 5},${by + ux * 5} ${bx + uy * 5},${by - ux * 5}`;
+  return <polygon points={pts} className={`${className} transition-colors`} />;
+}
+
 export function GraphSvg({
   nodes,
   edges,
   edgeClass,
   nodeClass,
   showWeights,
+  directed,
 }: {
   nodes: GraphNode[];
   edges: GraphEdge[];
   edgeClass: (e: GraphEdge, i: number) => { stroke: string; width: number; dash?: string };
   nodeClass: (id: number) => string;
   showWeights?: boolean;
+  directed?: boolean; // draw an arrowhead where each edge meets its "to" node
 }) {
   const w = Math.max(...nodes.map((n) => n.x)) + 50;
   const h = Math.max(...nodes.map((n) => n.y)) + 40;
@@ -1028,6 +1045,7 @@ export function GraphSvg({
         return (
           <g key={i}>
             <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={`${st.stroke} transition-all`} strokeWidth={st.width} strokeDasharray={st.dash} />
+            {directed && <Arrowhead from={a} to={b} className={st.stroke.replace("stroke-", "fill-")} />}
             {showWeights && e.weight !== undefined && (
               <g>
                 <rect x={(a.x + b.x) / 2 - 10} y={(a.y + b.y) / 2 - 9} width={20} height={18} rx={2} className="fill-card" />
@@ -1051,7 +1069,7 @@ export function GraphSvg({
   );
 }
 
-export function Chips({ label, items, tone, hint }: { label: string; items: number[]; tone: string; hint?: string }) {
+export function Chips({ label, items, tone, hint }: { label: string; items: (number | string)[]; tone: string; hint?: string }) {
   return (
     <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
       <span className="w-14 text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
@@ -1091,14 +1109,21 @@ export function GraphTraversal({
   nodes = DEFAULT_NODES,
   edges = DEFAULT_EDGES,
   start = 0,
+  directed = false,
 }: {
   algorithm?: "bfs" | "dfs";
   nodes?: GraphNode[];
   edges?: GraphEdge[];
   start?: number;
+  directed?: boolean;
 }) {
   const [kind, setKind] = useState(algorithm);
-  const frames = useMemo(() => traversalFrames(kind, nodes.length, edges, start), [kind, nodes, edges, start]);
+  const names = useMemo(() => {
+    const out: string[] = [];
+    for (const n of nodes) out[n.id] = n.label ?? String(n.id);
+    return out;
+  }, [nodes]);
+  const frames = useMemo(() => traversalFrames(kind, nodes.length, edges, start, directed, names), [kind, nodes, edges, start, directed, names]);
   return (
     <Stepper
       title={kind === "bfs" ? "Breadth-first search" : "Depth-first search"}
@@ -1114,6 +1139,7 @@ export function GraphTraversal({
           <GraphSvg
             nodes={nodes}
             edges={edges}
+            directed={directed}
             edgeClass={(e) =>
               sameEdge(e, s.checking)
                 ? { stroke: "stroke-neon", width: 4 }
@@ -1132,8 +1158,8 @@ export function GraphTraversal({
             }
           />
           <div className="flex flex-col gap-2">
-            <Chips label={kind === "bfs" ? "queue" : "stack"} items={s.frontier} tone="border-sky bg-sky/10" hint={kind === "bfs" ? "← front … back" : "bottom … top →"} />
-            <Chips label="order" items={s.order} tone="border-mint bg-mint/10" />
+            <Chips label={kind === "bfs" ? "queue" : "stack"} items={s.frontier.map((v) => names[v])} tone="border-sky bg-sky/10" hint={kind === "bfs" ? "← front … back" : "bottom … top →"} />
+            <Chips label="order" items={s.order.map((v) => names[v])} tone="border-mint bg-mint/10" />
           </div>
         </div>
       )}

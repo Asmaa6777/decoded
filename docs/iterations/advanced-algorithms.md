@@ -27,7 +27,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M0
   - [x] M1
   - [x] M2
-  - [ ] M3
+  - [x] M3
   - [ ] M4
 - [ ] 6. Practice
   - [ ] M0
@@ -356,3 +356,15 @@ Listed every idea in m2-01 to m2-07 that is still only text and judged whether a
 **Phone width, dark theme, reduced motion (code audit):** the new chart scales with `w-full h-auto`, uses theme classes only, and doesn't animate.
 
 **Couldn't check:** no browser automation is installed, so nothing was looked at in a real browser.
+
+### Round 5, visualizations: M3 Design Strategies
+
+Listed every idea in m3-01 to m3-05 that is still only text and judged whether a reader needs something to step through.
+
+**Built:** directed graphs for `GraphTraversal`, the gap round 2 logged. `GraphSvg` takes a `directed` flag and draws an arrowhead on each edge in the edge's own colour; `traversalFrames` takes node names, so the step messages, the queue and the visit order show letters instead of numbers. m3-05 now steps through the lecture's directed a to i graph (positions from the slide), and the generic undirected BFS that sat next to it was removed as redundant. A test checks the order `a b d c e g i f h` and that the messages use the letters. Algorithm Design and Analysis uses the same component with the defaults (undirected, no labels) and is unchanged.
+
+**Judged and left as text:** the DP recurrences' derivations, the greedy-choice and optimal-substructure proofs, the Huffman exchange argument, the scheduling example (it has its own visualizer), and Dijkstra's correctness proof. Coin-row, binomial, robot, LCS and knapsack tables, Huffman, both MST algorithms on the lecture graph, activity selection, and Dijkstra already have visualizers.
+
+**Phone width, dark theme, reduced motion (code audit):** the arrowheads use the same theme classes as their edges (`fill-` for `stroke-`) and the graph SVG already scales to its container; nothing new animates beyond the existing colour transition.
+
+**Couldn't check:** no browser automation is installed, so the arrow placement wasn't looked at in a real browser.

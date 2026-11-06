@@ -152,6 +152,10 @@ describe("traversalFrames", () => {
     ].map(([from, to]) => ({ from, to }));
     const order = traversalFrames("bfs", 9, lecture, 0, true).at(-1)!.state.order;
     expect(order.map((i) => "abcdefghi"[i]).join(" ")).toBe("a b d c e g i f h");
+    // with names, the step messages use the letters too
+    const named = traversalFrames("bfs", 9, lecture, 0, true, [..."abcdefghi"]);
+    expect(named.at(-1)!.message).toContain("a → b → d → c → e → g → i → f → h");
+    expect(named[0].message).toBe("Mark a as seen and put it in the queue.");
   });
 
   it("BFS visits level by level", () => {
