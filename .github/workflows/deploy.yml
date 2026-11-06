@@ -16,6 +16,9 @@ concurrency:
 
 jobs:
   build:
+    # Only the main repository publishes the site. Forks don't have Pages set up,
+    # so without this the "Setup Pages" step fails on every push to a fork.
+    if: github.repository == 'STACK-42/decoded'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
