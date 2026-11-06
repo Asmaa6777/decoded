@@ -1,4 +1,4 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { RecursionTreeDiagram, GaussMultiply, RecurrenceExplorer } from "@/components/mdx/AdvancedVisualizers";
 
@@ -272,3 +272,40 @@ Sort first with [merge sort](/courses/advanced-algorithms/analysis-of-algorithms
     { id: 162, title: "Find Peak Element", slug: "find-peak-element", why: "The 1-D version of exercise 3: a local maximum in O(log n) by halving.", difficulty: "Medium" },
   ]}
 />
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2023)* Design a divide-and-conquer algorithm that computes the number of levels in a binary tree (0 for the empty tree, 1 for a single node), and analyze it.
+
+<ModelAnswer>
+A tree's levels are its root plus the levels of its taller subtree:
+
+```cpp
+int levels(Node* t) {
+    if (t == nullptr) return 0;                    // empty tree
+    return 1 + max(levels(t->left), levels(t->right));
+}
+```
+
+A single node gives $1 + \max(0, 0) = 1$, as required. Each node is visited exactly once and does constant work, so the time is $\Theta(n)$ for $n$ nodes. (As a recurrence for a balanced tree, $T(n) = 2T(n/2) + \Theta(1) = \Theta(n)$, Case 1.)
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+**2.** *(Finals 2018, and an exam-examples sheet)* You are choosing between three algorithms:
+
+- **A** divides a problem into five subproblems of half the size, solves each recursively, and combines the solutions in linear time.
+- **B** solves a problem of size $n$ by solving two subproblems of size $n - 1$ and combining in constant time.
+- **C** divides a problem into nine subproblems of size $n/3$, solves each recursively, and combines in $O(n^2)$ time.
+
+What are their running times, and which would you choose?
+
+<ModelAnswer>
+- **A:** $T(n) = 5T(n/2) + O(n)$. $n^{\log_2 5} \approx n^{2.32}$ beats $n$: Case 1, $O(n^{\log_2 5}) \approx O(n^{2.32})$.
+- **B:** $T(n) = 2T(n-1) + O(1)$. The number of calls doubles each level, over $n$ levels: $O(2^n)$.
+- **C:** $T(n) = 9T(n/3) + O(n^2)$. $n^{\log_3 9} = n^2$ equals $f(n)$: Case 2, $O(n^2 \log n)$.
+
+**Choose C.** $n^2 \log n$ grows more slowly than $n^{2.32}$, and both are vastly better than $2^n$.
+</ModelAnswer>

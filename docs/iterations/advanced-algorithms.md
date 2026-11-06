@@ -31,7 +31,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M4
 - [ ] 6. Practice
   - [x] M0
-  - [ ] M1
+  - [x] M1
   - [ ] M2
   - [ ] M3
   - [ ] M4
@@ -407,3 +407,22 @@ All numeric answers were checked in Python (crossover, 1.466 root, both recurren
 **Source errors:** the 2018 midterm prints "n > 32" for the Fibonacci case; one final's "T(1) = 5, T(n) = 5T(n/4) + n, n = 32" isn't solvable (32 isn't a power of 4), so it was left out; the 2019 answer sheet's counting-sort table has slips (for round 6 M1).
 
 **Not checked:** no browser check of the new button and quiz layout.
+
+### Round 6, practice: M1 Divide and Conquer
+
+Same format as M0: every lesson ends with past-exam practice, Part 1 midterms and Part 2 finals.
+
+**Added:**
+- m1-01: Fibonacci three ways with F(5) (asked in three midterms), Fibonacci of 16 in four squarings (F₁₆ = 987, two midterms), the maximum-subarray functions from 2025 (Θ(n lg n)), counting inversions with merge sort traced on [5, 7, 2, 1, 4, 3, 6, 8] (11 inversions, in the order found), Strassen true/false; 5 final MCQs (the three steps, recursion, Strassen, binary search on sorted data, where merge sort's work is).
+- m1-02: levels of a binary tree by divide and conquer (Θ(n)); algorithms A, B and C from two finals (choose C, O(n² log n)).
+- m1-03: the full quicksort trace of (5, 2, 4, 8, 0, 3, 1, 7) with this course's PARTITION; best case by recursion tree; worst case, 1/10 : 9/10 and lucky/unlucky; 4 final MCQs (T(n − 1) + Θ(n), divide and conquer, lowest worst case, not in place).
+- m1-04: both counting sorts with their C tables, and the worst-case table asked in three midterms. No final asked about this lesson; the section says so.
+- m1-05: median of two sorted arrays, naive and O(log n). No final asked about selection; the section says so.
+
+Every trace and count was checked in Python.
+
+**Source errors:** the 2019 counting-sort answer sheet gives the output as "1 2 3 5 6 1 8" (should be 1 2 3 5 6 7 8); its recursive-squaring code declares `int x[2][3]` for a 2 × 2 matrix.
+
+**Left out:** the 2024 retake's top-down min-heap question and the 2024 build-heap proof, because heaps aren't taught in this course. One final's "purpose of randomized quicksort" MCQ was left out because its options are ambiguous (randomizing doesn't lower the worst case; it makes the expected time Θ(n lg n) on every input).
+
+**Not checked:** no browser check.

@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { SelectVisualizer, MedianOfMediansGrid, RecursionTreeDiagram } from "@/components/mdx/AdvancedVisualizers";
 
@@ -242,3 +242,25 @@ This holds if $c$ is chosen large enough to handle both the $\Theta(n)$ and the 
     { id: 462, title: "Minimum Moves to Equal Array Elements II", slug: "minimum-moves-to-equal-array-elements-ii", why: "The best target is the median, so find it in linear time.", difficulty: "Medium" },
   ]}
 />
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterms 2024, 2025)* You are given two sorted arrays $A$ and $B$ of sizes $m$ and $n$, with no values in common, and you want the median of all $m + n$ numbers. (a) Give a naive $\Theta(m + n)$ algorithm. (b) If $m = n$, give an $O(\log n)$ algorithm.
+
+<ModelAnswer>
+**(a)** Merge the two arrays, as in merge sort, but stop once you reach position $\lfloor (m + n + 1)/2 \rfloor$ of the merged order. That element is the median. At most $m + n$ steps: $\Theta(m + n)$.
+
+**(b)** Compare the two medians, $a$ (of $A$) and $b$ (of $B$).
+
+- If $a = b$, that value is the median of everything. (With disjoint arrays this can't happen, but it's the usual base check.)
+- If $a < b$: the overall median can't be in the lower half of $A$ (those values are below both medians), and it can't be in the upper half of $B$. Throw away the lower half of $A$ and the upper half of $B$, the same number from each, so the median of what's left is unchanged.
+- If $a > b$, do the mirror image.
+
+Repeat on the two remaining halves. When each array has one or two elements left, merge them directly. Each step halves both arrays with $O(1)$ work: $T(n) = T(n/2) + O(1) = O(\log n)$. This is the same idea as binary search, which the exam hints at.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+None of the past finals asked about selection, RAND-SELECT or median of medians. The midterm question above is the best practice.

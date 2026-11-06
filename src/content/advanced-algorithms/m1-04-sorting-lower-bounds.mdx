@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { DecisionTree, CountingSortVisualizer, RadixSortVisualizer } from "@/components/mdx/AdvancedVisualizers";
 
@@ -255,3 +255,47 @@ In practice, radix sort is **fast for large inputs**, and simple to code and mai
     { id: 274, title: "H-Index", slug: "h-index", why: "The citation counts are bounded by n, so counting sort gives O(n).", difficulty: "Medium" },
   ]}
 />
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterm 2019)* Use counting sort to sort $(8, 5, 7, 3, 6, 1, 2)$.
+
+<ModelAnswer>
+Here $k = 8$, so $C$ has slots 1 to 8.
+
+| key | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| count (loop 2) | 1 | 1 | 1 | 0 | 1 | 1 | 1 | 1 |
+| running total (loop 3) | 1 | 2 | 3 | 3 | 4 | 5 | 6 | 7 |
+
+Loop 4 walks the input from right to left, putting each key at position $C[key]$ and then lowering $C[key]$ by 1: 2 goes to position 2, 1 to 1, 6 to 5, 3 to 3, 7 to 6, 5 to 4, and 8 to 7. Output: **1 2 3 5 6 7 8**.
+
+(The answer sheet for this exam writes the output as "1 2 3 5 6 1 8", a slip: the 1 should be 7.)
+</ModelAnswer>
+
+**2.** *(Midterm 2020)* Use counting sort to sort $(1, 1, 2, 2, 3, 3, 4)$.
+
+<ModelAnswer>
+$k = 4$. Counts: $C = [2, 2, 2, 1]$. Running totals: $C = [2, 4, 6, 7]$. Walking from the right: 4 goes to position 7; the second 3 to 6, the first 3 to 5; the 2s to 4 and 3; the 1s to 2 and 1. Output: **1 1 2 2 3 3 4**, and each pair of equal keys keeps its original order. That is stability, and it's why loop 4 runs from the right.
+</ModelAnswer>
+
+**3.** *(Midterms 2016, 2017, 2018)* Give the worst-case running time of: binary search, insertion sort, merge sort, counting sort, heap sort, and the operations of a red-black tree.
+
+<ModelAnswer>
+| algorithm | worst case |
+| --- | --- |
+| binary search | $\Theta(\lg n)$ |
+| insertion sort | $\Theta(n^2)$ |
+| merge sort | $\Theta(n \lg n)$ |
+| counting sort | $\Theta(n + k)$, so $\Theta(n)$ when $k = O(n)$ |
+| heap sort | $\Theta(n \lg n)$ |
+| red-black tree search, insert, delete | $\Theta(\lg n)$ |
+
+Merge sort and heap sort meet the $\Omega(n \lg n)$ lower bound for comparison sorts. Counting sort beats it because it never compares elements.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+None of the past finals asked about decision trees, the lower bound, or counting and radix sort. The midterm questions above are the best practice.

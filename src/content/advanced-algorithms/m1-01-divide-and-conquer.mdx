@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SearchVisualizer, MergeSortTree } from "@/components/mdx/AlgoVisualizers";
 import { FastPowerVisualizer, FibonacciMatrix, StrassenCalculator, RecurrenceExplorer, VlsiLayouts } from "@/components/mdx/AdvancedVisualizers";
 
@@ -276,3 +276,169 @@ Compare the two layouts for the same number of leaves. Each green dot is a leaf;
     Deep learning is mostly matrix multiplication. Libraries split matrices into blocks, exactly like the $2 \times 2$ split above, so each block fits in fast cache memory.
   </PracticalApplication>
 </ApplicationsGrid>
+
+## Practice from past exams
+
+### Part 1: Midterm questions
+
+**1.** *(Midterms 2019, 2020, and an undated one)* $F(n) = n$ for $0 \le n < 2$, and $F(n) = F(n-1) + F(n-2)$ for $n \ge 2$. Solve it in three different ways from the lectures, give each one's complexity, and compute $F(5)$ with each.
+
+<ModelAnswer>
+**1. Plain recursion: exponential, $\Theta(\varphi^n)$** (more than $2^{n/2}$).
+
+```cpp
+int fib(int n) { return n < 2 ? n : fib(n - 1) + fib(n - 2); }
+```
+
+$F(5)$ calls $F(4)$ and $F(3)$, and so on down; the recursion tree has 15 calls in all. $F(5) = 5$.
+
+**2. Bottom-up with an array (dynamic programming): $\Theta(n)$.**
+
+```cpp
+int fib(int n) {
+    vector<int> f(n + 2);
+    f[0] = 0; f[1] = 1;
+    for (int i = 2; i <= n; i++) f[i] = f[i - 1] + f[i - 2];
+    return f[n];
+}
+```
+
+The table fills in as $0, 1, 1, 2, 3, 5$, so $F(5) = 5$.
+
+**3. Recursive squaring of a matrix: $\Theta(\lg n)$.** Compute $\begin{bmatrix} 1 & 1 \\ 1 & 0 \end{bmatrix}^n$ by squaring, like $a^n$. For $n = 5$: $M^2 = \begin{bmatrix} 2 & 1 \\ 1 & 1 \end{bmatrix}$, $M^4 = \begin{bmatrix} 5 & 3 \\ 3 & 2 \end{bmatrix}$, $M^5 = M^4 \cdot M = \begin{bmatrix} 8 & 5 \\ 5 & 3 \end{bmatrix}$. The top-right entry is $F(5) = 5$.
+</ModelAnswer>
+
+**2.** *(Midterms 2024, 2025)* Compute Fibonacci of 16 in only four steps, and show the details.
+
+<ModelAnswer>
+$16 = 2^4$, so square $M = \begin{bmatrix} 1 & 1 \\ 1 & 0 \end{bmatrix}$ four times:
+
+| step | matrix |
+| --- | --- |
+| $M^2 = M \cdot M$ | $\begin{bmatrix} 2 & 1 \\ 1 & 1 \end{bmatrix}$ |
+| $M^4 = M^2 \cdot M^2$ | $\begin{bmatrix} 5 & 3 \\ 3 & 2 \end{bmatrix}$ |
+| $M^8 = M^4 \cdot M^4$ | $\begin{bmatrix} 34 & 21 \\ 21 & 13 \end{bmatrix}$ |
+| $M^{16} = M^8 \cdot M^8$ | $\begin{bmatrix} 1597 & 987 \\ 987 & 610 \end{bmatrix}$ |
+
+Since $M^n = \begin{bmatrix} F_{n+1} & F_n \\ F_n & F_{n-1} \end{bmatrix}$, **$F_{16} = 987$**.
+</ModelAnswer>
+
+**3.** *(Midterm 2025)* What do these two functions do? What is the recurrence for `F1`, and its time complexity?
+
+```text
+F2(A, l, mid, r):
+    left_sum = −∞;  sum = 0
+    for i from mid down to l:  sum += A[i];  left_sum = max(left_sum, sum)
+    right_sum = −∞; sum = 0
+    for i from mid+1 up to r:  sum += A[i];  right_sum = max(right_sum, sum)
+    return left_sum + right_sum
+
+F1(A, l, r):
+    if l == r: return A[l]
+    mid = (l + r) / 2
+    return max(F1(A, l, mid), F1(A, mid+1, r), F2(A, l, mid, r))
+```
+
+<ModelAnswer>
+`F2` finds the largest sum of a block of consecutive elements that **crosses the middle**: the best block ending exactly at `mid`, plus the best block starting exactly at `mid + 1`. It looks at each element once: $\Theta(n)$.
+
+`F1` finds the **maximum subarray sum** by divide and conquer. The best block is either entirely in the left half, entirely in the right half, or crosses the middle, so it takes the largest of the three.
+
+$$
+T(n) = 2T(n/2) + \Theta(n) \;\Longrightarrow\; T(n) = \Theta(n \lg n)
+$$
+
+(Master method, Case 2, the same recurrence as merge sort.)
+</ModelAnswer>
+
+**4.** *(Midterm 2024, retake)* An **inversion** is a pair of elements where the bigger one comes first. Give a divide-and-conquer algorithm that finds all inversions in $O(n \log n)$ time (plus the time to list them), and trace it on $[5, 7, 2, 1, 4, 3, 6, 8]$.
+
+<ModelAnswer>
+Use merge sort. While merging, whenever an element is taken from the **right** half, every element still waiting in the left half is bigger and comes before it, so each of them forms an inversion with it. Counting them costs $O(1)$ per step, so counting takes $T(n) = 2T(n/2) + O(n) = O(n \log n)$. (Listing them all takes extra time proportional to how many there are.)
+
+Trace, in the order found:
+
+- $[2, 1]$: taking 1 → $(2, 1)$.
+- Merge $[5, 7]$ with $[1, 2]$: taking 1 → $(5, 1), (7, 1)$; taking 2 → $(5, 2), (7, 2)$.
+- $[4, 3]$: taking 3 → $(4, 3)$.
+- Merge $[3, 4]$ with $[6, 8]$: none.
+- Merge $[1, 2, 5, 7]$ with $[3, 4, 6, 8]$: taking 3 → $(5, 3), (7, 3)$; taking 4 → $(5, 4), (7, 4)$; taking 6 → $(7, 6)$.
+
+**11 inversions** in all.
+</ModelAnswer>
+
+**5.** *(Midterm 2022, true or false)* There is an algorithm that multiplies two $n \times n$ matrices in less than $O(n^3)$ time.
+
+<ModelAnswer>
+**True.** Strassen's algorithm uses 7 multiplications of half-size matrices instead of 8: $T(n) = 7T(n/2) + \Theta(n^2) = \Theta(n^{\lg 7}) \approx \Theta(n^{2.81})$.
+</ModelAnswer>
+
+### Part 2: Final exam questions
+
+<Quiz
+  courseSlug="advanced-algorithms"
+  lessonSlug="divide-and-conquer"
+  practice
+  questions={[
+    {
+      id: "f1",
+      prompt: "(Final 2026) The three steps of divide and conquer are:",
+      options: [
+        { id: "a", text: "Divide, solve (conquer), combine" },
+        { id: "b", text: "Sort, search, merge" },
+        { id: "c", text: "Break, sort, combine" },
+        { id: "d", text: "Divide, conquer, destroy" },
+      ],
+      correctOptionId: "a",
+      explanation: "Divide the problem into subproblems, conquer them recursively, then combine their solutions.",
+    },
+    {
+      id: "f2",
+      prompt: "(Final 2026) Divide and conquer uses:",
+      options: [
+        { id: "a", text: "Iteration" },
+        { id: "b", text: "Recursion" },
+        { id: "c", text: "Greedy choice" },
+        { id: "d", text: "Memoization" },
+      ],
+      correctOptionId: "b",
+      explanation: "Each subproblem is a smaller instance of the same problem, solved by calling the algorithm on it again.",
+    },
+    {
+      id: "f3",
+      prompt: "(Final 2026) Which algorithm uses divide and conquer for matrix multiplication?",
+      options: [
+        { id: "a", text: "Strassen's algorithm" },
+        { id: "b", text: "Prim's algorithm" },
+        { id: "c", text: "Kruskal's algorithm" },
+        { id: "d", text: "Floyd's algorithm" },
+      ],
+      correctOptionId: "a",
+      explanation: "Strassen splits each matrix into four blocks and gets by with 7 block multiplications.",
+    },
+    {
+      id: "f4",
+      prompt: "(Final 2026) Binary search applies divide and conquer to:",
+      options: [
+        { id: "a", text: "An unsorted array" },
+        { id: "b", text: "A sorted array" },
+        { id: "c", text: "A linked list" },
+        { id: "d", text: "A tree" },
+      ],
+      correctOptionId: "b",
+      explanation: "Only a sorted array lets one comparison with the middle element rule out a whole half. A linked list also has no fast way to reach the middle.",
+    },
+    {
+      id: "f5",
+      prompt: "(Final 2026) In which algorithm is the combining step the most expensive?",
+      options: [
+        { id: "a", text: "Quicksort" },
+        { id: "b", text: "Merge sort" },
+        { id: "c", text: "Binary search" },
+        { id: "d", text: "Linear search" },
+      ],
+      correctOptionId: "b",
+      explanation: "Merge sort's divide step is trivial and its combine (the merge) is Θ(n). Quicksort is the opposite: the work is in the partition (divide), and combining is trivial.",
+    },
+  ]}
+/>
