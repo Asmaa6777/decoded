@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
+import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle, vizCard, vizHeader } from "@/components/mdx/AlgoVisualizers";
 import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, probeText, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, CPP_MIN_MAX_MERGE, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, type Seg, expectedProbes, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
@@ -11,12 +11,12 @@ import { humanTime, formatOps } from "@/lib/algorithms";
 
 function Panel({ title, legend, children }: { title: string; legend?: [string, string][]; children: React.ReactNode }) {
   return (
-    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+    <div className={vizCard}>
+      <div className={vizHeader}>
         <div className="eyebrow text-violet">{title}</div>
         {legend && <Legend items={legend} />}
       </div>
-      <div className="p-5 flex flex-col gap-4">{children}</div>
+      <div className="p-5 flex flex-col gap-5">{children}</div>
     </div>
   );
 }
@@ -37,18 +37,18 @@ export function TermContribution({ initialN = 10 }: { initialN?: number }) {
   return (
     <Panel title={`Who does the work in T(n) = ${terms[0].label} + 8n + 10?`} legend={terms.map((t) => [t.bar, t.label] as [string, string])}>
       <label className="flex flex-wrap items-center gap-4 font-mono text-xs">
-        <span className="uppercase tracking-widest text-muted-foreground">n</span>
+        <span className="text-muted-foreground">n</span>
         <input type="range" min={1} max={100} value={n} onChange={(e) => setN(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="n" />
-        <span className="font-display text-xl font-bold w-24">n = {n}</span>
+        <span className="font-display text-xl font-semibold text-violet w-24">n = {n}</span>
       </label>
-      <div className="flex h-8 w-full overflow-hidden rounded-sm border border-border">
+      <div className="flex h-8 w-full overflow-hidden rounded-lg border border-border">
         {terms.map((t, i) => (
           <div key={t.label} className={`${t.bar} transition-all duration-200`} style={{ width: `${shares[i] * 100}%` }} title={t.label} />
         ))}
       </div>
       <table className="w-full font-mono text-xs border-collapse">
         <thead>
-          <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">
+          <tr className="text-xs text-muted-foreground border-b border-border">
             <th className="text-left py-1.5 font-normal">term</th>
             <th className="text-right py-1.5 font-normal">value</th>
             <th className="text-right py-1.5 font-normal">share of T(n)</th>
@@ -125,12 +125,12 @@ export function BigOWitness() {
       </div>
       <div className="flex flex-wrap items-center gap-4 font-mono text-xs">
         <label className="inline-flex items-center gap-2">
-          <span className="uppercase tracking-widest text-muted-foreground">c</span>
+          <span className="text-muted-foreground">c</span>
           <input type="range" min={0.5} max={10} step={0.5} value={c} onChange={(e) => setC(Number(e.target.value))} aria-label="c" />
           <span className="w-8 text-foreground">{c}</span>
         </label>
         <label className="inline-flex items-center gap-2">
-          <span className="uppercase tracking-widest text-muted-foreground">n₀</span>
+          <span className="text-muted-foreground">n₀</span>
           <input type="range" min={1} max={20} value={n0} onChange={(e) => setN0(Number(e.target.value))} aria-label="n0" />
           <span className="w-8 text-foreground">{n0}</span>
         </label>
@@ -167,19 +167,19 @@ export function FibonacciCalls({ initialN = 30 }: { initialN?: number }) {
   return (
     <Panel title="fib(n): recursive vs. with an array">
       <label className="flex flex-wrap items-center gap-4 font-mono text-xs">
-        <span className="uppercase tracking-widest text-muted-foreground">n</span>
+        <span className="text-muted-foreground">n</span>
         <input type="range" min={0} max={100} value={n} onChange={(e) => setN(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="n" />
-        <span className="font-display text-xl font-bold w-24">n = {n}</span>
+        <span className="font-display text-xl font-semibold text-violet w-24">n = {n}</span>
       </label>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="border border-orange/60 bg-orange/10 rounded-sm p-4">
+        <div className="border border-orange/60 bg-orange/10 rounded-lg p-4">
           <div className="eyebrow text-orange mb-1">fib (recursive)</div>
-          <div className="font-display text-2xl font-bold">{formatOps(rec)} calls</div>
+          <div className="font-display text-2xl font-semibold">{formatOps(rec)} calls</div>
           <div className="font-mono text-xs text-muted-foreground mt-1">≈ {humanTime(rec / 10)} at one call per nanosecond</div>
         </div>
-        <div className="border border-mint/60 bg-mint/10 rounded-sm p-4">
+        <div className="border border-mint/60 bg-mint/10 rounded-lg p-4">
           <div className="eyebrow text-mint mb-1">fib2 (array)</div>
-          <div className="font-display text-2xl font-bold">{iter} terms</div>
+          <div className="font-display text-2xl font-semibold">{iter} terms</div>
           <div className="font-mono text-xs text-muted-foreground mt-1">≈ {iter} ns: {humanTime(iter / 10)}</div>
         </div>
       </div>
@@ -250,12 +250,12 @@ export function RecurrenceExplorer({ a: a0 = 2, b: b0 = 2, k: k0 = 1, p: p0 = 0 
         </button>
       </div>
 
-      <div className="font-display text-xl md:text-2xl font-bold">{recText}</div>
+      <div className="font-display text-xl md:text-2xl font-semibold">{recText}</div>
 
       <div className="overflow-x-auto">
         <table className="w-full font-mono text-xs border-collapse min-w-[460px]">
           <thead>
-            <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">
+            <tr className="text-xs text-muted-foreground border-b border-border">
               <th className="text-left py-2 pr-3 font-normal">level</th>
               <th className="text-left py-2 pr-3 font-normal">subproblems</th>
               <th className="text-left py-2 pr-3 font-normal">each of size</th>
@@ -278,7 +278,7 @@ export function RecurrenceExplorer({ a: a0 = 2, b: b0 = 2, k: k0 = 1, p: p0 = 0 
                 <td className="py-2 pr-3">{l.depth === 0 ? "n" : `n/${formatOps(Math.pow(v.b, l.depth))}`}</td>
                 <td className="py-2">
                   <span className="inline-flex items-center gap-2 w-full">
-                    <span className="h-2.5 bg-violet rounded-[2px] transition-all" style={{ width: `${Math.max(2, (l.cost / maxCost) * 100)}px` }} />
+                    <span className="h-2.5 bg-violet rounded-full transition-all" style={{ width: `${Math.max(2, (l.cost / maxCost) * 100)}px` }} />
                     {fmtExp(l.cost)}
                   </span>
                 </td>
@@ -297,7 +297,7 @@ export function RecurrenceExplorer({ a: a0 = 2, b: b0 = 2, k: k0 = 1, p: p0 = 0 
         <div className="font-mono text-xs text-muted-foreground">
           compare f(n) = <span className="text-foreground">{fText(v.k, v.p)}</span> with n<sup>log<sub>{v.b}</sub> {v.a}</sup> = <span className="text-foreground">{powN(res.critical)}</span>
         </div>
-        <div className="font-display text-lg font-bold">
+        <div className="font-display text-lg font-semibold">
           <span className={CASE_TONE[String(res.case)]}>{res.case === "gap" ? "No case applies" : `Case ${res.case}`}</span>
           <span className="text-foreground"> → T(n) = {res.answer}</span>
         </div>
@@ -331,7 +331,7 @@ function BitRow({ label, value, width, tone, changed }: { label: string; value: 
           return (
             <span
               key={i}
-              className={`w-7 h-8 flex items-center justify-center text-sm border rounded-sm transition-colors ${
+              className={`w-9 h-10 flex items-center justify-center text-base border rounded-lg transition-all duration-300 ${
                 b === "1" ? tone : "border-border text-muted-foreground"
               } ${changed?.has(pos) ? "ring-2 ring-orange" : ""}`}
             >
@@ -404,7 +404,7 @@ export function CountOnes({ n = 13 }: { n?: number }) {
           {s.prev !== undefined && <BitRow label="before" value={s.prev} width={8} tone="border-mint bg-mint/15" />}
           {s.prev !== undefined && <BitRow label="n − 1" value={s.prev - 1} width={8} tone="border-sky bg-sky/15" />}
           <BitRow label="n" value={s.n} width={8} tone="border-mint bg-mint/15" changed={s.cleared !== undefined ? new Set([s.cleared]) : undefined} />
-          <div className="font-display text-2xl font-bold mt-2">count = {s.count}</div>
+          <div className="font-display text-2xl font-semibold mt-2">count = {s.count}</div>
         </div>
       )}
       inputs={
@@ -439,11 +439,11 @@ export function FastPowerVisualizer({ a: a0 = 3, b: b0 = 13 }: { a?: number; b?:
       legend={[["bg-sky", "running now"], ["bg-mint", "returned"]]}
       render={(s) => (
         <div className="flex flex-col gap-1.5 font-mono text-sm">
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground">call stack (outermost first)</span>
+          <span className="text-xs text-muted-foreground">call stack (outermost first)</span>
           {s.calls.map((c, i) => (
             <div
               key={i}
-              className={`flex flex-wrap items-baseline gap-x-3 px-3 py-1.5 border rounded-sm transition-colors ${
+              className={`flex flex-wrap items-baseline gap-x-3 px-3 py-1.5 border rounded-lg transition-colors ${
                 i === s.active ? "border-sky bg-sky/15" : c.result !== undefined ? "border-mint/60 bg-mint/10" : "border-border"
               }`}
               style={{ marginLeft: Math.min(i, 8) * 14 }}
@@ -503,7 +503,7 @@ export function MinMaxVisualizer({
         <div className="flex flex-col gap-3">
           <ArrayCells s={s} />
           {s.phase !== "pairs" && (
-            <div className="flex flex-wrap gap-6 font-display text-xl font-bold">
+            <div className="flex flex-wrap gap-6 font-display text-xl font-semibold">
               <span>
                 min = <span className="text-mint">{s.min}</span>
               </span>
@@ -524,7 +524,7 @@ export function MinMaxVisualizer({
 export function PvsNpDiagram({ initial = "differ" }: { initial?: "differ" | "equal" }) {
   const [world, setWorld] = useState<"differ" | "equal">(initial);
   const label = (x: number, y: number, text: string, cls = "fill-current", size = 13, bold = true) => (
-    <text x={x} y={y} textAnchor="middle" fontSize={size} className={`${cls} font-mono ${bold ? "font-bold" : ""}`}>
+    <text x={x} y={y} textAnchor="middle" fontSize={size} className={`${cls} font-mono ${bold ? "font-semibold" : ""}`}>
       {text}
     </text>
   );
@@ -618,10 +618,10 @@ export function LoadFactorChart({ initial = 0.5 }: { initial?: number }) {
       </svg>
       <div className="flex flex-wrap gap-6 font-mono text-sm">
         <span>
-          open addressing: <span className="text-orange font-bold">{e.open.toFixed(1)}</span> probes
+          open addressing: <span className="text-orange font-semibold">{e.open.toFixed(1)}</span> probes
         </span>
         <span>
-          chaining: <span className="text-sky font-bold">{e.chain.toFixed(2)}</span> probes
+          chaining: <span className="text-sky font-semibold">{e.chain.toFixed(2)}</span> probes
         </span>
       </div>
       <p className="text-sm text-muted-foreground">
@@ -672,13 +672,13 @@ export function VlsiLayouts({ initialK = 2 }: { initialK?: number }) {
       <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
         <div className="flex flex-col gap-2 min-w-0">
           <div className="font-mono text-xs">
-            Obvious layout: {plain.width} wide × {plain.height} high = <span className="text-orange font-bold">{plain.area}</span> cells
+            Obvious layout: {plain.width} wide × {plain.height} high = <span className="text-orange font-semibold">{plain.area}</span> cells
           </div>
           <GridLayout w={plain.width} h={plain.height} segs={plain.segs} leaves={plain.leaves} label={`Binary tree with ${n} leaves laid out in rows`} />
         </div>
         <div className="flex flex-col gap-2 min-w-0">
           <div className="font-mono text-xs">
-            H-tree: {h.side} × {h.side} = <span className="text-mint font-bold">{h.area}</span> cells
+            H-tree: {h.side} × {h.side} = <span className="text-mint font-semibold">{h.area}</span> cells
           </div>
           <GridLayout w={h.side} h={h.side} segs={h.segs} leaves={h.leaves} label={`H-tree with ${n} leaves`} />
         </div>
@@ -703,11 +703,11 @@ export function RecursionTreeDiagram({ fracs, k = 1, depth = 3, title }: { fracs
         <div className="flex flex-col gap-3 min-w-fit">
           {levels.map((l, d) => (
             <div key={d} className="flex items-center gap-4">
-              <span className="w-14 shrink-0 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">level {d}</span>
+              <span className="w-14 shrink-0 font-mono text-xs text-muted-foreground">level {d}</span>
               <div className="flex-1 flex justify-center gap-1.5 flex-wrap">
                 {l.sizes.length <= 16 ? (
                   l.sizes.map((f, i) => (
-                    <span key={i} className="px-1.5 py-1 border border-border rounded-sm font-mono text-[11px] whitespace-nowrap">
+                    <span key={i} className="px-1.5 py-1 border border-border rounded-lg font-mono text-[11px] whitespace-nowrap">
                       {cost(f)}
                     </span>
                   ))
@@ -716,7 +716,7 @@ export function RecursionTreeDiagram({ fracs, k = 1, depth = 3, title }: { fracs
                 )}
               </div>
               <span className="w-32 shrink-0 text-right font-mono text-xs">
-                = <span className="text-violet font-bold">{fmtExp(l.cost)}</span> · c{k === 0 ? "" : k === 1 ? "n" : k === 2 ? "n²" : `n^${k}`}
+                = <span className="text-violet font-semibold">{fmtExp(l.cost)}</span> · c{k === 0 ? "" : k === 1 ? "n" : k === 2 ? "n²" : `n^${k}`}
               </span>
             </div>
           ))}
@@ -750,7 +750,7 @@ export function GaussMultiply({ a: a0 = 1234, b: b0 = 5678 }: { a?: number; b?: 
           {s.calls.map((c, i) => (
             <div
               key={i}
-              className={`flex flex-wrap items-baseline gap-x-3 px-2.5 py-1 border rounded-sm transition-colors ${
+              className={`flex flex-wrap items-baseline gap-x-3 px-2.5 py-1 border rounded-lg transition-colors ${
                 i === s.active ? "border-sky bg-sky/15" : c.result !== undefined ? "border-mint/50 bg-mint/5" : "border-border"
               }`}
               style={{ marginLeft: c.depth * 18 }}
@@ -808,10 +808,10 @@ export function QuicksortVisualizer({ initial = [6, 10, 13, 5, 8, 3, 2, 11], ran
       render={(s) => (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] min-h-[24px]">
-            <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">call stack</span>
+            <span className="text-xs text-muted-foreground mr-1">call stack</span>
             {s.calls.length === 0 && <span className="text-muted-foreground">(empty)</span>}
             {s.calls.map(([p, r], d) => (
-              <span key={d} className={`px-1.5 py-0.5 rounded-sm border ${d === s.calls.length - 1 ? "border-sky bg-sky/15" : "border-border text-muted-foreground"}`}>
+              <span key={d} className={`px-1.5 py-0.5 rounded-lg border ${d === s.calls.length - 1 ? "border-sky bg-sky/15" : "border-border text-muted-foreground"}`}>
                 qs({p}, {r})
               </span>
             ))}
@@ -906,9 +906,9 @@ export function RBTreeView({ snap, focus = [], showNil = false }: { snap: RBSnap
         const on = focus.includes(n.id);
         return (
           <g key={n.id} style={{ transform: `translate(${p.x}px, ${p.y}px)` }} className="transition-transform duration-500 ease-out motion-reduce:transition-none">
-            {on && <circle r={22} className="fill-none stroke-neon" strokeWidth={3} />}
-            <circle r={17} strokeWidth={2} className={`transition-colors duration-300 ${n.color === "R" ? "fill-orange stroke-orange" : "fill-zinc-900 stroke-foreground/50"}`} />
-            <text textAnchor="middle" dominantBaseline="central" fontSize={12} className="font-mono font-bold fill-white">
+            {on && <circle r={24} className="fill-neon/10 stroke-neon" strokeWidth={2.5} />}
+            <circle r={19} strokeWidth={2} className={`transition-colors duration-300 ${n.color === "R" ? "fill-orange stroke-orange" : "fill-zinc-800 stroke-zinc-600"}`} />
+            <text textAnchor="middle" dominantBaseline="central" fontSize={12} className="font-mono font-medium fill-white">
               {n.key}
             </text>
           </g>
@@ -945,7 +945,7 @@ export function RBTreeVisualizer({ start = NO_KEYS, ops: ops0 = NO_OPS }: { star
       legend={[["bg-orange", "red node"], ["bg-zinc-900", "black node"], ["bg-neon", "involved in this step"]]}
       render={(s) => (
         <div className="flex flex-col gap-2">
-          {s.caseLabel && <span className="self-start font-mono text-[11px] uppercase tracking-widest px-2 py-0.5 border border-violet text-violet rounded-sm">{s.caseLabel}</span>}
+          {s.caseLabel && <span className="self-start font-mono text-xs px-2 py-0.5 border border-violet text-violet rounded-lg">{s.caseLabel}</span>}
           <RBTreeView snap={s} focus={s.focus} showNil={showNil} />
         </div>
       )}
@@ -997,7 +997,7 @@ export function RotationDemo() {
         {(["A", "B"] as const).map((k) => (
           <g key={k} style={{ transform: `translate(${P[k][0]}px, ${P[k][1]}px)` }} className={move}>
             <circle r={18} className="fill-card stroke-current" strokeWidth={2} />
-            <text textAnchor="middle" dominantBaseline="central" fontSize={14} className="font-mono font-bold fill-current">
+            <text textAnchor="middle" dominantBaseline="central" fontSize={14} className="font-mono font-medium fill-current">
               {k}
             </text>
           </g>
@@ -1083,7 +1083,7 @@ export function DPVisualizer({
                             : "border-border";
                       const mark = has(s.marks, r, c);
                       return (
-                        <td key={c} className={`relative w-9 h-9 text-center border transition-colors ${cls} ${mark && problem !== "robot" ? "!bg-mint/30 !border-mint font-bold" : ""}`}>
+                        <td key={c} className={`relative w-11 h-11 text-center border transition-colors ${cls} ${mark && problem !== "robot" ? "!bg-mint/30 !border-mint font-semibold" : ""}`}>
                           {v ?? ""}
                           {mark && problem === "robot" && <span className="absolute top-0.5 right-1 text-[9px] text-mint">●</span>}
                         </td>
@@ -1095,7 +1095,7 @@ export function DPVisualizer({
             </table>
           </div>
           {s.answer !== undefined && (
-            <div className="font-display text-lg font-bold">
+            <div className="font-display text-lg font-semibold">
               answer: <span className="text-mint">{s.answer}</span>
             </div>
           )}
@@ -1168,7 +1168,7 @@ export function SatExplorer({ formula = "(a ∨ b) ∧ (a ∨ ¬b)" }: { formula
                       {T(c)}
                     </td>
                   ))}
-                  <td className={`px-2 py-1 text-center font-bold ${r.sat ? "text-mint" : "text-muted-foreground"}`}>{T(r.sat)}</td>
+                  <td className={`px-2 py-1 text-center font-semibold ${r.sat ? "text-mint" : "text-muted-foreground"}`}>{T(r.sat)}</td>
                 </tr>
               ))}
             </tbody>
@@ -1226,7 +1226,7 @@ export function SatToClique({ formula = "(x1 ∨ ¬x2 ∨ x3) ∧ (¬x1 ∨ x2) 
         {g.vs.map((v, i) => (
           <g key={v.id}>
             <circle cx={pos[i].x} cy={pos[i].y} r={20} strokeWidth={2} className={inC.has(v.id) ? "fill-mint/30 stroke-mint" : "fill-card stroke-violet"} />
-            <text x={pos[i].x} y={pos[i].y} textAnchor="middle" dominantBaseline="central" fontSize={12} className="fill-current font-mono font-bold">
+            <text x={pos[i].x} y={pos[i].y} textAnchor="middle" dominantBaseline="central" fontSize={12} className="fill-current font-mono font-medium">
               {litText(v.lit)}
             </text>
           </g>
@@ -1312,7 +1312,7 @@ export function DijkstraVisualizer({ graph = "lecture" }: { graph?: keyof typeof
               return (
                 <g key={i}>
                   <path d={`M${sx},${sy} Q${mx},${my} ${tx},${ty}`} fill="none" className={`${cls} transition-colors`} strokeWidth={relax || tree ? 3.5 : 1.8} markerEnd={G.directed ? `url(#arrow-${graph})` : undefined} />
-                  <rect x={mx - 10 - uy * (bend ? 4 : 0)} y={my - 9 + ux * (bend ? 4 : 0)} width={20} height={18} rx={2} className="fill-card" />
+                  <rect x={mx - 10 - uy * (bend ? 4 : 0)} y={my - 9 + ux * (bend ? 4 : 0)} width={20} height={18} rx={9} className="fill-card" />
                   <text x={mx - uy * (bend ? 4 : 0)} y={my + ux * (bend ? 4 : 0)} textAnchor="middle" dominantBaseline="central" fontSize={11} className="font-mono fill-current">
                     {e.w}
                   </text>
@@ -1325,7 +1325,7 @@ export function DijkstraVisualizer({ graph = "lecture" }: { graph?: keyof typeof
               return (
                 <g key={v}>
                   <circle cx={x} cy={y} r={19} strokeWidth={2} className={`${cls} transition-colors`} />
-                  <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={13} className="font-mono font-bold fill-current">
+                  <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={13} className="font-mono font-medium fill-current">
                     {nm}
                   </text>
                   <text x={x} y={y - 27} textAnchor="middle" fontSize={11} className={`font-mono ${s.S.includes(v) ? "fill-mint" : "fill-muted-foreground"}`}>
@@ -1414,12 +1414,12 @@ export function CoinChangeGreedy({ system: sys0 = "us" }: { system?: keyof typeo
         </label>
       </div>
       <div className="grid gap-2 font-mono text-sm">
-        <div className="border border-sky/60 bg-sky/10 rounded-sm px-3 py-2">
-          <span className="text-[10px] uppercase tracking-widest text-sky mr-2">greedy</span>
+        <div className="border border-sky/60 bg-sky/10 rounded-lg px-3 py-2">
+          <span className="text-xs text-sky mr-2">greedy</span>
           {show(g)} = <b>{countCoins(g)} pieces</b>
         </div>
-        <div className="border border-mint/60 bg-mint/10 rounded-sm px-3 py-2">
-          <span className="text-[10px] uppercase tracking-widest text-mint mr-2">best</span>
+        <div className="border border-mint/60 bg-mint/10 rounded-lg px-3 py-2">
+          <span className="text-xs text-mint mr-2">best</span>
           {show(o)} = <b>{countCoins(o)} pieces</b>
         </div>
       </div>
@@ -1458,15 +1458,15 @@ export function JobScheduling({ jobs = JOBS, processors = 3 }: { jobs?: number[]
       <div className="flex flex-col gap-2">
         {lanes.map((l, p) => (
           <div key={p} className="flex items-center gap-2">
-            <span className="w-8 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">P{p + 1}</span>
-            <div className="relative flex-1 h-8 border border-border rounded-sm overflow-hidden flex">
+            <span className="w-8 font-mono text-xs text-muted-foreground">P{p + 1}</span>
+            <div className="relative flex-1 h-8 border border-border rounded-lg overflow-hidden flex">
               {l.map((j, k) => (
                 <div key={k} className={`${tones[k % tones.length]} border-r border-background h-full flex items-center justify-center font-mono text-[11px]`} style={{ width: `${(j / scale) * 100}%` }}>
                   {j}
                 </div>
               ))}
             </div>
-            <span className={`w-10 text-right font-mono text-xs ${loads[p] === span ? "font-bold" : "text-muted-foreground"}`}>{loads[p]}</span>
+            <span className={`w-10 text-right font-mono text-xs ${loads[p] === span ? "font-semibold" : "text-muted-foreground"}`}>{loads[p]}</span>
           </div>
         ))}
       </div>
@@ -1523,7 +1523,7 @@ function HuffTree({ root, highlight }: { root: HuffNode; highlight?: number[] })
         const on = highlight?.includes(n.id);
         return (
           <g key={n.id}>
-            <circle cx={p.x} cy={p.y} r={15} strokeWidth={2} className={on ? "fill-neon/30 stroke-neon" : n.left ? "fill-card stroke-muted-foreground" : "fill-sky/15 stroke-sky"} />
+            <circle cx={p.x} cy={p.y} r={18} strokeWidth={2} className={on ? "fill-neon/30 stroke-neon" : n.left ? "fill-card stroke-muted-foreground" : "fill-sky/15 stroke-sky"} />
             <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={10} className="font-mono fill-current">
               {n.left ? n.freq : `${n.label}:${n.freq}`}
             </text>
@@ -1555,7 +1555,7 @@ export function HuffmanVisualizer({ chars = ["A", "B", "C", "D", "E", "F"], freq
               <tbody>
                 {chars.map((c, i) => (
                   <tr key={c} className="border-b border-border/50">
-                    <td className="py-1 pr-4 font-bold">{c}</td>
+                    <td className="py-1 pr-4 font-semibold">{c}</td>
                     <td className="py-1 pr-4 text-muted-foreground">{freqs[i]}</td>
                     <td className="py-1 text-mint">{s.codes![c]}</td>
                   </tr>
@@ -1587,7 +1587,7 @@ export function ActivitySelector({ acts = CLRS_ACTIVITIES }: { acts?: Activity[]
               <div key={i} className="flex items-center gap-2">
                 <span className="w-8 text-right text-muted-foreground">a{i + 1}</span>
                 <div className="relative flex-1 h-5">
-                  <div className={`absolute h-full border rounded-sm transition-colors ${cls}`} style={{ left: `${(a.s / end) * 100}%`, width: `${((a.f - a.s) / end) * 100}%` }}>
+                  <div className={`absolute h-full border rounded-lg transition-colors ${cls}`} style={{ left: `${(a.s / end) * 100}%`, width: `${((a.f - a.s) / end) * 100}%` }}>
                     <span className="px-1">
                       [{a.s},{a.f})
                     </span>
@@ -1651,7 +1651,7 @@ export function SkipListVisualizer({ ops: ops0 = SKIP_DEFAULT_OPS, layout: layou
             <div className="inline-grid gap-x-1 gap-y-1.5 font-mono text-xs" style={{ gridTemplateColumns: `auto repeat(${cols}, 38px)` }}>
               {Array.from({ length: levels }, (_, r) => levels - 1 - r).map((lv) => (
                 <div key={lv} className="contents">
-                  <span className="pr-2 self-center text-right text-[10px] uppercase tracking-widest text-muted-foreground">L{lv}</span>
+                  <span className="pr-2 self-center text-right text-xs text-muted-foreground">L{lv}</span>
                   {Array.from({ length: cols }, (_, c) => {
                     const col = c - 1; // -1 header, towers.length sentinel
                     const isHeader = col === -1;
@@ -1662,14 +1662,14 @@ export function SkipListVisualizer({ ops: ops0 = SKIP_DEFAULT_OPS, layout: layou
                     const current = s.at === col && s.level === lv;
                     const cls =
                       s.found === col
-                        ? "border-mint bg-mint/25 font-bold"
+                        ? "border-mint bg-mint/25 font-semibold"
                         : current
-                          ? "border-sky bg-sky/25 font-bold"
+                          ? "border-sky bg-sky/25 font-semibold"
                           : onPath(col, lv)
                             ? "border-neon bg-neon/15"
                             : "border-border";
                     return (
-                      <span key={c} className={`h-8 flex items-center justify-center border rounded-sm transition-colors ${cls} ${isHeader || isSentinel ? "text-muted-foreground" : ""}`}>
+                      <span key={c} className={`h-10 flex items-center justify-center border rounded-lg transition-colors ${cls} ${isHeader || isSentinel ? "text-muted-foreground" : ""}`}>
                         {isHeader ? "H" : isSentinel ? "∞" : t!.key}
                       </span>
                     );
@@ -1677,7 +1677,7 @@ export function SkipListVisualizer({ ops: ops0 = SKIP_DEFAULT_OPS, layout: layou
                 </div>
               ))}
             </div>
-            {s.flips && <div className="mt-3 font-mono text-xs">coin flips: <span className="text-violet font-bold tracking-widest">{s.flips}</span></div>}
+            {s.flips && <div className="mt-3 font-mono text-xs">coin flips: <span className="text-violet font-semibold tracking-widest">{s.flips}</span></div>}
           </div>
         );
       }}
@@ -1738,8 +1738,8 @@ function AugTreeView({ nodes, s }: { nodes: AugNode[]; s: PathState }) {
         const wide = n.label.length > 2;
         return (
           <g key={n.id}>
-            {wide ? <rect x={n.x - 28} y={n.y - 14} width={56} height={28} rx={4} strokeWidth={2} className={cls} /> : <circle cx={n.x} cy={n.y} r={16} strokeWidth={2} className={cls} />}
-            <text x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" fontSize={wide ? 11 : 13} className="font-mono font-bold fill-current">
+            {wide ? <rect x={n.x - 28} y={n.y - 14} width={56} height={28} rx={14} strokeWidth={2} className={cls} /> : <circle cx={n.x} cy={n.y} r={18} strokeWidth={2} className={cls} />}
+            <text x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" fontSize={wide ? 11 : 13} className="font-mono font-medium fill-current">
               {n.label}
             </text>
             <text x={n.x} y={n.y + (wide ? 25 : 28)} textAnchor="middle" fontSize={10} className="font-mono fill-violet">
@@ -1776,7 +1776,7 @@ export function AugmentedTreeSearch({ kind = "select", i: i0 = 5, query = [14, 1
         kind === "select" ? (
           <label className="inline-flex items-center gap-2 font-mono text-xs">
             i =
-            <select value={i} onChange={(e) => setI(Number(e.target.value))} className="bg-transparent border border-border rounded-sm px-2 py-1.5 text-foreground">
+            <select value={i} onChange={(e) => setI(Number(e.target.value))} className="bg-transparent border border-border rounded-lg px-2 py-1.5 text-foreground">
               {Array.from({ length: nodes.length }, (_, k) => (
                 <option key={k} value={k + 1}>
                   {k + 1}
@@ -1971,9 +1971,9 @@ export function DoublingCostChart({ initialN = 17 }: { initialN?: number }) {
   return (
     <Panel title="Appending to a table that doubles when full" legend={[["bg-sky", "write the new item"], ["bg-orange", "copy everything over"], ["bg-mint", "bank balance at $3 per append"]]}>
       <label className="flex flex-wrap items-center gap-4 font-mono text-xs">
-        <span className="uppercase tracking-widest text-muted-foreground">appends</span>
+        <span className="text-muted-foreground">appends</span>
         <input type="range" min={1} max={64} value={n} onChange={(e) => setN(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="number of appends" />
-        <span className="font-display text-xl font-bold w-24">n = {n}</span>
+        <span className="font-display text-xl font-semibold text-violet w-24">n = {n}</span>
       </label>
       <div className="flex items-end gap-[2px] h-36 overflow-x-auto">
         {costs.map((c, i) => (
@@ -2023,7 +2023,7 @@ export function SelectVisualizer({ initial = [6, 10, 13, 5, 8, 3, 2, 11], want =
             })}
           </div>
           <div className="font-mono text-xs text-muted-foreground">
-            looking for rank <span className="text-foreground font-bold">{s.want}</span> inside the bright part
+            looking for rank <span className="text-foreground font-semibold">{s.want}</span> inside the bright part
           </div>
         </div>
       )}
@@ -2031,7 +2031,7 @@ export function SelectVisualizer({ initial = [6, 10, 13, 5, 8, 3, 2, 11], want =
         <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
           <label className="inline-flex items-center gap-2">
             i =
-            <select value={i} onChange={(e) => setI(Number(e.target.value))} className="bg-transparent border border-border rounded-sm px-2 py-1.5 text-foreground">
+            <select value={i} onChange={(e) => setI(Number(e.target.value))} className="bg-transparent border border-border rounded-lg px-2 py-1.5 text-foreground">
               {initial.map((_, k) => (
                 <option key={k} value={k + 1}>
                   {k + 1}
@@ -2061,7 +2061,7 @@ export function MedianOfMediansGrid({ input }: { input?: number[] }) {
   );
   const { groups, x, pivotCol, guaranteedEach } = useMemo(() => medianOfMedians(nums), [nums]);
   const cls = (c: number, r: number) => {
-    if (c === pivotCol && r === 2) return "border-violet bg-violet/30 font-bold";
+    if (c === pivotCol && r === 2) return "border-violet bg-violet/30 font-semibold";
     if (c <= pivotCol && r <= 2) return "border-sky bg-sky/15";
     if (c >= pivotCol && r >= 2) return "border-orange bg-orange/15";
     return "border-border text-muted-foreground";
@@ -2072,9 +2072,9 @@ export function MedianOfMediansGrid({ input }: { input?: number[] }) {
         <div className="inline-grid gap-1" style={{ gridTemplateColumns: `auto repeat(${groups.length}, 40px)` }}>
           {[0, 1, 2, 3, 4].map((r) => (
             <div key={r} className="contents">
-              <span className="pr-2 self-center text-right font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{r === 0 ? "lesser" : r === 2 ? "median" : r === 4 ? "greater" : ""}</span>
+              <span className="pr-2 self-center text-right font-mono text-xs text-muted-foreground">{r === 0 ? "lesser" : r === 2 ? "median" : r === 4 ? "greater" : ""}</span>
               {groups.map((g, c) => (
-                <span key={c} className={`h-9 flex items-center justify-center font-mono text-sm border rounded-sm ${cls(c, r)}`}>
+                <span key={c} className={`h-11 flex items-center justify-center font-mono text-base border rounded-lg ${cls(c, r)}`}>
                   {g[r]}
                 </span>
               ))}
@@ -2150,7 +2150,7 @@ export function DecisionTree({ initial = [9, 4, 6] }: { initial?: [number, numbe
           if (p.node.leaf)
             return (
               <g key={p.node.id}>
-                <rect x={p.x - 38} y={p.y - 14} width={76} height={28} rx={3} strokeWidth={2} className={on ? "fill-mint/25 stroke-mint" : "fill-card stroke-border"} />
+                <rect x={p.x - 38} y={p.y - 14} width={76} height={28} rx={14} strokeWidth={2} className={on ? "fill-mint/25 stroke-mint" : "fill-card stroke-border"} />
                 <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={12} className="fill-current font-mono">
                   ⟨{p.node.leaf.join(",")}⟩
                 </text>
@@ -2160,7 +2160,7 @@ export function DecisionTree({ initial = [9, 4, 6] }: { initial?: [number, numbe
           return (
             <g key={p.node.id}>
               <circle cx={p.x} cy={p.y} r={20} strokeWidth={2} className={on ? "fill-neon/30 stroke-neon" : "fill-card stroke-current"} />
-              <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={13} className="fill-current font-mono font-bold">
+              <text x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central" fontSize={13} className="fill-current font-mono font-medium">
                 {i}:{j}
               </text>
             </g>
@@ -2169,7 +2169,7 @@ export function DecisionTree({ initial = [9, 4, 6] }: { initial?: [number, numbe
       </svg>
       <p className="font-mono text-sm">
         Leaf ⟨{leaf.join(", ")}⟩ means a{leaf[0]} ≤ a{leaf[1]} ≤ a{leaf[2]}, which is{" "}
-        <span className="text-mint font-bold">{leaf.map((i) => a[i - 1]).join(" ≤ ")}</span>. That took {path.size - 1} comparisons.
+        <span className="text-mint font-semibold">{leaf.map((i) => a[i - 1]).join(" ≤ ")}</span>. That took {path.size - 1} comparisons.
       </p>
     </Panel>
   );
@@ -2180,11 +2180,11 @@ export function DecisionTree({ initial = [9, 4, 6] }: { initial?: [number, numbe
 function Row({ label, values, hi, tone, base = 1 }: { label: string; values: (number | null)[]; hi?: number; tone: string; base?: number }) {
   return (
     <div className="flex items-start gap-3 font-mono">
-      <span className="w-6 pt-2 text-sm font-bold">{label}</span>
+      <span className="w-6 pt-2 text-sm font-semibold">{label}</span>
       <div className="flex flex-col">
         <div className="flex gap-1">
           {values.map((v, i) => (
-            <span key={i} className={`w-10 h-10 flex items-center justify-center text-sm border rounded-sm transition-colors ${i === hi ? tone : v === null ? "border-dashed border-border text-muted-foreground" : "border-border"}`}>
+            <span key={i} className={`w-11 h-11 flex items-center justify-center text-base border rounded-xl transition-all duration-300 ${i === hi ? tone : v === null ? "border-dashed border-border text-muted-foreground" : "border-border"}`}>
               {v ?? "·"}
             </span>
           ))}
@@ -2212,7 +2212,7 @@ export function CountingSortVisualizer({ A = [4, 1, 3, 4, 3], k = 4 }: { A?: num
       legend={[["bg-sky", "reading A"], ["bg-violet", "counter C"], ["bg-mint", "writing B"]]}
       render={(s) => (
         <div className="flex flex-col gap-3">
-          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{s.loop >= 1 && s.loop <= 4 ? `loop ${s.loop}` : s.loop === 5 ? "done" : ""}</div>
+          <div className="font-mono text-xs text-muted-foreground">{s.loop >= 1 && s.loop <= 4 ? `loop ${s.loop}` : s.loop === 5 ? "done" : ""}</div>
           <Row label="A" values={s.A} hi={s.aAt} tone="border-sky bg-sky/20" />
           <Row label="C" values={s.C} hi={s.cAt} tone="border-violet bg-violet/20" />
           <Row label="B" values={s.B} hi={s.bAt} tone="border-mint bg-mint/25" />
@@ -2237,7 +2237,7 @@ export function RadixSortVisualizer({ input = [329, 457, 657, 839, 436, 720, 355
         <div className="flex flex-wrap items-start gap-8">
           {s.digit >= 0 && s.digit < s.width && (
             <div className="flex flex-col gap-1">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">before</span>
+              <span className="font-mono text-xs text-muted-foreground">before</span>
               {s.prev.map((x, i) => (
                 <span key={i} className="font-mono text-base tracking-[0.3em] text-muted-foreground">
                   {String(x).padStart(s.width, "0")}
@@ -2246,14 +2246,14 @@ export function RadixSortVisualizer({ input = [329, 457, 657, 839, 436, 720, 355
             </div>
           )}
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{s.digit < 0 ? "input" : s.digit >= s.width ? "sorted" : "after"}</span>
+            <span className="font-mono text-xs text-muted-foreground">{s.digit < 0 ? "input" : s.digit >= s.width ? "sorted" : "after"}</span>
             {s.rows.map((x, i) => {
               const digits = String(x).padStart(s.width, "0").split("");
               return (
                 <span key={i} className="font-mono text-base tracking-[0.3em]">
                   {digits.map((c, p) => {
                     const fromRight = s.width - 1 - p;
-                    const cls = fromRight === s.digit ? "text-neon font-bold bg-neon/15" : fromRight < s.digit || s.digit >= s.width ? "text-mint" : "";
+                    const cls = fromRight === s.digit ? "text-neon font-semibold bg-neon/15" : fromRight < s.digit || s.digit >= s.width ? "text-mint" : "";
                     return (
                       <span key={p} className={cls}>
                         {c}
@@ -2275,8 +2275,8 @@ export function RadixSortVisualizer({ input = [329, 457, 657, 839, 436, 720, 355
 function MatrixBox({ m, label, tone = "border-border" }: { m: (number | string)[][]; label: string; tone?: string }) {
   return (
     <div className="flex flex-col items-center gap-1">
-      <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
-      <div className={`grid grid-cols-2 gap-1 p-1.5 border-x-2 rounded-sm ${tone}`}>
+      <span className="font-mono text-xs text-muted-foreground">{label}</span>
+      <div className={`grid grid-cols-2 gap-1 p-1.5 border-x-2 rounded-lg ${tone}`}>
         {m.flat().map((v, i) => (
           <span key={i} className="min-w-[44px] text-center font-mono text-sm px-1">
             {v}
@@ -2308,12 +2308,12 @@ export function StrassenCalculator() {
     <Panel title="Strassen: 7 multiplications instead of 8" legend={[["bg-violet", "the 7 products"], ["bg-mint", "matches the usual way"]]}>
       <div className="flex flex-wrap items-center gap-4 font-mono text-xs">
         <div className="flex flex-col items-center gap-1">
-          <span className="uppercase tracking-widest text-muted-foreground text-[10px]">A = [a b; c d]</span>
+          <span className="text-muted-foreground text-xs">A = [a b; c d]</span>
           <div className="grid grid-cols-2 gap-1">{(["a", "b", "c", "d"] as const).map(cell)}</div>
         </div>
         <span className="text-lg">·</span>
         <div className="flex flex-col items-center gap-1">
-          <span className="uppercase tracking-widest text-muted-foreground text-[10px]">B = [e f; g h]</span>
+          <span className="text-muted-foreground text-xs">B = [e f; g h]</span>
           <div className="grid grid-cols-2 gap-1">{(["e", "f", "g", "h"] as const).map(cell)}</div>
         </div>
         <span className="text-lg">=</span>
@@ -2322,11 +2322,11 @@ export function StrassenCalculator() {
       </div>
       <div className="grid gap-1 sm:grid-cols-2 font-mono text-xs">
         {res.P.map((p, i) => (
-          <div key={i} className="flex justify-between gap-3 border border-violet/40 bg-violet/10 rounded-sm px-2.5 py-1.5">
+          <div key={i} className="flex justify-between gap-3 border border-violet/40 bg-violet/10 rounded-lg px-2.5 py-1.5">
             <span>
               P{i + 1} = {STRASSEN_P[i]}
             </span>
-            <span className="font-bold">{p}</span>
+            <span className="font-semibold">{p}</span>
           </div>
         ))}
       </div>
@@ -2350,9 +2350,9 @@ export function FibonacciMatrix({ initialN = 13 }: { initialN?: number }) {
   return (
     <Panel title="Fibonacci by repeated squaring" legend={[["bg-mint", "used for n"], ["bg-violet", "computed"]]}>
       <label className="flex flex-wrap items-center gap-4 font-mono text-xs">
-        <span className="uppercase tracking-widest text-muted-foreground">n</span>
+        <span className="text-muted-foreground">n</span>
         <input type="range" min={1} max={200} value={n} onChange={(e) => setN(Number(e.target.value))} className="flex-1 min-w-[160px]" aria-label="n" />
-        <span className="font-display text-xl font-bold w-24">n = {n}</span>
+        <span className="font-display text-xl font-semibold text-violet w-24">n = {n}</span>
       </label>
       <div className="font-mono text-xs text-muted-foreground">
         n = {n} = ({n.toString(2)})₂ = {steps.filter((s) => s.used).map((s) => s.power).join(" + ")}, so multiply together the mint matrices.
@@ -2362,7 +2362,7 @@ export function FibonacciMatrix({ initialN = 13 }: { initialN?: number }) {
           <MatrixBox key={s.power} label={`M^${s.power}`} m={s.matrix.map((r) => r.map(short))} tone={s.used ? "border-mint" : "border-violet/50"} />
         ))}
       </div>
-      <div className="font-display text-lg font-bold break-all">
+      <div className="font-display text-lg font-semibold break-all">
         F({n}) = <span className="text-mint">{result[0][1].toString()}</span>
       </div>
       <p className="text-xs text-muted-foreground leading-relaxed">

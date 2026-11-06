@@ -41,16 +41,24 @@ import {
    ============================================================ */
 
 export const btn =
-  "font-mono text-[11px] uppercase tracking-widest px-3 py-2 border border-border hover:border-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-sm";
+  "font-mono text-xs px-3.5 py-2 border border-border rounded-full hover:border-violet/60 hover:bg-violet/[0.06] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors";
+/** the main action in a row of buttons, e.g. Play */
+export const btnPrimary = "border-violet bg-violet text-white hover:bg-violet/90 hover:border-violet";
 export const inputCls =
-  "font-mono text-sm px-3 py-2 border border-border bg-transparent text-foreground focus:outline-none focus:border-foreground rounded-sm";
+  "font-mono text-sm px-3 py-2 border border-border bg-transparent text-foreground focus:outline-none focus:border-violet focus:ring-2 focus:ring-violet/20 rounded-lg";
+
+/** Card, header, stage and caption shared by every visualizer (Stepper here, Panel in AdvancedVisualizers). */
+export const vizCard = "not-prose my-8 rounded-2xl border border-border/70 bg-card shadow-sm overflow-hidden text-foreground";
+export const vizHeader = "flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 border-b border-border/60 bg-gradient-to-r from-violet/[0.07] to-transparent";
+export const vizStage = "mx-4 sm:mx-5 my-5 rounded-xl bg-secondary/30 p-4 sm:p-5 overflow-x-auto";
+export const vizCaption = "min-h-[3em] rounded-lg border-l-[3px] border-violet/50 bg-violet/[0.05] px-4 py-2.5 text-[15px] leading-relaxed";
 
 export function Legend({ items }: { items: [string, string][] }) {
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+    <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-muted-foreground">
       {items.map(([cls, label]) => (
         <span key={label} className="inline-flex items-center gap-1.5">
-          <span className={`inline-block h-2.5 w-2.5 rounded-[2px] ${cls}`} />
+          <span className={`inline-block h-3 w-3 rounded-full ${cls}`} />
           {label}
         </span>
       ))}
@@ -61,14 +69,14 @@ export function Legend({ items }: { items: [string, string][] }) {
 function CodePanel({ code, line, label }: { code: string[]; line: number; label: string }) {
   return (
     <div className="border-t border-border bg-background/40">
-      <div className="px-5 pt-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="px-5 pt-3 font-mono text-xs text-muted-foreground">{label}</div>
       {/* a div, not a <pre>: .prose-reading styles every pre as a dark code block */}
       <div className="overflow-x-auto py-3 text-[12px] leading-[1.6] font-mono" role="region" aria-label={label}>
         {code.map((l, i) => (
           <div
             key={i}
             className={`px-5 whitespace-pre border-l-2 transition-colors ${
-              i === line ? "bg-neon/20 border-neon text-foreground font-semibold" : "border-transparent text-muted-foreground"
+              i === line ? "bg-violet/10 border-violet text-foreground" : "border-transparent text-muted-foreground"
             }`}
           >
             <span className="inline-block w-6 select-none text-right mr-3 opacity-40">{i + 1}</span>
@@ -230,7 +238,7 @@ export function Stepper<S>({
       </button>
       <button
         type="button"
-        className={`${btn} ${playing ? "border-foreground" : ""}`}
+        className={`${btn} ${btnPrimary}`}
         onClick={() => {
           if (idx >= last) setIdx(0);
           setPlaying((p) => !p);
@@ -238,9 +246,9 @@ export function Stepper<S>({
       >
         {playing ? "❚❚ Pause" : "▶ Play"}
       </button>
-      <label className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+      <label className="inline-flex items-center gap-2 font-mono text-xs text-muted-foreground">
         speed
-        <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))} className="bg-transparent border border-border rounded-sm px-2 py-1.5 text-foreground">
+        <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))} className="bg-transparent border border-border rounded-full px-3 py-1.5 text-foreground">
           <option value={1200}>slow</option>
           <option value={700}>normal</option>
           <option value={250}>fast</option>
@@ -250,13 +258,13 @@ export function Stepper<S>({
   );
 
   const stats = (
-    <div className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-      <span>
-        step <span className="text-foreground">{idx + 1}</span>/{frames.length}
+    <div className="flex flex-wrap gap-2 font-mono text-xs text-muted-foreground">
+      <span className="rounded-full bg-secondary px-3 py-1">
+        step <span className="text-foreground font-medium">{idx + 1}</span>/{frames.length}
       </span>
       {Object.entries(frame.stats).map(([k, v]) => (
-        <span key={k}>
-          {k} <span className="text-foreground">{v}</span>
+        <span key={k} className="rounded-full bg-secondary px-3 py-1">
+          {k} <span className="text-foreground font-medium">{v}</span>
         </span>
       ))}
     </div>
@@ -306,7 +314,7 @@ export function Stepper<S>({
             {controls}
             {stats}
           </div>
-          <div className="hidden sm:block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          <div className="hidden sm:block font-mono text-xs text-muted-foreground">
             space play · ← → step · R reset · C code · esc exit
           </div>
         </div>
@@ -315,21 +323,21 @@ export function Stepper<S>({
   }
 
   return (
-    <div ref={rootRef} className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+    <div ref={rootRef} className={vizCard}>
+      <div className={vizHeader}>
         <div className="eyebrow text-sky">{title}</div>
         <div className="flex flex-wrap items-center gap-4">
           {legend && <Legend items={legend} />}
-          <button type="button" className={`${btn} !px-2 !py-1`} onClick={enterFocus} aria-label={`Open ${title} in focus mode`} title="Focus mode: full screen, no distractions">
+          <button type="button" className={`${btn} !px-3 !py-1`} onClick={enterFocus} aria-label={`Open ${title} in focus mode`} title="Focus mode: full screen, no distractions">
             ⛶ Focus
           </button>
         </div>
       </div>
 
-      <div className="p-5 overflow-x-auto">{render(frame.state)}</div>
+      <div className={vizStage}>{render(frame.state)}</div>
 
-      <div className="px-5 pb-4 flex flex-col gap-3">
-        <p aria-live="polite" className="min-h-[3em] text-sm leading-relaxed">
+      <div className="px-5 pb-5 flex flex-col gap-3">
+        <p aria-live="polite" className={vizCaption}>
           {frame.message}
         </p>
         {stats}
@@ -355,10 +363,10 @@ function cellTone(i: number, s: ArrayState) {
 
 const barBg: Record<string, string> = { mint: "bg-mint", orange: "bg-orange", neon: "bg-neon", violet: "bg-violet" };
 const cellBorder: Record<string, string> = {
-  mint: "border-mint bg-mint/15",
-  orange: "border-orange bg-orange/15",
-  neon: "border-neon bg-neon/20",
-  violet: "border-violet bg-violet/15",
+  mint: "bg-mint/20 ring-2 ring-mint/50",
+  orange: "bg-orange/15 ring-2 ring-orange/45 motion-safe:scale-[1.06]",
+  neon: "bg-neon/15 ring-2 ring-neon/50 motion-safe:scale-[1.06]",
+  violet: "bg-violet/15 ring-2 ring-violet/45",
 };
 
 function inRange(i: number, s: ArrayState) {
@@ -389,9 +397,9 @@ export function ArrayBars({ s }: { s: ArrayState }) {
   return (
     <div className="min-w-fit">
       {s.held && (
-        <div className="mb-3 inline-flex items-center gap-2 font-mono text-xs border border-violet bg-violet/15 px-2.5 py-1 rounded-sm">
-          <span className="text-muted-foreground uppercase tracking-widest text-[10px]">{s.held.label}</span>
-          <span className="font-bold">{s.held.value}</span>
+        <div className="mb-3 inline-flex items-center gap-2 font-mono text-sm bg-violet/15 ring-1 ring-violet/40 px-3 py-1 rounded-full">
+          <span className="text-muted-foreground text-xs">{s.held.label}</span>
+          <span className="font-medium text-violet">{s.held.value}</span>
         </div>
       )}
       <div className="grid gap-1 items-end h-40" style={cols}>
@@ -400,7 +408,7 @@ export function ArrayBars({ s }: { s: ArrayState }) {
           return (
             <div key={i} className={`flex flex-col justify-end h-full transition-opacity ${inRange(i, s) ? "" : "opacity-25"}`}>
               <div
-                className={`w-full rounded-t-[2px] transition-all duration-200 ${tone ? barBg[tone] : "bg-foreground/25"}`}
+                className={`w-full rounded-t-md transition-all duration-200 ${tone ? barBg[tone] : "bg-foreground/20"}`}
                 style={{ height: `${Math.max(4, (v / max) * 100)}%` }}
               />
             </div>
@@ -418,10 +426,10 @@ export function ArrayBars({ s }: { s: ArrayState }) {
       </div>
       {s.aux && (
         <div className="mt-4">
-          <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-1">tmp (merge buffer)</div>
+          <div className="font-mono text-xs text-muted-foreground mb-1">tmp (merge buffer)</div>
           <div className="flex gap-1">
             {s.aux.map((v, i) => (
-              <div key={i} className={`w-8 h-8 flex items-center justify-center font-mono text-[11px] border rounded-sm ${v === null ? "border-dashed border-border text-muted-foreground" : "border-orange bg-orange/15"}`}>
+              <div key={i} className={`w-10 h-10 flex items-center justify-center font-mono text-sm border rounded-lg ${v === null ? "border-dashed border-border text-muted-foreground" : "border-orange/50 bg-orange/15"}`}>
                 {v ?? "·"}
               </div>
             ))}
@@ -434,25 +442,25 @@ export function ArrayBars({ s }: { s: ArrayState }) {
 
 export function ArrayCells({ s }: { s: ArrayState }) {
   const n = s.array.length;
-  const cols = { gridTemplateColumns: `repeat(${n}, minmax(34px, 1fr))` };
+  const cols = { gridTemplateColumns: `repeat(${n}, minmax(2.75rem, 1fr))` };
   return (
     <div className="min-w-fit">
-      <div className="grid gap-1" style={cols}>
+      <div className="grid gap-2" style={cols}>
         {s.array.map((v, i) => {
           const tone = cellTone(i, s);
           return (
             <div
               key={i}
-              className={`h-11 flex items-center justify-center font-mono text-sm border rounded-sm transition-all motion-reduce:transition-none ${tone ? cellBorder[tone] : "border-border"} ${inRange(i, s) ? "" : "opacity-25"}`}
+              className={`h-14 flex items-center justify-center font-mono text-base rounded-xl transition-all duration-300 motion-reduce:transition-none ${tone ? cellBorder[tone] : "bg-secondary"} ${inRange(i, s) ? "" : "opacity-25"}`}
             >
               {v}
             </div>
           );
         })}
       </div>
-      <div className="grid gap-1 mt-1" style={cols}>
+      <div className="grid gap-2 mt-1.5" style={cols}>
         {s.array.map((_, i) => (
-          <div key={i} className="text-center font-mono text-[10px] text-muted-foreground">
+          <div key={i} className="text-center font-mono text-[11px] text-muted-foreground">
             {i}
           </div>
         ))}
@@ -503,7 +511,7 @@ function InsertionBars({ s }: { s: ArrayState }) {
         {/* the sorted "hand" */}
         {split > 0 && (
           <div
-            className={`absolute bottom-0 left-0 rounded-sm bg-sky/10 border-r-2 border-dashed border-sky transition-[width] duration-300 ease-out motion-reduce:transition-none`}
+            className={`absolute bottom-0 left-0 rounded-lg bg-sky/10 border-r-2 border-dashed border-sky transition-[width] duration-300 ease-out motion-reduce:transition-none`}
             style={{ width: slotX(split), height: INS_ROW + 6 }}
           />
         )}
@@ -522,7 +530,7 @@ function InsertionBars({ s }: { s: ArrayState }) {
             style={{ left: slotX(it.slot), width, bottom: it.lifted ? INS_ROW + 14 : 0 }}
           >
             {it.lifted && (
-              <span className="mb-0.5 font-mono text-[9px] uppercase tracking-widest text-violet">{s.held?.label}</span>
+              <span className="mb-0.5 font-mono text-[10px] text-violet">{s.held?.label}</span>
             )}
             <span className={`font-mono text-[11px] leading-[18px] ${it.lifted || it.slot < split || sortedAll ? "text-foreground font-semibold" : "text-muted-foreground"}`}>
               {it.value}
@@ -542,7 +550,7 @@ function InsertionBars({ s }: { s: ArrayState }) {
       </div>
 
       {!sortedAll && split > 0 && (
-        <div className="grid mt-2 font-mono text-[10px] uppercase tracking-widest" style={cols}>
+        <div className="grid mt-2 font-mono text-xs" style={cols}>
           <div className="text-sky border-t border-sky pt-1 text-center" style={{ gridColumn: `span ${Math.min(split, n)}` }}>
             sorted
           </div>
@@ -623,13 +631,13 @@ function PieceBars({ s, call, buffer }: { s: ArrayState; call: string; buffer: b
   return (
     <div className="min-w-fit">
       <div className="mb-4 flex flex-wrap items-center gap-1.5 font-mono text-[11px] min-h-[24px]">
-        <span className="text-[10px] uppercase tracking-widest text-muted-foreground mr-1">call stack</span>
+        <span className="text-xs text-muted-foreground mr-1">call stack</span>
         {(s.stack ?? []).length === 0 && <span className="text-muted-foreground">(empty)</span>}
         {(s.stack ?? []).map(([l, r], d, all) => (
           <span key={d} className="inline-flex items-center gap-1.5">
             {d > 0 && <span className="text-muted-foreground">›</span>}
             <span
-              className={`px-1.5 py-0.5 rounded-sm border ${d === all.length - 1 ? "border-sky bg-sky/15 text-foreground" : "border-border text-muted-foreground"}`}
+              className={`px-1.5 py-0.5 rounded-lg border ${d === all.length - 1 ? "border-sky bg-sky/15 text-foreground" : "border-border text-muted-foreground"}`}
             >
               {call}({l}, {r})
             </span>
@@ -641,8 +649,8 @@ function PieceBars({ s, call, buffer }: { s: ArrayState; call: string; buffer: b
         {/* the tmp lane, always drawn so the layout never jumps */}
         {buffer && (
           <>
-            <div className="absolute inset-x-0 rounded-sm bg-orange/[0.04] border border-dashed border-orange/25" style={{ top: MS_TMP_TOP - 22, bottom: -4 }} />
-            <div className={`absolute left-2 font-mono text-[10px] uppercase tracking-widest ${s.aux ? "text-orange" : "text-muted-foreground"}`} style={{ top: MS_TMP_TOP - 18 }}>
+            <div className="absolute inset-x-0 rounded-lg bg-orange/[0.04] border border-dashed border-orange/25" style={{ top: MS_TMP_TOP - 22, bottom: -4 }} />
+            <div className={`absolute left-2 font-mono text-xs ${s.aux ? "text-orange" : "text-muted-foreground"}`} style={{ top: MS_TMP_TOP - 18 }}>
               tmp {s.aux ? `[${s.aux.length}]` : "(empty until a merge)"}
             </div>
           </>
@@ -815,8 +823,8 @@ export function StabilityCompare({ initial = [3, 7, 8, 5, 2, 1, 9, 5, 4] }: { in
     rows.push([SORT_TITLES[algo].toLowerCase(), frames[frames.length - 1].state]);
   }
   return (
-    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
-      <div className="px-5 pt-4 eyebrow text-sky">Stable or not?</div>
+    <div className={vizCard}>
+      <div className={`${vizHeader} eyebrow text-sky`}>Stable or not?</div>
       <div className="p-5 overflow-x-auto flex flex-col gap-4">
         {rows.map(([label, s], r) => {
           const tags = equalTags(s);
@@ -824,7 +832,7 @@ export function StabilityCompare({ initial = [3, 7, 8, 5, 2, 1, 9, 5, 4] }: { in
           const cols = { gridTemplateColumns: `repeat(${s.array.length}, minmax(34px, 1fr))` };
           return (
             <div key={label} className="min-w-fit">
-              <div className="mb-1 flex flex-wrap items-baseline gap-x-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              <div className="mb-1 flex flex-wrap items-baseline gap-x-3 font-mono text-xs text-muted-foreground">
                 {label}
                 {r > 0 && kept !== null && (
                   <span className={kept ? "text-mint" : "text-orange"}>{kept ? "equal values kept their order: stable" : "equal values swapped order: not stable"}</span>
@@ -832,7 +840,7 @@ export function StabilityCompare({ initial = [3, 7, 8, 5, 2, 1, 9, 5, 4] }: { in
               </div>
               <div className="grid gap-1" style={cols}>
                 {s.array.map((v, i) => (
-                  <div key={i} className={`h-11 flex items-center justify-center font-mono text-sm border rounded-sm ${tags[i] ? cellBorder.violet : "border-border"}`}>
+                  <div key={i} className={`h-12 flex items-center justify-center font-mono text-base rounded-xl ${tags[i] ? cellBorder.violet : "bg-secondary"}`}>
                     {v}
                     {tags[i] && <sup className="text-violet font-semibold">{tags[i]}</sup>}
                   </div>
@@ -884,7 +892,7 @@ export function SearchVisualizer({
       render={(s) => <ArrayCells s={s} />}
       inputs={
         <div className="flex flex-wrap items-center gap-2">
-          <label className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground" htmlFor={`target-${algorithm}`}>
+          <label className="font-mono text-xs text-muted-foreground" htmlFor={`target-${algorithm}`}>
             target
           </label>
           <input
@@ -908,7 +916,7 @@ export function SearchVisualizer({
                   </button>
                 ))}
               </div>
-              <div className="basis-full font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+              <div className="basis-full font-mono text-xs text-muted-foreground">
                 n = <span className="text-foreground">{n}</span> · best <span className="text-foreground">1</span> · worst{" "}
                 <span className="text-foreground">{n}</span> · average <span className="text-foreground">{+((n * (n + 1) / 2 + n) / (n + 1)).toFixed(1)}</span> comparisons
               </div>
@@ -938,13 +946,13 @@ export function EuclidVisualizer({ m = 210, n = 45 }: { m?: number; n?: number }
       code={JAVA_GCD}
       render={(s) => (
         <div className="flex flex-col gap-4">
-          <div className="font-display text-2xl md:text-3xl font-bold">
+          <div className="font-display text-2xl md:text-3xl font-semibold">
             gcd(<span className="text-sky">{s.m}</span>, <span className="text-orange">{s.n}</span>)
             {s.result !== undefined && <span className="text-mint"> = {s.result}</span>}
           </div>
           <table className="font-mono text-sm border-collapse w-full max-w-md">
             <thead>
-              <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">
+              <tr className="text-xs text-muted-foreground border-b border-border">
                 <th className="text-left py-1.5 pr-4">m</th>
                 <th className="text-left py-1.5 pr-4">n</th>
                 <th className="text-left py-1.5">r = m mod n</th>
@@ -1044,11 +1052,11 @@ export function GraphSvg({
         const st = edgeClass(e, i);
         return (
           <g key={i}>
-            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={`${st.stroke} transition-all`} strokeWidth={st.width} strokeDasharray={st.dash} />
+            <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={`${st.stroke} transition-all`} strokeWidth={st.width} strokeDasharray={st.dash} strokeLinecap="round" />
             {directed && <Arrowhead from={a} to={b} className={st.stroke.replace("stroke-", "fill-")} />}
             {showWeights && e.weight !== undefined && (
               <g>
-                <rect x={(a.x + b.x) / 2 - 10} y={(a.y + b.y) / 2 - 9} width={20} height={18} rx={2} className="fill-card" />
+                <rect x={(a.x + b.x) / 2 - 12} y={(a.y + b.y) / 2 - 9} width={24} height={18} rx={9} className="fill-card stroke-border" strokeWidth={1} />
                 <text x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle" dominantBaseline="central" fontSize={11} className="font-mono fill-current">
                   {e.weight}
                 </text>
@@ -1059,8 +1067,8 @@ export function GraphSvg({
       })}
       {nodes.map((n) => (
         <g key={n.id}>
-          <circle cx={n.x} cy={n.y} r={18} strokeWidth={2} className={`transition-colors ${nodeClass(n.id)}`} />
-          <text x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" fontSize={13} className="font-mono fill-current font-bold">
+          <circle cx={n.x} cy={n.y} r={19} strokeWidth={2} className={`transition-colors duration-300 ${nodeClass(n.id)}`} />
+          <text x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" fontSize={14} className="font-mono fill-current font-medium">
             {n.label ?? n.id}
           </text>
         </g>
@@ -1072,30 +1080,31 @@ export function GraphSvg({
 export function Chips({ label, items, tone, hint }: { label: string; items: (number | string)[]; tone: string; hint?: string }) {
   return (
     <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
-      <span className="w-14 text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="w-14 text-xs text-muted-foreground">{label}</span>
       {items.length === 0 ? (
         <span className="text-muted-foreground italic">empty</span>
       ) : (
         items.map((v, i) => (
-          <span key={`${v}-${i}`} className={`px-2 py-0.5 border rounded-sm ${tone}`}>
+          <span key={`${v}-${i}`} className={`px-2.5 py-1 border rounded-full ${tone}`}>
             {v}
           </span>
         ))
       )}
-      {hint && items.length > 0 && <span className="text-[10px] text-muted-foreground">{hint}</span>}
+      {hint && items.length > 0 && <span className="text-[11px] text-muted-foreground">{hint}</span>}
     </div>
   );
 }
 
 export function Toggle<T extends string>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return (
-    <div className="inline-flex border border-border rounded-sm overflow-hidden">
+    <div className="inline-flex flex-wrap gap-1 rounded-full bg-secondary p-1">
       {options.map(([v, label]) => (
         <button
           key={v}
           type="button"
           onClick={() => onChange(v)}
-          className={`font-mono text-[11px] uppercase tracking-widest px-3 py-2 transition-colors ${value === v ? "bg-foreground text-background" : "hover:bg-foreground/10"}`}
+          aria-pressed={value === v}
+          className={`font-mono text-xs px-3.5 py-1.5 rounded-full transition-colors ${value === v ? "bg-violet text-white shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-background/70"}`}
         >
           {label}
         </button>
@@ -1284,7 +1293,7 @@ export function KnapsackTable({ items = DEFAULT_ITEMS, capacity = 5 }: { items?:
         <table className="font-mono text-xs border-collapse">
           <thead>
             <tr>
-              <th className="px-2 py-1.5 text-left text-[10px] uppercase tracking-widest text-muted-foreground font-normal">item (w, v) \ capacity</th>
+              <th className="px-2 py-1.5 text-left text-xs text-muted-foreground font-normal">item (w, v) \ capacity</th>
               {Array.from({ length: capacity + 1 }, (_, w) => (
                 <th key={w} className="px-2 py-1.5 w-10 text-center text-muted-foreground font-normal">
                   {w}
@@ -1295,7 +1304,7 @@ export function KnapsackTable({ items = DEFAULT_ITEMS, capacity = 5 }: { items?:
           <tbody>
             {s.table.map((row, i) => (
               <tr key={i}>
-                <td className={`px-2 py-1.5 whitespace-nowrap ${i > 0 && s.chosen.includes(i - 1) ? "text-mint font-bold" : "text-muted-foreground"}`}>
+                <td className={`px-2 py-1.5 whitespace-nowrap ${i > 0 && s.chosen.includes(i - 1) ? "text-mint font-semibold" : "text-muted-foreground"}`}>
                   {i === 0 ? "none" : `${items[i - 1].name} (${items[i - 1].weight}, ${items[i - 1].value})`}
                 </td>
                 {row.map((v, w) => {
@@ -1329,18 +1338,18 @@ export function GrowthTable({ initialN = 100 }: { initialN?: number }) {
   const [i, setI] = useState(Math.max(0, GROWTH_NS.indexOf(initialN)));
   const n = GROWTH_NS[i];
   return (
-    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
-      <div className="px-5 pt-4 eyebrow text-sky">How the work grows with n</div>
+    <div className={vizCard}>
+      <div className={`${vizHeader} eyebrow text-sky`}>How the work grows with n</div>
       <div className="p-5 flex flex-col gap-4">
         <label className="flex flex-wrap items-center gap-4 font-mono text-xs">
-          <span className="uppercase tracking-widest text-muted-foreground">input size</span>
+          <span className="text-muted-foreground">input size</span>
           <input type="range" min={0} max={GROWTH_NS.length - 1} value={i} onChange={(e) => setI(Number(e.target.value))} className="flex-1 min-w-[160px] accent-current" aria-label="Input size n" />
-          <span className="font-display text-xl font-bold w-28">n = {n.toLocaleString("en-US")}</span>
+          <span className="font-display text-xl font-semibold text-violet w-28">n = {n.toLocaleString("en-US")}</span>
         </label>
         <div className="overflow-x-auto">
           <table className="w-full font-mono text-xs border-collapse">
             <thead>
-              <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">
+              <tr className="text-xs text-muted-foreground border-b border-border">
                 <th className="text-left py-2 pr-4 font-normal">growth</th>
                 <th className="text-right py-2 pr-4 font-normal">basic operations</th>
                 <th className="text-right py-2 font-normal">time at ~10⁸ ops/sec</th>
@@ -1353,7 +1362,7 @@ export function GrowthTable({ initialN = 100 }: { initialN?: number }) {
                 return (
                   <tr key={g.label} className="border-b border-border/50">
                     <td className="py-2 pr-4">
-                      <span className="font-bold">{g.label}</span> <span className="text-muted-foreground">{g.name}</span>
+                      <span className="font-semibold">{g.label}</span> <span className="text-muted-foreground">{g.name}</span>
                     </td>
                     <td className="py-2 pr-4 text-right">{formatOps(ops)}</td>
                     <td className={`py-2 text-right ${bad ? "text-orange" : "text-mint"}`}>{humanTime(ops)}</td>
@@ -1383,10 +1392,10 @@ export type LeetCodeProblem = {
 
 export function LeetCodeProblems({ problems, note = "solve them in Java" }: { problems: LeetCodeProblem[]; note?: string }) {
   return (
-    <section className="not-prose my-10 border border-border bg-card rounded-sm overflow-hidden">
+    <section className="not-prose my-10 rounded-2xl border border-border/70 bg-card shadow-sm overflow-hidden">
       <div className="px-5 pt-4 pb-2 flex items-baseline justify-between gap-3 flex-wrap">
         <div className="eyebrow text-orange">Practice on LeetCode</div>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{note}</span>
+        <span className="font-mono text-xs text-muted-foreground">{note}</span>
       </div>
       <ul className="divide-y divide-border">
         {problems.map((p) => {
@@ -1403,7 +1412,7 @@ export function LeetCodeProblems({ problems, note = "solve them in Java" }: { pr
                 <span className="flex-1 min-w-0">
                   <span className="flex items-baseline gap-2 flex-wrap">
                     <span className="font-display font-semibold group-hover:underline underline-offset-4">{p.title}</span>
-                    <span className={`font-mono text-[10px] uppercase tracking-widest ${diff === "Easy" ? "text-mint" : "text-orange"}`}>
+                    <span className={`font-mono text-xs ${diff === "Easy" ? "text-mint" : "text-orange"}`}>
                       {diff === "Easy" ? "easy" : `stretch · ${diff.toLowerCase()}`}
                     </span>
                   </span>
@@ -1474,8 +1483,8 @@ export function MergeSortTree({ input = [38, 27, 43, 3, 9, 82, 10] }: { input?: 
   };
 
   return (
-    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+    <div className={vizCard}>
+      <div className={vizHeader}>
         <div className="eyebrow text-sky">Merge sort, level by level</div>
         <Legend items={[["bg-sky", "base case"], ["bg-orange", "merged"], ["bg-mint", "done"]]} />
       </div>
@@ -1484,7 +1493,7 @@ export function MergeSortTree({ input = [38, 27, 43, 3, 9, 82, 10] }: { input?: 
           {rows.map((row, r) => (
             <div key={r} className="contents">
               <div
-                className={`font-mono text-[10px] uppercase tracking-widest self-center text-right ${
+                className={`font-mono text-xs self-center text-right ${
                   r === depth ? "text-sky" : r > depth ? "text-orange" : "text-muted-foreground"
                 } ${row.kind === "output" ? "!text-mint" : ""}`}
               >
@@ -1499,7 +1508,7 @@ export function MergeSortTree({ input = [38, 27, 43, 3, 9, 82, 10] }: { input?: 
                     <div
                       key={`${p.lo}-${p.hi}`}
                       style={{ gridColumn: `${p.lo + 1} / ${p.hi + 2}` }}
-                      className={`h-9 flex items-center justify-around px-1 font-mono text-[13px] border rounded-sm transition-opacity ${
+                      className={`h-9 flex items-center justify-around px-1 font-mono text-[13px] border rounded-lg transition-opacity ${
                         dim ? "border-dashed border-border text-muted-foreground opacity-60" : boxTone[row.kind]
                       }`}
                     >
