@@ -63,7 +63,7 @@ int hashName(const string& name, int m) {
 
 A **collision** happens when two keys $x \ne y$ hash to the same slot: $h(x) = h(y)$. There are two ways to resolve collisions:
 
-1. **Chaining:** each slot points to a linked list. Given a key $x$, insert, delete or look it up in the list $A[h(x)]$.
+1. **Chaining:** each slot points to a [linked list](/courses/data-structures/linked-lists#nodes-and-pointers). Given a key $x$, insert, delete or look it up in the list $A[h(x)]$.
 2. **Open addressing:** all keys live in the table itself, one key per slot. To insert, we **probe** (examine) slots one after another until we find an empty one. So the hash function takes the probe number as well:
 
 $$

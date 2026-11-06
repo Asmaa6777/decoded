@@ -96,7 +96,7 @@ The table counts every **ordering** of the cities, $N!$. Many orderings are the 
 
 ### The clique problem
 
-A **clique** is a set of vertices that are **all connected to each other**: a complete subgraph. The clique problem is to find cliques in a graph.
+A **clique** is a set of vertices that are **all connected to each other**: a complete subgraph. The clique problem is to find cliques in a [graph](/courses/discrete-mathematics/graphs#what-a-graph-is).
 
 - What's the complexity of **checking** whether some specific vertices form a clique? **Polynomial.** Just check every pair.
 - What's the complexity of deciding whether a graph **has** a clique of size $k$? Trying all $\binom{n}{k}$ subsets is exponential when $k$ grows with $n$. This is the **NP** version.
@@ -145,7 +145,7 @@ A problem $R$ can be **reduced** to another problem $Q$ if any instance of $R$ c
 To show a **new** problem $Q$ is hard, reduce a **known** hard problem **to** $Q$. That says "if $Q$ were easy, the known hard problem would be easy too". Reducing $Q$ to a hard problem proves nothing: anything can be rephrased as a harder problem. The 3-CNF SAT → CLIQUE example below goes the right way: SAT is known to be hard, so CLIQUE must be at least as hard.
 </Callout>
 
-**Example:** $\text{LCM}(m, n) = \dfrac{m \cdot n}{\text{GCD}(m, n)}$. So the LCM problem reduces to the GCD problem: compute the GCD with Euclid's algorithm, then do one multiplication and one division.
+**Example:** $\text{LCM}(m, n) = \dfrac{m \cdot n}{\text{GCD}(m, n)}$. So the LCM problem reduces to the GCD problem: compute the GCD with [Euclid's algorithm](/courses/algorithm-design-and-analysis/euclid-gcd), then do one multiplication and one division.
 
 **Another example:** is a linear equation reducible to a quadratic equation? Sure! Set the coefficient of the square term to 0. $bx + c = 0$ is just $0x^2 + bx + c = 0$.
 

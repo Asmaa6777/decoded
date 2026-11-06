@@ -102,7 +102,7 @@ Two steps:
 To prove $T(n) = O(g(n))$:
 
 - **Induction goal:** $T(n) \le d\,g(n)$ for some constant $d > 0$ and all $n \ge n_0$. That's just the definition of [Big-O](/courses/advanced-algorithms/asymptotic-notation#big-o).
-- **Induction hypothesis:** $T(k) \le d\,g(k)$ for all $k < n$. (This is *strong* induction: we assume it for every smaller value.)
+- **Induction hypothesis:** $T(k) \le d\,g(k)$ for all $k < n$. (This is [*strong* induction](/courses/discrete-mathematics/induction#strong-induction): we assume it for every smaller value.)
 - **Prove the goal:** plug the hypothesis into the recurrence and find values of $d$ and $n_0$ that make it work.
 
 **Example: binary search, $T(n) = 1 + T(n/2)$.** Guess $T(n) = O(\lg n)$.

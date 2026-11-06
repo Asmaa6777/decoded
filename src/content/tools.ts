@@ -63,6 +63,7 @@ export const tools: Tool[] = [
     lessons: [
       { course: "data-structures", lesson: "arrays-and-memory", mentions: "cache" },
       { course: "data-structures", lesson: "dynamic-arrays", mentions: "ArrayList" },
+      { course: "advanced-algorithms", lesson: "hashing", mentions: "push_back" },
     ],
   },
   {
@@ -90,7 +91,21 @@ export const tools: Tool[] = [
     lessons: [
       { course: "discrete-mathematics", lesson: "relations", mentions: "partial order" },
       { course: "discrete-mathematics", lesson: "paths-and-dags", mentions: "npm" },
+      { course: "advanced-algorithms", lesson: "p-and-np", mentions: "conda" },
     ],
+  },
+  {
+    name: "Maps apps and internet routing",
+    what: "How a route planner or a router finds the cheapest way from here to there.",
+    lessons: [
+      { course: "advanced-algorithms", lesson: "shortest-paths", mentions: "OSPF" },
+      { course: "computer-networks", lesson: "routing", mentions: "Dijkstra" },
+    ],
+  },
+  {
+    name: "diff and Git",
+    what: "How a tool spots exactly which lines changed between two versions of a file.",
+    lessons: [{ course: "advanced-algorithms", lesson: "dynamic-programming", mentions: "git diff" }],
   },
   {
     name: "Passwords and hashes",
@@ -108,6 +123,7 @@ export const tools: Tool[] = [
       { course: "computational-mathematics", lesson: "order-and-primitive-roots", mentions: "Diffie" },
       { course: "computational-mathematics", lesson: "modular-inverses", mentions: "RSA" },
       { course: "computer-networks", lesson: "http-and-https", mentions: "TLS" },
+      { course: "advanced-algorithms", lesson: "divide-and-conquer", mentions: "RSA" },
     ],
   },
   {
@@ -117,6 +133,7 @@ export const tools: Tool[] = [
       { course: "computational-mathematics", lesson: "multiplying-matrices", mentions: "GPU" },
       { course: "computational-mathematics", lesson: "derivatives-and-curve-fitting", mentions: "neural" },
       { course: "computer-architecture", lesson: "parallel-processing", mentions: "GPU" },
+      { course: "advanced-algorithms", lesson: "sorting-lower-bounds", mentions: "GPU" },
     ],
   },
   {
@@ -135,6 +152,7 @@ export const tools: Tool[] = [
       { course: "operating-systems", lesson: "processes", mentions: "Task Manager" },
       { course: "operating-systems", lesson: "cpu-scheduling-basics", mentions: "Task Manager" },
       { course: "operating-systems", lesson: "os-design-and-structure", mentions: "`top`" },
+      { course: "advanced-algorithms", lesson: "balanced-search-trees", mentions: "scheduler" },
     ],
   },
   {

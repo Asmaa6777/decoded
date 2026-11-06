@@ -245,7 +245,7 @@ Step through the textbook's 11 activities:
 **1.** *(Midterm 2024, retake)* Give a greedy $O(n \log n)$ algorithm for the Huffman codes of the characters of a string, trace it on "aabcaaadbcddaa", and prove it correct.
 
 <ModelAnswer>
-**Algorithm:** count each character, put the counts in a min-heap, and repeat $n - 1$ times: take out the two smallest, join them under a new node whose count is their sum, and put that node back. Reading 0 for left and 1 for right on the path to each leaf gives the codes. Building the heap is $O(n)$, and each of the $n - 1$ rounds costs $O(\log n)$: $O(n \log n)$.
+**Algorithm:** count each character, put the counts in a [min-heap](/courses/data-structures/heaps#the-heap-rule), and repeat $n - 1$ times: take out the two smallest, join them under a new node whose count is their sum, and put that node back. Reading 0 for left and 1 for right on the path to each leaf gives the codes. Building the heap is $O(n)$, and each of the $n - 1$ rounds costs $O(\log n)$: $O(n \log n)$.
 
 **Trace.** The string has 14 characters: a × 7, d × 3, b × 2, c × 2.
 

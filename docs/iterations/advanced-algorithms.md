@@ -35,7 +35,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M2
   - [x] M3
   - [x] M4
-- [ ] 7. Connections (whole course)
+- [x] 7. Connections (whole course)
 - [ ] 8. Student read-through
   - [ ] M0
   - [ ] M1
@@ -479,3 +479,21 @@ Every answer was recomputed in Python: both 2023 traces, the 2018 MST, Dijkstra,
 **Not checked:** no browser check.
 
 Round 6 is complete for all modules. Next: round 7, connections (whole course).
+
+### Round 7, connections: whole course
+
+Counted links out of every lesson: 10 of the 24 linked nowhere outside the course.
+
+**Added 18 links** to the lesson that teaches each idea, at its first use:
+- Algorithm Design and Analysis: insertion sort (m0-01), binary search (m0-06), Euclid's algorithm (m4-01).
+- Discrete Mathematics: expected value (m0-02), strong induction (m0-04), indicator random variables (m1-03, m1-05), Pascal's triangle (m3-01), storing a graph (m3-03), what a graph is (m4-01).
+- Data Structures: binary trees (m1-02), the call stack (m1-03), linked lists (m2-03, m2-07), BST search (m2-05), heaps and priority queues (m3-04, m3-05).
+- Within the course: SELECT from the augmenting lesson (m2-06).
+
+**Checked and already in place:** 21 links back from Data Structures and Discrete Mathematics to this course, 7 from Algorithm Design and Analysis, and more from Computational Mathematics, Computer Networks, Operating Systems and Theory of Computation. The learning path and the prerequisites (Algorithm Design and Analysis, Discrete Mathematics, Data Structures) are set.
+
+**Tools page:** the course was linked from only four tools. Added it to five more (Python lists and vector → amortized doubling, Encryption → fast exponentiation and RSA, Machine learning and GPUs → radix sort on GPUs, Task Manager and top → the red-black scheduler, Package managers → SAT solvers), plus two new tools: "Maps apps and internet routing" (shortest paths, and Computer Networks' routing lesson) and "diff and Git" (LCS). The tools test checks each lesson mentions what its entry claims.
+
+**Found but not fixed:** no course teaches Bellman–Ford, so its two mentions stay unlinked. Heaps and heapsort are used but taught only in Data Structures; the links point there.
+
+**Not checked:** the 4 failing tests in `lesson-preview.test.ts` fail on a clean checkout too; no new failures.

@@ -121,7 +121,7 @@ $$
 
 The worst case tells you the **absolute maximum** time the algorithm can take.
 
-**Average case $A(n)$.** This is the *expected* number of comparisons. Assume `x` is in the array and is equally likely to be in any of the $n$ slots, so each slot has probability $1/n$. If `x` is in slot $k$, finding it takes $k$ comparisons:
+**Average case $A(n)$.** This is the [*expected*](/courses/discrete-mathematics/probability-and-expectation#random-variables-and-expectation) number of comparisons. Assume `x` is in the array and is equally likely to be in any of the $n$ slots, so each slot has probability $1/n$. If `x` is in slot $k$, finding it takes $k$ comparisons:
 
 $$
 A(n) = \sum_{k=1}^{n} k \cdot \frac{1}{n} = \frac{1}{n} \cdot \frac{n(n+1)}{2} = \frac{n+1}{2}

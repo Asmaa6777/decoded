@@ -305,7 +305,7 @@ $$
 **3.** *(Midterms 2017, 2018)* A **unimodal** array of $n$ distinct elements increases up to its maximum, then decreases. Give an $O(\log n)$ algorithm to find the maximum.
 
 <ModelAnswer>
-Binary search on the **slope**. Look at the middle element and its right neighbour:
+[Binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half) on the **slope**. Look at the middle element and its right neighbour:
 
 - if $A[mid] < A[mid + 1]$, we're still going up, so the maximum is to the right: search $A[mid+1 \dots r]$;
 - otherwise we're going down (or at the peak), so the maximum is at $mid$ or to its left: search $A[l \dots mid]$.
