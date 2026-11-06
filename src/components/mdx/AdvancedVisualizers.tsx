@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, CPP_MIN_MAX_MERGE, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, type Seg, expectedProbes, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, probeText, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, CPP_MIN_MAX_MERGE, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, type Seg, expectedProbes, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -1846,38 +1846,80 @@ export function HashTableVisualizer({
       frames={frames}
       code={mode === "chaining" ? CHAIN_PSEUDO : HASH_PSEUDO}
       codeLabel="Pseudocode"
-      legend={[["bg-neon", "probe path"], ["bg-orange", "collision / miss"], ["bg-mint", "placed / found"]]}
-      render={(s) => (
-        <div className="flex flex-col gap-3">
-          <div className="font-mono text-xs text-muted-foreground">{mode === "chaining" ? `h(k) = k mod ${m}` : formula}</div>
-          {s.op && (
-            <div className="font-display text-lg font-bold">
-              {s.op.op} <span className="text-violet">{s.op.key}</span>
-            </div>
-          )}
-          <div className="flex flex-col gap-1 font-mono text-sm">
-            {s.slots.map((v, i) => {
-              const on = i === s.hit ? "border-mint bg-mint/20" : i === s.bad ? "border-orange bg-orange/15" : s.path.includes(i) ? "border-neon bg-neon/10" : "border-border";
-              const order = s.path.indexOf(i);
-              return (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="w-6 text-right text-[11px] text-muted-foreground">{i}</span>
-                  <span className={`w-16 h-8 flex items-center justify-center border rounded-sm transition-colors ${on}`}>
-                    {mode === "chaining" ? (s.chains[i].length ? "•" : "") : v === DELETED ? <span className="text-[10px] text-orange">deleted</span> : v ?? ""}
-                  </span>
-                  {mode === "chaining" && s.chains[i].map((k, c) => (
-                    <span key={c} className="inline-flex items-center gap-1">
-                      <span className="text-muted-foreground">→</span>
-                      <span className="px-2 py-0.5 border border-sky/60 bg-sky/10 rounded-sm">{k}</span>
+      legend={[["bg-neon", "probe path (#n = probe number)"], ["bg-orange", "collision / miss"], ["bg-mint", "placed / found"]]}
+      render={(s) => {
+        const filled = mode === "chaining" ? s.chains.reduce((t, c) => t + c.length, 0) : s.slots.filter((v) => v !== null && v !== DELETED).length;
+        const alpha = filled / m;
+        const i = s.path.length - 1;
+        const step = s.op && i >= 0 ? (mode === "chaining" ? `h(${s.op.key}) = ${probeText(s.op.key, 0, cfg)}` : `h(${s.op.key}, ${i}) = ${probeText(s.op.key, i, cfg)}`) : null;
+        return (
+          <div className="flex flex-col gap-4">
+            <div className="rounded-xl border border-violet/25 bg-violet/[0.06] px-4 py-3 flex flex-col gap-1.5">
+              <div className="font-mono text-[11px] text-muted-foreground">{mode === "chaining" ? `h(k) = k mod ${m}` : formula}</div>
+              <div className="flex flex-wrap items-center gap-3 min-h-8">
+                {s.op ? (
+                  <>
+                    <span className="rounded-full bg-violet/15 text-violet px-3 py-1 font-display text-sm font-semibold">
+                      {s.op.op} {s.op.key}
                     </span>
-                  ))}
-                  {order >= 0 && mode !== "chaining" && <span className="text-[10px] text-neon">probe {order}</span>}
-                </div>
-              );
-            })}
+                    {step && <span className="font-mono text-base">{step}</span>}
+                  </>
+                ) : (
+                  <span className="font-mono text-sm text-muted-foreground">An empty table of {m} slots. Press next to start.</span>
+                )}
+              </div>
+            </div>
+
+            <div className="overflow-x-auto pb-1">
+              <div className="grid gap-1.5 font-mono min-w-fit" style={{ gridTemplateColumns: `repeat(${m}, minmax(3.25rem, 1fr))` }}>
+                {s.slots.map((v, idx) => {
+                  const isHit = idx === s.hit;
+                  const isBad = idx === s.bad;
+                  const onPath = s.path.includes(idx);
+                  const empty = mode === "chaining" ? s.chains[idx].length === 0 : v === null;
+                  const tone = isHit ? "bg-mint/20 ring-2 ring-mint/50" : isBad ? "bg-orange/15 ring-2 ring-orange/45" : onPath ? "bg-neon/10 ring-1 ring-neon/40" : empty ? "bg-secondary/40 border border-dashed border-border" : "bg-secondary";
+                  const order = s.path.indexOf(idx);
+                  return (
+                    <div key={idx} className="flex flex-col items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground tabular-nums">{idx}</span>
+                      <span className={`w-full h-14 flex items-center justify-center rounded-lg text-base tabular-nums transition-all duration-300 motion-reduce:transition-none ${isHit ? "motion-safe:scale-[1.06]" : ""} ${tone}`}>
+                        {mode === "chaining" ? "" : v === DELETED ? <span className="text-[10px] text-orange">deleted</span> : v ?? ""}
+                      </span>
+                      {mode === "chaining" ? (
+                        <div className="flex flex-col items-center gap-1">
+                          {s.chains[idx].map((k, c) => (
+                            <div key={c} className="flex flex-col items-center gap-1">
+                              <span className="text-muted-foreground text-xs leading-none">↓</span>
+                              <span className="px-2.5 py-1 rounded-full bg-sky/15 ring-1 ring-sky/40 text-sm tabular-nums">{k}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className={`h-5 rounded-full px-2 text-[10px] leading-5 whitespace-nowrap ${order < 0 ? "invisible" : isHit ? "bg-mint/15 text-mint" : isBad ? "bg-orange/15 text-orange" : "bg-neon/10 text-neon"}`}>
+                          #{order < 0 ? 0 : order}
+                          {isHit ? " ✓" : isBad ? " ✗" : ""}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-baseline justify-between font-mono text-xs">
+                <span>
+                  load factor α = {filled}/{m} = <span className={alpha > 0.75 ? "text-orange font-semibold" : "text-mint font-semibold"}>{alpha.toFixed(2)}</span>
+                </span>
+                <span className="text-muted-foreground">{alpha > 0.75 ? "getting full: time to rehash" : mode === "chaining" ? "chains can grow past 1" : "rehash around 0.5 to 0.75"}</span>
+              </div>
+              <div className="h-2.5 rounded-full bg-secondary overflow-hidden" role="meter" aria-valuemin={0} aria-valuemax={1} aria-valuenow={Number(alpha.toFixed(2))} aria-label="load factor">
+                <div className={`h-full rounded-full transition-all duration-300 motion-reduce:transition-none ${alpha > 0.75 ? "bg-orange" : "bg-mint"}`} style={{ width: `${Math.min(alpha, 1) * 100}%` }} />
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      }}
     />
   );
 }
@@ -1888,10 +1930,12 @@ export function HashFunctions({ initial = 12345678 }: { initial?: number }) {
   const mid = hashMidSquare(k, 2);
   const fold = hashFolding(k, 2);
   const row = (name: string, how: React.ReactNode, value: React.ReactNode) => (
-    <tr className="border-b border-border/50 align-top">
-      <td className="py-2 pr-4 font-semibold whitespace-nowrap">{name}</td>
-      <td className="py-2 pr-4 text-muted-foreground">{how}</td>
-      <td className="py-2 text-right font-bold text-mint">{value}</td>
+    <tr className="border-b border-border/40 align-middle">
+      <td className="py-3 pr-4 font-medium whitespace-nowrap">{name}</td>
+      <td className="py-3 pr-4 text-muted-foreground">{how}</td>
+      <td className="py-3 text-right">
+        <span className="inline-block min-w-[3rem] text-center rounded-full bg-mint/15 text-mint px-3 py-1 text-base tabular-nums">{value}</span>
+      </td>
     </tr>
   );
   return (
@@ -1902,11 +1946,11 @@ export function HashFunctions({ initial = 12345678 }: { initial?: number }) {
         <span className="text-muted-foreground">table size n = 100</span>
       </label>
       <div className="overflow-x-auto">
-        <table className="w-full font-mono text-xs border-collapse min-w-[480px]">
+        <table className="w-full font-mono text-sm border-collapse min-w-[480px]">
           <tbody>
             {row("Division", `${k} mod 97 (a prime near 100)`, hashDivision(k, 97))}
             {row("Multiplication", `⌊100 · (${k} × 0.618033 mod 1)⌋`, hashMultiplication(k, 100))}
-            {row("Mid-square", <>{k}² = {mid.square.slice(0, mid.start)}<b className="text-foreground">{mid.digits}</b>{mid.square.slice(mid.start + 2)} → middle 2 digits</>, mid.digits)}
+            {row("Mid-square", <>{k}² = {mid.square.slice(0, mid.start)}<span className="text-foreground underline decoration-mint decoration-2 underline-offset-4">{mid.digits}</span>{mid.square.slice(mid.start + 2)} → middle 2 digits</>, mid.digits)}
             {row("Fold-shifting", `${fold.parts.join(" + ")} = ${fold.shift}, mod 100`, fold.shiftHash)}
             {row("Fold-boundary", `${fold.boundaryParts.join(" + ")} = ${fold.boundary}, mod 100 (outer parts reversed)`, fold.boundaryHash)}
           </tbody>
