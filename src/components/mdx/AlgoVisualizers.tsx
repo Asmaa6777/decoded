@@ -443,7 +443,7 @@ export function ArrayCells({ s }: { s: ArrayState }) {
           return (
             <div
               key={i}
-              className={`h-11 flex items-center justify-center font-mono text-sm border rounded-sm transition-all ${tone ? cellBorder[tone] : "border-border"} ${inRange(i, s) ? "" : "opacity-25"}`}
+              className={`h-11 flex items-center justify-center font-mono text-sm border rounded-sm transition-all motion-reduce:transition-none ${tone ? cellBorder[tone] : "border-border"} ${inRange(i, s) ? "" : "opacity-25"}`}
             >
               {v}
             </div>

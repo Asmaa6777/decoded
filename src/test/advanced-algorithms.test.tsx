@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES, dijkstraFrames, parseCNF, truthTable, findClique, cliqueGraph } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, minMaxMergeFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES, dijkstraFrames, parseCNF, truthTable, findClique, cliqueGraph } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -101,6 +101,21 @@ describe("analysis helpers", () => {
     const last = minMaxFrames([11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1]).at(-1)!;
     expect([last.state.min, last.state.max]).toEqual([0, 21]);
     expect(last.stats.comparisons).toBe(22);
+  });
+
+  it("runs Algorithm 2 (merge the pairs) to the lesson's corrected rows", () => {
+    const f = minMaxMergeFrames([11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1]);
+    const last = f.at(-1)!;
+    expect(last.stats.comparisons).toBe(22);
+    expect([last.state.min, last.state.max]).toEqual([0, 21]);
+    // the final row in m0-06's table, not the lab sheet's stale one
+    expect(last.state.array).toEqual([0, 7, 5, 9, 3, 5, 2, 11, 1, 8, 10, 13, 1, 4, 5, 21]);
+    for (let n = 2; n <= 64; n *= 2) {
+      const xs = Array.from({ length: n }, (_, i) => (i * 37 + 11) % 101);
+      const end = minMaxMergeFrames(xs).at(-1)!;
+      expect([end.state.min, end.state.max]).toEqual([Math.min(...xs), Math.max(...xs)]);
+      expect(end.stats.comparisons).toBe(1.5 * n - 2);
+    }
   });
 
   it("Strassen's 7 products match the usual 8", () => {

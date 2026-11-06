@@ -24,7 +24,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M3
   - [x] M4
 - [ ] 5. Visualizations
-  - [ ] M0
+  - [x] M0
   - [ ] M1
   - [ ] M2
   - [ ] M3
@@ -313,3 +313,18 @@ Same method: a script flagged sentences over 28 words and stock hard words in m4
 **Not checked:** no browser check.
 
 Round 4 is complete for all modules. Next: round 5, visualizations, starting with M0.
+
+### Round 5, visualizations: M0 Foundations
+
+Listed every idea in m0-01 to m0-06 that is still only text and judged whether a reader needs something to step through.
+
+**Built:** the min-max **Algorithm 2** (merge the pairs) as a second mode of `MinMaxVisualizer`, with its own C++ and a toggle between the two algorithms. Each merge highlights the piece being merged and compares only its two fronts and two backs. Logic in `minMaxMergeFrames` (`src/lib/advancedAlgorithms.ts`); a test checks it ends on the corrected row from round 2 with 22 comparisons, and gives the true min and max in exactly 1.5n − 2 comparisons for every power of 2 up to 64. It's in m0-06 under the static table.
+
+**Judged and left as text:** the substitution proofs (a proof, read line by line), the add-count table, the missing-key average case (three worked values are enough), the odd-n min-max case, and the binary-file `fseek` example (students run the lab code). Insertion and merge sort, binary and linear search, the Fibonacci calls, term contributions, Big-O witnesses, growth, recursion trees, the bit operators, popcount and fast power already have visualizers.
+
+**Phone width, dark theme, reduced motion (code audit, not a browser check):**
+- every Stepper draws inside an `overflow-x-auto` panel, so the 16-cell arrays and the 420–480px tables scroll inside their box instead of widening the page;
+- no hard-coded colours in the visualizer files; everything uses the theme tokens, so dark mode follows;
+- animated moves already had `motion-reduce:transition-none`; the array cells' colour fade didn't, and now does (this affects every array visualizer on the site).
+
+**Couldn't check:** no browser automation is installed (no Playwright or Puppeteer), so nothing was looked at in a real browser at phone width or in dark mode. Installing Playwright would add a dev dependency and browser downloads, so I left that for you to decide.

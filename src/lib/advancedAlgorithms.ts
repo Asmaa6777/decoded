@@ -201,6 +201,69 @@ export function minMaxFrames(input: number[]): Frame<MinMaxState>[] {
   return frames;
 }
 
+export const CPP_MIN_MAX_MERGE = [
+  "void minMaxMerge(int x[], int n) {            // n a power of 2",
+  "    for (int i = 0; i + 1 < n; i += 2)        // step 1: order each pair",
+  "        if (x[i] > x[i + 1]) swap(x[i], x[i + 1]);",
+  "    for (int size = 2; size < n; size *= 2)   // merge pieces of this size",
+  "        for (int s = 0; s < n; s += 2 * size) {",
+  "            int a = s, b = s + size;          // fronts of the two pieces",
+  "            if (x[b] < x[a]) swap(x[a], x[b]);              // min to the front",
+  "            if (x[b - 1] > x[b + size - 1]) swap(x[b - 1], x[b + size - 1]); // max to the back",
+  "        }",
+  "    // x[0] is the min, x[n - 1] the max",
+  "}",
+];
+
+/** The lab's Algorithm 2: order the pairs, then merge neighbouring pieces comparing only fronts (mins) and backs (maxes). n must be a power of 2. */
+export function minMaxMergeFrames(input: number[]): Frame<MinMaxState>[] {
+  let n = 1;
+  while (n < input.length) n *= 2;
+  const x = [...input];
+  while (x.length < n) x.push(x[x.length - 1]);
+  const frames: Frame<MinMaxState>[] = [];
+  let comparisons = 0;
+  const push = (s: Partial<MinMaxState>, line: number, message: string) =>
+    frames.push({ state: { array: [...x], phase: "pairs", ...s }, line, message, stats: { comparisons, "1.5n − 2": 1.5 * n - 2 } });
+
+  push({}, 0, `Algorithm 2 on ${n} numbers: order each pair, then keep merging neighbouring pieces. Each merge compares only the two fronts and the two backs.`);
+  for (let i = 0; i + 1 < n; i += 2) {
+    comparisons++;
+    const swap = x[i] > x[i + 1];
+    push({ compare: [i, i + 1] }, 2, `Pair (${x[i]}, ${x[i + 1]}): ${swap ? "out of order, swap them" : "already small-then-big"}.`);
+    if (swap) {
+      [x[i], x[i + 1]] = [x[i + 1], x[i]];
+      push({ write: [i, i + 1] }, 2, `Now ${x[i]} is at the front of its pair and ${x[i + 1]} at the back.`);
+    }
+  }
+  for (let size = 2; size < n; size *= 2) {
+    push({ phase: "merge" }, 3, `Every piece of ${size} has its min at the front and its max at the back. Merge neighbours into pieces of ${2 * size}.`);
+    for (let s = 0; s < n; s += 2 * size) {
+      const a = s;
+      const b = s + size;
+      const range: [number, number] = [s, s + 2 * size - 1];
+      comparisons++;
+      const front = x[b] < x[a];
+      push({ phase: "merge", range, compare: [a, b] }, 6, `Fronts ${x[a]} and ${x[b]}: ${front ? `${x[b]} is smaller, so it moves to the front` : `${x[a]} is already the smaller`}.`);
+      if (front) {
+        [x[a], x[b]] = [x[b], x[a]];
+        push({ phase: "merge", range, write: [a, b] }, 6, `The min of this piece, ${x[a]}, is at its front.`);
+      }
+      const ea = b - 1;
+      const eb = b + size - 1;
+      comparisons++;
+      const back = x[ea] > x[eb];
+      push({ phase: "merge", range, compare: [ea, eb] }, 7, `Backs ${x[ea]} and ${x[eb]}: ${back ? `${x[ea]} is bigger, so it moves to the back` : `${x[eb]} is already the bigger`}.`);
+      if (back) {
+        [x[ea], x[eb]] = [x[eb], x[ea]];
+        push({ phase: "merge", range, write: [ea, eb] }, 7, `The max of this piece, ${x[eb]}, is at its back.`);
+      }
+    }
+  }
+  push({ phase: "done", min: x[0], max: x[n - 1], found: 0, sorted: [n - 1] }, 9, `min = ${x[0]} (index 0) and max = ${x[n - 1]} (index ${n - 1}) after ${comparisons} comparisons, exactly 1.5n − 2 = ${1.5 * n - 2}. The middle numbers were never sorted.`);
+  return frames;
+}
+
 /* ---------------------------- quicksort ---------------------------- */
 
 /** Small seeded RNG (mulberry32), so a "random" run replays the same way every time. */

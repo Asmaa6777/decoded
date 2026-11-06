@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, fastPowerFrames, minMaxFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, CPP_MIN_MAX_MERGE, fastPowerFrames, minMaxFrames, minMaxMergeFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -473,13 +473,30 @@ export function FastPowerVisualizer({ a: a0 = 3, b: b0 = 13 }: { a?: number; b?:
 
 /* ------------------------- min and max ------------------------- */
 
-export function MinMaxVisualizer({ input = [11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1] }: { input?: number[] }) {
-  const frames = useMemo(() => minMaxFrames(input), [input]);
+export function MinMaxVisualizer({
+  input = [11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1],
+  algorithm = "pairs",
+}: {
+  input?: number[];
+  algorithm?: "pairs" | "merge";
+}) {
+  const [kind, setKind] = useState(algorithm);
+  const frames = useMemo(() => (kind === "merge" ? minMaxMergeFrames(input) : minMaxFrames(input)), [kind, input]);
   return (
     <Stepper
       title="Min and max in 1.5n − 2 comparisons"
       frames={frames}
-      code={CPP_MIN_MAX}
+      code={kind === "merge" ? CPP_MIN_MAX_MERGE : CPP_MIN_MAX}
+      inputs={
+        <Toggle<"pairs" | "merge">
+          value={kind}
+          onChange={setKind}
+          options={[
+            ["pairs", "Algorithm 1: pairs first"],
+            ["merge", "Algorithm 2: merge the pairs"],
+          ]}
+        />
+      }
       codeLabel="C++"
       legend={[["bg-neon", "comparing"], ["bg-orange", "swapped"], ["bg-mint", "min / max"]]}
       render={(s) => (

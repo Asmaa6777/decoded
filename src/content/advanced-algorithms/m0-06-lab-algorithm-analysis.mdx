@@ -233,6 +233,10 @@ Take the merge into 8s on the left half. The fronts are 3 and 1, and 1 is smalle
 
 The minimum 0 ends at index 0 and the maximum 21 at index 15, after $8 + 8 + 4 + 2 = 22$ comparisons, which is exactly $1.5 \times 16 - 2$.
 
+Step through the same run. The bright window is the piece being merged; only its two ends are compared:
+
+<MinMaxVisualizer algorithm="merge" input={[11, 3, 5, 7, 1, 9, 5, 2, 0, 8, 10, 13, 21, 5, 4, 1]} />
+
 <Callout tone="sky" label="If you're checking against the lab sheet">
 The sheet's last row starts again from the row before the merge into 8s, and gets `0 7 5 11 1 5 2 9 3 8 …`. The minimum and maximum come out the same, but the middle doesn't match a real run. The table above is the run done step by step.
 </Callout>
