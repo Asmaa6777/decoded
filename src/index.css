@@ -47,7 +47,7 @@
     --neon: 67 100% 42%;               /* #6b8c00 darker yellow for light bg */
     --orange: 14 100% 48%;             /* #c64500 darker orange for light bg */
     --sky: 213 100% 52%;               /* #0066ff darker sky for light bg */
-    --violet: 263 100% 52%;            /* #6600ff darker violet for light bg */
+    --violet: 280 35% 40%;             /* #72428a soft plum: calmer on the cream page than a saturated violet */
     --mint: 165 100% 42%;              /* #009966 darker mint for light bg */
 
     /* Typography */
@@ -151,6 +151,23 @@
     overflow-y: hidden;
     padding-block: 0.25em;
   }
+  /* Calmer maths: KaTeX draws at 1.21em by default, heavy next to 18px body text.
+     Slightly smaller, a touch softer, and display equations sit in a light card
+     so a derivation reads as a set of steps rather than a dark block. */
+  .prose-reading .katex {
+    font-size: 1.08em;
+    color: hsl(var(--reading-fg) / 0.9);
+  }
+  .prose-reading .katex-display {
+    margin: 1.5em 0;
+    padding: 0.85em 1.25em;
+    background: hsl(var(--secondary) / 0.55);
+    border-left: 3px solid hsl(var(--violet) / 0.45);
+    border-radius: 0 10px 10px 0;
+  }
+  .prose-reading .katex-display > .katex {
+    font-size: 1.12em;
+  }
   .prose-reading h1 {
     font-family: var(--font-display);
     font-weight: 800;
@@ -164,14 +181,26 @@
     font-weight: 700;
     font-size: clamp(24px, 3.2vw, 32px);
     line-height: 1.2;
-    margin: 2.5rem 0 1rem;
+    margin: 2.75rem 0 1.25rem;
     letter-spacing: -0.005em;
+    color: hsl(var(--violet));
+  }
+  /* a short bar under each section heading, so a new section is easy to spot */
+  .prose-reading h2::after {
+    content: "";
+    display: block;
+    width: 3rem;
+    height: 3px;
+    margin-top: 0.55rem;
+    border-radius: 999px;
+    background: hsl(var(--violet) / 0.7);
   }
   .prose-reading h3 {
     font-family: var(--font-display);
     font-weight: 600;
     font-size: 20px;
     margin: 2rem 0 .75rem;
+    color: hsl(var(--violet));
   }
   .prose-reading h2, .prose-reading h3 { scroll-margin-top: 1.5rem; }
   .prose-reading p { margin: 0 0 1.25rem; }
@@ -185,6 +214,8 @@
     text-decoration-thickness: 2px;
   }
   .prose-reading strong { color: hsl(var(--reading-fg)); font-weight: 600; }
+  /* topic labels that start a paragraph or bullet ("Worst case:", "Case 1:", "Proof.") */
+  .prose-reading strong.lead-in { color: hsl(var(--violet)); }
   .prose-reading em { font-style: italic; }
   .prose-reading code {
     font-family: var(--font-mono);

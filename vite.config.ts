@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSlug from "rehype-slug";
+import rehypeLeadIn from "./src/lib/rehypeLeadIn";
 
 /** The MDX compiler, except for `?raw` imports: those load a lesson's source text
  *  (for link previews), and @mdx-js/rollup would otherwise strip the query and compile it. */
@@ -42,6 +43,8 @@ export default defineConfig(({ mode }) => ({
         rehypeKatex,
         // ids on headings, used by the lesson contents sidebar and deep links
         rehypeSlug,
+        // class="lead-in" on a paragraph's leading bold label, coloured by the lesson CSS
+        rehypeLeadIn,
         // Shiki highlighting at build time. Only fences with a language
         // (```java, ```ts) get colours; bare fences stay plain for pseudocode.
         [rehypePrettyCode, { theme: "github-dark-dimmed", keepBackground: false }],
