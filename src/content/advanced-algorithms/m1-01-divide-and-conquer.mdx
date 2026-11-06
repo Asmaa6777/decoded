@@ -1,6 +1,6 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { SearchVisualizer, MergeSortTree } from "@/components/mdx/AlgoVisualizers";
-import { FastPowerVisualizer, FibonacciMatrix, StrassenCalculator, RecurrenceExplorer } from "@/components/mdx/AdvancedVisualizers";
+import { FastPowerVisualizer, FibonacciMatrix, StrassenCalculator, RecurrenceExplorer, VlsiLayouts } from "@/components/mdx/AdvancedVisualizers";
 
 # Divide and Conquer
 
@@ -257,6 +257,10 @@ $$
 $$
 
 That's the best possible: you need at least one grid cell per leaf anyway.
+
+Compare the two layouts for the same number of leaves. Each green dot is a leaf; the grid shows the area each one needs:
+
+<VlsiLayouts initialK={2} />
 
 ## Conclusion
 

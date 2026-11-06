@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, CPP_MIN_MAX_MERGE, fastPowerFrames, minMaxFrames, minMaxMergeFrames, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
+import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, CPP_MIN_MAX_MERGE, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, type Seg, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
 /* ============================================================
@@ -515,6 +515,65 @@ export function MinMaxVisualizer({
         </div>
       )}
     />
+  );
+}
+
+/* --------------------------- VLSI layouts --------------------------- */
+
+function GridLayout({ w, h, segs, leaves, label }: { w: number; h: number; segs: Seg[]; leaves: [number, number][]; label: string }) {
+  const u = 16;
+  return (
+    <svg viewBox={`${-u / 2} ${-u / 2} ${w * u} ${h * u}`} className="w-full h-auto" role="img" aria-label={label}>
+      <g className="stroke-border" strokeWidth={0.5}>
+        {Array.from({ length: w + 1 }, (_, i) => (
+          <line key={`v${i}`} x1={i * u - u / 2} y1={-u / 2} x2={i * u - u / 2} y2={h * u - u / 2} />
+        ))}
+        {Array.from({ length: h + 1 }, (_, i) => (
+          <line key={`h${i}`} x1={-u / 2} y1={i * u - u / 2} x2={w * u - u / 2} y2={i * u - u / 2} />
+        ))}
+      </g>
+      <g className="stroke-violet" strokeWidth={2} strokeLinecap="round">
+        {segs.map(([a, b, c, d], i) => (
+          <line key={i} x1={a * u} y1={b * u} x2={c * u} y2={d * u} />
+        ))}
+      </g>
+      {leaves.map(([x, y], i) => (
+        <circle key={i} cx={x * u} cy={y * u} r={3.5} className="fill-mint" />
+      ))}
+    </svg>
+  );
+}
+
+/** The obvious layout of a complete binary tree next to the H-tree, for n = 4, 16 or 64 leaves. */
+export function VlsiLayouts({ initialK = 2 }: { initialK?: number }) {
+  const [k, setK] = useState(initialK);
+  const n = 4 ** k;
+  const plain = useMemo(() => plainTreeLayout(n), [n]);
+  const h = useMemo(() => hTreeLayout(k), [k]);
+  return (
+    <Panel title="Laying out a binary tree on a chip" legend={[["bg-mint", "leaf"], ["bg-violet", "wire"]]}>
+      <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
+        <span>leaves n =</span>
+        <Toggle<string> value={String(k)} onChange={(v) => setK(Number(v))} options={[["1", "4"], ["2", "16"], ["3", "64"]]} />
+      </div>
+      <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
+        <div className="flex flex-col gap-2 min-w-0">
+          <div className="font-mono text-xs">
+            Obvious layout: {plain.width} wide × {plain.height} high = <span className="text-orange font-bold">{plain.area}</span> cells
+          </div>
+          <GridLayout w={plain.width} h={plain.height} segs={plain.segs} leaves={plain.leaves} label={`Binary tree with ${n} leaves laid out in rows`} />
+        </div>
+        <div className="flex flex-col gap-2 min-w-0">
+          <div className="font-mono text-xs">
+            H-tree: {h.side} × {h.side} = <span className="text-mint font-bold">{h.area}</span> cells
+          </div>
+          <GridLayout w={h.side} h={h.side} segs={h.segs} leaves={h.leaves} label={`H-tree with ${n} leaves`} />
+        </div>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Both hold {n} leaves. The obvious layout grows like n lg n; the H-tree like n. At n = 64 the H-tree needs about a quarter of the area, and the gap keeps growing.
+      </p>
+    </Panel>
   );
 }
 

@@ -264,6 +264,45 @@ export function minMaxMergeFrames(input: number[]): Frame<MinMaxState>[] {
   return frames;
 }
 
+/* --------------------------- VLSI layouts --------------------------- */
+
+export type Seg = [number, number, number, number]; // x1, y1, x2, y2 on an integer grid
+
+/** H-tree with 4^k leaves on a (2^(k+1) − 1)-square grid: L(n) = 2L(n/4) + 1. */
+export function hTreeLayout(k: number) {
+  const side = 2 ** (k + 1) - 1;
+  const segs: Seg[] = [];
+  const leaves: [number, number][] = [];
+  const draw = (x: number, y: number, h: number) => {
+    segs.push([x - h, y, x + h, y], [x - h, y - h, x - h, y + h], [x + h, y - h, x + h, y + h]);
+    for (const [cx, cy] of [[x - h, y - h], [x + h, y - h], [x - h, y + h], [x + h, y + h]]) {
+      if (h === 1) leaves.push([cx, cy]);
+      else draw(cx, cy, h / 2);
+    }
+  };
+  draw((side - 1) / 2, (side - 1) / 2, 2 ** (k - 1));
+  return { side, segs, leaves, area: side * side };
+}
+
+/** The obvious layout of a complete binary tree with n = 2^d leaves: width 2n − 1, height lg n + 1. */
+export function plainTreeLayout(n: number) {
+  const d = Math.log2(n);
+  const segs: Seg[] = [];
+  let level = Array.from({ length: n }, (_, i) => 2 * i);
+  for (let row = d; row > 0; row--) {
+    const up: number[] = [];
+    for (let i = 0; i < level.length; i += 2) {
+      const px = (level[i] + level[i + 1]) / 2;
+      segs.push([px, row - 1, level[i], row], [px, row - 1, level[i + 1], row]);
+      up.push(px);
+    }
+    level = up;
+  }
+  const width = 2 * n - 1;
+  const height = d + 1;
+  return { width, height, segs, leaves: Array.from({ length: n }, (_, i) => [2 * i, d] as [number, number]), area: width * height };
+}
+
 /* ---------------------------- quicksort ---------------------------- */
 
 /** Small seeded RNG (mulberry32), so a "random" run replays the same way every time. */

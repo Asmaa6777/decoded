@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, minMaxMergeFrames, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES, dijkstraFrames, parseCNF, truthTable, findClique, cliqueGraph } from "@/lib/advancedAlgorithms";
+import { fibCalls, masterMethod, recursionLevels, powN, firstViolation, termShares, bitOp, isPowerOfTwo, popcountFrames, toBits, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, strassen, fibByMatrix, gaussFrames, unevenLevels, fracLabel, quicksortFrames, decisionPath, minComparisons, countingSortFrames, radixSortFrames, selectFrames, medianOfMedians, hashFrames, hashMultiplication, hashFolding, hashMidSquare, doublingCosts, DELETED, type HashConfig, osSelectFrames, intervalSearchFrames, OS_TREE, INTERVAL_TREE, layoutAug, skipFrames, perfectHeights, coinRowFrames, binomialFrames, robotFrames, lcsFrames, greedyChange, optimalChange, countCoins, scheduleInOrder, scheduleOptimal, huffmanFrames, activityFrames, CLRS_ACTIVITIES, dijkstraFrames, parseCNF, truthTable, findClique, cliqueGraph } from "@/lib/advancedAlgorithms";
 import { FibonacciCalls, RecurrenceExplorer, TermContribution, BigOWitness } from "@/components/mdx/AdvancedVisualizers";
 
 beforeAll(() => {
@@ -116,6 +116,23 @@ describe("analysis helpers", () => {
       expect([end.state.min, end.state.max]).toEqual([Math.min(...xs), Math.max(...xs)]);
       expect(end.stats.comparisons).toBe(1.5 * n - 2);
     }
+  });
+
+  it("lays out the H-tree in Θ(n) area and the obvious tree in Θ(n lg n)", () => {
+    for (let k = 1; k <= 4; k++) {
+      const n = 4 ** k;
+      const h = hTreeLayout(k);
+      const p = plainTreeLayout(n);
+      // L(n) = 2L(n/4) + 1, leaves on distinct grid points inside the square
+      expect(h.side).toBe(2 ** (k + 1) - 1);
+      expect(new Set(h.leaves.map(([x, y]) => `${x},${y}`)).size).toBe(n);
+      expect(h.leaves.every(([x, y]) => x >= 0 && y >= 0 && x < h.side && y < h.side)).toBe(true);
+      // W(n) = 2n − 1, H(n) = lg n + 1, and n − 1 internal nodes with 2 wires each
+      expect([p.width, p.height]).toEqual([2 * n - 1, 2 * k + 1]);
+      expect(p.segs).toHaveLength(2 * (n - 1));
+      expect(h.area).toBeLessThan(p.area);
+    }
+    expect([plainTreeLayout(64).area, hTreeLayout(3).area]).toEqual([889, 225]);
   });
 
   it("Strassen's 7 products match the usual 8", () => {

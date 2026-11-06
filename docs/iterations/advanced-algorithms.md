@@ -25,7 +25,7 @@ Modules: **M0** Foundations of Analysis · **M1** Divide and Conquer · **M2** H
   - [x] M4
 - [ ] 5. Visualizations
   - [x] M0
-  - [ ] M1
+  - [x] M1
   - [ ] M2
   - [ ] M3
   - [ ] M4
@@ -328,3 +328,17 @@ Listed every idea in m0-01 to m0-06 that is still only text and judged whether a
 - animated moves already had `motion-reduce:transition-none`; the array cells' colour fade didn't, and now does (this affects every array visualizer on the site).
 
 **Couldn't check:** no browser automation is installed (no Playwright or Puppeteer), so nothing was looked at in a real browser at phone width or in dark mode. Installing Playwright would add a dev dependency and browser downloads, so I left that for you to decide.
+
+### Round 5, visualizations: M1 Divide and Conquer
+
+Listed every idea in m1-01 to m1-05 that is still only text and judged whether a reader needs something to step through.
+
+**Built:**
+- `VlsiLayouts` (m1-01): the obvious layout and the H-tree side by side on a grid, for 4, 16 or 64 leaves, with their areas (21 vs 9, 155 vs 49, 889 vs 225). The section had only recurrences before. Logic in `hTreeLayout` and `plainTreeLayout`; a test checks the side lengths follow L(n) = 2L(n/4) + 1 and W(n) = 2n − 1, every leaf gets its own grid point, and the H-tree is smaller for k = 1 to 4.
+- m1-03: the existing quicksort stepper now also runs on eight equal keys, under the round 3 callout, so the 7 : 0 splits can be stepped through instead of only described.
+
+**Judged and left as text:** the master theorem's lg^k n case (the recurrence explorer covers it), the Fibonacci matrix proof, the expected-time proofs, the Ω(n lg n) decision-tree argument and the median-of-medians recurrence. Merge sort, binary search, fast power, Strassen, Gauss multiplication, recursion trees, partition, decision trees, counting and radix sort, select and median of medians already have visualizers.
+
+**Phone width, dark theme, reduced motion (code audit):** the new SVGs scale with `w-full h-auto` and stack into one column below the `md` breakpoint; they use theme classes only (`stroke-violet`, `fill-mint`, `stroke-border`) and have no animation.
+
+**Couldn't check:** no browser automation is installed, so nothing was looked at in a real browser.
