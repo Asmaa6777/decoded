@@ -1,4 +1,4 @@
-import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { KroneckerVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 # The Kronecker Product
@@ -17,6 +17,16 @@ a_{21}B & a_{22}B & \cdots & a_{2n}B \\
 \vdots & \vdots & & \vdots \\
 a_{m1}B & a_{m2}B & \cdots & a_{mn}B
 \end{bmatrix}
+$$
+
+The size follows from the picture. There are $m$ rows of blocks, each block $p$ rows tall, so $mp$ rows in total. Likewise $n$ columns of blocks, each $q$ wide, give $nq$ columns.
+
+Worked by hand with $A = \begin{bmatrix}1 & -2\\-1 & 0\end{bmatrix}$ and $B = \begin{bmatrix}4 & -3\\2 & 3\end{bmatrix}$, the top-left block is $1 \cdot B$, the top-right is $-2 \cdot B$, and so on:
+
+$$
+A \otimes B =
+\begin{bmatrix} 1\cdot B & -2\cdot B \\ -1\cdot B & 0\cdot B \end{bmatrix} =
+\left[\begin{array}{cc|cc} 4 & -3 & -8 & 6 \\ 2 & 3 & -4 & -6 \\ \hline -4 & 3 & 0 & 0 \\ -2 & -3 & 0 & 0 \end{array}\right]
 $$
 
 Watch the blocks appear one at a time:
@@ -51,7 +61,7 @@ print([[a * b for a in rp for b in rq] for rp in P for rq in Q])  # [[0, 5, 0, 1
 
 </CodeTabs>
 
-The size grows fast, and machine learning puts that to work in reverse. Some optimizers need the curvature of the loss for every pair of weights, a matrix far too large to store, let alone invert. **K-FAC** approximates each layer's block of it as a Kronecker product of two small matrices. That helps because
+The size grows fast, and machine learning puts that to work in reverse. Some optimizers need the **curvature** of the loss, a measure of how quickly the slope itself changes, for every pair of weights. With a million weights that's a million-by-million matrix, far too large to store, let alone invert. **K-FAC** approximates each layer's block of it as a Kronecker product of two small matrices. That helps because
 
 $$
 (A \otimes B)^{-1} = A^{-1} \otimes B^{-1}
@@ -88,7 +98,11 @@ print(np.kron(I, X).tolist())  # [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 1, 2], [0, 
 
 </CodeTabs>
 
-`kron(I, X)` repeats $X$ down the diagonal. `kron(X, I)` spreads the entries of $X$ apart. Matrices made of zeros and ones are the usual way to stamp out repeated copies like this.
+`kron(I, X)` repeats $X$ down the diagonal, because each 1 on the diagonal of $I$ stamps a full copy of $X$ and each 0 stamps a block of zeros. `kron(X, I)` spreads the entries of $X$ apart, because each entry of $X$ scales a copy of $I$, which keeps only its diagonal. Matrices made of zeros and ones are the usual way to stamp out repeated copies like this.
+
+<Callout tone="orange" label="Common mistake">
+Treating `kron(A, B)` and `kron(B, A)` as the same matrix, or mixing up which one gets copied. The second argument is the block that gets copied; the first argument's entries are the scale factors. Check with the top-left block: in `kron(A, B)` it's $a_{11}B$.
+</Callout>
 
 A bigger identity stamps out more copies. `kron(eye(4), B)` puts four copies of a 2-by-2 block down the diagonal of an 8-by-8 matrix, with zeros everywhere else. Each copy only touches its own pair of entries, which is how you describe four separate, identical systems in one matrix:
 
