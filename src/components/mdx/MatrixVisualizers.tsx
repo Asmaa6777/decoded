@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { btn, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { inverseFrames, MATLAB_INVERSE, apply2, det2, diagOf, diagOnly, kron, kronFrames, MAGIC4, MATLAB_KRON, MATLAB_NORM, normFrames, tril, triu, type NormKind, elementwiseFrames, MAGIC3, MATLAB_ELEMENTWISE, MATLAB_MATMUL, matMulFrames, type Map2, MATLAB_VECTOR_PRODUCT, pascal, transpose, vectorProductFrames, type ElementwiseOp, type Mat, type VectorProductKind } from "@/lib/matrix";
+import { inverseFrames, MATLAB_INVERSE, apply2, det2, dotAngle, type DotAngle, diagOf, diagOnly, kron, kronFrames, MAGIC4, MATLAB_KRON, MATLAB_NORM, normFrames, tril, triu, type NormKind, elementwiseFrames, MAGIC3, MATLAB_ELEMENTWISE, MATLAB_MATMUL, matMulFrames, type Map2, MATLAB_VECTOR_PRODUCT, pascal, transpose, vectorProductFrames, type ElementwiseOp, type Mat, type VectorProductKind } from "@/lib/matrix";
 
 /* ============================================================
    Visualizers for the Computational Mathematics course. Matrix
@@ -221,7 +221,7 @@ export function VectorProductVisualizer({ kind: k0 = "inner" }: { kind?: VectorP
             <Op>=</Op>
             <div className="flex flex-col items-center gap-1.5 pb-5 font-mono text-sm min-w-[150px]">
               <div className="min-h-[24px]">{s.terms.map(signed).join(" + ") || "…"}</div>
-              <div className="text-2xl text-mint transition-all">{s.terms.reduce((a, b) => a + b, 0)}</div>
+              <div className="text-2xl text-mint transition-all motion-reduce:transition-none">{s.terms.reduce((a, b) => a + b, 0)}</div>
             </div>
           </div>
         ) : (
@@ -239,6 +239,112 @@ export function VectorProductVisualizer({ kind: k0 = "inner" }: { kind?: VectorP
 }
 
 const signed = (x: number) => (x < 0 ? `(${x})` : String(x));
+
+/* ------------------------ dot product and angle ------------------------ */
+
+const ANGLE_PRESETS: { id: string; label: string; v: [number, number, number, number] }[] = [
+  { id: "same", label: "Same way", v: [2, 20, 3, 50] },
+  { id: "right", label: "Right angle", v: [2, 20, 3, 110] },
+  { id: "apart", label: "Pointing apart", v: [2, 20, 3, 170] },
+];
+
+const SIGN_NOTE: Record<DotAngle["sign"], string> = {
+  same: "The angle is under 90°, so the cosine is positive and so is the dot product. The arrows point roughly the same way.",
+  right: "The angle is exactly 90°. The cosine is 0, so the dot product is 0 however long the arrows are.",
+  apart: "The angle is over 90°, so the cosine is negative and so is the dot product. The arrows point apart.",
+};
+
+const f2 = (x: number) => (Math.abs(x) < 0.005 ? "0" : x.toFixed(2));
+
+/** Two arrows you can turn and stretch, with the dot product worked both ways. */
+export function DotProductAngle() {
+  const [v, setV] = useState<[number, number, number, number]>(ANGLE_PRESETS[0].v);
+  const [lenA, degA, lenB, degB] = v;
+  const r = dotAngle(lenA, degA, lenB, degB);
+  const S = 40;
+  const pt = ([x, y]: [number, number]) => `${(x * S).toFixed(1)},${(-y * S).toFixed(1)}`;
+  // the arc marks the angle between, drawn from the smaller direction to the larger the short way round
+  const lo = ((degA % 360) + 360) % 360;
+  const hi = ((degB % 360) + 360) % 360;
+  const start = (hi - lo + 360) % 360 <= 180 ? lo : hi;
+  const arcR = 36;
+  const arcPt = (deg: number) => `${(arcR * Math.cos((deg * Math.PI) / 180)).toFixed(1)},${(-arcR * Math.sin((deg * Math.PI) / 180)).toFixed(1)}`;
+  const tone = r.sign === "same" ? "text-mint" : r.sign === "right" ? "text-violet" : "text-orange";
+  const sliders: [string, number, number, number, number][] = [
+    ["length of a", 0, 0.5, 3, 0.1],
+    ["angle of a (°)", 1, 0, 360, 5],
+    ["length of b", 2, 0.5, 3, 0.1],
+    ["angle of b (°)", 3, 0, 360, 5],
+  ];
+  return (
+    <Panel title="The dot product and the angle" legend={[["bg-neon", "a"], ["bg-orange", "b"], ["bg-violet", "angle between"]]}>
+      <div className="flex flex-wrap gap-5 items-start">
+        <svg viewBox="-140 -140 280 280" className="w-full max-w-[300px] rounded-sm border border-border bg-background/60" role="img" aria-label={`Arrow a at ${degA} degrees and arrow b at ${degB} degrees, ${r.angle} degrees apart; their dot product is ${f2(r.dot)}`}>
+          <defs>
+            <marker id="cm-dot-n" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto"><path d="M0,0L6,3L0,6z" className="fill-neon" /></marker>
+            <marker id="cm-dot-o" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto"><path d="M0,0L6,3L0,6z" className="fill-orange" /></marker>
+          </defs>
+          {[-3, -2, -1, 1, 2, 3].map((k) => (
+            <g key={k}>
+              <path d={`M${k * S},-130V130`} className="stroke-sky/25" />
+              <path d={`M-130,${k * S}H130`} className="stroke-sky/25" />
+            </g>
+          ))}
+          <path d="M-130,0H130M0,-130V130" className="stroke-foreground/40" />
+          {r.angle > 0 && <path d={`M0,0L${arcPt(start)}A${arcR},${arcR} 0 0 0 ${arcPt(start + r.angle)}Z`} className="fill-violet/30 stroke-violet" strokeWidth={1} />}
+          <path d={`M0,0L${pt(r.a)}`} className="stroke-neon" strokeWidth={3} markerEnd="url(#cm-dot-n)" />
+          <path d={`M0,0L${pt(r.b)}`} className="stroke-orange" strokeWidth={3} markerEnd="url(#cm-dot-o)" />
+        </svg>
+        <div className="flex flex-col gap-3 min-w-[220px] flex-1 font-mono text-sm">
+          <div>
+            <span className="text-neon">a</span> = ({f2(r.a[0])}, {f2(r.a[1])}), <span className="text-orange">b</span> = ({f2(r.b[0])}, {f2(r.b[1])})
+          </div>
+          <div className="flex flex-wrap gap-x-2">
+            <span>a₁b₁ + a₂b₂</span>
+            <span>
+              = {f2(r.a[0] * r.b[0])} + {f2(r.a[1] * r.b[1])} = <span className={tone}>{f2(r.dot)}</span>
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-x-2">
+            <span>‖a‖‖b‖cos θ</span>
+            <span>
+              = {f2(lenA)} × {f2(lenB)} × cos {r.angle}° = <span className={tone}>{f2(lenA * lenB * r.cos)}</span>
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {sliders.map(([name, i, min, max, step]) => (
+              <label key={name} className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+                {name} = {i % 2 ? v[i] : f2(v[i])}
+                <input
+                  type="range"
+                  aria-label={name}
+                  min={min}
+                  max={max}
+                  step={step}
+                  value={v[i]}
+                  onChange={(e) => {
+                    const next = [...v] as [number, number, number, number];
+                    next[i] = Number(e.target.value);
+                    setV(next);
+                  }}
+                  className="accent-[hsl(var(--mint))]"
+                />
+              </label>
+            ))}
+          </div>
+          <p className="font-body text-sm leading-relaxed min-h-[4.5em]">{SIGN_NOTE[r.sign]}</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {ANGLE_PRESETS.map((p) => (
+          <button key={p.id} type="button" className={`${btn} ${p.v.every((x, i) => x === v[i]) ? "border-foreground" : ""}`} onClick={() => setV(p.v)}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+    </Panel>
+  );
+}
 
 /* ----------------------- matrix multiplication ----------------------- */
 
@@ -512,6 +618,7 @@ export function SpecialMatrixExplorer() {
 /* ------------------------- inverse by cofactors ------------------------ */
 
 const INVERSE_PRESETS: Record<string, Mat> = {
+  notes: [[2, 3, -4], [1, 2, 3], [3, -1, -1]],
   neat: [[1, 2, 3], [0, 1, 4], [5, 6, 0]],
   fractions: [[2, 0, 1], [1, 3, 0], [0, 1, 2]],
   singular: [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
@@ -520,17 +627,18 @@ const INVERSE_PRESETS: Record<string, Mat> = {
 const STAGE_LABEL: Record<string, string> = { start: "", minors: "minors", cofactors: "cofactors", adjoint: "adjoint (cofactors transposed)", inverse: "A⁻¹", singular: "no inverse" };
 
 export function InverseVisualizer() {
-  const [preset, setPreset] = useState("neat");
+  const [preset, setPreset] = useState("notes");
   const a = INVERSE_PRESETS[preset];
   const frames = useMemo(() => inverseFrames(a), [a]);
+  const code = useMemo(() => [`A = [${a.map((r) => r.join(" ")).join("; ")}];`, ...MATLAB_INVERSE.slice(1)], [a]);
   return (
     <Stepper
       title="Building an inverse"
       frames={frames}
-      code={MATLAB_INVERSE}
+      code={code}
       codeLabel="MATLAB"
       legend={[["bg-orange", "crossed out"], ["bg-neon", "this entry"], ["bg-violet", "sign flipped"], ["bg-mint", "result"]]}
-      inputs={<Toggle<string> value={preset} onChange={setPreset} options={[["neat", "Whole-number answer"], ["fractions", "Fractions"], ["singular", "Singular"]]} />}
+      inputs={<Toggle<string> value={preset} onChange={setPreset} options={[["notes", "Worked example"], ["neat", "Whole-number answer"], ["fractions", "Fractions"], ["singular", "Singular"]]} />}
       render={(s) => {
         const n = s.a.length;
         const left = matCells(s.a, "l", (i, j) => {

@@ -8,7 +8,7 @@ import { getCourse, flattenLessons } from "@/content/registry";
 import { affineDecrypt, affineEncrypt, affineTable, bitsToText, flowFrames, keystream, shiftDecrypt, shiftEncrypt, textToBits, VALID_K1, xorBits, xorFrames } from "@/lib/ciphers";
 import { discreteLog, dlogFrames, fastPowFrames, logTable, modPow, cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
 import { conv, convFrames, coverUpFrames, deconv, fitQuality, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
-import { adjoint, cofactors, det, fraction, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
+import { adjoint, cofactors, det, dotAngle, fraction, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -123,6 +123,18 @@ describe("matrix arithmetic", () => {
 
   it("gets the dot product example right", () => {
     expect(dot([1, -2, 3, 4], [2, 3, -2, 1])).toBe(-6);
+  });
+
+  it("finds the same dot product from components and from |a||b|cos(angle)", () => {
+    expect(dotAngle(1, 0, 1, 90)).toMatchObject({ a: [1, 0], b: [0, 1], dot: 0, angle: 90, sign: "right" });
+    expect(dotAngle(2, 30, 3, 30)).toMatchObject({ dot: 6, cos: 1, sign: "same" });
+    expect(dotAngle(2, 0, 1, 180)).toMatchObject({ dot: -2, cos: -1, sign: "apart" });
+    // the angle between is the short way round: 350 and 10 degrees are 20 apart
+    expect(dotAngle(1, 350, 1, 10).angle).toBe(20);
+    for (const [la, da, lb, db] of [[1.5, 20, 2, 135], [3, 200, 0.5, 300], [2.5, 75, 1, 75]]) {
+      const r = dotAngle(la, da, lb, db);
+      expect(r.dot).toBeCloseTo(r.lenA * r.lenB * r.cos, 5);
+    }
   });
 
   it("finishes each elementwise animation on the true result", () => {

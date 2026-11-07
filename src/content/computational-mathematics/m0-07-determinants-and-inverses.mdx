@@ -49,9 +49,11 @@ This meaning of the determinant is also the basis of some AI models that create 
 A $3$-by-$3$ determinant breaks into three 2-by-2 ones, using the entries of the first row with alternating signs:
 
 $$
-\det(A) = a_{11}\begin{vmatrix} a_{22} & a_{23} \\ a_{32} & a_{33} \end{vmatrix}
-- a_{12}\begin{vmatrix} a_{21} & a_{23} \\ a_{31} & a_{33} \end{vmatrix}
-+ a_{13}\begin{vmatrix} a_{21} & a_{22} \\ a_{31} & a_{32} \end{vmatrix}
+\begin{aligned}
+\det(A) = {} & a_{11}\begin{vmatrix} a_{22} & a_{23} \\ a_{32} & a_{33} \end{vmatrix} \\
+& - a_{12}\begin{vmatrix} a_{21} & a_{23} \\ a_{31} & a_{33} \end{vmatrix} \\
+& + a_{13}\begin{vmatrix} a_{21} & a_{22} \\ a_{31} & a_{32} \end{vmatrix}
+\end{aligned}
 $$
 
 Each smaller determinant has a name:
@@ -70,7 +72,7 @@ $$
 The entry 7 sits at row 2, column 3. Deleting that row and column leaves
 
 $$
-M_{23} = \begin{vmatrix} -2 & 4 \\ -6 & 1 \end{vmatrix} = (-2)(1) - (4)(-6) = 22
+\begin{aligned} M_{23} &= \begin{vmatrix} -2 & 4 \\ -6 & 1 \end{vmatrix} \\ &= (-2)(1) - (4)(-6) = 22 \end{aligned}
 $$
 
 Its sign is $(-1)^{2+3} = -1$, so the cofactor is $C_{23} = -22$.
@@ -133,7 +135,7 @@ To check, multiply back: row 1 of $A$ against column 1 of the adjoint gives $(2)
 Forgetting step 3. The cofactor matrix and the adjoint look alike, and skipping the transpose gives a matrix that isn't the inverse. Multiplying back by $A$ shows the error at once.
 </Callout>
 
-Step through all four stages, and then try the singular matrix to see the method stop at the first step:
+Step through all four stages. The first preset is the example you just worked by hand, so you can compare each stage with your own. Then try the singular matrix and watch the method stop at the first step:
 
 <InverseVisualizer />
 

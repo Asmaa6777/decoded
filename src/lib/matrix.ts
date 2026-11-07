@@ -176,6 +176,36 @@ export function matMulFrames(a: Mat, b: Mat): Frame<MatMulState>[] {
 
 export type Map2 = [number, number, number, number];
 
+/* ------------------------ dot product and angle ------------------------ */
+
+export type DotAngle = {
+  a: [number, number];
+  b: [number, number];
+  /** a1*b1 + a2*b2, from the components */
+  dot: number;
+  lenA: number;
+  lenB: number;
+  /** the angle between the arrows, 0 to 180 degrees */
+  angle: number;
+  cos: number;
+  /** "same" (angle under 90), "right" (90) or "apart" (over 90) */
+  sign: "same" | "right" | "apart";
+};
+
+const round6 = (x: number) => Math.round(x * 1e6) / 1e6 + 0;
+
+/** Two arrows given by length and direction in degrees, with both ways of getting their dot product. */
+export function dotAngle(lenA: number, degA: number, lenB: number, degB: number): DotAngle {
+  const rad = Math.PI / 180;
+  const a: [number, number] = [round6(lenA * Math.cos(degA * rad)), round6(lenA * Math.sin(degA * rad))];
+  const b: [number, number] = [round6(lenB * Math.cos(degB * rad)), round6(lenB * Math.sin(degB * rad))];
+  let angle = Math.abs(degA - degB) % 360;
+  if (angle > 180) angle = 360 - angle;
+  const cos = round6(Math.cos(angle * rad));
+  const dot = round6(a[0] * b[0] + a[1] * b[1]);
+  return { a, b, dot, lenA, lenB, angle, cos, sign: Math.abs(dot) < 1e-4 ? "right" : dot > 0 ? "same" : "apart" };
+}
+
 export const det2 = ([a, b, c, d]: Map2) => a * d - b * c;
 export const apply2 = ([a, b, c, d]: Map2, x: number, y: number): [number, number] => [a * x + b * y, c * x + d * y];
 

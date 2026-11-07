@@ -1,5 +1,5 @@
 import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { TransposeVisualizer, VectorProductVisualizer } from "@/components/mdx/MatrixVisualizers";
+import { DotProductAngle, TransposeVisualizer, VectorProductVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 # Transpose and Vector Products
 
@@ -16,20 +16,24 @@ $$
 Books usually write it $A^T$. MATLAB writes $A'$, and this course uses both. Notice the size flips too: a 2-by-3 matrix becomes 3-by-2. Row 1 of $A$ becomes column 1 of $A^T$, row 2 becomes column 2, and so on:
 
 $$
-A = \begin{bmatrix} 4 & -2 & 3 \\ 0 & 5 & -2 \end{bmatrix}
-\quad\Rightarrow\quad
-A^T = \begin{bmatrix} 4 & 0 \\ -2 & 5 \\ 3 & -2 \end{bmatrix}
+\begin{aligned}
+A &= \begin{bmatrix} 4 & -2 & 3 \\ 0 & 5 & -2 \end{bmatrix} \\
+A^T &= \begin{bmatrix} 4 & 0 \\ -2 & 5 \\ 3 & -2 \end{bmatrix}
+\end{aligned}
 $$
 
 A square matrix stays square, and a row vector becomes a column vector:
 
 $$
-B = \begin{bmatrix} 6 & 2 & -4 \\ 3 & -1 & 2 \\ 0 & 4 & 3 \end{bmatrix}
-\ \Rightarrow\ 
-B^T = \begin{bmatrix} 6 & 3 & 0 \\ 2 & -1 & 4 \\ -4 & 2 & 3 \end{bmatrix},
-\qquad
+\begin{aligned}
+B &= \begin{bmatrix} 6 & 2 & -4 \\ 3 & -1 & 2 \\ 0 & 4 & 3 \end{bmatrix} \\
+B^T &= \begin{bmatrix} 6 & 3 & 0 \\ 2 & -1 & 4 \\ -4 & 2 & 3 \end{bmatrix}
+\end{aligned}
+$$
+
+$$
 D = \begin{bmatrix} 3 & -5 & 1 \end{bmatrix}
-\ \Rightarrow\ 
+\quad
 D^T = \begin{bmatrix} 3 \\ -5 \\ 1 \end{bmatrix}
 $$
 
@@ -75,13 +79,13 @@ In MATLAB, `'` also takes the complex conjugate of each entry: it flips the sign
 For two vectors of the same length, the **dot product** (or inner product) multiplies matching entries and adds the results:
 
 $$
-a \cdot b = a_1 b_1 + a_2 b_2 + \cdots + a_n b_n = \sum_{i=1}^{n} a_i b_i
+a \cdot b = a_1 b_1 + a_2 b_2 + \cdots + a_n b_n \\ = \sum_{i=1}^{n} a_i b_i
 $$
 
 Books often write "$a, b \in \mathbb{R}^n$" for this, meaning both are lists of $n$ real numbers. For example, with $u = (1, -2, 3, 4)$ and $v = (2, 3, -2, 1)$:
 
 $$
-u \cdot v = (1)(2) + (-2)(3) + (3)(-2) + (4)(1) = -6
+\begin{aligned} u \cdot v &= (1)(2) + (-2)(3) \\ &\quad + (3)(-2) + (4)(1) \\ &= 2 - 6 - 6 + 4 = -6 \end{aligned}
 $$
 
 <CodeTabs>
@@ -115,6 +119,10 @@ a \cdot b = \|a\|\,\|b\|\cos\theta
 $$
 
 Lengths are never negative, so the sign comes from $\cos\theta$ alone. A large positive dot product means the two vectors point in roughly the same direction ($\theta$ near 0, cosine near 1). Zero means they're at right angles ($\cos 90° = 0$). Negative means they point apart ($\theta$ over 90°). For example, $(1, 0) \cdot (0, 1) = 0$: one points right, the other up.
+
+Turn and stretch the two arrows. Both ways of computing the dot product always agree, and the sign changes exactly when the angle crosses 90°:
+
+<DotProductAngle />
 
 Divide by both lengths, which are [Euclidean norms](/courses/computational-mathematics/norms-and-trace#three-norms-to-know) ($\|a\| = \sqrt{a_1^2 + \cdots + a_n^2}$), and only the cosine is left. That's the **cosine similarity**, a score from $-1$ to $1$ that ignores length and keeps only direction:
 
