@@ -1,4 +1,4 @@
-import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { CoverUpVisualizer } from "@/components/mdx/PolynomialVisualizers";
 
 # Partial Fractions
@@ -105,7 +105,25 @@ print(np.round(r2, 6).tolist(), np.round(p2, 6).tolist())  # [8.0, -12.0] [-2.0,
 
 </CodeTabs>
 
-So the fraction equals $\dfrac{-12}{s + 4} + \dfrac{8}{s + 2}$. In the residue formula, $a'$ is the [derivative](/courses/computational-mathematics/derivatives-and-curve-fitting#derivatives) of $a$.
+So the fraction equals $\dfrac{-12}{s + 4} + \dfrac{8}{s + 2}$.
+
+Worked by hand, the cover-up method gives each residue in one line. For the pole $-4$, cover up $(s + 4)$ and put $s = -4$ into the rest:
+
+$$
+r_1 = \frac{-4(-4) + 8}{-4 + 2} = \frac{24}{-2} = -12
+$$
+
+For the pole $-2$, cover up $(s + 2)$ and put $s = -2$ into the rest:
+
+$$
+r_2 = \frac{-4(-2) + 8}{-2 + 4} = \frac{16}{2} = 8
+$$
+
+The same numbers come from a formula that doesn't need the factors written out: $r_i = b(p_i) / a'(p_i)$, where $a'$ is the [derivative](/courses/computational-mathematics/derivatives-and-curve-fitting#derivatives) of $a$. Here $a'(s) = 2s + 6$, so $r_1 = 24 / a'(-4) = 24 / (-2) = -12$, and $r_2 = 16 / a'(-2) = 16 / 2 = 8$.
+
+<Callout tone="sky" label="Reading other notes">
+Some notes write the expansion with $\frac{a(s)}{b(s)}$ on the left. MATLAB's `residue(b, a)` always expands $b$ over $a$: numerator first, denominator second. The direct term is $k(s)$, a polynomial, sometimes misprinted as $k_s$.
+</Callout>
 
 ## Going back
 
