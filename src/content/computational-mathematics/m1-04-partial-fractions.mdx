@@ -10,7 +10,7 @@ A ratio of two polynomials can be hard to work with. Split it into a sum of simp
 For polynomials $b$ and $a$ with no repeated roots in $a$:
 
 $$
-\frac{b(s)}{a(s)} = \frac{r_1}{s - p_1} + \frac{r_2}{s - p_2} + \cdots + \frac{r_n}{s - p_n} + k(s)
+\begin{aligned} \frac{b(s)}{a(s)} = {} & \frac{r_1}{s - p_1} + \frac{r_2}{s - p_2} + \cdots \\ & + \frac{r_n}{s - p_n} + k(s) \end{aligned}
 $$
 
 Here $p_i$ are the **poles** (the [roots](/courses/computational-mathematics/polynomials-and-roots#roots) of $a$), $r_i$ are the **residues**, and $k(s)$ holds any direct terms. They're called poles because the fraction grows without limit there. At $s = p_i$ the bottom is zero, so the graph rises like a tent held up by a pole. Each residue says how strong its pole is.
