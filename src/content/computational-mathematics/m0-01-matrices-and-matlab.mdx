@@ -9,7 +9,7 @@ This course uses MATLAB because its syntax is close to the maths on paper. Every
 
 ## Writing a matrix down
 
-We describe size as **rows by columns**, always in that order. A 2-by-3 matrix has 2 rows and 3 columns. The entry in row $i$, column $j$ of $A$ is written $a_{ij}$.
+We describe size as **rows by columns**, always in that order. A 2-by-3 matrix has 2 rows and 3 columns. The entry in row $i$, column $j$ of $A$ is written $a_{ij}$. The row always comes first, in the size and in the index. Swapping them is the most common slip with matrices: $a_{23}$ is row 2, column 3, which is a different entry from $a_{32}$.
 
 <CodeTabs>
 
@@ -89,7 +89,7 @@ print(X.shape)  # (3, 2)
 
 ## Two example matrices
 
-MATLAB ships with dozens of functions that build matrices. We'll keep coming back to two of them because they're small and easy to recognise. `pascal(3)` is **symmetric**, meaning it looks the same when you mirror it across its main diagonal. `magic(3)` isn't symmetric, but all its rows, columns and both diagonals add up to 15.
+MATLAB ships with dozens of functions that build matrices. We'll keep coming back to two of them because they're small and easy to recognise. The **main diagonal** of a matrix is the line of entries $a_{11}, a_{22}, a_{33}, \dots$ running from the top-left corner down to the right, where the row number equals the column number. `pascal(3)` is **symmetric**, meaning it looks the same when you mirror it across its main diagonal: $a_{ij} = a_{ji}$ for every $i$ and $j$. Check one pair: row 2, column 3 holds 3, and so does row 3, column 2. `magic(3)` isn't symmetric, but all its rows, columns and both diagonals add up to 15.
 
 <CodeTabs>
 
@@ -177,7 +177,9 @@ print([[a + b for a, b in zip(rp, rq)] for rp, rq in zip(P, Q)])  # [[6, 8], [10
 
 </CodeTabs>
 
-Machine learning uses this all the time to prepare data. Features measured in different units, like centimetres and kilograms, are usually **standardised** first: subtract each column's mean and divide by its spread, so every feature sits around 0 on a similar scale. Both steps work entry by entry. Without it, the feature with the biggest numbers would dominate the model.
+Machine learning uses this all the time to prepare data. Features measured in different units, like centimetres and kilograms, are usually **standardised** first: subtract each column's mean and divide by its **standard deviation**, a measure of how far values typically sit from their mean. Afterwards every feature sits around 0 on a similar scale. Without it, the feature with the biggest numbers would dominate the model, because a change of 10 in centimetres would count as much as a change of 10 in kilograms.
+
+Two details in the code below need a word. `mean(X)` returns one mean per column, a 1-by-2 row, so `X - mean(X)` subtracts a row from a 3-by-2 matrix. That works because MATLAB (since 2016) and NumPy **broadcast**: a single row is copied down to fill every row before the subtraction. And `./` is entry-by-entry division. The dot tells MATLAB to work entry by entry rather than use the matrix version of the operation, which you'll meet with [multiplication](/courses/computational-mathematics/multiplying-matrices#the-rule). `std(X, 1)` divides by $n$ rather than $n - 1$, which matches NumPy's default.
 
 <CodeTabs>
 
@@ -227,7 +229,7 @@ $$
 w \leftarrow w - \eta \nabla L
 $$
 
-where $\nabla L$ says which way each weight should move to reduce the error, and the **learning rate** $\eta$ is a scalar that sets the step size. So one training step is a scalar multiple followed by a subtraction:
+Here $w$ holds the weights and $L$ is the **loss**, one number that measures how wrong the model's predictions are. The **gradient** $\nabla L$ has one entry per weight, saying how fast the loss rises as that weight grows. Stepping against it, hence the minus sign, moves each weight the way that lowers the error, and the **learning rate** $\eta$ is a scalar that sets the step size. So one training step is a scalar multiple followed by a subtraction:
 
 <CodeTabs>
 
@@ -256,7 +258,7 @@ print(np.round(w, 4).tolist())  # [0.48, -1.16]
 </CodeTabs>
 
 <Callout tone="orange" label="Common error">
-Addition needs matching sizes, with one exception: a scalar is allowed, and MATLAB adds it to every entry. Trying `pascal(3) + fix(10*rand(3,2))` stops with a dimensions error, because a 3-by-3 and a 3-by-2 don't line up. Older MATLAB versions word it as "Matrix dimensions must agree", and Octave says "nonconformant arguments".
+Addition needs matching sizes. The exceptions are the broadcasting cases above: a scalar is added to every entry, and a single row or column is copied to fill the other matrix. Two full matrices of different shapes never work. Trying `pascal(3) + fix(10*rand(3,2))` stops with a dimensions error, because a 3-by-3 and a 3-by-2 don't line up. Older MATLAB versions word it as "Matrix dimensions must agree", and Octave says "nonconformant arguments".
 </Callout>
 
 <CodeTabs>
