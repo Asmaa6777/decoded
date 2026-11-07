@@ -9,11 +9,13 @@ How big is a matrix? Its number of rows doesn't answer that, because a 3-by-3 ma
 
 There are several norms, but all the ones here share these properties, for any [scalar](/courses/computational-mathematics/matrices-and-matlab#multiplying-by-a-scalar) $k$:
 
-1. $\|A\| \ge 0$
-2. $\|A\| = 0$ only when $A$ is the zero matrix
-3. $\|kA\| = |k|\,\|A\|$
-4. $\|A + B\| \le \|A\| + \|B\|$, the triangle inequality
-5. $\|AB\| \le \|A\|\,\|B\|$
+1. $\|A\| \ge 0$: a size is never negative.
+2. $\|A\| = 0$ only when $A$ is the zero matrix (all entries 0): anything else has some size.
+3. $\|kA\| = |k|\,\|A\|$: doubling every entry doubles the size, and flipping every sign changes nothing, which is why it's $|k|$ and not $k$.
+4. $\|A + B\| \le \|A\| + \|B\|$, the **triangle inequality**. It's named after triangles, where one side is never longer than the other two put together. Adding two matrices can cancel entries, so the total can come out smaller, but never larger.
+5. $\|AB\| \le \|A\|\,\|B\|$: multiplying can't make a matrix bigger than the two sizes multiplied. This one holds for the three norms below, but not for every way of measuring size, which is why it's listed separately.
+
+The symbol $\|A\|$, with double bars, is read "the norm of $A$". It's different from $|A|$ with single bars, which some books use for the [determinant](/courses/computational-mathematics/determinants-and-inverses#what-the-determinant-measures).
 
 ## Three norms to know
 
@@ -105,7 +107,7 @@ $$
 </details>
 
 <Callout tone="orange" label="Watch the name in MATLAB">
-Many books call this the Frobenius norm, and MATLAB does too: use `norm(A, 'fro')`. Plain `norm(A)` computes something else, the 2-norm, which is the largest singular value of $A$.
+Many books call this the Frobenius norm, and MATLAB does too: use `norm(A, 'fro')`. Plain `norm(A)` computes something else, the 2-norm: the most that $A$ can stretch any vector, measured as length after divided by length before. Books call it the largest **singular value** of $A$. This course doesn't need it, but it's what you get if you forget the `'fro'`.
 </Callout>
 
 Norms are how machine learning keeps a model under control while it trains:
@@ -165,7 +167,7 @@ print(np.trace(M))  # 34
 
 </CodeTabs>
 
-The trace has a job in data science too. The diagonal of a covariance matrix holds the variance of each feature, so its trace is the **total variance** of the data. PCA divides that total up when it reports how much of the variation each of its components explains, and that's how you decide how many dimensions you can safely throw away.
+The trace has a job in data science too. The **variance** of a feature is the average squared distance of its values from their mean, so a feature that swings widely has a large variance. A covariance matrix has one row and one column per feature, and its diagonal holds the variance of each feature, so its trace is the **total variance** of the data. PCA divides that total up when it reports how much of the variation each of its components explains, and that's how you decide how many dimensions you can safely throw away.
 
 ## Where you'll meet this
 
