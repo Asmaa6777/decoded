@@ -8,7 +8,7 @@ import { getCourse, flattenLessons } from "@/content/registry";
 import { affineDecrypt, affineEncrypt, affineTable, bitsToText, flowFrames, keystream, shiftDecrypt, shiftEncrypt, textToBits, VALID_K1, xorBits, xorFrames } from "@/lib/ciphers";
 import { discreteLog, dlogFrames, fastPowFrames, logTable, modPow, cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
 import { conv, convFrames, coverUpFrames, deconv, fitQuality, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
-import { adjoint, cofactors, det, dotAngle, fraction, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
+import { adjoint, cofactors, det, dotAngle, fraction, scale, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -196,6 +196,25 @@ describe("Kronecker products, norms and special matrices", () => {
     expect(diagOf(MAGIC4)).toEqual([16, 11, 6, 1]);
     expect(triu([[1, 1], [1, 1]])).toEqual([[1, 1], [0, 1]]);
     expect(tril([[1, 1, 1], [1, 1, 1], [1, 1, 1]], -1)).toEqual([[0, 0, 0], [1, 0, 0], [1, 1, 0]]);
+  });
+});
+
+describe("the matrices quiz's hand calculations", () => {
+  it("has the right answer for every calculation question", () => {
+    expect(add([[1, -2], [3, 0]], [[4, 5], [-1, 2]])).toEqual([[5, 3], [2, 2]]); // q1
+    expect(scale(-3, [[2, -1], [0, 4]])[1][1]).toBe(-12); // q2
+    expect(transpose([[4, -2, 3], [0, 5, -2]])[2][0]).toBe(3); // q4
+    expect(dot([2, -1, 3], [4, 5, -1])).toBe(0); // q5
+    expect(mul([[1, 2], [3, 4]], [[0, 1], [5, -2]])).toEqual([[10, -3], [20, -5]]); // q8
+    expect(kron([[2, 0], [1, 3]], [[1, -1], [4, 2]])[3][2]).toBe(12); // q10
+    expect(norm1([[2, -8], [3, 1]])).toBe(9); // q11
+    expect(normInf([[1, -7], [-2, -3]])).toBe(8); // q12
+    expect(trace([[1, -7], [-2, -3]])).toBe(-2); // q13
+    expect(tril([[1, 1, 1], [1, 1, 1], [1, 1, 1]], -1).flat().filter((x) => x === 1)).toHaveLength(3); // q15
+    expect(det([[5, 2], [3, 4]])).toBe(14); // q16
+    expect(cofactors([[1, 0, 2], [-1, 3, 1], [4, 2, 5]])[0][1]).toBe(9); // q17
+    expect(fraction(adjoint([[4, 7], [2, 6]])[0][1], det([[4, 7], [2, 6]]))).toBe("-7/10"); // q18
+    expect(det([[2, 4], [1, 2]])).toBe(0); // q19
   });
 });
 

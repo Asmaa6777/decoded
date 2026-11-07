@@ -2,27 +2,75 @@ import { Quiz } from "@/components/mdx/MdxComponents";
 
 # Quiz: Matrices
 
-Eight questions on the whole module. Get 6 right to pass. Your first click on a question is your answer, and it shows an explanation.
+Twenty-one questions on the whole module, in lesson order. Most of them are small calculations, so keep a pen and paper nearby. Get 16 right to pass. Your first click on a question is your answer, and it shows an explanation.
 
 <Quiz
   courseSlug="computational-mathematics"
   lessonSlug="matrices-quiz"
-  passThreshold={6/8}
+  passThreshold={16/21}
   questions={[
     {
       id: "q1",
-      prompt: "A is 3-by-4 and B is 4-by-2. What is true about the products?",
+      prompt: "A = [1 -2; 3 0] and B = [4 5; -1 2]. What is A + B?",
       options: [
-        { id: "a", text: "AB is 3-by-2 and BA doesn't exist" },
-        { id: "b", text: "AB is 4-by-4 and BA is 3-by-2" },
-        { id: "c", text: "Both exist, because the numbers overlap" },
-        { id: "d", text: "Neither exists, because the matrices aren't square" },
+        { id: "a", text: "[5 3; 2 2]" },
+        { id: "b", text: "[-3 -7; 4 -2]" },
+        { id: "c", text: "[4 -10; -3 0]" },
+        { id: "d", text: "It doesn't exist, because neither matrix is a scalar" },
       ],
       correctOptionId: "a",
-      explanation: "AB needs the inner sizes to match: 4 and 4 do, and the outer sizes give 3-by-2. BA would pair 2 with 3, which fails.",
+      explanation: "Add the entries in the same place: 1 + 4 = 5, -2 + 5 = 3, 3 + (-1) = 2 and 0 + 2 = 2. [-3 -7; 4 -2] is A - B. [4 -10; -3 0] multiplies matching entries instead of adding them. Two matrices of the same size can always be added; the scalar rule is only about adding a single number.",
     },
     {
       id: "q2",
+      prompt: "What is entry (2, 2) of -3 * [2 -1; 0 4]?",
+      options: [
+        { id: "a", text: "-12" },
+        { id: "b", text: "12" },
+        { id: "c", text: "1" },
+        { id: "d", text: "4" },
+      ],
+      correctOptionId: "a",
+      explanation: "A scalar multiplies every entry, so entry (2, 2) is (-3)(4) = -12. 12 loses the minus sign. 1 adds -3 to 4 instead of multiplying. 4 assumes the scalar skips some entries, but it changes all of them: the full answer is [-6 3; 0 -12].",
+    },
+    {
+      id: "q3",
+      prompt: "Which of these gives a size error in MATLAB?",
+      options: [
+        { id: "a", text: "ones(3, 2) + 5" },
+        { id: "b", text: "ones(3, 2) + [1 2]" },
+        { id: "c", text: "ones(3, 2) + ones(2, 3)" },
+        { id: "d", text: "ones(3, 2) - ones(3, 2)" },
+      ],
+      correctOptionId: "c",
+      explanation: "A 3-by-2 and a 2-by-3 have different shapes, and neither is a single row, column or number, so they can't be added. Adding 5 adds it to every entry. The row [1 2] has as many entries as each row of the 3-by-2, so it's copied down to every row (broadcasting). Subtracting two 3-by-2 matrices is ordinary subtraction.",
+    },
+    {
+      id: "q4",
+      prompt: "A = [4 -2 3; 0 5 -2]. What is entry (3, 1) of A' (the transpose)?",
+      options: [
+        { id: "a", text: "3" },
+        { id: "b", text: "-2" },
+        { id: "c", text: "0" },
+        { id: "d", text: "There is none, because A has only 2 rows" },
+      ],
+      correctOptionId: "a",
+      explanation: "Entry (i, j) of A' is entry (j, i) of A, so (3, 1) of A' is (1, 3) of A, which is 3. -2 is entry (2, 3) of A, read without swapping. 0 is entry (2, 1). A is 2-by-3, so A' is 3-by-2 and does have a row 3.",
+    },
+    {
+      id: "q5",
+      prompt: "u = (2, -1, 3) and v = (4, 5, -1). What is u · v, and what does it tell you?",
+      options: [
+        { id: "a", text: "0, so u and v are at right angles" },
+        { id: "b", text: "0, so u and v point the same way" },
+        { id: "c", text: "16, so u and v point the same way" },
+        { id: "d", text: "(8, -5, -3), a new vector" },
+      ],
+      correctOptionId: "a",
+      explanation: "u · v = (2)(4) + (-1)(5) + (3)(-1) = 8 - 5 - 3 = 0, and a dot product of 0 means a right angle, because cos 90° = 0. Pointing the same way would give a positive number. 16 adds the sizes 8 + 5 + 3 and ignores the signs. (8, -5, -3) is the list of products before adding them up; the dot product is one number.",
+    },
+    {
+      id: "q6",
       prompt: "u and v are both 3-by-1 column vectors. Which expression gives a single number?",
       options: [
         { id: "a", text: "u * v" },
@@ -31,22 +79,34 @@ Eight questions on the whole module. Get 6 right to pass. Your first click on a 
         { id: "d", text: "u + v" },
       ],
       correctOptionId: "c",
-      explanation: "1-by-3 times 3-by-1 is 1-by-1, the inner product. u * v' is the 3-by-3 outer product, and u * v is an error.",
+      explanation: "u' * v is 1-by-3 times 3-by-1, which is 1-by-1: the inner product. u * v' is 3-by-1 times 1-by-3, the 3-by-3 outer product. u * v is 3-by-1 times 3-by-1, and the inner sizes 1 and 3 don't match, so it's an error. u + v is another 3-by-1 vector.",
     },
     {
-      id: "q3",
-      prompt: "What does the transpose do to the entries on the main diagonal?",
+      id: "q7",
+      prompt: "A is 3-by-4 and B is 4-by-2. What is true about the products?",
       options: [
-        { id: "a", text: "Changes their sign" },
-        { id: "b", text: "Leaves them where they are" },
-        { id: "c", text: "Moves them to the other diagonal" },
-        { id: "d", text: "Sets them to zero" },
+        { id: "a", text: "AB is 3-by-2 and BA doesn't exist" },
+        { id: "b", text: "AB is 4-by-4 and BA is 3-by-2" },
+        { id: "c", text: "Both exist, because the numbers overlap" },
+        { id: "d", text: "Neither exists, because the matrices aren't square" },
       ],
-      correctOptionId: "b",
-      explanation: "The transpose swaps i and j. On the main diagonal i equals j, so nothing moves.",
+      correctOptionId: "a",
+      explanation: "AB pairs (3-by-4)(4-by-2): the inner 4s match, and the outer numbers give 3-by-2. BA pairs (4-by-2)(3-by-4), and the inner 2 and 3 don't match. 4-by-4 takes the inner numbers instead of the outer ones. Matrices don't need to be square to be multiplied; only the inner sizes have to match.",
     },
     {
-      id: "q4",
+      id: "q8",
+      prompt: "A = [1 2; 3 4] and B = [0 1; 5 -2]. What is entry (2, 1) of AB?",
+      options: [
+        { id: "a", text: "20" },
+        { id: "b", text: "15" },
+        { id: "c", text: "-3" },
+        { id: "d", text: "-5" },
+      ],
+      correctOptionId: "a",
+      explanation: "Entry (2, 1) is row 2 of A, (3, 4), against column 1 of B, (0, 5): (3)(0) + (4)(5) = 20. 15 multiplies only the two entries in position (2, 1), which is entry-by-entry multiplication. -3 is entry (1, 2) and -5 is entry (2, 2) of AB, so they use the wrong row or column. The whole product is [10 -3; 20 -5].",
+    },
+    {
+      id: "q9",
       prompt: "A is 2-by-3 and B is 4-by-5. What is the size of kron(A, B)?",
       options: [
         { id: "a", text: "6-by-20" },
@@ -55,10 +115,34 @@ Eight questions on the whole module. Get 6 right to pass. Your first click on a 
         { id: "d", text: "It doesn't exist, because the sizes don't fit" },
       ],
       correctOptionId: "b",
-      explanation: "The sizes multiply: 2 × 4 rows and 3 × 5 columns. The Kronecker product works with any two matrices.",
+      explanation: "There are 2 rows of blocks, each 4 rows tall, so 2 × 4 = 8 rows. There are 3 columns of blocks, each 5 wide, so 3 × 5 = 15 columns. 6-by-20 multiplies the wrong pairs (A's rows by its own columns). 2-by-5 is what an ordinary product would give if it existed. The Kronecker product works for any two matrices.",
     },
     {
-      id: "q5",
+      id: "q10",
+      prompt: "A = [2 0; 1 3] and B = [1 -1; 4 2]. What is entry (4, 3) of kron(A, B)?",
+      options: [
+        { id: "a", text: "12" },
+        { id: "b", text: "4" },
+        { id: "c", text: "6" },
+        { id: "d", text: "-3" },
+      ],
+      correctOptionId: "a",
+      explanation: "Row 4 is in the second row of blocks and column 3 is in the second column of blocks, so it's in the block a₂₂B = 3B. Inside that block it's row 2, column 1, where B has 4, so the entry is 3 × 4 = 12. 4 forgets to scale by a₂₂ = 3. 6 is 3 × B(2, 2), one column too far right. -3 is 3 × B(1, 2), the wrong row and column inside the block.",
+    },
+    {
+      id: "q11",
+      prompt: "What is the 1-norm of [2 -8; 3 1]?",
+      options: [
+        { id: "a", text: "9" },
+        { id: "b", text: "10" },
+        { id: "c", text: "5" },
+        { id: "d", text: "√78" },
+      ],
+      correctOptionId: "a",
+      explanation: "The 1-norm is the largest absolute column sum: |2| + |3| = 5 and |-8| + |1| = 9, so it's 9. 10 is the largest absolute row sum, which is the infinity-norm. 5 comes from adding without absolute values: the second column gives -7, so the first column wins. √78 is the Euclidean norm, √(4 + 64 + 9 + 1).",
+    },
+    {
+      id: "q12",
       prompt: "For A = [1 -7; -2 -3], what is the infinity-norm?",
       options: [
         { id: "a", text: "3" },
@@ -67,22 +151,22 @@ Eight questions on the whole module. Get 6 right to pass. Your first click on a 
         { id: "d", text: "10" },
       ],
       correctOptionId: "c",
-      explanation: "It's the largest absolute row sum. The rows give 1 + 7 = 8 and 2 + 3 = 5. The 1-norm of this matrix would be 10.",
+      explanation: "It's the largest absolute row sum. The rows give 1 + 7 = 8 and 2 + 3 = 5, so it's 8. 5 is the smaller row sum. 10 is the largest column sum, which is the 1-norm. 3 is the first column's sum, |1| + |-2|.",
     },
     {
-      id: "q6",
-      prompt: "A 2-by-2 matrix has determinant -3. What does it do to the unit square?",
+      id: "q13",
+      prompt: "What is the trace of [1 -7; -2 -3]?",
       options: [
-        { id: "a", text: "Shrinks its area to one third" },
-        { id: "b", text: "Makes its area 3 times bigger and flips it over" },
-        { id: "c", text: "Collapses it to a line" },
-        { id: "d", text: "Rotates it by 3 radians" },
+        { id: "a", text: "-2" },
+        { id: "b", text: "-9" },
+        { id: "c", text: "-11" },
+        { id: "d", text: "4" },
       ],
-      correctOptionId: "b",
-      explanation: "The size of the determinant is the area factor, and the negative sign means the orientation is flipped.",
+      correctOptionId: "a",
+      explanation: "The trace adds the main diagonal, top-left to bottom-right: 1 + (-3) = -2. -9 adds the other diagonal, -7 + (-2). -11 adds every entry. 4 adds the absolute values of the diagonal, but the trace keeps the signs and can be negative.",
     },
     {
-      id: "q7",
+      id: "q14",
       prompt: "What does triu(A, 1) keep?",
       options: [
         { id: "a", text: "Only the main diagonal" },
@@ -91,10 +175,82 @@ Eight questions on the whole module. Get 6 right to pass. Your first click on a 
         { id: "d", text: "Everything strictly below the main diagonal" },
       ],
       correctOptionId: "c",
-      explanation: "A positive k moves the boundary up and to the right. With k = 1 the main diagonal itself gets dropped.",
+      explanation: "triu(A, k) keeps the entries on diagonal k and above, where the diagonal number is column minus row. With k = 1 the main diagonal (number 0) is dropped too. The main diagonal and everything above is triu(A) with k = 0. Only the main diagonal is diag(diag(A)). Below the diagonal is what tril keeps, not triu.",
     },
     {
-      id: "q8",
+      id: "q15",
+      prompt: "How many ones are in tril(ones(3), -1)?",
+      options: [
+        { id: "a", text: "3" },
+        { id: "b", text: "6" },
+        { id: "c", text: "2" },
+        { id: "d", text: "9" },
+      ],
+      correctOptionId: "a",
+      explanation: "k = -1 keeps diagonal -1 and everything below it, which are the entries (2, 1), (3, 1) and (3, 2): 3 ones. 6 is tril(ones(3)), which also keeps the main diagonal. 2 counts only diagonal -1 itself and misses (3, 1). 9 would keep the whole matrix.",
+    },
+    {
+      id: "q16",
+      prompt: "What is det([5 2; 3 4])?",
+      options: [
+        { id: "a", text: "14" },
+        { id: "b", text: "26" },
+        { id: "c", text: "-14" },
+        { id: "d", text: "9" },
+      ],
+      correctOptionId: "a",
+      explanation: "ad - bc = (5)(4) - (2)(3) = 20 - 6 = 14. 26 adds the second product instead of subtracting it. -14 subtracts in the wrong order, bc - ad. 9 is the trace, 5 + 4, which adds the diagonal instead of multiplying.",
+    },
+    {
+      id: "q17",
+      prompt: "A = [1 0 2; -1 3 1; 4 2 5]. What is the cofactor C₁₂?",
+      options: [
+        { id: "a", text: "9" },
+        { id: "b", text: "-9" },
+        { id: "c", text: "4" },
+        { id: "d", text: "-5" },
+      ],
+      correctOptionId: "a",
+      explanation: "Delete row 1 and column 2 to leave [-1 1; 4 5], so the minor is M₁₂ = (-1)(5) - (1)(4) = -9. Then 1 + 2 = 3 is odd, so the sign flips: C₁₂ = 9. -9 is the minor without its sign. 4 is C₂₁, from deleting row 2 and column 1, which swaps i and j. -5 multiplies only the diagonal, (-1)(5), and forgets to subtract bc.",
+    },
+    {
+      id: "q18",
+      prompt: "A = [4 7; 2 6]. What is the top-right entry of inv(A)?",
+      options: [
+        { id: "a", text: "-0.7" },
+        { id: "b", text: "0.7" },
+        { id: "c", text: "-0.2" },
+        { id: "d", text: "0.6" },
+      ],
+      correctOptionId: "a",
+      explanation: "det(A) = (4)(6) - (7)(2) = 10. The 2-by-2 shortcut swaps a and d, changes the signs of b and c, and divides by the determinant: (1/10)[6 -7; -2 4]. So the top-right entry is -7/10 = -0.7. 0.7 forgets to change the sign of b. -0.2 is the bottom-left entry, -c/det. 0.6 is the top-left entry, d/det.",
+    },
+    {
+      id: "q19",
+      prompt: "Which of these matrices has no inverse?",
+      options: [
+        { id: "a", text: "[2 4; 1 2]" },
+        { id: "b", text: "[2 4; 1 3]" },
+        { id: "c", text: "[0 1; 1 0]" },
+        { id: "d", text: "[1 0; 0 0.001]" },
+      ],
+      correctOptionId: "a",
+      explanation: "A matrix has an inverse exactly when its determinant isn't 0. [2 4; 1 2] has det 4 - 4 = 0: its first row is twice its second, so it squashes the plane onto a line. [2 4; 1 3] has det 2. [0 1; 1 0] has det -1, and a negative determinant only means a flip. [1 0; 0 0.001] has det 0.001: small, but not 0, so it still has an inverse.",
+    },
+    {
+      id: "q20",
+      prompt: "A 2-by-2 matrix has determinant -3. What does it do to the unit square?",
+      options: [
+        { id: "a", text: "Shrinks its area to one third" },
+        { id: "b", text: "Makes its area 3 times bigger and flips it over" },
+        { id: "c", text: "Collapses it to a line" },
+        { id: "d", text: "Rotates it by 3 radians" },
+      ],
+      correctOptionId: "b",
+      explanation: "The size of the determinant, 3, is the factor the area is multiplied by, and the minus sign means the square is flipped over. One third would need a determinant of ±1/3. Collapsing to a line happens only when the determinant is 0. The determinant measures area, not angle, so it can't tell you about a rotation.",
+    },
+    {
+      id: "q21",
       prompt: "You need to solve Ax = b in MATLAB. What should you write?",
       options: [
         { id: "a", text: "x = inv(A) * b" },
@@ -103,7 +259,7 @@ Eight questions on the whole module. Get 6 right to pass. Your first click on a 
         { id: "d", text: "x = A' * b" },
       ],
       correctOptionId: "c",
-      explanation: "The backslash solves the system directly through a factorization. Computing the inverse first is slower and usually less accurate.",
+      explanation: "The backslash solves the system directly through a triangular factorization. inv(A) * b gives the same answer in exact arithmetic, but computing the inverse first is slower and usually less accurate. Dividing b by det(A) isn't a method at all: the determinant only says whether a solution exists. A' * b multiplies by the transpose, which isn't the inverse unless A is a rotation or reflection.",
     },
   ]}
 />
