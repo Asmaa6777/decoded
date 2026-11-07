@@ -57,7 +57,7 @@ With two outputs, it returns the derivative of the quotient $a(x) / b(x)$. The r
 <CodeTabs>
 
 ```matlab
-[q, d] = polyder(a, b)   % q = -2  -8  -2
+[q, d] = polyder(a, b)   % q = -2  -8  -2   (Octave divides both by 4)
                          % d =  4  16  40  48  36
 ```
 
@@ -116,7 +116,7 @@ print(round(w, 4))  # 2.0
 
 ## Fitting a curve to data
 
-Real measurements rarely sit on a neat curve. `polyfit(x, y, n)` finds the degree $n$ polynomial with the smallest **sum of squared errors**, which is called a **least-squares** fit:
+Real measurements rarely sit on a neat curve. `polyfit(x, y, n)` finds the degree $n$ polynomial (MATLAB's help says "order $n$") with the smallest **sum of squared errors**, which is called a **least-squares** fit:
 
 $$
 \min_{p} \sum_{i} \bigl(p(x_i) - y_i\bigr)^2
@@ -140,6 +140,37 @@ x = [1, 2, 3, 4, 5]
 y = [5.5, 43.1, 128, 290.7, 498.4]
 
 print(np.round(np.polyfit(x, y, 3), 4).tolist())  # [-0.1917, 31.5821, -60.3262, 35.34]
+```
+
+</CodeTabs>
+
+So the fitted cubic is $p(x) \approx -0.1917x^3 + 31.5821x^2 - 60.3262x + 35.34$. To draw it, evaluate it at many points between the data, here every 0.1 from 1 to 5, and plot those over the original measurements:
+
+<CodeTabs>
+
+```matlab
+x2 = 1:0.1:5;             % 41 points from 1 to 5
+y2 = polyval(p, x2);
+plot(x, y, 'o', x2, y2)   % data as circles, the fit as a line
+grid on
+
+polyval(p, 2.5)
+ans =
+   78.9181
+```
+
+```python
+import numpy as np
+
+x = [1, 2, 3, 4, 5]
+y = [5.5, 43.1, 128, 290.7, 498.4]
+p = np.polyfit(x, y, 3)
+
+x2 = np.arange(1, 5.05, 0.1)  # 41 points from 1 to 5
+y2 = np.polyval(p, x2)
+# matplotlib: plt.plot(x, y, "o", x2, y2)
+
+print(len(x2), round(float(np.polyval(p, 2.5)), 4))  # 41 78.9181
 ```
 
 </CodeTabs>
