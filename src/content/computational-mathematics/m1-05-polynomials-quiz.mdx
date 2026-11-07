@@ -172,10 +172,10 @@ Twenty questions on the whole module, in lesson order. Most are small calculatio
         { id: "a", text: "[2 1]" },
         { id: "b", text: "[1 2]" },
         { id: "c", text: "[2 1 0]" },
-        { id: "d", text: "[3 1]" },
+        { id: "d", text: "[2 0]" },
       ],
       correctOptionId: "a",
-      explanation: "The three points lie exactly on y = 2x + 1, so the best line is that line, written in descending powers as [2 1]. [1 2] lists the coefficients in ascending order, which MATLAB would read as x + 2. [2 1 0] has three numbers, so it would be a degree-2 polynomial. [3 1] reads the slope as the jump from x = 1 to x = 2 plus 1, but the y values rise by 2 for each step of 1 in x.",
+      explanation: "The three points lie exactly on y = 2x + 1, so the best line is that line, written in descending powers as [2 1]. [1 2] lists the coefficients in ascending order, which MATLAB would read as x + 2. [2 1 0] has three numbers, so it would be a degree-2 polynomial. [2 0] is y = 2x, which gets the slope right but forgets the intercept: at x = 0 the data has y = 1, not 0.",
     },
     {
       id: "q15",

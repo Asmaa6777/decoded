@@ -7,7 +7,7 @@ Two more jobs that become a single function call: finding how fast a polynomial 
 
 ## Derivatives
 
-The **derivative** $p'(x)$ of a polynomial is another polynomial that gives the slope of $p$'s curve at every $x$. It's positive where the curve rises, negative where it falls, and zero at the top of a hill or the bottom of a valley. For a single term, the derivative of $ax^n$ is $nax^{n-1}$: the power comes down as a multiplier and goes down by one. On a coefficient vector, that takes two steps. First multiply each coefficient by its power of $x$. Then delete the constant term, the rightmost number, because a constant has a derivative of zero.
+The **derivative** $p'(x)$ of a polynomial is another polynomial that gives the slope of $p$'s curve at every $x$. It's positive where the curve rises, negative where it falls, and zero at the top of a hill or the bottom of a valley. For a single term, the derivative of $ax^n$ is $nax^{n-1}$: the power comes down as a multiplier and goes down by one. For example, $x^2$ has the derivative $2x$, so at $x = 3$ its slope is 6. You can check that with numbers: moving from $x = 3$ to $x = 3.01$ raises $x^2$ from 9 to 9.0601, a rise of about 6 times the step of 0.01. On a coefficient vector, the rule takes two steps. First multiply each coefficient by its power of $x$. Then delete the constant term, the rightmost number, because a constant has a derivative of zero.
 
 Take $x^3 - 2x - 5$. Its coefficients `[1 0 -2 -5]` go with the powers 3, 2, 1 and 0, so multiplying gives `[3 0 -2 0]`. Deleting the constant term leaves `[3 0 -2]`, which is $3x^2 - 2$. `polyder` does this for you:
 
@@ -33,9 +33,9 @@ print(np.polyder([1, 0, -2, -5]).tolist())  # [3, 0, -2]
 Only dropping the last number. `[1 0 -2 -5]` with the constant removed is `[1 0 -2]`, which is $x^2 - 2$, not the derivative. Each coefficient must first be multiplied by its own power, so the $x^3$ coefficient becomes 3. The answer is always one entry shorter than $p$.
 </Callout>
 
-`polyder` also accepts two polynomials, and the number of outputs you ask for decides what it computes. Take $a(x) = x^2 + 3x + 5$ and $b(x) = 2x^2 + 4x + 6$.
+A MATLAB function can return more than one result. You choose how many by listing names in square brackets on the left: `c = f(...)` asks for one, and `[q, d] = f(...)` asks for two. `polyder` also accepts two polynomials, and the number of results you ask for decides what it computes. Take $a(x) = x^2 + 3x + 5$ and $b(x) = 2x^2 + 4x + 6$.
 
-With one output, `polyder(a, b)` returns the derivative of the product $a(x)\,b(x)$. There's a rule for that, $(ab)' = a'b + ab'$, but the simplest way to check it is to multiply first and then differentiate. The product, worked out by [convolution](/courses/computational-mathematics/multiplying-and-dividing#convolution), is $2x^4 + 10x^3 + 28x^2 + 38x + 30$, so the answer is $8x^3 + 30x^2 + 56x + 38$:
+With one output, `polyder(a, b)` returns the derivative of the product $a(x)\,b(x)$. There's a rule for that, $(ab)' = a'b + ab'$, but the simplest way to check it is to multiply first and then differentiate. The product, worked out by [convolution](/courses/computational-mathematics/multiplying-and-dividing#convolution), is $2x^4 + 10x^3 + 28x^2 + 38x + 30$. Differentiating multiplies its coefficients 2, 10, 28 and 38 by their powers 4, 3, 2 and 1 and drops the 30, so the answer is $8x^3 + 30x^2 + 56x + 38$:
 
 <CodeTabs>
 
@@ -97,7 +97,7 @@ $$
 \frac{-2x^2 - 8x - 2}{4x^4 + 16x^3 + 40x^2 + 48x + 36}
 $$
 
-The derivative is how every neural network learns. It says which way is downhill. So training measures the error, takes the derivative of the error with respect to each weight, and moves each weight a little the other way. That's **gradient descent**, and the deep-learning libraries' main job is computing these derivatives for billions of weights at once. For a single weight fitting $y = wx$ to three points, a short loop is enough. The error is the mean of $(wx_i - y_i)^2$. Its derivative with respect to $w$ is the mean of $2(wx_i - y_i)x_i$: the power 2 comes down, and the inner $wx_i$ gives the factor $x_i$. The data lies on $y = 2x$, so $w$ should end up at 2:
+The derivative is how every neural network learns. It says which way is downhill. So training measures the error, takes the derivative of the error with respect to each weight, and moves each weight a little the other way. That's **gradient descent**, and the deep-learning libraries' main job is computing these derivatives for billions of weights at once. For a single weight fitting $y = wx$ to three points, a short loop is enough. The error to make small is the **mean squared error**, the average of the squared gaps $(wx_i - y_i)^2$; the next section says why the gaps are squared. Its derivative with respect to $w$ is the mean of $2(wx_i - y_i)x_i$: the power 2 comes down, and the inner $wx_i$ gives the factor $x_i$. Each step moves $w$ against that slope by 0.05 times its size; 0.05 is the [learning rate](/courses/computational-mathematics/matrices-and-matlab#multiplying-by-a-scalar). The data lies on $y = 2x$, so $w$ should end up at 2:
 
 <CodeTabs>
 
@@ -196,10 +196,10 @@ Now try it. Change the degree, and drag the points to see the curve respond:
 <CurveFitExplorer />
 
 <Callout tone="orange" label="Lower error isn't always better">
-Five points can always be matched exactly by a polynomial of degree 4. Zero error looks perfect, but it often means the curve has learned the noise in your data and will predict poorly between and beyond the points. This is called overfitting, and it's one of the main problems in machine learning.
+Five points can always be matched exactly by a polynomial of degree 4, because it has five coefficients to choose, one for each point. Zero error looks perfect, but it often means the curve has learned the noise in your data and will predict poorly between and beyond the points. This is called overfitting, and it's one of the main problems in machine learning.
 </Callout>
 
-That's why machine learning never judges a model on the data it trained on. Hold some points back as a **test set**: as the degree rises, the error on the training points keeps falling, while the error on the held-out points eventually climbs. The degree where test error is lowest is the one to keep. Here a straight line is trained on the even points and checked on the odd ones, against a degree-4 curve:
+That's why machine learning never judges a model on the data it trained on. Hold some points back as a **test set**: as the degree rises, the error on the training points keeps falling, while the error on the held-out points eventually climbs. The degree where test error is lowest is the one to keep. Here a straight line is trained on the even points and checked on the odd ones, against a degree-4 curve. The code uses some MATLAB you haven't met yet: `mod(x, 2) == 0` marks the even values of `x` as true, `~` swaps true and false, `x(train)` keeps only the entries marked true, and `@(p, m) ...` defines a small function on the spot, here the mean squared error of the polynomial `p` on the points `m`:
 
 <CodeTabs>
 

@@ -31,7 +31,7 @@ p = [1, -2, -1, 2]
 
 </CodeTabs>
 
-Read the vector from left to right against the powers $x^3, x^2, x^1, x^0$. The 1 goes with $x^3$, the $-2$ with $x^2$ and the $-1$ with $x$. The last number, 2, is the constant.
+Read the vector from left to right against the powers $x^3, x^2, x^1, x^0$. The 1 goes with $x^3$, the $-2$ with $x^2$ and the $-1$ with $x$. The last number, 2, goes with $x^0$, and $x^0 = 1$ for every $x$, so it's simply the constant.
 
 Missing powers still need a place. $x^3 - 2x - 5$ has no $x^2$ term, so its vector is `[1 0 -2 -5]`, with an explicit zero.
 
@@ -69,13 +69,19 @@ print(np.round(np.poly([-1, 2, 1]), 6).tolist())  # [1.0, -2.0, -1.0, 2.0]
 
 These two are inverse functions, up to ordering, scaling and rounding error. Ordering, because `roots` may list the roots in any order. Scaling, because `poly` always returns a polynomial whose first coefficient is 1. The roots of $2x^2 - 2$ are $\pm 1$, but `poly` of those gives back $x^2 - 1$: the same roots, at half the size. Rounding, because the roots are computed in floating point, so `poly` may return 1.9999999 where you expected 2.
 
-Root finding is a central part of training a model, even though it's rarely called that. A loss is lowest where its slope is flat, at a point where the [derivative](/courses/computational-mathematics/derivatives-and-curve-fitting#derivatives) is zero. So **minimising a loss means finding a root of its derivative**. Every optimizer, from gradient descent to the ones that train large language models, is really searching for a root of the gradient.
+Not every polynomial crosses the x-axis, though. Drag the sliders and watch the roots move. When the whole curve moves above the axis, the real roots disappear, and `roots` reports a complex pair instead:
+
+<PolynomialExplorer />
+
+<Callout tone="sky" label="Why roots returns complex numbers">
+A polynomial of degree $n$ always has exactly $n$ roots if you count repeats and allow complex values. $x^2 + 1$ never touches the x-axis, yet it still has two roots, $i$ and $-i$, where $i$ is the number with $i^2 = -1$. Complex roots of a polynomial with real coefficients always come in pairs like this, $a + bi$ and $a - bi$. That's why the explorer shows them as a pair.
+</Callout>
+
+Root finding is a central part of training a model, even though it's rarely called that. A loss is lowest where its slope is flat, at a point where the [derivative](/courses/computational-mathematics/derivatives-and-curve-fitting#derivatives) is zero. So **minimising a loss means finding a root of its derivative**. Every optimizer, from gradient descent to the ones that train large language models, is really searching for a root of the gradient, the list of slopes of the loss, one per weight.
 
 ## Evaluating
 
-`polyval(p, 3)` works out $p(3) = 27 - 18 - 3 + 2 = 8$. Drag the sliders and see the roots move. When the whole curve moves above the axis, the real roots disappear, and they come back as a complex pair:
-
-<PolynomialExplorer />
+`polyval(p, 3)` works out $p(3) = 27 - 18 - 3 + 2 = 8$:
 
 <CodeTabs>
 
@@ -103,10 +109,6 @@ print(polyval([1, -2, -1, 2], 3))  # 8
 ```
 
 </CodeTabs>
-
-<Callout tone="sky" label="Why roots returns complex numbers">
-A polynomial of degree $n$ always has exactly $n$ roots if you count repeats and allow complex values. $x^2 + 1$ never touches the x-axis, yet it still has two roots, $i$ and $-i$, where $i$ is the number with $i^2 = -1$. Complex roots of a polynomial with real coefficients always come in pairs like this, $a + bi$ and $a - bi$. That's why the explorer shows them as a pair.
-</Callout>
 
 ## Evaluating at a matrix
 
@@ -142,9 +144,9 @@ print(Y.tolist())  # [[377, 179, 439], [111, 81, 136], [490, 253, 639]]
 
 </CodeTabs>
 
-Note that this differs from `polyval(p, X)`, which evaluates the polynomial separately on each entry.
+This differs from `polyval(p, X)`, which evaluates the polynomial separately on each entry. With $p(x) = x^2$ and $X = \begin{bmatrix} 1 & 1 \\ 0 & 1 \end{bmatrix}$, `polyvalm` gives $X \cdot X = \begin{bmatrix} 1 & 2 \\ 0 & 1 \end{bmatrix}$, while `polyval` squares each entry and gives $X$ back unchanged, because $1^2 = 1$ and $0^2 = 0$.
 
-Matrices and polynomials meet again in **eigenvalues**. Some directions are only stretched by a matrix, never turned, and the stretch factors along them are its eigenvalues. They're the roots of a polynomial built from the matrix, its **characteristic polynomial**, which `poly` returns when you give it a square matrix. PCA ranks the directions in a dataset by exactly these numbers:
+Matrices and polynomials meet again in **eigenvalues**, the factors by which a matrix stretches the directions it doesn't turn. They're the roots of a polynomial built from the matrix, its **characteristic polynomial**, which `poly` returns when you give it a square matrix:
 
 <CodeTabs>
 
@@ -166,7 +168,7 @@ print(np.round(np.sort(np.roots(c)), 6).tolist())  # [1.0, 3.0]
 
 </CodeTabs>
 
-Real libraries don't compute eigenvalues this way, because small rounding errors in the coefficients can move the roots a lot. In fact `roots` works the other way round: it builds a matrix whose characteristic polynomial is $p$, and computes that matrix's eigenvalues with `eig`.
+Real libraries don't compute eigenvalues this way, because small rounding errors in the coefficients can move the roots a lot.
 
 ## Where you'll meet this
 

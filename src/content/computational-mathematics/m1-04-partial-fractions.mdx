@@ -3,7 +3,7 @@ import { CoverUpVisualizer } from "@/components/mdx/PolynomialVisualizers";
 
 # Partial Fractions
 
-A ratio of two polynomials can be hard to work with. Split it into a sum of simple fractions and each piece becomes easy to integrate, to invert, or to read a system's behaviour from.
+A ratio of two polynomials can be hard to work with. Split it into a sum of simple fractions and each piece becomes easy to integrate, to turn back into a signal over time (the step engineers call inverting), or to read a system's behaviour from.
 
 ## The expansion
 
@@ -19,41 +19,6 @@ $k$ is empty when $b$ has a lower degree than $a$. Otherwise, $k(s)$ is the poly
 
 "No repeated roots" matters because the formula needs one simple fraction per pole. If $a$ has a double root, the expansion also needs a term with $(s - p)^2$ underneath. `residue` handles that case too, but this lesson sticks to distinct poles.
 
-Each piece $\dfrac{r}{s - p}$ is the simplest system there is: something that remembers its past and lets it fade at a fixed rate. Machine learning is full of these. An **exponential moving average** updates as
-
-$$
-y_t = \alpha x_t + (1 - \alpha)\, y_{t-1}
-$$
-
-so every new value is blended with the running average, and older values fade by a factor of $1 - \alpha$ each step. That's a filter with a single pole. **Momentum** and the **Adam** optimizer, which train most neural networks today, keep moving averages like this of the gradient, so one noisy step can't push training in the wrong direction. Many models also keep an averaged copy of their own weights to use at the end, because it changes less from step to step than the latest weights do.
-
-<CodeTabs>
-
-```matlab
-x = [1 2 3];
-alpha = 0.5;
-
-% filter(b, a, x) runs y(t) = alpha*x(t) + (1 - alpha)*y(t-1).
-% The last argument starts the average at the first value.
-y = filter(alpha, [1 -(1 - alpha)], x, (1 - alpha) * x(1))
-
-y =
-    1.0000    1.5000    2.2500
-```
-
-```python
-import pandas as pd
-
-s = pd.Series([1.0, 2.0, 3.0])
-
-# adjust=False gives exactly the update above, starting from the first value
-print(s.ewm(alpha=0.5, adjust=False).mean().tolist())  # [1.0, 1.5, 2.25]
-```
-
-</CodeTabs>
-
-Splitting a complicated filter into partial fractions breaks it into pieces of exactly this kind, each with its own pole and its own rate of fading.
-
 ## An example
 
 A **transfer function** is a fraction like this one, written in the variable $s$. It describes how a system, such as a circuit, a motor or a filter, turns an input signal into an output. Engineers write systems this way because chaining two systems is then just multiplying their fractions. Take this transfer function:
@@ -62,7 +27,7 @@ $$
 \frac{-4s + 8}{s^2 + 6s + 8}
 $$
 
-The denominator factors as $(s + 4)(s + 2)$. To find the residue at a pole, cover up that pole's factor and substitute the pole into everything left over:
+The denominator's roots are $-4$ and $-2$: two numbers that multiply to 8 and add to 6 give the factors, or `roots([1 6 8])` finds them. So it factors as $(s + 4)(s + 2)$. To find the residue at a pole, cover up that pole's factor and substitute the pole into everything left over:
 
 <CoverUpVisualizer />
 
@@ -158,11 +123,50 @@ print(np.round(b2, 6).tolist(), np.round(a2, 6).tolist())  # [-4.0, 8.0] [1.0, 6
 
 </CodeTabs>
 
+## Fading memory
+
+Each simple fraction $\dfrac{r}{s - p}$ describes the simplest system there is: something that remembers its past and lets it fade at a fixed rate set by its pole. Computers work in steps rather than continuous time, and the step-by-step version of one such fraction is a running average. Machine learning is full of these. An **exponential moving average** updates as
+
+$$
+y_t = \alpha x_t + (1 - \alpha)\, y_{t-1}
+$$
+
+so every new value is blended with the running average, and older values fade by a factor of $1 - \alpha$ each step. That's a filter with a single pole. **Momentum** and the **Adam** optimizer, which train most neural networks today, keep moving averages like this of the gradient, so one noisy step can't push training in the wrong direction. Many models also keep an averaged copy of their own weights to use at the end, because it changes less from step to step than the latest weights do.
+
+In MATLAB, `filter(b, a, x)` runs a step rule like this over a whole list. Its first two arguments are coefficient vectors, like a polynomial's. `b = alpha` multiplies the new value $x_t$. `a = [1 -(1 - alpha)]` describes the left side, $y_t - (1 - \alpha) y_{t-1}$, which is the same equation with the old average moved across. The optional fourth argument sets the starting point, here so the average begins at the first value instead of at 0:
+
+<CodeTabs>
+
+```matlab
+x = [1 2 3];
+alpha = 0.5;
+
+% filter(b, a, x) runs y(t) = alpha*x(t) + (1 - alpha)*y(t-1).
+% The last argument starts the average at the first value.
+y = filter(alpha, [1 -(1 - alpha)], x, (1 - alpha) * x(1))
+
+y =
+    1.0000    1.5000    2.2500
+```
+
+```python
+import pandas as pd
+
+s = pd.Series([1.0, 2.0, 3.0])
+
+# adjust=False gives exactly the update above, starting from the first value
+print(s.ewm(alpha=0.5, adjust=False).mean().tolist())  # [1.0, 1.5, 2.25]
+```
+
+</CodeTabs>
+
+Splitting a complicated filter into partial fractions breaks it into pieces of exactly this kind, each with its own pole and its own rate of fading.
+
 ## Where you'll meet this
 
 <ApplicationsGrid>
 <PracticalApplication title="Predicting a system's response" tool="Control theory, Simulink">
-Each term $r/(s - p)$ corresponds to an exponential $re^{pt}$ over time. So once you've split a transfer function, you can read how the system responds term by term.
+Each term $r/(s - p)$ corresponds to the signal $re^{pt}$ over time $t$, which dies away when the pole $p$ is negative and grows when it's positive. So once you've split a transfer function, you can read how the system responds term by term.
 </PracticalApplication>
 <PracticalApplication title="Designing filters" tool="Signal processing">
 Digital filters are often split into smaller first and second order sections, using this same expansion in its discrete form, which keeps them numerically stable.
