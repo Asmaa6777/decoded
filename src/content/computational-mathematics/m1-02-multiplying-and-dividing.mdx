@@ -49,13 +49,13 @@ print(c)  # [4, 13, 28, 27, 18]
 
 </CodeTabs>
 
-So the product is $4s^4 + 13s^3 + 28s^2 + 27s + 18$. If $a$ has degree $m$ and $b$ has degree $n$, the result has degree $m + n$, because the highest power comes from multiplying the two highest powers: $s^m \cdot s^n = s^{m+n}$.
+So the product is $4s^4 + 13s^3 + 28s^2 + 27s + 18$. If $a$ has degree $m$ and $b$ has degree $n$, the result has degree $m + n$. The highest power comes from multiplying the two highest powers: $s^m \cdot s^n = s^{m+n}$.
 
 <Callout tone="orange" label="Common mistake">
 Multiplying the coefficient vectors entry by entry. `[1 2 3] .* [4 5 6]` gives `[4 10 18]`, which is not the product. Every term of one polynomial multiplies every term of the other, so the answer is longer than either input: two vectors of length 3 give a vector of length 5.
 </Callout>
 
-The same slide-multiply-add runs through machine learning. A **moving average**, the most common way to smooth a noisy series before forecasting, is a convolution with equal weights. Averaging each pair of neighbours means sliding $[0.5,\ 0.5]$ along the data:
+The same slide, multiply and add appears all over machine learning. A **moving average**, the most common way to smooth a noisy series before forecasting, is a convolution with equal weights. Averaging each pair of neighbours means sliding $[0.5,\ 0.5]$ along the data:
 
 <CodeTabs>
 
@@ -80,9 +80,9 @@ print(s.rolling(2).mean().dropna().tolist())  # [3.0, 5.0, 7.0]
 
 </CodeTabs>
 
-When averages like these feed a forecasting model, each one must use only past values. A window that reaches forward lets the model peek at the future during training, and it then looks far better in testing than it will ever be in real use.
+When averages like these feed a forecasting model, each one must use only past values. A window that reaches forward lets the model see the future during training. It then scores much better in testing than it ever will in real use.
 
-Slide a small grid of weights across an image instead of a list, and you get **convolution in two dimensions**: the blur in a photo editor, and the core of a **convolutional neural network**. A CNN learns its own grids of weights, called filters. Early ones end up detecting edges and textures, later ones eyes and wheels, and a pattern counts the same wherever it appears in the picture because the same filter slides over every position. Frameworks usually skip the flip, so strictly they compute a correlation, but everyone still calls it convolution. The flip makes no practical difference when the weights are learned.
+Slide a small grid of weights across an image instead of a list, and you get **convolution in two dimensions**. It's the blur in a photo editor, and the core of a **convolutional neural network** (CNN). A CNN learns its own grids of weights, called filters. Early filters learn to detect edges and textures, later ones eyes and wheels. Because the same filter slides over every position, a pattern counts the same wherever it appears in the picture. Frameworks usually skip the flip, so strictly they compute a correlation, but everyone still calls it convolution. The flip makes no practical difference when the weights are learned.
 
 ## Deconvolution
 

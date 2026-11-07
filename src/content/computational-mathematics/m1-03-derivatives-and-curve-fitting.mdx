@@ -3,11 +3,11 @@ import { CurveFitExplorer } from "@/components/mdx/PolynomialVisualizers";
 
 # Derivatives and Curve Fitting
 
-Two more jobs that become a single function call: finding how fast a polynomial changes, and finding the polynomial that best describes messy data. Between them, they're machine learning in miniature.
+Two more jobs that become a single function call: finding how fast a polynomial changes, and finding the polynomial that best describes noisy data. Together, they're a small version of machine learning.
 
 ## Derivatives
 
-The **derivative** $p'(x)$ of a polynomial is another polynomial that gives the slope of $p$'s curve at every $x$: positive where the curve rises, negative where it falls, zero at the top of a hill or the bottom of a valley. For a single term, the derivative of $ax^n$ is $nax^{n-1}$: the power comes down as a multiplier and goes down by one. On a coefficient vector, that takes two steps: multiply each coefficient by its power of $x$, then delete the constant term, the rightmost number, because a constant has a derivative of zero.
+The **derivative** $p'(x)$ of a polynomial is another polynomial that gives the slope of $p$'s curve at every $x$. It's positive where the curve rises, negative where it falls, and zero at the top of a hill or the bottom of a valley. For a single term, the derivative of $ax^n$ is $nax^{n-1}$: the power comes down as a multiplier and goes down by one. On a coefficient vector, that takes two steps. First multiply each coefficient by its power of $x$. Then delete the constant term, the rightmost number, because a constant has a derivative of zero.
 
 Take $x^3 - 2x - 5$. Its coefficients `[1 0 -2 -5]` go with the powers 3, 2, 1 and 0, so multiplying gives `[3 0 -2 0]`. Deleting the constant term leaves `[3 0 -2]`, which is $3x^2 - 2$. `polyder` does this for you:
 
@@ -97,7 +97,7 @@ $$
 \frac{-2x^2 - 8x - 2}{4x^4 + 16x^3 + 40x^2 + 48x + 36}
 $$
 
-The derivative is how every neural network learns. It says which way is downhill, so training measures the error, takes the derivative of the error with respect to each weight, and moves each weight a little the other way. That's **gradient descent**, and the deep-learning libraries' main job is computing these derivatives for billions of weights at once. For a single weight fitting $y = wx$ to three points, a short loop is enough. The error is the mean of $(wx_i - y_i)^2$, and its derivative with respect to $w$ is the mean of $2(wx_i - y_i)x_i$: the power 2 comes down, and the inner $wx_i$ contributes the factor $x_i$. The data lies on $y = 2x$, so $w$ should end up at 2:
+The derivative is how every neural network learns. It says which way is downhill. So training measures the error, takes the derivative of the error with respect to each weight, and moves each weight a little the other way. That's **gradient descent**, and the deep-learning libraries' main job is computing these derivatives for billions of weights at once. For a single weight fitting $y = wx$ to three points, a short loop is enough. The error is the mean of $(wx_i - y_i)^2$. Its derivative with respect to $w$ is the mean of $2(wx_i - y_i)x_i$: the power 2 comes down, and the inner $wx_i$ gives the factor $x_i$. The data lies on $y = 2x$, so $w$ should end up at 2:
 
 <CodeTabs>
 
@@ -130,7 +130,7 @@ print(round(w, 4))  # 2.0
 
 ## Fitting a curve to data
 
-Real measurements rarely sit on a neat curve. `polyfit(x, y, n)` finds the degree $n$ polynomial (MATLAB's help says "order $n$") with the smallest **sum of squared errors**, which is called a **least-squares** fit. Each error is the gap between the curve and a data point, $p(x_i) - y_i$. Squaring stops positive and negative gaps from cancelling, and makes one big miss cost more than several small ones:
+Real measurements rarely lie exactly on a smooth curve. `polyfit(x, y, n)` finds the degree $n$ polynomial (MATLAB's help says "order $n$") with the smallest **sum of squared errors**, which is called a **least-squares** fit. Each error is the gap between the curve and a data point, $p(x_i) - y_i$. Squaring stops positive and negative gaps from cancelling, and makes one big miss cost more than several small ones:
 
 $$
 \min_{p} \sum_{i} \bigl(p(x_i) - y_i\bigr)^2
@@ -189,7 +189,7 @@ print(len(x2), round(float(np.polyval(p, 2.5)), 4))  # 41 78.9181
 
 </CodeTabs>
 
-This is the core of machine learning in miniature. `polyfit` is [linear regression](/courses/computational-mathematics/determinants-and-inverses#dont-use-inv-to-solve-equations) on [polynomial features](/courses/computational-mathematics/polynomials-and-roots#writing-one-down), the sum of squared errors is the **mean squared error** loss without the division, and the degree is the model's complexity.
+This is the core of machine learning, on a small scale. `polyfit` is [linear regression](/courses/computational-mathematics/determinants-and-inverses#dont-use-inv-to-solve-equations) on [polynomial features](/courses/computational-mathematics/polynomials-and-roots#writing-one-down), the sum of squared errors is the **mean squared error** loss without the division, and the degree is the model's complexity.
 
 Now try it. Change the degree, and drag the points to see the curve respond:
 
