@@ -13,7 +13,9 @@ $$
 c_{ij} = a_{i1}b_{1j} + a_{i2}b_{2j} + \cdots + a_{ip}b_{pj} = \sum_{k=1}^{p} a_{ik}b_{kj}
 $$
 
-In words: entry $(i, j)$ of the answer is the [dot product](/courses/computational-mathematics/transpose-and-products#the-dot-product) of **row $i$ of $A$** with **column $j$ of $B$**. Step through it:
+In words: entry $(i, j)$ of the answer is the [dot product](/courses/computational-mathematics/transpose-and-products#the-dot-product) of **row $i$ of $A$** with **column $j$ of $B$**. That's why the inner sizes must match: a row of $A$ has $p$ entries and a column of $B$ has $p$ entries, and a dot product needs two lists of the same length. The symbol $\sum_{k=1}^{p}$ is shorthand for "add up the terms for $k = 1, 2, \dots, p$".
+
+To check sizes quickly, write them side by side: $(m \times \underline{p})(\underline{p} \times n)$. The two inside numbers must match, and the two outside numbers give the answer's size. A common slip is to assume the answer has the same size as $A$; a 2-by-3 times a 3-by-2 gives a 2-by-2. Step through it:
 
 <MatMulVisualizer />
 
@@ -146,7 +148,15 @@ A large language model does the same thing on a vast scale: generating each word
 
 ## The identity matrix
 
-The **identity matrix** $I$ has ones on its main diagonal and zeros everywhere else. It's the matrix version of the number 1: $AI = A$ and $IA = A$. `eye(n)` builds the $n$-by-$n$ one, and `eye(m, n)` builds a rectangular version.
+The **identity matrix** $I$ has ones on its main diagonal and zeros everywhere else. It's the matrix version of the number 1: $AI = A$ and $IA = A$. The row-times-column rule shows why. Column $j$ of $I$ is all zeros except a 1 in position $j$, so row $i$ of $A$ times that column picks out exactly $a_{ij}$ and nothing else:
+
+$$
+\begin{bmatrix} 2 & 5 \\ 7 & 3 \end{bmatrix}\begin{bmatrix} 1 & 0 \\ 0 & 1 \end{bmatrix}
+= \begin{bmatrix} 2\cdot1 + 5\cdot0 & 2\cdot0 + 5\cdot1 \\ 7\cdot1 + 3\cdot0 & 7\cdot0 + 3\cdot1 \end{bmatrix}
+= \begin{bmatrix} 2 & 5 \\ 7 & 3 \end{bmatrix}
+$$
+
+`eye(n)` builds the $n$-by-$n$ one, and `eye(m, n)` builds a rectangular version: an $m$-by-$n$ matrix with ones on the main diagonal as far as it goes, so `eye(2, 3)` is $\begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \end{bmatrix}$.
 
 <CodeTabs>
 
@@ -170,15 +180,15 @@ print(np.array_equal(A @ np.eye(3), A))  # True
 
 ## Why the rule looks like that
 
-A matrix is a function that moves points. A 2-by-2 matrix sends $(x, y)$ to $(ax + by,\ cx + dy)$. Its first column says where $(1, 0)$ lands, and its second column says where $(0, 1)$ lands. Once you know those two, the rest of the grid follows.
+A matrix is a function that moves points. A 2-by-2 matrix sends $(x, y)$ to $(ax + by,\ cx + dy)$. Its first column says where $(1, 0)$ lands: put $x = 1, y = 0$ into the formula and you get $(a, c)$, which is the first column. Likewise its second column says where $(0, 1)$ lands. Once you know those two, the rest of the grid follows.
 
 Try the presets, or drag the sliders and read the columns as the two arrows:
 
 <LinearMapGrid />
 
-Multiplying matrices means doing one map after another. $AB$ is the single matrix that applies $B$ first and then $A$, and the row-times-column formula is what you get when you work out where the arrows end up. That also explains why order matters: rotating and then stretching doesn't give the same picture as stretching and then rotating.
+Multiplying matrices means doing one map after another. $AB$ is the single matrix that applies $B$ first and then $A$. "B first" sounds backwards, but it comes from where the point sits: in $(AB)x = A(Bx)$, the matrix next to $x$ touches it first, just as $f(g(x))$ applies $g$ first. The row-times-column formula is what you get when you work out where the arrows end up. That also explains why order matters: rotating and then stretching doesn't give the same picture as stretching and then rotating.
 
-This picture is what a neural network layer does to its data. A **dense layer** computes $Wx + b$: the matrix $W$ rotates, stretches and shears the points, the way the grid above bends, so that later layers can pull the classes apart. Each layer then applies a non-linear function, such as setting negatives to zero. That step isn't decoration. Without it, two layers $W_2(W_1 x)$ collapse into the single matrix $W_2 W_1$, so a hundred stacked linear layers can do no more than one:
+This picture is what a neural network layer does to its data. A **dense layer** computes $Wx + b$, where $x$ is the input as a column, $W$ holds the layer's weights, and $b$ is a column of learned offsets called the **bias**. The matrix $W$ rotates, stretches and shears the points, the way the grid above bends, so that later layers can pull the classes apart. Each layer then applies a **non-linear** function, one that no matrix can express, such as setting negatives to zero (called ReLU). That step isn't decoration. Without it, two layers $W_2(W_1 x)$ collapse into the single matrix $W_2 W_1$, so a hundred stacked linear layers can do no more than one:
 
 <CodeTabs>
 
