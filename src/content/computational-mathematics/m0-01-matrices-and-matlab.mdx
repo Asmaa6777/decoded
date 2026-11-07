@@ -140,6 +140,15 @@ $$
 c_{ij} = a_{ij} + b_{ij}
 $$
 
+for every row $i = 1, \dots, m$ and every column $j = 1, \dots, n$. By hand, you add the two entries that sit in the same place:
+
+$$
+\begin{bmatrix} 1 & -2 & 3 \\ 2 & -1 & 4 \end{bmatrix} +
+\begin{bmatrix} 0 & 2 & 1 \\ 1 & 3 & -4 \end{bmatrix} =
+\begin{bmatrix} 1+0 & -2+2 & 3+1 \\ 2+1 & -1+3 & 4+(-4) \end{bmatrix} =
+\begin{bmatrix} 1 & 0 & 4 \\ 3 & 2 & 0 \end{bmatrix}
+$$
+
 Subtraction works the same way. Adding $A$ to $B$ and then subtracting $A$ brings you back to $B$, just as it does with ordinary numbers.
 
 <CodeTabs>
@@ -200,6 +209,14 @@ $$
 c_{ij} = r \cdot a_{ij}
 $$
 
+With $r = -2$, every entry changes sign and doubles:
+
+$$
+-2\begin{bmatrix} 4 & -2 & -3 \\ 7 & -3 & 2 \end{bmatrix} =
+\begin{bmatrix} (-2)(4) & (-2)(-2) & (-2)(-3) \\ (-2)(7) & (-2)(-3) & (-2)(2) \end{bmatrix} =
+\begin{bmatrix} -8 & 4 & 6 \\ -14 & 6 & -4 \end{bmatrix}
+$$
+
 Pick an operation and step through it. Each entry only ever talks to the entry in the same position:
 
 <ElementwiseVisualizer />
@@ -239,7 +256,7 @@ print(np.round(w, 4).tolist())  # [0.48, -1.16]
 </CodeTabs>
 
 <Callout tone="orange" label="Common error">
-Addition needs matching sizes, with one exception: a scalar is allowed, and MATLAB adds it to every entry. Trying `pascal(3) + fix(10*rand(3,2))` stops with a dimensions error, because a 3-by-3 and a 3-by-2 don't line up.
+Addition needs matching sizes, with one exception: a scalar is allowed, and MATLAB adds it to every entry. Trying `pascal(3) + fix(10*rand(3,2))` stops with a dimensions error, because a 3-by-3 and a 3-by-2 don't line up. Older MATLAB versions word it as "Matrix dimensions must agree", and Octave says "nonconformant arguments".
 </Callout>
 
 <CodeTabs>
