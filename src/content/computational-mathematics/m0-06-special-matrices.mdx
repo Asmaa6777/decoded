@@ -3,7 +3,7 @@ import { SpecialMatrixExplorer } from "@/components/mdx/MatrixVisualizers";
 
 # Some Special Matrices
 
-Most zeros in a matrix mean less work. A matrix with a known pattern of zeros can be stored in less memory and solved with fewer steps, so these patterns have names and MATLAB has commands for them.
+Zeros in a matrix usually mean less work. If you know where the zeros are, you can store the matrix in less memory and solve problems with it in fewer steps. So the common patterns have names, and MATLAB has commands for them.
 
 ## Filled matrices
 
@@ -34,7 +34,7 @@ print(np.zeros((1, 2)).tolist())  # [[0.0, 0.0]]
 
 </CodeTabs>
 
-A single number means a square matrix, so `ones(2)` is 2-by-2, not a row of two ones. `eye(1)` is just the 1-by-1 matrix `1`. A third number adds a third direction: `ones(2, 3, 4)` is a stack of four 2-by-3 pages, a 3-D array rather than a matrix. Machine learning code uses arrays like this all the time, for example a batch of greyscale images is images × rows × columns.
+A single number means a square matrix, so `ones(2)` is 2-by-2, not a row of two ones. `eye(1)` is just the 1-by-1 matrix `1`. A third number adds a third direction: `ones(2, 3, 4)` is a stack of four 2-by-3 pages, a 3-D array rather than a matrix. Machine learning code uses arrays like this all the time. For example, a batch of greyscale images is stored as images × rows × columns.
 
 <CodeTabs>
 
@@ -56,7 +56,7 @@ print(X3.shape)  # (2, 3, 4)
 
 </CodeTabs>
 
-The identity matrix has a neat use in machine learning. A classifier can't train on labels like "cat", "dog" and "bird" directly, because a model only does arithmetic. Numbering them 1, 2 and 3 doesn't fix it either, since then "dog" would sit halfway between "cat" and "bird" and the model would treat it that way. Instead, each label becomes a **one-hot** vector: all zeros except a single 1 in that class's position. Those are exactly the rows of an identity matrix, so indexing into `eye` encodes a whole list of labels in one line:
+The identity matrix has a useful job in machine learning. A classifier can't train on labels like "cat", "dog" and "bird" directly, because a model only does arithmetic. Numbering them 1, 2 and 3 doesn't solve this. Then "dog" would be halfway between "cat" and "bird", and the model would treat it that way. Instead, each label becomes a **one-hot** vector: all zeros except a single 1 in that class's position. These are exactly the rows of an identity matrix. So picking rows of `eye` turns a whole list of labels into one-hot vectors in one line:
 
 <CodeTabs>
 
@@ -94,9 +94,9 @@ $$
 
 To check by hand, look only at the entries the definition talks about. For the first matrix, $i > j$ means $a_{21}$, $a_{31}$ and $a_{32}$, the three entries below the diagonal, and all of them are 0. The other entries can be anything, zero included.
 
-`triu` and `tril` take a matrix and keep one triangle. An optional second argument $k$ shifts the boundary: $k = 0$ is the main diagonal, positive values move up and to the right, and negative values move down and to the left.
+`triu` and `tril` take a matrix and keep one triangle. An optional second argument $k$ moves the boundary. $k = 0$ is the main diagonal. Positive values move it up and to the right, and negative values move it down and to the left.
 
-The numbering comes from column minus row. Every entry $a_{ij}$ lies on diagonal number $j - i$. The main diagonal has $j = i$, so it's diagonal 0. The entry $a_{12}$, just to the right of it, is on diagonal $2 - 1 = 1$, and $a_{21}$, just below, is on diagonal $1 - 2 = -1$. `triu(A, k)` keeps every entry with $j - i \ge k$, and `tril(A, k)` keeps every entry with $j - i \le k$.
+The numbering comes from column minus row. Every entry $a_{ij}$ lies on diagonal number $j - i$. The main diagonal has $j = i$, so it's diagonal 0. The entry $a_{12}$, just to the right of it, is on diagonal $2 - 1 = 1$. The entry $a_{21}$, just below it, is on diagonal $1 - 2 = -1$. `triu(A, k)` keeps every entry with $j - i \ge k$, and `tril(A, k)` keeps every entry with $j - i \le k$.
 
 Slide $k$ and switch between the commands:
 
@@ -163,7 +163,7 @@ print(np.tril(M).tolist())  # [[8, 0, 0], [3, 5, 0], [4, 9, 2]]
 
 </details>
 
-A lower triangle is how a chatbot is kept from cheating. While a GPT-style model learns to predict the next word, it reads a whole sentence at once, so it could simply look ahead at the answer. A **causal mask** stops that: row $i$ says which positions word $i$ may look at, and the lower triangle allows only itself and the words before it.
+A lower triangle stops a chatbot from cheating. A GPT-style model learns by predicting the next word, but it reads a whole sentence at once. So it could simply look ahead at the answer. A **causal mask** prevents that. Row $i$ of the mask says which positions word $i$ may look at, and the lower triangle allows only the word itself and the words before it.
 
 <CodeTabs>
 
@@ -185,11 +185,11 @@ print(np.tril(np.ones((3, 3), dtype=int)).tolist())  # [[1, 0, 0], [1, 1, 0], [1
 
 </CodeTabs>
 
-Triangles also tidy up charts. A **correlation matrix** scores every pair of features from $-1$ to $1$ on how closely they rise and fall together. It's [symmetric](/courses/computational-mathematics/transpose-and-products#the-transpose), because feature 1 against feature 2 is the same pair as feature 2 against feature 1, so a heatmap of one shows every number twice, and plotting code usually hides one triangle with `triu`.
+Triangles also make charts clearer. A **correlation matrix** gives every pair of features a score from $-1$ to $1$, for how closely they go up and down together. It's [symmetric](/courses/computational-mathematics/transpose-and-products#the-transpose), because feature 1 against feature 2 is the same pair as feature 2 against feature 1. So a heatmap of it shows every number twice, and plotting code usually hides one triangle with `triu`.
 
 ## `diag` does two jobs
 
-`diag` depends on what you give it. A matrix returns its diagonal as a vector, and a vector builds a diagonal matrix. Calling it twice therefore wipes out everything off the diagonal: the inner call pulls the diagonal out as a vector, and the outer call builds a fresh matrix from that vector, with zeros everywhere else. A second argument picks another diagonal, numbered the same way as for `triu`, so `diag(A, -1)` reads the one just below the main diagonal:
+What `diag` does depends on what you give it. Give it a matrix and it returns the diagonal as a vector. Give it a vector and it builds a diagonal matrix. So calling it twice sets everything off the diagonal to zero. The inner call takes the diagonal out as a vector, and the outer call builds a new matrix from that vector, with zeros everywhere else. A second argument picks another diagonal, numbered the same way as for `triu`. So `diag(A, -1)` reads the one just below the main diagonal:
 
 <CodeTabs>
 
@@ -212,7 +212,7 @@ print(np.diag(np.diag(A))[1].tolist())  # [0, 11, 0, 0]
 
 </CodeTabs>
 
-Diagonal matrices are a favourite shortcut in machine learning, because $n$ numbers stand in for $n^2$. **Variational autoencoders**, a kind of generative model, describe each input with a covariance matrix and usually assume it's diagonal: every feature varies on its own, and a 1000-dimensional model stores 1000 numbers instead of a million.
+Diagonal matrices are a common shortcut in machine learning, because $n$ numbers replace $n^2$. **Variational autoencoders** are models that learn to create new data. They describe each input with a covariance matrix and usually assume it's diagonal. That means every feature varies on its own, and a 1000-dimensional model stores 1000 numbers instead of a million.
 
 ## Where you'll meet this
 
@@ -221,6 +221,6 @@ Diagonal matrices are a favourite shortcut in machine learning, because $n$ numb
 Solvers factor a matrix into triangular pieces first, because a triangular system can be solved one unknown at a time by substitution.
 </PracticalApplication>
 <PracticalApplication title="Hiding future words" tool="Transformers">
-GPT-style models apply a triangular mask during training, so each word can only attend to the words before it. PyTorch builds one with `torch.tril`.
+GPT-style models apply a triangular mask during training, so each word can only look at the words before it. PyTorch builds one with `torch.tril`.
 </PracticalApplication>
 </ApplicationsGrid>

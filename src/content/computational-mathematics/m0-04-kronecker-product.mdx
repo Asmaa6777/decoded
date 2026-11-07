@@ -3,7 +3,7 @@ import { KroneckerVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 # The Kronecker Product
 
-The ordinary matrix product needs sizes that fit together. The **Kronecker product**, also called the Kronecker tensor product, works with any two matrices and always grows the result, so it's the standard way to build a big structured matrix out of small ones.
+The ordinary matrix product needs sizes that fit together. The **Kronecker product**, also called the Kronecker tensor product, works with any two matrices. Its result is always bigger than either one, so it's the standard way to build a big matrix with a regular pattern out of small ones.
 
 ## The definition
 
@@ -21,7 +21,7 @@ $$
 
 The size follows from the picture. There are $m$ rows of blocks, each block $p$ rows tall, so $mp$ rows in total. Likewise $n$ columns of blocks, each $q$ wide, give $nq$ columns.
 
-Worked by hand with $A = \begin{bmatrix}1 & -2\\-1 & 0\end{bmatrix}$ and $B = \begin{bmatrix}4 & -3\\2 & 3\end{bmatrix}$, the top-left block is $1 \cdot B$, the top-right is $-2 \cdot B$, and so on:
+By hand, with $A = \begin{bmatrix}1 & -2\\-1 & 0\end{bmatrix}$ and $B = \begin{bmatrix}4 & -3\\2 & 3\end{bmatrix}$, the top-left block is $1 \cdot B$, the top-right is $-2 \cdot B$, and so on:
 
 $$
 A \otimes B =
@@ -61,13 +61,13 @@ print([[a * b for a in rp for b in rq] for rp in P for rq in Q])  # [[0, 5, 0, 1
 
 </CodeTabs>
 
-The size grows fast, and machine learning puts that to work in reverse. Some optimizers need the **curvature** of the loss, a measure of how quickly the slope itself changes, for every pair of weights. With a million weights that's a million-by-million matrix, far too large to store, let alone invert. **K-FAC** approximates each layer's block of it as a Kronecker product of two small matrices. That helps because
+The size grows fast. Machine learning uses this fact the other way round, to make a huge matrix small. Some optimizers need the **curvature** of the loss for every pair of weights. Curvature measures how quickly the slope itself changes. With a million weights, that's a million-by-million matrix. It's far too large to store, and much too large to invert. **K-FAC** approximates each layer's block of it as a Kronecker product of two small matrices. That helps because
 
 $$
 (A \otimes B)^{-1} = A^{-1} \otimes B^{-1}
 $$
 
-so [inverting](/courses/computational-mathematics/determinants-and-inverses#the-inverse) two small matrices replaces inverting a huge one. **Gaussian processes**, which predict with an honest error bar around each prediction, use the same shortcut on grid-shaped data such as images or measurements over space and time, because their covariance matrix often factors this way.
+so [inverting](/courses/computational-mathematics/determinants-and-inverses#the-inverse) two small matrices replaces inverting a huge one. **Gaussian processes** are models that give an error range with each prediction. They use the same shortcut on data laid out on a grid, such as images or measurements over space and time. For that kind of data, their covariance matrix often splits into a Kronecker product.
 
 ## Order changes the pattern
 
@@ -98,13 +98,13 @@ print(np.kron(I, X).tolist())  # [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 1, 2], [0, 
 
 </CodeTabs>
 
-`kron(I, X)` repeats $X$ down the diagonal, because each 1 on the diagonal of $I$ stamps a full copy of $X$ and each 0 stamps a block of zeros. `kron(X, I)` spreads the entries of $X$ apart, because each entry of $X$ scales a copy of $I$, which keeps only its diagonal. Matrices made of zeros and ones are the usual way to stamp out repeated copies like this.
+`kron(I, X)` repeats $X$ down the diagonal. Each 1 on the diagonal of $I$ places a full copy of $X$, and each 0 places a block of zeros. `kron(X, I)` spreads the entries of $X$ apart. Each entry of $X$ scales a copy of $I$, which has numbers only on its diagonal. Matrices of zeros and ones are the usual way to make repeated copies like this.
 
 <Callout tone="orange" label="Common mistake">
 Treating `kron(A, B)` and `kron(B, A)` as the same matrix, or mixing up which one gets copied. The second argument is the block that gets copied; the first argument's entries are the scale factors. Check with the top-left block: in `kron(A, B)` it's $a_{11}B$.
 </Callout>
 
-A bigger identity stamps out more copies. `kron(eye(4), B)` puts four copies of a 2-by-2 block down the diagonal of an 8-by-8 matrix, with zeros everywhere else. Each copy only touches its own pair of entries, which is how you describe four separate, identical systems in one matrix:
+A bigger identity makes more copies. `kron(eye(4), B)` puts four copies of a 2-by-2 block down the diagonal of an 8-by-8 matrix, with zeros everywhere else. Each copy only acts on its own pair of entries. This is how you describe four separate, identical systems in one matrix:
 
 <CodeTabs>
 
@@ -138,7 +138,7 @@ print(K[2].tolist())  # [0, 0, 1, -1, 0, 0, 0, 0]
 
 ## Using it without building it
 
-Because the result grows so fast, real code often avoids building $A \otimes B$ at all. If you only need to multiply it by a vector, there's a shortcut. Write the vector's entries as the columns of a matrix $X$, an operation called `vec` ($x = $ `X(:)` in MATLAB). Then
+Because the result grows so fast, real code often avoids building $A \otimes B$ at all. If you only need to multiply it by a vector, there's a shortcut. Cut the vector into equal pieces and place them side by side as the columns of a matrix $X$. The opposite step, stacking the columns of $X$ back into one long vector, is called `vec`, and MATLAB writes it `X(:)`. Then
 
 $$
 (T \otimes S)\,\operatorname{vec}(X) = \operatorname{vec}(S X T^T)
@@ -194,6 +194,6 @@ The loops never form the 4-by-4 Kronecker product. For two 1000-by-1000 factors 
 The combined state of several qubits is the Kronecker product of their individual states. Each added qubit doubles the size, which is why simulating many qubits gets expensive so quickly.
 </PracticalApplication>
 <PracticalApplication title="Solving equations on a grid" tool="Scientific computing">
-The matrix for a 2D heat or Laplace problem can be assembled from 1D matrices using `kron`, which saves writing out a huge sparse matrix by hand.
+The matrix for a 2D heat or Laplace problem can be assembled from 1D matrices using `kron`, which saves writing out a huge matrix, mostly zeros, by hand.
 </PracticalApplication>
 </ApplicationsGrid>
