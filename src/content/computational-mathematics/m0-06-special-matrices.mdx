@@ -3,7 +3,7 @@ import { SpecialMatrixExplorer } from "@/components/mdx/MatrixVisualizers";
 
 # Some Special Matrices
 
-Zeros in a matrix usually mean less work. If you know where the zeros are, you can store the matrix in less memory and solve problems with it in fewer steps. So the common patterns have names, and MATLAB has commands for them.
+Zeros in a matrix usually mean less work. If you know where the zeros are, you can store the matrix in less memory and solve problems with it in fewer steps. For example, a 1000-by-1000 diagonal matrix has a million entries, but only the 1000 on its diagonal can be non-zero, so storing just those saves 999,000 numbers. So the common patterns have names, and MATLAB has commands for them.
 
 ## Filled matrices
 
@@ -198,7 +198,7 @@ What `diag` does depends on what you give it. Give it a matrix and it returns th
 ```matlab
 A = magic(4);
 diag(A)         % [16; 11; 6; 1]
-diag(A, -1)     % the diagonal just below the main one
+diag(A, -1)     % [5; 7; 15], the diagonal just below the main one
 diag(diag(A))   % a 4-by-4 diagonal matrix
 ```
 

@@ -94,12 +94,19 @@ MATLAB has dozens of functions that build matrices. We'll keep coming back to tw
 <CodeTabs>
 
 ```matlab
-A = pascal(3)          B = magic(3)
+A = pascal(3)
 
-A =                    B =
-     1     1     1          8     1     6
-     1     2     3          3     5     7
-     1     3     6          4     9     2
+A =
+     1     1     1
+     1     2     3
+     1     3     6
+
+B = magic(3)
+
+B =
+     8     1     6
+     3     5     7
+     4     9     2
 ```
 
 ```python
@@ -151,11 +158,13 @@ $$
 \end{aligned}
 $$
 
-Subtraction works the same way. Adding $A$ to $B$ and then subtracting $A$ brings you back to $B$, just as it does with ordinary numbers.
+Subtraction works the same way. Adding $A$ to $B$ and then subtracting $A$ brings you back to $B$, just as it does with ordinary numbers. In MATLAB, `+` does the whole sum at once. Here it adds `pascal(3)` and `magic(3)` from the section above:
 
 <CodeTabs>
 
 ```matlab
+A = pascal(3);
+B = magic(3);
 A + B
 
 ans =
@@ -181,7 +190,7 @@ print([[a + b for a, b in zip(rp, rq)] for rp, rq in zip(P, Q)])  # [[6, 8], [10
 
 Machine learning uses this all the time to prepare data. Features are often measured in different units, like centimetres and kilograms. So they are usually **standardised** first: subtract each column's mean, then divide by its **standard deviation**. The standard deviation measures how far values usually are from their mean. Afterwards every feature sits around 0 on a similar scale. Without this step, the feature with the biggest numbers would control the model. A change of 10 in centimetres would count as much as a change of 10 in kilograms.
 
-Two details in the code below need explaining. `mean(X)` returns one mean per column, a 1-by-2 row, so `X - mean(X)` subtracts a row from a 3-by-2 matrix. That works because MATLAB (since 2016) and NumPy **broadcast**: a single row is copied down to fill every row before the subtraction. And `./` is entry-by-entry division. The dot tells MATLAB to work entry by entry rather than use the matrix version of the operation, which you'll meet with [multiplication](/courses/computational-mathematics/multiplying-matrices#the-rule). `std(X, 1)` divides by $n$ rather than $n - 1$, which matches NumPy's default.
+Two details in the code below need explaining. `mean(X)` returns one mean per column, a 1-by-2 row, so `X - mean(X)` subtracts a row from a 3-by-2 matrix. That works because MATLAB (since 2016) and NumPy **broadcast**: a single row is copied down to fill every row before the subtraction. And `./` is entry-by-entry division. The dot tells MATLAB to work entry by entry rather than use the matrix version of the operation, which you'll meet with [multiplication](/courses/computational-mathematics/multiplying-matrices#the-rule). Finally, the standard deviation is the square root of the average squared distance from the mean. Some books average by dividing by $n - 1$ instead of $n$, which corrects a small bias when the data is only a sample. `std(X, 1)` divides by $n$, which matches NumPy's default.
 
 <CodeTabs>
 
@@ -207,7 +216,7 @@ print(np.allclose(Z.mean(axis=0), 0))  # True
 
 ## Multiplying by a scalar
 
-The scalar multiple $rA$ multiplies every entry of $A$ by $r$:
+The scalar multiple $C = rA$ multiplies every entry of $A$ by $r$:
 
 $$
 c_{ij} = r \cdot a_{ij}
@@ -233,7 +242,7 @@ $$
 w \leftarrow w - \eta \nabla L
 $$
 
-Here $w$ holds the weights and $L$ is the **loss**, one number that measures how wrong the model's predictions are. The **gradient** $\nabla L$ has one entry per weight, saying how fast the loss rises as that weight grows. Stepping against it (that's why there's a minus sign) moves each weight in the direction that lowers the error. The **learning rate** $\eta$ is a scalar that sets the step size. So one training step is a scalar multiple followed by a subtraction:
+Here $w$ holds the weights and $L$ is the **loss**, one number that measures how wrong the model's predictions are. The **gradient** $\nabla L$ (read "grad L") has one entry per weight, saying how fast the loss rises as that weight grows. Stepping against it (that's why there's a minus sign) moves each weight in the direction that lowers the error. The **learning rate** $\eta$ is a scalar that sets the step size. So one training step is a scalar multiple followed by a subtraction:
 
 <CodeTabs>
 

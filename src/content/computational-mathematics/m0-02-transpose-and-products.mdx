@@ -79,10 +79,10 @@ In MATLAB, `'` also takes the complex conjugate of each entry: it flips the sign
 For two vectors of the same length, the **dot product** (or inner product) multiplies matching entries and adds the results:
 
 $$
-a \cdot b = a_1 b_1 + a_2 b_2 + \cdots + a_n b_n \\ = \sum_{i=1}^{n} a_i b_i
+a \cdot b = a_1 b_1 + a_2 b_2 + \cdots + a_n b_n
 $$
 
-Books often write "$a, b \in \mathbb{R}^n$" for this, meaning both are lists of $n$ real numbers. For example, with $u = (1, -2, 3, 4)$ and $v = (2, 3, -2, 1)$:
+With the sum sign this is $a \cdot b = \sum_{i=1}^{n} a_i b_i$, read "add up $a_i b_i$ for $i = 1$ to $n$". Books often write "$a, b \in \mathbb{R}^n$" for this, meaning both are lists of $n$ real numbers. For example, with $u = (1, -2, 3, 4)$ and $v = (2, 3, -2, 1)$:
 
 $$
 \begin{aligned} u \cdot v &= (1)(2) + (-2)(3) \\ &\quad + (3)(-2) + (4)(1) \\ &= 2 - 6 - 6 + 4 = -6 \end{aligned}
@@ -112,7 +112,7 @@ print(sum(a * b for a, b in zip([1, -2, 3, 4], [2, 3, -2, 1])))  # -6
 
 </CodeTabs>
 
-The sign of the answer has a meaning. A second formula for the same number shows why. If $\theta$ is the angle between the two arrows and $\|a\|$, $\|b\|$ are their lengths, then
+The sign of the answer has a meaning. To see it, draw each vector as an arrow from the origin $(0, 0)$ to the point it names: $(3, 1)$ is an arrow pointing right and a little up. A second formula for the same number then shows why the sign matters. If $\theta$ is the angle between the two arrows and $\|a\|$, $\|b\|$ are their lengths, then
 
 $$
 a \cdot b = \|a\|\,\|b\|\cos\theta
@@ -158,7 +158,9 @@ Transformers, the networks behind chatbots, use the same idea inside **attention
 
 ## One pair of vectors, two products
 
-Take a column vector $u$ and a row vector $v$ of the same length. Both orders are allowed [matrix products](/courses/computational-mathematics/multiplying-matrices#the-rule), because the inner sizes match either way. But the results are completely different:
+MATLAB also multiplies vectors with `*`, as matrices. The full rule is in [the next lesson](/courses/computational-mathematics/multiplying-matrices#the-rule), but for vectors it's short. Write the two sizes side by side, like (1-by-3)(3-by-1). The two inside numbers must be equal, and the two outside numbers give the size of the answer.
+
+Take a column vector $u$ and a row vector $v$ of the same length. Both orders pass that check, because the inside numbers match either way. But the results are completely different:
 
 - `v * u` is 1-by-3 times 3-by-1, so the result is 1-by-1. This is the **inner product**.
 - `u * v` is 3-by-1 times 1-by-3, so the result is 3-by-3. This is the **outer product**. Entry $(i, j)$ is simply $u_i v_j$, so each row is a copy of $v$ scaled by one entry of $u$. Nothing gets added up.
@@ -206,9 +208,9 @@ If `x` and `y` are both column vectors, then `x * y` is an error because the inn
 Putting the transpose on the wrong vector. `x' * y` and `x * y'` look almost the same, but one gives a single number and the other a full $n$-by-$n$ matrix. Before running either, write the sizes down: (1-by-n)(n-by-1) is 1-by-1, and (n-by-1)(1-by-n) is n-by-n. The outer sizes are the answer's size.
 </Callout>
 
-Recommendation systems use both. A classic film recommender learns a short vector for every user and every film, and predicts a rating as the **dot product** of the two. The rating is high when the user's tastes match what the film offers. Each entry of those vectors measures one hidden taste, say "likes action". Put every user's action score in a column, and every film's action score in a row. Their **outer product** is a full user-by-film table: the part of each prediction that comes from liking action. Add up these tables for all the tastes, and you get the full table of predictions.
+Recommendation systems use both. A classic film recommender learns a short vector for every user and every film. Each entry measures one hidden taste, such as "likes action". A predicted rating is the **dot product** of a user's vector and a film's vector, so it's high when the user's tastes match what the film offers. The **outer product** builds a whole table at once: a column of every user's action score times a row of every film's action score gives the "action" part of every prediction.
 
-The transpose is useful in machine learning too. If $X$ holds one example per row, then $X'X$ takes the dot product of every feature column with every other. Suppose the data is centred: each column's mean has already been subtracted, so every feature averages 0. Then $X'X$ divided by $n$ (or by $n - 1$, depending on the convention) is the **covariance matrix**. It records which features go up and down together. It's also where **PCA** (principal component analysis) starts, when it compresses data down to its most important directions.
+The transpose is useful in machine learning too. If $X$ holds one example per row, then $X'X$ takes the dot product of every feature column with every other. Suppose the data is centred: each column's mean has already been subtracted, so every feature averages 0. Then $X'X$ divided by $n$ (or by $n - 1$, depending on the convention) is the **covariance matrix**. It records which features go up and down together, and you'll meet it again in [the trace](/courses/computational-mathematics/norms-and-trace#the-trace).
 
 <CodeTabs>
 
@@ -237,6 +239,6 @@ print((X.T @ X).tolist())  # [[35, 44], [44, 56]]
 Text embeddings are long vectors. A vector database ranks results using dot products, usually of normalised vectors, which gives cosine similarity.
 </PracticalApplication>
 <PracticalApplication title="Recommending films" tool="Matrix factorization">
-Classic recommender models predict a rating as the dot product of a user vector and a film vector. The whole table of predictions for one user-film factor is an outer product.
+Classic recommender models predict a rating as the dot product of a user vector and a film vector. The part of every prediction that comes from one hidden taste is an outer product.
 </PracticalApplication>
 </ApplicationsGrid>

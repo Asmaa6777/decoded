@@ -3,7 +3,7 @@ import { KroneckerVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 # The Kronecker Product
 
-The ordinary matrix product needs sizes that fit together. The **Kronecker product**, also called the Kronecker tensor product, works with any two matrices. Its result is always bigger than either one, so it's the standard way to build a big matrix with a regular pattern out of small ones.
+The ordinary matrix product needs sizes that fit together. The **Kronecker product**, also called the Kronecker tensor product, works with any two matrices. Unless one of them is a single number, its result is bigger than either one, so it's the standard way to build a big matrix with a regular pattern out of small ones.
 
 ## The definition
 
@@ -61,29 +61,28 @@ print([[a * b for a in rp for b in rq] for rp in P for rq in Q])  # [[0, 5, 0, 1
 
 </CodeTabs>
 
-The size grows fast. Machine learning uses this fact the other way round, to make a huge matrix small. Some optimizers need the **curvature** of the loss for every pair of weights. Curvature measures how quickly the slope itself changes. With a million weights, that's a million-by-million matrix. It's far too large to store, and much too large to invert. **K-FAC** approximates each layer's block of it as a Kronecker product of two small matrices. That helps because
-
-$$
-(A \otimes B)^{-1} = A^{-1} \otimes B^{-1}
-$$
-
-so [inverting](/courses/computational-mathematics/determinants-and-inverses#the-inverse) two small matrices replaces inverting a huge one. **Gaussian processes** are models that give an error range with each prediction. They use the same shortcut on data laid out on a grid, such as images or measurements over space and time. For that kind of data, their covariance matrix often splits into a Kronecker product.
-
 ## Order changes the pattern
 
-`kron(X, Y)` and `kron(Y, X)` have the same size and the same entries in a different arrangement. Using the [identity matrix](/courses/computational-mathematics/multiplying-matrices#the-identity-matrix) makes this easy to see. With $X = \begin{bmatrix}1 & 2\\3 & 4\end{bmatrix}$ and `I = eye(2)`:
+`kron(A, B)` and `kron(B, A)` have the same size and the same entries, in a different arrangement. Using the [identity matrix](/courses/computational-mathematics/multiplying-matrices#the-identity-matrix) makes this easy to see. With $X = \begin{bmatrix}1 & 2\\3 & 4\end{bmatrix}$ and `I = eye(2)`:
 
 <CodeTabs>
 
 ```matlab
 X = [1 2; 3 4];
 I = eye(2);
-kron(X, I)             kron(I, X)
+kron(X, I)
 
-  1  0  2  0             1  2  0  0
-  0  1  0  2             3  4  0  0
-  3  0  4  0             0  0  1  2
-  0  3  0  4             0  0  3  4
+  1  0  2  0
+  0  1  0  2
+  3  0  4  0
+  0  3  0  4
+
+kron(I, X)
+
+  1  2  0  0
+  3  4  0  0
+  0  0  1  2
+  0  0  3  4
 ```
 
 ```python
@@ -104,7 +103,7 @@ print(np.kron(I, X).tolist())  # [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 1, 2], [0, 
 Treating `kron(A, B)` and `kron(B, A)` as the same matrix, or mixing up which one gets copied. The second argument is the block that gets copied; the first argument's entries are the scale factors. Check with the top-left block: in `kron(A, B)` it's $a_{11}B$.
 </Callout>
 
-A bigger identity makes more copies. `kron(eye(4), B)` puts four copies of a 2-by-2 block down the diagonal of an 8-by-8 matrix, with zeros everywhere else. Each copy only acts on its own pair of entries. This is how you describe four separate, identical systems in one matrix:
+A bigger identity makes more copies. `kron(eye(4), B)` puts four copies of a 2-by-2 block down the diagonal of an 8-by-8 matrix, with zeros everywhere else. Multiply it by a vector of 8 numbers and rows 1 and 2 only use entries 1 and 2, rows 3 and 4 only use entries 3 and 4, and so on. So the big matrix behaves like four separate copies of the same 2-by-2 matrix, each working on its own pair of numbers:
 
 <CodeTabs>
 
@@ -138,13 +137,15 @@ print(K[2].tolist())  # [0, 0, 1, -1, 0, 0, 0, 0]
 
 ## Using it without building it
 
-Because the result grows so fast, real code often avoids building $A \otimes B$ at all. If you only need to multiply it by a vector, there's a shortcut. Cut the vector into equal pieces and place them side by side as the columns of a matrix $X$. The opposite step, stacking the columns of $X$ back into one long vector, is called `vec`, and MATLAB writes it `X(:)`. Then
+Because the result grows so fast, real code often avoids building a Kronecker product at all. Often you only need to multiply it by a vector, and for that there's a shortcut.
+
+Take two 2-by-2 matrices $S$ and $T$, so $T \otimes S$ is 4-by-4, and a vector $x$ with 4 entries. Cut $x$ into two pieces of 2 entries and stand them side by side as the columns of a 2-by-2 matrix $X$. The opposite step, stacking the columns of $X$ back into one long column, is called `vec`, and MATLAB writes it `X(:)`. Then
 
 $$
 (T \otimes S)\,\operatorname{vec}(X) = \operatorname{vec}(S X T^T)
 $$
 
-so two ordinary products with the small matrices do the work of one product with the big one. Written as loops, that's "multiply every column of $X$ by $S$, transpose, multiply every column by $T$, transpose back":
+so two ordinary products with the small matrices do the work of one product with the big one. Watch the order: $S$ is written second in $T \otimes S$, but it's the one that multiplies $X$ from the left. Written as loops, the right-hand side is "multiply every column of $X$ by $S$, transpose, multiply every column by $T$, transpose back". The loops overwrite `X` as they go, so the comments say what it holds after each step:
 
 <CodeTabs>
 
@@ -185,7 +186,15 @@ print(np.array_equal(fast, slow))  # True
 
 </CodeTabs>
 
-The loops never form the 4-by-4 Kronecker product. For two 1000-by-1000 factors the full product would have $10^{12}$ entries, while $S$, $T$ and $X$ together hold about three million. This is the same saving K-FAC relies on.
+The loops never form the 4-by-4 Kronecker product. For two 1000-by-1000 factors the full product would have $10^{12}$ entries, while $S$, $T$ and $X$ together hold about three million.
+
+This saving is what makes a Kronecker product useful in machine learning, where it's used the other way round: to make a huge matrix small. Some optimizers need the **curvature** of the loss for every pair of weights. Curvature measures how quickly the slope itself changes. With a million weights, that's a million-by-million matrix. It's far too large to store, and much too large to invert. **K-FAC** approximates each layer's block of it as a Kronecker product of two small matrices. That helps because
+
+$$
+(A \otimes B)^{-1} = A^{-1} \otimes B^{-1}
+$$
+
+so inverting two small matrices replaces inverting a huge one. (The [inverse](/courses/computational-mathematics/determinants-and-inverses#the-inverse) of a matrix is the matrix that undoes it; it's the last lesson of this module.) **Gaussian processes** are models that give an error range with each prediction. They use the same shortcut on data laid out on a grid, such as images or measurements over space and time. For that kind of data, their covariance matrix often splits into a Kronecker product.
 
 ## Where you'll meet this
 

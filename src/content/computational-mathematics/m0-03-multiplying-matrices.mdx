@@ -19,19 +19,26 @@ To check sizes quickly, write them side by side: $(m \times \underline{p})(\unde
 
 <MatMulVisualizer />
 
-The code panel shows the rule as two loops, one over rows and one over columns. Inside, `A(i,:) * B(:,j)` is a row times a column, so each entry is one dot product. MATLAB's single asterisk does the same work and is far faster than the loop:
+The code panel shows the rule as two loops, one over rows and one over columns. Inside, `A(i,:)` is all of row $i$ (the colon stands for "every column") and `B(:,j)` is all of column $j$. So `A(i,:) * B(:,j)` is a row times a column, and each entry is one dot product. MATLAB's single asterisk does the same work and is far faster than the loop:
 
 <CodeTabs>
 
 ```matlab
 A = pascal(3);
 B = magic(3);
-X = A * B              Y = B * A
+X = A * B
 
-X =                    Y =
-    15    15    15         15    28    47
-    26    38    26         15    34    60
-    41    70    39         15    28    43
+X =
+    15    15    15
+    26    38    26
+    41    70    39
+
+Y = B * A
+
+Y =
+    15    28    47
+    15    34    60
+    15    28    43
 ```
 
 ```python
@@ -122,7 +129,7 @@ print((B @ A).tolist())  # [[13, 1, 22], [-5, 5, -16], [5, 5, 2]]
 Compare `X = A * B` and `Y = B * A` from the `pascal` and `magic` example above. They use the same two matrices, but only one entry is the same. Matrix multiplication is **not commutative**, so $AB$ and $BA$ are usually different, and one of them may not exist at all. Use `.*` when you want entry-by-entry multiplication instead.
 </Callout>
 
-This one operation is most of the arithmetic in machine learning. A **linear model** gives each feature a weight and predicts by adding up feature times weight, which is a dot product. Put the examples in the rows of $X$ and the weights in a column $w$. Then one product, $\hat{y} = Xw$, predicts every example at once. Here, three examples with two features each:
+This one operation is most of the arithmetic in machine learning. A **linear model** gives each feature a weight and predicts by adding up feature times weight, which is a dot product. Put the examples in the rows of $X$ and the weights in a column $w$. Then one product, $\hat{y} = Xw$, predicts every example at once. The hat on $\hat{y}$ (read "y-hat") is the usual mark for a prediction, as opposed to the true value $y$. Here, three examples with two features each:
 
 <CodeTabs>
 
@@ -168,7 +175,7 @@ $$
 
 ```matlab
 A = pascal(3);
-isequal(A * eye(3), A)
+isequal(A * eye(3), A)   % logical 1 is MATLAB's way of printing "true"
 
 ans =
   logical
@@ -186,7 +193,7 @@ print(np.array_equal(A @ np.eye(3), A))  # True
 
 ## Why the rule looks like that
 
-A matrix is a function that moves points. A 2-by-2 matrix sends $(x, y)$ to $(ax + by,\ cx + dy)$. Its first column says where $(1, 0)$ lands: put $x = 1, y = 0$ into the formula and you get $(a, c)$, which is the first column. Likewise its second column says where $(0, 1)$ lands. Once you know those two, the rest of the grid follows.
+A matrix is a function that moves points. Multiplying the column $(x, y)$ by the 2-by-2 matrix $\begin{bmatrix} a & b \\ c & d \end{bmatrix}$ gives the point $(ax + by,\ cx + dy)$, one row at a time. Its first column says where $(1, 0)$ lands: put $x = 1, y = 0$ into the formula and you get $(a, c)$, which is the first column. Likewise its second column says where $(0, 1)$ lands. Once you know those two, the rest of the grid follows.
 
 Try the presets, or drag the sliders and read the columns as the two arrows:
 
@@ -194,7 +201,7 @@ Try the presets, or drag the sliders and read the columns as the two arrows:
 
 Multiplying matrices means doing one map after another. $AB$ is the single matrix that applies $B$ first and then $A$. "B first" sounds backwards. It comes from where the point is written: in $(AB)x = A(Bx)$, the matrix next to $x$ acts on it first, just as $f(g(x))$ applies $g$ first. The row-times-column formula is what you get when you work out where the arrows end up. That also explains why order matters: rotating and then stretching doesn't give the same picture as stretching and then rotating.
 
-This picture is what a neural network layer does to its data. A **dense layer** computes $Wx + b$. Here $x$ is the input as a column, $W$ holds the layer's weights, and $b$ is a column of learned offsets called the **bias**. The matrix $W$ rotates, stretches and shears the points, the way the grid above bends. This moves the points so that later layers can separate the classes. Each layer then applies a **non-linear** function, one that no matrix can express, such as setting negatives to zero (called ReLU). That step is necessary. Without it, two layers $W_2(W_1 x)$ collapse into the single matrix $W_2 W_1$, so a hundred stacked linear layers can do no more than one:
+This picture is what a neural network layer does to its data. A **dense layer** computes $Wx + b$. Here $x$ is the input as a column, $W$ holds the layer's weights, and $b$ is a column of learned offsets called the **bias**. The matrix $W$ rotates, stretches and shears the points (a shear slants them, like the Shear preset above), the way the grid bends. This moves the points so that later layers can separate the classes, the categories the network has to tell apart, such as "cat" and "dog". Each layer then applies a **non-linear** function, one that no matrix can express, such as setting negatives to zero (called ReLU). That step is necessary. Without it, two layers $W_2(W_1 x)$ collapse into the single matrix $W_2 W_1$, so a hundred stacked linear layers can do no more than one:
 
 <CodeTabs>
 

@@ -12,7 +12,7 @@ There are several norms, but all the ones here share these properties, for any [
 1. $\|A\| \ge 0$: a size is never negative.
 2. $\|A\| = 0$ only when $A$ is the zero matrix (all entries 0): anything else has some size.
 3. $\|kA\| = |k|\,\|A\|$: doubling every entry doubles the size. Flipping every sign changes nothing, so the rule uses $|k|$ and not $k$.
-4. $\|A + B\| \le \|A\| + \|B\|$, the **triangle inequality**. It's named after triangles, where one side is never longer than the other two put together. Adding two matrices can cancel entries, so the total can come out smaller, but never larger.
+4. $\|A + B\| \le \|A\| + \|B\|$, the **triangle inequality**. It's named after triangles, where one side is never longer than the other two put together. Adding two matrices can cancel entries, so $\|A + B\|$ can come out smaller than $\|A\| + \|B\|$, but never larger.
 5. $\|AB\| \le \|A\|\,\|B\|$: the size of a product is at most the two sizes multiplied. This one is true for the three norms below. It isn't true for every way of measuring size, so it's listed on its own.
 
 The symbol $\|A\|$, with double bars, is read "the norm of $A$". It's different from $|A|$ with single bars, which some books use for the [determinant](/courses/computational-mathematics/determinants-and-inverses#what-the-determinant-measures).
@@ -31,7 +31,7 @@ $$
 \|A\|_\infty = \max_{i} \sum_{j=1}^{n} |a_{ij}|
 $$
 
-A handy way to remember them: "1" is tall and thin like a column, and "∞" is short and wide like a row.
+In both formulas, $\max_j$ means "the largest value over all columns $j$", and $\max_i$ means the largest over all rows $i$. A handy way to remember them: "1" is tall and thin like a column, and "∞" is short and wide like a row.
 
 The **Euclidean norm** is the square root of the sum of every entry squared. It's Pythagoras applied to the whole matrix:
 
@@ -118,8 +118,8 @@ Many books call the Euclidean norm the Frobenius norm, and so does MATLAB: use `
 
 Machine learning uses norms to keep a model under control while it trains:
 
-- **Regularization.** A model with huge weights tends to memorise its training data instead of learning the pattern. **Weight decay** adds the squared Euclidean norm of the weights to the loss, so large weights make the loss worse. **Lasso** adds the sum of absolute values instead, which tends to push unhelpful weights to exactly zero. Note that this "L1 penalty" sums all the entries, so it isn't the matrix 1-norm above.
-- **Gradient clipping.** Sometimes a gradient comes out enormous, and one step that size would destroy the weights learned so far. So if the gradient's norm goes over a limit, the gradient is scaled down to that length. Its direction stays the same. Large language models are trained with this turned on.
+- **Regularization.** A model with huge weights tends to memorise its training data instead of learning the pattern. **Weight decay** adds the squared Euclidean norm of the weights to the loss, so large weights make the loss worse. **Lasso** adds the sum of the weights' absolute values instead, which tends to push unhelpful weights to exactly zero.
+- **Gradient clipping.** Sometimes a gradient comes out enormous, and one step that size would destroy the weights learned so far. So if the gradient's norm goes over a limit, the gradient is scaled down to that length. Its direction stays the same. Large language models are trained with this turned on. For a vector like `g`, plain `norm(g)` is simply its length, $\sqrt{g_1^2 + g_2^2 + \cdots}$, which is the Euclidean norm, so here there's no 2-norm surprise.
 
 <CodeTabs>
 
@@ -173,7 +173,7 @@ print(np.trace(M))  # 34
 
 </CodeTabs>
 
-The trace is used in data science too. The **variance** of a feature is the average squared distance of its values from their mean. A feature whose values are spread far apart has a large variance. A covariance matrix has one row and one column per feature. Its diagonal holds the variance of each feature, so its trace is the **total variance** of the data. PCA splits that total into parts and reports how much of it each of its components explains. That's how you decide how many dimensions you can safely remove.
+The trace is used in data science too. The **variance** of a feature is the average squared distance of its values from their mean. A feature whose values are spread far apart has a large variance. A covariance matrix has one row and one column per feature. Its diagonal holds the variance of each feature, so its trace is the **total variance** of the data. **PCA** (principal component analysis), a method that compresses data down to its most important directions, splits that total into parts and reports how much of it each of its components explains. That's how you decide how many dimensions you can safely remove.
 
 ## Where you'll meet this
 
