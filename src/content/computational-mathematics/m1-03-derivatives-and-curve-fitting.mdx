@@ -7,7 +7,7 @@ Two more jobs that become a single function call: finding how fast a polynomial 
 
 ## Derivatives
 
-The derivative of $ax^n$ is $nax^{n-1}$. On a coefficient vector, that takes two steps: multiply each coefficient by its power of $x$, then delete the constant term, the rightmost number, because a constant has a derivative of zero.
+The **derivative** $p'(x)$ of a polynomial is another polynomial that gives the slope of $p$'s curve at every $x$: positive where the curve rises, negative where it falls, zero at the top of a hill or the bottom of a valley. For a single term, the derivative of $ax^n$ is $nax^{n-1}$: the power comes down as a multiplier and goes down by one. On a coefficient vector, that takes two steps: multiply each coefficient by its power of $x$, then delete the constant term, the rightmost number, because a constant has a derivative of zero.
 
 Take $x^3 - 2x - 5$. Its coefficients `[1 0 -2 -5]` go with the powers 3, 2, 1 and 0, so multiplying gives `[3 0 -2 0]`. Deleting the constant term leaves `[3 0 -2]`, which is $3x^2 - 2$. `polyder` does this for you:
 
@@ -29,9 +29,13 @@ print(np.polyder([1, 0, -2, -5]).tolist())  # [3, 0, -2]
 
 </CodeTabs>
 
+<Callout tone="orange" label="Common mistake">
+Only dropping the last number. `[1 0 -2 -5]` with the constant removed is `[1 0 -2]`, which is $x^2 - 2$, not the derivative. Each coefficient must first be multiplied by its own power, so the $x^3$ coefficient becomes 3. The answer is always one entry shorter than $p$.
+</Callout>
+
 `polyder` also accepts two polynomials, and the number of outputs you ask for decides what it computes. Take $a(x) = x^2 + 3x + 5$ and $b(x) = 2x^2 + 4x + 6$.
 
-With one output, `polyder(a, b)` returns the derivative of the product $a(x)\,b(x)$. The product, worked out by [convolution](/courses/computational-mathematics/multiplying-and-dividing#convolution), is $2x^4 + 10x^3 + 28x^2 + 38x + 30$, so the answer is $8x^3 + 30x^2 + 56x + 38$:
+With one output, `polyder(a, b)` returns the derivative of the product $a(x)\,b(x)$. There's a rule for that, $(ab)' = a'b + ab'$, but the simplest way to check it is to multiply first and then differentiate. The product, worked out by [convolution](/courses/computational-mathematics/multiplying-and-dividing#convolution), is $2x^4 + 10x^3 + 28x^2 + 38x + 30$, so the answer is $8x^3 + 30x^2 + 56x + 38$:
 
 <CodeTabs>
 
@@ -52,7 +56,17 @@ print(np.polyder(np.polymul(a, b)).tolist())  # [8, 30, 56, 38]
 
 </CodeTabs>
 
-With two outputs, it returns the derivative of the quotient $a(x) / b(x)$. The result is a fraction, so you get its top and bottom separately. By the quotient rule, `q` is $a'b - ab'$ and `d` is $b^2$:
+With two outputs, it returns the derivative of the quotient $a(x) / b(x)$. The result is a fraction, so you get its top and bottom separately. By the quotient rule, the derivative of $a/b$ is $(a'b - ab')/b^2$, so `q` is $a'b - ab'$ and `d` is $b^2$. Here $a' = 2x + 3$ and $b' = 4x + 4$, so
+
+$$
+\begin{aligned}
+a'b &= (2x + 3)(2x^2 + 4x + 6) = 4x^3 + 14x^2 + 24x + 18 \\
+ab' &= (x^2 + 3x + 5)(4x + 4) = 4x^3 + 16x^2 + 32x + 20 \\
+a'b - ab' &= -2x^2 - 8x - 2
+\end{aligned}
+$$
+
+The $x^3$ terms cancel, which is why `q` has only three numbers:
 
 <CodeTabs>
 
@@ -83,7 +97,7 @@ $$
 \frac{-2x^2 - 8x - 2}{4x^4 + 16x^3 + 40x^2 + 48x + 36}
 $$
 
-The derivative is how every neural network learns. It says which way is downhill, so training measures the error, takes the derivative of the error with respect to each weight, and moves each weight a little the other way. That's **gradient descent**, and the deep-learning libraries' main job is computing these derivatives for billions of weights at once. For a single weight fitting $y = wx$ to three points, a short loop is enough:
+The derivative is how every neural network learns. It says which way is downhill, so training measures the error, takes the derivative of the error with respect to each weight, and moves each weight a little the other way. That's **gradient descent**, and the deep-learning libraries' main job is computing these derivatives for billions of weights at once. For a single weight fitting $y = wx$ to three points, a short loop is enough. The error is the mean of $(wx_i - y_i)^2$, and its derivative with respect to $w$ is the mean of $2(wx_i - y_i)x_i$: the power 2 comes down, and the inner $wx_i$ contributes the factor $x_i$. The data lies on $y = 2x$, so $w$ should end up at 2:
 
 <CodeTabs>
 
@@ -116,7 +130,7 @@ print(round(w, 4))  # 2.0
 
 ## Fitting a curve to data
 
-Real measurements rarely sit on a neat curve. `polyfit(x, y, n)` finds the degree $n$ polynomial (MATLAB's help says "order $n$") with the smallest **sum of squared errors**, which is called a **least-squares** fit:
+Real measurements rarely sit on a neat curve. `polyfit(x, y, n)` finds the degree $n$ polynomial (MATLAB's help says "order $n$") with the smallest **sum of squared errors**, which is called a **least-squares** fit. Each error is the gap between the curve and a data point, $p(x_i) - y_i$. Squaring stops positive and negative gaps from cancelling, and makes one big miss cost more than several small ones:
 
 $$
 \min_{p} \sum_{i} \bigl(p(x_i) - y_i\bigr)^2
