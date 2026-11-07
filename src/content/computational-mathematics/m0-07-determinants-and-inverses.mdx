@@ -15,7 +15,9 @@ $$
 \det\begin{bmatrix} a & b \\ c & d \end{bmatrix} = ad - bc
 $$
 
-Geometrically, it's the factor by which the map scales area, with a minus sign if space gets flipped. Press Squash below and watch the square collapse into a line. Once that happens, many points share the same destination, so nothing can send them back:
+For example, $\det\begin{bmatrix} 3 & 1 \\ 2 & 4 \end{bmatrix} = (3)(4) - (1)(2) = 10$. The usual slip is the order of the second product: it's $b$ times $c$, the other diagonal, and it's subtracted.
+
+Geometrically, it's the factor by which the map scales area, with a minus sign if space gets flipped. You can see why with a diagonal matrix $\begin{bmatrix} a & 0 \\ 0 & d \end{bmatrix}$: it stretches width by $a$ and height by $d$, so the unit square becomes an $a$-by-$d$ rectangle with area $ad$, and the formula gives $ad - 0 = ad$. Press Squash below and watch the square collapse into a line. Once that happens, many points share the same destination, so nothing can send them back:
 
 <LinearMapGrid start="squash" />
 
@@ -55,7 +57,9 @@ $$
 Each smaller determinant has a name:
 
 - The **minor** $M_{ij}$ is the determinant left after deleting row $i$ and column $j$.
-- The **cofactor** $C_{ij} = (-1)^{i+j} M_{ij}$ is the minor with a checkerboard sign.
+- The **cofactor** $C_{ij} = (-1)^{i+j} M_{ij}$ is the minor with a checkerboard sign. When $i + j$ is even the sign is $+$, and when it's odd the sign is $-$, which gives the pattern $\begin{smallmatrix} + & - & + \\ - & + & - \\ + & - & + \end{smallmatrix}$ starting with $+$ in the top-left corner.
+
+So the formula above is $\det(A) = a_{11}C_{11} + a_{12}C_{12} + a_{13}C_{13}$: each entry of the first row times its cofactor. The alternating signs are just the first row of the checkerboard. You may expand along any row or column the same way and get the same answer, so pick one with zeros in it to save work.
 
 For example, take
 
@@ -73,7 +77,15 @@ Its sign is $(-1)^{2+3} = -1$, so the cofactor is $C_{23} = -22$.
 
 ## The inverse
 
-The **inverse** $A^{-1}$ satisfies $AA^{-1} = A^{-1}A = I$. Here $I$ is the [identity matrix](/courses/computational-mathematics/multiplying-matrices#the-identity-matrix). The inverse exists exactly when $\det(A) \ne 0$. A matrix without one is called **singular**.
+The **inverse** $A^{-1}$ satisfies $AA^{-1} = A^{-1}A = I$. Here $I$ is the [identity matrix](/courses/computational-mathematics/multiplying-matrices#the-identity-matrix). The inverse exists exactly when $\det(A) \ne 0$. The reason is the squashed grid: a zero determinant means the map flattens area to nothing, so different points land in the same place and no map can tell them apart again. A matrix without an inverse is called **singular**, and one with an inverse is **non-singular**.
+
+For a 2-by-2 matrix, the formula below boils down to a shortcut worth remembering: swap $a$ and $d$, change the signs of $b$ and $c$, and divide by the determinant.
+
+$$
+\begin{bmatrix} a & b \\ c & d \end{bmatrix}^{-1} = \frac{1}{ad - bc}\begin{bmatrix} d & -b \\ -c & a \end{bmatrix}
+$$
+
+With the matrix from before, $\begin{bmatrix} 3 & 1 \\ 2 & 4 \end{bmatrix}^{-1} = \frac{1}{10}\begin{bmatrix} 4 & -1 \\ -2 & 3 \end{bmatrix}$. Check the top-left entry of the product: $(3)(4) + (1)(-2) = 10$, divided by 10 is 1.
 
 The **adjoint** of $A$ is the [transpose](/courses/computational-mathematics/transpose-and-products#the-transpose) of its cofactor matrix. Many newer books call it the **adjugate**, because "adjoint" also means something else in linear algebra (the conjugate transpose). Either way, it gives a direct formula:
 
@@ -184,7 +196,7 @@ print(round(np.linalg.det(M5)))  # 5070000
 </CodeTabs>
 
 <Callout tone="orange" label="Computers round">
-`magic(4)` is singular, so its determinant is exactly 0. MATLAB's `det(magic(4))` returns a tiny value around $-1.45 \times 10^{-12}$ instead, because it works in floating point. Don't test `det(A) == 0` in real code. Use `rank` or `cond`.
+`magic(4)` is singular, so its determinant is exactly 0. MATLAB's `det(magic(4))` returns a tiny value around $-1.45 \times 10^{-12}$ instead, because it works in **floating point**: it stores each number to about 16 significant digits, so every step rounds a little and the errors don't cancel exactly. Don't test `det(A) == 0` in real code. Use `rank`, which counts directions with a tolerance, or `cond`, the **condition number**, which says how much the matrix can magnify small errors. A huge condition number means the matrix is singular or nearly so.
 </Callout>
 
 ## Don't use `inv` to solve equations
