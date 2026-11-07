@@ -3,7 +3,7 @@ import { KroneckerVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 # The Kronecker Product
 
-The ordinary matrix product needs sizes that fit together. The **Kronecker product** works with any two matrices and always grows the result, so it's the standard way to build a big structured matrix out of small ones.
+The ordinary matrix product needs sizes that fit together. The **Kronecker product**, also called the Kronecker tensor product, works with any two matrices and always grows the result, so it's the standard way to build a big structured matrix out of small ones.
 
 ## The definition
 
@@ -89,6 +89,89 @@ print(np.kron(I, X).tolist())  # [[1, 2, 0, 0], [3, 4, 0, 0], [0, 0, 1, 2], [0, 
 </CodeTabs>
 
 `kron(I, X)` repeats $X$ down the diagonal. `kron(X, I)` spreads the entries of $X$ apart. Matrices made of zeros and ones are the usual way to stamp out repeated copies like this.
+
+A bigger identity stamps out more copies. `kron(eye(4), B)` puts four copies of a 2-by-2 block down the diagonal of an 8-by-8 matrix, with zeros everywhere else. Each copy only touches its own pair of entries, which is how you describe four separate, identical systems in one matrix:
+
+<CodeTabs>
+
+```matlab
+A = eye(4);
+B = [1 -1; -1 1];
+kron(A, B)
+
+ans =
+     1    -1     0     0     0     0     0     0
+    -1     1     0     0     0     0     0     0
+     0     0     1    -1     0     0     0     0
+     0     0    -1     1     0     0     0     0
+     0     0     0     0     1    -1     0     0
+     0     0     0     0    -1     1     0     0
+     0     0     0     0     0     0     1    -1
+     0     0     0     0     0     0    -1     1
+```
+
+```python
+import numpy as np
+
+B = np.array([[1, -1], [-1, 1]])
+K = np.kron(np.eye(4, dtype=int), B)
+
+print(K.shape)  # (8, 8)
+print(K[2].tolist())  # [0, 0, 1, -1, 0, 0, 0, 0]
+```
+
+</CodeTabs>
+
+## Using it without building it
+
+Because the result grows so fast, real code often avoids building $A \otimes B$ at all. If you only need to multiply it by a vector, there's a shortcut. Write the vector's entries as the columns of a matrix $X$, an operation called `vec` ($x = $ `X(:)` in MATLAB). Then
+
+$$
+(T \otimes S)\,\operatorname{vec}(X) = \operatorname{vec}(S X T^T)
+$$
+
+so two ordinary products with the small matrices do the work of one product with the big one. Written as loops, that's "multiply every column of $X$ by $S$, transpose, multiply every column by $T$, transpose back":
+
+<CodeTabs>
+
+```matlab
+S = [1 2; 3 4];
+T = [0 1; 1 1];
+X = [1 2; 3 4];
+
+[M, N] = size(X);
+for col = 1:N
+  X(:, col) = S * X(:, col);   % X becomes S*X
+end
+X = X';
+for col = 1:M
+  X(:, col) = T * X(:, col);   % X becomes T*(S*X)'
+end
+X = X'                         % X is now S*X*T'
+
+X =
+    10    17
+    22    37
+```
+
+```python
+import numpy as np
+
+S = np.array([[1, 2], [3, 4]])
+T = np.array([[0, 1], [1, 1]])
+X = np.array([[1, 2], [3, 4]])
+
+fast = S @ X @ T.T
+# MATLAB's X(:) stacks columns, which is order="F" in NumPy
+slow = (np.kron(T, S) @ X.flatten(order="F")).reshape(2, 2, order="F")
+
+print(fast.tolist())  # [[10, 17], [22, 37]]
+print(np.array_equal(fast, slow))  # True
+```
+
+</CodeTabs>
+
+The loops never form the 4-by-4 Kronecker product. For two 1000-by-1000 factors the full product would have $10^{12}$ entries, while $S$, $T$ and $X$ together hold about three million. This is the same saving K-FAC relies on.
 
 ## Where you'll meet this
 
