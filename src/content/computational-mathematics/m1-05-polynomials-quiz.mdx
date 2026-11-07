@@ -2,12 +2,12 @@ import { Quiz } from "@/components/mdx/MdxComponents";
 
 # Quiz: Polynomials
 
-Six questions on the module. Get 5 right to pass.
+Twenty questions on the whole module, in lesson order. Most are small calculations, so keep a pen and paper nearby. Get 16 right to pass. Your first click on a question is your answer, and it shows an explanation.
 
 <Quiz
   courseSlug="computational-mathematics"
   lessonSlug="polynomials-quiz"
-  passThreshold={5/6}
+  passThreshold={16/20}
   questions={[
     {
       id: "q1",
@@ -19,22 +19,70 @@ Six questions on the module. Get 5 right to pass.
         { id: "d", text: "[5 0 0 2]" },
       ],
       correctOptionId: "c",
-      explanation: "Coefficients go in descending powers, and missing powers need explicit zeros.",
+      explanation: "Coefficients go in descending powers, and missing powers need explicit zeros: 2 for x³, 0 for x², 0 for x, then 5. [2 5] leaves out the zeros, so MATLAB reads it as 2x + 5. [5 2] is 5x + 2. [5 0 0 2] lists the powers in ascending order, which is 5x³ + 2.",
     },
     {
       id: "q2",
       prompt: "What does polyval([1 0 -2 -5], 2) return?",
       options: [
         { id: "a", text: "-1" },
-        { id: "b", text: "3" },
-        { id: "c", text: "-5" },
-        { id: "d", text: "11" },
+        { id: "b", text: "-5" },
+        { id: "c", text: "7" },
+        { id: "d", text: "3" },
       ],
       correctOptionId: "a",
-      explanation: "2³ - 2(2) - 5 = 8 - 4 - 5 = -1.",
+      explanation: "The vector is x³ - 2x - 5, so p(2) = 8 - 4 - 5 = -1. -5 reads the vector without its zero, as x² - 2x - 5. 7 gets the sign of the 2x term wrong: 8 + 4 - 5. 3 forgets the -2x term altogether: 8 - 5.",
     },
     {
       id: "q3",
+      prompt: "What are the roots of x² - 5x + 6?",
+      options: [
+        { id: "a", text: "2 and 3" },
+        { id: "b", text: "-2 and -3" },
+        { id: "c", text: "5 and 6" },
+        { id: "d", text: "1 and 6" },
+      ],
+      correctOptionId: "a",
+      explanation: "x² - 5x + 6 = (x - 2)(x - 3), which is zero at x = 2 and x = 3. Check: 4 - 10 + 6 = 0 and 9 - 15 + 6 = 0. -2 and -3 are the roots of (x + 2)(x + 3) = x² + 5x + 6, so the signs are flipped. 5 and 6 are just coefficients. 1 and 6 multiply to 6 but add to 7, not 5.",
+    },
+    {
+      id: "q4",
+      prompt: "What does poly([1 1]) return?",
+      options: [
+        { id: "a", text: "[1 -2 1]" },
+        { id: "b", text: "[1 1]" },
+        { id: "c", text: "[1 2 1]" },
+        { id: "d", text: "[1 0 -1]" },
+      ],
+      correctOptionId: "a",
+      explanation: "poly builds the polynomial whose roots are the inputs, here 1 twice: (x - 1)(x - 1) = x² - 2x + 1. [1 1] is x + 1, whose root is -1. [1 2 1] is (x + 1)², with the root -1 twice, so the sign is flipped. [1 0 -1] is x² - 1, whose roots are 1 and -1.",
+    },
+    {
+      id: "q5",
+      prompt: "What does roots([1 0 4]) return?",
+      options: [
+        { id: "a", text: "2i and -2i" },
+        { id: "b", text: "2 and -2" },
+        { id: "c", text: "4i and -4i" },
+        { id: "d", text: "Nothing, because x² + 4 never crosses the x-axis" },
+      ],
+      correctOptionId: "a",
+      explanation: "x² + 4 = 0 means x² = -4, so x = ±2i, because (2i)² = 4i² = -4. 2 and -2 are the roots of x² - 4. ±4i would give x² = -16. A degree-2 polynomial always has two roots once complex values are allowed. Not crossing the axis only means they aren't real.",
+    },
+    {
+      id: "q6",
+      prompt: "What does polyvalm([1 0 0], [1 1; 0 1]) return?",
+      options: [
+        { id: "a", text: "[1 2; 0 1]" },
+        { id: "b", text: "[1 1; 0 1]" },
+        { id: "c", text: "[2 2; 0 2]" },
+        { id: "d", text: "[1 0; 0 1]" },
+      ],
+      correctOptionId: "a",
+      explanation: "[1 0 0] is x², and polyvalm uses the matrix product, so the answer is X·X = [1·1 + 1·0, 1·1 + 1·1; 0, 1] = [1 2; 0 1]. [1 1; 0 1] squares each entry on its own, which is what polyval would do. [2 2; 0 2] doubles X instead of squaring it. [1 0; 0 1] is the identity, X to the power 0.",
+    },
+    {
+      id: "q7",
       prompt: "What does conv([1 1], [1 1]) return?",
       options: [
         { id: "a", text: "[1 1]" },
@@ -43,22 +91,106 @@ Six questions on the module. Get 5 right to pass.
         { id: "d", text: "[1 1 1 1]" },
       ],
       correctOptionId: "b",
-      explanation: "That's (x + 1)(x + 1) = x² + 2x + 1.",
+      explanation: "That's (x + 1)(x + 1) = x² + 2x + 1. The middle 2 collects x·1 and 1·x. [1 1] multiplies entry by entry. [2 2] adds the vectors instead of multiplying the polynomials. [1 1 1 1] writes the four products side by side without adding the two x terms.",
     },
     {
-      id: "q4",
-      prompt: "How can you tell that deconv(c, a) divided exactly?",
+      id: "q8",
+      prompt: "What does conv([1 2], [1 -3]) return?",
       options: [
-        { id: "a", text: "The quotient has all zeros" },
-        { id: "b", text: "The remainder has all zeros" },
-        { id: "c", text: "The quotient equals a" },
-        { id: "d", text: "It returns an error if not" },
+        { id: "a", text: "[1 -1 -6]" },
+        { id: "b", text: "[1 -6]" },
+        { id: "c", text: "[1 1 -6]" },
+        { id: "d", text: "[1 -5 -6]" },
       ],
-      correctOptionId: "b",
-      explanation: "If a remainder of zeros comes back, a is a factor of c.",
+      correctOptionId: "a",
+      explanation: "(x + 2)(x - 3) = x² - 3x + 2x - 6 = x² - x - 6. [1 -6] multiplies entry by entry and loses the x term. [1 1 -6] gets the sign of the -3x wrong. [1 -5 -6] uses 2 × (-3) + 1 for the middle, mixing up which numbers pair with which.",
     },
     {
-      id: "q5",
+      id: "q9",
+      prompt: "a has degree 3 and b has degree 2. How many numbers are in conv(a, b)?",
+      options: [
+        { id: "a", text: "6" },
+        { id: "b", text: "5" },
+        { id: "c", text: "7" },
+        { id: "d", text: "12" },
+      ],
+      correctOptionId: "a",
+      explanation: "The product has degree 3 + 2 = 5, and a degree-5 polynomial has 6 coefficients, x⁵ down to the constant. 5 confuses the degree with the number of coefficients. 7 adds the two vector lengths, 4 + 3. 12 multiplies them, which counts the pairs before like terms are combined.",
+    },
+    {
+      id: "q10",
+      prompt: "Divide x² + 2x + 7 by x + 1. What are the quotient and the remainder?",
+      options: [
+        { id: "a", text: "Quotient x + 1, remainder 6" },
+        { id: "b", text: "Quotient x + 1, remainder 8" },
+        { id: "c", text: "Quotient x + 3, remainder 4" },
+        { id: "d", text: "It divides exactly" },
+      ],
+      correctOptionId: "a",
+      explanation: "x² ÷ x = x. Subtract x(x + 1) = x² + x to leave x + 7. Then x ÷ x = 1. Subtract 1(x + 1) to leave 6. Remainder 8 adds the 1 instead of subtracting it in the last step. x + 3 comes from adding x instead of subtracting it in the first step, which leaves 3x + 7. It can't divide exactly, because x + 1 is a factor only if p(-1) = 0, and p(-1) = 1 - 2 + 7 = 6.",
+    },
+    {
+      id: "q11",
+      prompt: "p(x) = x³ - 2x² - x + 2. What is the remainder when you divide p by x - 3?",
+      options: [
+        { id: "a", text: "8" },
+        { id: "b", text: "-40" },
+        { id: "c", text: "0" },
+        { id: "d", text: "2" },
+      ],
+      correctOptionId: "a",
+      explanation: "Dividing by x - r leaves a remainder of p(r), so it's p(3) = 27 - 18 - 3 + 2 = 8. -40 is p(-3), which uses the wrong sign of r: x - 3 means r = 3. 0 would make 3 a root, but p's roots are -1, 1 and 2. 2 is only the constant term.",
+    },
+    {
+      id: "q12",
+      prompt: "What does polyder([2 0 -3 1]) return?",
+      options: [
+        { id: "a", text: "[6 0 -3]" },
+        { id: "b", text: "[2 0 -3]" },
+        { id: "c", text: "[6 0 -3 0]" },
+        { id: "d", text: "[6 -3]" },
+      ],
+      correctOptionId: "a",
+      explanation: "The derivative of 2x³ - 3x + 1 is 6x² - 3: multiply each coefficient by its power (3, 2, 1, 0), then drop the constant. [2 0 -3] only drops the constant and skips the multiplying. [6 0 -3 0] multiplies but keeps the 0 the constant becomes, which shifts every power up by one. [6 -3] drops the zero for x, so it reads as 6x - 3.",
+    },
+    {
+      id: "q13",
+      prompt: "What does polyder([1 1], [1 -1]) return?",
+      options: [
+        { id: "a", text: "[2 0]" },
+        { id: "b", text: "[1]" },
+        { id: "c", text: "[1 0 -1]" },
+        { id: "d", text: "[2 0 -1]" },
+      ],
+      correctOptionId: "a",
+      explanation: "With one output, polyder returns the derivative of the product (x + 1)(x - 1) = x² - 1, which is 2x. [1] multiplies the two derivatives, 1 × 1, but the product rule is a'b + ab', not a'b'. [1 0 -1] is the product before taking the derivative. [2 0 -1] differentiates only the x² term and keeps the constant.",
+    },
+    {
+      id: "q14",
+      prompt: "What does polyfit([0 1 2], [1 3 5], 1) return?",
+      options: [
+        { id: "a", text: "[2 1]" },
+        { id: "b", text: "[1 2]" },
+        { id: "c", text: "[2 1 0]" },
+        { id: "d", text: "[3 1]" },
+      ],
+      correctOptionId: "a",
+      explanation: "The three points lie exactly on y = 2x + 1, so the best line is that line, written in descending powers as [2 1]. [1 2] lists the coefficients in ascending order, which MATLAB would read as x + 2. [2 1 0] has three numbers, so it would be a degree-2 polynomial. [3 1] reads the slope as the jump from x = 1 to x = 2 plus 1, but the y values rise by 2 for each step of 1 in x.",
+    },
+    {
+      id: "q15",
+      prompt: "Why does least squares square each error before adding them up?",
+      options: [
+        { id: "a", text: "So positive and negative errors can't cancel, and one big miss costs more than several small ones" },
+        { id: "b", text: "To make the total smaller" },
+        { id: "c", text: "Because polyfit can only add positive numbers" },
+        { id: "d", text: "So the curve passes through every point" },
+      ],
+      correctOptionId: "a",
+      explanation: "Without squaring, a point 3 above the curve and a point 3 below it would add to 0 and look like a perfect fit. Squaring makes every error count, and a miss of 4 costs 16, more than two misses of 2 (4 + 4). Squaring makes errors bigger than 1 larger, not smaller. polyfit could add negative numbers fine; the problem is cancelling. A least-squares curve usually passes through none of the points.",
+    },
+    {
+      id: "q16",
       prompt: "You fit a degree 9 polynomial to 10 noisy points, and the error is zero. What should you suspect?",
       options: [
         { id: "a", text: "The data has no noise" },
@@ -67,10 +199,10 @@ Six questions on the module. Get 5 right to pass.
         { id: "d", text: "polyfit failed" },
       ],
       correctOptionId: "c",
-      explanation: "Ten points can always be matched by degree 9. Zero error here says nothing about how well the curve predicts new data.",
+      explanation: "Ten points can always be matched exactly by degree 9, noise and all, so zero error is guaranteed and says nothing about the data. The curve has learned the noise, so it usually predicts badly between and beyond the points. polyfit did exactly what it was asked.",
     },
     {
-      id: "q6",
+      id: "q17",
       prompt: "In [r, p, k] = residue(b, a), what is p?",
       options: [
         { id: "a", text: "The roots of b" },
@@ -79,7 +211,43 @@ Six questions on the module. Get 5 right to pass.
         { id: "d", text: "The direct terms" },
       ],
       correctOptionId: "b",
-      explanation: "The poles are the roots of the denominator. r holds the numerators and k holds the direct terms.",
+      explanation: "The poles are the roots of the denominator a, where the fraction grows without limit. The roots of b are where the fraction is zero, not where it blows up. r holds the numerators of the simple fractions, and k holds the direct terms.",
+    },
+    {
+      id: "q18",
+      prompt: "Split 1 / (s² + 3s + 2) into partial fractions. What are the residues?",
+      options: [
+        { id: "a", text: "1 at the pole -1, and -1 at the pole -2" },
+        { id: "b", text: "1 at the pole 1, and -1 at the pole 2" },
+        { id: "c", text: "-1 at the pole -1, and 1 at the pole -2" },
+        { id: "d", text: "1/2 at both poles" },
+      ],
+      correctOptionId: "a",
+      explanation: "s² + 3s + 2 = (s + 1)(s + 2), so the poles are -1 and -2. Cover up (s + 1) and put s = -1 into what's left: 1 / (-1 + 2) = 1. Cover up (s + 2) and put s = -2: 1 / (-2 + 1) = -1. Poles at +1 and +2 flip the signs; (s + 1) comes from s = -1. Swapping the residues uses each pole in the factor it should have covered. 1/2 at both poles would add up to (s + 1.5) / ((s + 1)(s + 2)), not 1 over it.",
+    },
+    {
+      id: "q19",
+      prompt: "When does residue return a k that isn't empty?",
+      options: [
+        { id: "a", text: "When b has a degree at least as high as a" },
+        { id: "b", text: "When a has a repeated root" },
+        { id: "c", text: "When one of the residues is zero" },
+        { id: "d", text: "Always, because k holds the poles" },
+      ],
+      correctOptionId: "a",
+      explanation: "k is the polynomial part left after long division, so it's there only when the top's degree is at least the bottom's: (s² + 1)/(s + 1) = s - 1 + 2/(s + 1) has k = [1 -1]. A repeated root adds a term with (s - p)² underneath, but k stays empty. A zero residue only drops a fraction. The poles are in p, not k.",
+    },
+    {
+      id: "q20",
+      prompt: "The denominator of a transfer function factors as (s + 4)(s + 2). Which numbers do you substitute in the cover-up method?",
+      options: [
+        { id: "a", text: "-4 and -2" },
+        { id: "b", text: "4 and 2" },
+        { id: "c", text: "0 and 0" },
+        { id: "d", text: "-4 only, since that's the larger pole" },
+      ],
+      correctOptionId: "a",
+      explanation: "You substitute each pole, the value that makes its factor zero: s + 4 = 0 at s = -4, and s + 2 = 0 at s = -2. 4 and 2 are the most common slip, because the factors show + signs. 0 is the value of the covered factor, not what you substitute. Every pole gets its own residue, so both are needed.",
     },
   ]}
 />

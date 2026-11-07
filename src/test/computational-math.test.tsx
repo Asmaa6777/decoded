@@ -199,6 +199,25 @@ describe("Kronecker products, norms and special matrices", () => {
   });
 });
 
+describe("the polynomials quiz's hand calculations", () => {
+  it("has the right answer for every calculation question", () => {
+    expect(polyval([1, 0, -2, -5], 2)).toBe(-1); // q2
+    expect(realRoots([1, -5, 6]).map((x) => Number(x.toFixed(6)))).toEqual([2, 3]); // q3
+    expect(polyFromRoots([1, 1])).toEqual([1, -2, 1]); // q4
+    expect(roots([1, 0, 4]).map(([re, im]) => [Number(re.toFixed(6)) + 0, Math.abs(Number(im.toFixed(6)))])).toEqual([[0, 2], [0, 2]]); // q5
+    expect(polyvalm([1, 0, 0], [[1, 1], [0, 1]])).toEqual([[1, 2], [0, 1]]); // q6
+    expect(conv([1, 1], [1, 1])).toEqual([1, 2, 1]); // q7
+    expect(conv([1, 2], [1, -3])).toEqual([1, -1, -6]); // q8
+    expect(conv([1, 1, 1, 1], [1, 1, 1])).toHaveLength(6); // q9
+    expect(deconv([1, 2, 7], [1, 1])).toEqual({ q: [1, 1], r: [0, 0, 6] }); // q10
+    expect(deconv([1, -2, -1, 2], [1, -3]).r.at(-1)).toBe(8); // q11
+    expect(polyder([2, 0, -3, 1])).toEqual([6, 0, -3]); // q12
+    expect(polyder(conv([1, 1], [1, -1]))).toEqual([2, 0]); // q13
+    expect(polyfit([0, 1, 2], [1, 3, 5], 1).map((c) => Number(c.toFixed(6)))).toEqual([2, 1]); // q14
+    expect(residue([1], [1, 3, 2]).map(({ r, p }) => [Number(r.toFixed(6)), Number(p.toFixed(6))]).sort((x, y) => x[1] - y[1])).toEqual([[-1, -2], [1, -1]]); // q18
+  });
+});
+
 describe("the matrices quiz's hand calculations", () => {
   it("has the right answer for every calculation question", () => {
     expect(add([[1, -2], [3, 0]], [[4, 5], [-1, 2]])).toEqual([[5, 3], [2, 2]]); // q1
