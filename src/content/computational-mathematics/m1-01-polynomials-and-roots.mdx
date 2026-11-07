@@ -33,6 +33,8 @@ p = [1, -2, -1, 2]
 
 Missing powers still need a place. $x^3 - 2x - 5$ has no $x^2$ term, so its vector is `[1 0 -2 -5]`, with an explicit zero.
 
+The highest power is the polynomial's **degree**, and a vector of $n + 1$ numbers holds a polynomial of degree $n$. Many books and MATLAB's own help call it the **order** instead, so a "third order polynomial" is a cubic, degree 3. The letter doesn't matter either: $p(x)$ and $p(s)$ are written the same way, and engineering texts often use $s$.
+
 Polynomials are also the oldest trick for making a straight-line model bend. A linear model can only fit $y = w_0 + w_1 x$, but add $x^2$ and $x^3$ as extra input columns and it fits a cubic. These **polynomial features** keep the model linear in its weights, so the same solver still works, and it's often the first thing to try when a straight line underfits.
 
 ## Roots
