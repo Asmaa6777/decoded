@@ -17,7 +17,7 @@ In words: entry $(i, j)$ of the answer is the [dot product](/courses/computation
 
 <MatMulVisualizer />
 
-MATLAB uses a single asterisk, and it's far faster than the loop in the code panel:
+The code panel shows the rule as two loops, one over rows and one over columns. Inside, `A(i,:) * B(:,j)` is a row times a column, so each entry is one dot product. MATLAB's single asterisk does the same work and is far faster than the loop:
 
 <CodeTabs>
 
@@ -49,6 +49,65 @@ print((A * B)[0].tolist())  # [8, 1, 6]
 P = [[2, -1, 3], [0, 4, 1]]
 Q = [[1, 2], [3, -1], [0, 5]]
 print([[sum(a * b for a, b in zip(row, col)) for col in zip(*Q)] for row in P])  # [[-1, 20], [12, 1]]
+```
+
+</CodeTabs>
+
+### A product by hand
+
+Take a 2-by-3 and a 3-by-2:
+
+$$
+A = \begin{bmatrix} 1 & 2 & -1 \\ 3 & 1 & 4 \end{bmatrix}, \qquad
+B = \begin{bmatrix} -2 & 5 \\ 4 & -3 \\ 2 & 1 \end{bmatrix}
+$$
+
+$AB$ is 2-by-3 times 3-by-2, so the inner sizes match (3 and 3) and the answer is 2-by-2. Each entry is one row of $A$ against one column of $B$:
+
+$$
+\begin{aligned}
+c_{11} &= (1)(-2) + (2)(4) + (-1)(2) = -2 + 8 - 2 = 4 \\
+c_{12} &= (1)(5) + (2)(-3) + (-1)(1) = 5 - 6 - 1 = -2 \\
+c_{21} &= (3)(-2) + (1)(4) + (4)(2) = -6 + 4 + 8 = 6 \\
+c_{22} &= (3)(5) + (1)(-3) + (4)(1) = 15 - 3 + 4 = 16
+\end{aligned}
+\qquad\Rightarrow\qquad
+AB = \begin{bmatrix} 4 & -2 \\ 6 & 16 \end{bmatrix}
+$$
+
+$BA$ also exists, because 3-by-2 times 2-by-3 has matching inner sizes (2 and 2). But it's 3-by-3, a different shape altogether:
+
+$$
+BA = \begin{bmatrix} 13 & 1 & 22 \\ -5 & 5 & -16 \\ 5 & 5 & 2 \end{bmatrix}
+$$
+
+<details>
+<summary>Check one entry of BA yourself</summary>
+
+Entry $(1, 3)$ is row 1 of $B$, $(-2, 5)$, against column 3 of $A$, $(-1, 4)$: $(-2)(-1) + (5)(4) = 2 + 20 = 22$.
+
+</details>
+
+<CodeTabs>
+
+```matlab
+A = [1 2 -1; 3 1 4];
+B = [-2 5; 4 -3; 2 1];
+A * B
+
+ans =
+     4    -2
+     6    16
+```
+
+```python
+import numpy as np
+
+A = np.array([[1, 2, -1], [3, 1, 4]])
+B = np.array([[-2, 5], [4, -3], [2, 1]])
+
+print((A @ B).tolist())  # [[4, -2], [6, 16]]
+print((B @ A).tolist())  # [[13, 1, 22], [-5, 5, -16], [5, 5, 2]]
 ```
 
 </CodeTabs>
