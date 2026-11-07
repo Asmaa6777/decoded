@@ -7,7 +7,7 @@ import { CodeTabs } from "@/components/mdx/MdxComponents";
 import { getCourse, flattenLessons } from "@/content/registry";
 import { affineDecrypt, affineEncrypt, affineTable, bitsToText, flowFrames, keystream, shiftDecrypt, shiftEncrypt, textToBits, VALID_K1, xorBits, xorFrames } from "@/lib/ciphers";
 import { discreteLog, dlogFrames, fastPowFrames, logTable, modPow, cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
-import { conv, convFrames, coverUpFrames, deconv, fitQuality, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
+import { conv, convFrames, divisionFrames, coverUpFrames, deconv, fitQuality, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
 import { adjoint, cofactors, det, dotAngle, fraction, scale, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
 beforeAll(() => {
@@ -254,6 +254,20 @@ describe("determinants and inverses", () => {
 
 describe("polynomials", () => {
   const p = [1, -2, -1, 2];
+  it("steps through long division to the same answer as deconv", () => {
+    const frames = divisionFrames([1, 3, 5], [1, 1]);
+    const last = frames.at(-1)!.state;
+    expect(last.phase).toBe("done");
+    expect(last.q.filter((x) => x !== null)).toEqual(deconv([1, 3, 5], [1, 1]).q);
+    expect(last.rest).toEqual(deconv([1, 3, 5], [1, 1]).r);
+    expect(frames.map((f) => f.state.phase)).toEqual(["start", "divide", "multiply", "subtract", "divide", "multiply", "subtract", "done"]);
+    expect(frames[2].state.sub).toEqual([1, 1, null]);
+    expect(frames[3].message).toContain("2x + 5");
+    const big = divisionFrames([4, 13, 28, 27, 18], [1, 2, 3]).at(-1)!.state;
+    expect(big.q.filter((x) => x !== null)).toEqual([4, 5, 6]);
+    expect(big.rest).toEqual([0, 0, 0, 0, 0]);
+  });
+
   it("finds roots and rebuilds the polynomial", () => {
     expect(realRoots(p).map((x) => Number(x.toFixed(6)))).toEqual([-1, 1, 2]);
     expect(polyFromRoots([-1, 2, 1])).toEqual(p);

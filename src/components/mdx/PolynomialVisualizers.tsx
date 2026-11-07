@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { btn, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import { MatrixStage, matCells, Op, Panel, useTween, type CellTone, type StageCell } from "@/components/mdx/MatrixVisualizers";
-import { convFrames, coverUpFrames, fitQuality, MATLAB_CONV, MATLAB_RESIDUE, polyder, polyfit, polyText, polyval, roots, sumSquaredError, type Poly } from "@/lib/polynomial";
+import { convFrames, coverUpFrames, divisionFrames, MATLAB_DECONV, fitQuality, MATLAB_CONV, MATLAB_RESIDUE, polyder, polyfit, polyText, polyval, roots, sumSquaredError, type Poly } from "@/lib/polynomial";
 
 /* ------------------------------- plotting ------------------------------ */
 
@@ -137,6 +137,54 @@ export function ConvolutionVisualizer({ a = [1, 2, 3], b = [4, 5, 6] }: { a?: Po
           <div className="flex flex-col gap-3 items-start">
             <MatrixStage rows={2} cols={cols} cells={cells} label="a on top, b reversed below" />
             <MatrixStage rows={1} cols={s.c.length} cells={matCells([s.c], "c", (_, j) => (j === s.n ? "orange" : s.c[j] !== null ? "mint" : undefined))} label="c = conv(a, b)" />
+          </div>
+        );
+      }}
+    />
+  );
+}
+
+/* ------------------------------ long division ---------------------------- */
+
+const cellCls = "w-11 h-9 flex items-center justify-center rounded-sm border font-mono text-sm transition-colors duration-300 motion-reduce:transition-none";
+
+/** Polynomial long division one move at a time: divide leading terms, multiply back, subtract. */
+export function LongDivisionVisualizer({ u = [1, 3, 5], v = [1, 1] }: { u?: Poly; v?: Poly }) {
+  const frames = useMemo(() => divisionFrames(u, v), [u, v]);
+  const n = u.length;
+  const pow = (k: number) => {
+    const e = n - 1 - k;
+    return e === 0 ? "1" : e === 1 ? "x" : `x${"⁰¹²³⁴⁵⁶⁷⁸⁹"[e]}`;
+  };
+  return (
+    <Stepper
+      title="Long division, one move at a time"
+      frames={frames}
+      code={MATLAB_DECONV}
+      codeLabel="MATLAB"
+      legend={[["bg-mint", "quotient"], ["bg-neon", "leading term"], ["bg-orange", "subtracting"], ["bg-violet", "remainder"]]}
+      render={(s) => {
+        const live = s.at === null ? -1 : s.at;
+        const remainderStart = n - v.length + 1;
+        const row = (label: string, cells: React.ReactNode[]) => (
+          <div className="flex items-center gap-2">
+            <div className="w-24 shrink-0 text-right font-mono text-[11px] text-muted-foreground">{label}</div>
+            <div className="flex gap-1">{cells}</div>
+          </div>
+        );
+        return (
+          <div className="flex flex-col gap-1.5 overflow-x-auto">
+            {row("power", Array.from({ length: n }, (_, k) => <div key={k} className={`${cellCls} border-transparent text-muted-foreground text-xs`}>{pow(k)}</div>))}
+            {row("quotient", s.q.map((x, k) => <div key={k} className={`${cellCls} ${x === null ? "border-transparent" : "border-mint bg-mint/15"}`}>{x ?? ""}</div>))}
+            {row(s.phase === "start" ? "u" : "what's left", s.rest.map((x, k) => {
+              const done = s.phase === "done";
+              const lead = k === live && s.phase !== "subtract";
+              const used = s.at !== null && k <= live && s.phase === "subtract";
+              const rem = done && k >= remainderStart;
+              const cls = lead ? "border-neon bg-neon/20" : rem ? "border-violet bg-violet/15" : used || (done && k < remainderStart) ? "border-border/50 text-muted-foreground/50" : "border-border bg-background/50";
+              return <div key={k} className={`${cellCls} ${cls}`}>{x}</div>;
+            }))}
+            {row("− subtract", s.sub.map((x, k) => <div key={k} className={`${cellCls} ${x === null ? "border-transparent" : "border-orange bg-orange/15"}`}>{x ?? ""}</div>))}
           </div>
         );
       }}

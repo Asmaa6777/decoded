@@ -170,6 +170,56 @@ export function convFrames(a: Poly, b: Poly): Frame<ConvState>[] {
   return frames;
 }
 
+/* ---------------------------- long division frames ---------------------------- */
+
+export type DivisionPhase = "start" | "divide" | "multiply" | "subtract" | "done";
+
+export type DivisionState = {
+  u: Poly;
+  v: Poly;
+  /** quotient so far, aligned to the right end of u; null where not yet written */
+  q: (number | null)[];
+  /** what's left of u after the subtractions so far */
+  rest: number[];
+  /** f times v, written under rest starting at column `at`; null when nothing is being subtracted */
+  sub: (number | null)[];
+  /** column of u where the current step's leading term sits */
+  at: number | null;
+  phase: DivisionPhase;
+};
+
+export const MATLAB_DECONV = ["u = [1 3 5];     % x² + 3x + 5", "v = [1 1];       % x + 1", "[q, r] = deconv(u, v)"];
+
+const clean = (x: number) => (Math.abs(x) < 1e-12 ? 0 : x);
+
+/** Long division one move at a time: divide the leading terms, multiply back, subtract. */
+export function divisionFrames(u: Poly, v: Poly): Frame<DivisionState>[] {
+  const n = u.length;
+  const steps = n - v.length + 1;
+  const q: (number | null)[] = Array(n).fill(null);
+  let rest = [...u];
+  const none = () => Array<number | null>(n).fill(null);
+  const qText = () => polyText(q.filter((x): x is number => x !== null));
+  const frames: Frame<DivisionState>[] = [
+    { state: { u, v, q: [...q], rest: [...rest], sub: none(), at: null, phase: "start" }, line: 2, message: `Divide ${polyText(u)} by ${polyText(v)}. The quotient will have degree ${u.length - 1} − ${v.length - 1} = ${steps - 1}.`, stats: {} },
+  ];
+  for (let i = 0; i < steps; i++) {
+    const f = clean(rest[i] / v[0]);
+    // the quotient term for this step lands under column i + (v.length - 1), so it lines up with the matching power
+    q[i + v.length - 1] = f;
+    const pow = steps - 1 - i;
+    frames.push({ state: { u, v, q: [...q], rest: [...rest], sub: none(), at: i, phase: "divide" }, line: 2, message: `Leading terms: ${rest[i]} ÷ ${v[0]} = ${f}, so the next quotient term is ${polyText([f, ...Array(pow).fill(0)])}.`, stats: {} });
+    const sub = none();
+    v.forEach((c, j) => (sub[i + j] = clean(f * c)));
+    frames.push({ state: { u, v, q: [...q], rest: [...rest], sub, at: i, phase: "multiply" }, line: 2, message: `Multiply back: (${polyText([f, ...Array(pow).fill(0)])}) × (${polyText(v)}) = ${polyText(sub.filter((x): x is number => x !== null).concat(Array(pow).fill(0)))}.`, stats: {} });
+    rest = rest.map((x, k) => clean(x - (sub[k] ?? 0)));
+    frames.push({ state: { u, v, q: [...q], rest: [...rest], sub, at: i, phase: "subtract" }, line: 2, message: `Subtract. What's left is ${polyText(rest.slice(i + 1))}.`, stats: {} });
+  }
+  const remainder = rest.slice(steps);
+  frames.push({ state: { u, v, q: [...q], rest: [...rest], sub: none(), at: null, phase: "done" }, line: 2, message: `${polyText(remainder)} has a lower degree than ${polyText(v)}, so it's the remainder. Quotient ${qText()}, remainder ${polyText(remainder)}.`, stats: {} });
+  return frames;
+}
+
 /* ------------------------- partial fraction frames ------------------------- */
 
 export type Residue = { r: number; p: number };
