@@ -1,4 +1,4 @@
-import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { SpecialMatrixExplorer } from "@/components/mdx/MatrixVisualizers";
 
 # Some Special Matrices
@@ -56,7 +56,7 @@ print(X3.shape)  # (2, 3, 4)
 
 </CodeTabs>
 
-The identity matrix has a neat use in machine learning. A classifier can't train on labels like "cat", "dog" and "bird" directly, so each label becomes a **one-hot** vector: all zeros except a single 1 in that class's position. Those are exactly the rows of an identity matrix, so indexing into `eye` encodes a whole list of labels in one line:
+The identity matrix has a neat use in machine learning. A classifier can't train on labels like "cat", "dog" and "bird" directly, because a model only does arithmetic. Numbering them 1, 2 and 3 doesn't fix it either, since then "dog" would sit halfway between "cat" and "bird" and the model would treat it that way. Instead, each label becomes a **one-hot** vector: all zeros except a single 1 in that class's position. Those are exactly the rows of an identity matrix, so indexing into `eye` encodes a whole list of labels in one line:
 
 <CodeTabs>
 
@@ -96,6 +96,8 @@ To check by hand, look only at the entries the definition talks about. For the f
 
 `triu` and `tril` take a matrix and keep one triangle. An optional second argument $k$ shifts the boundary: $k = 0$ is the main diagonal, positive values move up and to the right, and negative values move down and to the left.
 
+The numbering comes from column minus row. Every entry $a_{ij}$ lies on diagonal number $j - i$. The main diagonal has $j = i$, so it's diagonal 0. The entry $a_{12}$, just to the right of it, is on diagonal $2 - 1 = 1$, and $a_{21}$, just below, is on diagonal $1 - 2 = -1$. `triu(A, k)` keeps every entry with $j - i \ge k$, and `tril(A, k)` keeps every entry with $j - i \le k$.
+
 Slide $k$ and switch between the commands:
 
 <SpecialMatrixExplorer />
@@ -121,6 +123,10 @@ print(np.tril(np.ones((2, 2), dtype=int)).tolist())  # [[1, 0], [1, 1]]
 ```
 
 </CodeTabs>
+
+<Callout tone="orange" label="Common mistake">
+Getting the sign of $k$ backwards. A negative $k$ means "below the main diagonal", so `triu(A, -1)` keeps *more* than `triu(A)`, one extra diagonal below. To check, find where $a_{21}$ goes: it's on diagonal $-1$, so `triu(A, -1)` keeps it and `triu(A)` drops it.
+</Callout>
 
 `tril` works the same way from the other side. Before opening the answers, predict what `tril(ones(4), -1)` and `tril(magic(3))` print. Applying `triu` to a matrix that's already upper triangular, like the first example above, gives it back unchanged.
 
@@ -179,11 +185,11 @@ print(np.tril(np.ones((3, 3), dtype=int)).tolist())  # [[1, 0, 0], [1, 1, 0], [1
 
 </CodeTabs>
 
-Triangles also tidy up charts. A correlation matrix is symmetric, so a heatmap of one shows every number twice, and plotting code usually hides one triangle with `triu`.
+Triangles also tidy up charts. A **correlation matrix** scores every pair of features from $-1$ to $1$ on how closely they rise and fall together. It's [symmetric](/courses/computational-mathematics/transpose-and-products#the-transpose), because feature 1 against feature 2 is the same pair as feature 2 against feature 1, so a heatmap of one shows every number twice, and plotting code usually hides one triangle with `triu`.
 
 ## `diag` does two jobs
 
-`diag` depends on what you give it. A matrix returns its diagonal as a vector, and a vector builds a diagonal matrix. Calling it twice therefore wipes out everything off the diagonal:
+`diag` depends on what you give it. A matrix returns its diagonal as a vector, and a vector builds a diagonal matrix. Calling it twice therefore wipes out everything off the diagonal: the inner call pulls the diagonal out as a vector, and the outer call builds a fresh matrix from that vector, with zeros everywhere else. A second argument picks another diagonal, numbered the same way as for `triu`, so `diag(A, -1)` reads the one just below the main diagonal:
 
 <CodeTabs>
 
