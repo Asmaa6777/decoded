@@ -12,10 +12,9 @@ If $A$ is $m$-by-$n$ and $B$ is $p$-by-$q$, then $A \otimes B$ is $mp$-by-$nq$. 
 $$
 A \otimes B =
 \begin{bmatrix}
-a_{11}B & a_{12}B & \cdots & a_{1n}B \\
-a_{21}B & a_{22}B & \cdots & a_{2n}B \\
-\vdots & \vdots & & \vdots \\
-a_{m1}B & a_{m2}B & \cdots & a_{mn}B
+a_{11}B & \cdots & a_{1n}B \\
+\vdots & \ddots & \vdots \\
+a_{m1}B & \cdots & a_{mn}B
 \end{bmatrix}
 $$
 
@@ -24,9 +23,10 @@ The size follows from the picture. There are $m$ rows of blocks, each block $p$ 
 By hand, with $A = \begin{bmatrix}1 & -2\\-1 & 0\end{bmatrix}$ and $B = \begin{bmatrix}4 & -3\\2 & 3\end{bmatrix}$, the top-left block is $1 \cdot B$, the top-right is $-2 \cdot B$, and so on:
 
 $$
-A \otimes B =
-\begin{bmatrix} 1\cdot B & -2\cdot B \\ -1\cdot B & 0\cdot B \end{bmatrix} =
-\left[\begin{array}{cc|cc} 4 & -3 & -8 & 6 \\ 2 & 3 & -4 & -6 \\ \hline -4 & 3 & 0 & 0 \\ -2 & -3 & 0 & 0 \end{array}\right]
+\begin{aligned}
+A \otimes B &= \begin{bmatrix} 1\cdot B & -2\cdot B \\ -1\cdot B & 0\cdot B \end{bmatrix} \\
+&= \left[\begin{array}{cc|cc} 4 & -3 & -8 & 6 \\ 2 & 3 & -4 & -6 \\ \hline -4 & 3 & 0 & 0 \\ -2 & -3 & 0 & 0 \end{array}\right]
+\end{aligned}
 $$
 
 Watch the blocks appear one at a time:
