@@ -237,6 +237,22 @@ describe("the matrices quiz's hand calculations", () => {
   });
 });
 
+describe("the cryptography quiz's hand calculations", () => {
+  it("has the right answer for every calculation question", () => {
+    expect(xorBits([1, 1, 0, 1, 1, 1, 0], [1, 0, 0, 1, 0, 1, 0])).toEqual([0, 1, 0, 0, 1, 0, 0]); // q6
+    expect(0b01000011 ^ 0b01000001).toBe(0b00000010); // q8
+    expect(shiftEncrypt("IBM", 3)).toBe("LEP"); // q10
+    expect(shiftEncrypt("NIST", 4)).toBe("RMWX"); // q11
+    expect(shiftEncrypt("ZOO", 7)).toBe("GVV"); // q12
+    expect(shiftDecrypt("VHFFNGBVTMBHG", 19)).toBe("COMMUNICATION"); // q13
+    expect(VALID_K1.length * 26).toBe(312); // q16
+    expect(inverseMod(7, 26)).toBe(15); // q17
+    expect(affineEncrypt("AB", 7, 21)).toBe("VC"); // q18
+    expect(affineDecrypt("VL", 7, 21)).toBe("AG"); // q19
+    expect(Array.from(new Set(affineTable(13, 5))).sort((a, b) => a - b)).toEqual([5, 18]); // q20
+  });
+});
+
 describe("determinants and inverses", () => {
   const A = [[1, 2, 3], [0, 1, 4], [5, 6, 0]];
   it("computes determinants, including the 3-by-3 examples", () => {
