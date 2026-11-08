@@ -1,4 +1,4 @@
-import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { SecretKeyFlow } from "@/components/mdx/CipherVisualizers";
 
 # What Is Cryptography?
@@ -7,43 +7,58 @@ Everything from the [last module](/courses/computational-mathematics/divisibilit
 
 ## The vocabulary
 
-- **Cryptography** (from the Greek *kryptos*, "hidden", and *graphein*, "to write") is the study of how to conceal information in a ciphertext, so that only the legitimate users holding the key can recover it, while making it impossible or computationally infeasible for an unauthorized person to do so.
+Before naming the field, start with the four pieces of any disguised message:
+
+- **Plaintext** is the original readable message before anything is hidden.
+- **Ciphertext** is the scrambled result after hiding it.
+- **Encryption** turns plaintext into ciphertext, and **decryption** turns ciphertext back into plaintext.
+- A **key** is the secret piece of information (such as a number, a word or a string of bits) that chooses which scrambling rule to apply.
+
+With those four words in place, the three classical names follow:
+
+- **Cryptography** (from the Greek *kryptos*, "hidden", and *graphein*, "to write") is the study of how to conceal information in a ciphertext, so that only the legitimate users holding the key can recover it, while making it impossible or **computationally infeasible** for an unauthorized person to do so. "Impossible" means no amount of computing power can narrow down the plaintext at all. "Computationally infeasible" means an attacker could in principle find the key by trying every possibility or solving a hard math problem like [integer factorization](/courses/computational-mathematics/discrete-logarithms#integer-factorization), but doing so would take the fastest computers millions of years.
 - **Cryptanalysis** (from *kryptos* and *analyein*, "to loosen") is the science and art of recovering information from ciphertext without knowing the key.
 - **Cryptology** (from *kryptos* and *logos*, "word") is the broader field that covers both. Within cryptography sit symmetric ciphers, asymmetric ciphers and cryptographic **protocols** (multi-step exchanges such as key agreement and authentication handshakes).
 
-Modern cryptography solves two main security problems:
+Modern cryptography solves two main security problems over a **public** (or **insecure**) **channel**, meaning any connection an outsider can listen to or tamper with, such as Wi-Fi or the internet:
 
-1. **Privacy** stops unauthorised parties from reading messages sent over a public channel. The sender can be sure that only the intended receiver can read it. Every question you type to a hosted AI model travels this way, encrypted with TLS, and medical or financial training data is kept encrypted when it's stored and when it moves.
-2. **Authentication** stops unauthorised parties from injecting messages. The receiver can be sure who sent it. A signed model file, for example, shows that the weights you downloaded really came from the lab that published them.
+1. **Privacy** stops unauthorised parties from reading messages sent over a public channel. The sender can be sure that only the intended receiver can read the message. Every question you type to a hosted AI model travels this way, encrypted with [TLS](/courses/computer-networks/http-and-https#https-and-tls), and medical or financial training data is kept encrypted when it is stored and when it moves.
+2. **Authentication** stops unauthorised parties from injecting or forging messages on a public channel. Privacy alone does not give you authentication: even if an eavesdropper cannot read your encrypted traffic, they could still send their own ciphertext or replay an old one pretending to be you unless the receiver can verify who created it. A cryptographically signed model file, for example, lets you verify with the publisher's key that the neural network [weights](/courses/computational-mathematics/matrices-and-matlab#multiplying-by-a-scalar) you downloaded really came from the lab that published them and were not altered in transit.
 
 Cryptanalysis also helped create the modern computer. At Bletchley Park in the Second World War, Alan Turing helped design the Bombe, an electromechanical machine for breaking Enigma, and Tommy Flowers built Colossus, one of the first programmable electronic computers, to attack another German cipher.
 
-Machine learning has been pointed at the problem too. In 2016, researchers at Google trained one neural network to encrypt messages for a second while a third tried to eavesdrop, and the first two learned a scheme the third couldn't read. It's a striking result, but nobody protects real data with learned ciphers, because they come with no proof of security. Real systems use ciphers whose strength rests on mathematics like the number theory in this course.
+Machine learning has been pointed at the problem too. In 2016, researchers at Google trained one neural network to encrypt messages for a second while a third tried to eavesdrop, and the first two learned a scheme the third couldn't read. It's a striking result, but nobody protects real data with learned ciphers, because they come with no proof of security: defeating one specific eavesdropper network during training does not mean a larger network or a mathematical attack cannot break the scheme tomorrow. Real systems use ciphers whose strength rests on mathematics like the number theory in this course.
 
 ## Two kinds of system
 
 Cryptographic systems (also called **cryptosystems**, **cryptographic schemes** or **ciphers**) split into two families:
 
-- **Secret-key** (or **symmetric**, or **conventional**) systems use the same key to encrypt and decrypt.
-- **Public-key** (or **asymmetric**) systems use a public key to encrypt and a different private key to decrypt.
+- **Secret-key** (or **symmetric**, or **conventional**) systems use the same key to encrypt and decrypt. They are called symmetric because sender and receiver hold identical secrets.
+- **Public-key** (or **asymmetric**) systems use a public key to encrypt and a different private key to decrypt. Anyone can lock a message with the public key, but only the holder of the matching private key can unlock it, which solves the problem of how two strangers on the internet can start talking secretly without having met first to share a key.
 
 ## The notation
 
-A cryptosystem has these parts:
+A cryptosystem has five parts:
 
-- $M$, the **message space**: a set of plaintext strings over some alphabet to be encrypted.
+- $M$, the **message space**: a [set](/courses/discrete-mathematics/sets#what-a-set-is) of plaintext strings over some [alphabet](/courses/theory-of-computation/language-of-languages) to be encrypted.
 - $C$, the **ciphertext space**: a set of encrypted strings over some alphabet.
 - $K$, the **key space**: a set of possible keys, including an encryption key $e_k$ and a decryption key $d_k$.
-- $E$, the encryption process (algorithm): $E_{e_k}(m) = c$.
-- $D$, the decryption process (algorithm): $D_{d_k}(c) = m$.
+- $E$, the encryption process (algorithm): choosing a key $e_k \in K$ picks a function $E_{e_k}$ that maps a plaintext $m \in M$ to a ciphertext $E_{e_k}(m) = c \in C$.
+- $D$, the decryption process (algorithm): choosing the matching key $d_k \in K$ picks a function $D_{d_k}$ that maps $c \in C$ back to $D_{d_k}(c) = m \in M$.
 
-The two algorithms have to undo each other, for every message:
+The two algorithms have to undo each other, for every message $m \in M$:
 
 $$
 D_{d_k}(c) = D_{d_k}(E_{e_k}(m)) = m
 $$
 
-In code, that's two functions that undo each other. Here $E$ shifts each letter $k$ places along the alphabet and $D$ shifts it back, a cipher you'll take apart in [Caesar and Shift Ciphers](/courses/computational-mathematics/caesar-and-shift-ciphers):
+Why must this hold for every $m$? If two different plaintexts $m_1 \neq m_2$ ever produced the same ciphertext $c$, then $D_{d_k}(c)$ could only return one answer and would get the other message wrong. For decryption to work without ambiguity, $E_{e_k}$ has to be [injective](/courses/discrete-mathematics/functions#three-properties) (one-to-one), and when $M$ and $C$ have the same size it is a [bijection](/courses/discrete-mathematics/functions#inverses).
+
+In code, $E$ and $D$ are two functions that undo each other. Computers store letters as [ASCII](/courses/logic-design/codes-and-floating-point#ascii-text) numbers, where `'A'` is 65, `'B'` is 66, and `'Z'` is 90 (`double` and `char` in MATLAB, or `ord` and `chr` in Python, convert between characters and their ASCII codes). Here $E$ shifts each letter $k$ places along the alphabet and $D$ shifts it back, a cipher you'll take apart in [Caesar and Shift Ciphers](/courses/computational-mathematics/caesar-and-shift-ciphers). To trace `E(3, 'HELLO')` by hand:
+
+1. Convert `'H', 'E', 'L', 'L', 'O'` to ASCII codes $72, 69, 76, 76, 79$, then subtract $65$ to get 0-based alphabet positions $7, 4, 11, 11, 14$.
+2. Add the key $k = 3$ modulo $26$: $(7 + 3, 4 + 3, 11 + 3, 11 + 3, 14 + 3) \bmod 26 = (10, 7, 14, 14, 17)$.
+3. Add $65$ back to get ASCII codes $75, 72, 79, 79, 82$, which are the letters `'KHOOR'`. Calling `D(3, 'KHOOR')` runs `E(-3, 'KHOOR')`, subtracting $3$ modulo $26$ from $(10, 7, 14, 14, 17)$ to recover $(7, 4, 11, 11, 14)$ and `'HELLO'`:
 
 <CodeTabs>
 
@@ -70,9 +85,9 @@ print(D(3, E(3, "HELLO")))  # HELLO
 
 ## Secret-key systems
 
-In a conventional secret-key system, $e_k = d_k = k \in K$, called the **secret key**. Anyone who has enough information to encrypt messages automatically has enough information to decrypt them as well, so the key must travel to the legitimate receiver over a separate secure channel.
+In a conventional secret-key system, the encryption key and decryption key are the same ($e_k = d_k = k \in K$, read "$k$ in the key space $K$"), called the **secret key**. Anyone who has enough information to encrypt messages automatically has enough information to decrypt them as well, so the key must travel to the legitimate receiver over a separate **secure channel** (a path protected from eavesdropping and tampering, such as handing the key over in person or agreeing on it with a public-key handshake).
 
-Written as a mapping, the sender applies an invertible transformation $f$ determined by $k$,
+Written as a mapping, the sender applies an invertible transformation $f$ determined by $k$ (read $f \colon M \xrightarrow{k} C$ as "$f$ maps $M$ to $C$ under key $k$"),
 
 $$
 f \colon M \xrightarrow{k} C, \qquad c = E_k(m), \quad m \in M,\ c \in C
@@ -90,7 +105,11 @@ to recover the original plaintext. Follow one message through:
 
 The ciphertext crosses the insecure channel in full view, so all the security rests on the key.
 
-So the key has to be truly unpredictable, and that rules out the random numbers you use for everything else. The generators in MATLAB and NumPy are built to be **reproducible**: give them the same seed and they replay the same numbers, which is exactly what you want when you shuffle training data and exactly what a key must never do.
+<Callout tone="orange" label="Secrecy belongs in the key, not the algorithm">
+A common beginner mistake is assuming a cipher stays safe by keeping the algorithm $E$ secret. In practice, algorithms are built into software and hardware used by millions of people and can be reverse-engineered. Cryptographers design systems under **Kerckhoffs's principle**: assume the attacker knows the algorithm $E$ and $D$ completely, and put all the secrecy in the key $k$. If a key leaks, you only have to change the key, not rebuild the whole system.
+</Callout>
+
+Because all security rests on $k$, the key has to be truly unpredictable, and that rules out the random numbers you use for everything else. A standard **pseudorandom number generator** starts from a single number called a **seed** and computes every later number from it by a fixed formula. The generators in MATLAB and NumPy are built to be **reproducible**: give them the same seed and they replay the exact same sequence of numbers, which is what you want when you shuffle training data for an experiment and what a cryptographic key must never do.
 
 <CodeTabs>
 
@@ -109,7 +128,7 @@ import secrets
 # The secrets module draws from the operating system's secure generator.
 # Never make keys with the random module: like MATLAB's rand, it's
 # designed to be reproducible.
-key = secrets.token_bytes(16)  # a 128-bit key
+key = secrets.token_bytes(16)  # 16 bytes = 16 * 8 = 128 bits (2^128 possible keys)
 print(len(key))  # 16
 ```
 
