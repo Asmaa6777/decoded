@@ -7,7 +7,7 @@ Computers store everything as [bits](/courses/computer-organization/bits-and-byt
 
 ## How it works
 
-In a **stream cipher**, the message units are bits. A secret key seeds a random bit generator, which produces a long **key stream** $k$. Each plaintext bit is combined with one key bit using XOR:
+In a **stream cipher** (also called a **bit cipher**), the message units are bits. A secret key seeds a random bit generator, which produces a long sequence of binary signals called the **key stream** (or **key-stream**) $k$. Each plaintext bit is mixed with one key bit using bitwise XOR:
 
 $$
 c_i = m_i \oplus k_i
@@ -18,6 +18,22 @@ XOR gives 1 when two bits differ and 0 when they match. It also undoes itself, w
 $$
 (m \oplus k) \oplus k = m
 $$
+
+Here is a 9-bit stream worked bit by bit. Mixing the plaintext stream $m$ with the key stream $k$ produces the ciphertext stream $c$:
+
+| Stream | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | $\cdots$ |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| $m$ | 0 | 1 | 1 | 0 | 0 | 1 | 1 | 1 | 0 | $\cdots$ |
+| $k$ | 1 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 1 | $\cdots$ |
+| $c = m \oplus k$ | 1 | 1 | 1 | 1 | 0 | 1 | 0 | 1 | 1 | $\cdots$ |
+
+To decrypt, the receiver generates the identical key stream $k$ from the same generator and seed, then XORs $c$ with $k$ bit by bit to get $m$ back:
+
+| Stream | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | $\cdots$ |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| $c$ | 1 | 1 | 1 | 1 | 0 | 1 | 0 | 1 | 1 | $\cdots$ |
+| $k$ | 1 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 1 | $\cdots$ |
+| $m = c \oplus k$ | 0 | 1 | 1 | 0 | 0 | 1 | 1 | 1 | 0 | $\cdots$ |
 
 XOR also has a famous place in the history of AI. The earliest neural network, the **perceptron**, decides by drawing one straight line through its inputs, and no straight line can separate XOR's outputs: on the four corners of a square, the 1s sit on one diagonal and the 0s on the other. A 1969 book on perceptrons by Minsky and Papert made that limit famous, and enthusiasm for neural networks cooled for years. The fix is a **hidden layer**. One hidden unit computes OR and another computes AND, and the output says "OR but not AND", which is XOR. That's the whole reason networks need depth and a non-linear step:
 
@@ -52,9 +68,10 @@ So decryption is the same operation as encryption, with the same key stream. The
 <CodeTabs>
 
 ```matlab
-m = [0 1 1 0];  k = [1 1 0 0];
-c = xor(m, k)          % 1 0 1 0
-xor(c, k)              % 0 1 1 0, the message again
+m = [0 1 1 0 0 1 1 1 0];
+k = [1 0 0 1 0 0 1 0 1];
+c = double(xor(m, k))         % 1 1 1 1 0 1 0 1 1
+double(xor(c, k))             % 0 1 1 0 0 1 1 1 0, the message again
 
 % On real text, bitxor works on whole bytes
 key = uint8([90 195]);
@@ -66,12 +83,12 @@ char(bitxor(cipher, key))     % HI
 import numpy as np
 
 # XOR is ^ in Python, and it works on whole NumPy arrays
-m = np.array([0, 1, 1, 0])
-k = np.array([1, 1, 0, 0])
+m = np.array([0, 1, 1, 0, 0, 1, 1, 1, 0])
+k = np.array([1, 0, 0, 1, 0, 0, 1, 0, 1])
 c = m ^ k
 
-print(c.tolist())  # [1, 0, 1, 0]
-print((c ^ k).tolist())  # [0, 1, 1, 0]
+print(c.tolist())  # [1, 1, 1, 1, 0, 1, 0, 1, 1]
+print((c ^ k).tolist())  # [0, 1, 1, 0, 0, 1, 1, 1, 0]
 
 # On real text, bytes XOR one at a time
 key = bytes([0x5A, 0xC3])

@@ -7,42 +7,72 @@ Earlier ciphers transformed each letter of the plaintext into a different letter
 
 ## Letters as numbers
 
-First, give each letter a number, with $A = 0, B = 1, \dots, Z = 25$. All the operations happen on these numbers, [modulo 26](/courses/computational-mathematics/modular-arithmetic#the-mod-operation).
+First, give each of the 26 English capital letters a **numerical equivalent**, with $A = 0, B = 1, \dots, Z = 25$. All the operations happen on these numbers rather than the letters themselves, [modulo 26](/courses/computational-mathematics/modular-arithmetic#the-mod-operation):
+
+| A | B | C | D | E | F | G | H | I | J | K | L | M |
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+
+| N | O | P | Q | R | S | T | U | V | W | X | Y | Z |
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 |
 
 Language models start the same way. A neural network can only do arithmetic, so before a chatbot reads your message, a **tokenizer** turns the text into a list of numbers, one per piece of text. The simplest, a character-level tokenizer, does exactly what this cipher does and gives each symbol an index. Modern ones give common word pieces their own numbers too, so "the" or "ing" is a single token.
 
 ## The Caesar cipher
 
-A Caesar cipher moves each letter three places forward:
+A Caesar cipher moves each letter three places forward, using the substitution transformation $f_3$ and its inverse $f_3^{-1}$:
 
 $$
-E_3(m) = m + 3 \pmod{26}, \qquad D_3(c) = c - 3 \pmod{26}
+f_3 = E_3(m) \equiv m + 3 \pmod{26}, \qquad f_3^{-1} = D_3(c) \equiv c - 3 \pmod{26}
 $$
 
-The key for both directions is 3. Z wraps around to C, and that wrapping is the mod at work.
+for $0 \le m, c \le 25$. The key for both encryption and decryption is 3. Every letter shifts by +3, and the last three wrap around modulo 26:
+
+| $M$ | A | B | C | D | E | F | G | H | I | J | K | L | M |
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| $m + 3 \bmod 26$ | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 |
+| $C$ | D | E | F | G | H | I | J | K | L | M | N | O | P |
+
+| $M$ | N | O | P | Q | R | S | T | U | V | W | X | Y | Z |
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| $m + 3 \bmod 26$ | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 0 | 1 | 2 |
+| $C$ | Q | R | S | T | U | V | W | X | Y | Z | A | B | C |
+
+Notice the last three columns: $X = 23$, $Y = 24$ and $Z = 25$ become $(23 + 3) \bmod 26 = 0\ (A)$, $(24 + 3) \bmod 26 = 1\ (B)$ and $(25 + 3) \bmod 26 = 2\ (C)$. (A table that prints 1, 2, 3 in that middle row is slipping into 1-based numbering; in 0-based numbering, $A, B, C$ are 0, 1, 2.)
 
 ## Shift ciphers
 
-There's no reason to stick with 3. A **shift cipher** allows any key $k$:
+There's no reason to stick with 3. A **shift cipher** (or **shift transformation**) allows any key $0 \le k \le 25$:
 
 $$
-E_k(m) = m + k \pmod{26}, \qquad D_k(c) = c - k \pmod{26}
+f_k = E_k(m) \equiv m + k \pmod{26}, \qquad f_k^{-1} = D_k(c) \equiv c - k \pmod{26}
 $$
 
 Turn the wheel to change the key. The inner ring gives the ciphertext letter under each plaintext letter:
 
 <CipherWheel />
 
-For example, with $k = 3$, IBM becomes LEP. With $k = 4$, NIST becomes RMWX. With $k = 7$, ENCRYPTION becomes LUJYFWAPVU.
+Here are three encryptions and three decryptions worked with $E_k$ and $D_k$:
+
+- $E_3(\text{IBM}) = \text{LEP}$: $I\ (8) \to 11\ (L)$, $B\ (1) \to 4\ (E)$, $M\ (12) \to 15\ (P)$.
+- $E_4(\text{NIST}) = \text{RMWX}$: $N\ (13) \to 17\ (R)$, $I\ (8) \to 12\ (M)$, $S\ (18) \to 22\ (W)$, $T\ (19) \to 23\ (X)$.
+- $E_7(\text{ENCRYPTION}) = \text{LUJYFWAPVU}$. (Some notes misprint this as `LUJXFWAPYU`, which would decrypt to `ENCQXPRION`: $R = 17$ shifts by 7 to $(17 + 7) \bmod 26 = 24 = Y$, not $X = 23$, and $O = 14$ shifts to $(14 + 7) \bmod 26 = 21 = V$, not $Y = 24$.)
+- $D_{22}(\text{YWHEBKNJEW}) = \text{CALIFORNIA}$, since subtracting 22 modulo 26 is the same as adding $26 - 22 = 4$. (Some notes print a stray period inside the ciphertext as `YWHEBKN.JEW`.)
+- $D_{21}(\text{ZIBGVIY}) = \text{ENGLAND}$: subtracting 21 modulo 26 adds 5, so $Z\ (25) \to (25 - 21) \bmod 26 = 4\ (E)$.
+- $D_{20}(\text{XYWLSJNCIH}) = \text{DECRYPTION}$: subtracting 20 modulo 26 adds 6.
 
 <CodeTabs>
 
 ```matlab
 shift = @(t, k) char(mod(double(t) - 65 + k, 26) + 65);   % 'A' is character 65
 
-shift('IBM', 3)           % LEP
-shift('NIST', 4)          % RMWX
-shift('ENCRYPTION', 7)    % LUJYFWAPVU
+shift('IBM', 3)               % LEP
+shift('NIST', 4)              % RMWX
+shift('ENCRYPTION', 7)        % LUJYFWAPVU
+shift('YWHEBKNJEW', -22)      % CALIFORNIA
+shift('ZIBGVIY', -21)         % ENGLAND
+shift('XYWLSJNCIH', -20)      % DECRYPTION
 ```
 
 ```python
@@ -51,14 +81,46 @@ import string
 def shift(text, k):
     # str.translate applies a whole substitution table in one call
     letters = string.ascii_uppercase
+    k %= 26
     return text.translate(str.maketrans(letters, letters[k:] + letters[:k]))
 
 print(shift("IBM", 3))  # LEP
 print(shift("NIST", 4))  # RMWX
 print(shift("ENCRYPTION", 7))  # LUJYFWAPVU
+print(shift("YWHEBKNJEW", -22))  # CALIFORNIA
+print(shift("ZIBGVIY", -21))  # ENGLAND
+print(shift("XYWLSJNCIH", -20))  # DECRYPTION
 ```
 
 </CodeTabs>
+
+Now try two decryptions on your own: find $D_{19}(\text{VHFFNGBVTMBHG})$ and $D_{17}(\text{JVTLIZKP})$.
+
+<details>
+<summary>Show the answers</summary>
+
+- **First ciphertext:** subtracting $k = 19$ modulo 26 is the same as adding $26 - 19 = 7$. Letter by letter, $V\ (21) \to 2\ (C)$, $H\ (7) \to 14\ (O)$, $F\ (5) \to 12\ (M)$, and the whole string $D_{19}(\text{VHFFNGBVTMBHG})$ decrypts to **COMMUNICATION**.
+- **Second ciphertext:** subtracting $k = 17$ modulo 26 is the same as adding $26 - 17 = 9$. Letter by letter, $J\ (9) \to 18\ (S)$, $V\ (21) \to 4\ (E)$, $T\ (19) \to 2\ (C)$, and $D_{17}(\text{JVTLIZKP})$ decrypts to **SECURITY**.
+
+<CodeTabs>
+
+```matlab
+shift = @(t, k) char(mod(double(t) - 65 + k, 26) + 65);
+shift('VHFFNGBVTMBHG', -19)   % COMMUNICATION
+shift('JVTLIZKP', -17)        % SECURITY
+```
+
+```python
+def shift(text, k):
+    return "".join(chr((ord(ch) - 65 + k) % 26 + 65) for ch in text)
+
+print(shift("VHFFNGBVTMBHG", -19))  # COMMUNICATION
+print(shift("JVTLIZKP", -17))  # SECURITY
+```
+
+</CodeTabs>
+
+</details>
 
 ## How to break it
 

@@ -7,9 +7,9 @@ Everything from the [last module](/courses/computational-mathematics/divisibilit
 
 ## The vocabulary
 
-- **Cryptography** (from the Greek for "hidden writing") is the study of how to conceal information in a ciphertext, so that only the legitimate users holding the key can recover it.
-- **Cryptanalysis** is the science of recovering information from ciphertext without knowing the key.
-- **Cryptology** is the broader field that covers both.
+- **Cryptography** (from the Greek *kryptos*, "hidden", and *graphein*, "to write") is the study of how to conceal information in a ciphertext, so that only the legitimate users holding the key can recover it, while making it impossible or computationally infeasible for an unauthorized person to do so.
+- **Cryptanalysis** (from *kryptos* and *analyein*, "to loosen") is the science and art of recovering information from ciphertext without knowing the key.
+- **Cryptology** (from *kryptos* and *logos*, "word") is the broader field that covers both. Within cryptography sit symmetric ciphers, asymmetric ciphers and cryptographic **protocols** (multi-step exchanges such as key agreement and authentication handshakes).
 
 Modern cryptography solves two main security problems:
 
@@ -22,25 +22,25 @@ Machine learning has been pointed at the problem too. In 2016, researchers at Go
 
 ## Two kinds of system
 
-Cryptosystems split into two families:
+Cryptographic systems (also called **cryptosystems**, **cryptographic schemes** or **ciphers**) split into two families:
 
-- **Secret-key** (or symmetric) systems use the same key to encrypt and decrypt.
-- **Public-key** (or asymmetric) systems use a public key to encrypt and a different private key to decrypt.
+- **Secret-key** (or **symmetric**, or **conventional**) systems use the same key to encrypt and decrypt.
+- **Public-key** (or **asymmetric**) systems use a public key to encrypt and a different private key to decrypt.
 
 ## The notation
 
 A cryptosystem has these parts:
 
-- $M$, the **message space**: the plaintext strings to be encrypted.
-- $C$, the **ciphertext space**: the encrypted strings.
-- $K$, the **key space**: the possible keys, including an encryption key $e_k$ and a decryption key $d_k$.
-- $E$, the encryption algorithm: $E_{e_k}(m) = c$.
-- $D$, the decryption algorithm: $D_{d_k}(c) = m$.
+- $M$, the **message space**: a set of plaintext strings over some alphabet to be encrypted.
+- $C$, the **ciphertext space**: a set of encrypted strings over some alphabet.
+- $K$, the **key space**: a set of possible keys, including an encryption key $e_k$ and a decryption key $d_k$.
+- $E$, the encryption process (algorithm): $E_{e_k}(m) = c$.
+- $D$, the decryption process (algorithm): $D_{d_k}(c) = m$.
 
 The two algorithms have to undo each other, for every message:
 
 $$
-D_{d_k}(E_{e_k}(m)) = m
+D_{d_k}(c) = D_{d_k}(E_{e_k}(m)) = m
 $$
 
 In code, that's two functions that undo each other. Here $E$ shifts each letter $k$ places along the alphabet and $D$ shifts it back, a cipher you'll take apart in [Caesar and Shift Ciphers](/courses/computational-mathematics/caesar-and-shift-ciphers):
@@ -70,7 +70,21 @@ print(D(3, E(3, "HELLO")))  # HELLO
 
 ## Secret-key systems
 
-In a secret-key system, $e_k = d_k = k$. Anyone who can encrypt can also decrypt, so the key must travel to the receiver over a separate secure channel. Follow one message through:
+In a conventional secret-key system, $e_k = d_k = k \in K$, called the **secret key**. Anyone who has enough information to encrypt messages automatically has enough information to decrypt them as well, so the key must travel to the legitimate receiver over a separate secure channel.
+
+Written as a mapping, the sender applies an invertible transformation $f$ determined by $k$,
+
+$$
+f \colon M \xrightarrow{k} C, \qquad c = E_k(m), \quad m \in M,\ c \in C
+$$
+
+and sends $c$ over the public insecure channel. The receiver applies the inverse transformation $f^{-1}$,
+
+$$
+f^{-1} \colon C \xrightarrow{k} M, \qquad D_k(c) = D_k(E_k(m)) = m
+$$
+
+to recover the original plaintext. Follow one message through:
 
 <SecretKeyFlow />
 

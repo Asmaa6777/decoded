@@ -1,4 +1,4 @@
-import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { AffineMapVisualizer } from "@/components/mdx/CipherVisualizers";
 
 # Affine Ciphers
@@ -7,21 +7,21 @@ A shift cipher only adds. If we multiply as well, we get a larger key space, and
 
 ## The cipher
 
-An **affine transformation** uses a pair of keys, $k_1$ and $k_2$:
+An **affine cipher** (or **affine transformation**) uses a pair of keys, $k_1, k_2 \in \mathbb{Z}$ with $0 \le k_1, k_2, m \le 25$:
 
 $$
-E_{(k_1, k_2)}(m) = k_1 m + k_2 \pmod{26}
+f_{(k_1, k_2)} = E_{(k_1, k_2)}(m) \equiv k_1 \cdot m + k_2 \pmod{26}
 $$
 
 If that shape looks familiar, it should. Every layer of a neural network computes $wx + b$, a multiplication followed by a shift, and "affine" is the name for exactly that in both fields. It's why a layer's $b$ is called the **bias**: without it, the layer can only scale, so a layer with no bias is linear but not affine.
 
-To decrypt, subtract $k_2$ and then multiply by the inverse of $k_1$:
+To decrypt, subtract $k_2$ and then multiply by $k_1^{-1}$, the multiplicative inverse of $k_1$ modulo 26:
 
 $$
-D_{(k_1, k_2)}(c) = k_1^{-1}(c - k_2) \pmod{26}
+f_{(k_1, k_2)}^{-1} = D_{(k_1, k_2)}(c) \equiv k_1^{-1} \cdot (c - k_2) \pmod{26}
 $$
 
-The inverse only exists when $\gcd(k_1, 26) = 1$ ([here's why](/courses/computational-mathematics/modular-inverses#when-an-inverse-exists)), and this is a hard requirement. Drag $k_1$ and watch the lines. When $k_1$ shares a factor with 26, they bunch up on fewer letters, and that information is gone for good:
+The inverse only exists when $\gcd(k_1, 26) = 1$ ([here's why](/courses/computational-mathematics/modular-inverses#when-an-inverse-exists)), and this is a hard requirement. More generally, the modulus 26 can be replaced by any larger alphabet size $n$, and is normally chosen to be a prime number so that every $1 \le k_1 < n$ has an inverse. Drag $k_1$ and watch the lines. When $k_1$ shares a factor with 26, they bunch up on fewer letters, and that information is gone for good:
 
 <AffineMapVisualizer />
 
@@ -112,9 +112,61 @@ print("".join(chr(k1inv * (n - 21) % 26 + 65) for n in c))  # AGENCY
 
 There are 12 valid values for $k_1$, because [Euler's totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) gives $\phi(26) = 12$, and 26 for $k_2$. That makes $12 \times 26 = 312$ keys, which a computer tries instantly. It also maps each letter to one fixed letter, so letter frequencies still give it away.
 
-<Callout tone="sky" label="Try it yourself">
-Use $k_1 = 11$ and $k_2 = 23$ to encrypt THE NATIONAL SECURITY AGENCY. The inverse of 11 modulo 26 is 19, so you can check your answer by decrypting with $19(c - 23)$.
-</Callout>
+Now try one on your own: use the affine transformation $f_{(11, 23)}(m) \equiv 11m + 23 \pmod{26}$ to encrypt **THE NATIONAL SECURITY AGENCY**, then apply the inverse transformation $f_{(11, 23)}^{-1}(c) \equiv 11^{-1}(c - 23) \pmod{26}$ to verify your result.
+
+<details>
+<summary>Show the answer</summary>
+
+First find $11^{-1} \bmod 26$: since $11 \times 19 = 209 = 8 \times 26 + 1$, the multiplicative inverse of 11 modulo 26 is **19**. Working each distinct letter of the message:
+
+| Plain | $m$ | $11m + 23 \bmod 26$ | Cipher | $19(c - 23) \bmod 26$ | Back |
+| :-: | :-: | :-: | :-: | :-: | :-: |
+| T | 19 | $232 \equiv 24$ | Y | $19(1) \equiv 19$ | T |
+| H | 7 | $100 \equiv 22$ | W | $19(-1) \equiv 7$ | H |
+| E | 4 | $67 \equiv 15$ | P | $19(-8) \equiv 4$ | E |
+| N | 13 | $166 \equiv 10$ | K | $19(-13) \equiv 13$ | N |
+| A | 0 | $23 \equiv 23$ | X | $19(0) \equiv 0$ | A |
+| I | 8 | $111 \equiv 7$ | H | $19(-16) \equiv 8$ | I |
+| O | 14 | $177 \equiv 21$ | V | $19(-2) \equiv 14$ | O |
+| L | 11 | $144 \equiv 14$ | O | $19(-9) \equiv 11$ | L |
+| S | 18 | $221 \equiv 13$ | N | $19(-10) \equiv 18$ | S |
+| C | 2 | $45 \equiv 19$ | T | $19(-4) \equiv 2$ | C |
+| U | 20 | $243 \equiv 9$ | J | $19(-14) \equiv 20$ | U |
+| R | 17 | $210 \equiv 2$ | C | $19(-21) \equiv 17$ | R |
+| Y | 24 | $287 \equiv 1$ | B | $19(-22) \equiv 24$ | Y |
+| G | 6 | $89 \equiv 11$ | L | $19(-12) \equiv 6$ | G |
+
+Putting the words back together:
+
+- **Ciphertext:** `YWP KXYHVKXO NPTJCHYB XLPKTB`
+- **Decrypted:** `THE NATIONAL SECURITY AGENCY`
+
+<CodeTabs>
+
+```matlab
+msg = 'THE NATIONAL SECURITY AGENCY';
+enc = msg;
+idx = msg ~= ' ';
+enc(idx) = char(mod(11 * (double(msg(idx)) - 65) + 23, 26) + 65);
+enc                        % YWP KXYHVKXO NPTJCHYB XLPKTB
+
+dec = enc;
+dec(idx) = char(mod(19 * (double(enc(idx)) - 65 - 23), 26) + 65);
+dec                        % THE NATIONAL SECURITY AGENCY
+```
+
+```python
+msg = "THE NATIONAL SECURITY AGENCY"
+enc = "".join(chr((11 * (ord(ch) - 65) + 23) % 26 + 65) if ch != " " else " " for ch in msg)
+dec = "".join(chr(19 * (ord(ch) - 65 - 23) % 26 + 65) if ch != " " else " " for ch in enc)
+
+print(enc)  # YWP KXYHVKXO NPTJCHYB XLPKTB
+print(dec)  # THE NATIONAL SECURITY AGENCY
+```
+
+</CodeTabs>
+
+</details>
 
 ## Where you'll meet this
 

@@ -474,6 +474,11 @@ describe("ciphers", () => {
     expect(shiftEncrypt("IBM", 3)).toBe("LEP");
     expect(shiftEncrypt("NIST", 4)).toBe("RMWX");
     expect(shiftEncrypt("ENCRYPTION", 7)).toBe("LUJYFWAPVU");
+    expect(shiftDecrypt("YWHEBKNJEW", 22)).toBe("CALIFORNIA");
+    expect(shiftDecrypt("ZIBGVIY", 21)).toBe("ENGLAND");
+    expect(shiftDecrypt("XYWLSJNCIH", 20)).toBe("DECRYPTION");
+    expect(shiftDecrypt("VHFFNGBVTMBHG", 19)).toBe("COMMUNICATION");
+    expect(shiftDecrypt("JVTLIZKP", 17)).toBe("SECURITY");
     expect(shiftEncrypt("XYZ", 3)).toBe("ABC");
     expect(shiftDecrypt(shiftEncrypt("ATTACK AT DAWN", 11), 11)).toBe("ATTACK AT DAWN");
   });
@@ -481,7 +486,8 @@ describe("ciphers", () => {
   it("runs the worked affine cipher both ways", () => {
     expect(affineEncrypt("SECURITY", 7, 21)).toBe("RXJFKZYH");
     expect(affineDecrypt("VLXIJH", 7, 21)).toBe("AGENCY");
-    expect(affineDecrypt(affineEncrypt("THE NATIONAL SECURITY AGENCY", 11, 23), 11, 23)).toBe("THE NATIONAL SECURITY AGENCY");
+    expect(affineEncrypt("THE NATIONAL SECURITY AGENCY", 11, 23)).toBe("YWP KXYHVKXO NPTJCHYB XLPKTB");
+    expect(affineDecrypt("YWP KXYHVKXO NPTJCHYB XLPKTB", 11, 23)).toBe("THE NATIONAL SECURITY AGENCY");
     expect((11 * 19) % 26).toBe(1);
     expect((7 * 15) % 26).toBe(1);
   });
@@ -495,6 +501,10 @@ describe("ciphers", () => {
   });
 
   it("encrypts and decrypts a bit stream with the same operation", () => {
+    const m9 = [0, 1, 1, 0, 0, 1, 1, 1, 0];
+    const k9 = [1, 0, 0, 1, 0, 0, 1, 0, 1];
+    expect(xorBits(m9, k9)).toEqual([1, 1, 1, 1, 0, 1, 0, 1, 1]);
+    expect(xorBits(xorBits(m9, k9), k9)).toEqual(m9);
     const m = textToBits("HI");
     const k = keystream(44257, m.length);
     const c = xorBits(m, k);
