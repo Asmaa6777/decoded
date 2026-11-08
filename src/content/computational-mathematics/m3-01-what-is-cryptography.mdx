@@ -42,7 +42,7 @@ A cryptosystem has five parts:
 
 - $M$, the **message space**: a [set](/courses/discrete-mathematics/sets#what-a-set-is) of plaintext strings over some [alphabet](/courses/theory-of-computation/language-of-languages) to be encrypted.
 - $C$, the **ciphertext space**: a set of encrypted strings over some alphabet.
-- $K$, the **key space**: a set of possible keys, including an encryption key $e_k$ and a decryption key $d_k$.
+- $K$, the **key space**: the set of all possible keys, from which an encryption key $e_k \in K$ and a matching decryption key $d_k \in K$ are chosen.
 - $E$, the encryption process (algorithm). Choosing a key $e_k \in K$ picks a function $E_{e_k}$. This function maps a plaintext $m \in M$ to a ciphertext $E_{e_k}(m) = c \in C$.
 - $D$, the decryption process (algorithm). Choosing the matching key $d_k \in K$ picks a function $D_{d_k}$. This function maps $c \in C$ back to $D_{d_k}(c) = m \in M$.
 
@@ -54,7 +54,7 @@ $$
 
 Why must this hold for every $m$? If two different plaintexts $m_1 \neq m_2$ ever produced the same ciphertext $c$, then $D_{d_k}(c)$ could only return one answer and would get the other message wrong. For decryption to return only one possible message, $E_{e_k}$ has to be [injective](/courses/discrete-mathematics/functions#three-properties) (one-to-one), and when $M$ and $C$ have the same size it is a [bijection](/courses/discrete-mathematics/functions#inverses).
 
-In code, $E$ and $D$ are two functions that undo each other. Computers store letters as [ASCII](/courses/logic-design/codes-and-floating-point#ascii-text) numbers, where `'A'` is 65, `'B'` is 66, and `'Z'` is 90. In MATLAB, `double` and `char` convert between characters and their ASCII codes; in Python, `ord` and `chr` do the same job. Here $E$ shifts each letter $k$ places along the alphabet and $D$ shifts it back, a cipher you will study in [Caesar and Shift Ciphers](/courses/computational-mathematics/caesar-and-shift-ciphers). To trace `E(3, 'HELLO')` by hand:
+In code, $E$ and $D$ are two functions that undo each other. Computers store letters as [ASCII](/courses/logic-design/codes-and-floating-point#ascii-text) numbers, where `'A'` is 65, `'B'` is 66, and `'Z'` is 90. In MATLAB, strings are character arrays whose ASCII codes are obtained with `double('HELLO')`, and `char([75 72 ...])` turns numbers back into text; in Python, `ord` and `chr` do the same for single characters. Here $E$ shifts each letter $k$ places along the alphabet and $D$ shifts it back, a cipher you will study in [Caesar and Shift Ciphers](/courses/computational-mathematics/caesar-and-shift-ciphers). To trace `E(3, 'HELLO')` by hand:
 
 1. Convert `'H', 'E', 'L', 'L', 'O'` to ASCII codes $72, 69, 76, 76, 79$, then subtract $65$ to get 0-based alphabet positions $7, 4, 11, 11, 14$.
 2. Add the key $k = 3$ modulo $26$:
@@ -64,7 +64,7 @@ $$
 &\quad = (10,\ 7,\ 14,\ 14,\ 17)
 \end{aligned}
 $$
-3. Add $65$ back to get ASCII codes $75, 72, 79, 79, 82$, which are the letters `'KHOOR'`. Calling `D(3, 'KHOOR')` runs `E(-3, 'KHOOR')`. That subtracts $3$ modulo $26$ from $(10, 7, 14, 14, 17)$ to recover $(7, 4, 11, 11, 14)$ and `'HELLO'`:`
+3. Add $65$ back to get ASCII codes $75, 72, 79, 79, 82$, which are the letters `'KHOOR'`. Calling `D(3, 'KHOOR')` runs `E(-3, 'KHOOR')`. That subtracts $3$ modulo $26$ from $(10, 7, 14, 14, 17)$ to recover $(7, 4, 11, 11, 14)$ and `'HELLO'`:
 
 
 <CodeTabs>
@@ -94,7 +94,7 @@ print(D(3, E(3, "HELLO")))  # HELLO
 
 In a conventional secret-key system, the encryption and decryption keys are identical: $e_k = d_k = k \in K$ (read "$k$ in the key space $K$"). This shared value is the **secret key**. Anyone who can encrypt messages with $k$ can decrypt them too. The sender and receiver must share $k$ over a separate **secure channel**. A secure channel is protected from eavesdropping and tampering, such as handing the key over in person or agreeing on it with a public-key handshake.
 
-Written as a mapping, the sender applies an invertible transformation $f$ chosen by $k$. Read $f \colon M \xrightarrow{k} C$ as "$f$ maps $M$ to $C$ under key $k$":
+Written as a mapping, each secret key $k$ specifies an invertible transformation $f = E_k$. Read $f \colon M \xrightarrow{k} C$ as "$f$ maps $M$ to $C$ under key $k$":
 
 $$
 \begin{aligned}
@@ -122,7 +122,7 @@ The ciphertext crosses the insecure channel in the open, so all the security res
 A common beginner mistake is assuming a cipher stays safe by keeping the algorithm $E$ secret. In practice, algorithms are built into software and hardware used by millions of people, so attackers can take them apart and read how they work. Cryptographers design systems under **Kerckhoffs's principle**: assume the attacker knows the algorithms $E$ and $D$ completely, and put all the secrecy in the key $k$. If a key leaks, you only have to change the key, not rebuild the whole system.
 </Callout>
 
-Because all security rests on $k$, the key has to be truly unpredictable, and that rules out the random numbers you use for everything else. A standard **pseudorandom number generator** starts from a single number called a **seed** and computes every later number from it by a fixed formula. The generators in MATLAB and NumPy are built to be **reproducible**, so giving them the same seed replays the exact same sequence of numbers. That is useful when you shuffle training data for an experiment, and dangerous for a cryptographic key, which must never repeat.
+Because all security rests on $k$, the key has to be truly unpredictable, and that rules out the random numbers you use for everything else. A standard **pseudorandom number generator** starts from a single number called a **seed** and computes every later number from it by a fixed formula. The generators in MATLAB and NumPy are built to be **reproducible**, so giving them the same seed replays the exact same sequence of numbers. That is useful when you shuffle training data for an experiment, and dangerous for a cryptographic key, which must never repeat. Cryptographically secure keys come from operating-system entropy pools (such as `/dev/urandom`), which harvest hardware unpredictability like thermal fluctuations and interrupt timings.
 
 <CodeTabs>
 
@@ -132,7 +132,7 @@ Because all security rests on $k$, the key has to be truly unpredictable, and th
 % operating system or a cryptography library, never from rand.
 rng(42);  a = randi(255, 1, 4);
 rng(42);  b = randi(255, 1, 4);
-isequal(a, b)          % true: fine for experiments, fatal for keys
+isequal(a, b)          % 1 (true): fine for experiments, fatal for keys
 ```
 
 ```python

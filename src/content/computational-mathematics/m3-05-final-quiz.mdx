@@ -199,7 +199,7 @@ Twenty questions on the whole module, in lesson order. Most are small calculatio
         { id: "d", text: "300" },
       ],
       correctOptionId: "a",
-      explanation: "The multiplier k₁ must be chosen from the integers in {1, ..., 25} coprime to 26, which is φ(26) = φ(2) · φ(13) = 1 · 12 = 12 choices (specifically: 1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25). The shift k₂ can be any of the 26 integers {0, 1, ..., 25}. The total number of valid keys is 12 × 26 = 312. Option b (26 × 26 = 676) assumes every multiplier is invertible. Option c (26) only counts shift keys (k₁ = 1). Option d (12 × 25 = 300) mistakenly excludes k₂ = 0.",
+      explanation: "The multiplier k₁ must be chosen from the integers in {1, ..., 25} coprime to 26, which is φ(26) = φ(2) · φ(13) = 1 · 12 = 12 choices (specifically: 1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25). The shift k₂ can be any of the 26 integers {0, 1, ..., 25}. The total number of valid keys is 12 × 26 = 312. Option b (26 × 26 = 676) assumes every multiplier is invertible. Option c (26) only counts shift keys (k₁ = 1). Option d (12 × 25 = 300) mistakenly excludes k₂ = 0, assuming shifts must be non-zero.",
     },
     {
       id: "q17",
@@ -223,7 +223,7 @@ Twenty questions on the whole module, in lesson order. Most are small calculatio
         { id: "d", text: "AB" },
       ],
       correctOptionId: "a",
-      explanation: "The encryption formula is c = (7m + 21) mod 26. For 'A' (m = 0): c = (7 × 0 + 21) mod 26 = 21 (V). For 'B' (m = 1): c = (7 × 1 + 21) mod 26 = 28 mod 26 = 2 (C). The result is VC. Option b incorrectly shifts B by 1 from V (21 + 1 = 22 = W) or miscalculates 28 mod 26. Option c uses 1-based indexing for A (m = 1 ⟹ c = 2) or makes an off-by-one subtraction. Option d represents no encryption.",
+      explanation: "The encryption formula is c = (7m + 21) mod 26. For 'A' (m = 0): c = (7 × 0 + 21) mod 26 = 21 (V). For 'B' (m = 1): c = (7 × 1 + 21) mod 26 = 28 mod 26 = 2 (C). The result is VC. Option b makes an off-by-one arithmetic error on the second letter (28 mod 26 = 2 = C, not 3 = D). Option c uses 1-based indexing for A (m = 1 ⟹ c = 2) or makes an off-by-one subtraction. Option d represents no encryption.",
     },
     {
       id: "q19",

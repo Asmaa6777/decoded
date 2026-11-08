@@ -16,7 +16,7 @@ f_{(k_1, k_2)} &= E_{(k_1, k_2)}(m) \\
 \end{aligned}
 $$
 
-If that shape looks familiar, it should. Every layer of a neural network computes $wx + b$, a multiplication followed by a shift. "Affine" is the name for that combination in both fields. That is why $b$ in a layer is called the **bias**. Without $b$, the layer can only scale its input, sending $0$ to $0$. A layer with no bias is linear; adding $b$ makes it affine.
+If that shape looks familiar, it should. Every layer of a neural network computes $wx + b$, a multiplication followed by a shift. "Affine" is the name for that combination in both fields. Here $m$ is a single number rather than a vector of features, but the structure is identical: scale by $k_1$, then offset by $k_2$. That is why $b$ in a layer is called the **bias**. Without $b$, the layer can only scale its input, sending $0$ to $0$. A layer with no bias is linear; adding $b$ makes it affine.
 
 To find the decryption formula, solve $c \equiv k_1 \cdot m + k_2 \pmod{26}$ for $m$. Encryption multiplies by $k_1$ first and adds $k_2$ second. Decryption undoes those steps in the [opposite order](/courses/discrete-mathematics/functions#composition). First, subtract $k_2$ from both sides to get $c - k_2 \equiv k_1 \cdot m \pmod{26}$. Next, multiply both sides by $k_1^{-1}$, the multiplicative inverse of $k_1$ modulo 26. That is the integer satisfying $k_1^{-1} \cdot k_1 \equiv 1 \pmod{26}$:
 
@@ -121,22 +121,22 @@ Substituting back from the bottom equation:
 $$
 \begin{aligned}
 1 &= 5 - 2 \times 2 \\
-  &= 5 - 2 \times (7 - 1 \times 5) = 3 \times 5 - 2 \times 7 \\
+  &= 5 - 2 \times (7 - 1 \times 5) = 5 - 2 \times 7 + 2 \times 5 = 3 \times 5 - 2 \times 7 \\
   &= 3 \times (26 - 3 \times 7) - 2 \times 7 \\
   &= 3 \times 26 - 11 \times 7
 \end{aligned}
 $$
 
-Reducing modulo 26 drops $3 \times 26$, leaving $(-11) \times 7 \equiv 1 \pmod{26}$. This gives $7^{-1} \equiv -11 \equiv 26 - 11 = 15 \pmod{26}$ (check: $7 \times 15 = 105 = 4 \times 26 + 1$). Now apply $D_{(7, 21)}(c) = 15(c - 21) \bmod 26$ to each letter of VLXIJH. You can multiply $15(c - 21)$ and divide by 26, or [reduce $(c - 21) \bmod 26$ first](/courses/computational-mathematics/modular-arithmetic#you-can-reduce-at-any-time) to keep the values positive:
+Reducing modulo 26 drops $3 \times 26$, leaving $(-11) \times 7 \equiv 1 \pmod{26}$. Adding 26 converts this negative result into the standard positive range: $7^{-1} \equiv -11 \equiv 26 - 11 = 15 \pmod{26}$ (check: $7 \times 15 = 105 = 4 \times 26 + 1$). Now apply $D_{(7, 21)}(c) = 15(c - 21) \bmod 26$ to each letter of VLXIJH. You can multiply $15(c - 21)$ directly or [reduce $(c - 21) \bmod 26$ first](/courses/computational-mathematics/modular-arithmetic#you-can-reduce-at-any-time) to keep the values positive; both give the exact same remainder:
 
-| Letter | $c$ | $c - 21$ | $15(c - 21)$ | Divide by 26 ($26q + r$) | $\bmod\ 26$ | Result |
+| Letter | $c$ | $c - 21$ | $15(c - 21)$ or $15(c - 21 \bmod 26)$ | Divide by 26 ($26q + r$) | $\bmod\ 26$ | Result |
 | --- | --- | --- | --- | --- | --- | --- |
 | V | 21 | $0$ | $0$ | $0 \times 26 + 0$ | 0 | A |
-| L | 11 | $-10 \equiv 16$ | $-150$ | $-6 \times 26 + 6$ | 6 | G |
+| L | 11 | $-10 \equiv 16$ | $-150$ or $240$ | $-6 \times 26 + 6$ or $9 \times 26 + 6$ | 6 | G |
 | X | 23 | $2$ | $30$ | $1 \times 26 + 4$ | 4 | E |
-| I | 8 | $-13 \equiv 13$ | $-195$ | $-8 \times 26 + 13$ | 13 | N |
-| J | 9 | $-12 \equiv 14$ | $-180$ | $-7 \times 26 + 2$ | 2 | C |
-| H | 7 | $-14 \equiv 12$ | $-210$ | $-9 \times 26 + 24$ | 24 | Y |
+| I | 8 | $-13 \equiv 13$ | $-195$ or $195$ | $-8 \times 26 + 13$ or $7 \times 26 + 13$ | 13 | N |
+| J | 9 | $-12 \equiv 14$ | $-180$ or $210$ | $-7 \times 26 + 2$ or $8 \times 26 + 2$ | 2 | C |
+| H | 7 | $-14 \equiv 12$ | $-210$ or $180$ | $-9 \times 26 + 24$ or $6 \times 26 + 24$ | 24 | Y |
 
 The message is AGENCY.
 
@@ -144,7 +144,7 @@ The message is AGENCY.
 
 ```matlab
 c = double('VLXIJH') - 65;
-% [g, x, y] = gcd(7, 26) solves 7*x + 26*y = 1, returning x = -11 (congruent to 15 mod 26)
+% [g, x, y] = gcd(7, 26) solves 7*x + 26*y = 1; x = -11. mod handles negative k1inv automatically
 [~, k1inv] = gcd(7, 26);
 char(mod(k1inv * (c - 21), 26) + 65)      % AGENCY
 ```
@@ -159,7 +159,7 @@ print("".join(chr(k1inv * (n - 21) % 26 + 65) for n in c))  # AGENCY
 
 ## How strong is it?
 
-How many valid keys $(k_1, k_2)$ exist for an affine cipher modulo 26? The multiplier $k_1$ must be [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $26 = 2 \times 13$. [Euler's totient function](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) gives $\phi(26) = (2 - 1)(13 - 1) = 12$ choices for $k_1$. These are the 12 odd numbers in $1 \dots 25$ other than $13$:
+How many valid keys $(k_1, k_2)$ exist for an affine cipher modulo 26? The multiplier $k_1$ must be [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $26 = 2 \times 13$. Because $26 = 2 \times 13$ is the product of two distinct primes, [Euler's totient function](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) gives $\phi(26) = \phi(2)\phi(13) = (2 - 1)(13 - 1) = 12$ choices for $k_1$. These are the 12 odd numbers in $1 \dots 25$ other than $13$:
 
 $$
 k_1 \in \{1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25\}

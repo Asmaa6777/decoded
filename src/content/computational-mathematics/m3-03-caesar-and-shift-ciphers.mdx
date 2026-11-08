@@ -27,8 +27,8 @@ A Caesar cipher shifts each letter forward by three places. It uses the transfor
 
 $$
 \begin{aligned}
-f_3 = E_3(m) &\equiv m + 3 \pmod{26} \\
-f_3^{-1} = D_3(c) &\equiv c - 3 \pmod{26}
+f_3(m) = E_3(m) &\equiv m + 3 \pmod{26} \\
+f_3^{-1}(c) = D_3(c) &\equiv c - 3 \pmod{26}
 \end{aligned}
 $$
 
@@ -52,8 +52,8 @@ There's no reason to stick with 3. A **shift cipher** (or **shift transformation
 
 $$
 \begin{aligned}
-f_k = E_k(m) &\equiv m + k \pmod{26} \\
-f_k^{-1} = D_k(c) &\equiv c - k \pmod{26}
+f_k(m) = E_k(m) &\equiv m + k \pmod{26} \\
+f_k^{-1}(c) = D_k(c) &\equiv c - k \pmod{26}
 \end{aligned}
 $$
 
@@ -83,6 +83,8 @@ When working shift ciphers by hand, watch out for two classic slips:
 2. **Counting $A = 1$ instead of $A = 0$.** If you start with $A = 1, B = 2, \dots$, every shift is off by one letter. Furthermore, $(23 + 3) \bmod 26 = 0$ has no letter to match.
 </Callout>
 
+In MATLAB and Python, `mod(-22, 26)` and `-22 % 26` automatically evaluate to $4$, so you can pass the negative key $-k$ directly into the shift function for decryption:
+
 <CodeTabs>
 
 ```matlab
@@ -91,7 +93,7 @@ shift = @(t, k) char(mod(double(t) - 65 + k, 26) + 65);   % 'A' is character 65
 shift('IBM', 3)               % LEP
 shift('NIST', 4)              % RMWX
 shift('ENCRYPTION', 7)        % LUJYFWAPVU
-shift('YWHEBKNJEW', -22)      % CALIFORNIA
+shift('YWHEBKNJEW', -22)      % CALIFORNIA (mod(-22, 26) is 4)
 shift('ZIBGVIY', -21)         % ENGLAND
 shift('XYWLSJNCIH', -20)      % DECRYPTION
 ```
@@ -186,22 +188,22 @@ Even without testing keys, letter frequencies break a shift cipher. E is the mos
 
 ```matlab
 c = shift('EEEEATTN', 3);
-% accumarray adds 1 to bucket (letter_code - 64) for each character in c
-counts = accumarray(double(c)' - 64, 1, [26 1]);   % how often each letter appears
-[~, i] = max(counts);
+% accumarray counts occurrences: adds 1 for each character mapped to bucket 1..26
+counts = accumarray(double(c)' - 64, 1, [26 1]);
+[~, i] = max(counts); % [~, i] ignores the max count and keeps its index i
 char(64 + i)          % H: E shifted by 3, so the key is 3
 ```
 
 ```python
 import string
-import pandas as pd
+from collections import Counter
 
 def shift(text, k):
     letters = string.ascii_uppercase
     return text.translate(str.maketrans(letters, letters[k:] + letters[:k]))
 
-counts = pd.Series(list(shift("EEEEATTN", 3))).value_counts()
-print(counts.idxmax())  # H
+counts = Counter(shift("EEEEATTN", 3))
+print(counts.most_common(1)[0][0])  # H
 ```
 
 </CodeTabs>

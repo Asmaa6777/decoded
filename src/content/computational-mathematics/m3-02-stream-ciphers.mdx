@@ -83,19 +83,20 @@ print(step(h - g - 0.5).tolist())  # [0, 1, 1, 0]
 
 </CodeTabs>
 
-So decryption is the same operation as encryption, with the same key stream. The receiver just needs the same generator and the same seed. Run it in both directions:
+Back in cryptography, because XOR is self-inverting ($(c \oplus k) \oplus k = c \oplus 0 = c$), decryption uses the exact same operation and key stream as encryption. The receiver just needs the same generator and the same seed. Run it in both directions:
 
 <XorStreamVisualizer />
 
 When encrypting real text, a computer groups bits into 8-bit bytes (`uint8` in MATLAB, `bytes` in Python) and XORs all 8 bits of each byte at once. For the two-letter message `'HI'`:
 
 - `'H'` is ASCII $72 = \text{01001000}_2$ in [binary](/courses/logic-design/number-systems#decimal-to-another-base), and `'I'` is ASCII $73 = \text{01001001}_2$.
-- Use key bytes $90 = \text{0x5A} = \text{01011010}_2$ and $195 = \text{0xC3} = \text{11000011}_2$, where `0x` marks [hexadecimal](/courses/logic-design/number-systems#why-programmers-love-hex). Bitwise XOR gives $\text{01001000}_2 \oplus \text{01011010}_2 = \text{00010010}_2 = 18$ for the first byte, and $\text{01001001}_2 \oplus \text{11000011}_2 = \text{10001010}_2 = 138$ for the second.
+- Use key bytes $90 = 5 \times 16 + 10 = \text{0x5A} = \text{01011010}_2$ and $195 = 12 \times 16 + 3 = \text{0xC3} = \text{11000011}_2$, where `0x` marks [hexadecimal](/courses/logic-design/number-systems#why-programmers-love-hex) (with $A = 10, C = 12$). Bitwise XOR gives $\text{01001000}_2 \oplus \text{01011010}_2 = \text{00010010}_2 = 18$ for the first byte, and $\text{01001001}_2 \oplus \text{11000011}_2 = \text{10001010}_2 = 138$ for the second.
 - XORing the ciphertext bytes $[18, 138]$ with $[90, 195]$ flips those exact bits back to $[72, 73]$, which is `'HI'`:
 
 <CodeTabs>
 
 ```matlab
+% On bit arrays, xor treats 0/1 as logical values
 m = [0 1 1 0 0 1 1 1 0];
 k = [1 0 0 1 0 0 1 0 1];
 c = double(xor(m, k))         % 1 1 1 1 0 1 0 1 1
@@ -141,7 +142,7 @@ Two traps show up regularly with stream ciphers:
 2. **Mixing up logical `xor` and bitwise `bitxor` in MATLAB (or `^` in MATLAB vs Python).** In MATLAB, `xor(72, 90)` treats every non-zero number as logical `true`, returning `xor(true, true) = 0`. In contrast, `bitxor(72, 90)` XORs their 8-bit binary forms to give `18`. Also, `^` is bitwise XOR in Python, but exponentiation in MATLAB.
 </Callout>
 
-The generator in this visualizer is a toy: a 16-bit linear-feedback [shift register](/courses/logic-design/registers#shift-registers) (LFSR). At each step, it shifts its bits by one position and feeds back the XOR of a few fixed positions as the new bit. Because XOR is linear modulo 2, the generator is predictable. An attacker who sees 32 consecutive output bits can solve a system of linear equations modulo 2. That reveals the register's internal state and predicts every future bit. Real systems require far stronger generators.
+The generator in this visualizer is a toy: a 16-bit linear-feedback [shift register](/courses/logic-design/registers#shift-registers) (LFSR). At each step, it shifts its bits by one position and feeds back the XOR of a few fixed positions as the new bit. Because XOR is linear modulo 2, the generator is predictable. An attacker who sees 32 consecutive output bits (twice the register's 16-bit length) can solve a system of linear equations modulo 2. That reveals the register's internal state and predicts every future bit. Real systems require far stronger generators.
 
 Machine learning uses random numbers too, but for different goals. Shuffling data and initializing weights require numbers that are fast and statistically even. A stream cipher needs numbers that no one can predict, even after seeing millions of earlier outputs. That is a much stronger requirement, so ciphers use a **cryptographically secure** generator. Swapping one generator for the other is a classic security bug.
 
