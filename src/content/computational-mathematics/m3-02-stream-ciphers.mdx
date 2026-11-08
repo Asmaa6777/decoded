@@ -7,7 +7,7 @@ Computers store everything as [bits](/courses/computer-organization/bits-and-byt
 
 ## How it works
 
-In a **stream cipher** (also called a **bit cipher**), the message units are individual bits ($0$ or $1$). A secret key seeds a random bit generator, which produces a long sequence of binary signals called the **key stream** (or **key-stream**) $k = k_1, k_2, k_3, \dots$. Each plaintext bit $m_i$ is mixed with the matching key bit $k_i$ at the same position $i$ using **bitwise** XOR (meaning position $i$ depends only on $m_i$ and $k_i$, with no carries into neighbouring bits):
+In a **stream cipher** (also called a **bit cipher**), the message units are individual bits ($0$ or $1$). A secret key starts a random bit generator. The generator outputs a sequence of bits called the **key stream** (or **key-stream**) $k = k_1, k_2, k_3, \dots$. Each plaintext bit $m_i$ is combined with the matching key bit $k_i$ at position $i$ using **bitwise** XOR. "Bitwise" means each position $i$ depends only on $m_i$ and $k_i$, with no carries into neighboring bits:
 
 $$
 c_i = m_i \oplus k_i
@@ -19,13 +19,13 @@ $$
 0 \oplus 0 = 0, \qquad 0 \oplus 1 = 1, \qquad 1 \oplus 0 = 1, \qquad 1 \oplus 1 = 0
 $$
 
-Why use XOR instead of AND or OR? Because AND with $0$ always outputs $0$ ($0 \text{ AND } 0 = 0$ and $1 \text{ AND } 0 = 0$), and OR with $1$ always outputs $1$, destroying the message bit $m_i$ so no receiver can tell what it was. With XOR, both key bit choices are reversible: $k_i = 0$ keeps $m_i$ as it is, and $k_i = 1$ flips $m_i$ between $0$ and $1$. Applying the same key bit a second time undoes the first:
+Why use XOR instead of AND or OR? AND with $0$ always outputs $0$ ($0 \text{ AND } 0 = 0$ and $1 \text{ AND } 0 = 0$). OR with $1$ always outputs $1$. Both operations destroy the message bit $m_i$, so the receiver cannot recover it. XOR is different because both key bit choices can be reversed: $k_i = 0$ leaves $m_i$ unchanged, and $k_i = 1$ flips $m_i$ between $0$ and $1$. Applying the same key bit a second time undoes the first:
 
 $$
 (m_i \oplus k_i) \oplus k_i = m_i \oplus (k_i \oplus k_i) = m_i \oplus 0 = m_i
 $$
 
-That identity holds because XOR is associative, any bit XORed with itself is $0$ ($k_i \oplus k_i = 0$, since the two bits match), and any bit XORed with $0$ stays $m_i$.
+That identity holds because XOR is associative. Any bit XORed with itself is $0$ ($k_i \oplus k_i = 0$, because the bits match). And any bit XORed with $0$ stays unchanged ($m_i \oplus 0 = m_i$).
 
 Here is a 9-bit stream worked bit by bit. Mixing the plaintext stream $m$ with the key stream $k$ produces the ciphertext stream $c$:
 
@@ -35,9 +35,9 @@ Here is a 9-bit stream worked bit by bit. Mixing the plaintext stream $m$ with t
 | $k$ | 1 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 1 | $\cdots$ |
 | $c = m \oplus k$ | 1 | 1 | 1 | 1 | 0 | 1 | 0 | 1 | 1 | $\cdots$ |
 
-Check a few columns: at bit 1, $m_1 = 0$ and $k_1 = 1$ differ, so $c_1 = 0 \oplus 1 = 1$; at bit 5, $m_5 = 0$ and $k_5 = 0$ match, so $c_5 = 0 \oplus 0 = 0$; at bit 7, $m_7 = 1$ and $k_7 = 1$ match, so $c_7 = 1 \oplus 1 = 0$.
+Check a few columns. At bit 1, $m_1 = 0$ and $k_1 = 1$ differ, so $c_1 = 0 \oplus 1 = 1$. At bit 5, $m_5 = 0$ and $k_5 = 0$ match, so $c_5 = 0 \oplus 0 = 0$. At bit 7, $m_7 = 1$ and $k_7 = 1$ match, so $c_7 = 1 \oplus 1 = 0$.
 
-To decrypt, the receiver generates the identical key stream $k$ from the same generator and seed, then XORs $c$ with $k$ bit by bit to get $m$ back. At bit 1, $c_1 \oplus k_1 = 1 \oplus 1 = 0 = m_1$; at bit 5, $0 \oplus 0 = 0 = m_5$; at bit 7, $0 \oplus 1 = 1 = m_7$:
+To decrypt, the receiver generates the same key stream $k$ from the same seed. XORing $c$ with $k$ bit by bit recovers $m$. At bit 1, $c_1 \oplus k_1 = 1 \oplus 1 = 0 = m_1$. At bit 5, $0 \oplus 0 = 0 = m_5$. At bit 7, $0 \oplus 1 = 1 = m_7$:
 
 | Stream | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | $\cdots$ |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -45,13 +45,13 @@ To decrypt, the receiver generates the identical key stream $k$ from the same ge
 | $k$ | 1 | 0 | 0 | 1 | 0 | 0 | 1 | 0 | 1 | $\cdots$ |
 | $m = c \oplus k$ | 0 | 1 | 1 | 0 | 0 | 1 | 1 | 1 | 0 | $\cdots$ |
 
-XOR also has a famous place in the history of AI. The earliest neural network, the **perceptron**, decides by weighting its inputs, adding a constant and checking whether the sum is positive, which geometrically draws one straight line through the input plane. No single straight line can separate XOR's outputs: on the four corners of the unit square $(0, 0), (0, 1), (1, 0), (1, 1)$, the $1$s sit on one diagonal at $(0, 1)$ and $(1, 0)$ while the $0$s sit on the other at $(0, 0)$ and $(1, 1)$. A 1969 book on perceptrons by Minsky and Papert made that limit famous, and enthusiasm for neural networks cooled for years.
+XOR also appears in the history of machine learning. The earliest neural network model, the **perceptron**, weights its inputs, adds a constant, and checks whether the sum is positive. Geometrically, that rule draws one straight line through the plane. But no single straight line can separate the outputs of XOR. On the four corners of the unit square, $(0, 1)$ and $(1, 0)$ output $1$, while $(0, 0)$ and $(1, 1)$ output $0$. Those pairs sit on opposite diagonals, so a single straight line cannot separate them. A 1969 book by Marvin Minsky and Seymour Papert proved that limitation, which slowed work on neural networks for over a decade.
 
-The fix is a **hidden layer**, an intermediate layer of units between the inputs and the final output, paired with a **non-linear step** (here a threshold function `step(v)` that outputs $1$ when $v > 0$ and $0$ otherwise). For the four input rows of $X$, [matrix multiplication](/courses/computational-mathematics/multiplying-matrices#the-rule) $X \begin{bmatrix} 1 \\ 1 \end{bmatrix}$ adds the two bits in each row to get $[0, 1, 1, 2]^T$:
+The fix uses a **hidden layer** between the inputs and the final output, along with a **non-linear step**. Here the function `step(v)` outputs $1$ when $v > 0$ and $0$ otherwise. For the four input rows of $X$, [matrix multiplication](/courses/computational-mathematics/multiplying-matrices#the-rule) $X \begin{bmatrix} 1 \\ 1 \end{bmatrix}$ adds the two bits in each row to get $[0, 1, 1, 2]^T$:
 
-- Hidden unit 1 subtracts $0.5$ to get $[-0.5, 0.5, 0.5, 1.5]^T$, and `step` turns that into $h = [0, 1, 1, 1]^T$, which is OR (at least one bit is $1$).
-- Hidden unit 2 subtracts $1.5$ to get $[-1.5, -0.5, -0.5, 0.5]^T$, and `step` turns that into $g = [0, 0, 0, 1]^T$, which is AND (both bits are $1$).
-- The output unit computes $h - g - 0.5 = [-0.5, 0.5, 0.5, -0.5]^T$, and `step` gives $[0, 1, 1, 0]^T$, which is "OR but not AND", or XOR. That is why neural networks need both depth and a non-linear step between layers:
+- Hidden unit 1 subtracts $0.5$ to get $[-0.5, 0.5, 0.5, 1.5]^T$. Applying `step` gives $h = [0, 1, 1, 1]^T$, which computes OR (at least one bit is $1$).
+- Hidden unit 2 subtracts $1.5$ to get $[-1.5, -0.5, -0.5, 0.5]^T$. Applying `step` gives $g = [0, 0, 0, 1]^T$, which computes AND (both bits are $1$).
+- The output unit computes $h - g - 0.5 = [-0.5, 0.5, 0.5, -0.5]^T$, and `step` gives $[0, 1, 1, 0]^T$. That matches XOR: 1 when exactly one input is 1, and 0 otherwise. That is why neural networks require both depth and a non-linear step between layers:
 
 <CodeTabs>
 
@@ -84,7 +84,7 @@ So decryption is the same operation as encryption, with the same key stream. The
 When encrypting real text, a computer groups bits into 8-bit bytes (`uint8` in MATLAB, `bytes` in Python) and XORs all 8 bits of each byte at once. For the two-letter message `'HI'`:
 
 - `'H'` is ASCII $72 = \text{01001000}_2$ in [binary](/courses/logic-design/number-systems#decimal-to-another-base), and `'I'` is ASCII $73 = \text{01001001}_2$.
-- With key bytes $90 = \text{0x5A} = \text{01011010}_2$ and $195 = \text{0xC3} = \text{11000011}_2$ (`0x` marks [hexadecimal](/courses/logic-design/number-systems#why-programmers-love-hex)), bitwise XOR gives $\text{01001000}_2 \oplus \text{01011010}_2 = \text{00010010}_2 = 18$ for the first byte and $\text{01001001}_2 \oplus \text{11000011}_2 = \text{10001010}_2 = 138$ for the second.
+- Use key bytes $90 = \text{0x5A} = \text{01011010}_2$ and $195 = \text{0xC3} = \text{11000011}_2$, where `0x` marks [hexadecimal](/courses/logic-design/number-systems#why-programmers-love-hex). Bitwise XOR gives $\text{01001000}_2 \oplus \text{01011010}_2 = \text{00010010}_2 = 18$ for the first byte, and $\text{01001001}_2 \oplus \text{11000011}_2 = \text{10001010}_2 = 138$ for the second.
 - XORing the ciphertext bytes $[18, 138]$ with $[90, 195]$ flips those exact bits back to $[72, 73]$, which is `'HI'`:
 
 <CodeTabs>
@@ -123,19 +123,19 @@ print(bytes(t ^ s for t, s in zip(cipher, key)))  # b'HI'
 <Callout tone="orange" label="Usual mistakes: never reuse a key stream, and watch your XOR operator">
 Two traps show up regularly with stream ciphers:
 
-1. **Reusing a key stream.** If two messages $m_1$ and $m_2$ are encrypted with the same key stream $k$, an eavesdropper who intercepts $c_1 = m_1 \oplus k$ and $c_2 = m_2 \oplus k$ can XOR the two ciphertexts together:
+1. **Reusing a key stream.** Suppose two messages $m_1$ and $m_2$ use the same key stream $k$. An eavesdropper who intercepts $c_1 = m_1 \oplus k$ and $c_2 = m_2 \oplus k$ can XOR the two ciphertexts together:
    $$
    c_1 \oplus c_2 = (m_1 \oplus k) \oplus (m_2 \oplus k) = m_1 \oplus m_2 \oplus (k \oplus k) = m_1 \oplus m_2
    $$
    The unknown key $k$ cancels completely. Wherever the attacker guesses a common word or header in $m_1$, XORing that guess with $m_1 \oplus m_2$ reveals the corresponding characters of $m_2$. WEP, an early Wi-Fi security standard, was broken partly because its key streams repeated.
-2. **Mixing up logical `xor` and bitwise `bitxor` in MATLAB (or `^` in MATLAB vs Python).** In MATLAB, `xor(72, 90)` treats any nonzero number as logical `true` and returns `xor(true, true) = 0`, whereas `bitxor(72, 90)` XORs their 8-bit binary forms to give `18`. And while `^` is bitwise XOR in Python, `^` is exponentiation in MATLAB.
+2. **Mixing up logical `xor` and bitwise `bitxor` in MATLAB (or `^` in MATLAB vs Python).** In MATLAB, `xor(72, 90)` treats every non-zero number as logical `true`, returning `xor(true, true) = 0`. In contrast, `bitxor(72, 90)` XORs their 8-bit binary forms to give `18`. Also, `^` is bitwise XOR in Python, but exponentiation in MATLAB.
 </Callout>
 
-The generator in this visualizer is a toy, a 16-bit linear-feedback [shift register](/courses/logic-design/registers#shift-registers) (LFSR). At each step it shifts its bits by one position and feeds back the XOR of a few fixed positions as the new bit. Because XOR is linear modulo 2, an attacker who observes just 32 consecutive bits of output can set up and solve a system of linear equations modulo 2 to find the register's internal state and predict every future bit, so real systems use far stronger generators.
+The generator in this visualizer is a toy: a 16-bit linear-feedback [shift register](/courses/logic-design/registers#shift-registers) (LFSR). At each step, it shifts its bits by one position and feeds back the XOR of a few fixed positions as the new bit. Because XOR is linear modulo 2, the generator is predictable. An attacker who sees 32 consecutive output bits can solve a system of linear equations modulo 2. That reveals the register's internal state and predicts every future bit. Real systems require far stronger generators.
 
-Machine learning needs random bits too, but of a different kind. Shuffling data and initialising weights need numbers that are fast and statistically even, and ML libraries pick generators built for exactly that. A stream cipher also needs numbers nobody can predict even after seeing millions of previous outputs, which is a much stronger demand, so it uses a **cryptographically secure** generator. Swapping one for the other is a classic security bug.
+Machine learning uses random numbers too, but for different goals. Shuffling data and initializing weights require numbers that are fast and statistically even. A stream cipher needs numbers that no one can predict, even after seeing millions of earlier outputs. That is a much stronger requirement, so ciphers use a **cryptographically secure** generator. Swapping one generator for the other is a classic security bug.
 
-If the key stream is truly random (like coin flips rather than a deterministic formula), at least as long as the message, and never reused, you have the **one-time pad**, which is provably unbreakable. To see why: for any $n$-bit ciphertext $c$ and any conceivable $n$-bit plaintext $m'$, there is exactly one $n$-bit key $k' = c \oplus m'$ that maps $m'$ to $c$. Because every $n$-bit key is equally likely, every $n$-bit plaintext is equally likely given $c$, so the ciphertext leaks zero information about $m$. It is rarely practical, because securely sharing an $n$-bit key is just as hard as securely sharing the $n$-bit message itself.
+When the key stream is truly random (like physical coin flips), at least as long as the message, and never reused, the cipher is a **one-time pad**. It is provably unbreakable. For any $n$-bit ciphertext $c$ and any potential $n$-bit plaintext $m'$, exactly one $n$-bit key $k' = c \oplus m'$ maps $m'$ to $c$. Because every $n$-bit key has equal probability, every $n$-bit plaintext has equal probability given $c$. The ciphertext reveals nothing about $m$. But a one-time pad is rarely practical: sharing an $n$-bit secret key safely is just as hard as sending the message itself.
 
 ## Where you'll meet this
 
