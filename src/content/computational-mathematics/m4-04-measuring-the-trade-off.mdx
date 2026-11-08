@@ -5,7 +5,7 @@ import { FilterPlayground, HearIt } from "@/components/mdx/SignalVisualizers";
 
 To say how well a filter worked, you have to compare its output with the clean voice. But in a real recording, the clean voice is exactly what you don't have. So the project cheats on purpose: **record a voice $x$, add noise yourself with a fixed seed, and keep $x$ to compare against**. That's a controlled experiment, and it's how every noise-removal method gets tested.
 
-Write $\hat{x}$ ("x-hat") for the estimate of the clean signal, the recording after filtering. Two measures say how close it is.
+Write $\hat{x}$ ("x-hat") for the estimate of the clean signal, the recording after filtering (the same hat notation used for [predictions in linear models](/courses/computational-mathematics/multiplying-matrices#the-rule)). Two measures say how close it is.
 
 ## Error norm: how far off, as one number
 
@@ -13,28 +13,56 @@ $$
 \lVert x - \hat{x} \rVert = \sqrt{\sum_n \big(x(n) - \hat{x}(n)\big)^2}
 $$
 
-Subtract the estimate from the truth sample by sample, square each difference so negatives don't cancel positives, add them up and take the square root. That's the length of the error vector, the [2-norm](/courses/computational-mathematics/norms-and-trace#three-norms-to-know). **Smaller is better.**
+Subtract the estimate from the truth sample by sample, square each difference so negatives don't cancel positives, add them up and take the square root. That's the length of the error vector $x - \hat{x}$, the [Euclidean norm](/courses/computational-mathematics/norms-and-trace#three-norms-to-know) (which MATLAB's `norm(v)` and NumPy's `np.linalg.norm(v)` compute on a vector). **Smaller is better.**
 
 ## Signal-to-noise ratio: how loud the voice is next to what's left of the noise
+
+An error norm of $1.11$ doesn't tell you on its own whether the error is tiny or huge: an error of $1.11$ is small if the voice has norm $100$, and terrible if the voice has norm $1$. So we compare the energy of the clean voice, $\lVert x \rVert^2 = \sum_n x(n)^2$, with the energy of the leftover error, $\lVert x - \hat{x} \rVert^2$. That ratio is the **signal-to-noise ratio (SNR)**:
 
 $$
 \text{SNR} = 10 \log_{10} \frac{\lVert x \rVert^2}{\lVert x - \hat{x} \rVert^2} \quad \text{in decibels (dB)}
 $$
 
-The fraction compares the strength of the voice with the strength of the leftover error. The **decibel** puts that ratio on a logarithmic scale: every +10 dB means the voice is 10 times stronger relative to the noise, +3 dB means about twice as strong, and 0 dB means the noise is as strong as the voice. **Larger is better.**
+Here $\log_{10}(r)$ is the **base-10 logarithm**, the power to which you must raise $10$ to get $r$: $\log_{10}(1) = 0$ because $10^0 = 1$, $\log_{10}(10) = 1$ because $10^1 = 10$, and $\log_{10}(100) = 2$ because $10^2 = 100$. Multiplying by $10$ puts the ratio in **decibels (dB)**:
+
+- **0 dB** means $\lVert x \rVert^2 / \lVert x - \hat{x} \rVert^2 = 1$, because $10 \log_{10}(1) = 0$: the leftover error has the same energy as the voice.
+- **+10 dB** means the energy ratio is $10$, because $10 \log_{10}(10) = 10$: the voice has 10 times the energy of the error.
+- **+20 dB** means the energy ratio is $100$ ($10 \log_{10}(100) = 20$), and **+3 dB** means the energy ratio is about $2$, because $\log_{10}(2) \approx 0.301$ and $10 \times 0.301 \approx 3.01$ dB.
+
+**Larger is better.** Notice the squares inside the fraction: if the error vector's length $\lVert x - \hat{x} \rVert$ shrinks by a factor of $2$, its squared length $\lVert x - \hat{x} \rVert^2$ shrinks by $2^2 = 4$, which multiplies the energy ratio by $4$ and adds $10 \log_{10}(4) \approx 6.02$ dB to the SNR.
+
+<Callout tone="orange" label="Common mistake">
+Using $x - y$ (the added noise) instead of $x - \hat{x}$ (the leftover error after filtering), or forgetting to square the norms inside $10 \log_{10}(\dots)$. After filtering, the error is $x - \hat{x}$, which combines whatever noise wasn't cancelled with whatever distortion the filter did to the clean voice. And because the norms are squared, `10 * log10(norm(x)^2 / norm(x - x_hat)^2)` is equal to `20 * log10(norm(x) / norm(x - x_hat))`; leaving out the squares with `10 * log10` cuts the decibel answer in half.
+</Callout>
 
 ## Worked example
 
-Back to the [five samples](/courses/computational-mathematics/noise-and-averaging#a-five-sample-example): $x = [2\ 2\ 2\ 2\ 2]$, so $\lVert x \rVert^2 = 5 \times 2^2 = 20$. After the 3-sample average, $\hat{x} = [1.33\ 2.33\ 1.67\ 2.33\ 1.33]$.
+Back to the [five samples](/courses/computational-mathematics/noise-and-averaging#a-five-sample-example): $x = [2\ 2\ 2\ 2\ 2]$, so the signal energy is
+
+$$
+\lVert x \rVert^2 = 2^2 + 2^2 + 2^2 + 2^2 + 2^2 = 5 \times 4 = 20
+$$
+
+**Before filtering ($\hat{x} = y = [3\ 1\ 3\ 1\ 3]$):**
+
+- Error vector: $x - y = [2-3,\ 2-1,\ 2-3,\ 2-1,\ 2-3] = [-1,\ 1,\ -1,\ 1,\ -1]$.
+- Squared error norm: $\lVert x - y \rVert^2 = (-1)^2 + 1^2 + (-1)^2 + 1^2 + (-1)^2 = 1 + 1 + 1 + 1 + 1 = 5$.
+- Error norm: $\lVert x - y \rVert = \sqrt{5} \approx 2.2361 \approx 2.24$.
+- SNR: $10 \log_{10}(20 / 5) = 10 \log_{10}(4) \approx 10 \times 0.6021 = 6.02 \approx 6.0\text{ dB}$.
+
+**After the 3-sample average ($\hat{x} = [\tfrac43\ \tfrac73\ \tfrac53\ \tfrac73\ \tfrac43] \approx [1.33\ 2.33\ 1.67\ 2.33\ 1.33]$):**
+
+- Error vector: $x - \hat{x} = [2 - \tfrac43,\ 2 - \tfrac73,\ 2 - \tfrac53,\ 2 - \tfrac73,\ 2 - \tfrac43] = [\tfrac23,\ -\tfrac13,\ \tfrac13,\ -\tfrac13,\ \tfrac23] \approx [0.67,\ -0.33,\ 0.33,\ -0.33,\ 0.67]$.
+- Squared error norm: $\lVert x - \hat{x} \rVert^2 = (\tfrac23)^2 + (-\tfrac13)^2 + (\tfrac13)^2 + (-\tfrac13)^2 + (\tfrac23)^2 = \frac{4 + 1 + 1 + 1 + 4}{9} = \frac{11}{9} \approx 1.2222 \approx 1.22$.
+- Error norm: $\lVert x - \hat{x} \rVert = \sqrt{11/9} \approx 1.1055 \approx 1.11$.
+- SNR: $10 \log_{10}(20 / (11/9)) = 10 \log_{10}(180 / 11) \approx 10 \log_{10}(16.3636) \approx 10 \times 1.2139 = 12.14 \approx 12.1\text{ dB}$.
 
 | | errors $x - \hat{x}$ | $\lVert x - \hat{x} \rVert^2$ | $\lVert x - \hat{x} \rVert$ | SNR |
 |---|---|---|---|---|
 | before ($\hat{x} = y$) | −1, 1, −1, 1, −1 | 5.00 | 2.24 | 6.0 dB |
 | after (M = 3) | 0.67, −0.33, 0.33, −0.33, 0.67 | 1.22 | 1.11 | 12.1 dB |
 
-For example, before filtering: $10 \log_{10}(20 / 5) = 10 \log_{10} 4 \approx 6.0$ dB.
-
-The error halved and the SNR went up by about 6 dB. The two end samples improved less than the middle ones, from 1 away to only 0.67 away, because the zeros past the edges pull them down. On a real recording of 132,300 samples, two edge samples barely matter.
+The error norm halved (from $2.24$ to $1.11$), which quartered the squared error (from $5.00$ to $1.22$) and raised the SNR by about $6$ dB. The two end samples improved less than the middle ones, from $1$ away to $\tfrac23 \approx 0.67$ away, because the padded zeros past the edges pull them down. On a real recording of 132,300 samples, two edge samples barely matter.
 
 <CodeTabs>
 
@@ -74,16 +102,18 @@ print(round(snr_db, 4))  # 12.1388
 </CodeTabs>
 
 <Callout tone="sky" label="The same numbers train AI">
-The squared error norm divided by the number of samples is the **mean squared error**, the loss function most machine learning models minimise while training. Speech-enhancement networks, the ones that clean up calls in Zoom and Teams, are trained with losses like it and compared by SNR in decibels, exactly the two measures above.
+The squared error norm $\lVert x - \hat{x} \rVert^2$ divided by the number of samples $N$ is the [mean squared error](/courses/computational-mathematics/derivatives-and-curve-fitting#derivatives) ($\frac{1}{N}\sum_n (x(n) - \hat{x}(n))^2$), the loss function most machine learning models minimise while training. Speech-enhancement networks, the ones that clean up calls in Zoom and Teams, are trained with losses like it and compared by SNR in decibels, the same two measures above.
 </Callout>
 
 ## The trade-off
 
-Averaging more samples removes more noise, but it also smears every fast, real change. The signal below has slow waves, one sharp spike and one fast burst. Increase $M$ and watch the noise shrink, then watch the spike and the burst flatten:
+Why doesn't the SNR keep rising forever as $M$ grows? Because the error $x - \hat{x}$ has two parts: leftover random noise, which shrinks like $\sigma / \sqrt{M}$ as $M$ grows, and **signal distortion** (blurring of the clean voice itself), which *grows* as the window $M$ gets wider than the voice's fast details.
+
+The signal below has slow waves, one sharp spike and one fast burst. Increase $M$ and watch the noise shrink, then watch the spike and the burst flatten:
 
 <FilterPlayground />
 
-The small chart underneath runs the filter for every $M$ from 1 to 61 and plots the SNR. It rises while noise removal wins, peaks, then falls once blurring wins. The violet dot marks the best $M$ for this signal and this noise. Change the noise strength and the peak moves: stronger noise is worth more blur.
+The small chart underneath runs the filter for every $M$ from 1 to 61 and plots the SNR. At small $M$, increasing $M$ removes more noise than it blurs the signal, so $\lVert x - \hat{x} \rVert$ falls and the SNR rises. Past the peak, the window is wide enough to flatten the spike and the fast burst, so each increase in $M$ damages the clean signal more than it reduces the remaining noise, and the SNR falls. The violet dot marks the best $M$ for this signal and this noise. Change the noise strength $\sigma$ and the peak moves right when $\sigma$ is large: when noise dominates the error, it pays to average across a wider window and accept more blur.
 
 **Finding that peak, and explaining why it's there, is the core of the project.**
 
@@ -93,18 +123,18 @@ Numbers are one thing; ears are another. Here's a voice-like buzz, a 140 Hz tone
 
 <HearIt />
 
-At small $M$ the hiss fades. At large $M$ the hiss is gone, but so is the brightness of the voice: the overtones are fast changes, and averaging smooths them away. That's the trade-off you can hear.
+At small $M$ the hiss fades. At large $M$ the hiss is gone, but so is the brightness of the voice: the higher overtones (such as the 10th overtone at $10 \times 140 = 1{,}400$ Hz, whose cycle is only $22{,}050 / 1{,}400 \approx 16$ samples long in this player) complete whole cycles inside a 60-sample window, so their peaks and troughs cancel out in the average just like noise. That's the trade-off you can hear.
 
 ## Your project
 
 You now have every piece. Here's the full project to run on a real recording.
 
-1. **Record yourself** saying a short sentence, about 3 seconds, and load it as a vector $x$. If the file is stereo, keep one column.
+1. **Record yourself** saying a short sentence, about 3 seconds, and load it as a vector `x`. If the file is stereo (2 columns), keep the first column with `x = x(:, 1)` in MATLAB or `x = x[:, 0]` in Python.
 2. **Add noise** with a fixed seed: `rng(42); y = x + sigma * randn(size(x));`. Start with $\sigma$ around 0.05; recordings are quieter than the examples here.
 3. **Filter** with `x_hat = conv(y, ones(1, M) / M, 'same')` for every $M$ from 1 to 61.
 4. **Measure** the error norm and the SNR for each $M$, and plot SNR against $M$.
 5. **Find the best $M$** and listen with `sound(x_hat, Fs)` at the best $M$, at a much smaller one and at a much larger one.
-6. **Explain** the shape of the curve in your own words, using the √M rule from the [noise lesson](/courses/computational-mathematics/noise-and-averaging#why-averaging-neighbours-removes-noise) and the spike example from the [convolution lesson](/courses/computational-mathematics/averaging-is-convolution#what-just-happened).
+6. **Explain** the shape of the curve in your own words, using the $\sqrt{M}$ rule from the [noise lesson](/courses/computational-mathematics/noise-and-averaging#why-averaging-neighbours-removes-noise) and the spike example from the [convolution lesson](/courses/computational-mathematics/averaging-is-convolution#what-just-happened).
 7. **Repeat** for three different values of $\sigma$ and report how the best $M$ moves.
 
-To go further, try the centre-heavy kernel $[\tfrac14\ \tfrac12\ \tfrac14]$ stretched to more weights, and compare its best SNR with the plain average's. Then try undoing a convolution with `deconv`, which the [polynomial division lesson](/courses/computational-mathematics/multiplying-and-dividing#deconvolution) introduces, and see how even a little noise ruins an exact undo.
+To go further, try the centre-heavy kernel $[\tfrac14\ \tfrac12\ \tfrac14]$ stretched to more weights, and compare its best SNR with the plain average's. Then try undoing a convolution with `deconv`, which the [polynomial division lesson](/courses/computational-mathematics/multiplying-and-dividing#deconvolution) introduces, and see why even a tiny rounding or noise bump in `y` gets amplified at each long-division step until the recovered signal blows up.
