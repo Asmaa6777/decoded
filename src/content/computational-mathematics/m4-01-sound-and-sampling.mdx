@@ -3,7 +3,7 @@ import { WaveCycle, ToneButtons, SamplingDemo } from "@/components/mdx/SignalVis
 
 # Project: Sound and Sampling
 
-This module is a project. Over four lessons you'll build, from nothing, the maths behind cleaning noise out of a voice recording, and then run it on a recording of your own. You don't need to know anything about audio to start. Everything rests on ideas from earlier in this course: vectors, [norms](/courses/computational-mathematics/norms-and-trace) and [convolution](/courses/computational-mathematics/multiplying-and-dividing#convolution).
+This module is a project. Over four lessons you'll build, from nothing, the maths behind cleaning noise out of a voice recording, and then run it on a recording of your own. You don't need to know anything about audio to start. Everything rests on ideas from earlier in this course: [vectors](/courses/computational-mathematics/matrices-and-matlab#writing-a-matrix-down), [norms](/courses/computational-mathematics/norms-and-trace) and [convolution](/courses/computational-mathematics/multiplying-and-dividing#convolution).
 
 <Callout tone="violet" label="The whole project in one question">
 How much noise can a moving-average convolution remove from a real voice recording, and how much does it cost the voice?
@@ -13,72 +13,93 @@ How much noise can a moving-average convolution remove from a real voice recordi
 
 When you speak, your vocal cords push the air back and forth. At the listener's ear, the air pressure goes up, then down, then back up, over and over. **A sound is one number, air pressure, changing over time.**
 
-One complete trip, up, down and back to the start, is a **cycle**. A **hertz (Hz)** is a count: cycles per second. A 3 Hz wave completes 3 cycles every second. Press play and count:
+One complete trip, up, down and back to the start, is a **cycle**. A **hertz (Hz)** is a count: cycles per second. The **frequency** $f$ of a wave is how many cycles it completes in one second, measured in hertz. A 3 Hz wave has $f = 3$, so it completes 3 cycles every second. Press play and count:
 
 <WaveCycle />
 
-The time one cycle takes is the **period**:
+The time one cycle takes is the **period** $T$, in seconds:
 
 $$
 T = \frac{1}{f}
 $$
 
-At 3 Hz, each cycle takes $1/3 \approx 0.33$ seconds.
+Three cycles fit into one second, so each cycle gets one third of that second: $T = 1/3 \approx 0.33$ seconds. In general, $f$ cycles share 1 second equally, so each one takes $1/f$ seconds.
 
-You can't hear 3 Hz; it's far too slow. People hear from about 20 Hz to 20,000 Hz. A speaking voice vibrates at roughly 85 to 255 Hz, plus higher **overtones**, whole-number multiples of that frequency, which make your voice sound like you. Those are too fast to see but easy to hear:
+You can't hear 3 Hz; it's far too slow. People hear from about 20 Hz to 20,000 Hz. A speaking voice vibrates at roughly 85 to 255 Hz, plus higher **overtones**, whole-number multiples of that starting frequency, which make your voice sound like you. For example, a 100 Hz voice also carries energy at $2 \times 100 = 200$ Hz, $3 \times 100 = 300$ Hz, and so on. Those are too fast to see on a one-second graph, but easy to hear:
 
 <ToneButtons />
 
-440 Hz means 440 cycles every second, so one cycle takes $1/440 \approx 2.3$ milliseconds.
+440 Hz means 440 cycles every second, so one cycle takes $1/440 \approx 0.00227$ seconds, or about $2.3$ milliseconds (a **millisecond**, ms, is a thousandth of a second, $10^{-3}$ s). Doubling the frequency from 220 Hz to 440 Hz makes the wave vibrate twice as fast, which your ear hears as one **octave** higher, the musical jump from one note to the next note with the same name.
 
 ## Sampling: what "44,100 per second" means
 
-A microphone produces a smooth, continuous wave. A computer can't store a smooth curve, only a list of numbers. So it checks the wave at regular moments and writes down its value each time. Each written-down value is a **sample**, and the number of samples taken per second is the **sample rate**, written $F_s$.
+A microphone turns air pressure into a smooth, continuous voltage, an [analog](/courses/logic-design/signals) wave. A computer can't store a smooth curve, only a finite list of numbers. So an analog-to-digital converter checks the wave at regular moments and writes down its value each time. Each written-down value is a **sample**, and the number of samples taken per second is the **sample rate**, written $F_s$.
 
-The sample rate is also measured in hertz, but here hertz counts *measurements* per second, not cycles. A sample rate of 10 Hz means 10 measurements every second. Change how fast the wave moves and how often it's measured:
+The sample rate is also measured in hertz, because hertz simply means "per second". For the wave, $f$ counts cycles per second; for sampling, $F_s$ counts *measurements* per second. If a wave has $f = 2$ Hz and we measure it at $F_s = 10$ Hz, we take $10 / 2 = 5$ samples during each cycle, spaced $1 / F_s = 0.1$ seconds apart. Change how fast the wave moves and how often it's measured:
 
 <SamplingDemo />
 
-Now set the wave to 5 Hz and the sample rate to 7 Hz. The dots trace out a slow 2 Hz wave that isn't there at all. Sampling too slowly makes a fast wave look like a slower one; this is **aliasing**, the same word, and the same idea, as the [jagged edges in computer graphics](/courses/computer-graphics/aliasing). The rule that prevents it is the **Nyquist rule**: take more than 2 samples per cycle of the fastest wave you want to keep.
+Now set the wave to $f = 5$ Hz and the sample rate to $F_s = 7$ Hz. Every $1/7$ of a second the wave advances by $5/7$ of a cycle. Because $5/7$ of a full turn lands in the same spot as stepping *backwards* by $2/7$ of a turn ($1 - 5/7 = 2/7$), the recorded dots line up on a slow 2 Hz wave going the other way ($7 - 5 = 2$ Hz). The computer only keeps the dots, so once they're recorded there is no way to tell that the real wave was 5 Hz and not 2 Hz. Sampling too slowly makes a fast wave look like a slower one; this is **aliasing**, the same word, and the same idea, as the [jagged edges in computer graphics](/courses/computer-graphics/aliasing).
 
-That rule explains the number 44,100. Hearing tops out near 20,000 Hz, so you need more than $2 \times 20{,}000 = 40{,}000$ samples per second. CDs use 44,100, which leaves some margin, and most audio files still use it, or 48,000.
+The rule that prevents it is the **Nyquist rule**:
+
+$$
+F_s > 2f
+$$
+
+You must take *more* than 2 samples per cycle of the fastest wave you want to keep. Why 2? Each cycle goes up to a peak and down to a trough, so you need at least one sample near the top and one near the bottom to catch the up-and-down motion at all. Even $F_s = 2f$ isn't quite enough: if you sample a sine wave at the exact moments it crosses zero, every sample is 0 and the wave disappears completely.
+
+<Callout tone="orange" label="Common mistake">
+Confusing the wave's frequency $f$ with the sample rate $F_s$, because both are written in Hz. $f$ is a property of the sound in the air (how fast the wave vibrates); $F_s$ is a choice made by the recorder (how often it measures). A 440 Hz note recorded at $F_s = 44{,}100$ Hz gives $44{,}100 / 440 \approx 100.2$ samples per cycle. Also watch the Nyquist factor of 2: keeping frequencies up to 20,000 Hz requires $F_s > 40{,}000$ Hz, not 20,000 Hz.
+</Callout>
+
+That rule explains the number 44,100. Human hearing tops out near 20,000 Hz, so you need more than $2 \times 20{,}000 = 40{,}000$ samples per second. CDs use $F_s = 44{,}100$ Hz, which leaves room for the hardware filter that blocks frequencies above 20,000 Hz before sampling, and most audio files still use 44,100 or 48,000.
 
 | | Value | Why |
 |---|---|---|
-| Gap between two samples | 22.7 µs | $1/44{,}100$ s, about 23 millionths of a second |
-| Samples in a blink (about 0.1 s) | 4,410 | $0.1 \times 44{,}100$ |
-| A 3-second recording | 132,300 numbers | $3 \times 44{,}100$ |
+| Gap between two samples | 22.7 µs | $1/44{,}100 \text{ s} \approx 0.0000227 \text{ s}$; a **microsecond** (µs) is a millionth of a second ($10^{-6}$ s) |
+| Samples in a blink (about 0.1 s) | 4,410 | $0.1 \text{ s} \times 44{,}100 \text{ samples/s}$ |
+| A 3-second recording | 132,300 numbers | $3 \text{ s} \times 44{,}100 \text{ samples/s}$ |
 
 ## A recording is a vector
 
-Once a sound is a list of numbers, it's a **vector**, and everything in this course applies to it: adding vectors, scaling them, measuring their length with a norm, and `conv`. That's the bridge between audio and computational mathematics, and the rest of the project walks across it.
+Once a sound is a list of numbers, it's a [column vector](/courses/computational-mathematics/matrices-and-matlab#writing-a-matrix-down), and everything in this course applies to it: [adding vectors](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting), [scaling them](/courses/computational-mathematics/matrices-and-matlab#multiplying-by-a-scalar), measuring their length with a norm, and `conv`. That's the bridge between audio and computational mathematics, and the rest of the project walks across it.
 
-In the project you'll load a real recording with `audioread` (MATLAB) or `soundfile.read` (Python). Here, a 440 Hz tone built from scratch stands in for it, so the code runs anywhere:
+In the project you'll load a real recording with `audioread` (MATLAB) or `soundfile.read` (Python). A **mono** recording has one microphone channel, so it loads as a single column of samples; a **stereo** recording has left and right channels, so it loads as a 2-column matrix. Here, a 440 Hz tone built from a sine wave stands in for the file, so the code runs anywhere.
+
+Why `sin(2*pi*440*t)`? The sine function $\sin(\theta)$ completes one full cycle as its angle $\theta$ goes from $0$ to $2\pi$ radians (about $6.283$). Multiplying the time $t$ in seconds by $2\pi \cdot 440$ makes the angle advance by $440$ full turns every second, which gives a 440 Hz wave. Sample $n$ (counting from $n = 0$) happens at time $t = n / F_s$ seconds, so for $n = 0, 1, 2$ the times are $0$, $1/44{,}100 \approx 22.7\ \mu\text{s}$ and $2/44{,}100 \approx 45.4\ \mu\text{s}$. Plotting the first 400 samples shows $400 / 44{,}100 \approx 0.00907$ seconds (about 9 ms), which holds $440 \times 0.00907 \approx 4$ cycles of the tone:
 
 <CodeTabs>
 
 ```matlab
 Fs = 44100;                      % samples per second
-t = (0:3*Fs-1)' / Fs;            % the time of each sample, 3 seconds
+t = (0:3*Fs-1)' / Fs;            % 132300 sample times from 0 to ~3 s, as a column
 x = sin(2*pi*440*t);             % a 440 Hz tone, one column vector
 size(x)
 
 ans =
        132300           1
 
+% first three sample values, at t = 0, 22.7 us, 45.4 us:
+round(x(1:3)', 4)
+
+ans =
+         0    0.0626    0.1251
+
 % with a real file instead:
 % [x, Fs] = audioread('voice.wav');   % stereo gives 2 columns
-plot(t(1:400), x(1:400))         % the first 9 ms
+plot(t(1:400), x(1:400))         % the first 9 ms (~4 cycles)
 ```
 
 ```python
 import numpy as np
 
 Fs = 44100                       # samples per second
-t = np.arange(3 * Fs) / Fs       # the time of each sample, 3 seconds
+t = np.arange(3 * Fs) / Fs       # 132300 sample times from 0 to ~3 s
 x = np.sin(2 * np.pi * 440 * t)  # a 440 Hz tone, one vector
 print(x.shape)  # (132300,)
 print(round(t[1] * 1e6, 1))  # 22.7
+print(np.round(x[:3], 4).tolist())  # [0.0, 0.0626, 0.1251]
 
 # with a real file instead (pip install soundfile):
 # import soundfile as sf
@@ -87,8 +108,10 @@ print(round(t[1] * 1e6, 1))  # 22.7
 
 </CodeTabs>
 
+Let's check the second sample by hand: at $n = 1$, $t = 1/44{,}100$ s, the angle is $2\pi \times 440 / 44{,}100 \approx 0.06269$ radians, and $\sin(0.06269) \approx 0.0626$.
+
 <Callout tone="sky" label="Where this goes in AI">
-Speech models such as Whisper start exactly here: a recording becomes a vector of samples, usually resampled to 16,000 per second, since speech carries little above 8,000 Hz. Everything the machine learning model learns about your voice, it learns from that list of numbers.
+Speech models such as Whisper start exactly here: a recording becomes a vector of samples, usually resampled to $F_s = 16{,}000$ Hz. By the Nyquist rule, 16,000 samples per second keeps frequencies up to $16{,}000 / 2 = 8{,}000$ Hz, which covers almost everything speech uses while cutting the vector to about a third of its CD length. Everything the machine learning model learns about your voice, it learns from that list of numbers.
 </Callout>
 
 The [next lesson](/courses/computational-mathematics/noise-and-averaging) adds what every real recording has on top of the voice: noise.
