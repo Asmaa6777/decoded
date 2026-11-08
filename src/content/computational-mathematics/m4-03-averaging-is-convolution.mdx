@@ -13,7 +13,7 @@ $$
 0.5 \cdot 80 + 0.3 \cdot 90 + 0.2 \cdot 70 = 40 + 27 + 14 = 81
 $$
 
-Each number gets a **weight** saying how much it counts. Multiply each number by its weight, then add everything up. This is a **weighted sum**, and it's the [dot product](/courses/computational-mathematics/transpose-and-products#the-dot-product) of the scores with the weights. A [linear model](/courses/computational-mathematics/multiplying-matrices#the-rule)'s prediction, $w \cdot x$, is exactly this. Notice that the weights $0.5 + 0.3 + 0.2 = 1$: when the weights add up to $1$, a weighted sum keeps the overall scale of the numbers (if you scored 80 on everything, your grade is $0.5 \cdot 80 + 0.3 \cdot 80 + 0.2 \cdot 80 = 80$).
+Each number gets a **weight** saying how much it counts. Multiply each number by its weight, then add everything up. This is a **weighted sum**, and it is the [dot product](/courses/computational-mathematics/transpose-and-products#the-dot-product) of the scores with the weights. A [linear model](/courses/computational-mathematics/multiplying-matrices#the-rule)'s prediction, $w \cdot x$, is the same calculation. Notice that the weights add up to $0.5 + 0.3 + 0.2 = 1$. When the weights sum to $1$, the weighted sum keeps the scale of the inputs. Scoring 80 on every part gives $0.5 \cdot 80 + 0.3 \cdot 80 + 0.2 \cdot 80 = 80$.
 
 The list of weights, here $[0.5,\ 0.3,\ 0.2]$, is what convolution calls the **kernel**.
 
@@ -25,17 +25,17 @@ $$
 \frac{3 + 1 + 3}{3} = \tfrac13 \cdot 3 + \tfrac13 \cdot 1 + \tfrac13 \cdot 3 = 1 + \tfrac13 + 1 = \frac{7}{3} \approx 2.33
 $$
 
-So "take the average of 3 numbers" is a weighted sum with the kernel $[\tfrac13,\ \tfrac13,\ \tfrac13]$, where every number counts equally and the three weights add up to $\tfrac13 + \tfrac13 + \tfrac13 = 1$.
+Averaging 3 numbers is a weighted sum with the kernel $[\tfrac13,\ \tfrac13,\ \tfrac13]$. Every number gets the same weight, and the three weights add up to $\tfrac13 + \tfrac13 + \tfrac13 = 1$.
 
 <Callout tone="orange" label="Common mistake">
-Forgetting to divide the kernel by $M$, so the weights don't add up to 1. Convolving with $[1,\ 1,\ 1]$ adds three neighbours without dividing by 3, which makes the signal 3 times louder ($\text{sum} = 3$). For a smoothing filter that preserves the volume of a steady signal, the weights in `h` must sum to 1, such as `ones(1, M) / M` or $[\tfrac14,\ \tfrac12,\ \tfrac14]$.
+Forgetting to divide the kernel by $M$, so the weights do not add up to 1. Convolving with $[1,\ 1,\ 1]$ adds three neighbours without dividing by 3, which makes the signal 3 times louder ($\text{sum} = 3$). To keep the volume of a steady signal unchanged, the weights in `h` must add up to 1, as in `ones(1, M) / M` or $[\tfrac14,\ \tfrac12,\ \tfrac14]$.
 </Callout>
 
 ## Step 3: a window that slides
 
-A signal is a long list of numbers, but the kernel has only 3 weights. So look at 3 numbers at a time, through a **window**. Take the weighted sum of what's inside, write down the answer, move the window one step to the right and do it again, all the way along.
+A signal is a long list of numbers, while the kernel here has only 3 weights. Look at 3 numbers at a time through a **window**. Take the weighted sum of what is inside, write down the answer, then move the window one step to the right and repeat.
 
-Each window position gives one output number. The full list of outputs is the **convolution** of the signal with the kernel. At the two ends, the window hangs off the edge of the signal, so we pad the signal with a zero at each end (the dashed cells) so the window always has 3 numbers to multiply.
+Each window position gives one output number. The full list of outputs is the **convolution** of the signal with the kernel. At the first and last positions, the window extends past the ends of the signal. We pad the signal with a zero at each end (the dashed cells) so the window always holds 3 numbers.
 
 For the noisy signal $[3\ 1\ 3\ 1\ 3]$, padding with a zero on the left and right gives $[0\ 3\ 1\ 3\ 1\ 3\ 0]$. Sliding the 3-weight average kernel $[\tfrac13,\ \tfrac13,\ \tfrac13]$ across all five window positions produces:
 
@@ -49,31 +49,31 @@ Step through it on the recording from the [last lesson](/courses/computational-m
 
 <ConvolutionStepper />
 
-That's all of it: **convolution slides a window along the signal and, at every stop, takes a weighted sum using the kernel's weights**. The kernel decides what the convolution does:
+**Convolution slides a window along the signal and takes a weighted sum at every stop using the kernel's weights.** The kernel decides what the convolution does:
 
 - **Average $[\tfrac13,\ \tfrac13,\ \tfrac13]$** gives all three neighbours equal weight, smoothing the middle of $[3\ 1\ 3\ 1\ 3]$ to $[2.33\ 1.67\ 2.33]$.
-- **Centre-heavy $[\tfrac14,\ \tfrac12,\ \tfrac14]$** gives half the weight to the middle sample and a quarter to each neighbour (still adding up to $\tfrac14 + \tfrac12 + \tfrac14 = 1$). At position 2 its window is $[3,\ 1,\ 3]$, giving $\tfrac14 \cdot 3 + \tfrac12 \cdot 1 + \tfrac14 \cdot 3 = 0.75 + 0.5 + 0.75 = 2$, and across all five positions it gives $[1.75\ 2\ 2\ 2\ 1.75]$.
-- **Copy $[0,\ 1,\ 0]$** gives weight 1 to the middle sample and 0 to its neighbours, so every window returns its middle number and $[3\ 1\ 3\ 1\ 3]$ comes back unchanged.
+- **Centre-heavy $[\tfrac14,\ \tfrac12,\ \tfrac14]$** gives half the weight to the middle sample and a quarter to each neighbour, still adding to $1$. At position 2, the window $[3,\ 1,\ 3]$ gives $\tfrac14 \cdot 3 + \tfrac12 \cdot 1 + \tfrac14 \cdot 3 = 2$. Across all five positions, the output is $[1.75\ 2\ 2\ 2\ 1.75]$.
+- **Copy $[0,\ 1,\ 0]$** gives weight 1 to the middle sample and 0 to its neighbours. Every window returns its middle number, leaving $[3\ 1\ 3\ 1\ 3]$ unchanged.
 
 ## What just happened
 
-**Noisy constant.** The truth hiding under $[3\ 1\ 3\ 1\ 3]$ is 2. Before averaging, each middle number was 1 away from 2. After averaging with $[\tfrac13,\ \tfrac13,\ \tfrac13]$, the middle outputs are 2.33, 1.67 and 2.33, only 0.33 away: the noise there got three times smaller, which is what we want. The two end outputs, 1.33, improved less (from 1 away to $2 - 1.33 = 0.67$ away), because at the ends the window includes a padded zero outside the signal, pulling the average toward 0. Signal processing calls this distortion at the boundaries an **edge effect**.
+**Noisy constant.** The clean value under $[3\ 1\ 3\ 1\ 3]$ is 2. Before averaging, each middle number was 1 away from 2. After averaging with $[\tfrac13,\ \tfrac13,\ \tfrac13]$, the middle outputs are 2.33, 1.67 and 2.33, only 0.33 away from 2. The noise in the middle shrank to a third of its size. The two end outputs are 1.33, which is $2 - 1.33 = 0.67$ away from 2. They improved less because the end windows include a padded zero outside the signal, which pulls the average toward 0. Signal processing calls this distortion at the boundaries an **edge effect**.
 
-**Sharp spike.** Now switch the stepper to $[0\ 0\ 6\ 0\ 0]$. Padded with zeros, it is $[0\ 0\ 0\ 6\ 0\ 0\ 0]$. At position 1 the window $[0,\ 0,\ 0]$ averages to $0$. At positions 2, 3 and 4 the windows are $[0,\ 0,\ 6]$, $[0,\ 6,\ 0]$ and $[6,\ 0,\ 0]$: each one contains the 6 once and two zeros, so each averages to $\tfrac13 \cdot 6 = 2$. At position 5 the window $[0,\ 0,\ 0]$ gives $0$ again. The single spike of height 6 has been spread across three samples of height 2: $[0\ 2\ 2\ 2\ 0]$. That spike was real, not noise, but averaging flattened it anyway, which is what we *don't* want.
+**Sharp spike.** Now switch the stepper to $[0\ 0\ 6\ 0\ 0]$. Padded with zeros, it is $[0\ 0\ 0\ 6\ 0\ 0\ 0]$. At position 1, the window $[0,\ 0,\ 0]$ averages to $0$. At positions 2, 3 and 4, the windows are $[0,\ 0,\ 6]$, $[0,\ 6,\ 0]$ and $[6,\ 0,\ 0]$. Each window holds one 6 and two zeros, so each averages to $\tfrac13 \cdot 6 = 2$. At position 5, the window $[0,\ 0,\ 0]$ gives $0$ again. The single spike of height 6 has spread across three samples of height 2: $[0\ 2\ 2\ 2\ 0]$. That spike was part of the clean signal, yet averaging flattened it.
 
 <Callout tone="orange" label="The catch">
-Averaging can't tell noise from a real, sudden change. It smooths both: in signal processing, a filter that lets slow changes pass and blocks fast ones is called a **low-pass filter**. In speech, the fast changes are consonants like "s", "t" and "k", so too much averaging makes a voice sound muffled. The [last lesson](/courses/computational-mathematics/measuring-the-trade-off) measures this trade-off.
+Averaging cannot tell noise from a sudden change in the signal. It smooths both: in signal processing, a filter that lets slow changes pass and blocks fast ones is called a **low-pass filter**. In speech, the fast changes are consonants like "s", "t" and "k", so too much averaging makes a voice sound muffled. The [last lesson](/courses/computational-mathematics/measuring-the-trade-off) measures this trade-off.
 </Callout>
 
 ## The formula
 
-To distinguish the input of the filter from its output, write $y(n)$ for the noisy signal going in and $\hat{x}(n)$ (read "x-hat", our estimate of the clean signal) for the smoothed signal coming out. For the 3-number average, the output at position $n$ is the average of $y$ at $n$ and its two neighbours, indexed $k = -1, 0, 1$:
+Write $y(n)$ for the noisy signal going into the filter, and $\hat{x}(n)$ (read "x-hat") for the smoothed estimate coming out. For the 3-number average, $\hat{x}(n)$ averages $y$ at $n$ and its two neighbours, indexed $k = -1, 0, 1$:
 
 $$
 \hat{x}(n) = \tfrac13 y(n-1) + \tfrac13 y(n) + \tfrac13 y(n+1)
 $$
 
-Check it at $n = 2$ on $y = [3\ 1\ 3\ 1\ 3]$: $\hat{x}(2) = \tfrac13 y(1) + \tfrac13 y(2) + \tfrac13 y(3) = \tfrac13 \cdot 3 + \tfrac13 \cdot 1 + \tfrac13 \cdot 3 \approx 2.33$, matching position 2 of the stepper.
+At $n = 2$ on $y = [3\ 1\ 3\ 1\ 3]$, this gives $\hat{x}(2) = \tfrac13(3 + 1 + 3) \approx 2.33$, matching position 2 of the stepper.
 
 Textbooks write one formula that works for any kernel $h$:
 
@@ -81,9 +81,9 @@ $$
 \hat{x}(n) = \sum_k h(k)\, y(n - k)
 $$
 
-Here $\sum_k$ means "add up over every index $k$ in the kernel". For each weight $h(k)$, multiply it by the signal value it lines up with, $y(n-k)$, and add them all up. Why $n - k$ with a minus sign? It comes from [multiplying polynomials](/courses/computational-mathematics/multiplying-and-dividing#convolution), where the coefficient at position $n$ collects every pair of indices $k$ and $n - k$ that add up to $n$. As $k$ goes from left to right across the kernel, $n - k$ goes from right to left across the signal, which means the kernel is **flipped** (read backwards) before sliding. Our kernels ($[\tfrac13,\ \tfrac13,\ \tfrac13]$, $[\tfrac14,\ \tfrac12,\ \tfrac14]$ and $[0,\ 1,\ 0]$) are symmetric, so flipping them changes nothing.
+Here $\sum_k$ means "add up over every index $k$ in the kernel". Multiply each weight $h(k)$ by the signal value $y(n-k)$ it lines up with, then add the products. Why $n - k$ with a minus sign? It comes from [multiplying polynomials](/courses/computational-mathematics/multiplying-and-dividing#convolution), where the coefficient at position $n$ collects every pair of indices $k$ and $n - k$ that add up to $n$. As $k$ moves left to right across the kernel, $n - k$ moves right to left across the signal. That minus sign means the kernel is **flipped** (read backward) before sliding. Our kernels ($[\tfrac13,\ \tfrac13,\ \tfrac13]$, $[\tfrac14,\ \tfrac12,\ \tfrac14]$ and $[0,\ 1,\ 0]$) are symmetric, so flipping them changes nothing.
 
-Try a lopsided kernel to see the flip: if $h = [1,\ 2,\ 3]$ (indexed $k = -1, 0, 1$) and the signal is the spike $[0\ 0\ 6\ 0\ 0]$, the non-zero terms happen when $n - k = 3$, so at $n = 2, 3, 4$ the outputs are $6 \cdot h(-1) = 6$, $6 \cdot h(0) = 12$ and $6 \cdot h(1) = 18$, giving $[0\ 6\ 12\ 18\ 0]$. And on polynomial coefficients, `conv([1 2], [1 3])` gives `[1 5 6]`, because $(s + 2)(s + 3) = s^2 + (1 \cdot 3 + 2 \cdot 1)s + 2 \cdot 3 = s^2 + 5s + 6$. Smoothing a recording and multiplying polynomials are one operation.
+An uneven kernel shows the flip clearly. Take $h = [1,\ 2,\ 3]$ (indexed $k = -1, 0, 1$) on the spike $[0\ 0\ 6\ 0\ 0]$, where the 6 sits at index 3. The non-zero terms occur when $n - k = 3$. At $n = 2, 3, 4$, the outputs are $6h(-1) = 6$, $6h(0) = 12$ and $6h(1) = 18$, giving $[0\ 6\ 12\ 18\ 0]$. On polynomial coefficients, `conv([1 2], [1 3])` returns `[1 5 6]` because $(s + 2)(s + 3) = s^2 + 5s + 6$. Smoothing a recording and multiplying polynomials use the same operation.
 
 ## In code
 
@@ -93,7 +93,7 @@ $$
 \text{conv}([3\ 1\ 3\ 1\ 3],\ [\tfrac13\ \tfrac13\ \tfrac13]) = [1,\ 1.3333,\ 2.3333,\ 1.6667,\ 2.3333,\ 1.3333,\ 1]
 $$
 
-The extra $1$ at each end is where the kernel touches only the first or last $3$ ($\tfrac13 \cdot 3 = 1$). Passing `'same'` drops those partial-touch tails and keeps the middle $N$ numbers, so the output is the **same length** as `y`, matching the 5 positions of the stepper:
+The extra $1$ at each end is where the kernel touches only the first or last $3$ ($\tfrac13 \cdot 3 = 1$). Passing `'same'` drops those outer ends and keeps the middle $N$ numbers. The output then has the **same length** as `y`, matching the 5 positions of the stepper:
 
 <CodeTabs>
 
@@ -132,11 +132,11 @@ print(np.convolve([1, 2], [1, 3]).tolist())  # [1, 5, 6]
 </CodeTabs>
 
 <Callout tone="orange" label="NumPy's 'same' isn't MATLAB's">
-First, leaving out `'same'` returns $N + M - 1$ samples instead of $N$, so subtracting `x - x_hat` in the next lesson will fail with a size error or compare shifted samples. Second, `np.convolve(x, h, mode="same")` exists in NumPy, but for kernels of even length $M$ it starts one sample earlier than MATLAB: on `x = [1, 2, 3, 4]` and `h = [1, 1]`, the full convolution is `[1, 3, 5, 7, 4]`, from which MATLAB's `'same'` takes `[3, 5, 7, 4]` (starting at index `len(h) // 2 = 1`) while NumPy's `mode="same"` takes `[1, 3, 5, 7]`. The small `conv_same` above copies MATLAB's slice for every kernel length.
+Leaving out `'same'` returns $N + M - 1$ samples instead of $N$. Subtracting `x - x_hat` in the next lesson will then fail with a size error. Also, NumPy's `np.convolve(x, h, mode="same")` differs from MATLAB when the kernel length $M$ is even. On `x = [1, 2, 3, 4]` and `h = [1, 1]`, the full convolution is `[1, 3, 5, 7, 4]`. MATLAB's `'same'` takes `[3, 5, 7, 4]` (starting at index `len(h) // 2 = 1`), while NumPy's `mode="same"` takes `[1, 3, 5, 7]`. The helper `conv_same` above matches MATLAB for every kernel length.
 </Callout>
 
 <Callout tone="sky" label="The same operation, learned">
-A [convolutional neural network](/courses/computational-mathematics/multiplying-and-dividing#convolution) does exactly this, with one difference: nobody chooses the kernel by hand. The network learns the weights from data. A 1D convolution layer in a speech or audio model slides learned kernels along the samples just as `conv` does here, and the first layers often end up learning smoothing and edge-finding kernels much like the ones in the stepper.
+A [convolutional neural network](/courses/computational-mathematics/multiplying-and-dividing#convolution) does the same operation, except nobody chooses the kernel by hand. The network learns the weights from data. A 1D convolution layer in a speech model slides learned kernels along the audio samples just as `conv` does here. Its first layers often learn smoothing and edge-finding kernels like the ones in the stepper.
 </Callout>
 
 One question is left: how much better is the cleaned signal, as a number? The [next lesson](/courses/computational-mathematics/measuring-the-trade-off) measures it.

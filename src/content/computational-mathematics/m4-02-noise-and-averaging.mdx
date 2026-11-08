@@ -9,15 +9,15 @@ $$
 y(n) = x(n) + e(n)
 $$
 
-Here $n$ is the sample number ($1, 2, 3, \dots$), $x$ is the clean voice, $e$ is the noise and $y$ is what the microphone records. All three are vectors of the same length, and this is plain [vector addition](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting). Why addition? Sound waves are small changes in air pressure, and when two sounds reach the microphone at the same time their pressure changes add together at the microphone's diaphragm.
+Here $n$ is the sample number ($1, 2, 3, \dots$), $x$ is the clean voice, $e$ is the noise and $y$ is what the microphone records. All three are vectors of the same length, and this is plain [vector addition](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting). Why addition? Sound waves are small changes in air pressure. When two sounds reach the microphone at the same time, their pressure changes add together.
 
 <NoiseAdd />
 
-We only ever hear the bottom row. The task for the whole project is to get from $y$ back as close to $x$ as possible.
+We hear only the bottom row, $y$. The goal of the project is to recover an estimate of $x$ from $y$.
 
 ## A five-sample example
 
-Big recordings hide what's going on, so here's a tiny one. The clean value is always 2, and the noise alternates +1 and −1. Adding them sample by sample ($2 + 1 = 3$, $2 + (-1) = 1$, and so on) gives the recorded signal:
+Big recordings hide what is going on, so start with five samples. The clean value is always 2, and the noise alternates $+1$ and $-1$. Adding them sample by sample ($2 + 1 = 3$, $2 + (-1) = 1$, and so on) gives the recorded signal:
 
 | n | clean x(n) | noise e(n) | recorded y(n) = x(n) + e(n) |
 |---|---|---|---|
@@ -27,11 +27,11 @@ Big recordings hide what's going on, so here's a tiny one. The clean value is al
 | 4 | 2 | −1 | 1 |
 | 5 | 2 | +1 | 3 |
 
-This example comes back in the next two lessons, so keep it in mind: **the truth is [2 2 2 2 2] and we recorded [3 1 3 1 3]**.
+The next two lessons reuse this example: **the clean signal is [2 2 2 2 2] and the recorded signal is [3 1 3 1 3]**.
 
-Real noise isn't a neat ±1. It's random, and the usual model draws each $e(n)$ from a **normal distribution** (also called a **Gaussian distribution**): a bell-shaped curve where values near the **mean** (average) are common and large jumps are rare. Here the mean is 0, so positive and negative bumps are equally likely and the noise doesn't push the signal permanently up or down. The noise strength $\sigma$ (sigma) is the [standard deviation](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting), the typical size of a bump: `randn` produces standard normal numbers with mean 0 and standard deviation 1, and [multiplying by the scalar](/courses/computational-mathematics/matrices-and-matlab#multiplying-by-a-scalar) $\sigma$ scales their spread to $\sigma$.
+Real noise does not alternate cleanly between $+1$ and $-1$. Instead, each $e(n)$ is drawn at random from a **normal distribution** (also called a **Gaussian distribution**). This distribution has a bell-shaped curve where values near the **mean** (average) are common and large jumps are rare. Here the mean is 0, so positive and negative bumps are equally likely and the noise does not shift the signal up or down on average. The noise strength $\sigma$ (sigma) is the [standard deviation](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting), which measures the typical size of a bump. In code, `randn` draws numbers with mean 0 and standard deviation 1, and [multiplying by the scalar](/courses/computational-mathematics/matrices-and-matlab#multiplying-by-a-scalar) $\sigma$ scales their spread to $\sigma$.
 
-To make an experiment repeatable, fix the **random seed**, the starting number of the [random number generator](/courses/computational-mathematics/stream-ciphers#how-it-works), so every run gets the exact same sequence of "random" noise:
+To make an experiment repeatable, fix the **random seed**, the starting number of the [random number generator](/courses/computational-mathematics/stream-ciphers#how-it-works). Every run then gets the same sequence of noise:
 
 <CodeTabs>
 
@@ -73,7 +73,7 @@ MATLAB's `rng(42)` and NumPy's `default_rng(42)` use different generators, so th
 
 ## Why averaging neighbours removes noise
 
-Two neighbouring samples at 44,100 Hz are only 22.7 microseconds apart. Even a 250 Hz voice takes $1/250 = 4{,}000$ microseconds for one cycle, so in 22.7 microseconds it moves less than a hundredth of a cycle: **neighbours of the voice have almost the same value**. Random noise is drawn fresh and [independently](/courses/discrete-mathematics/probability-and-expectation#independence) at every sample, so knowing $e(n)$ tells you nothing about $e(n+1)$: it jumps up and down with no pattern.
+Two neighbouring samples at 44,100 Hz are only 22.7 microseconds apart. A 250 Hz voice takes $1/250 = 4{,}000$ microseconds for one cycle, so in 22.7 microseconds it moves less than a hundredth of a cycle. **Neighbours of the voice have almost the same value.** Random noise is drawn [independently](/courses/discrete-mathematics/probability-and-expectation#independence) at every sample, so $e(n)$ tells you nothing about $e(n+1)$. It jumps up and down with no pattern.
 
 So average a few neighbours. Because $y(n) = x(n) + e(n)$, the average of $M$ recorded samples splits into the average of the voice plus the average of the noise:
 
@@ -81,24 +81,24 @@ $$
 \frac{y(1) + \cdots + y(M)}{M} = \frac{x(1) + \cdots + x(M)}{M} + \frac{e(1) + \cdots + e(M)}{M}
 $$
 
-The voice values are nearly equal, so their average is still the voice. On the five-sample example, averaging the first three recorded samples $[3, 1, 3]$ averages the clean part $(2 + 2 + 2)/3 = 2$ and the noise part $(1 + (-1) + 1)/3 = 1/3 \approx 0.33$: two of the three noise bumps cancel out, shrinking the error from $1$ to $0.33$, while the clean $2$ comes through unchanged. Watch the same cancellation on pure random noise:
+The voice values are nearly equal, so their average is still the voice. On the five-sample example, take the first three recorded samples $[3, 1, 3]$. The clean part averages to $(2 + 2 + 2)/3 = 2$, and the noise part averages to $(1 - 1 + 1)/3 = 1/3 \approx 0.33$. Two of the three noise bumps cancel out, so the error shrinks from $1$ to $0.33$ while the clean $2$ stays unchanged. Watch the same cancellation on pure random noise:
 
 <NoiseAveraging />
 
-There's a rule for how much random noise shrinks: **averaging $M$ independent random samples shrinks their typical size (standard deviation) by a factor of $\sqrt{M}$**. Why $\sqrt{M}$ and not $M$? When you add $M$ independent noise samples, they don't all point the same way, so their standard deviations don't simply add; instead their [variances](/courses/computational-mathematics/norms-and-trace#the-trace) (squared standard deviations) add up, from $\sigma^2$ to $M\sigma^2$. Taking the square root gives a sum of typical size $\sqrt{M}\,\sigma$, and dividing by $M$ to take the average leaves
+There is a rule for how much random noise shrinks: **averaging $M$ independent random samples shrinks their standard deviation by a factor of $\sqrt{M}$**. Why $\sqrt{M}$ and not $M$? When you add $M$ independent noise samples, positive and negative bumps partly cancel. Because of that, their [variances](/courses/computational-mathematics/norms-and-trace#the-trace) (squared standard deviations) add up instead of their standard deviations, growing from $\sigma^2$ to $M\sigma^2$. Taking the square root gives a sum with standard deviation $\sqrt{M}\,\sigma$, and dividing by $M$ for the average leaves
 
 $$
 \frac{\sqrt{M}\,\sigma}{M} = \frac{\sigma}{\sqrt{M}}
 $$
 
-So averaging $M = 9$ samples gives $\sqrt{9} = 3$ times less noise, and averaging $M = 100$ gives $\sqrt{100} = 10$ times less. The square root is why noise reduction gets expensive: to cut the remaining noise in half again, you need $2^2 = 4$ times as many samples.
+Averaging $M = 9$ samples gives $\sqrt{9} = 3$ times less noise, and averaging $M = 100$ gives $\sqrt{100} = 10$ times less. Because of the square root, cutting the remaining noise in half again takes $2^2 = 4$ times as many samples.
 
 <Callout tone="orange" label="Common mistake">
-Expecting the noise to shrink by $M$ instead of $\sqrt{M}$, or forgetting that the noise samples must be independent. Averaging $M = 16$ samples cuts random noise by $\sqrt{16} = 4$, not $16$. And if the unwanted sound is a steady 50 Hz electrical hum rather than independent random hiss, neighbouring hum samples have nearly the same value just like the voice does, so averaging a few neighbours won't cancel them.
+Expecting the noise to shrink by $M$ instead of $\sqrt{M}$, or forgetting that the noise samples must be independent. Averaging $M = 16$ samples cuts random noise by $\sqrt{16} = 4$, not $16$. Also, if the unwanted sound is a steady 50 Hz electrical hum, neighbouring hum samples have nearly the same value. Averaging a few neighbours will not cancel them.
 </Callout>
 
 <Callout tone="sky" label="The same rule, in machine learning">
-This $\sqrt{M}$ law is everywhere data is noisy. Averaging the predictions of $M$ independent models, an **ensemble**, shrinks their random errors the same way, and averaging gradients over a **mini-batch** of $M$ training examples makes each step about $\sqrt{M}$ times less noisy. In the other direction, **diffusion models**, the AI behind image generators, are trained on exactly $y = x + e$: add Gaussian noise to a clean image, and teach a network to take it back out.
+This $\sqrt{M}$ rule appears wherever data is noisy. Averaging the predictions of $M$ independent models, called an **ensemble**, shrinks their random errors by $\sqrt{M}$. Averaging gradients over a **mini-batch** of $M$ training examples quiets each training step the same way. In the other direction, **diffusion models** (the AI behind image generators) train on $y = x + e$. They add Gaussian noise to a clean image and train a neural network to remove it.
 </Callout>
 
-Averaging has a catch, though, and so does the $\sqrt{M}$ rule: it assumes the clean signal doesn't change between the neighbours being averaged. The [next lesson](/courses/computational-mathematics/averaging-is-convolution) turns averaging into a convolution and finds out what happens when the voice *does* change quickly.
+Averaging has a limit, and so does the $\sqrt{M}$ rule: both assume the clean signal does not change across the averaged neighbours. The [next lesson](/courses/computational-mathematics/averaging-is-convolution) writes averaging as a convolution and checks what happens when the voice changes quickly.
