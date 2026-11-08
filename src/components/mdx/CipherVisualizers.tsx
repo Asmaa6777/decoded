@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { btn, inputCls, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import { Panel, useTween } from "@/components/mdx/MatrixVisualizers";
-import { affineDecrypt, affineEncrypt, affineTable, ALPHABET, bitsToText, FLOW_CODE, flowFrames, keystream, MATLAB_XOR, shiftDecrypt, shiftEncrypt, textToBits, validAffineKey, xorBits, xorFrames } from "@/lib/ciphers";
+import { affineDecrypt, affineEncrypt, affineTable, ALPHABET, bitsToText, findPeakLetter, FLOW_CODE, flowFrames, keystream, letterCounts, letterFrequencies, MATLAB_XOR, shiftDecrypt, shiftEncrypt, textToBits, validAffineKey, xorBits, xorFrames } from "@/lib/ciphers";
 import { gcd, inverseMod } from "@/lib/numberTheory";
 
 /* ------------------------------ secret-key flow ----------------------------- */
@@ -200,6 +200,209 @@ export function ShiftBruteForce({ cipher = shiftEncrypt("MEET ME AFTER THE TOGA 
         <button type="button" className={btn} disabled={shown >= 25} onClick={() => setShown((s) => Math.min(25, s + 1))}>Try next key</button>
         <button type="button" className={btn} disabled={shown >= 25} onClick={() => setShown(25)}>Try them all</button>
         <span className="font-mono text-[11px] text-muted-foreground">{picked === 3 ? "That's the one. 25 keys took a moment." : "Click the line that reads like English."}</span>
+      </div>
+    </Panel>
+  );
+}
+
+/* -------------------------- frequency analysis -------------------------- */
+
+const DEFAULT_CIPHER = "GHIHQG WKH HDVW ZDOO RI WKH FDVWOH"; // "DEFEND THE EAST WALL OF THE CASTLE" with k = 3
+
+export function FrequencyAnalysisVisualizer({ start = DEFAULT_CIPHER }: { start?: string }) {
+  const [text, setText] = useState(start);
+  const [target, setTarget] = useState("E");
+  const clean = text.toUpperCase().replace(/[^A-Z ]/g, "");
+  const counts = useMemo(() => letterCounts(clean), [clean]);
+  const maxCount = Math.max(...counts, 1);
+  const peak = useMemo(() => findPeakLetter(clean), [clean]);
+  const targetIdx = ALPHABET.indexOf(target);
+  const deducedK = peak.count > 0 ? (peak.index - (targetIdx >= 0 ? targetIdx : 4) + 26) % 26 : 0;
+  const [k, setK] = useState(deducedK);
+
+  const decrypted = useMemo(() => shiftDecrypt(clean, k), [clean, k]);
+
+  return (
+    <Panel
+      title="Frequency cryptanalysis"
+      legend={[
+        ["bg-orange", "ciphertext counts"],
+        ["bg-neon", "peak letter"],
+        ["bg-mint", "decrypted text"],
+      ]}
+    >
+      <div className="flex flex-col gap-3 font-mono text-sm">
+        <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+          Ciphertext to analyze
+          <input
+            aria-label="Ciphertext"
+            className={inputCls}
+            value={text}
+            onChange={(e) => {
+              const val = e.target.value.slice(0, 60);
+              setText(val);
+              const p = findPeakLetter(val);
+              setK((p.index - targetIdx + 26) % 26);
+            }}
+          />
+        </label>
+
+        {/* 26-letter frequency histogram */}
+        <div className="overflow-x-auto pb-1">
+          <svg
+            viewBox="0 0 546 140"
+            className="min-w-[480px] w-full"
+            role="img"
+            aria-label="Letter frequency bar chart of ciphertext"
+          >
+            {ALPHABET.split("").map((ch, i) => {
+              const count = counts[i];
+              const isPeak = i === peak.index && peak.count > 0;
+              const barH = count > 0 ? Math.max(4, Math.round((count / maxCount) * 85)) : 0;
+              const x = i * 21 + 4;
+              const y = 100 - barH;
+              return (
+                <g key={ch}>
+                  {count > 0 && (
+                    <rect
+                      x={x}
+                      y={y}
+                      width={14}
+                      height={barH}
+                      rx={2}
+                      className={`transition-all duration-300 ${
+                        isPeak ? "fill-neon" : "fill-orange/80 hover:fill-orange"
+                      }`}
+                    />
+                  )}
+                  {count > 0 && (
+                    <text
+                      x={x + 7}
+                      y={y - 4}
+                      textAnchor="middle"
+                      fontSize={10}
+                      className="fill-muted-foreground font-mono"
+                    >
+                      {count}
+                    </text>
+                  )}
+                  <text
+                    x={x + 7}
+                    y={118}
+                    textAnchor="middle"
+                    fontSize={12}
+                    className={`font-mono ${
+                      isPeak ? "fill-neon font-bold" : "fill-foreground"
+                    }`}
+                  >
+                    {ch}
+                  </text>
+                </g>
+              );
+            })}
+            <line x1={0} y1={102} x2={546} y2={102} className="stroke-border" strokeWidth={1} />
+          </svg>
+        </div>
+
+        {/* Readout and controls */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-1 border-t border-border/60">
+          <div className="flex flex-col gap-1 min-w-[220px]">
+            <div className="text-[12px] text-muted-foreground">
+              Peak ciphertext letter: <span className="text-neon font-bold">{peak.letter}</span> ({peak.count} {peak.count === 1 ? "time" : "times"})
+            </div>
+            <div className="text-[12px] text-muted-foreground">
+              Match <span className="text-neon">{peak.letter}</span> to{" "}
+              <select
+                aria-label="Plaintext target letter"
+                value={target}
+                onChange={(e) => {
+                  const t = e.target.value;
+                  setTarget(t);
+                  const tIdx = ALPHABET.indexOf(t);
+                  setK((peak.index - tIdx + 26) % 26);
+                }}
+                className="bg-secondary text-foreground rounded px-1.5 py-0.5 border border-border text-[12px]"
+              >
+                <option value="E">E (most common, ~12.7%)</option>
+                <option value="T">T (second, ~9.1%)</option>
+                <option value="A">A (third, ~8.2%)</option>
+                <option value="O">O (fourth, ~7.5%)</option>
+              </select>
+              : shift <span className="text-violet font-bold">k = ({peak.index} - {targetIdx} + 26) mod 26 = {deducedK}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+            <label className="flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>Applied shift k = {k}</span>
+              <button
+                type="button"
+                className="text-[11px] text-mint underline hover:text-foreground"
+                onClick={() => setK(deducedK)}
+              >
+                Use deduced k ({deducedK})
+              </button>
+            </label>
+            <input
+              type="range"
+              aria-label="Shift key k"
+              min={0}
+              max={25}
+              value={k}
+              onChange={(e) => setK(Number(e.target.value))}
+              className="accent-[hsl(var(--orange))]"
+            />
+          </div>
+        </div>
+
+        {/* Decrypted result */}
+        <div className="p-3 rounded-md bg-secondary/40 border border-border flex flex-col gap-1">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Decrypted message:</div>
+          <div className="text-mint font-bold text-sm tracking-wide break-all">
+            {decrypted || "—"}
+          </div>
+        </div>
+
+        {/* Presets */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <span className="text-[11px] text-muted-foreground">Presets:</span>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => {
+              setText(DEFAULT_CIPHER);
+              setTarget("E");
+              setK(3);
+            }}
+          >
+            Castle guard (k = 3)
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => {
+              const msg = shiftEncrypt("MEET ME AFTER THE TOGA PARTY", 3);
+              setText(msg);
+              setTarget("E");
+              setK(3);
+            }}
+          >
+            Toga party (k = 3)
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => {
+              const msg = shiftEncrypt("CRYPTOGRAPHY IS THE SCIENCE OF SECRECY", 7);
+              setText(msg);
+              setTarget("E");
+              const p = findPeakLetter(msg);
+              setK((p.index - 4 + 26) % 26);
+            }}
+          >
+            Science of secrecy (k = 7)
+          </button>
+        </div>
       </div>
     </Panel>
   );

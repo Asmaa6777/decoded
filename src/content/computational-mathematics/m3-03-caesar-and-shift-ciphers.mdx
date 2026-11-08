@@ -1,5 +1,5 @@
 import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { CipherWheel, ShiftBruteForce } from "@/components/mdx/CipherVisualizers";
+import { CipherWheel, FrequencyAnalysisVisualizer, ShiftBruteForce } from "@/components/mdx/CipherVisualizers";
 
 # Caesar and Shift Ciphers
 
@@ -26,7 +26,10 @@ Language models start the same way. A neural network can only do arithmetic, so 
 A Caesar cipher shifts each letter forward by three places. It uses the transformation $f_3$ and its inverse $f_3^{-1}$, where $\equiv$ marks [congruence](/courses/computational-mathematics/modular-arithmetic#congruence) modulo 26:
 
 $$
-f_3 = E_3(m) \equiv m + 3 \pmod{26}, \qquad f_3^{-1} = D_3(c) \equiv c - 3 \pmod{26}
+\begin{aligned}
+f_3 = E_3(m) &\equiv m + 3 \pmod{26} \\
+f_3^{-1} = D_3(c) &\equiv c - 3 \pmod{26}
+\end{aligned}
 $$
 
 Here $0 \le m, c \le 25$. The key for both encryption and decryption is 3. $D_3$ undoes $E_3$ because $(m + 3) - 3 \equiv m \pmod{26}$. Every letter shifts by $+3$, and the last three letters wrap around modulo 26:
@@ -48,7 +51,10 @@ Notice the last three columns. $X = 23$, $Y = 24$ and $Z = 25$ become $(23 + 3) 
 There's no reason to stick with 3. A **shift cipher** (or **shift transformation**) allows any key $0 \le k \le 25$:
 
 $$
-f_k = E_k(m) \equiv m + k \pmod{26}, \qquad f_k^{-1} = D_k(c) \equiv c - k \pmod{26}
+\begin{aligned}
+f_k = E_k(m) &\equiv m + k \pmod{26} \\
+f_k^{-1} = D_k(c) &\equiv c - k \pmod{26}
+\end{aligned}
 $$
 
 Turn the wheel to change the key. The inner ring gives the ciphertext letter under each plaintext letter:
@@ -201,6 +207,8 @@ print(counts.idxmax())  # H
 </CodeTabs>
 
 The most common ciphertext letter is $H\ (7)$. Matching it to $E\ (4)$ gives $4 + k \equiv 7 \pmod{26}$, so $k = (7 - 4) \bmod 26 = 3$. The frequency count reveals the key without testing the other 24 shifts.
+
+<FrequencyAnalysisVisualizer />
 
 ## Where you'll meet this
 

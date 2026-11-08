@@ -16,13 +16,19 @@ $$
 XOR ($\oplus$) gives $1$ when two bits differ and $0$ when they match, which is the same as addition [modulo 2](/courses/computational-mathematics/modular-arithmetic#the-mod-operation), $(m_i + k_i) \bmod 2$:
 
 $$
-0 \oplus 0 = 0, \qquad 0 \oplus 1 = 1, \qquad 1 \oplus 0 = 1, \qquad 1 \oplus 1 = 0
+\begin{aligned}
+0 \oplus 0 &= 0, \qquad 0 \oplus 1 = 1 \\
+1 \oplus 0 &= 1, \qquad 1 \oplus 1 = 0
+\end{aligned}
 $$
 
 Why use XOR instead of AND or OR? AND with $0$ always outputs $0$ ($0 \text{ AND } 0 = 0$ and $1 \text{ AND } 0 = 0$). OR with $1$ always outputs $1$. Both operations destroy the message bit $m_i$, so the receiver cannot recover it. XOR is different because both key bit choices can be reversed: $k_i = 0$ leaves $m_i$ unchanged, and $k_i = 1$ flips $m_i$ between $0$ and $1$. Applying the same key bit a second time undoes the first:
 
 $$
-(m_i \oplus k_i) \oplus k_i = m_i \oplus (k_i \oplus k_i) = m_i \oplus 0 = m_i
+\begin{aligned}
+(m_i \oplus k_i) \oplus k_i &= m_i \oplus (k_i \oplus k_i) \\
+&= m_i \oplus 0 = m_i
+\end{aligned}
 $$
 
 That identity holds because XOR is associative. Any bit XORed with itself is $0$ ($k_i \oplus k_i = 0$, because the bits match). And any bit XORed with $0$ stays unchanged ($m_i \oplus 0 = m_i$).
@@ -125,7 +131,11 @@ Two traps show up regularly with stream ciphers:
 
 1. **Reusing a key stream.** Suppose two messages $m_1$ and $m_2$ use the same key stream $k$. An eavesdropper who intercepts $c_1 = m_1 \oplus k$ and $c_2 = m_2 \oplus k$ can XOR the two ciphertexts together:
    $$
-   c_1 \oplus c_2 = (m_1 \oplus k) \oplus (m_2 \oplus k) = m_1 \oplus m_2 \oplus (k \oplus k) = m_1 \oplus m_2
+   \begin{aligned}
+   c_1 \oplus c_2 &= (m_1 \oplus k) \oplus (m_2 \oplus k) \\
+   &= m_1 \oplus m_2 \oplus (k \oplus k) \\
+   &= m_1 \oplus m_2
+   \end{aligned}
    $$
    The unknown key $k$ cancels completely. Wherever the attacker guesses a common word or header in $m_1$, XORing that guess with $m_1 \oplus m_2$ reveals the corresponding characters of $m_2$. WEP, an early Wi-Fi security standard, was broken partly because its key streams repeated.
 2. **Mixing up logical `xor` and bitwise `bitxor` in MATLAB (or `^` in MATLAB vs Python).** In MATLAB, `xor(72, 90)` treats every non-zero number as logical `true`, returning `xor(true, true) = 0`. In contrast, `bitxor(72, 90)` XORs their 8-bit binary forms to give `18`. Also, `^` is bitwise XOR in Python, but exponentiation in MATLAB.

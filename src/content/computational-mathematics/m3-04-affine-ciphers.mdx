@@ -10,7 +10,10 @@ A shift cipher only adds. If we multiply as well, we get a larger key space, and
 An **affine cipher** (or **affine transformation**) uses a pair of integer keys $k_1, k_2 \in \mathbb{Z}$. Here $\mathbb{Z}$ is the set of integers $\{\dots, -2, -1, 0, 1, 2, \dots\}$, with $0 \le k_1, k_2, m \le 25$:
 
 $$
-f_{(k_1, k_2)} = E_{(k_1, k_2)}(m) \equiv k_1 \cdot m + k_2 \pmod{26}
+\begin{aligned}
+f_{(k_1, k_2)} &= E_{(k_1, k_2)}(m) \\
+&\equiv k_1 \cdot m + k_2 \pmod{26}
+\end{aligned}
 $$
 
 If that shape looks familiar, it should. Every layer of a neural network computes $wx + b$, a multiplication followed by a shift. "Affine" is the name for that combination in both fields. That is why $b$ in a layer is called the **bias**. Without $b$, the layer can only scale its input, sending $0$ to $0$. A layer with no bias is linear; adding $b$ makes it affine.
@@ -18,13 +21,19 @@ If that shape looks familiar, it should. Every layer of a neural network compute
 To find the decryption formula, solve $c \equiv k_1 \cdot m + k_2 \pmod{26}$ for $m$. Encryption multiplies by $k_1$ first and adds $k_2$ second. Decryption undoes those steps in the [opposite order](/courses/discrete-mathematics/functions#composition). First, subtract $k_2$ from both sides to get $c - k_2 \equiv k_1 \cdot m \pmod{26}$. Next, multiply both sides by $k_1^{-1}$, the multiplicative inverse of $k_1$ modulo 26. That is the integer satisfying $k_1^{-1} \cdot k_1 \equiv 1 \pmod{26}$:
 
 $$
-f_{(k_1, k_2)}^{-1} = D_{(k_1, k_2)}(c) \equiv k_1^{-1} \cdot (c - k_2) \pmod{26}
+\begin{aligned}
+f_{(k_1, k_2)}^{-1} &= D_{(k_1, k_2)}(c) \\
+&\equiv k_1^{-1} \cdot (c - k_2) \pmod{26}
+\end{aligned}
 $$
 
 Substituting $c = k_1 \cdot m + k_2$ confirms that it recovers $m$:
 
 $$
-k_1^{-1} \cdot \bigl((k_1 \cdot m + k_2) - k_2\bigr) = (k_1^{-1} \cdot k_1) \cdot m \equiv 1 \cdot m = m \pmod{26}
+\begin{aligned}
+k_1^{-1} \cdot \bigl((k_1 \cdot m + k_2) - k_2\bigr) &= (k_1^{-1} \cdot k_1) \cdot m \\
+&\equiv 1 \cdot m = m \pmod{26}
+\end{aligned}
 $$
 
 <Callout tone="orange" label="Usual mistakes: wrong order of operations and ordinary fractions">
@@ -100,7 +109,11 @@ print("".join(chr(n + 65) for n in (7 * m + 21) % 26))  # RXJFKZYH
 To decrypt VLXIJH with $k_1 = 7$ and $k_2 = 21$, first find $7^{-1} \bmod 26$ with the [extended Euclidean algorithm](/courses/computational-mathematics/modular-inverses#the-extended-euclidean-algorithm). Dividing down gives:
 
 $$
-26 = 3 \times 7 + 5, \qquad 7 = 1 \times 5 + 2, \qquad 5 = 2 \times 2 + 1
+\begin{aligned}
+26 &= 3 \times 7 + 5 \\
+7 &= 1 \times 5 + 2 \\
+5 &= 2 \times 2 + 1
+\end{aligned}
 $$
 
 Substituting back from the bottom equation:
@@ -109,7 +122,8 @@ $$
 \begin{aligned}
 1 &= 5 - 2 \times 2 \\
   &= 5 - 2 \times (7 - 1 \times 5) = 3 \times 5 - 2 \times 7 \\
-  &= 3 \times (26 - 3 \times 7) - 2 \times 7 = 3 \times 26 - 11 \times 7
+  &= 3 \times (26 - 3 \times 7) - 2 \times 7 \\
+  &= 3 \times 26 - 11 \times 7
 \end{aligned}
 $$
 
@@ -156,7 +170,10 @@ The shift $k_2$ can be any of the 26 numbers $0 \le k_2 \le 25$. By the [product
 Each plaintext letter still maps to one fixed ciphertext letter. Because of that, frequency analysis breaks an affine cipher without searching all 312 keys. Suppose the two most common ciphertext letters are $c_E$ and $c_T$. Matching them to $E\ (4)$ and $T\ (19)$ produces two linear equations:
 
 $$
-4k_1 + k_2 \equiv c_E \pmod{26}, \qquad 19k_1 + k_2 \equiv c_T \pmod{26}
+\begin{aligned}
+4k_1 + k_2 &\equiv c_E \pmod{26} \\
+19k_1 + k_2 &\equiv c_T \pmod{26}
+\end{aligned}
 $$
 
 Subtracting the first equation from the second eliminates $k_2$:
@@ -174,12 +191,20 @@ Now try one on your own. Encrypt **THE NATIONAL SECURITY AGENCY** using $f_{(11,
 
 First, find $11^{-1} \bmod 26$ using the extended Euclidean algorithm:
 $$
-26 = 2 \times 11 + 4, \qquad 11 = 2 \times 4 + 3, \qquad 4 = 1 \times 3 + 1
+\begin{aligned}
+26 &= 2 \times 11 + 4 \\
+11 &= 2 \times 4 + 3 \\
+4 &= 1 \times 3 + 1
+\end{aligned}
 $$
 Substituting back gives:
 
 $$
-1 = 4 - 1 \times (11 - 2 \times 4) = 3 \times 4 - 11 = 3 \times (26 - 2 \times 11) - 11 = 3 \times 26 - 7 \times 11
+\begin{aligned}
+1 &= 4 - 1 \times (11 - 2 \times 4) = 3 \times 4 - 11 \\
+  &= 3 \times (26 - 2 \times 11) - 11 \\
+  &= 3 \times 26 - 7 \times 11
+\end{aligned}
 $$
 
 This yields $11^{-1} \equiv -7 \equiv 19 \pmod{26}$ (check: $11 \times 19 = 209 = 8 \times 26 + 1$). Now work through each distinct letter of the message:

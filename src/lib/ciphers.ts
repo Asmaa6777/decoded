@@ -81,3 +81,52 @@ export function flowFrames(plain: string, k: number): Frame<FlowState>[] {
   ];
   return msgs.map((message, i) => ({ state: { stage: i as FlowState["stage"], plain, cipher, k }, line: i < 2 ? 0 : i === 2 ? 1 : 2, message, stats: {} }));
 }
+
+/* ---------------------------- frequency analysis ---------------------------- */
+
+/** Letter counts for A-Z in 0-based order (ignoring other characters). */
+export function letterCounts(text: string): number[] {
+  const counts = Array(26).fill(0);
+  const clean = text.toUpperCase();
+  for (let i = 0; i < clean.length; i++) {
+    const code = clean.charCodeAt(i) - 65;
+    if (code >= 0 && code < 26) counts[code]++;
+  }
+  return counts;
+}
+
+/** Standard relative frequencies (%) of English letters A to Z. */
+export const ENGLISH_FREQUENCIES: number[] = [
+  8.2, 1.5, 2.8, 4.3, 12.7, 2.2, 2.0, 6.1, 7.0, 0.15, 0.77, 4.0, 2.4,
+  6.7, 7.5, 1.9, 0.09, 6.0, 6.3, 9.1, 2.8, 1.0, 2.4, 0.15, 2.0, 0.07,
+];
+
+/** Relative percentage frequencies of A-Z in text. */
+export function letterFrequencies(text: string): number[] {
+  const counts = letterCounts(text);
+  const total = counts.reduce((a, b) => a + b, 0);
+  if (total === 0) return Array(26).fill(0);
+  return counts.map((c) => (c / total) * 100);
+}
+
+/** Finds the most frequent letter in text and its count. */
+export function findPeakLetter(text: string): { letter: string; index: number; count: number } {
+  const counts = letterCounts(text);
+  let maxIdx = 0;
+  let maxCount = -1;
+  for (let i = 0; i < 26; i++) {
+    if (counts[i] > maxCount) {
+      maxCount = counts[i];
+      maxIdx = i;
+    }
+  }
+  return { letter: ALPHABET[maxIdx], index: maxIdx, count: Math.max(0, maxCount) };
+}
+
+/** Cracks a shift cipher by aligning the peak letter with targetLetter (defaults to 'E' = index 4). */
+export function crackShiftByFrequency(ciphertext: string, targetLetter = "E"): { peak: string; key: number; decrypted: string } {
+  const peak = findPeakLetter(ciphertext);
+  const targetIdx = ALPHABET.indexOf(targetLetter.toUpperCase());
+  const key = mod(peak.index - (targetIdx >= 0 ? targetIdx : 4), 26);
+  return { peak: peak.letter, key, decrypted: shiftDecrypt(ciphertext, key) };
+}

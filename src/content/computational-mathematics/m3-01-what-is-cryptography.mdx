@@ -59,7 +59,10 @@ In code, $E$ and $D$ are two functions that undo each other. Computers store let
 1. Convert `'H', 'E', 'L', 'L', 'O'` to ASCII codes $72, 69, 76, 76, 79$, then subtract $65$ to get 0-based alphabet positions $7, 4, 11, 11, 14$.
 2. Add the key $k = 3$ modulo $26$:
 $$
-(7 + 3, 4 + 3, 11 + 3, 11 + 3, 14 + 3) \bmod 26 = (10, 7, 14, 14, 17)
+\begin{aligned}
+&(7 + 3,\ 4 + 3,\ 11 + 3,\ 11 + 3,\ 14 + 3) \bmod 26 \\
+&\quad = (10,\ 7,\ 14,\ 14,\ 17)
+\end{aligned}
 $$
 3. Add $65$ back to get ASCII codes $75, 72, 79, 79, 82$, which are the letters `'KHOOR'`. Calling `D(3, 'KHOOR')` runs `E(-3, 'KHOOR')`. That subtracts $3$ modulo $26$ from $(10, 7, 14, 14, 17)$ to recover $(7, 4, 11, 11, 14)$ and `'HELLO'`:`
 
@@ -94,13 +97,19 @@ In a conventional secret-key system, the encryption and decryption keys are iden
 Written as a mapping, the sender applies an invertible transformation $f$ chosen by $k$. Read $f \colon M \xrightarrow{k} C$ as "$f$ maps $M$ to $C$ under key $k$":
 
 $$
-f \colon M \xrightarrow{k} C, \qquad c = E_k(m), \quad m \in M,\ c \in C
+\begin{aligned}
+f \colon M \xrightarrow{k} C, \qquad &c = E_k(m) \\
+&m \in M,\ c \in C
+\end{aligned}
 $$
 
 and sends $c$ over the public insecure channel. The receiver applies the inverse transformation $f^{-1}$,
 
 $$
-f^{-1} \colon C \xrightarrow{k} M, \qquad D_k(c) = D_k(E_k(m)) = m
+\begin{aligned}
+f^{-1} \colon C \xrightarrow{k} M, \qquad &D_k(c) = D_k(E_k(m)) \\
+&= m
+\end{aligned}
 $$
 
 to recover the original plaintext. Follow one message through:

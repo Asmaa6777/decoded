@@ -5,7 +5,7 @@ import path from "path";
 import { render, fireEvent, cleanup } from "@testing-library/react";
 import { CodeTabs } from "@/components/mdx/MdxComponents";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { affineDecrypt, affineEncrypt, affineTable, bitsToText, flowFrames, keystream, shiftDecrypt, shiftEncrypt, textToBits, VALID_K1, xorBits, xorFrames } from "@/lib/ciphers";
+import { affineDecrypt, affineEncrypt, affineTable, bitsToText, crackShiftByFrequency, findPeakLetter, flowFrames, keystream, letterCounts, letterFrequencies, shiftDecrypt, shiftEncrypt, textToBits, VALID_K1, xorBits, xorFrames } from "@/lib/ciphers";
 import { discreteLog, dlogFrames, fastPowFrames, logTable, modPow, cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
 import { conv, convFrames, divisionFrames, coverUpFrames, deconv, fitQuality, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
 import { adjoint, cofactors, det, dotAngle, fraction, scale, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
@@ -518,5 +518,24 @@ describe("ciphers", () => {
     const f = flowFrames("HELLO", 3);
     expect(f).toHaveLength(5);
     expect(f[2].state.cipher).toBe("KHOOR");
+  });
+
+  it("analyzes letter frequencies and cracks a shift cipher by peak matching", () => {
+    const plain = "DEFEND THE EAST WALL OF THE CASTLE";
+    const cipher = shiftEncrypt(plain, 3);
+    const counts = letterCounts(cipher);
+    expect(counts).toHaveLength(26);
+    expect(counts[7]).toBe(6); // 'H' appears 6 times (from 'E' shifted by 3)
+    const peak = findPeakLetter(cipher);
+    expect(peak.letter).toBe("H");
+    expect(peak.count).toBe(6);
+    const freqs = letterFrequencies(cipher);
+    expect(freqs).toHaveLength(26);
+    const sumFreq = freqs.reduce((a, b) => a + b, 0);
+    expect(Math.round(sumFreq)).toBe(100);
+    const cracked = crackShiftByFrequency(cipher, "E");
+    expect(cracked.peak).toBe("H");
+    expect(cracked.key).toBe(3);
+    expect(cracked.decrypted).toBe(plain);
   });
 });
