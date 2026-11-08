@@ -415,6 +415,7 @@ describe("order, primitive roots and inverses", () => {
     expect(primitiveRoots(7)).toEqual([3, 5]);
     expect(primitiveRoots(19)).toEqual([2, 3, 10, 13, 14, 15]);
     expect(isPrimitiveRoot(7, 45)).toBe(false);
+    expect(order(7, 45)).toBe(12);
     expect(powers(3, 7, 6)).toEqual([3, 2, 6, 4, 5, 1]);
     expect(powers(2, 9, 6)).toEqual([2, 4, 8, 7, 5, 1]);
     expect(cycleFrames(3, 7).at(-1)!.stats.k).toBe(6);
@@ -458,7 +459,8 @@ describe("fast powers and discrete logs", () => {
     expect(logTable(2, 9)).toEqual({ 1: 0, 2: 1, 4: 2, 8: 3, 7: 4, 5: 5 });
     expect(discreteLog(11, 2, 19)).toBe(12);
     expect(modPow(2, 12, 19)).toBe(11);
-    expect(discreteLog(37, 3, 101)).not.toBeNull();
+    expect(discreteLog(37, 3, 101)).toBe(24);
+    expect(discreteLog(1454, 63, 2017)).toBe(245);
     expect(dlogFrames(2, 11, 19).at(-1)!.state.found).toBe(true);
     expect(discreteLog(3, 2, 7)).toBeNull();
   });

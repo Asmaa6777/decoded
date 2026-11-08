@@ -20,6 +20,7 @@ For example, $91 = 7 \cdot 13$, $3600 = 2^4 \cdot 3^2 \cdot 5^2$, and $11011 = 7
 <CodeTabs>
 
 ```matlab
+factor(91)      % 7 13
 factor(3600)    % 2 2 2 2 3 3 5 5
 factor(11011)   % 7 11 11 13
 ```
@@ -35,6 +36,7 @@ def factor(n):
         d += 1
     return out + [n] if n > 1 else out
 
+print(factor(91))    # [7, 13]
 print(factor(3600))  # [2, 2, 2, 2, 3, 3, 5, 5]
 print(factor(11011))  # [7, 11, 11, 13]
 # sympy.factorint(3600) gives the same as a dictionary, {2: 4, 3: 2, 5: 2}
@@ -107,7 +109,7 @@ This method for listing small primes is over two thousand years old:
 3. Strike out all its multiples.
 4. Repeat until you pass $\sqrt{n}$. Whatever remains is prime.
 
-For $n = 100$, you can stop as soon as you reach a prime above 10. Step through it and watch how little work is left after the first few primes:
+For $n = 100$, calculating $\sqrt{100} = 10$, you can stop as soon as you finish striking out multiples of the primes up to 10 (that is, 2, 3, 5, and 7). The next remaining candidate prime is 11, which exceeds 10, so every composite number up to 100 has already had its prime factor struck out. Step through it and watch how little work is left after the first few primes:
 
 <SieveVisualizer />
 
@@ -154,9 +156,21 @@ Some factors can be spotted from the digits of $n$:
 - **3**: the sum of the digits is a multiple of 3.
 - **11**: the alternating sum of the digits is a multiple of 11.
 
-Take $17865843$. It ends in 3, so it isn't divisible by 2 or 5. Its digits add up to $1+7+8+6+5+8+4+3 = 42$, a multiple of 3, so 3 divides it.
+Take $17865843$. It ends in 3, so it isn't divisible by 2 or 5. Its digits add up to:
 
-For $8132619$, the alternating sum is $8-1+3-2+6-1+9 = 22 = 2 \cdot 11$, so 11 divides it.
+$$
+1 + 7 + 8 + 6 + 5 + 8 + 4 + 3 = 42
+$$
+
+If $42$ is not immediately obvious, sum its digits again: $4 + 2 = 6 = 2 \cdot 3$, confirming that 3 divides $17865843$.
+
+For $8132619$, taking the alternating sum $\sum (-1)^{j-1} d_j$ gives:
+
+$$
+8 - 1 + 3 - 2 + 6 - 1 + 9 = 22 = 2 \cdot 11
+$$
+
+(From right to left, $9 - 1 + 6 - 2 + 3 - 1 + 8 = 22$ gives the exact same result.) Since 22 is a multiple of 11, 11 divides $8132619$.
 
 <CodeTabs>
 

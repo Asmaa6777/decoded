@@ -19,7 +19,7 @@ $$
 b \equiv a^k \pmod p, \qquad 0 \le k \le p - 2
 $$
 
-This $k$ is the **discrete logarithm** of $b$ to the base $a$. The same rules hold, with the exponents worked out modulo $\phi(p)$, [Euler's totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) of $p$.
+This exponent $k$ is the **discrete logarithm** of $b$ for the base $a$ modulo $p$, denoted $\log_a(b)$ or the **index** $\operatorname{ind}_a(b)$. (Because $a^0 \equiv a^{p-1} \equiv 1 \pmod p$, discrete logarithms can be represented in $\{0, 1, \dots, p - 2\}$ or $\{1, 2, \dots, p - 1\}$; tables of discrete logarithms often assign $\log_a(1) = p - 1$.) The same logarithm rules hold, with exponents reduced modulo $\phi(p) = p - 1$, [Euler's totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) of $p$.
 
 ## A small example
 
@@ -54,7 +54,14 @@ Pick a base and a target modulo 19. The chords jump around with no visible patte
 
 <DiscreteLogSearch />
 
-Modulo 19 you can finish by hand. With a prime of hundreds of digits, this search would never end. Better algorithms exist, such as baby-step giant-step and the number field sieve, but none of them are fast enough at those sizes.
+Modulo 19 you can finish by hand, where searching for $b = 11$ with base $a = 2$ gives $2^{12} \equiv 11 \pmod{19}$, so $\log_2(11) = 12$.
+
+For larger numbers, brute force tests successive powers:
+
+- **$\log_3(37) \pmod{101}$:** testing powers of 3 finds $3^{24} \equiv 37 \pmod{101}$, giving the discrete logarithm $k = 24$.
+- **$\log_{63}(1454) \pmod{2017}$:** testing powers of 63 modulo the prime 2017 finds $63^{245} \equiv 1454 \pmod{2017}$, giving $k = 245$.
+
+With a prime of hundreds of digits, this linear search would never end. Better algorithms exist, such as baby-step giant-step and the number field sieve, but none of them are fast enough at cryptographic sizes.
 
 The brute-force search is a few lines, and it's a good way to watch the time grow as $p$ does:
 
@@ -84,7 +91,11 @@ def discrete_log(b, a, p):
         v = v * a % p
     return None
 
-print(discrete_log(11, 2, 19))  # 12
+print(discrete_log(11, 2, 19))       # 12
+print(discrete_log(37, 3, 101))      # 24
+print(discrete_log(1454, 63, 2017))  # 245
+print(pow(3, 24, 101))               # 37
+print(pow(63, 245, 2017))            # 1454
 ```
 
 </CodeTabs>

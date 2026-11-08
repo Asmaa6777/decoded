@@ -22,6 +22,7 @@ So $11 \bmod 7 = 4$ and $-11 \bmod 7 = 3$. Picture a clock with $n$ positions: p
 ```matlab
 mod(-28, 81)              % 53
 mod(7653, 915)            % 333
+mod(4357667512, 565349)   % 522769
 mod([-4 -1 7 9], 3)       % 2  2  1  0
 mod(1:10, 5)              % 1 2 3 4 0 1 2 3 4 0
 ```
@@ -33,6 +34,7 @@ import pandas as pd
 # Python's % matches MATLAB's mod, negative numbers included
 print(-28 % 81)  # 53
 print(7653 % 915)  # 333
+print(4357667512 % 565349)  # 522769
 print(np.mod([-4, -1, 7, 9], 3).tolist())  # [2, 2, 1, 0]
 print((np.arange(1, 11) % 5).tolist())  # [1, 2, 3, 4, 0, 1, 2, 3, 4, 0]
 
@@ -123,33 +125,46 @@ $$
 \end{aligned}
 $$
 
-So you can shrink the numbers partway through and still get the right answer. Check it with $11 \bmod 8 = 3$ and $15 \bmod 8 = 7$. Then $(3 \cdot 7) \bmod 8 = 21 \bmod 8 = 5$, and directly $(11 \cdot 15) \bmod 8 = 165 \bmod 8 = 5$.
+So you can shrink the numbers partway through and still get the right answer. We can verify all three operations with $11 \bmod 8 = 3$ and $15 \bmod 8 = 7$:
+
+- **Addition:** $[(11 \bmod 8) + (15 \bmod 8)] \bmod 8 = (3 + 7) \bmod 8 = 10 \bmod 8 = 2$, which matches $(11 + 15) \bmod 8 = 26 \bmod 8 = 2$.
+- **Subtraction:** $[(11 \bmod 8) - (15 \bmod 8)] \bmod 8 = (3 - 7) \bmod 8 = -4 \bmod 8 = 4$, which matches $(11 - 15) \bmod 8 = -4 \bmod 8 = 4$.
+- **Multiplication:** $[(11 \bmod 8) \cdot (15 \bmod 8)] \bmod 8 = (3 \cdot 7) \bmod 8 = 21 \bmod 8 = 5$, which matches $(11 \cdot 15) \bmod 8 = 165 \bmod 8 = 5$.
 
 That also makes big powers easy. To find $10^7 \bmod 17$:
 
 $$
 \begin{aligned}
-10^2 &= 100 \equiv 15 \\
-10^4 &= 15^2 \equiv 4 \\
-10^7 &= 10 \cdot 10^2 \cdot 10^4 \equiv 10 \cdot 15 \cdot 4 = 600 \equiv 5
+10^2 &= 100 \equiv 15 \pmod{17} \\
+10^4 &= (10^2)^2 \equiv 15^2 = 225 \equiv 4 \pmod{17} \\
+10^7 &= 10 \cdot 10^2 \cdot 10^4 \equiv 10 \cdot 15 \cdot 4 = 600 \equiv 5 \pmod{17}
 \end{aligned}
 $$
+
+(Notice that $10^7$ requires all three factors $10^1 \cdot 10^2 \cdot 10^4$; writing $10^4 \cdot 15$ directly would give $10^6 \equiv 60 \equiv 9 \pmod{17}$, not $10^7$.) Similarly, $10^{10} = 10^8 \cdot 10^2 \equiv 4^2 \cdot 15 = 240 \equiv 2 \pmod{17}$.
 
 [Fast Exponentiation](/courses/computational-mathematics/fast-exponentiation) turns this trick into an algorithm that handles exponents hundreds of digits long.
 
 <CodeTabs>
 
 ```matlab
-mod(mod(11, 8) * mod(15, 8), 8)    % 5, reducing first
-mod(11 * 15, 8)                    % 5, the same
+mod(mod(11, 8) + mod(15, 8), 8)    % 2, addition reducing first
+mod(11 + 15, 8)                    % 2, addition directly
+mod(mod(11, 8) - mod(15, 8), 8)    % 4, subtraction reducing first
+mod(11 - 15, 8)                    % 4, subtraction directly
+mod(mod(11, 8) * mod(15, 8), 8)    % 5, multiplication reducing first
+mod(11 * 15, 8)                    % 5, multiplication directly
+mod(10^10, 17)                     % 2, exponentiation
 ```
 
 ```python
-print((11 % 8) * (15 % 8) % 8)  # 5
-print(11 * 15 % 8)  # 5
+print((11 % 8 + 15 % 8) % 8, (11 + 15) % 8)  # 2 2
+print((11 % 8 - 15 % 8) % 8, (11 - 15) % 8)  # 4 4
+print((11 % 8) * (15 % 8) % 8, 11 * 15 % 8)  # 5 5
 
 # Python's three-argument pow reduces as it goes
-print(pow(10, 7, 17))  # 5
+print(pow(10, 7, 17))   # 5
+print(pow(10, 10, 17))  # 2
 ```
 
 </CodeTabs>

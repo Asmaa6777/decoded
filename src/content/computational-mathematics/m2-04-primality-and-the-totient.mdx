@@ -13,7 +13,23 @@ $$
 (n - 1)! \equiv -1 \pmod{n}
 $$
 
-The proof is a good picture. Modulo a prime, every number from 1 to $n - 1$ has a partner it multiplies with to give 1, its [inverse modulo $n$](/courses/computational-mathematics/modular-inverses). These pairs all cancel, except for 1 and $n - 1$, which are their own partners:
+The proof is a good picture. Modulo a prime, every number from 1 to $n - 1$ has a partner it multiplies with to give 1, its [inverse modulo $n$](/courses/computational-mathematics/modular-inverses). These pairs all cancel, except for 1 and $n - 1$, which are their own partners. For $n = 13$, the numbers from 2 to 11 pair up cleanly:
+
+$$
+\begin{aligned}
+2 \cdot 7 &= 14 \equiv 1 \pmod{13} \\
+3 \cdot 9 &= 27 \equiv 1 \pmod{13} \\
+4 \cdot 10 &= 40 \equiv 1 \pmod{13} \\
+5 \cdot 8 &= 40 \equiv 1 \pmod{13} \\
+6 \cdot 11 &= 66 \equiv 1 \pmod{13}
+\end{aligned}
+$$
+
+Multiplying these five pairs together gives $11! \equiv 1 \pmod{13}$. Therefore:
+
+$$
+12! = 12 \cdot 11! \equiv (-1) \cdot 1 \equiv -1 \pmod{13}
+$$
 
 <WilsonVisualizer />
 
@@ -52,19 +68,29 @@ $$
 5^{38} = (5^{10})^3 \cdot 5^8 \equiv 1^3 \cdot (5^2)^4 \equiv 3^4 = 81 \equiv 4 \pmod{11}
 $$
 
+Similarly, to find $2^{90} \bmod 11$:
+
+$$
+2^{90} = (2^{10})^9 \equiv 1^9 \equiv 1 \pmod{11}
+$$
+
 <CodeTabs>
 
 ```matlab
 powermod(7, 18, 19)     % 1, as the theorem predicts
 powermod(5, 38, 11)     % 4
+powermod(2, 90, 11)     % 1
+powermod(2, 16, 17)     % 1
 powermod(2, 560, 561)   % 1, yet 561 = 3 * 11 * 17
 % powermod needs the Symbolic Math Toolbox
 ```
 
 ```python
 # Python's three-argument pow is modular exponentiation, built in
-print(pow(7, 18, 19))  # 1
-print(pow(5, 38, 11))  # 4
+print(pow(7, 18, 19))    # 1
+print(pow(5, 38, 11))    # 4
+print(pow(2, 90, 11))    # 1
+print(pow(2, 16, 17))    # 1
 print(pow(2, 560, 561))  # 1
 ```
 
@@ -76,17 +102,34 @@ Miller-Rabin is a **randomised** test: it tries random bases, and a composite nu
 
 ## Euler's totient function
 
-$\phi(n)$ counts the positive integers less than $n$ that are [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $n$. Some values follow directly:
+$\phi(n)$, also written Euler's phi function, counts the positive integers less than $n$ that are [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $n$.
 
-- If $p$ is prime, $\phi(p) = p - 1$. An integer $n > 1$ is prime exactly when $\phi(n) = n - 1$.
-- For a prime power, $\phi(p^k) = p^k - p^{k-1}$.
-- In general, if $p_1, \dots, p_r$ are the distinct primes dividing $n$:
+For a prime such as 37, all 36 integers from 1 through 36 are coprime to 37, so $\phi(37) = 36$. For a composite number such as 35, we can list the positive integers less than 35 that share no common factor with 35:
 
 $$
-\phi(n) = n \left(1 - \frac{1}{p_1}\right)\left(1 - \frac{1}{p_2}\right) \cdots \left(1 - \frac{1}{p_r}\right)
+1, 2, 3, 4, 6, 8, 9, 11, 12, 13, 16, 17, 18, 19, 22, 23, 24, 26, 27, 29, 31, 32, 33, 34
 $$
 
-So $\phi(23) = 22$, $\phi(81) = 81 \cdot \tfrac{2}{3} = 54$, and $\phi(100) = 100 \cdot \tfrac{1}{2} \cdot \tfrac{4}{5} = 40$. Slide $n$ and watch the coprime numbers change. Primes light up almost the whole grid:
+There are 24 numbers on this list, so $\phi(35) = 24$.
+
+Some values and formulas follow directly:
+
+- An integer $n > 1$ is prime if and only if $\phi(n) = n - 1$.
+- For a prime power, $\phi(p^k) = p^k - p^{k-1} = p^k \left(1 - \frac{1}{p}\right)$.
+- In general, if $n = p_1^{a_1} p_2^{a_2} \cdots p_r^{a_r}$ is the prime factorization of $n$:
+
+$$
+\phi(n) = \phi(p_1^{a_1}) \cdots \phi(p_r^{a_r}) = n \left(1 - \frac{1}{p_1}\right)\left(1 - \frac{1}{p_2}\right) \cdots \left(1 - \frac{1}{p_r}\right)
+$$
+
+We can verify the formulas against direct counts:
+
+- $\phi(23) = 23 - 1 = 22$
+- $\phi(81) = \phi(3^4) = 3^4 \left(1 - \frac{1}{3}\right) = 81 \cdot \frac{2}{3} = 54$
+- $\phi(100) = \phi(2^2 \cdot 5^2) = 100 \left(1 - \frac{1}{2}\right)\left(1 - \frac{1}{5}\right) = 100 \cdot \frac{1}{2} \cdot \frac{4}{5} = 40$
+- $\phi(35) = \phi(5 \cdot 7) = 35 \left(1 - \frac{1}{5}\right)\left(1 - \frac{1}{7}\right) = 35 \cdot \frac{4}{5} \cdot \frac{6}{7} = 24$
+
+Slide $n$ and watch the coprime numbers change. Primes light up almost the whole grid:
 
 <TotientGrid />
 

@@ -28,7 +28,24 @@ For $a^{100}$, we have $100 = (1100100)_2$, so the bits build the exponent like 
 | 0 | square | $a^{50}$ |
 | 0 | square | $a^{100}$ |
 
-Squaring doubles the exponent, which shifts its binary form left, and multiplying by $a$ sets the new last bit to 1. Step through $25^{193} \bmod 469$, where $193 = (11000001)_2$:
+Squaring doubles the exponent, which shifts its binary form left, and multiplying by $a$ sets the new last bit to 1.
+
+For $25^{193} \bmod 469$, the binary form of the exponent is $193 = (11000001)_2 = e_7 e_6 e_5 e_4 e_3 e_2 e_1 e_0$. The eight bit steps evaluate as follows:
+
+| Bit | Value | Operation | Computation modulo 469 | Reduced |
+| --- | --- | --- | --- | --- |
+| $e_7$ | 1 | start | $25 \bmod 469$ | 25 |
+| $e_6$ | 1 | square, multiply | $(25^2 \cdot 25) \bmod 469 = 15625 \bmod 469$ | 148 |
+| $e_5$ | 0 | square | $148^2 \bmod 469 = 21904 \bmod 469$ | 330 |
+| $e_4$ | 0 | square | $330^2 \bmod 469 = 108900 \bmod 469$ | 92 |
+| $e_3$ | 0 | square | $92^2 \bmod 469 = 8464 \bmod 469$ | 22 |
+| $e_2$ | 0 | square | $22^2 \bmod 469 = 484 \bmod 469$ | 15 |
+| $e_1$ | 0 | square | $15^2 \bmod 469 = 225 \bmod 469$ | 225 |
+| $e_0$ | 1 | square, multiply | $(225^2 \cdot 25) \bmod 469 = 1265625 \bmod 469$ | 263 |
+
+Hence $25^{193} \equiv 263 \pmod{469}$.
+
+Step through the calculation below to see each squaring and multiplication animate:
 
 <FastModPowVisualizer />
 

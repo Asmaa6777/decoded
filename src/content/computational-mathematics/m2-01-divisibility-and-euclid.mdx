@@ -73,13 +73,37 @@ print(divmod(1000, 32))  # (31, 8)
 
 ## Greatest common divisor
 
-$\gcd(a, b)$ is the largest integer dividing both $a$ and $b$. For example, $\gcd(60, 24) = 12$. Signs don't matter, so $\gcd(60, -24) = 12$ too, and by convention $\gcd(0, 0) = 0$.
+The **greatest common divisor** of $a$ and $b$, written $\gcd(a, b)$, is the largest positive integer that divides both numbers:
 
-Two numbers are **coprime** (or relatively prime) when their gcd is 1. Neither has to be prime: $\gcd(8, 15) = 1$.
+$$
+\gcd(a, b) = \max \{k \in \mathbb{Z}^+ : k \mid a \text{ and } k \mid b\}
+$$
+
+More formally, a positive integer $c = \gcd(a, b)$ satisfies two conditions: $c$ is a divisor of both $a$ and $b$, and any integer dividing both $a$ and $b$ also divides $c$. Because the greatest common divisor is defined to be positive, signs do not change the answer:
+
+$$
+\gcd(a, b) = \gcd(|a|, |b|) = \gcd(-a, b) = \gcd(a, -b) = \gcd(-a, -b)
+$$
+
+For example, $\gcd(60, 24) = \gcd(60, -24) = 12$. By convention, $\gcd(0, 0) = 0$.
+
+Two numbers are **coprime** (or relatively prime) if their only common positive factor is 1, which means $\gcd(a, b) = 1$. Neither number has to be prime: the positive divisors of 8 are 1, 2, 4, 8 and those of 15 are 1, 3, 5, 15, so $\gcd(8, 15) = 1$.
 
 ## The Euclidean algorithm
 
-Listing divisors becomes hopeless for large numbers. Euclid's method needs one fact, which is that $\gcd(a, b) = \gcd(b, a \bmod b)$. Here $a \bmod b$ is the remainder $r$ from the division algorithm above, and the [next lesson](/courses/computational-mathematics/modular-arithmetic#the-mod-operation) is all about it. Keep replacing the pair until the remainder hits zero, and the last non-zero remainder is the answer.
+Listing divisors becomes hopeless for large numbers. Euclid's method needs one fact, which is that $\gcd(a, b) = \gcd(b, a \bmod b)$. Here $a \bmod b$ is the remainder $r$ from the division algorithm above, and the [next lesson](/courses/computational-mathematics/modular-arithmetic#the-mod-operation) is all about it. Setting $r_0 = b$, we find successive quotients $q_i$ and remainders $r_i$ with $0 \le r_i < r_{i-1}$:
+
+$$
+\begin{aligned}
+a &= q_1 b + r_1 \\
+b &= q_2 r_1 + r_2 \\
+r_1 &= q_3 r_2 + r_3 \\
+&\;\;\vdots \\
+r_{n-1} &= q_{n+1} r_n + 0
+\end{aligned}
+$$
+
+When a remainder hits zero, the last non-zero remainder is the gcd: $r_n = \gcd(a, b)$.
 
 It has a nice picture. Cut as many squares of side $b$ as you can from an $a$-by-$b$ rectangle. Then repeat on the leftover piece. The final square tiles everything before it, and its side is the gcd:
 
@@ -97,12 +121,61 @@ $$
 \end{aligned}
 $$
 
-So $\gcd(1281, 243) = 3$. MATLAB's `gcd` does this for you, and it also works entry by entry on vectors:
+So $\gcd(1281, 243) = 3$.
+
+The same reduction works for $\gcd(247, 143)$:
+
+$$
+\begin{aligned}
+247 &= 1 \cdot 143 + 104 \\
+143 &= 1 \cdot 104 + 39 \\
+104 &= 2 \cdot 39 + 26 \\
+39 &= 1 \cdot 26 + 13 \\
+26 &= 2 \cdot 13 + 0
+\end{aligned}
+$$
+
+So $\gcd(247, 143) = 13$. Indeed, $247 = 13 \times 19$ and $143 = 13 \times 11$.
+
+A simple `while` loop carries out the successive reductions:
+
+<CodeTabs>
+
+```matlab
+% The Euclidean algorithm in MATLAB
+a = 247;  b = 143;
+r = a - b * floor(a / b);
+while r ~= 0
+    a = b;
+    b = r;
+    r = a - b * floor(a / b);
+end
+gcd_result = b
+
+gcd_result =
+    13
+```
+
+```python
+# The Euclidean algorithm in Python
+a, b = 247, 143
+while b:
+    a, b = b, a % b
+print(a)  # 13
+```
+
+</CodeTabs>
+
+Testing the same reduction on $a = 18$ and $b = 50$ yields $\gcd(18, 50) = 2$ ($50 = 2 \cdot 18 + 14$, $18 = 1 \cdot 14 + 4$, $14 = 3 \cdot 4 + 2$, $4 = 2 \cdot 2 + 0$), whereas running on 24 and 78 gives $\gcd(78, 24) = 6$ ($78 = 3 \cdot 24 + 6$, $24 = 4 \cdot 6 + 0$).
+
+MATLAB's built-in `gcd` computes this directly, and works elementwise on vectors:
 
 <CodeTabs>
 
 ```matlab
 gcd(65, 70)                                % 5
+gcd(247, 143)                              % 13
+gcd(18, 50)                                % 2
 gcd([250 1050 6022], [180 1150 5622])      % 10  50  2
 ```
 
@@ -111,15 +184,9 @@ import math
 import numpy as np
 
 print(math.gcd(65, 70))  # 5
+print(math.gcd(247, 143))  # 13
+print(math.gcd(18, 50))  # 2
 print(np.gcd([250, 1050, 6022], [180, 1150, 5622]).tolist())  # [10, 50, 2]
-
-# The whole algorithm fits in three lines of plain Python
-def gcd(a, b):
-    while b:
-        a, b = b, a % b
-    return a
-
-print(gcd(1281, 243))  # 3
 ```
 
 </CodeTabs>
