@@ -4,58 +4,64 @@ import { CoinChangeGreedy } from "@/components/mdx/AdvancedVisualizers";
 
 # Greedy Algorithms: Prim and Kruskal
 
-So far you've learned specific algorithms. This module covers *strategies for inventing them*, starting with the one most people use without thinking: **always grab the best option available right now.**
+Earlier lessons focused on specific algorithms. This module looks at general strategies for designing algorithms. The first strategy is one people often use by instinct: **always grab the best option available right now.**
 
 ## The greedy approach
 
-A greedy algorithm builds a solution **one step at a time**. At each step it extends the partial solution it has so far, and the choice it makes must be:
+A greedy algorithm constructs a solution **one step at a time**. At each step, it extends the partial solution built so far by making a choice that satisfies three properties:
 
-1. **Feasible:** it doesn't break the problem's rules.
-2. **Locally optimal:** it's the best choice available *at this step*.
-3. **Irrevocable:** once made, it's never undone.
+1. **Feasible:** it satisfies all the constraints of the problem.
+2. **Locally optimal:** it is the best choice available *at this step*.
+3. **Irrevocable:** once made, the choice is never undone or reconsidered.
 
-The third rule keeps greedy algorithms fast and simple, since they never go back or try alternatives. It's also why they can get the wrong answer. Greedy algorithms pick the **local optimum** (the best choice at this step) in the hope that it leads to the **global optimum** (the best answer overall).
+The third rule keeps greedy algorithms fast and simple, because they never backtrack or explore alternative branches. However, this same rule explains why greedy algorithms can fail. A greedy algorithm picks the **local optimum** (the best immediate choice) in the hope that these choices combine to produce the **global optimum** (the best overall solution).
 
 ## When greedy fails
 
-Make change for 6 using as few coins as possible. Coins come in values 1, 3 and 4.
+Consider making change for an amount of 6 using the smallest number of coins possible, when coins are available in values 1, 3, and 4.
 
-The greedy cashier always picks the biggest coin that fits: **4**, leaving 2. Then **1**, then **1**, for three coins: 4 + 1 + 1.
+A greedy cashier always picks the largest coin that does not exceed the remaining total: first **4**, leaving 2. Then **1**, and then another **1**, giving three coins: 4 + 1 + 1.
 
-But **3 + 3** is only two coins. Grabbing the 4 looked best at that moment and turned out to be a mistake, and greedy never takes a choice back.
+Using **3 + 3** requires only two coins. Grabbing 4 looked best at the initial step, but it forced an inferior total. Because greedy algorithms never backtrack, they cannot correct that early mistake.
 
 <CoinChangeGreedy system="small" />
 
-Try other amounts with 1, 3 and 4 (10 and 14 fail too), then switch to US money, where greedy never loses.
+Try other target amounts with coins 1, 3, and 4 (totals of 10 and 14 fail too), then switch to standard US currency, where greedy change-making never fails.
 
-(With real coin systems such as 1, 5, 10, 25, greedy always gives the optimal answer, because those values were designed that way.)
+Real-world currency systems like 1, 5, 10, and 25 cents were chosen specifically so greedy change-making always yields the minimum number of coins.
 
-The notes list the advantages: greedy algorithms are easy to describe, and they can be faster than other approaches, though not always. They're also easy to code. Their drawback, which the notes call the major one, is that they **don't always produce the optimal solution**. For each problem you have to *prove* that the local choices lead to the global best, or accept a good-enough answer.
+Greedy algorithms offer clear benefits: they are simple to describe, easy to implement, and often run faster than algorithms that search multiple alternatives. Their main limitation is that they **do not always produce the optimal solution**. For each problem, you must mathematically prove that local choices guarantee a globally optimal outcome, or decide to accept an approximate answer.
 
-The rest of this lesson is about a problem where greedy provably finds the best answer.
+For certain fundamental problems, greedy choices are provably guaranteed to find the true minimum. Minimum spanning trees are a classic example.
 
 ## Minimum spanning trees
 
-You're laying cable to connect six buildings. Some pairs of buildings can be connected, each at a known cost. Every building must be connected, directly or indirectly, and you want to spend as little as possible.
+Imagine laying cable to connect six buildings. Specific pairs of buildings can be linked, each at a known installation cost. Every building must connect to the network, directly or indirectly, and your goal is to minimize total cable cost.
 
-In graph terms, this is a connected, weighted, undirected graph. A **spanning tree** is a subset of edges that connects **every** vertex with **no cycles** (a cycle would mean paying for a cable you don't need). With $n$ vertices, every spanning tree has exactly $n - 1$ edges. To see why, build it one edge at a time. Start with $n$ separate vertices, $n$ pieces. Each edge that doesn't close a cycle joins two pieces into one, so it lowers the count by exactly 1. Getting from $n$ pieces to 1 takes $n - 1$ edges; one more would have to join two vertices already connected, which makes a cycle. The **minimum spanning tree (MST)** is the spanning tree with the smallest total weight.
+In graph theory, this network forms a connected, weighted, undirected graph. A **spanning tree** is a subset of edges that connects **every** vertex with **no cycles** (a cycle would mean paying for redundant cable). For a graph with $n$ vertices, every spanning tree contains exactly $n - 1$ edges.
 
-There are two classic greedy algorithms for it. Both always find the true minimum.
+To see why, construct the tree one edge at a time. Begin with $n$ isolated vertices, representing $n$ separate components. Each edge that does not form a cycle connects two separate components into one, reducing the component count by exactly 1. Reducing $n$ components to 1 single connected component takes exactly $n - 1$ edges. Adding any further edge would connect two vertices that are already linked, creating a cycle.
 
-Both run on the notes' example: six vertices, a to f, and ten weighted edges, ab = 3, bc = 1, bf = 4, cf = 4, af = 5, df = 5, ae = 6, cd = 6, ef = 2 and de = 8.
+The **minimum spanning tree (MST)** is the spanning tree that has the smallest total edge weight.
+
+Two classic greedy algorithms find minimum spanning trees: Prim's algorithm and Kruskal's algorithm. Both algorithms are guaranteed to find an optimal minimum spanning tree every time.
+
+The examples below trace both algorithms on a graph with six vertices, a to f, and ten weighted edges: ab = 3, bc = 1, bf = 4, cf = 4, af = 5, df = 5, ae = 6, cd = 6, ef = 2, and de = 8.
 
 ## Prim's algorithm: grow one tree
 
-1. Start the tree with any single vertex. (The notes say "chosen at random": any vertex works.)
-2. Look at every edge that connects a vertex **in** the tree to a vertex **not yet** in it.
-3. Add the **cheapest** of those edges (and its new vertex) to the tree.
-4. Repeat until every vertex is in.
+Prim's algorithm builds a single tree outward from an initial vertex:
+
+1. Start the tree with any single vertex. Any starting vertex produces a valid minimum spanning tree.
+2. Examine every edge that connects a vertex **in** the tree to a vertex **not yet** in the tree.
+3. Select the **cheapest** of those crossing edges, and add it along with its endpoint vertex to the tree.
+4. Repeat this process until every vertex belongs to the tree.
 
 <MstVisualizer algorithm="prim" nodes={[{ id: 0, x: 50, y: 120, label: "a" }, { id: 1, x: 170, y: 40, label: "b" }, { id: 2, x: 330, y: 40, label: "c" }, { id: 3, x: 450, y: 120, label: "d" }, { id: 4, x: 250, y: 200, label: "e" }, { id: 5, x: 250, y: 120, label: "f" }]} edges={[{ from: 0, to: 1, weight: 3 }, { from: 1, to: 2, weight: 1 }, { from: 1, to: 5, weight: 4 }, { from: 2, to: 5, weight: 4 }, { from: 0, to: 5, weight: 5 }, { from: 5, to: 3, weight: 5 }, { from: 0, to: 4, weight: 6 }, { from: 2, to: 3, weight: 6 }, { from: 5, to: 4, weight: 2 }, { from: 4, to: 3, weight: 8 }]} />
 
-The dotted neon edges are the candidates at each step: the edges that cross from the tree to the outside. Prim always takes the cheapest crossing edge, so the tree grows outward from its starting vertex.
+In the visualizer, dotted neon edges indicate candidate crossing edges at each step. Prim always selects the lowest-weight crossing edge, expanding the tree by one vertex each turn.
 
-The notes trace it as a table. Each vertex outside the tree carries a label (nearest tree vertex, weight of that edge), and $(-, \infty)$ means no edge reaches the tree yet. Each row adds the vertex with the smallest weight:
+You can trace the algorithm step by step using a priority table. Each vertex outside the tree keeps a label showing its closest neighbor in the tree and the weight of that connecting edge. The label $(-, \infty)$ indicates that no edge connects that vertex to the current tree yet. Each row adds the external vertex with the smallest edge weight:
 
 | Tree vertex added | Remaining vertices |
 | --- | --- |
@@ -66,9 +72,9 @@ The notes trace it as a table. Each vertex outside the tree carries a label (nea
 | e(f, 2) | **d(f, 5)** |
 | d(f, 5) | |
 
-When b joins, f's label improves from (a, 5) to (b, 4), because b is closer. When f joins, e improves from (a, 6) to (f, 2) and d from (c, 6) to (f, 5). The tree is ab, bc, bf, fe and fd, with total weight $3 + 1 + 4 + 2 + 5 = 15$.
+When vertex b joins the tree, vertex f's label improves from (a, 5) to (b, 4) because b is closer. When f joins, e improves from (a, 6) to (f, 2) and d improves from (c, 6) to (f, 5). The resulting tree consists of edges ab, bc, bf, fe, and fd, with total weight $3 + 1 + 4 + 2 + 5 = 15$.
 
-The notes' pseudocode, where $V_T$ is the set of tree vertices and $E_T$ the set of tree edges:
+Here is the pseudocode for Prim's algorithm, where $V_T$ is the set of tree vertices and $E_T$ is the set of tree edges:
 
 ```text
 ALGORITHM Prim(G)
@@ -82,35 +88,35 @@ for i ← 1 to |V| − 1 do
 return E_T
 ```
 
-The loop runs $|V| - 1$ times, once per tree edge.
+The main loop runs $|V| - 1$ times, adding one tree edge in each iteration.
 
 ## Kruskal's algorithm: join the forest
 
-Kruskal works differently. Instead of growing one tree, it starts with every vertex as its own tiny tree (a forest) and joins them up.
+Kruskal's algorithm takes a different approach. Rather than growing a single tree from a starting vertex, it treats every vertex as its own one-node tree (a forest) and joins them together:
 
-1. **Sort** all edges from lowest weight to highest.
-2. Take the cheapest remaining edge. If it connects two **different** trees, add it. If both ends are **already in the same tree**, adding it would create a cycle, so **reject** it.
-3. Repeat until you have $n - 1$ edges.
+1. **Sort** all edges in non-decreasing order of weight.
+2. Pick the cheapest remaining edge. If its endpoints belong to two **different** trees, add it to the forest to connect them. If both endpoints are **already in the same tree**, adding it would form a cycle, so **reject** it.
+3. Repeat until you have collected $n - 1$ edges.
 
 <MstVisualizer algorithm="kruskal" nodes={[{ id: 0, x: 50, y: 120, label: "a" }, { id: 1, x: 170, y: 40, label: "b" }, { id: 2, x: 330, y: 40, label: "c" }, { id: 3, x: 450, y: 120, label: "d" }, { id: 4, x: 250, y: 200, label: "e" }, { id: 5, x: 250, y: 120, label: "f" }]} edges={[{ from: 0, to: 1, weight: 3 }, { from: 1, to: 2, weight: 1 }, { from: 1, to: 5, weight: 4 }, { from: 2, to: 5, weight: 4 }, { from: 0, to: 5, weight: 5 }, { from: 5, to: 3, weight: 5 }, { from: 0, to: 4, weight: 6 }, { from: 2, to: 3, weight: 6 }, { from: 5, to: 4, weight: 2 }, { from: 4, to: 3, weight: 8 }]} />
 
-The orange dashed edges were cheap, but their two ends were already connected, so they would only have closed a loop. Kruskal skips them.
+In the visualizer, orange dashed edges have low weights, but their endpoints were already connected through earlier edges. Adding them would merely create a cycle, so Kruskal discards them.
 
-On the notes' graph, the sorted list is bc 1, ef 2, ab 3, bf 4, cf 4, af 5, df 5, ae 6, cd 6, de 8:
+On the six-vertex example graph, the sorted edges are bc (1), ef (2), ab (3), bf (4), cf (4), af (5), df (5), ae (6), cd (6), and de (8):
 
 | Edge | Weight | Result |
 | --- | --- | --- |
 | bc | 1 | accept |
 | ef | 2 | accept |
 | ab | 3 | accept |
-| bf | 4 | accept: joins the a, b, c piece to the e, f piece |
+| bf | 4 | accept: joins the component containing a, b, c to the component containing e, f |
 | cf | 4 | reject: c and f are already connected |
 | af | 5 | reject: a and f are already connected |
-| df | 5 | accept: the 5th edge, so the tree is done |
+| df | 5 | accept: fifth edge added, completing the tree |
 
-Kruskal stops as soon as it has $|V| - 1 = 5$ edges and never looks at ae, cd or de. It finds the same tree as Prim here, total **15**. When there are ties the two can pick different edges, but the minimum total weight is always the same.
+Kruskal halts as soon as it accepts $|V| - 1 = 5$ edges, without needing to inspect edges ae, cd, or de. In this example, it finds the same tree as Prim, with a total weight of **15**. When edge weights tie, the two algorithms may choose different individual edges, but the total minimum weight remains identical.
 
-The notes' pseudocode keeps a count of tree edges, `ecounter`, and an index `k` into the sorted edge list:
+Here is the pseudocode for Kruskal's algorithm, tracking edge count with `ecounter` and indexing edges with `k`:
 
 ```text
 ALGORITHM Kruskal(G)
@@ -124,11 +130,11 @@ while ecounter < |V| − 1 do
 return E_T
 ```
 
-"Is acyclic" is the cycle check: adding the edge must not close a loop.
+The condition `is acyclic` checks whether the candidate edge connects two previously disjoint components.
 
-## Homework from the notes
+## Worked examples with ties
 
-**Prim, starting from C.** Edges: AB = 4, AC = 4, BC = 2, CD = 3, CE = 2, CF = 4, DF = 3, EF = 3.
+**Prim, starting from vertex C.** Given edges AB = 4, AC = 4, BC = 2, CD = 3, CE = 2, CF = 4, DF = 3, EF = 3:
 
 | Tree so far | Cheapest edge leaving it | Adds |
 | --- | --- | --- |
@@ -138,49 +144,55 @@ return E_T
 | C, B, E, D | DF = 3 (tied with EF = 3) | F |
 | C, B, E, D, F | AB = 4 (tied with AC = 4) | A |
 
-Total weight $2 + 2 + 3 + 3 + 4 = 14$. Every tie gives a different tree, but each one weighs 14. On an exam, say how you broke ties (here, alphabetically).
+Total weight is $2 + 2 + 3 + 3 + 4 = 14$. Different tie-breaking decisions may yield different valid trees, but every valid minimum spanning tree has a total weight of 14. In coursework or exam settings, state your tie-breaking rule clearly (here, alphabetical order).
 
-**Kruskal.** Edges: AB = 1, DE = 2, BC = 3, CD = 4, AE = 5, AC = 7, AD = 10. Sorted, accept AB 1, DE 2, BC 3 and CD 4. That's $5 - 1 = 4$ edges, so the tree is done: A–B–C–D–E with total weight $1 + 2 + 3 + 4 = 10$. The heavier edges AE, AC and AD would each close a cycle.
+**Kruskal on a separate graph.** Given edges AB = 1, DE = 2, BC = 3, CD = 4, AE = 5, AC = 7, AD = 10:
+
+Sorting the edges gives AB (1), DE (2), BC (3), CD (4), AE (5), AC (7), and AD (10). Kruskal accepts AB (1), DE (2), BC (3), and CD (4). That reaches $5 - 1 = 4$ edges, completing the spanning tree across vertices A, B, C, D, and E with total weight $1 + 2 + 3 + 4 = 10$. The remaining edges AE, AC, and AD are never added because each would close a cycle.
 
 ## Why does greedy work here?
 
-The reason is the **cut property**. A **cut** splits the vertices into two groups. The cheapest edge crossing between the groups is always safe to include in some minimum spanning tree. Why: a spanning tree has to cross the cut somewhere, or the two groups wouldn't be connected. If a tree crosses it with a more expensive edge, swap that edge for the cheapest crossing one; everything stays connected and the total goes down (or stays equal). So some minimum tree uses the cheapest crossing edge. Prim applies this to "tree vs. everything else." Kruskal applies it to "this edge's tree vs. everything else." So every greedy choice is one that some optimal solution also makes, and that's what greedy needs to be correct.
+The correctness of both algorithms rests on the **cut property**. In graph theory, a **cut** partitions the vertices of a graph into two disjoint sets. The cheapest edge crossing between these two sets is always safe to include in a minimum spanning tree.
+
+To understand why, suppose an optimal spanning tree connects the two sets using a more expensive crossing edge instead. Swapping that expensive edge for the cheapest crossing edge maintains full connectivity across the cut without increasing total weight. Therefore, at least one optimal spanning tree must contain the cheapest crossing edge.
+
+Prim's algorithm applies this rule by defining the cut between vertices in the growing tree and vertices outside it. Kruskal's algorithm applies it by defining the cut between a candidate edge's component and the rest of the graph. Because every choice selects an edge that belongs to at least one valid optimal tree, neither algorithm makes an irreversible mistake.
 
 ## Analysis
 
-- **Prim**, simple version (matrix, scan for the cheapest crossing edge each time): $O(V^2)$. With a [priority queue](/courses/data-structures/heaps#the-interface): $O(E \log V)$.
-- **Kruskal**: sorting the edges dominates, $O(E \log E)$. The "same tree?" check uses a **union–find** structure: each vertex points towards a representative of its tree, `find` follows the pointers to that representative, and two vertices are in the same tree when they reach the same one. Accepting an edge points one representative at the other, which joins the trees (the `find` and `parent` in the Java below). With two standard improvements, which keep the pointer chains short, each check is nearly $O(1)$.
+- **Prim's algorithm:** with an adjacency matrix and a simple linear scan for the cheapest crossing edge, the running time is $O(V^2)$. When implemented with an adjacency list and a binary [priority queue](/courses/data-structures/heaps#the-interface), the running time drops to $O(E \log V)$.
+- **Kruskal's algorithm:** sorting edges takes $O(E \log E)$, which equals $O(E \log V)$ because $E \le V^2$. Checking whether two vertices share the same component uses a **union-find** disjoint-set data structure: each vertex points to a parent representative, `find` traverses pointers to identify the root, and two vertices share a component when their roots match. Adding an edge links one root to the other, merging their trees. Using path compression and union by rank keeps operations nearly $O(1)$ amortized time.
 
-Rule of thumb: Prim for **dense** graphs, where the number of edges is close to the maximum $V(V-1)/2$, and Kruskal for **sparse** ones, where it's closer to $V$. Kruskal's sorting cost grows with $E$, so few edges help it most.
+As a general guideline, choose Prim's algorithm for **dense** graphs, where the edge count approaches the maximum $V(V-1)/2$. Choose Kruskal's algorithm for **sparse** graphs, where the edge count is closer to $V$, because having fewer edges minimizes sorting time.
 
 <Callout tone="orange" label="Common mistakes with Prim and Kruskal">
-**Mixing them up in Prim:** Prim's next edge must touch the tree built so far. Picking the cheapest edge *anywhere* in the graph is Kruskal's rule, and in a Prim trace it gives the wrong order. On the a to f example, after a–b, Prim takes b–c (1), and only later f–e (2), even though f–e is cheaper than a–b; f–e doesn't touch the tree until f joins it.
+**Confusing candidate edges in Prim:** In Prim's algorithm, every candidate edge must directly attach to the tree constructed so far. Selecting the cheapest edge anywhere in the entire graph is Kruskal's strategy, not Prim's. In the six-vertex example, after selecting edge ab (weight 3), Prim chooses bc (weight 1), and only considers ef (weight 2) once vertex f has joined the tree.
 
-**Skipping the cycle check in Kruskal:** on the notes' graph, c–f (4) is the next cheapest edge after b–f, and accepting it would close the loop b–c–f. Before accepting each edge, ask whether its two ends are already connected.
+**Omitting the cycle check in Kruskal:** In Kruskal's algorithm, you must confirm that both endpoints belong to different components before accepting an edge. In the six-vertex graph, edge cf (weight 4) arrives right after bf (weight 4). Accepting cf would close the cycle b-c-f because b, c, and f are already linked. Always verify that an edge joins two separate components before adding it.
 </Callout>
 
-Advanced Algorithms proves these results, in [greedy algorithms](/courses/advanced-algorithms/greedy-algorithms#optimization-problems) and [minimum spanning trees](/courses/advanced-algorithms/minimum-spanning-trees#optimal-substructure).
+Advanced Algorithms provides full proofs for these properties, in [greedy algorithms](/courses/advanced-algorithms/greedy-algorithms#optimization-problems) and [minimum spanning trees](/courses/advanced-algorithms/minimum-spanning-trees#optimal-substructure).
 
 ## Where this shows up today
 
 <ApplicationsGrid>
   <PracticalApplication title="Network design" tool="INFRASTRUCTURE">
-    Laying fibre, power lines, water pipes or roads between sites at minimum total cost is the MST problem.
+    Laying optical fiber, electric transmission lines, water pipelines, or transit networks between facilities at lowest construction cost uses minimum spanning trees.
   </PracticalApplication>
   <PracticalApplication title="Clustering" tool="MACHINE LEARNING">
-    Build the MST of a set of data points and remove the most expensive edges. What's left splits into natural clusters.
+    Single-linkage clustering builds a minimum spanning tree over data points and deletes the heaviest edges, leaving points grouped into natural geometric clusters.
   </PracticalApplication>
   <PracticalApplication title="Huffman coding" tool="COMPRESSION">
-    ZIP and JPEG compress data with Huffman codes, built by a greedy algorithm that repeatedly merges the two rarest symbols.
+    File formats like ZIP and JPEG compress data using Huffman trees, constructed by a greedy algorithm that iteratively merges the two least frequent character symbols.
   </PracticalApplication>
   <PracticalApplication title="Dijkstra's shortest paths" tool="MAPS">
-    The algorithm behind route planning is greedy too: always settle the closest unsettled place next. It looks a lot like Prim.
+    GPS navigation engines compute shortest travel paths with Dijkstra's algorithm, a greedy method that repeatedly settles the closest reachable node in a manner similar to Prim's algorithm.
   </PracticalApplication>
 </ApplicationsGrid>
 
 ## The Java
 
-The visualizer shows the simple matrix version of Prim. Here's Kruskal in full, with a minimal union–find:
+The visualizer illustrates Prim's algorithm. Here is a complete Java implementation of Kruskal's algorithm using a lightweight union-find structure:
 
 ```java
 import java.util.Arrays;

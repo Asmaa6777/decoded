@@ -3,11 +3,11 @@ import { KnapsackTable, LeetCodeProblems } from "@/components/mdx/AlgoVisualizer
 
 # Dynamic Programming: The 0/1 Knapsack
 
-Greedy makes one choice and never looks back. Sometimes that's right, and sometimes, as the coin example showed, it walks straight past the best answer. The alternative is to consider *every* option, which sounds expensive. **Dynamic programming** lets you consider every option without paying the full price.
+Greedy algorithms make a single choice at each step and never reconsider. Sometimes that produces the right answer, but as the coin example showed, a greedy choice can miss the best solution entirely. Trying every combination guarantees an optimal answer, but brute-force search is usually far too slow. **Dynamic programming** solves this by evaluating all valid options efficiently, without repeating work.
 
 ## The problem with plain recursion
 
-Fibonacci numbers: $F(0) = 0$, $F(1) = 1$, and every number after that is the sum of the two before it: $F(n) = F(n-1) + F(n-2)$. The definition translates straight into Java:
+Consider the Fibonacci sequence: $F(0) = 0$, $F(1) = 1$, and each subsequent number is the sum of the two preceding values: $F(n) = F(n-1) + F(n-2)$. The mathematical definition translates directly into Java:
 
 ```java
 static long fib(int n) {
@@ -16,13 +16,13 @@ static long fib(int n) {
 }
 ```
 
-It's correct, and extremely slow. To compute `fib(5)` it computes `fib(3)` twice, `fib(2)` three times, `fib(1)` five times... The same small problems get solved over and over. The number of calls grows exponentially, by about 1.6 times with each $n$, so **$O(2^n)$** is an upper bound. `fib(50)` makes billions of calls.
+This implementation is correct, but extraordinarily slow. Computing `fib(5)` calculates `fib(3)` twice, `fib(2)` three times, and `fib(1)` five times. The same subproblems are recalculated repeatedly. The total number of recursive calls grows exponentially, scaling by roughly 1.6 with each increase in $n$, making **$O(2^n)$** an upper bound. A call to `fib(50)` triggers billions of operations.
 
-Those repeated pieces are called **overlapping subproblems**. Dynamic programming is the technique for problems that have them:
+When a recursive algorithm encounters identical subproblems again and again, those pieces are called **overlapping subproblems**. Dynamic programming is designed specifically for problems with this structure:
 
-> Solve each smaller subproblem **only once**, record its answer in a **table**, and look it up whenever it's needed again.
+> Solve each smaller subproblem **only once**, record its answer in a **table**, and look up the stored value whenever it is needed again.
 
-The notes add where the subproblems come from: usually a **recurrence**, an equation that gives a problem's answer in terms of the answers to smaller versions of it. $F(n) = F(n-1) + F(n-2)$ is one.
+These subproblems usually arise from a **recurrence relation**, an equation that defines the solution to a problem in terms of solutions to smaller instances of itself. The relation $F(n) = F(n-1) + F(n-2)$ is a classic recurrence.
 
 ```java
 static long fib(int n) {
@@ -34,44 +34,44 @@ static long fib(int n) {
 }
 ```
 
-The recurrence is the same, but now it's $O(n)$. The rest of dynamic programming is working out *what goes in the table*.
+The mathematical recurrence remains unchanged, but recording intermediate values in an array reduces the running time from exponential to $O(n)$. Applying dynamic programming to other problems comes down to defining the subproblems and deciding what information to store in the table.
 
 ## The 0/1 knapsack problem
 
-You have a knapsack that can carry a total weight of at most $W$. There are $n$ items, each with a weight $w_i$ and a value $v_i$. Find the **most valuable subset of items that fits**. The notes also call the value the **benefit** or **profit**, and write the arrays as `wt` and `val`. Each item is all or nothing: you take it (1) or leave it (0), hence "0/1."
+Imagine you have a knapsack that can hold at most a total weight of $W$. You are given $n$ items, each having a weight $w_i$ and a value $v_i$. The objective is to select the **most valuable subset of items that fits** within the capacity limit. In textbooks, value is often called the **benefit** or **profit**, with arrays labeled `wt` and `val`. Each item is indivisible: you either take it (1) or leave it (0), giving the **0/1 knapsack problem** its name.
 
-This is one of the hard problems from lesson 1. Trying every subset means $2^n$ subsets, which is fine for 4 items and hopeless for 60.
+This is a computationally challenging problem. Evaluating every possible subset requires testing $2^n$ combinations. That is simple for 4 items (16 subsets), but impossible for 60 items (over $10^{18}$ subsets).
 
-Greedy fails too. Take capacity 50 and three items: weight 10 worth 60, weight 20 worth 100, weight 30 worth 120. The greedy rule "best value per kilo first" takes the first two (worth 160) and then the third doesn't fit. The real best is the second and third: **220**.
+A greedy approach also fails on this problem. Suppose the knapsack has capacity 50, and you have three items: weight 10 with value 60 (value density 6), weight 20 with value 100 (value density 5), and weight 30 with value 120 (value density 4). A greedy heuristic that chooses items with the highest value per unit of weight takes the first two items (total value 160), leaving no remaining capacity for the third. The optimal solution takes the second and third items, which fit within capacity 50 and achieve a total value of **220**.
 
 ## Breaking it into subproblems
 
-Define a table where each cell answers a smaller version of the question:
+Define a two-dimensional table where each cell represents the solution to a smaller subproblem:
 
-> $V[i, w]$ = the best value you can get using **only the first $i$ items**, with **capacity $w$**.
+> $V[i, w]$ represents the maximum value achievable using **only the first $i$ items** with a maximum **capacity $w$**.
 
-The answer to the whole problem is $V[n, W]$. To fill each cell, ask: **what happens with item $i$?**
+The answer to the complete problem will appear in cell $V[n, W]$. To determine the value of any cell $V[i, w]$, ask: **what happens with item $i$?**
 
-- **It doesn't fit** ($w_i \gt w$). You can't take it, so the best is whatever the first $i - 1$ items could do: $V[i, w] = V[i-1, w]$.
-- **It fits.** You have two options and take the better one:
-  - **Skip it:** $V[i-1, w]$.
-  - **Take it:** you get $v_i$, and the remaining capacity $w - w_i$ goes to the first $i - 1$ items: $v_i + V[i-1, w - w_i]$.
+- **It does not fit** ($w_i \gt w$). The item is too heavy for current capacity $w$, so you cannot take it. The best value is whatever you could achieve using only the first $i - 1$ items: $V[i, w] = V[i-1, w]$.
+- **It fits.** You have two choices and select whichever yields greater value:
+  - **Skip it:** do not take item $i$, giving value $V[i-1, w]$.
+  - **Take it:** collect its value $v_i$, and use the remaining capacity $w - w_i$ to take the best combination from the first $i - 1$ items: $v_i + V[i-1, w - w_i]$.
 
 $$
 V[i, w] = \max\big(V[i-1, w],\ \ v_i + V[i-1, w - w_i]\big)
 $$
 
-Row 0 (no items) and column 0 (no capacity) are all **zero**, because there's nothing to take or no room to take it.
+Row 0 (considering 0 items) and column 0 (having 0 capacity) are filled entirely with **zero**, because you cannot gain value without items or without capacity.
 
-Every cell depends only on cells in the row **above** it. If you fill the table top to bottom and left to right, every value you need is already there.
+Notice that every cell depends exclusively on values in the row **above** it. Filling the table row by row from top to bottom, and left to right within each row, guarantees that every prerequisite value is already calculated when needed.
 
 <Callout tone="orange" label="Common mistake: reading from the same row">
-The "take" option reads $V[i-1, w - w_i]$, from the row **above**. Students often write $V[i, w - w_i]$, from the same row. That cell may already include item $i$, so the formula can take item $i$ a second time. That solves a different problem, where you have unlimited copies of each item. In the notes' example it fills the corner with **200**: five copies of item 4, each weighing 1 and worth 40, where the right answer is 140.
+The 'take' choice accesses $V[i-1, w - w_i]$, which comes from the row **above**. A frequent coding mistake is writing $V[i, w - w_i]$ from the current row instead. Reading from the current row allows item $i$ to be selected multiple times, solving the unbounded knapsack problem where item quantities are unlimited. In the four-item example below, that bug produces a corner value of **200** by taking item 4 five times (weight 1, value 40), instead of the correct 0/1 limit of 140.
 </Callout>
 
 ## Watch the table fill
 
-The notes' example: four items, capacity $W = 5$.
+Consider four items with a knapsack capacity $W = 5$:
 
 | Item | Weight `wt` | Value `val` |
 | --- | --- | --- |
@@ -82,64 +82,64 @@ The notes' example: four items, capacity $W = 5$.
 
 <KnapsackTable items={[{ name: "item 1", weight: 3, value: 100 }, { name: "item 2", weight: 2, value: 20 }, { name: "item 3", weight: 4, value: 60 }, { name: "item 4", weight: 1, value: 40 }]} capacity={5} />
 
-Each step highlights the cell being filled in neon and the one or two cells it reads from in sky: directly above ("skip"), and above and to the left by the item's weight ("take").
+In the visualizer, each step highlights the active cell in neon. Sky blue highlights the one or two cells it inspects: directly above for the 'skip' option, and above and to the left by the item's weight for the 'take' option.
 
-Here is one cell worked the way the notes do it, $V[1, 5]$. Item 1 has weight 3, which fits in 5, so:
+Here is how cell $V[1, 5]$ is computed. Item 1 weighs 3, which fits within capacity 5:
 
 $$
 V[1, 5] = \max\big(V[0, 5],\ \ 100 + V[0, 5 - 3]\big) = \max(0,\ 100 + 0) = 100
 $$
 
-And the corner, $V[4, 5]$. Item 4 has weight 1 and value 40:
+For the bottom-right corner, cell $V[4, 5]$, item 4 weighs 1 with value 40:
 
 $$
 V[4, 5] = \max\big(V[3, 5],\ \ 40 + V[3, 4]\big) = \max(120,\ 40 + 100) = 140
 $$
 
-The full table:
+The completed table:
 
 | $V[i, w]$ | w = 0 | 1 | 2 | 3 | 4 | 5 |
-| --- | --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 | i = 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 1 | 0 | 0 | 0 | 100 | 100 | 100 |
 | 2 | 0 | 0 | 20 | 100 | 100 | 120 |
 | 3 | 0 | 0 | 20 | 100 | 100 | 120 |
 | 4 | 0 | 40 | 40 | 100 | 140 | **140** |
 
-Row 3 is the same as row 2: item 3 weighs 4, and wherever it fits, taking it (60 plus what's left) is worse than skipping it.
+Row 3 is identical to row 2 across all columns. Item 3 weighs 4, and for every capacity where it fits, taking it yields a lower total value than keeping the selection from row 2.
 
 ## Which items were taken?
 
-The table holds the best *value*, not the items. To recover them, **backtrack** from the corner, $V[n, W]$:
+The table computes the maximum possible value, but does not list the chosen items directly. To reconstruct the subset, **backtrack** through the table starting from the final cell, $V[n, W]$:
 
-- If $V[i, w] = V[i-1, w]$, item $i$ didn't change anything, so it was **skipped**. Move up one row.
-- Otherwise item $i$ was **taken**. Move up one row *and* left by $w_i$ (the capacity it used).
-- Stop when $i$ or $w$ reaches 0.
+- If $V[i, w] = V[i-1, w]$, item $i$ did not improve the total, so it was **skipped**. Move up one row to $(i - 1, w)$.
+- If $V[i, w] \ne V[i-1, w]$, item $i$ was **taken**. Record item $i$, then move up one row and left by $w_i$ to $(i - 1, w - w_i)$.
+- Stop when $i = 0$ or $w = 0$.
 
-When you take an item, remember to subtract its weight before comparing the next row. Forgetting that compares the wrong column, and the backtrack can "take" items that don't fit.
+When you take an item, always subtract its weight from the current capacity before moving to the row above. Omitting this step checks the wrong column, which can cause the backtrack to select items that exceed the capacity.
 
-On the notes' table:
+Tracing the backtrack on the completed table:
 
-| i, w | Compare | Result |
+| i, w | Comparison | Action |
 | --- | --- | --- |
-| 4, 5 | 140 ≠ V[3, 5] = 120 | take item 4; w = 5 − 1 = 4 |
-| 3, 4 | 100 = V[2, 4] = 100 | skip item 3 |
-| 2, 4 | 100 = V[1, 4] = 100 | skip item 2 |
-| 1, 4 | 100 ≠ V[0, 4] = 0 | take item 1; w = 4 − 3 = 1 |
+| 4, 5 | 140 ≠ V[3, 5] = 120 | take item 4; new capacity w = 5 − 1 = 4 |
+| 3, 4 | 100 = V[2, 4] = 100 | skip item 3; move to row 2 |
+| 2, 4 | 100 = V[1, 4] = 100 | skip item 2; move to row 1 |
+| 1, 4 | 100 ≠ V[0, 4] = 0 | take item 1; new capacity w = 4 − 3 = 1 |
 | 0, 1 | i = 0 | stop |
 
-The knapsack holds items 1 and 4: weight $3 + 1 = 4$, value $100 + 40 = 140$. It doesn't have to be full: one unit of capacity is left, and no remaining item weighs 1.
+The optimal solution contains items 1 and 4, giving total weight $3 + 1 = 4$ and total value $100 + 40 = 140$. The knapsack does not need to be completely full: one unit of capacity remains unused because none of the remaining available items has a weight of 1.
 
-Keep the visualizer stepping after the table is full and you'll see the violet cell walk back up the same way.
+Continuing the steps in the visualizer above highlights this backtracking traversal in violet.
 
 ## Analysis
 
-The table has $(n + 1) \times (W + 1)$ cells, and each one takes $O(1)$ to fill. **Time and space: $O(nW)$.**
+The table contains $(n + 1) \times (W + 1)$ cells, and each cell requires $O(1)$ constant time arithmetic to compute. **Time and space: $O(nW)$.**
 
-Compare that with $O(2^n)$. For 100 items and capacity 1,000 that's 100,000 cell updates instead of $2^{100}$ subsets.
+Compare this with exhaustive brute-force search at $O(2^n)$. For 100 items and a capacity of 1,000, dynamic programming evaluates 100,000 cell updates instead of $2^{100} \approx 10^{30}$ subset combinations.
 
 <Callout tone="violet" label="The fine print">
-$O(nW)$ looks polynomial, but $W$ is a *value*, not a count of items. Add one digit to $W$ and the table gets about ten times wider, so the cost is exponential in the length of the input. That's why knapsack is still classed as NP-complete: DP makes it fast when the capacity is reasonably small, not in general.
+While $O(nW)$ appears polynomial at first glance, $W$ is a numeric value rather than a count of distinct input items. Adding one digit to the representation of $W$ multiplies its numeric value by ten and widens the table tenfold. Because the size of the input is measured in the number of bits required to encode $W$, the running time is exponential with respect to input length, an efficiency known as **pseudo-polynomial** time. This is why 0/1 knapsack remains NP-complete: dynamic programming solves it efficiently when capacity $W$ is small, but does not provide a general polynomial-time solution for arbitrarily large numbers.
 </Callout>
 
 ## DP vs. greedy vs. divide and conquer
@@ -147,26 +147,26 @@ $O(nW)$ looks polynomial, but $W$ is a *value*, not a count of items. Add one di
 | | Divide and conquer | Greedy | Dynamic programming |
 | --- | --- | --- | --- |
 | Subproblems | Independent | One choice at a time | Overlapping |
-| Looks at alternatives? | n/a | No, commits immediately | Yes, all of them, once each |
-| Always optimal? | n/a | Only if you can prove it | Yes |
+| Explores alternatives? | n/a | No, commits immediately | Yes, evaluates all viable options |
+| Always optimal? | n/a | Only with mathematical proof | Yes |
 | Examples | Merge sort, quick sort | Prim, Kruskal | Fibonacci table, knapsack |
 
-Advanced Algorithms has more worked problems, including the coin-row problem and longest common subsequence, in [dynamic programming](/courses/advanced-algorithms/dynamic-programming#examples-of-dynamic-programming-algorithms).
+Advanced Algorithms provides further worked problems, including the coin-row problem and longest common subsequence, in [dynamic programming](/courses/advanced-algorithms/dynamic-programming#examples-of-dynamic-programming-algorithms).
 
 ## Where this shows up today
 
 <ApplicationsGrid>
   <PracticalApplication title="Diff and version control" tool="LCS">
-    Comparing two files comes down to the longest common subsequence, a classic DP over their lines. Git's default Myers algorithm solves the same problem without filling the whole table.
+    Comparing two source files relies on finding the longest common subsequence, a classic dynamic programming problem over lines of text. Git's default diff engine uses Myers' algorithm to compute these edits quickly.
   </PracticalApplication>
   <PracticalApplication title="Spell checkers" tool="AUTOCORRECT">
-    "Did you mean...?" ranks words by edit distance: a DP table counting the fewest insertions, deletions and substitutions.
+    Autocorrect features rank candidate words by edit distance (Levenshtein distance), a dynamic programming table that counts the minimum insertions, deletions, and substitutions to transform one string into another.
   </PracticalApplication>
   <PracticalApplication title="Budget and resource allocation" tool="OPERATIONS">
-    Picking projects under a budget, loading cargo, and choosing ads under a spend limit are all knapsack problems.
+    Selecting capital investments under budget constraints, packing cargo containers, and allocating cloud compute under spending caps are practical instances of the knapsack problem.
   </PracticalApplication>
   <PracticalApplication title="Genome alignment" tool="BIOINFORMATICS">
-    Comparing DNA sequences is a DP over two strings. The Needleman-Wunsch and Smith-Waterman alignment algorithms fill a table much like this one.
+    Comparing biological sequences uses dynamic programming over character pairs. The Needleman-Wunsch algorithm finds global alignments and the Smith-Waterman algorithm finds local alignments across DNA and protein sequences.
   </PracticalApplication>
 </ApplicationsGrid>
 
@@ -205,7 +205,7 @@ public class Knapsack {
 }
 ```
 
-Note the off-by-one: the table's row `i` is about item `i`, but Java arrays start at 0, so item `i`'s weight is `wt[i - 1]`.
+Note the array indexing: table row `i` corresponds to item `i`, but zero-indexed arrays store item `i` at `wt[i - 1]` and `val[i - 1]`.
 
 <LeetCodeProblems
   problems={[
