@@ -3,23 +3,23 @@ import { SearchVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisuali
 
 # Linear vs Binary Search
 
-**Searching** means finding a particular element among many. Either you find it (a *successful* search, usually returning its position) or you show it isn't there (an *unsuccessful* search, which by convention returns `-1`).
+**Searching** means finding a particular element within a collection. Either the search finds the target (a successful search, returning its position or index) or determines that the target is absent (an unsuccessful search, which conventionally returns `-1`).
 
-There are two basic ways to do it, and on large inputs the difference in speed between them is enormous.
+The two fundamental search algorithms on arrays are linear search and binary search. On large collections, the difference in efficiency between them is substantial.
 
 ## Linear search: check everything
 
-Start at the beginning. Compare each element with the one you want. Stop when you find it or run out of array. Because it walks the array in sequence, the notes also call it **sequential search**. The value you're looking for is the **key** (`K` or `item` in the notes), and the position found is stored in `loc`, set to `-1` when the search fails.
+In a **linear search**, you start at the beginning of the array, compare each element with the desired value, and stop when you find a match or reach the end of the array. Because it inspects elements one by one in sequence, textbooks also call it **sequential search**. The value you want to find is the **key** (often denoted `K` or `item`). When the search succeeds, it returns the index where the key was found; when the search fails, it returns `-1`.
 
-The notes search for 15 in this array:
+Here is an example searching for the key 15 in an unsorted array:
 
 <SearchVisualizer algorithm="linear" array={[92, 87, 53, 10, 15, 23, 67]} target={15} />
 
-15 ≠ 92, 15 ≠ 87, 15 ≠ 53, 15 ≠ 10, and the fifth comparison finds 15, so the search returns **index 4** (the fifth element, since indexes start at 0). Their second example searches for 3 in 6, 4, 1, 9, 7, 3, 2, 8: five misses, then a match at index 5 on the sixth comparison.
+The search compares 15 against each element in order: $15 \neq 92$, $15 \neq 87$, $15 \neq 53$, and $15 \neq 10$. On the fifth comparison, the algorithm finds 15 at index 4 (the fifth element, since array indexing begins at 0). A second example searches for 3 in $[6, 4, 1, 9, 7, 3, 2, 8]$: after five mismatches, it locates 3 at index 5 on the sixth comparison.
 
-It's hard to make an algorithm simpler. Linear search works on **any** array, sorted or not, and needs **no** preparation. The notes list when to use it: when nothing is known about the array, when the array is unsorted, and when the list is **small**. It's also right when you'll only search once.
+Linear search requires no preprocessing and works on any array, whether sorted or unsorted. It is appropriate when the array is small, when data arrives unsorted, or when you only need to run a single lookup.
 
-The notes' pseudocode, corrected:
+The standard algorithm in pseudocode:
 
 ```text
 ALGORITHM SequentialSearch(A[0..n − 1], K)
@@ -28,29 +28,29 @@ for i ← 0 to n − 1 do
 return −1
 ```
 
-<Callout tone="orange" label="A bug in the notes' version">
-The notes put `else return −1` **inside** the loop. Then the first element that doesn't match ends the search, so it only ever checks `A[0]`. `return −1` belongs **after** the loop: you can only say the key is missing once you've checked every element. The notes also write the array as `A[0..n]`, which is $n + 1$ elements; it should be `A[0..n − 1]`.
+<Callout tone="orange" label="A common loop bug">
+Placing `else return -1` inside the loop body is a frequent mistake. That causes the algorithm to terminate on the very first mismatch, meaning it only ever checks `A[0]`. The return statement belongs after the loop, because you can only conclude the key is missing after inspecting every position. Also note that array bounds written as `A[0..n]` contain $n + 1$ elements; a zero-indexed array of length $n$ spans from `0` to `n - 1`.
 </Callout>
 
 ### Analysis
 
-- **Best case:** the target is first. **$O(1)$.**
-- **Worst case:** the target is last or missing, so you check all $n$ elements. **$O(n)$.**
-- **Average case:** about $n/2$ comparisons. **$O(n)$.** (The [counting steps lesson](/courses/algorithm-design-and-analysis/counting-steps) works this out exactly.)
+- **Best case:** The target is located at the first index: $O(1)$.
+- **Worst case:** The target is at the last index or missing entirely, requiring all $n$ comparisons: $O(n)$.
+- **Average case:** Assuming each position is equally likely, the search checks approximately $n/2$ elements: $O(n)$. (The [counting steps lesson](/courses/algorithm-design-and-analysis/counting-steps) derives this average rigorously.)
 
-The notes compare it with binary search and **hash tables**, which both search much faster. (A hash table computes where a value should be stored from the value itself, so a lookup usually goes straight to the right slot instead of walking the array. The [Data Structures course](/courses/data-structures/arrays-and-memory) covers it.) Linear search pays for its simplicity in speed.
+Algorithms texts often compare linear search with binary search and hash tables. A hash table maps each key directly to a storage bucket so lookups run in expected $O(1)$ time without scanning elements (covered in the [Data Structures course](/courses/data-structures/arrays-and-memory)). Linear search requires no extra memory and is simple to implement, but scales linearly with the size of the input.
 
 ## Binary search: throw away half
 
-Now suppose the array is **sorted**. Look at the **middle** element. If it's the target, you're done. If it's smaller than the target, the target can't be anywhere on the left, because everything there is even smaller, so throw away the entire left half. If it's bigger, throw away the right half. Repeat on what's left.
+When an array is sorted, **binary search** locates a key by repeatedly comparing it with the middle element. If the middle element matches the key, the search finishes. If the middle element is smaller than the key, the key cannot appear in the left half, because every element there is smaller still, so you discard the left half. If the middle element is larger than the key, you discard the right half. You then repeat the process on the remaining subarray.
 
-Each comparison cuts the search space in half. It's [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer) again, with only one half to recurse into.
+Each comparison cuts the remaining search space in half. This is [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer), but with only one active half to recurse into.
 
-The notes' first example searches for $K = 70$ in a sorted array of 13 numbers:
+Consider searching for $K = 70$ in a sorted array of 13 numbers:
 
 <SearchVisualizer algorithm="binary" array={[3, 14, 27, 31, 39, 42, 55, 70, 74, 81, 85, 93, 98]} target={70} />
 
-The notes call the ends `l` and `r` (left and right) and the middle `m`. Other examples call them `beg` and `end`, and the lab calls them `low` and `high`. They're the same three indexes:
+Textbooks use several pairs of names for the search boundaries: `l` and `r` (left and right), `beg` and `end` (beginning and end), or `low` and `high`. The midpoint is `m` or `mid`. They represent the same three array indexes:
 
 | Iteration | l | r | m | A[m] | Decision |
 | --- | --- | --- | --- | --- | --- |
@@ -58,17 +58,27 @@ The notes call the ends `l` and `r` (left and right) and the middle `m`. Other e
 | 2 | 7 | 12 | 9 | 81 | 70 < 81, so r ← 8 |
 | 3 | 7 | 8 | 7 | 70 | found, return 7 |
 
-The middle is $m = \lfloor (l + r)/2 \rfloor$, rounded down: $(7 + 8)/2 = 7.5$ becomes 7.
+The midpoint index is $m = \lfloor (l + r)/2 \rfloor$, rounded down: $(7 + 8)/2 = 7.5$ becomes 7.
 
-Their second example looks for 15 in 3, 10, 15, 20, 35, 40, 60 with `beg` and `end`. Step 1: beg = 0, end = 6, mid = 3, and a[3] = 20 > 15, so end = 2. Step 2: mid = (0 + 2)/2 = 1, and a[1] = 10 < 15, so beg = 2. Step 3: mid = (2 + 2)/2 = 2, and a[2] = 15, so it returns index 2.
+A second example searches for 15 in $[3, 10, 15, 20, 35, 40, 60]$ using `beg` and `end`:
 
-The third looks for 56 in 10, 12, 24, 29, 39, 40, 51, 56, 69. Mid = 4 (39 < 56, beg = 5), then mid = 6 (51 < 56, beg = 7), then mid = 7, which holds 56. The notes say the element is "found at 7th location", but index 7 is the **8th** element. Keep "index" (counted from 0) and "position" (counted from 1) apart, because exams mark that difference.
+- Step 1: `beg = 0`, `end = 6`, `mid = 3`. `A[3] = 20 > 15`, so update `end = 2`.
+- Step 2: `beg = 0`, `end = 2`, `mid = (0 + 2)/2 = 1`. `A[1] = 10 < 15`, so update `beg = 2`.
+- Step 3: `beg = 2`, `end = 2`, `mid = (2 + 2)/2 = 2`. `A[2] = 15`, returning index 2.
 
-Try a target that isn't in the array, like `30`. Watch `low` and `high` close in until `low` passes `high`. At that point binary search *knows* the target is missing, without having looked at most of the array.
+A third example searches for 56 in $[10, 12, 24, 29, 39, 40, 51, 56, 69]$:
+
+- Step 1: `mid = 4` (`A[4] = 39 < 56`), so update `beg = 5`.
+- Step 2: `mid = 6` (`A[6] = 51 < 56`), so update `beg = 7`.
+- Step 3: `mid = 7`, where `A[7] = 56` matches.
+
+Some course notes describe this result as found at the seventh location. However, index 7 is the eighth element of the array. Distinguish zero-based indexes from one-based positions, as exam questions frequently test that distinction.
+
+Try entering a target that does not appear in the array, such as `30`. Watch `low` and `high` converge until `low` exceeds `high`. At that point, binary search determines that the target is absent without inspecting most of the array.
 
 ### Analysis
 
-How many times can you halve $n$ before only one element is left? About $\log_2 n$ times. Each comparison is one halving, so that's also the number of comparisons. A million needs about 20 because $2^{20} = 1{,}048{,}576$: twenty halvings take a million down to one. The notes' 13-element example needs at most 4, since $2^3 = 8 \lt 13 \le 16 = 2^4$; searching for 70 happened to take 3.
+How many times can you halve $n$ before only one element is left? Approximately $\log_2 n$ times. Because each comparison discards half of the candidate elements, that logarithmic value bounds the total number of comparisons. An array of one million items requires at most 20 comparisons because $2^{20} = 1{,}048{,}576$. The 13-element example above requires at most 4 comparisons, since $2^3 = 8 \lt 13 \le 16 = 2^4$; searching for 70 happened to take 3.
 
 | Array size $n$ | Linear search (worst) | Binary search (worst) |
 | --- | --- | --- |
@@ -76,9 +86,9 @@ How many times can you halve $n$ before only one element is left? About $\log_2 
 | 1,000,000 | 1,000,000 | 20 |
 | 1,000,000,000 | 1,000,000,000 | 30 |
 
-A billion elements take at most thirty comparisons. Best case **$O(1)$** (the first middle is the target), average and worst **$O(\log n)$**. The worst case keeps halving until one element is left.
+An array of one billion elements takes at most thirty comparisons. The best case is $O(1)$ when the initial midpoint matches the target. The average and worst cases are $O(\log n)$, halving the search window until one element remains.
 
-The notes' pseudocode, with the textbook's arrow for assignment:
+Binary search in pseudocode:
 
 ```text
 ALGORITHM BinarySearch(A[0..n − 1], K)
@@ -91,13 +101,16 @@ while l ≤ r do
 return −1
 ```
 
-The notes' advantages: each comparison throws away half the list, and it tells you whether the key is before or after the current position. On large lists it's far faster than linear search. Their disadvantages: it's easy to get wrong (see the three details below), and they say it "employs recursive approach". That one needs care: binary search *can* be written recursively, but the pseudocode above is a plain loop with no recursion at all.
+Comparing the tradeoffs:
 
-<Callout tone="orange" label="The catch">
-Binary search **only works on sorted data**, in ascending numeric or dictionary order. If the array isn't sorted, you have to sort it first in $O(n \log n)$, which only pays off if you'll search it many times. For a single search on unsorted data, linear search wins.
+- **Advantages:** Each comparison eliminates half of the remaining candidates, and the comparison reveals whether the target lies before or after the midpoint. On large collections, it runs far faster than linear search.
+- **Disadvantages:** It requires data to be sorted in advance, and boundary conditions must be handled carefully. While binary search can be formulated recursively, the iterative version above uses a simple loop with $O(1)$ auxiliary memory.
+
+<Callout tone="orange" label="The sorting requirement">
+Binary search only works on sorted data, in ascending numerical or alphabetical order. If the array is unsorted, you must sort it first in $O(n \log n)$ time. That upfront sorting cost pays off only when you intend to search the same data repeatedly. For a single search on an unsorted array, linear search is faster.
 </Callout>
 
-## The Java
+## Java implementation
 
 ```java
 static int binarySearch(int[] a, int x) {
@@ -113,35 +126,35 @@ static int binarySearch(int[] a, int x) {
 ```
 
 <Callout tone="orange" label="Common mistake: binary search on unsorted data">
-Binary search on an unsorted array doesn't crash. It quietly gives wrong answers. Search for 9 in 4, 9, 1, 7, 3: the middle is 1, and since 9 > 1 it throws away the left half, which is where the 9 was. It returns −1 for a value that's right there. If the data might not be sorted, sort it first or use linear search.
+Running binary search on an unsorted array does not produce a runtime crash. Instead, it quietly returns incorrect answers. For example, if you search for 9 in $[4, 9, 1, 7, 3]$, the middle element is 1. Because $9 > 1$, the search discards the left half, which is where 9 was located. The method returns `-1` even though 9 is in the array. When data might not be sorted, sort it first or use linear search.
 </Callout>
 
-Binary search is easy to describe and easy to get *slightly* wrong. Check these three details every time:
+Binary search is straightforward to describe, but implementations easily harbor boundary mistakes. Verify these three details:
 
-1. **Use `low <= high`.** With `low < high`, a one-element range is never checked, and you'll miss targets sitting at the edges.
-2. **`low = mid + 1` and `high = mid - 1`.** You already know `a[mid]` isn't the target, so exclude it. Write `low = mid` and the loop can get stuck forever.
-3. **Use `low + (high - low) / 2` instead of `(low + high) / 2`.** On a huge array, `low + high` can be bigger than the largest `int` and overflow into a negative number. This exact bug lived in Java's own `Arrays.binarySearch` for about nine years before it was found in 2006.
+1. **Use `low <= high`.** If you write `low < high`, the loop terminates when a single candidate element remains, missing targets located at the boundaries.
+2. **`low = mid + 1` and `high = mid - 1`.** Because `a[mid]` did not match the target, you must exclude it from the next window. Writing `low = mid` can trap the loop in an infinite cycle when two elements remain.
+3. **Use `low + (high - low) / 2` instead of `(low + high) / 2`.** When searching a large array, `low + high` can exceed the maximum positive 32-bit integer ($2^{31} - 1$) and overflow into a negative value. This arithmetic overflow bug remained in Java's `Arrays.binarySearch` for nine years before its discovery in 2006.
 
-A quick lab test: fill an array with even numbers using `array[i] = i * 2`, so it's sorted by construction, then search for `8` (it should return index `4`) and for `7` (it should return `-1`). The lab sheet prints `"Found at location: " + (x+1)`, so it says **5**: it reports the position counted from 1, not the index.
+To test your implementation, populate an array with even numbers using `array[i] = i * 2`, which is sorted by construction. Searching for `8` returns index `4`, while searching for `7` returns `-1`. Note that lab exercises often print `"Found at location: " + (x + 1)`, reporting a one-based position (5) rather than the zero-based array index (4).
 
-<Callout tone="orange" label="A bug in the lab's linear search">
-The lab's `linearSearch` loops `for (int i = 0; i < array.length - 1; i++)`, which stops one short and never checks the last element. Searching for a value that's only in the last slot returns `-1`. The condition should be `i < array.length`.
+<Callout tone="orange" label="Off-by-one error in linear search loops">
+Lab code sometimes defines linear search with the loop header `for (int i = 0; i < array.length - 1; i++)`. That loop stops one iteration early and never inspects the final element. Searching for a value present only in the last slot erroneously returns `-1`. The condition must be `i < array.length`.
 </Callout>
 
 ## Where this shows up today
 
 <ApplicationsGrid>
   <PracticalApplication title="Database indexes" tool="B-TREES">
-    An index on a database column keeps the values sorted so lookups don't scan every row. A B-tree is binary search generalised to "many-way" search, built for disks.
+    An index on a database column keeps entries in sorted order so lookups avoid scanning every row. A B-tree generalizes binary search to multi-way branching nodes optimized for disk storage.
   </PracticalApplication>
   <PracticalApplication title="git bisect" tool="DEBUGGING">
-    Somewhere in your last 1,000 commits a bug appeared. `git bisect` checks the middle commit, you say "good" or "bad," and it halves the range. About 10 tests to find the culprit.
+    When a regression appears within a history of 1,000 commits, `git bisect` checks out the middle commit. You mark that commit as working or broken, and Git halves the commit range, identifying the faulty commit in approximately 10 tests.
   </PracticalApplication>
   <PracticalApplication title="Java standard library" tool="JDK">
-    `Arrays.binarySearch` and `Collections.binarySearch` are built in, and a `TreeMap` lookup is binary search over a balanced tree.
+    `Arrays.binarySearch` and `Collections.binarySearch` provide standard library implementations, while `TreeMap` lookups perform binary search decisions over balanced search trees.
   </PracticalApplication>
   <PracticalApplication title="Binary search on the answer" tool="INTERVIEWS">
-    "What's the smallest speed that finishes in time?" If you can check a guess, and bigger guesses are always better, you can binary search the answer itself. Interviewers like this technique.
+    When searching for an optimal threshold where all values on one side satisfy a monotonic condition, you can binary search over the numerical solution space rather than testing every value sequentially.
   </PracticalApplication>
 </ApplicationsGrid>
 

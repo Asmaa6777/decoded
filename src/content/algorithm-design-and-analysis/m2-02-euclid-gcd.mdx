@@ -3,22 +3,22 @@ import { EuclidVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisuali
 
 # Euclid's GCD: A 2,300-Year-Old Algorithm
 
-Around 300 BC, Euclid wrote down a method for finding the greatest common divisor of two numbers. It's one of the oldest known algorithms and still the one everyone uses. A version of it runs inside the encryption that protects your phone's connections.
+Around 300 BC, the Greek mathematician Euclid documented an efficient method for finding the greatest common divisor of two integers. It remains one of the oldest numerical algorithms in active use, running inside the cryptographic routines that protect secure network connections.
 
 ## The problem
 
-The **greatest common divisor** of two non-negative integers $m$ and $n$ (not both zero), written $\gcd(m, n)$, is the largest integer that divides both of them **evenly**, with remainder zero.
+The **greatest common divisor** of two non-negative integers $m$ and $n$ (not both zero), written $\gcd(m, n)$, is the largest integer that divides both numbers without a remainder.
 
-The notes ask you to find these "by inspection", meaning by looking at the numbers and their divisors rather than running an algorithm:
+Finding small GCD values by inspection means identifying common factors directly without executing an algorithm:
 
 - $\gcd(24, 54) = 6$
 - $\gcd(18, 42) = 6$
 - $\gcd(45, 210) = 15$
-- $\gcd(97, 20) = 1$. Numbers like these, with no common divisor except 1, are called *[coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor)*.
+- $\gcd(97, 20) = 1$. Two numbers whose only common divisor is 1 are called *[coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor)* (or relatively prime).
 
-## The obvious way
+## Brute force approach
 
-Try every candidate. Start at the smaller of the two numbers and count down until you find one that divides both:
+The direct brute force approach tests every candidate integer. Starting at $\min(m, n)$, the loop counts downward until it finds a number that divides both $m$ and $n$ without a remainder:
 
 ```java
 static int gcdBruteForce(int m, int n) {
@@ -28,43 +28,43 @@ static int gcdBruteForce(int m, int n) {
 }
 ```
 
-It's correct, but in the worst case (coprime numbers) it tries every value down to 1. That's $O(\min(m, n))$. For two 10-digit numbers, that's billions of divisions.
+This method is correct, but in the worst case (coprime inputs) it checks every integer down to 1. That requires $O(\min(m, n))$ iterations. For two 10-digit numbers, that involves billions of division operations.
 
 ## Euclid's idea
 
-Euclid's whole algorithm follows from one equality:
+**Euclid's algorithm** computes the greatest common divisor using a single recurrence relation:
 
 $$
 \gcd(m, n) = \gcd(n,\ m \bmod n)
 $$
 
-where $m \bmod n$ is the remainder when you divide $m$ by $n$ (`m % n` in Java).
+where $m \bmod n$ denotes the remainder when dividing $m$ by $n$ (`m % n` in Java).
 
-**Why is that true?** Write $m = q \cdot n + r$, where $r$ is the remainder. Any number that divides both $m$ and $n$ also divides $r = m - q \cdot n$. And any number that divides both $n$ and $r$ also divides $m = q \cdot n + r$. So the pairs $(m, n)$ and $(n, r)$ have exactly the same common divisors, and therefore the same *greatest* one.
+**Why is that true?** Express the integer division as $m = q \cdot n + r$, where $q$ is the integer quotient and $r$ is the remainder ($0 \le r < n$). Any divisor that divides both $m$ and $n$ must also divide their difference, $r = m - q \cdot n$. Likewise, any divisor that divides both $n$ and $r$ must also divide their sum, $m = q \cdot n + r$. Because $(m, n)$ and $(n, r)$ share identical sets of common divisors, they share the identical greatest common divisor.
 
-$(n, r)$ is also a smaller problem, because $r$ is always less than $n$. Keep applying the rule and the numbers keep shrinking until the second one becomes **0**. Every number divides 0 (because $0 = 0 \times m$, remainder zero), so the common divisors of $m$ and 0 are just the divisors of $m$, and the greatest of those is $m$ itself. So $\gcd(m, 0) = m$, and that's the answer.
+Because $r < n$, the subproblem $(n, r)$ is strictly smaller. Repeatedly applying this reduction shrinks the numbers until the second argument reaches 0. Every non-zero integer divides 0 (since $0 = 0 \cdot m$). Thus, the common divisors of $m$ and 0 are simply the divisors of $m$, the largest of which is $m$ itself. When the second value reaches 0, the algorithm terminates with $\gcd(m, 0) = m$.
 
-The notes' example shows the whole chain on one line:
+For example, tracing $\gcd(60, 24)$:
 
 $$
 \gcd(60, 24) = \gcd(24, 12) = \gcd(12, 0) = 12
 $$
 
-$60 \bmod 24 = 12$ (since $60 = 2 \times 24 + 12$), then $24 \bmod 12 = 0$, and the second number is 0, so the answer is 12.
+First, $60 \bmod 24 = 12$ because $60 = 2 \cdot 24 + 12$. Next, $24 \bmod 12 = 0$. Because the second value is now 0, the process halts and returns 12.
 
 ## Watch it run
 
 <EuclidVisualizer m={210} n={45} />
 
-The table is how you'd write it on an exam: one row per division, with $m$ and $n$ sliding one column left each time. Try your own numbers, including two consecutive Fibonacci numbers like $89$ and $55$, which are the slowest possible input for Euclid. Each division of one Fibonacci number by the one before it goes in only **once**, so the remainder is the next Fibonacci number down, and the pair shrinks as slowly as it possibly can: $(89, 55) \to (55, 34) \to (34, 21) \to \cdots$
+The table layout reflects standard exam presentation: each row performs one division, shifting $n$ and $r$ into the next row's inputs. You can test custom inputs in the visualizer above. Consecutive Fibonacci numbers, such as 89 and 55, represent the worst-case input for Euclid's algorithm. Because dividing one Fibonacci number by the preceding Fibonacci number yields a quotient of 1, the remainder is always the next smaller Fibonacci number: $(89, 55) \to (55, 34) \to (34, 21) \to \dots$, causing the values to shrink at the slowest possible rate.
 
-As steps:
+The algorithm proceeds in three steps:
 
-1. If $n = 0$, return $m$ and stop.
-2. Divide $m$ by $n$ and call the remainder $r$.
-3. Set $m \leftarrow n$ and $n \leftarrow r$. Go back to step 1.
+1. If $n = 0$, return $m$ and terminate.
+2. Divide $m$ by $n$ and let the remainder be $r$.
+3. Set $m \leftarrow n$ and $n \leftarrow r$, then return to step 1.
 
-And in the notes' pseudocode, where `!=` means "not equal":
+In pseudocode, where `!=` means not equal:
 
 ```text
 ALGORITHM Euclid(m, n)
@@ -76,9 +76,9 @@ while n != 0 do
 return m
 ```
 
-### The homework: gcd(31415, 14142)
+### Worked example: gcd(31415, 14142)
 
-The notes set this one by Euclid's algorithm. Each row divides $m$ by $n$, writing $m = q \times n + r$, and the next row moves $n$ and $r$ one column left:
+Consider finding the GCD of 31,415 and 14,142 using Euclid's algorithm. Each row performs the division $m = q \times n + r$ and shifts $n$ and $r$ one column to the left:
 
 | m | n | m = q × n + r | r |
 | --- | --- | --- | --- |
@@ -94,9 +94,9 @@ The notes set this one by Euclid's algorithm. Each row divides $m$ by $n$, writi
 | 4 | 1 | 4 = 4 × 1 + 0 | 0 |
 | 1 | 0 | stop | |
 
-So $\gcd(31415, 14142) = 1$: the two numbers are coprime. Ten divisions settled it, where counting down from 14142 would have taken 14,142 tries. You can check any row in the visualizer above by typing the two numbers in.
+Because the final non-zero remainder is 1, $\gcd(31415, 14142) = 1$, confirming that 31,415 and 14,142 are coprime. Euclid's algorithm solves this in 10 division steps, whereas the linear brute force approach would require 14,142 iterations. You can verify each row in the visualizer above by entering both numbers.
 
-The lab writes it as a `void` method that prints the answer:
+In introductory programming labs, the method is often written as a `void` procedure that prints the result:
 
 ```java
 public static void GCD(int m, int n) {
@@ -110,7 +110,7 @@ public static void GCD(int m, int n) {
 }
 ```
 
-Its `main` calls `GCD(45, 210)` and prints 15. Printing inside the method works for the lab, but you can't use the answer anywhere else, for example to [simplify a fraction](#where-this-shows-up-today). Returning it is more useful:
+Calling `GCD(45, 210)` outputs 15. However, returning the integer value is more versatile, allowing the caller to use the result in further calculations such as [fraction simplification](#where-this-shows-up-today):
 
 ```java
 static int gcd(int m, int n) {
@@ -124,10 +124,10 @@ static int gcd(int m, int n) {
 ```
 
 <Callout tone="orange" label="Common mistake: updating in the wrong order">
-The two assignments `m = n;` and `n = r;` must happen in that order. Write `n = r;` first and the old value of `n` is gone before `m` can take it, so `m` gets the remainder instead. On gcd(60, 24) that gives $m = 12, n = 12$, then $m = 0, n = 0$, and the loop returns 0. When you trace by hand, write each new row from the **previous** row's values, never from half-updated ones.
+The assignments `m = n;` and `n = r;` must execute in this exact sequence. If you update `n = r;` first, the original value of `n` is overwritten before `m` can receive it, causing `m` to receive `r` instead. Tracing $\gcd(60, 24)$ with that bug produces $m = 12, n = 12$, followed by $m = 0, n = 0$, returning an incorrect result of 0. When tracing by hand, derive each row strictly from the preceding row rather than partially updated variables.
 </Callout>
 
-Or recursively, which reads almost exactly like the equality:
+Euclid's algorithm can also be written recursively in a single line, mirroring the mathematical recurrence:
 
 ```java
 static int gcd(int m, int n) {
@@ -137,35 +137,44 @@ static int gcd(int m, int n) {
 
 ## Analysis
 
-Every two steps, the remainder drops to **less than half** of what it was. (If $n \le m/2$, then $m \bmod n \lt n \le m/2$. If $n \gt m/2$, then $m \bmod n = m - n \lt m/2$.)
+Every two steps, the remainder decreases by at least half:
 
-Halving every two steps means the number of steps is at most about $2 \log_2 n$. Euclid's algorithm is **$O(\log n)$**, the same growth as [binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half). For two 10-digit numbers, that's a few dozen divisions instead of billions.
+- If $n \le m/2$, then $m \bmod n \lt n \le m/2$.
+- If $n \gt m/2$, then $m \bmod n = m - n \lt m/2$.
 
-<Callout tone="sky" label="Order doesn't matter">
-What if $m \lt n$, like $\gcd(45, 210)$? The first step computes $45 \bmod 210 = 45$, so the pair becomes $(210, 45)$. Euclid swaps them for you, for the price of one division.
+Because the remainder is at least halved every two iterations, the maximum number of division steps is roughly $2 \log_2 n$. Euclid's algorithm runs in **$O(\log n)$** time, exhibiting the same logarithmic complexity as [binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half). For two 10-digit numbers, Euclid terminates in a few dozen divisions instead of billions.
+
+<Callout tone="sky" label="Order does not matter">
+If the smaller argument is passed first, as in $\gcd(45, 210)$, the first division computes $45 \bmod 210 = 45$. The next state becomes $(210, 45)$. The algorithm automatically swaps the values on the first step at the cost of one modulo operation.
 </Callout>
 
-Run the same divisions backwards and they also give you the numbers $x$ and $y$ with $mx + ny = \gcd(m, n)$. That's the [extended Euclidean algorithm](/courses/computational-mathematics/modular-inverses#the-extended-euclidean-algorithm), which ciphers use to undo multiplication modulo a number.
+Reversing the division steps computes integer coefficients $x$ and $y$ satisfying Bézout's identity, $mx + ny = \gcd(m, n)$. This is the [extended Euclidean algorithm](/courses/computational-mathematics/modular-inverses#the-extended-euclidean-algorithm), widely used in asymmetric cryptography to compute modular multiplicative inverses.
 
 ## Where this shows up today
 
 <ApplicationsGrid>
   <PracticalApplication title="RSA encryption" tool="CRYPTOGRAPHY">
-    Generating an RSA key needs numbers that are coprime, and computing the private key uses the *extended* Euclidean algorithm. That's Euclid running on numbers hundreds of digits long, which is only practical because it's $O(\log n)$.
+    RSA key generation requires picking coprime integers, and computing the private decryption key relies on the extended Euclidean algorithm. Euclid's algorithm operates on keys with hundreds of decimal digits, which is computationally feasible only because the algorithm runs in logarithmic time.
   </PracticalApplication>
   <PracticalApplication title="Simplifying fractions" tool="MATH LIBRARIES">
-    $\frac{210}{45}$ becomes $\frac{14}{3}$ by dividing both by their gcd, 15. Every exact-fraction library does this after each operation.
+    Rational number arithmetic reduces fractions like $\frac{210}{45}$ to $\frac{14}{3}$ by dividing both numerator and denominator by $\gcd(210, 45) = 15$. Exact arithmetic libraries apply this reduction after each operation.
   </PracticalApplication>
   <PracticalApplication title="Screen aspect ratios" tool="UI">
-    1920 × 1080 → divide both by $\gcd = 120$ → 16:9.
+    Display dimensions such as $1920 \times 1080$ reduce to an aspect ratio of $16:9$ by dividing width and height by $\gcd(1920, 1080) = 120$.
   </PracticalApplication>
-  <PracticalApplication title="Java's BigInteger" tool="JDK">
-    `BigInteger.gcd()` handles numbers too big for a `long`, using the same idea.
+  <PracticalApplication title="Java standard library" tool="JDK">
+    `BigInteger.gcd()` handles arbitrarily large integers, providing an efficient implementation of the Euclidean algorithm for cryptographic workloads.
   </PracticalApplication>
 </ApplicationsGrid>
 
 <Callout tone="violet" label="LCM for free">
-The least common multiple comes straight from the gcd: $\operatorname{lcm}(m, n) = \dfrac{m \cdot n}{\gcd(m, n)}$. In Java, write it as `m / gcd(m, n) * n`, dividing first so the multiplication doesn't overflow.
+The least common multiple connects directly to the greatest common divisor through the product formula:
+
+$$
+\operatorname{lcm}(m, n) = \frac{m \cdot n}{\gcd(m, n)}
+$$
+
+In Java, compute this as `(m / gcd(m, n)) * n`, dividing first so the intermediate multiplication does not overflow integer bounds.
 </Callout>
 
 <LeetCodeProblems
