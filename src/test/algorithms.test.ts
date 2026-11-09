@@ -15,6 +15,11 @@ import {
   JAVA_MST,
   JAVA_KNAPSACK,
   humanTime,
+  findMaxFrames,
+  JAVA_FIND_MAX,
+  loopGridInfo,
+  swapFrames,
+  JAVA_SWAP,
   type SortAlgorithm,
 } from "@/lib/algorithms";
 
@@ -272,5 +277,92 @@ describe("humanTime", () => {
   it("formats small and astronomically large durations", () => {
     expect(humanTime(10)).toBe("under a microsecond");
     expect(humanTime(Math.pow(2, 1000))).toBe("longer than the age of the universe");
+  });
+});
+
+describe("findMaxFrames", () => {
+  it("finds the maximum in the lesson instance [8, 1, 4, 9, 3, 7]", () => {
+    const input = [8, 1, 4, 9, 3, 7];
+    const frames = findMaxFrames(input);
+    const last = frames[frames.length - 1];
+    expect(last.state.found).toBe(3);
+    expect(last.state.array[last.state.found!]).toBe(9);
+    expect(last.stats.comparisons).toBe(5);
+    expect(last.stats.updates).toBe(1);
+    for (const f of frames) {
+      expect(f.line).toBeGreaterThanOrEqual(0);
+      expect(f.line).toBeLessThan(JAVA_FIND_MAX.length);
+    }
+  });
+
+  it("handles negative numbers correctly without 0 bug", () => {
+    const input = [-5, -2, -9, -1, -8];
+    const frames = findMaxFrames(input);
+    const last = frames[frames.length - 1];
+    expect(last.state.found).toBe(3);
+    expect(last.state.array[last.state.found!]).toBe(-1);
+    expect(last.stats.comparisons).toBe(4);
+  });
+
+  it("handles empty array gracefully", () => {
+    const frames = findMaxFrames([]);
+    expect(frames.length).toBe(1);
+    expect(frames[0].message).toContain("Empty array");
+  });
+
+  it("never mutates input array", () => {
+    const input = [10, 5, 20];
+    findMaxFrames(input);
+    expect(input).toEqual([10, 5, 20]);
+  });
+});
+
+describe("loopGridInfo", () => {
+  it("dependent mode forms triangular numbers n(n+1)/2", () => {
+    const info = loopGridInfo(4, "dependent");
+    expect(info.totalOps).toBe(10);
+    expect(info.maxOps).toBe(16);
+    expect(info.rowCounts).toEqual([1, 2, 3, 4]);
+    expect(info.bigO).toBe("O(n²)");
+  });
+
+  it("independent mode forms n*n square", () => {
+    const info = loopGridInfo(4, "independent");
+    expect(info.totalOps).toBe(16);
+    expect(info.maxOps).toBe(16);
+    expect(info.rowCounts).toEqual([4, 4, 4, 4]);
+    expect(info.bigO).toBe("O(n²)");
+  });
+
+  it("fixed mode forms 3*n linear strip", () => {
+    const info = loopGridInfo(4, "fixed");
+    expect(info.totalOps).toBe(12);
+    expect(info.rowCounts).toEqual([3, 3, 3, 3]);
+    expect(info.bigO).toBe("O(n)");
+  });
+});
+
+describe("swapFrames", () => {
+  it("correct swap exchanges elements using temp", () => {
+    const arr = [5, 9, 14, 2];
+    const frames = swapFrames(arr, 0, 1, "correct");
+    const last = frames[frames.length - 1];
+    expect(last.state.array).toEqual([9, 5, 14, 2]);
+    expect(last.state.temp).toBe(5);
+    for (const f of frames) {
+      expect(f.line).toBeGreaterThanOrEqual(0);
+      expect(f.line).toBeLessThan(JAVA_SWAP.correct.length);
+    }
+  });
+
+  it("buggy swap overwrites first element", () => {
+    const arr = [5, 9, 14, 2];
+    const frames = swapFrames(arr, 0, 1, "buggy");
+    const last = frames[frames.length - 1];
+    expect(last.state.array).toEqual([9, 9, 14, 2]);
+    for (const f of frames) {
+      expect(f.line).toBeGreaterThanOrEqual(0);
+      expect(f.line).toBeLessThan(JAVA_SWAP.buggy.length);
+    }
   });
 });

@@ -4,7 +4,20 @@ import { readdirSync, readFileSync } from "fs";
 import path from "path";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { SortVisualizer, SearchVisualizer, StabilityCompare, GraphTraversal, MstVisualizer, KnapsackTable, EuclidVisualizer, GrowthTable } from "@/components/mdx/AlgoVisualizers";
+import {
+  SortVisualizer,
+  SearchVisualizer,
+  StabilityCompare,
+  GraphTraversal,
+  MstVisualizer,
+  KnapsackTable,
+  EuclidVisualizer,
+  GrowthTable,
+  FindMaxVisualizer,
+  NestedLoopGrid,
+  ArraySwapVisualizer,
+  ArrayReferenceVisualizer,
+} from "@/components/mdx/AlgoVisualizers";
 
 beforeAll(() => {
   // ReactFlow (used by <Diagram>) needs ResizeObserver, which jsdom lacks.
@@ -122,5 +135,40 @@ describe("visualizers step all the way through", () => {
 
     render(<GrowthTable />);
     expect(screen.getByText("O(n log n)")).toBeDefined();
+  });
+
+  it("findMax visualizer steps through and finds maximum", () => {
+    const { container } = render(<FindMaxVisualizer initial={[8, 1, 4, 9, 3, 7]} />);
+    stepToEnd(container);
+    expect(screen.getByText(/Return max = 9/)).toBeDefined();
+  });
+
+  it("nested loop grid toggles between modes and steps", () => {
+    render(<NestedLoopGrid initialN={4} />);
+    expect(screen.getByText(/O\(n²\) time complexity/)).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: /Fixed inner/ }));
+    expect(screen.getByText(/O\(n\) time complexity/)).toBeDefined();
+  });
+
+  it("array swap visualizer steps through temp and buggy versions", () => {
+    const { container } = render(<ArraySwapVisualizer initial={[5, 9, 14, 2]} x={0} y={1} />);
+    stepToEnd(container);
+    expect(screen.getByText(/Swap complete!/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: /The bug/ }));
+    stepToEnd(container);
+    expect(screen.getByText(/Swap failed\./)).toBeDefined();
+  });
+
+  it("array reference visualizer demonstrates alias mutation vs clone", () => {
+    render(<ArrayReferenceVisualizer />);
+    expect(screen.getByText(/Click "Execute"/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: /Execute: copy\[0\] = 99/ }));
+    expect(screen.getByText(/Trap triggered/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: /copy = original\.clone\(\)/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Execute: copy\[0\] = 99/ }));
+    expect(screen.getByText(/Independent/)).toBeDefined();
   });
 });

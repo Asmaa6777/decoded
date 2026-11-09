@@ -843,3 +843,213 @@ export function formatOps(ops: number): string {
   if (ops < 1e6) return Math.round(ops).toLocaleString("en-US");
   return ops.toExponential(1).replace("e+", " × 10^");
 }
+
+/* ----------------------------- findMax ----------------------------- */
+
+export const JAVA_FIND_MAX = [
+  "static int findMax(int[] a) {",
+  "    int max = a[0];",
+  "    for (int i = 1; i < a.length; i++) {",
+  "        if (a[i] > max) {",
+  "            max = a[i];",
+  "        }",
+  "    }",
+  "    return max;",
+  "}",
+];
+
+export function findMaxFrames(input: number[]): Frame<ArrayState>[] {
+  const a = [...input];
+  const frames: Frame<ArrayState>[] = [];
+  let comparisons = 0;
+  let updates = 0;
+  const push = (line: number, message: string, s: Omit<ArrayState, "array"> = {}) =>
+    frames.push({ state: { ...s, array: a }, line, message, stats: { comparisons, updates } });
+
+  if (a.length === 0) {
+    push(1, "Empty array: a[0] throws ArrayIndexOutOfBoundsException. findMax requires at least one element.");
+    return frames;
+  }
+
+  push(0, `Looking for the largest number among ${a.length} elements.`);
+  let max = a[0];
+  let maxIdx = 0;
+  push(1, `Initialize max = a[0] = ${max} at index 0.`, {
+    pointers: { max: 0 },
+    sorted: [0],
+  });
+
+  for (let i = 1; i < a.length; i++) {
+    push(2, `i = ${i}: examine a[${i}] = ${a[i]}.`, {
+      pointers: { max: maxIdx, i },
+      sorted: [maxIdx],
+      compare: [i],
+    });
+
+    comparisons++;
+    if (a[i] > max) {
+      push(3, `Compare a[${i}] (${a[i]}) > max (${max}): yes! Found a new larger value.`, {
+        pointers: { max: maxIdx, i },
+        compare: [i, maxIdx],
+      });
+      max = a[i];
+      maxIdx = i;
+      updates++;
+      push(4, `Update max = a[${i}] = ${max}.`, {
+        pointers: { max: maxIdx, i },
+        write: [maxIdx],
+        sorted: [maxIdx],
+      });
+    } else {
+      push(3, `Compare a[${i}] (${a[i]}) > max (${max}): no. Keep current max = ${max}.`, {
+        pointers: { max: maxIdx, i },
+        sorted: [maxIdx],
+        compare: [i, maxIdx],
+      });
+    }
+  }
+
+  push(7, `Finished scanning all ${a.length} elements with ${comparisons} comparison${comparisons === 1 ? "" : "s"}. Return max = ${max}.`, {
+    pointers: { max: maxIdx },
+    sorted: [maxIdx],
+    found: maxIdx,
+  });
+
+  return frames;
+}
+
+/* -------------------------- nested loops -------------------------- */
+
+export type LoopGridMode = "dependent" | "independent" | "fixed";
+
+export type LoopGridInfo = {
+  n: number;
+  mode: LoopGridMode;
+  totalOps: number;
+  maxOps: number;
+  formula: string;
+  bigO: string;
+  activeCells: [number, number][];
+  rowCounts: number[];
+};
+
+export function loopGridInfo(n: number, mode: LoopGridMode): LoopGridInfo {
+  const activeCells: [number, number][] = [];
+  const rowCounts: number[] = [];
+
+  for (let i = 1; i <= n; i++) {
+    const limit = mode === "dependent" ? i : mode === "independent" ? n : Math.min(3, n);
+    rowCounts.push(limit);
+    for (let j = 1; j <= limit; j++) {
+      activeCells.push([i, j]);
+    }
+  }
+
+  const totalOps = activeCells.length;
+  const maxOps = n * n;
+  let formula = "";
+  let bigO = "";
+
+  if (mode === "dependent") {
+    formula = `n(n + 1) / 2 = (${n} × ${n + 1}) / 2 = ${totalOps}`;
+    bigO = "O(n²)";
+  } else if (mode === "independent") {
+    formula = `n × n = ${n}² = ${totalOps}`;
+    bigO = "O(n²)";
+  } else {
+    formula = `3 × n = 3 × ${n} = ${totalOps}`;
+    bigO = "O(n)";
+  }
+
+  return { n, mode, totalOps, maxOps, formula, bigO, activeCells, rowCounts };
+}
+
+/* ----------------------------- swap ----------------------------- */
+
+export const JAVA_SWAP = {
+  correct: [
+    "public static void swap(int[] array, int x, int y) {",
+    "    int temp = array[x];",
+    "    array[x] = array[y];",
+    "    array[y] = temp;",
+    "}",
+  ],
+  buggy: [
+    "public static void swapBuggy(int[] array, int x, int y) {",
+    "    array[x] = array[y];  // BUG: overwrites array[x]!",
+    "    array[y] = array[x];  // reads back array[x] (already lost)",
+    "}",
+  ],
+};
+
+export type SwapState = {
+  array: number[];
+  x: number;
+  y: number;
+  temp: number | null;
+  write?: number[];
+  compare?: number[];
+  buggy?: boolean;
+};
+
+export function swapFrames(
+  initial: number[],
+  x: number,
+  y: number,
+  mode: "correct" | "buggy" = "correct"
+): Frame<SwapState>[] {
+  const a = [...initial];
+  const frames: Frame<SwapState>[] = [];
+  const push = (line: number, message: string, s: Omit<SwapState, "array" | "x" | "y">) =>
+    frames.push({
+      state: { ...s, array: [...a], x, y },
+      line,
+      message,
+      stats: {},
+    });
+
+  if (mode === "correct") {
+    push(0, `Ready to swap elements at indices ${x} (value ${a[x]}) and ${y} (value ${a[y]}).`, {
+      temp: null,
+      compare: [x, y],
+    });
+    const temp = a[x];
+    push(1, `int temp = array[${x}]; Save ${temp} in temporary variable temp so it won't be lost.`, {
+      temp,
+      compare: [x],
+    });
+    a[x] = a[y];
+    push(2, `array[${x}] = array[${y}]; Copy ${a[y]} into slot ${x}. Slot ${x} is now ${a[x]}.`, {
+      temp,
+      write: [x],
+      compare: [y],
+    });
+    a[y] = temp;
+    push(3, `array[${y}] = temp; Retrieve ${temp} from temp into slot ${y}. Swap complete!`, {
+      temp,
+      write: [y],
+    });
+    return frames;
+  }
+
+  // Buggy mode without temp
+  push(0, `Attempting to swap indices ${x} (value ${a[x]}) and ${y} (value ${a[y]}) without a temporary variable.`, {
+    temp: null,
+    compare: [x, y],
+    buggy: true,
+  });
+  const originalX = a[x];
+  a[x] = a[y];
+  push(1, `array[${x}] = array[${y}]; Overwrote slot ${x} with ${a[y]}! The original value ${originalX} is gone.`, {
+    temp: null,
+    write: [x],
+    buggy: true,
+  });
+  a[y] = a[x];
+  push(2, `array[${y}] = array[${x}]; Copy slot ${x} into slot ${y}. Both slots now hold ${a[y]}! Swap failed.`, {
+    temp: null,
+    write: [y],
+    buggy: true,
+  });
+  return frames;
+}

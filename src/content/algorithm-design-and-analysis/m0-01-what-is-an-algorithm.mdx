@@ -1,5 +1,5 @@
 import { Callout, PracticalApplication, ApplicationsGrid, Diagram } from "@/components/mdx/MdxComponents";
-import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { FindMaxVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Recipes, Programs, and Proof
 
@@ -251,6 +251,10 @@ Trace it on the instance ⟨8, 1, 4, 9, 3, 7⟩, one row per loop pass:
 | 3 | 9 | 9 > 8? yes | 9 |
 | 4 | 3 | 3 > 9? no | 9 |
 | 5 | 7 | 7 > 9? no | 9 |
+
+Step through each comparison, watching the pointer $i$ advance and `max` update whenever a larger value is found:
+
+<FindMaxVisualizer />
 
 The loop ends after $i = 5 = n - 1$ and returns 9. The loop starts at 1, not 0, because `a[0]` is already in `max`; comparing it with itself would waste a step.
 

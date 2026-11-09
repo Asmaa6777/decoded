@@ -1,5 +1,5 @@
 import { Callout } from "@/components/mdx/MdxComponents";
-import { GrowthTable, SearchVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { GrowthTable, SearchVisualizer, NestedLoopGrid, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Counting Steps: Big-O, Omega and Theta
 
@@ -250,6 +250,10 @@ $$
 $$
 
 For $n = 4$, the formula yields $\frac{4 \cdot 5}{2} = 10$, matching the count in the table. Each inner loop pass runs two assignments, contributing $n(n+1)$ total operations, alongside $n$ evaluations of `sum = 1` and the initial assignment `x = 1`. Dropping constant factors and lower-order terms leaves **$O(n^2)$** (quadratic time). Even though the inner loop performs half the iterations of a full $n \times n$ grid, $\frac{1}{2} n^2$ still scales quadratically.
+
+Switch between the dependent triangle, the independent square, and a fixed inner loop to see how the execution shapes differ:
+
+<NestedLoopGrid />
 
 <Callout tone="orange" label="A classic mistake">
 Nested loops are not automatically $O(n^2)$. If the inner loop runs a fixed number of times (such as exactly 3 iterations), the total cost is $3n = O(n)$. Conversely, an inner loop running up to $i$ remains $O(n^2)$, as shown above. Always count how many times the inner operations execute instead of assuming each nesting level adds a factor of $n$.

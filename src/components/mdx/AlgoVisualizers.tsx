@@ -6,6 +6,13 @@ import {
   traversalFrames,
   mstFrames,
   knapsackFrames,
+  findMaxFrames,
+  JAVA_FIND_MAX,
+  loopGridInfo,
+  type LoopGridMode,
+  swapFrames,
+  JAVA_SWAP,
+  type SwapState,
   JAVA_SORT,
   JAVA_SEARCH,
   JAVA_GCD,
@@ -1508,6 +1515,521 @@ export function GrowthTable({ initialN = 100 }: { initialN?: number }) {
       <p className="text-xs text-muted-foreground leading-relaxed">
         Drag the slider. Up to n = 30 every row looks harmless. At a million, the slow rows take hours or longer, and avoiding them is what this course is about.
       </p>
+    </FocusPanel>
+  );
+}
+
+/* ----------------------------- foundations ----------------------------- */
+
+export function FindMaxVisualizer({
+  initial = [8, 1, 4, 9, 3, 7],
+}: {
+  initial?: number[];
+}) {
+  const [array, setArray] = useState<number[]>(initial);
+  const [text, setText] = useState(initial.join(", "));
+  const frames = useMemo(() => findMaxFrames(array), [array]);
+
+  const presets: [string, number[]][] = [
+    ["Lesson instance", [8, 1, 4, 9, 3, 7]],
+    ["All negative", [-5, -2, -9, -1, -8]],
+    ["Descending", [9, 7, 5, 3, 1]],
+    ["Ascending", [2, 4, 6, 8, 10]],
+  ];
+
+  const pick = (arr: number[]) => {
+    setArray(arr);
+    setText(arr.join(", "));
+  };
+
+  const applyCustom = () => {
+    const nums = text
+      .split(/[\s,]+/)
+      .map((s) => s.trim())
+      .filter((s) => s !== "" && !isNaN(Number(s)))
+      .map(Number);
+    if (nums.length > 0 && nums.length <= 16) {
+      setArray(nums);
+    }
+  };
+
+  return (
+    <Stepper
+      title="Finding the maximum: findMax"
+      frames={frames}
+      code={JAVA_FIND_MAX}
+      legend={[
+        ["bg-neon", "comparing / checking"],
+        ["bg-mint", "current max"],
+        ["bg-orange", "new max recorded"],
+      ]}
+      render={(s) => <ArrayCells s={s} />}
+      inputs={
+        <div className="flex flex-col gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-xs text-muted-foreground">Presets:</span>
+            {presets.map(([label, arr]) => (
+              <button
+                key={label}
+                type="button"
+                className={`${btn} ${JSON.stringify(array) === JSON.stringify(arr) ? "border-foreground" : ""}`}
+                onClick={() => pick(arr)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="font-mono text-xs text-muted-foreground" htmlFor="findmax-custom">
+              Custom array:
+            </label>
+            <input
+              id="findmax-custom"
+              className={`${inputCls} min-w-[200px] flex-1`}
+              value={text}
+              placeholder="e.g. 12, 4, 19, 7"
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") applyCustom();
+              }}
+            />
+            <button type="button" className={`${btn} ${btnPrimary}`} onClick={applyCustom}>
+              Load
+            </button>
+            <span className="text-xs text-muted-foreground">Up to 16 numbers.</span>
+          </div>
+        </div>
+      }
+    />
+  );
+}
+
+export function NestedLoopGrid({ initialN = 4 }: { initialN?: number }) {
+  const [n, setN] = useState(initialN);
+  const [mode, setMode] = useState<LoopGridMode>("dependent");
+  const [activeStep, setActiveStep] = useState<number>(-1);
+
+  const info = useMemo(() => loopGridInfo(n, mode), [n, mode]);
+
+  useEffect(() => {
+    setActiveStep(-1);
+  }, [n, mode]);
+
+  const currentCell = activeStep >= 0 && activeStep < info.activeCells.length ? info.activeCells[activeStep] : null;
+
+  return (
+    <FocusPanel
+      title="Nested loop execution geometry"
+      eyebrowTone="text-sky"
+      cardClass={vizCard}
+      headerClass={vizHeader}
+      extraHeader={
+        <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs">
+          <button
+            type="button"
+            className={`${btn} ${mode === "dependent" ? "border-foreground bg-secondary font-semibold" : ""}`}
+            onClick={() => setMode("dependent")}
+          >
+            Dependent (j ≤ i)
+          </button>
+          <button
+            type="button"
+            className={`${btn} ${mode === "independent" ? "border-foreground bg-secondary font-semibold" : ""}`}
+            onClick={() => setMode("independent")}
+          >
+            Independent (j ≤ n)
+          </button>
+          <button
+            type="button"
+            className={`${btn} ${mode === "fixed" ? "border-foreground bg-secondary font-semibold" : ""}`}
+            onClick={() => setMode("fixed")}
+          >
+            Fixed inner (j ≤ 3)
+          </button>
+        </div>
+      }
+    >
+      <div className="flex flex-wrap items-center justify-between gap-4 font-mono text-xs">
+        <label className="flex items-center gap-3">
+          <span className="text-muted-foreground">Outer loop size (n):</span>
+          <input
+            type="range"
+            min={2}
+            max={8}
+            value={n}
+            onChange={(e) => setN(Number(e.target.value))}
+            className="w-28 sm:w-36 accent-sky"
+            aria-label="Outer loop size n"
+          />
+          <span className="font-display text-lg font-semibold text-sky w-10">n = {n}</span>
+        </label>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className={btn}
+            disabled={activeStep <= -1}
+            onClick={() => setActiveStep((s) => Math.max(-1, s - 1))}
+          >
+            ← Prev
+          </button>
+          <button
+            type="button"
+            className={`${btn} ${btnPrimary}`}
+            disabled={activeStep >= info.activeCells.length - 1}
+            onClick={() => setActiveStep((s) => Math.min(info.activeCells.length - 1, s + 1))}
+          >
+            Step ({activeStep + 1}/{info.activeCells.length})
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => setActiveStep(activeStep === -1 ? info.activeCells.length - 1 : -1)}
+          >
+            {activeStep === -1 ? "Show all" : "Reset"}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-3 py-2">
+        <div className="text-xs font-mono text-muted-foreground text-center">
+          Columns: inner loop <span className="text-foreground">j = 1 … {n}</span> · Rows: outer loop <span className="text-foreground">i = 1 … {n}</span>
+        </div>
+        <div className="overflow-x-auto p-2 w-full flex justify-center">
+          <div className="flex flex-col gap-1.5 min-w-fit">
+            <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
+              <span className="w-8 text-right pr-2">i \ j</span>
+              {Array.from({ length: n }, (_, idx) => (
+                <span key={idx} className="w-8 sm:w-10 text-center">
+                  {idx + 1}
+                </span>
+              ))}
+              <span className="w-16 pl-2 text-left">passes</span>
+            </div>
+
+            {Array.from({ length: n }, (_, rowIdx) => {
+              const iVal = rowIdx + 1;
+              const limit = info.rowCounts[rowIdx];
+              return (
+                <div key={rowIdx} className="flex items-center gap-1.5">
+                  <span className="w-8 font-mono text-xs text-muted-foreground text-right pr-2">
+                    i={iVal}
+                  </span>
+                  {Array.from({ length: n }, (_, colIdx) => {
+                    const jVal = colIdx + 1;
+                    const isActive = jVal <= limit;
+                    const isCurrent = currentCell && currentCell[0] === iVal && currentCell[1] === jVal;
+                    const stepIdx = info.activeCells.findIndex((c) => c[0] === iVal && c[1] === jVal);
+                    const isExecuted = activeStep === -1 || stepIdx <= activeStep;
+
+                    return (
+                      <div
+                        key={colIdx}
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-mono text-xs transition-all duration-200 motion-reduce:transition-none border ${
+                          !isActive
+                            ? "bg-secondary/20 border-dashed border-border/40 text-muted-foreground/30 select-none"
+                            : isCurrent
+                            ? "bg-neon border-neon text-black font-bold ring-2 ring-neon/50 scale-105"
+                            : isExecuted
+                            ? "bg-sky/20 border-sky/50 text-foreground font-semibold"
+                            : "bg-secondary/60 border-border text-muted-foreground"
+                        }`}
+                        title={isActive ? `Pass i=${iVal}, j=${jVal}` : `j=${jVal} > limit, does not run`}
+                      >
+                        {isActive ? `${iVal},${jVal}` : "·"}
+                      </div>
+                    );
+                  })}
+                  <span className="w-16 pl-2 font-mono text-xs text-muted-foreground">
+                    {limit} {limit === 1 ? "step" : "steps"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 pt-2 border-t border-border/60">
+        <div className="rounded-xl border border-border/60 bg-secondary/30 p-3.5 font-mono text-xs">
+          <div className="text-muted-foreground mb-1">Total operations:</div>
+          <div className="text-sm font-semibold text-foreground mb-1">{info.formula}</div>
+          <div className="text-sky font-semibold text-base">{info.bigO} time complexity</div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-secondary/30 p-3.5 text-xs text-muted-foreground leading-relaxed">
+          {mode === "dependent" && (
+            <>
+              The active cells form a <strong className="text-foreground">triangle</strong>. The sum is{" "}
+              <code className="text-foreground">n(n+1)/2 = ½n² + ½n</code>. Dropping lower-order terms and the constant factor{" "}
+              <code className="text-foreground">½</code> yields <strong className="text-foreground">O(n²)</strong>.
+            </>
+          )}
+          {mode === "independent" && (
+            <>
+              Every row runs all <strong className="text-foreground">n</strong> iterations, forming a full{" "}
+              <code className="text-foreground">n × n</code> square. Total operations: <code className="text-foreground">n²</code>, which is{" "}
+              <strong className="text-foreground">O(n²)</strong>.
+            </>
+          )}
+          {mode === "fixed" && (
+            <>
+              The inner loop runs a fixed <strong className="text-foreground">3 times</strong> regardless of n. Total operations:{" "}
+              <code className="text-foreground">3n</code>. Dropping constant factor 3 yields <strong className="text-foreground">O(n)</strong> (linear).
+            </>
+          )}
+        </div>
+      </div>
+    </FocusPanel>
+  );
+}
+
+export function ArraySwapVisualizer({
+  initial = [5, 9, 14, 2],
+  x = 0,
+  y = 1,
+}: {
+  initial?: number[];
+  x?: number;
+  y?: number;
+}) {
+  const [mode, setMode] = useState<"correct" | "buggy">("correct");
+  const frames = useMemo(() => swapFrames(initial, x, y, mode), [initial, x, y, mode]);
+  const code = mode === "correct" ? JAVA_SWAP.correct : JAVA_SWAP.buggy;
+
+  return (
+    <Stepper
+      title="The swap method: temporary variable vs the overwrite bug"
+      frames={frames}
+      code={code}
+      legend={[
+        ["bg-violet", "temporary variable (temp)"],
+        ["bg-neon", "indices to swap"],
+        ["bg-orange", "written / modified slot"],
+      ]}
+      render={(s: SwapState) => (
+        <div className="flex flex-col gap-5 items-center py-2">
+          <div className="flex items-center gap-3 font-mono text-xs">
+            <span className="text-muted-foreground font-semibold">temp:</span>
+            <div
+              className={`w-14 h-12 rounded-xl flex items-center justify-center font-mono text-base border-2 transition-all duration-300 motion-reduce:transition-none ${
+                s.temp !== null
+                  ? "border-violet bg-violet/20 text-foreground font-bold shadow-sm ring-2 ring-violet/40"
+                  : "border-dashed border-border bg-secondary/30 text-muted-foreground/40"
+              }`}
+            >
+              {s.temp !== null ? s.temp : "empty"}
+            </div>
+            {s.buggy && <span className="text-orange font-semibold">(omitted in buggy version)</span>}
+          </div>
+
+          <div className="flex flex-col items-center gap-1.5 w-full max-w-sm">
+            <div className="text-xs font-mono text-muted-foreground">array slots</div>
+            <div className="grid grid-cols-4 gap-2.5 w-full">
+              {s.array.map((val, idx) => {
+                const isTarget = idx === s.x || idx === s.y;
+                const isWritten = s.write?.includes(idx);
+                const isComparing = s.compare?.includes(idx);
+                return (
+                  <div
+                    key={idx}
+                    className={`h-14 flex flex-col items-center justify-center font-mono rounded-xl border-2 transition-all duration-300 motion-reduce:transition-none ${
+                      isWritten
+                        ? "border-orange bg-orange/20 text-foreground font-bold ring-2 ring-orange/40 scale-105"
+                        : isComparing
+                        ? "border-neon bg-neon/15 text-foreground font-bold ring-2 ring-neon/40"
+                        : isTarget
+                        ? "border-border/80 bg-secondary/50 text-foreground"
+                        : "border-border/40 bg-secondary/20 text-muted-foreground opacity-60"
+                    }`}
+                  >
+                    <span className="text-base font-semibold">{val}</span>
+                    <span className="text-[10px] text-muted-foreground">[{idx}]</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Mode:</span>
+            <button
+              type="button"
+              className={`${btn} ${mode === "correct" ? "border-foreground bg-secondary font-semibold" : ""}`}
+              onClick={() => setMode("correct")}
+            >
+              Correct (with temp)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${mode === "buggy" ? "border-orange text-orange bg-orange/10 font-semibold" : ""}`}
+              onClick={() => setMode("buggy")}
+            >
+              The bug (without temp)
+            </button>
+          </div>
+          <span className="text-muted-foreground">
+            Swapping indices <span className="text-foreground">{x}</span> and <span className="text-foreground">{y}</span>
+          </span>
+        </div>
+      }
+    />
+  );
+}
+
+export function ArrayReferenceVisualizer() {
+  const [mode, setMode] = useState<"alias" | "clone">("alias");
+  const [mutated, setMutated] = useState(false);
+
+  const heapA = mutated && mode === "alias" ? [99, 24, 16] : [12, 24, 16];
+  const heapB = mutated && mode === "clone" ? [99, 24, 16] : [12, 24, 16];
+
+  const handleModeChange = (newMode: "alias" | "clone") => {
+    setMode(newMode);
+    setMutated(false);
+  };
+
+  return (
+    <FocusPanel
+      title="The reference trap: int[] copy = original vs .clone()"
+      eyebrowTone="text-orange"
+      cardClass={vizCard}
+      headerClass={vizHeader}
+      extraHeader={
+        <div className="flex items-center gap-1.5 font-mono text-xs">
+          <button
+            type="button"
+            className={`${btn} ${mode === "alias" ? "border-orange bg-orange/10 text-orange font-semibold" : ""}`}
+            onClick={() => handleModeChange("alias")}
+          >
+            copy = original (alias)
+          </button>
+          <button
+            type="button"
+            className={`${btn} ${mode === "clone" ? "border-mint bg-mint/10 text-mint font-semibold" : ""}`}
+            onClick={() => handleModeChange("clone")}
+          >
+            copy = original.clone() (independent)
+          </button>
+        </div>
+      }
+    >
+      <div className="grid gap-6 md:grid-cols-2 items-start py-2">
+        <div className="rounded-xl border border-border/70 bg-secondary/20 p-4 flex flex-col gap-3 font-mono text-xs">
+          <div className="flex items-center justify-between border-b border-border/50 pb-2">
+            <span className="font-semibold text-foreground tracking-wide uppercase">Stack (Variables)</span>
+            <span className="text-[11px] text-muted-foreground">stores memory addresses</span>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card">
+              <span className="font-semibold text-foreground">original</span>
+              <div className="flex items-center gap-1.5 text-sky font-semibold">
+                <span>→ ref @0x100</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-card">
+              <span className="font-semibold text-foreground">copy</span>
+              <div className="flex items-center gap-1.5 font-semibold">
+                {mode === "alias" ? (
+                  <span className="text-orange">→ ref @0x100 (same!)</span>
+                ) : (
+                  <span className="text-mint">→ ref @0x200 (new!)</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border/70 bg-secondary/20 p-4 flex flex-col gap-3 font-mono text-xs">
+          <div className="flex items-center justify-between border-b border-border/50 pb-2">
+            <span className="font-semibold text-foreground tracking-wide uppercase">Heap (Array Objects)</span>
+            <span className="text-[11px] text-muted-foreground">stores actual element values</span>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="p-3 rounded-lg border border-border bg-card flex flex-col gap-2">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span className="font-semibold text-sky">Object @0x100</span>
+                <span>{mode === "alias" ? "referenced by original & copy" : "referenced by original"}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {heapA.map((val, idx) => (
+                  <div
+                    key={idx}
+                    className={`py-2 rounded-md font-mono text-sm border ${
+                      idx === 0 && mutated && mode === "alias"
+                        ? "bg-orange/20 border-orange text-foreground font-bold ring-2 ring-orange/40"
+                        : "bg-secondary/40 border-border/60 text-foreground"
+                    }`}
+                  >
+                    <div>{val}</div>
+                    <div className="text-[10px] text-muted-foreground">[{idx}]</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {mode === "clone" && (
+              <div className="p-3 rounded-lg border border-mint/40 bg-card flex flex-col gap-2">
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span className="font-semibold text-mint">Object @0x200 (clone)</span>
+                  <span>referenced by copy</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  {heapB.map((val, idx) => (
+                    <div
+                      key={idx}
+                      className={`py-2 rounded-md font-mono text-sm border ${
+                        idx === 0 && mutated
+                          ? "bg-mint/20 border-mint text-foreground font-bold ring-2 ring-mint/40"
+                          : "bg-secondary/40 border-border/60 text-foreground"
+                      }`}
+                    >
+                      <div>{val}</div>
+                      <div className="text-[10px] text-muted-foreground">[{idx}]</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border/60">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className={`${btn} ${mutated ? "border-border" : btnPrimary}`}
+            onClick={() => setMutated(true)}
+            disabled={mutated}
+          >
+            Execute: copy[0] = 99
+          </button>
+          {mutated && (
+            <button type="button" className={btn} onClick={() => setMutated(false)}>
+              Reset
+            </button>
+          )}
+        </div>
+
+        <div className="text-xs font-mono">
+          {!mutated ? (
+            <span className="text-muted-foreground">Click "Execute" to mutate copy[0] and observe the side effect.</span>
+          ) : mode === "alias" ? (
+            <span className="text-orange font-semibold">
+              ⚠️ Trap triggered: original[0] also changed to 99! Both variables share one array in the heap.
+            </span>
+          ) : (
+            <span className="text-mint font-semibold">
+              ✓ Independent: original[0] remained 12! .clone() allocated a separate heap array.
+            </span>
+          )}
+        </div>
+      </div>
     </FocusPanel>
   );
 }

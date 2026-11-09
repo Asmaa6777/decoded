@@ -1,5 +1,5 @@
 import { Callout } from "@/components/mdx/MdxComponents";
-import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { ArraySwapVisualizer, ArrayReferenceVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Practical: Arrays, Swaps and a Stopwatch
 
@@ -101,6 +101,8 @@ Operator precedence requires parentheses: writing `(int) Math.random() * dataRan
 
 The `swap` method requires a temporary variable `temp` to avoid overwriting data. Tracing `swap(array, 0, 1)` on `[5, 9]` shows the sequence: `temp` stores 5, `array[0]` receives 9, and `array[1]` retrieves `temp` (5), resulting in `[9, 5]`. Omitting `temp` by writing `array[x] = array[y]; array[y] = array[x];` overwrites the original value at index `x` before it can be copied, leaving both slots holding 9.
 
+<ArraySwapVisualizer />
+
 <Callout tone="violet" label="Why swap requires the array reference">
 A common pitfall is writing `swap(int x, int y)` to swap two integer variables. That method compiles and runs without error, but has no effect on the caller's variables. Java passes **primitive** arguments (`int`, `long`, `double`, `boolean`) by **value**, meaning the method operates only on local copies. In contrast, an array variable of type `int[]` stores an object **reference** (the memory address of the array). Passing an array copies the reference, allowing the method to modify the original array in place.
 </Callout>
@@ -127,6 +129,8 @@ int[] copy = original.clone();          // or: Arrays.copyOf(original, original.
 ```
 
 You need this whenever you want a fair race between two algorithms on *the same* random input.
+
+<ArrayReferenceVisualizer />
 
 ## The stopwatch
 
