@@ -1,4 +1,4 @@
-import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { DiscreteLogSearch } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Discrete Logarithms
@@ -19,7 +19,19 @@ $$
 b \equiv a^k \pmod p, \qquad 0 \le k \le p - 2
 $$
 
-This exponent $k$ is the **discrete logarithm** of $b$ for the base $a$ modulo $p$, denoted $\log_a(b)$ or the **index** $\operatorname{ind}_a(b)$. (Because $a^0 \equiv a^{p-1} \equiv 1 \pmod p$, discrete logarithms can be represented in $\{0, 1, \dots, p - 2\}$ or $\{1, 2, \dots, p - 1\}$; tables of discrete logarithms often assign $\log_a(1) = p - 1$.) The same logarithm rules hold, with exponents reduced modulo $\phi(p) = p - 1$, [Euler's totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) of $p$.
+This exponent $k$ is the **discrete logarithm** of $b$ for the base $a$ modulo $p$, denoted $\log_a(b)$ or the **index** $\operatorname{ind}_a(b)$. (Because $a^0 \equiv a^{p-1} \equiv 1 \pmod p$, discrete logarithms can be represented in $\{0, 1, \dots, p - 2\}$ or $\{1, 2, \dots, p - 1\}$; tables of discrete logarithms often assign $\log_a(1) = p - 1$.)
+
+The ordinary logarithm rules still hold, but their arithmetic reduces modulo $\phi(p) = p - 1$, [Euler's totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) of $p$, rather than modulo $p$. Why? Because powers repeat every $p - 1$ steps by Fermat's Little Theorem ($a^{p-1} \equiv 1 \pmod p$). Multiplying two values adds their exponents:
+
+$$
+b \cdot c \equiv a^{\log_a b} \cdot a^{\log_a c} = a^{\log_a b + \log_a c} \pmod p
+$$
+
+Since exponents on base $a$ cycle with period $p - 1$, we have:
+
+$$
+\log_a(bc) \equiv \log_a(b) + \log_a(c) \pmod{p - 1}
+$$
 
 ## A small example
 
@@ -107,7 +119,28 @@ print(pow(63, 245, 2017))            # 1454
 | Forward | Compute $a^k \bmod p$ | Fast, about $\log k$ multiplications |
 | Backward | Find $k$ from $a^k \bmod p$ | No known fast method on classical computers |
 
-That gap lets two people agree on a secret in public. In **Diffie-Hellman**, they share a prime $p$ and a base $a$. Each picks a private exponent, $x$ and $y$, and sends the other $a^x$ or $a^y$ in the open. Both can then compute $a^{xy}$, but an eavesdropper who saw only $a^x$ and $a^y$ would need a discrete log to do the same:
+That gap lets two people agree on a secret in public. In **Diffie-Hellman**, they share a prime $p$ and a base $a$. Each picks a private exponent, $x$ and $y$, and sends the other $A = a^x \bmod p$ or $B = a^y \bmod p$ in the open. Both can then compute $(a^y)^x = a^{xy} = (a^x)^y \pmod p$, but an eavesdropper who saw only $A$ and $B$ would need to solve a discrete logarithm to find $x$ or $y$.
+
+Trace the arithmetic step by step with prime $p = 19$ and base $a = 2$:
+
+1. Alice chooses secret $x = 5$ and computes her public key:
+   $$
+   A = 2^5 \bmod 19 = 32 \bmod 19 = 13
+   $$
+2. Bob chooses secret $y = 7$ and computes his public key:
+   $$
+   B = 2^7 \bmod 19 = 128 = 6 \cdot 19 + 14 \equiv 14 \pmod{19}
+   $$
+3. Alice receives $B = 14$ and raises it to her secret $x = 5$:
+   $$
+   B^x \equiv 14^5 \equiv (-5)^5 = -3125 = -165 \cdot 19 + 10 \equiv 10 \pmod{19}
+   $$
+4. Bob receives $A = 13$ and raises it to his secret $y = 7$:
+   $$
+   A^y \equiv 13^7 \equiv (-6)^7 = -279936 = -14734 \cdot 19 + 10 \equiv 10 \pmod{19}
+   $$
+
+Both arrive at the identical shared key $10$. An observer who intercepts $A = 13$ and $B = 14$ cannot compute $2^{35} \equiv 10 \pmod{19}$ without solving $2^x \equiv 13 \pmod{19}$ or $2^y \equiv 14 \pmod{19}$.
 
 <CodeTabs>
 
@@ -138,6 +171,12 @@ Notice the contrast with how neural networks learn. Gradient descent works becau
 ## Integer factorization
 
 There's a second problem of this kind. Given a [composite](/courses/computational-mathematics/primes-and-the-sieve#prime-and-composite) number $N$, find integers $p$ and $q$ with $p \cdot q = N$. Multiplying is easy, but factoring a product of two large primes is not. RSA depends on this one, in the same way that Diffie-Hellman depends on discrete logs.
+
+<Callout tone="orange" label="Common errors">
+- **Reducing discrete logarithms modulo $p$:** Exponents and logarithms operate in modular arithmetic modulo $\phi(p) = p - 1$, not modulo $p$. For example, adding two discrete logarithms requires reducing modulo $p - 1$.
+- **Attempting continuous logarithms:** Using standard math `log(b) / log(a)` fails completely in modular arithmetic. Continuous logarithms require smooth, monotonic curves; modular powers jump pseudo-randomly over $\mathbb{Z}_p$.
+- **Swapping base and target:** In $\log_a(b) = k$, $a$ is the base that is raised to the power $k$, and $b$ is the target value ($a^k \equiv b \pmod p$). Confusing them with $\log_b(a)$ or evaluating $a^b \pmod p$ yields unrelated numbers.
+</Callout>
 
 ## Where you'll meet this
 

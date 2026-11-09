@@ -1,4 +1,4 @@
-import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { EuclidTilesVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Divisibility and the Euclidean Algorithm
@@ -7,7 +7,7 @@ Every secure connection your browser opens rests on arithmetic with whole number
 
 ## Divisibility
 
-A nonzero integer $b$ **divides** $a$ if $a = m \cdot b$ for some integer $m$, which means division leaves no remainder. We write $b \mid a$ and call $b$ a **divisor** of $a$. The positive divisors of 24 are 1, 2, 3, 4, 6, 8, 12 and 24.
+A nonzero integer $b$ **divides** $a$ if $a = m \cdot b$ for some integer $m$, which means division leaves no remainder. We write $b \mid a$ and call $b$ a **divisor** (or factor) of $a$. Notice the vertical bar $\mid$ is a complete mathematical statement ("$b$ divides $a$"), not a division operation or fraction like $a/b$ or $b/a$. If $b$ does not divide $a$, we write $b \nmid a$. The positive divisors of 24 are 1, 2, 3, 4, 6, 8, 12 and 24.
 
 <CodeTabs>
 
@@ -37,10 +37,10 @@ $$
 a = q \cdot n + r, \qquad 0 \le r < n, \qquad q = \left\lfloor \frac{a}{n} \right\rfloor
 $$
 
-Here $\lfloor x \rfloor$ means the largest integer not greater than $x$. The remainder is never negative, and that matters for negative numbers:
+Here $\lfloor x \rfloor$ is the **floor function**, meaning the largest integer not greater than $x$. The condition $0 \le r < n$ guarantees that the remainder is never negative, and that matters when dividing negative numbers:
 
-- $11 = 1 \cdot 7 + 4$, so $r = 4$
-- $-11 = (-2) \cdot 7 + 3$, so $r = 3$
+- For $a = 11$ and $n = 7$: $11 / 7 \approx 1.57$, so $q = \lfloor 1.57 \rfloor = 1$. The remainder is $r = 11 - 1 \cdot 7 = 4$.
+- For $a = -11$ and $n = 7$: $-11 / 7 \approx -1.57$. The floor rounds down toward $-\infty$, so $q = \lfloor -1.57 \rfloor = -2$, not $-1$. The remainder is $r = -11 - (-2) \cdot 7 = -11 + 14 = 3$, which satisfies $0 \le r < 7$. If you had chosen $q = -1$, the remainder would be $-4$, which violates $r \ge 0$.
 
 <CodeTabs>
 
@@ -79,7 +79,7 @@ $$
 \gcd(a, b) = \max \{k \in \mathbb{Z}^+ : k \mid a \text{ and } k \mid b\}
 $$
 
-More formally, a positive integer $c = \gcd(a, b)$ satisfies two conditions: $c$ is a divisor of both $a$ and $b$, and any integer dividing both $a$ and $b$ also divides $c$. Because the greatest common divisor is defined to be positive, signs do not change the answer:
+Here $\mathbb{Z}^+$ denotes the set of **positive integers** $\{1, 2, 3, \dots\}$. More formally, a positive integer $c = \gcd(a, b)$ satisfies two conditions: $c$ is a divisor of both $a$ and $b$, and any integer dividing both $a$ and $b$ also divides $c$. Because the greatest common divisor is defined to be positive, signs do not change the answer:
 
 $$
 \gcd(a, b) = \gcd(|a|, |b|) = \gcd(-a, b) = \gcd(a, -b) = \gcd(-a, -b)
@@ -91,7 +91,17 @@ Two numbers are **coprime** (or relatively prime) if their only common positive 
 
 ## The Euclidean algorithm
 
-Listing divisors becomes hopeless for large numbers. Euclid's method needs one fact, which is that $\gcd(a, b) = \gcd(b, a \bmod b)$. Here $a \bmod b$ is the remainder $r$ from the division algorithm above, and the [next lesson](/courses/computational-mathematics/modular-arithmetic#the-mod-operation) is all about it. Setting $r_0 = b$, we find successive quotients $q_i$ and remainders $r_i$ with $0 \le r_i < r_{i-1}$:
+Listing divisors becomes hopeless for large numbers. Euclid's method needs one fact:
+
+$$
+\gcd(a, b) = \gcd(b, a \bmod b)
+$$
+
+Here $a \bmod b$ is the remainder $r$ from the division algorithm above, and the [next lesson](/courses/computational-mathematics/modular-arithmetic#the-mod-operation) is all about it. Why does this equality hold? Since $a = qb + r$, we know $r = a - qb$:
+- Any common divisor $d$ of $a$ and $b$ must also divide the combination $r = a - qb$.
+- Any common divisor $d$ of $b$ and $r$ must also divide the sum $a = qb + r$.
+
+Because the pair $(a, b)$ and the pair $(b, r)$ share the exact same set of common divisors, their greatest common divisors must be equal. Setting $r_0 = b$, we find successive quotients $q_i$ and remainders $r_i$ with $0 \le r_i < r_{i-1}$:
 
 $$
 \begin{aligned}
@@ -166,7 +176,32 @@ print(a)  # 13
 
 </CodeTabs>
 
-Testing the same reduction on $a = 18$ and $b = 50$ yields $\gcd(18, 50) = 2$ ($50 = 2 \cdot 18 + 14$, $18 = 1 \cdot 14 + 4$, $14 = 3 \cdot 4 + 2$, $4 = 2 \cdot 2 + 0$), whereas running on 24 and 78 gives $\gcd(78, 24) = 6$ ($78 = 3 \cdot 24 + 6$, $24 = 4 \cdot 6 + 0$).
+Testing the same reduction on $a = 18$ and $b = 50$:
+
+$$
+\begin{aligned}
+50 &= 2 \cdot 18 + 14 \\
+18 &= 1 \cdot 14 + 4 \\
+14 &= 3 \cdot 4 + 2 \\
+4 &= 2 \cdot 2 + 0
+\end{aligned}
+$$
+
+The last non-zero remainder is 2, so $\gcd(18, 50) = 2$. Likewise, running on 24 and 78 gives:
+
+$$
+\begin{aligned}
+78 &= 3 \cdot 24 + 6 \\
+24 &= 4 \cdot 6 + 0
+\end{aligned}
+$$
+
+The last non-zero remainder is 6, so $\gcd(78, 24) = 6$.
+
+<Callout tone="orange" label="Common errors">
+- **Confusing $b \mid a$ with division:** $3 \mid 12$ is a true statement ("3 divides 12"), not the value $3/12 = 0.25$ or $12/3 = 4$. Remember that the divisor comes first: $12 \mid 3$ is false.
+- **Reporting 0 as the gcd:** The Euclidean algorithm terminates when the remainder becomes 0. The greatest common divisor is the *last non-zero remainder* (or the divisor in that final line), not 0 and not the quotient.
+</Callout>
 
 MATLAB's built-in `gcd` computes this directly, and works elementwise on vectors:
 

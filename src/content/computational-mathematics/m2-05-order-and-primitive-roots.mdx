@@ -1,4 +1,4 @@
-import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { PowerCycleVisualizer, PowersTable } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Order and Primitive Roots
@@ -13,7 +13,15 @@ $$
 a^k \equiv 1 \pmod n
 $$
 
-The [Euler-Fermat theorem](/courses/computational-mathematics/primality-and-the-totient#the-euler-fermat-theorem) guarantees such a $k$ exists, and it also tells us the order is at most $\phi(n)$. Other standard names for $\operatorname{ord}_n(a)$ include:
+The [Euler-Fermat theorem](/courses/computational-mathematics/primality-and-the-totient#the-euler-fermat-theorem) guarantees such a $k$ exists, and it also tells us the order is at most $\phi(n)$. In fact, the order $k$ must divide $\phi(n)$ exactly. Why? Divide $\phi(n)$ by $k$:
+
+$$
+\phi(n) = q \cdot k + r, \qquad 0 \le r < k
+$$
+
+Then $a^{\phi(n)} = a^{qk + r} = (a^k)^q \cdot a^r \equiv 1^q \cdot a^r = a^r \pmod n$. But Euler's theorem guarantees $a^{\phi(n)} \equiv 1 \pmod n$, so $a^r \equiv 1 \pmod n$. Since $k$ was defined as the *smallest* positive power reaching 1, and $0 \le r < k$, the remainder must be zero ($r = 0$). Hence $k \mid \phi(n)$.
+
+Other standard names for $\operatorname{ord}_n(a)$ include:
 
 - The **multiplicative order** of $a$ modulo $n$
 - The **exponent to which $a$ belongs** modulo $n$
@@ -99,18 +107,20 @@ $$
 \phi(45) = \phi(3^2 \cdot 5) = 45 \left(1 - \frac{1}{3}\right)\left(1 - \frac{1}{5}\right) = 45 \cdot \frac{2}{3} \cdot \frac{4}{5} = 24
 $$
 
-Now compute the powers of 7 modulo 45:
+Now compute the powers of 7 modulo 45, multiplying by 7 and reducing at each step:
 
 $$
 \begin{aligned}
-7^1 &\equiv 7, & 7^2 &= 49 \equiv 4, & 7^3 &= 28, \\
-7^4 &\equiv 16, & 7^5 &\equiv 22, & 7^6 &\equiv 19, \\
-7^7 &\equiv 43 \equiv -2, & 7^8 &\equiv 31, & 7^9 &\equiv 37, \\
-7^{10} &\equiv 34, & 7^{11} &\equiv 13, & 7^{12} &\equiv 1 \pmod{45}
+7^1 &\equiv 7, & 7^2 &= 49 = 1 \cdot 45 + 4 \equiv 4, & 7^3 &= 7 \cdot 4 = 28, \\
+7^4 &= 7 \cdot 28 = 196 = 4 \cdot 45 + 16 \equiv 16, & 7^5 &= 7 \cdot 16 = 112 = 2 \cdot 45 + 22 \equiv 22, & 7^6 &= 7 \cdot 22 = 154 = 3 \cdot 45 + 19 \equiv 19, \\
+7^7 &= 7 \cdot 19 = 133 = 3 \cdot 45 - 2 \equiv -2 \equiv 43, & 7^8 &\equiv 7 \cdot (-2) = -14 \equiv 31, & 7^9 &= 7 \cdot 31 = 217 = 4 \cdot 45 + 37 \equiv 37, \\
+7^{10} &= 7 \cdot 37 = 259 = 5 \cdot 45 + 34 \equiv 34, & 7^{11} &= 7 \cdot 34 = 238 = 5 \cdot 45 + 13 \equiv 13, & 7^{12} &= 7 \cdot 13 = 91 = 2 \cdot 45 + 1 \equiv 1 \pmod{45}
 \end{aligned}
 $$
 
 Because $7^{12} \equiv 1 \pmod{45}$, the order of 7 modulo 45 is 12, not 24. Therefore, 7 is **not** a primitive root of 45. (In fact, 45 has no primitive roots at all: for any integer $a$ coprime to 45, $a^{12} \equiv 1 \pmod{45}$.)
+
+When primitive roots do exist (for instance, modulo any prime $p$), there are always exactly $\phi(\phi(p)) = \phi(p - 1)$ of them. Modulo 7, $\phi(6) = \phi(2 \cdot 3) = 6 \cdot \frac{1}{2} \cdot \frac{2}{3} = 2$ primitive roots exist: 3 and 5. Modulo 19, there are $\phi(18) = 18 \cdot \frac{1}{2} \cdot \frac{2}{3} = 6$ primitive roots.
 
 <CodeTabs>
 
@@ -226,6 +236,12 @@ print([a for a in range(1, 19) if order(a, 19) == 18])  # [2, 3, 10, 13, 14, 15]
 </CodeTabs>
 
 If $a$ is a primitive root of a prime $p$, then $a^1, a^2, \dots, a^{p-1}$ are all distinct modulo $p$, and they cover each of $1, \dots, p - 1$ exactly once. The next lessons rely on this.
+
+<Callout tone="orange" label="Common errors">
+- **Testing only $a^{\phi(n)} \equiv 1$:** By Euler's theorem, $a^{\phi(n)} \equiv 1 \pmod n$ for *every* coprime $a$. To prove $a$ is a primitive root, you must verify that no *proper divisor* $d$ of $\phi(n)$ gives $a^d \equiv 1 \pmod n$.
+- **Confusing exponents with values:** If $\operatorname{ord}_n(a) = k$, then $a^x \equiv a^y \pmod n$ if and only if $x \equiv y \pmod k$. Exponents live modulo $k$, while the results live modulo $n$.
+- **Assuming all moduli have primitive roots:** Primitive roots exist only for $n = 2, 4, p^k, 2p^k$ (for odd primes $p$). Moduli like 8, 12, 15, and 45 do not possess any primitive roots.
+</Callout>
 
 ## Where you'll meet this
 

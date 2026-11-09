@@ -1,4 +1,4 @@
-import { CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
 import { SieveVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Primes and the Sieve
@@ -7,7 +7,7 @@ Primes are the atoms of whole-number arithmetic. Every other number is built fro
 
 ## Prime and composite
 
-A positive integer $n > 1$ is **prime** if its only positive [divisors](/courses/computational-mathematics/divisibility-and-euclid#divisibility) are 1 and $n$. Otherwise it's **composite**.
+A positive integer $n > 1$ is **prime** if its only positive [divisors](/courses/computational-mathematics/divisibility-and-euclid#divisibility) are 1 and $n$. Otherwise it's **composite**. The integer 1 is defined as neither prime nor composite (a **unit**); if 1 were counted as prime, uniqueness in the theorem below would fail because any number could be multiplied by $1$ arbitrarily many times ($6 = 2 \cdot 3 = 1 \cdot 2 \cdot 3 = 1^2 \cdot 2 \cdot 3$).
 
 The **Fundamental Theorem of Arithmetic** says every integer $n > 1$ can be written as a product of primes in only one way, apart from their order:
 
@@ -81,7 +81,7 @@ print(h(42))  # 471
 
 ## You only need to check up to the square root
 
-If $n$ has no prime divisor less than or equal to $\sqrt{n}$, then $n$ is prime. The reason is simple: if $n = a \cdot b$ with both factors above $\sqrt{n}$, their product would be more than $n$. So any composite number has a factor on the small side.
+If $n$ has no prime divisor less than or equal to $\sqrt{n}$, then $n$ is prime. The reason is simple: if $n$ were composite, it could be factored into two integers $n = a \cdot b$. If both factors were strictly greater than $\sqrt{n}$, their product would be $a \cdot b > \sqrt{n} \cdot \sqrt{n} = n$, a contradiction. So every composite number must have at least one factor less than or equal to $\sqrt{n}$.
 
 <CodeTabs>
 
@@ -106,7 +106,7 @@ This method for listing small primes is over two thousand years old:
 
 1. List the integers from 2 to $n$.
 2. Take the first number not struck out. It's prime.
-3. Strike out all its multiples.
+3. Strike out all its multiples, starting at $p^2$ (every smaller multiple $k \cdot p$ with $k < p$ has already been struck out by a prime factor of $k$).
 4. Repeat until you pass $\sqrt{n}$. Whatever remains is prime.
 
 For $n = 100$, calculating $\sqrt{100} = 10$, you can stop as soon as you finish striking out multiples of the primes up to 10 (that is, 2, 3, 5, and 7). The next remaining candidate prime is 11, which exceeds 10, so every composite number up to 100 has already had its prime factor struck out. Step through it and watch how little work is left after the first few primes:
@@ -149,12 +149,12 @@ print(np.flatnonzero(is_prime).tolist())  # [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
 
 ## Quick tests for divisibility
 
-Some factors can be spotted from the digits of $n$:
+Some factors can be spotted from the decimal digits of $n$, and modular arithmetic explains why each works:
 
-- **2**: the last digit is 0, 2, 4, 6 or 8.
-- **5**: the last digit is 0 or 5.
-- **3**: the sum of the digits is a multiple of 3.
-- **11**: the alternating sum of the digits is a multiple of 11.
+- **2**: the last digit is 0, 2, 4, 6 or 8 (because $10 \equiv 0 \pmod 2$).
+- **5**: the last digit is 0 or 5 (because $10 \equiv 0 \pmod 5$).
+- **3**: the sum of the digits is a multiple of 3. Why? In base 10, $10 = 3 \cdot 3 + 1 \equiv 1 \pmod 3$, so every power $10^k \equiv 1^k \equiv 1 \pmod 3$. Any integer $d_k 10^k + \dots + d_0$ is congruent to $d_k + \dots + d_0 \pmod 3$.
+- **11**: the alternating sum of the digits is a multiple of 11. Why? $10 = 11 - 1 \equiv -1 \pmod{11}$, so $10^k \equiv (-1)^k \pmod{11}$. Powers alternate sign, giving $d_0 - d_1 + d_2 - d_3 + \dots \pmod{11}$.
 
 Take $17865843$. It ends in 3, so it isn't divisible by 2 or 5. Its digits add up to:
 
@@ -170,7 +170,7 @@ $$
 8 - 1 + 3 - 2 + 6 - 1 + 9 = 22 = 2 \cdot 11
 $$
 
-(From right to left, $9 - 1 + 6 - 2 + 3 - 1 + 8 = 22$ gives the exact same result.) Since 22 is a multiple of 11, 11 divides $8132619$.
+(From right to left, $9 - 1 + 6 - 2 + 3 - 1 + 8 = 22$ gives the exact same result.) Since 22 is a multiple of 11, 11 divides $8132619$. Notice that a sum of 0 also means divisible by 11, since $0 = 0 \cdot 11$ (for instance, $121 \to 1 - 2 + 1 = 0$).
 
 <CodeTabs>
 
@@ -184,6 +184,12 @@ print(17865843 % 3, 8132619 % 11)  # 0 0
 ```
 
 </CodeTabs>
+
+<Callout tone="orange" label="Common errors">
+- **Counting 1 as prime:** 1 is a unit, not a prime. Primes are strictly greater than 1 ($p \ge 2$).
+- **Checking up to $n/2$ instead of $\sqrt{n}$:** While checking up to $n/2$ will find factors, it does massively more work than needed. For $n = 1{,}000{,}000$, $\sqrt{n} = 1{,}000$ operations versus $500{,}000$.
+- **Alternating sum sign slips:** When checking divisibility by 11, don't mix up addition and subtraction midway through the digits, and remember that an alternating sum of 0 is a valid multiple of 11.
+</Callout>
 
 ## Where you'll meet this
 

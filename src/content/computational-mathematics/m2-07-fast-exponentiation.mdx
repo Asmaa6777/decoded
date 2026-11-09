@@ -16,6 +16,8 @@ Write $m$ in binary and read it from left to right. Start with $a$ for the first
 - **Always** square the running value.
 - If the bit is **1**, also multiply by $a$.
 
+Why does binary representation make this work? Any exponent $m$ is a sum of powers of 2: $m = \sum_{i=0}^k b_i 2^i$, with bits $b_i \in \{0, 1\}$. Reading from left to right, squaring the running accumulator doubles its exponent ($(a^k)^2 = a^{2k}$), which shifts the binary exponent left by one place. If the incoming bit is 1, multiplying by $a$ adds 1 ($a^{2k} \cdot a = a^{2k+1}$). If the bit is 0, no extra multiplication is done. Crucially, reducing modulo $n$ after every operation keeps intermediate numbers below $n^2$.
+
 For $a^{100}$, we have $100 = (1100100)_2$, so the bits build the exponent like this:
 
 | Bit | Operation | Power so far |
@@ -35,15 +37,15 @@ For $25^{193} \bmod 469$, the binary form of the exponent is $193 = (11000001)_2
 | Bit | Value | Operation | Computation modulo 469 | Reduced |
 | --- | --- | --- | --- | --- |
 | $e_7$ | 1 | start | $25 \bmod 469$ | 25 |
-| $e_6$ | 1 | square, multiply | $(25^2 \cdot 25) \bmod 469 = 15625 \bmod 469$ | 148 |
-| $e_5$ | 0 | square | $148^2 \bmod 469 = 21904 \bmod 469$ | 330 |
-| $e_4$ | 0 | square | $330^2 \bmod 469 = 108900 \bmod 469$ | 92 |
-| $e_3$ | 0 | square | $92^2 \bmod 469 = 8464 \bmod 469$ | 22 |
-| $e_2$ | 0 | square | $22^2 \bmod 469 = 484 \bmod 469$ | 15 |
-| $e_1$ | 0 | square | $15^2 \bmod 469 = 225 \bmod 469$ | 225 |
-| $e_0$ | 1 | square, multiply | $(225^2 \cdot 25) \bmod 469 = 1265625 \bmod 469$ | 263 |
+| $e_6$ | 1 | square, multiply | $(25^2 \cdot 25) = 15625 = 33 \cdot 469 + 148$ | 148 |
+| $e_5$ | 0 | square | $148^2 = 21904 = 46 \cdot 469 + 330$ | 330 |
+| $e_4$ | 0 | square | $330^2 = 108900 = 232 \cdot 469 + 92$ | 92 |
+| $e_3$ | 0 | square | $92^2 = 8464 = 18 \cdot 469 + 22$ | 22 |
+| $e_2$ | 0 | square | $22^2 = 484 = 1 \cdot 469 + 15$ | 15 |
+| $e_1$ | 0 | square | $15^2 = 225 < 469$ | 225 |
+| $e_0$ | 1 | square, multiply | $(225^2 \cdot 25) = 1265625 = 2698 \cdot 469 + 263$ | 263 |
 
-Hence $25^{193} \equiv 263 \pmod{469}$.
+Hence $25^{193} \equiv 263 \pmod{469}$. (In practice, reducing between the square and the multiplication keeps numbers even smaller: $225^2 \equiv 442 \equiv -27$, and $(-27) \cdot 25 = -675 \equiv 263 \pmod{469}$.)
 
 Step through the calculation below to see each squaring and multiplication animate:
 
@@ -113,8 +115,11 @@ print(np.round(np.linalg.matrix_power(P, 64)[0], 4).tolist())  # [0.8333, 0.1667
 
 Both rows end up the same: wherever the chain starts, it spends five-sixths of its time in state 1. **Diffusion models**, the image generators behind tools like Stable Diffusion, lean on the same kind of shortcut. Training adds noise to an image over hundreds of small steps, and a closed-form formula jumps straight to any step, so training never has to simulate them one by one.
 
-<Callout tone="orange" label="Don't write mod(a^m, n)">
-In MATLAB, `mod(25^193, 469)` is wrong. `25^193` is too big for a double to store exactly, so its low digits are gone before `mod` sees them. Use `powermod(25, 193, 469)` from the Symbolic Math Toolbox, or reduce after each step as in the code panel. The same goes for Python's `pow(a, m, n)` versus `a**m % n`, where the slow form gives the right answer but can take forever.
+<Callout tone="orange" label="Common errors">
+- **Forgetting to square on bit 1:** A common misconception is that bit 0 means "square" and bit 1 means "multiply". In reality, *every* bit after the first requires squaring the accumulator; bit 1 requires squaring *followed by* multiplying by $a$.
+- **Processing bits in the wrong direction:** Left-to-right square-and-multiply starts at the most significant bit and multiplies into the squared total. Right-to-left starts at the least significant bit and squares the base into an accumulator. Mixing the two produces incorrect results.
+- **Reducing exponents modulo $n$:** Exponents do not reduce modulo $n$ ($a^m \bmod n \ne a^{m \bmod n} \bmod n$).
+- **Writing `mod(a^m, n)` in code:** In MATLAB, `mod(25^193, 469)` is wrong. `25^193` overflows IEEE 754 doubles, wiping out the low digits before `mod` runs. Use `powermod(25, 193, 469)` from the Symbolic Math Toolbox, or reduce at each step as in the code panel. In Python, prefer `pow(a, m, n)` over `a**m % n`.
 </Callout>
 
 ## Where you'll meet this

@@ -13,7 +13,7 @@ $$
 (n - 1)! \equiv -1 \pmod{n}
 $$
 
-The proof is a good picture. Modulo a prime, every number from 1 to $n - 1$ has a partner it multiplies with to give 1, its [inverse modulo $n$](/courses/computational-mathematics/modular-inverses). These pairs all cancel, except for 1 and $n - 1$, which are their own partners. For $n = 13$, the numbers from 2 to 11 pair up cleanly:
+The proof is a good picture. Modulo a prime, every number from 1 to $n - 1$ has a partner it multiplies with to give 1, its [inverse modulo $n$](/courses/computational-mathematics/modular-inverses). These pairs all cancel, except for 1 and $n - 1$, which are their own partners. Why are 1 and $n - 1$ the only self-inverses? A number $x$ is its own inverse when $x^2 \equiv 1 \pmod n$, which means $x^2 - 1 \equiv (x - 1)(x + 1) \equiv 0 \pmod n$. When $n$ is prime, a product can only be a multiple of $n$ if $n$ divides one of the factors: $x \equiv 1$ or $x \equiv -1 \equiv n - 1$. Every other number $2, 3, \dots, n - 2$ pairs with a distinct partner, and each pair multiplies to 1. For $n = 13$, the numbers from 2 to 11 pair up cleanly:
 
 $$
 \begin{aligned}
@@ -62,13 +62,15 @@ $$
 
 For $a = 7$ and $n = 19$: $7^2 \equiv 11$, $7^4 \equiv 7$, $7^8 \equiv 11$, $7^{16} \equiv 7$, and so $7^{18} = 7^{16} \cdot 7^2 \equiv 7 \cdot 11 \equiv 1 \pmod{19}$. Squaring repeatedly like this is the idea behind [fast exponentiation](/courses/computational-mathematics/fast-exponentiation).
 
-It's also a shortcut for big powers. To show $5^{38} \equiv 4 \pmod{11}$, use $5^{10} \equiv 1$:
+It's also a shortcut for big powers. To evaluate $5^{38} \pmod{11}$, divide the exponent 38 by $11 - 1 = 10$, which gives $38 = 3 \cdot 10 + 8$:
 
 $$
-5^{38} = (5^{10})^3 \cdot 5^8 \equiv 1^3 \cdot (5^2)^4 \equiv 3^4 = 81 \equiv 4 \pmod{11}
+5^{38} = (5^{10})^3 \cdot 5^8 \equiv 1^3 \cdot 5^8 = 5^8 \pmod{11}
 $$
 
-Similarly, to find $2^{90} \bmod 11$:
+Then reduce $5^8$ by repeated squaring: $5^2 = 25 = 2 \cdot 11 + 3 \equiv 3$, $5^4 \equiv 3^2 = 9 \equiv -2$, and $5^8 \equiv (-2)^2 = 4 \pmod{11}$.
+
+Similarly, to find $2^{90} \bmod 11$, since $90 = 9 \cdot 10$:
 
 $$
 2^{90} = (2^{10})^9 \equiv 1^9 \equiv 1 \pmod{11}
@@ -115,8 +117,8 @@ There are 24 numbers on this list, so $\phi(35) = 24$.
 Some values and formulas follow directly:
 
 - An integer $n > 1$ is prime if and only if $\phi(n) = n - 1$.
-- For a prime power, $\phi(p^k) = p^k - p^{k-1} = p^k \left(1 - \frac{1}{p}\right)$.
-- In general, if $n = p_1^{a_1} p_2^{a_2} \cdots p_r^{a_r}$ is the prime factorization of $n$:
+- For a prime power, $\phi(p^k) = p^k - p^{k-1} = p^k \left(1 - \frac{1}{p}\right)$. Why? The only numbers in $\{1, 2, \dots, p^k\}$ sharing a factor with $p^k$ are the multiples of $p$: $\{1p, 2p, \dots, p^{k-1}p\}$. There are $p^{k-1}$ of them; subtracting them leaves $p^k - p^{k-1}$.
+- Euler's totient is a **multiplicative function**, meaning $\phi(a \cdot b) = \phi(a) \cdot \phi(b)$ whenever $\gcd(a, b) = 1$. In general, if $n = p_1^{a_1} p_2^{a_2} \cdots p_r^{a_r}$ is the prime factorization of $n$:
 
 $$
 \phi(n) = \phi(p_1^{a_1}) \cdots \phi(p_r^{a_r}) = n \left(1 - \frac{1}{p_1}\right)\left(1 - \frac{1}{p_2}\right) \cdots \left(1 - \frac{1}{p_r}\right)
@@ -185,6 +187,12 @@ print(pow(3, 4, 10), pow(2, 10, 11))  # 1 1
 ```
 
 </CodeTabs>
+
+<Callout tone="orange" label="Common errors">
+- **Applying Fermat or Euler when not coprime:** Both theorems require $\gcd(a, n) = 1$. If $a$ is a multiple of $n$, then $a^{\phi(n)} \equiv 0 \pmod n$, not 1.
+- **Multiplying totients without checking coprimality:** The rule $\phi(a \cdot b) = \phi(a) \cdot \phi(b)$ holds *only* when $\gcd(a, b) = 1$. For example, $\phi(4) = 2$, but $\phi(2) \cdot \phi(2) = 1 \cdot 1 = 1 \ne 2$.
+- **Using $n - 1$ instead of $\phi(n)$ for composite numbers:** Fermat's Little Theorem exponent is $p - 1$ exclusively for primes. For composite numbers (such as $n = 10$), powers cycle every $\phi(n)$ steps ($\phi(10) = 4$), not $n - 1 = 9$.
+</Callout>
 
 ## Where you'll meet this
 
