@@ -23,7 +23,7 @@ $$
 \text{SNR} = 10 \log_{10} \frac{\lVert x \rVert^2}{\lVert x - \hat{x} \rVert^2} \quad \text{in decibels (dB)}
 $$
 
-Here $\log_{10}(r)$ is the **base-10 logarithm**, the power of $10$ that gives $r$. For example, $\log_{10}(1) = 0$ ($10^0 = 1$), $\log_{10}(10) = 1$ ($10^1 = 10$), and $\log_{10}(100) = 2$ ($10^2 = 100$). Multiplying by $10$ puts the ratio in **decibels (dB)**:
+Here $\log_{10}(r)$ is the **base-10 logarithm** (an ordinary [logarithm](/courses/computational-mathematics/discrete-logarithms#logarithms-modulo-a-prime)), the power of $10$ that gives $r$. For example, $\log_{10}(1) = 0$ ($10^0 = 1$), $\log_{10}(10) = 1$ ($10^1 = 10$), and $\log_{10}(100) = 2$ ($10^2 = 100$). Multiplying by $10$ puts the ratio in **decibels (dB)**:
 
 - **0 dB** means the energy ratio is $1$ ($10 \log_{10}(1) = 0$), so the leftover error has the same energy as the voice.
 - **+3 dB** means the energy ratio is about $2$, because $\log_{10}(2) \approx 0.301$ and $10 \times 0.301 \approx 3.01$ dB.
@@ -102,7 +102,7 @@ print(round(snr_db, 4))  # 12.1388
 </CodeTabs>
 
 <Callout tone="sky" label="The same numbers train AI">
-Dividing the squared error $\lVert x - \hat{x} \rVert^2$ by the sample count $N$ gives the [mean squared error](/courses/computational-mathematics/derivatives-and-curve-fitting#derivatives), $\frac{1}{N}\sum_n (x(n) - \hat{x}(n))^2$. Most machine learning models minimise this loss while training. Speech-enhancement networks, such as the noise filters in Zoom and Teams, train on losses like this and report their results using SNR in decibels.
+Dividing the squared error $\lVert x - \hat{x} \rVert^2$ by the sample count $N$ gives the [mean squared error](/courses/computational-mathematics/derivatives-and-curve-fitting#derivatives), $\frac{1}{N}\sum_n (x(n) - \hat{x}(n))^2$. Most machine learning models minimise this loss while training. Speech-enhancement networks, such as the noise filters in [real-time calls](/courses/computer-networks/udp-and-ports), train on losses like this and report their results using SNR in decibels.
 </Callout>
 
 ## The trade-off

@@ -112,7 +112,7 @@ print(sum(a * b for a, b in zip([1, -2, 3, 4], [2, 3, -2, 1])))  # -6
 
 </CodeTabs>
 
-The sign of the answer has a meaning. To see it, draw each vector as an arrow from the origin $(0, 0)$ to the point it names: $(3, 1)$ is an arrow pointing right and a little up. A second formula for the same number then shows why the sign matters. If $\theta$ is the angle between the two arrows and $\|a\|$, $\|b\|$ are their lengths, then
+The sign of the answer has a meaning. To see it, draw each vector as an arrow from the origin $(0, 0)$ to the [coordinates](/courses/computer-graphics/pixel-coordinates) $(3, 1)$ it names: an arrow pointing right and a little up. A second formula for the same number then shows why the sign matters. If $\theta$ is the angle between the two arrows and $\|a\|$, $\|b\|$ are their lengths, then
 
 $$
 a \cdot b = \|a\|\,\|b\|\cos\theta
@@ -210,7 +210,7 @@ Putting the transpose on the wrong vector. `x' * y` and `x * y'` look almost the
 
 Recommendation systems use both. A classic film recommender learns a short vector for every user and every film. Each entry measures one hidden taste, such as "likes action". A predicted rating is the **dot product** of a user's vector and a film's vector, so it's high when the user's tastes match what the film offers. The **outer product** builds a whole table at once: a column of every user's action score times a row of every film's action score gives the "action" part of every prediction.
 
-The transpose is useful in machine learning too. If $X$ holds one example per row, then $X'X$ takes the dot product of every feature column with every other. Suppose the data is centred: each column's mean has already been subtracted, so every feature averages 0. Then $X'X$ divided by $n$ (or by $n - 1$, depending on the convention) is the **covariance matrix**. It records which features go up and down together, and you'll meet it again in [the trace](/courses/computational-mathematics/norms-and-trace#the-trace).
+The transpose is useful in machine learning too. If $X$ holds one example per row, then $X'X$ takes the dot product of every feature column with every other. Suppose the data is centred: each column's [mean](/courses/discrete-mathematics/probability-and-expectation#random-variables-and-expectation) has already been subtracted, so every feature averages 0. Then $X'X$ divided by $n$ (or by $n - 1$, depending on the convention) is the **covariance matrix**. It records which features go up and down together, and you'll meet it again in [the trace](/courses/computational-mathematics/norms-and-trace#the-trace).
 
 <CodeTabs>
 

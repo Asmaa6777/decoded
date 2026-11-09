@@ -188,7 +188,7 @@ print(np.array_equal(fast, slow))  # True
 
 The loops never form the 4-by-4 Kronecker product. For two 1000-by-1000 factors the full product would have $10^{12}$ entries, while $S$, $T$ and $X$ together hold about three million.
 
-This saving is what makes a Kronecker product useful in machine learning, where it's used the other way round: to make a huge matrix small. Some optimizers need the **curvature** of the loss for every pair of weights. Curvature measures how quickly the slope itself changes. With a million weights, that's a million-by-million matrix. It's far too large to store, and much too large to invert. **K-FAC** approximates each layer's block of it as a Kronecker product of two small matrices. That helps because
+This saving is what makes a Kronecker product useful in machine learning, where it's used the other way round: to make a huge matrix small. Some optimizers need the **curvature** of the loss for every pair of weights. Curvature measures how quickly the [slope](/courses/computer-graphics/slope-and-the-line-equation#slope) itself changes. With a million weights, that's a million-by-million matrix. It's far too large to store, and much too large to invert. **K-FAC** approximates each layer's block of it as a Kronecker product of two small matrices. That helps because
 
 $$
 (A \otimes B)^{-1} = A^{-1} \otimes B^{-1}

@@ -3,7 +3,7 @@ import { ElementwiseVisualizer } from "@/components/mdx/MatrixVisualizers";
 
 # Matrices and MATLAB
 
-A **matrix** is a rectangular grid of numbers. Many programs are built on this simple idea. A photo is a matrix of pixel values. A spreadsheet is a matrix with labels. A neural network layer is mostly a matrix of weights.
+A **matrix** is a rectangular grid of numbers. Many programs are built on this simple idea. A photo is a [bitmap](/courses/computer-graphics/pixels-and-the-image-grid#a-bitmap) of pixel values. A spreadsheet is a matrix with labels. A neural network layer is mostly a matrix of weights.
 
 This course uses MATLAB because its syntax is close to the maths on paper. Every code block also has a Python version, using NumPy and pandas: switch with the tabs on top, and your choice applies to every block in the course.
 
@@ -89,7 +89,7 @@ print(X.shape)  # (3, 2)
 
 ## Two example matrices
 
-MATLAB has dozens of functions that build matrices. We'll keep coming back to two of them because they're small and easy to recognise. The **main diagonal** of a matrix is the line of entries $a_{11}, a_{22}, a_{33}, \dots$ from the top-left corner down to the right. On it, the row number equals the column number. `pascal(3)` is **symmetric**, meaning it looks the same when you mirror it across its main diagonal: $a_{ij} = a_{ji}$ for every $i$ and $j$. Check one pair: row 2, column 3 holds 3, and so does row 3, column 2. `magic(3)` isn't symmetric, but all its rows, columns and both diagonals add up to 15.
+MATLAB has dozens of functions that build matrices. We'll keep coming back to two of them because they're small and easy to recognise. The **main diagonal** of a matrix is the line of entries $a_{11}, a_{22}, a_{33}, \dots$ from the top-left corner down to the right. On it, the row number equals the column number. `pascal(3)` (built from [Pascal's triangle](/courses/discrete-mathematics/permutations-and-combinations#pascals-triangle)) is **symmetric**, meaning it looks the same when you mirror it across its main diagonal: $a_{ij} = a_{ji}$ for every $i$ and $j$. Check one pair: row 2, column 3 holds 3, and so does row 3, column 2. `magic(3)` isn't symmetric, but all its rows, columns and both diagonals add up to 15.
 
 <CodeTabs>
 
@@ -188,7 +188,7 @@ print([[a + b for a, b in zip(rp, rq)] for rp, rq in zip(P, Q)])  # [[6, 8], [10
 
 </CodeTabs>
 
-Machine learning uses this all the time to prepare data. Features are often measured in different units, like centimetres and kilograms. So they are usually **standardised** first: subtract each column's mean, then divide by its **standard deviation**. The standard deviation measures how far values usually are from their mean. Afterwards every feature sits around 0 on a similar scale. Without this step, the feature with the biggest numbers would control the model. A change of 10 in centimetres would count as much as a change of 10 in kilograms.
+Machine learning uses this all the time to prepare data. Features are often measured in different units, like centimetres and kilograms. So they are usually **standardised** first: subtract each column's mean, then divide by its **standard deviation**. The standard deviation measures how far values usually are from their [mean](/courses/discrete-mathematics/probability-and-expectation#random-variables-and-expectation). Afterwards every feature sits around 0 on a similar scale. Without this step, the feature with the biggest numbers would control the model. A change of 10 in centimetres would count as much as a change of 10 in kilograms.
 
 Two details in the code below need explaining. `mean(X)` returns one mean per column, a 1-by-2 row, so `X - mean(X)` subtracts a row from a 3-by-2 matrix. That works because MATLAB (since 2016) and NumPy **broadcast**: a single row is copied down to fill every row before the subtraction. And `./` is entry-by-entry division. The dot tells MATLAB to work entry by entry rather than use the matrix version of the operation, which you'll meet with [multiplication](/courses/computational-mathematics/multiplying-matrices#the-rule). Finally, the standard deviation is the square root of the average squared distance from the mean. Some books average by dividing by $n - 1$ instead of $n$, which corrects a small bias when the data is only a sample. `std(X, 1)` divides by $n$, which matches NumPy's default.
 

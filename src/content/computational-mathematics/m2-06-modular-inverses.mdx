@@ -10,7 +10,7 @@ Modular arithmetic has no fractions, so how do you divide? You multiply by an **
 If $\gcd(a, n) = 1$, the equation $a \cdot x \equiv b \pmod n$ has a solution, and it's unique modulo $n$. So $a$ has an inverse exactly when it's [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $n$:
 
 - **Existence:** By Bézout's identity, $\gcd(a, n) = 1$ implies integers $x$ and $y$ satisfy $ax + ny = 1$. Reducing modulo $n$ eliminates $ny$ ($ny \equiv 0$), leaving $a \cdot x \equiv 1 \pmod n$.
-- **Uniqueness:** Suppose two integers satisfy $a x_1 \equiv a x_2 \equiv 1 \pmod n$. Then $a(x_1 - x_2) \equiv 0 \pmod n$, so $n \mid a(x_1 - x_2)$. Because $\gcd(a, n) = 1$, $n$ shares no factors with $a$. That forces $n \mid (x_1 - x_2)$, proving $x_1 \equiv x_2 \pmod n$.
+- **Uniqueness:** Suppose two integers satisfy $a x_1 \equiv a x_2 \equiv 1 \pmod n$. Then $a(x_1 - x_2) \equiv 0 \pmod n$, so $n \mid a(x_1 - x_2)$. Because $\gcd(a, n) = 1$, $n$ shares no factors with $a$. That forces $n \mid (x_1 - x_2)$, proving $x_1 \equiv x_2 \pmod n$ under the [equivalence relation](/courses/discrete-mathematics/relations#equivalence-relations).
 
 For example, 2 has no inverse modulo 4, because $2x$ is always even and can't equal 1 modulo an even number.
 
@@ -134,7 +134,7 @@ print(secret)  # 23
 
 <ApplicationsGrid>
 <PracticalApplication title="Building an RSA private key" tool="OpenSSL">
-The private exponent $d$ is the inverse of the public exponent $e$ modulo a value derived from the primes. OpenSSL computes it using the extended Euclidean algorithm.
+The private exponent $d$ is the inverse of the public exponent $e$ modulo a value derived from the primes in [RSA](/courses/computer-networks/http-and-https#https-and-tls). OpenSSL computes it using the extended Euclidean algorithm.
 </PracticalApplication>
 <PracticalApplication title="Elliptic curve signatures" tool="ECDSA, Bitcoin">
 Every point addition on an elliptic curve requires division, which in a finite field means multiplying by a modular inverse.

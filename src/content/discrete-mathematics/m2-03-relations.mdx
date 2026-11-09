@@ -3,7 +3,7 @@ import { RelationGrid } from "@/components/mdx/DiscreteVisualizers";
 
 # Relations, Equivalence and Order
 
-"Follows" on a social network, "depends on" in a package manager, "is less than" on numbers, "has the same remainder as" in modular arithmetic. Each one connects some elements to others. A relation is the general idea, and a handful of properties decide what you can do with one: group things into classes, put them in order, or neither.
+"Follows" on a social network, "depends on" in a package manager, "is less than" on numbers, "has the same remainder as" in [modular arithmetic](/courses/computational-mathematics/modular-arithmetic). Each one connects some elements to others. A relation is the general idea, and a handful of properties decide what you can do with one: group things into classes, put them in order, or neither.
 
 ## What a relation is
 
@@ -14,7 +14,7 @@ Unlike a [function](/courses/discrete-mathematics/functions#what-a-function-is),
 There are three standard pictures of a relation on a small set:
 
 - a **list of pairs**: $\{(1,2), (2,3)\}$,
-- a **matrix**: row $a$, column $b$, a 1 where $a \mathrel{R} b$,
+- a [matrix](/courses/computational-mathematics/matrices-and-matlab#writing-a-matrix-down): row $a$, column $b$, a 1 where $a \mathrel{R} b$,
 - a **directed graph**: an arrow from $a$ to $b$ for each pair.
 
 The lab below uses the matrix. Click any cell to switch a pair on or off.
@@ -51,7 +51,7 @@ Load **a ≡ b (mod 3)**. The matrix shows three blocks and the lab lists the cl
 A relation that is reflexive, **antisymmetric** and transitive is a **partial order**, often written $\preceq$. It describes "comes before or is the same as."
 
 - $\le$ on numbers is a partial order, and a **total** one too: any two numbers can be compared.
-- "divides" on $\{1, \dots, 6\}$ is a partial order but not total: neither $2 \mid 3$ nor $3 \mid 2$. Those two are **incomparable**.
+- "[divides](/courses/computational-mathematics/divisibility-and-euclid#divisibility)" on $\{1, \dots, 6\}$ is a partial order but not total: neither $2 \mid 3$ nor $3 \mid 2$. Those two are **incomparable**.
 - $\subseteq$ on sets is a partial order. $\{a\}$ and $\{b\}$ are incomparable.
 
 "Partial" means some pairs have no order between them. That's exactly the situation with tasks that depend on each other: compile `utils` before `api`, but `parser` and `net` can go in either order. Turning a partial order into a full sequence that respects it is a [topological sort](/courses/discrete-mathematics/paths-and-dags#topological-sort).

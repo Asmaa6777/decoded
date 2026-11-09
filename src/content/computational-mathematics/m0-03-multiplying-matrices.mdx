@@ -155,7 +155,7 @@ print((X @ w).tolist())  # [-1.5, -2.5, -3.5]
 
 </CodeTabs>
 
-A large language model does the same thing on a huge scale: writing each word takes billions of these multiply-and-add steps. GPUs are chips built to do thousands of them at the same time, and that's why they became the main hardware for AI.
+A large language model does the same thing on a huge scale: writing each word takes billions of these multiply-and-add steps. [GPUs](/courses/computer-architecture/parallel-processing#simd-one-instruction-many-values) are chips built to do thousands of them at the same time, and that's why they became the main hardware for AI.
 
 ## The identity matrix
 
@@ -199,7 +199,7 @@ Try the presets, or drag the sliders and read the columns as the two arrows:
 
 <LinearMapGrid />
 
-Multiplying matrices means doing one map after another. $AB$ is the single matrix that applies $B$ first and then $A$. "B first" sounds backwards. It comes from where the point is written: in $(AB)x = A(Bx)$, the matrix next to $x$ acts on it first, just as $f(g(x))$ applies $g$ first. The row-times-column formula is what you get when you work out where the arrows end up. That also explains why order matters: rotating and then stretching doesn't give the same picture as stretching and then rotating.
+Multiplying matrices means doing one map after another. $AB$ is the single matrix that applies $B$ first and then $A$. "B first" sounds backwards. It comes from where the point is written: in $(AB)x = A(Bx)$, the matrix next to $x$ acts on it first, just as [composition](/courses/discrete-mathematics/functions#composition) $f(g(x))$ applies $g$ first. The row-times-column formula is what you get when you work out where the arrows end up. That also explains why order matters: rotating and then stretching doesn't give the same picture as stretching and then rotating.
 
 This picture is what a neural network layer does to its data. A **dense layer** computes $Wx + b$. Here $x$ is the input as a column, $W$ holds the layer's weights, and $b$ is a column of learned offsets called the **bias**. The matrix $W$ rotates, stretches and shears the points (a shear slants them, like the Shear preset above), the way the grid bends. This moves the points so that later layers can separate the classes, the categories the network has to tell apart, such as "cat" and "dog". Each layer then applies a **non-linear** function, one that no matrix can express, such as setting negatives to zero (called ReLU). That step is necessary. Without it, two layers $W_2(W_1 x)$ collapse into the single matrix $W_2 W_1$, so a hundred stacked linear layers can do no more than one:
 

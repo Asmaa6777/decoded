@@ -67,7 +67,7 @@ print(np.round(np.poly([-1, 2, 1]), 6).tolist())  # [1.0, -2.0, -1.0, 2.0]
 
 </CodeTabs>
 
-These two are inverse functions, up to ordering, scaling and rounding error. Ordering, because `roots` may list the roots in any order. Scaling, because `poly` always returns a polynomial whose first coefficient is 1. The roots of $2x^2 - 2$ are $\pm 1$, but `poly` of those gives back $x^2 - 1$: the same roots, at half the size. Rounding, because the roots are computed in floating point, so `poly` may return 1.9999999 where you expected 2.
+These two are inverse functions, up to ordering, scaling and rounding error. Ordering, because `roots` may list the roots in any order. Scaling, because `poly` always returns a polynomial whose first coefficient is 1. The roots of $2x^2 - 2$ are $\pm 1$, but `poly` of those gives back $x^2 - 1$: the same roots, at half the size. Rounding, because the roots are computed in [floating point](/courses/logic-design/codes-and-floating-point#floating-point-very-large-and-very-small-numbers), so `poly` may return 1.9999999 where you expected 2.
 
 Not every polynomial crosses the x-axis, though. Drag the sliders and watch the roots move. When the whole curve moves above the axis, the real roots disappear, and `roots` reports a complex pair instead:
 

@@ -90,7 +90,7 @@ For larger numbers, brute force tests successive powers:
 - **$\log_3(37) \pmod{101}$:** testing powers of 3 finds $3^{24} \equiv 37 \pmod{101}$, giving the discrete logarithm $k = 24$.
 - **$\log_{63}(1454) \pmod{2017}$:** testing powers of 63 modulo the prime 2017 finds $63^{245} \equiv 1454 \pmod{2017}$, giving $k = 245$.
 
-For primes with hundreds of digits, linear search is impossible. Specialized algorithms like baby-step giant-step and the index calculus method improve on brute force, but remain computationally intractable for cryptographic keys.
+For primes with hundreds of digits, [linear search](/courses/algorithm-design-and-analysis/linear-and-binary-search) is impossible. Specialized algorithms like baby-step giant-step and the index calculus method improve on brute force, but remain computationally intractable for cryptographic keys.
 
 A brute-force search requires only a few lines of code, illustrating how search time scales with modulus size:
 
@@ -136,7 +136,7 @@ print(pow(63, 245, 2017))            # 1454
 | Forward | Compute $a^k \bmod p$ | Fast, about $\log k$ multiplications |
 | Backward | Find $k$ from $a^k \bmod p$ | No known fast method on classical computers |
 
-This computational asymmetry enables key agreement over public channels. In **Diffie-Hellman**, two parties agree on a prime $p$ and a base $a$. Each generates a private exponent, $x$ and $y$, and transmits $A = a^x \bmod p$ and $B = a^y \bmod p$ publicly. Both compute $(a^y)^x = a^{xy} = (a^x)^y \pmod p$ to find the shared secret. An eavesdropper intercepting $A$ and $B$ must solve a discrete logarithm to recover $x$ or $y$.
+This computational asymmetry enables key agreement over public channels. In **Diffie-Hellman** (the key exchange behind [TLS](/courses/computer-networks/http-and-https#https-and-tls)), two parties agree on a prime $p$ and a base $a$. Each generates a private exponent, $x$ and $y$, and transmits $A = a^x \bmod p$ and $B = a^y \bmod p$ publicly. Both compute $(a^y)^x = a^{xy} = (a^x)^y \pmod p$ to find the shared secret. An eavesdropper intercepting $A$ and $B$ must solve a discrete logarithm to recover $x$ or $y$.
 
 Trace the arithmetic step by step with prime $p = 19$ and base $a = 2$:
 

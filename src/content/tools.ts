@@ -122,8 +122,19 @@ export const tools: Tool[] = [
       { course: "computational-mathematics", lesson: "primality-and-the-totient", mentions: "RSA" },
       { course: "computational-mathematics", lesson: "order-and-primitive-roots", mentions: "Diffie" },
       { course: "computational-mathematics", lesson: "modular-inverses", mentions: "RSA" },
+      { course: "computational-mathematics", lesson: "fast-exponentiation", mentions: "RSA" },
+      { course: "computational-mathematics", lesson: "discrete-logarithms", mentions: "Diffie" },
       { course: "computer-networks", lesson: "http-and-https", mentions: "TLS" },
       { course: "advanced-algorithms", lesson: "divide-and-conquer", mentions: "RSA" },
+    ],
+  },
+  {
+    name: "Digital audio and noise filters",
+    what: "How audio software samples continuous sound, removes noise with moving averages, and measures speech quality.",
+    lessons: [
+      { course: "computational-mathematics", lesson: "sound-and-sampling", mentions: "sampling" },
+      { course: "computational-mathematics", lesson: "averaging-is-convolution", mentions: "convolution" },
+      { course: "computational-mathematics", lesson: "measuring-the-trade-off", mentions: "decibel" },
     ],
   },
   {

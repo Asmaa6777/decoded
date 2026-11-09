@@ -109,7 +109,7 @@ print(pow(2, 560, 561))  # 1
 
 If $a^{n-1} \not\equiv 1 \pmod n$, then $n$ is composite. The converse does not always hold. Rare composite integers called Carmichael numbers, such as 561, pass this test for every coprime base $a$. For that reason, cryptographic tools use the stronger Miller-Rabin test.
 
-Miller-Rabin is a **randomised** primality test. It selects random bases, and a composite number passes a single round with probability at most $1/4$. Forty independent rounds reduce the error probability below $2^{-80}$, which is less likely than an undetected hardware fault. Machine learning employs a similar trade-off. **Stochastic gradient descent** evaluates gradients on small random minibatches instead of full datasets. While individual gradients carry variance, updates compute thousands of times faster, and noise cancels out across iterations.
+Miller-Rabin is a **randomised** primality test. It selects random bases, and a composite number passes a single round with probability at most $1/4$. Forty [independent](/courses/discrete-mathematics/probability-and-expectation#independence) rounds reduce the error probability below $2^{-80}$, which is less likely than an undetected hardware fault. Machine learning employs a similar trade-off. **Stochastic gradient descent** evaluates gradients on small random minibatches instead of full datasets. While individual gradients carry variance, updates compute thousands of times faster, and noise cancels out across iterations.
 
 ## Euler's totient function
 
@@ -214,7 +214,7 @@ print(pow(3, 4, 10), pow(2, 10, 11))  # 1 1
 
 <ApplicationsGrid>
 <PracticalApplication title="How RSA decrypts" tool="TLS, SSH, PGP">
-RSA chooses its two exponents so their product is $1$ modulo $\phi(n)$. The Euler-Fermat theorem then guarantees that encrypting followed by decrypting returns the original message.
+[RSA](/courses/computer-networks/http-and-https#https-and-tls) chooses its two exponents so their product is $1$ modulo $\phi(n)$. The Euler-Fermat theorem then guarantees that encrypting followed by decrypting returns the original message.
 </PracticalApplication>
 <PracticalApplication title="Generating large primes" tool="OpenSSL">
 Key generation picks random large numbers and runs Miller-Rabin, a descendant of Fermat's test, until one passes.

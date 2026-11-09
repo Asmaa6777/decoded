@@ -153,7 +153,7 @@ print([pow(5, k, 7) for k in range(1, 7)])  # [5, 4, 6, 2, 3, 1]
 
 </CodeTabs>
 
-That long cycle allows computers to generate pseudorandom numbers. Machine learning relies heavily on pseudorandom sequences: initial model weights, dataset shuffling, and dropout masks all derive from a random number generator. A **Lehmer generator** produces this exact power sequence by repeatedly multiplying by $a$ modulo a prime. Choosing a primitive root for $a$ yields the maximum possible period before values repeat. Modulo 7, the full cycle has length $p - 1 = 6$, so generating 7 steps shows the sequence cycling back to 3:
+That long cycle allows computers to generate pseudorandom numbers. Machine learning relies heavily on pseudorandom sequences: initial model weights, dataset [shuffling](/courses/discrete-mathematics/probability-and-expectation#random-variables-and-expectation), and dropout masks all derive from a random number generator. A **Lehmer generator** produces this exact power sequence by repeatedly multiplying by $a$ modulo a prime. Choosing a primitive root for $a$ yields the maximum possible period before values repeat. Modulo 7, the full cycle has length $p - 1 = 6$, so generating 7 steps shows the sequence cycling back to 3:
 
 <CodeTabs>
 
@@ -262,7 +262,7 @@ If $a$ is a primitive root of a prime $p$, the powers $a^1, a^2, \dots, a^{p-1}$
 
 <ApplicationsGrid>
 <PracticalApplication title="Agreeing on a shared key" tool="Diffie-Hellman, TLS">
-Diffie-Hellman needs a base with a large order. A small cycle would leave an attacker very few possibilities to try.
+[Diffie-Hellman](/courses/computer-networks/http-and-https#https-and-tls) needs a base with a large order. A small cycle would leave an attacker very few possibilities to try.
 </PracticalApplication>
 <PracticalApplication title="Generating random numbers" tool="Lehmer generators">
 A multiplicative random number generator computes $x \to ax \bmod p$. Choosing a primitive root as $a$ gives it the longest possible period.

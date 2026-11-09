@@ -77,7 +77,7 @@ Its sign is $(-1)^{2+3} = -1$, so the cofactor is $C_{23} = -22$.
 
 ## The inverse
 
-The **inverse** $A^{-1}$ satisfies $AA^{-1} = A^{-1}A = I$. Here $I$ is the [identity matrix](/courses/computational-mathematics/multiplying-matrices#the-identity-matrix). The inverse exists exactly when $\det(A) \ne 0$. The squashed grid shows why. A zero determinant means the map flattens area to nothing. Different points land in the same place, and no map can separate them again. A matrix without an inverse is called **singular**, and one with an inverse is **non-singular**.
+The **inverse** $A^{-1}$ satisfies $AA^{-1} = A^{-1}A = I$. Here $I$ is the [identity matrix](/courses/computational-mathematics/multiplying-matrices#the-identity-matrix). The inverse exists exactly when $\det(A) \ne 0$. The squashed grid shows why. A zero determinant means the map flattens area to nothing. Different points land in the same place (the map is not [injective](/courses/discrete-mathematics/functions#three-properties)), and no map can separate them again. A matrix without an inverse is called **singular**, and one with an inverse is **non-singular**.
 
 For a 2-by-2 matrix, the general formula below becomes a shortcut worth remembering: swap $a$ and $d$, change the signs of $b$ and $c$, and divide by the determinant.
 
@@ -196,7 +196,7 @@ print(round(np.linalg.det(M5)))  # 5070000
 </CodeTabs>
 
 <Callout tone="orange" label="Computers round">
-`magic(4)` is singular, so its determinant is exactly 0. MATLAB's `det(magic(4))` returns a tiny value around $-1.45 \times 10^{-12}$ instead, because it works in **floating point**. It stores each number to about 16 significant digits, so every step rounds a little, and the small errors don't cancel out exactly. Don't test `det(A) == 0` in real code. Use `rank`, which counts directions with a tolerance, or `cond`, the **condition number**, which says how much the matrix can magnify small errors. A huge condition number means the matrix is singular or nearly so.
+`magic(4)` is singular, so its determinant is exactly 0. MATLAB's `det(magic(4))` returns a tiny value around $-1.45 \times 10^{-12}$ instead, because it works in [floating point](/courses/logic-design/codes-and-floating-point#floating-point-very-large-and-very-small-numbers). It stores each number to about 16 significant digits, so every step rounds a little, and the small errors don't cancel out exactly. Don't test `det(A) == 0` in real code. Use `rank`, which counts directions with a tolerance, or `cond`, the **condition number**, which says how much the matrix can magnify small errors. A huge condition number means the matrix is singular or nearly so.
 </Callout>
 
 ## Don't use `inv` to solve equations

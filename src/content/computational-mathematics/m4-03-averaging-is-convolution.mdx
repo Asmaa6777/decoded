@@ -68,7 +68,7 @@ Step through it on the recording from the [last lesson](/courses/computational-m
 **Sharp spike.** Now switch the stepper to $[0\ 0\ 6\ 0\ 0]$. Padded with zeros, it is $[0\ 0\ 0\ 6\ 0\ 0\ 0]$. At position 1, the window $[0,\ 0,\ 0]$ averages to $0$. At positions 2, 3 and 4, the windows are $[0,\ 0,\ 6]$, $[0,\ 6,\ 0]$ and $[6,\ 0,\ 0]$. Each window holds one 6 and two zeros, so each averages to $\tfrac13 \cdot 6 = 2$. At position 5, the window $[0,\ 0,\ 0]$ gives $0$ again. The single spike of height 6 has spread across three samples of height 2: $[0\ 2\ 2\ 2\ 0]$. That spike was part of the clean signal, yet averaging flattened it.
 
 <Callout tone="orange" label="The catch">
-Averaging cannot tell noise from a sudden change in the signal. It smooths both: in signal processing, a filter that lets slow changes pass and blocks fast ones is called a **low-pass filter**. In speech, the fast changes are consonants like "s", "t" and "k", so too much averaging makes a voice sound muffled. The [last lesson](/courses/computational-mathematics/measuring-the-trade-off) measures this trade-off.
+Averaging cannot tell noise from a sudden change in the signal. It smooths both: in signal processing, a filter that lets slow changes pass and blocks fast ones is called a **low-pass filter** (just like the [blur filters](/courses/computer-graphics/aliasing#three-ways-to-fight-jaggies) used to antialias graphics). In speech, the fast changes are consonants like "s", "t" and "k", so too much averaging makes a voice sound muffled. The [last lesson](/courses/computational-mathematics/measuring-the-trade-off) measures this trade-off.
 </Callout>
 
 ## The formula
