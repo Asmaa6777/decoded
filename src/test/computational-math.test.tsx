@@ -237,6 +237,37 @@ describe("the matrices quiz's hand calculations", () => {
   });
 });
 
+describe("the number theory quiz's hand calculations", () => {
+  it("has the right answer for every calculation question", () => {
+    expect(Math.floor(-29 / 8)).toBe(-4); // q1
+    expect(mod(-29, 8)).toBe(3); // q1
+    expect(euclidSteps(247, 143)[0]).toMatchObject({ q: 1, r: 104 }); // q2
+    expect(gcd(1281, 243)).toBe(3); // q3
+    expect(mod(-28, 81)).toBe(53); // q4
+    expect(mod(7653 * 915, 10)).toBe(5); // q5
+    expect(gcd(4, 20)).toBe(4); // q6: cancelling 4 divides modulus to 20/4 = 5
+    expect(isPrime(53)).toBe(true); // q7
+    expect(53).toBeLessThanOrEqual(Math.floor(Math.sqrt(3457))); // q7
+    expect(59).toBeGreaterThan(Math.floor(Math.sqrt(3457))); // q7
+    expect(7 * 7).toBe(49); // q8
+    expect(mod(8132619, 11)).toBe(0); // q9
+    expect(mod(Array.from({ length: 12 }, (_, i) => i + 1).reduce((acc, x) => (acc * x) % 13, 1), 13)).toBe(12); // q10
+    expect(phi(3600)).toBe(960); // q11
+    expect(modPow(5, 38, 11)).toBe(4); // q12
+    expect(order(3, 16)).toBe(4); // q13
+    expect(phi(phi(19))).toBe(6); // q14
+    expect(primitiveRoots(19)).toHaveLength(6); // q14
+    expect(order(2, 7)).toBe(3); // q15
+    expect(inverseMod(17, 61)).toBe(18); // q16
+    expect(inverseMod(7, 26)).toBe(15); // q17
+    expect(gcd(8, 26)).toBe(2); // q18
+    expect(inverseMod(8, 26)).toBeNull(); // q18
+    expect(modPow(3, 7, 13)).toBe(3); // q20
+    expect(discreteLog(11, 2, 19)).toBe(12); // q21
+    expect(modPow(14, 5, 19)).toBe(10); // q22
+  });
+});
+
 describe("determinants and inverses", () => {
   const A = [[1, 2, 3], [0, 1, 4], [5, 6, 0]];
   it("computes determinants, including the 3-by-3 examples", () => {
