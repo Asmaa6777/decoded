@@ -31,8 +31,8 @@ Here $\log_{10}(r)$ is the **base-10 logarithm**, the power of $10$ that gives $
 
 **Larger is better.** Because the norms are squared inside the fraction, cutting the error norm $\lVert x - \hat{x} \rVert$ in half divides $\lVert x - \hat{x} \rVert^2$ by $2^2 = 4$. That multiplies the energy ratio by $4$ and adds $10 \log_{10}(4) \approx 6.02$ dB to the SNR.
 
-<Callout tone="orange" label="Common mistake">
-Using $x - y$ (the added noise) instead of $x - \hat{x}$ (the leftover error after filtering), or forgetting to square the norms inside $10 \log_{10}(\dots)$. After filtering, the error is $x - \hat{x}$, which combines whatever noise was not cancelled with whatever distortion the filter caused. Also, squaring the norms makes `10 * log10(norm(x)^2 / norm(x - x_hat)^2)` equal to `20 * log10(norm(x) / norm(x - x_hat))`. Leaving out the squares with `10 * log10` cuts the decibel result in half.
+<Callout tone="orange" label="Common mistake: 10 vs 20 and squared norms">
+Using $x - y$ (the added noise) instead of $x - \hat{x}$ (the leftover error after filtering), or confusing power and amplitude formulas. Decibels for energy or power use $10 \log_{10}(\text{energy ratio})$. Decibels for amplitudes or norms use $20 \log_{10}(\text{amplitude ratio})$. Because energy is norm squared ($\lVert x \rVert^2$), the logarithm property $\log_{10}(a^2) = 2 \log_{10}(a)$ means `10 * log10(norm(x)^2 / norm(x - x_hat)^2)` equals `20 * log10(norm(x) / norm(x - x_hat))`. Leaving out the squares when using `10 * log10` cuts the decibel result in half.
 </Callout>
 
 ## Worked example
@@ -55,7 +55,7 @@ $$
 - Error vector: $x - \hat{x} = [\tfrac23,\ -\tfrac13,\ \tfrac13,\ -\tfrac13,\ \tfrac23] \approx [0.67,\ -0.33,\ 0.33,\ -0.33,\ 0.67]$.
 - Squared error norm: $\lVert x - \hat{x} \rVert^2 = \frac{4 + 1 + 1 + 1 + 4}{9} = \frac{11}{9} \approx 1.2222 \approx 1.22$.
 - Error norm: $\lVert x - \hat{x} \rVert = \sqrt{11/9} \approx 1.1055 \approx 1.11$.
-- SNR: $10 \log_{10}(20 / (11/9)) = 10 \log_{10}(180 / 11) \approx 12.14 \approx 12.1\text{ dB}$.
+- SNR: $10 \log_{10}(20 / (11/9)) = 10 \log_{10}(20 \times \tfrac{9}{11}) = 10 \log_{10}(\tfrac{180}{11}) \approx 10 \times 1.2139 \approx 12.14 \approx 12.1\text{ dB}$.
 
 | | errors $x - \hat{x}$ | $\lVert x - \hat{x} \rVert^2$ | $\lVert x - \hat{x} \rVert$ | SNR |
 |---|---|---|---|---|
@@ -107,7 +107,14 @@ Dividing the squared error $\lVert x - \hat{x} \rVert^2$ by the sample count $N$
 
 ## The trade-off
 
-Why doesn't the SNR keep rising as $M$ grows? The error $x - \hat{x}$ combines two parts. Leftover random noise shrinks like $\sigma / \sqrt{M}$ as $M$ grows. At the same time, **signal distortion** (blurring of the clean voice) *grows* as the window $M$ gets wider than the voice's fast details.
+Why doesn't the SNR keep rising as $M$ grows? The error $x - \hat{x}$ combines two opposing parts. Let $\bar{x}$ be the moving average of the clean voice and $\bar{e}$ be the moving average of the noise. Then $\hat{x} = \bar{x} + \bar{e}$, so the error vector splits cleanly:
+
+$$
+x - \hat{x} = \underbrace{\big(x - \bar{x}\big)}_{\text{signal distortion (blur)}} - \underbrace{\bar{e}}_{\text{residual noise}}
+$$
+
+1. **Residual noise $\bar{e}$ shrinks** like $\sigma / \sqrt{M}$ as $M$ grows, because neighbouring independent noise bumps cancel out.
+2. **Signal distortion $x - \bar{x}$ grows** as the window $M$ widens. When $M = 1$, $\bar{x} = x$ and distortion is zero; as $M$ grows larger than the voice's fast variations, averaging blurs away true signal features.
 
 The signal below has slow waves, one sharp spike and one fast burst. Increase $M$ and watch the noise shrink, then watch the spike and the burst flatten:
 
@@ -123,18 +130,18 @@ You can hear the same trade-off with your ears. Below is a synthesized voice, a 
 
 <HearIt />
 
-At small $M$, the hiss fades while the voice stays clear. At $M = 60$, the hiss is gone, but the voice sounds muffled because the wide window erases the higher overtones. In this player ($F_s = 22{,}050$ Hz), the 10th overtone at $10 \times 140 = 1{,}400$ Hz has a cycle of only $22{,}050 / 1{,}400 \approx 16$ samples. Inside a 60-sample window, that overtone completes almost four full cycles, so its peaks and troughs cancel out in the average just like noise.
+At small $M$, the hiss fades while the voice stays clear. At $M = 60$, the hiss is gone, but the voice sounds muffled because the wide window erases the higher overtones. In this player ($F_s = 22{,}050$ Hz, half the CD rate to save browser computation while easily keeping speech frequencies up to $11{,}025$ Hz), the 10th overtone at $10 \times 140 = 1{,}400$ Hz has a cycle of only $22{,}050 / 1{,}400 \approx 16$ samples. Inside a 60-sample window, that overtone completes almost four full cycles, so its peaks and troughs cancel out in the average just like noise.
 
 ## Your project
 
 You now have every piece. Here is the full project to run on a real recording.
 
-1. **Record yourself** saying a short sentence, about 3 seconds, and load it as a vector `x`. If the file is stereo (2 columns), keep the first column with `x = x(:, 1)` in MATLAB or `x = x[:, 0]` in Python.
+1. **Record yourself** saying a short sentence, about 3 seconds, and load it as a vector `x`. If the file is stereo (2 columns), keep the first column: in MATLAB use `if size(x, 2) > 1, x = x(:, 1); end`, or in Python use `x = x[:, 0] if x.ndim > 1 else x` (checking dimensions prevents an indexing error on mono recordings).
 2. **Add noise** with a fixed seed: `rng(42); y = x + sigma * randn(size(x));`. Start with $\sigma$ around 0.05; recordings are quieter than the examples here.
 3. **Filter** with `x_hat = conv(y, ones(1, M) / M, 'same')` for every $M$ from 1 to 61.
 4. **Measure** the error norm and the SNR for each $M$, and plot SNR against $M$.
-5. **Find the best $M$** and listen with `sound(x_hat, Fs)` at the best $M$, at a much smaller one and at a much larger one.
+5. **Find the best $M$** and listen at the best $M$, at a much smaller one and at a much larger one. In MATLAB, use `sound(x_hat, Fs)`. In Python, save with `sf.write('filtered.wav', x_hat, Fs)` to play in your audio player, or use `IPython.display.Audio(x_hat, rate=Fs)` in a notebook.
 6. **Explain** the shape of the curve in your own words, using the $\sqrt{M}$ rule from the [noise lesson](/courses/computational-mathematics/noise-and-averaging#why-averaging-neighbours-removes-noise) and the spike example from the [convolution lesson](/courses/computational-mathematics/averaging-is-convolution#what-just-happened).
 7. **Repeat** for three different values of $\sigma$ and report how the best $M$ moves.
 
-To go further, try a wider centre-heavy kernel and compare its best SNR with the plain average. You can also try undoing the filter with `deconv` from the [polynomial division lesson](/courses/computational-mathematics/multiplying-and-dividing#deconvolution). Long division amplifies even tiny noise in `y` at each step, so the recovered numbers quickly grow huge.
+To go further, try a wider centre-heavy kernel and compare its best SNR with the plain average. You can also try undoing the filter with `deconv` from the [polynomial division lesson](/courses/computational-mathematics/multiplying-and-dividing#deconvolution). Polynomial long division divides each step by the leading kernel weight ($1 / (1/M) = M$), so even tiny noise in $y$ is multiplied by $M$ and compounded recursively at every subsequent sample, causing the recovered numbers to explode.

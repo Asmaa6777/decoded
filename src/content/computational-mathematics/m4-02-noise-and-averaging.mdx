@@ -9,7 +9,7 @@ $$
 y(n) = x(n) + e(n)
 $$
 
-Here $n$ is the sample number ($1, 2, 3, \dots$), $x$ is the clean voice, $e$ is the noise and $y$ is what the microphone records. All three are vectors of the same length, and this is plain [vector addition](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting). Why addition? Sound waves are small changes in air pressure. When two sounds reach the microphone at the same time, their pressure changes add together.
+Here $n$ is the sample index (numbered $1, 2, 3, \dots$ matching MATLAB's 1-based indexing, or $0, 1, 2, \dots$ in Python), $x$ is the clean voice, $e$ is the noise and $y$ is what the microphone records. All three are vectors of the same length, and this is plain [vector addition](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting). Why addition? Sound waves are small changes in air pressure. When two sounds reach the microphone at the same time, their pressure changes add together.
 
 <NoiseAdd />
 
@@ -29,7 +29,7 @@ Big recordings hide what is going on, so start with five samples. The clean valu
 
 The next two lessons reuse this example: **the clean signal is [2 2 2 2 2] and the recorded signal is [3 1 3 1 3]**.
 
-Real noise does not alternate cleanly between $+1$ and $-1$. Instead, each $e(n)$ is drawn at random from a **normal distribution** (also called a **Gaussian distribution**). This distribution has a bell-shaped curve where values near the **mean** (average) are common and large jumps are rare. Here the mean is 0, so positive and negative bumps are equally likely and the noise does not shift the signal up or down on average. The noise strength $\sigma$ (sigma) is the [standard deviation](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting), which measures the typical size of a bump. In code, `randn` draws numbers with mean 0 and standard deviation 1, and [multiplying by the scalar](/courses/computational-mathematics/matrices-and-matlab#multiplying-by-a-scalar) $\sigma$ scales their spread to $\sigma$.
+Real noise does not alternate cleanly between $+1$ and $-1$. Instead, each $e(n)$ is drawn at random from a **normal distribution** (also called a **Gaussian distribution**). This distribution has a bell-shaped curve where values near the **mean** (average) are common and large jumps are rare. Here the mean is 0, so positive and negative bumps are equally likely and the noise does not shift the signal up or down on average. The noise strength $\sigma$ (sigma) is the [standard deviation](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting), which measures the typical size of a bump: about 68.3% of noise samples fall within $\pm\sigma$ of the mean, and over 95% fall within $\pm 2\sigma$. In code, `randn` draws numbers with mean 0 and standard deviation 1, and [multiplying by the scalar](/courses/computational-mathematics/matrices-and-matlab#multiplying-by-a-scalar) $\sigma$ scales their spread to $\sigma$.
 
 <GaussianBellVisualizer />
 
@@ -48,7 +48,7 @@ y =
 % realistic noise: random, but the same every run
 rng(42);                         % fix the seed
 sigma = 0.2;
-e = sigma * randn(size(x));      % normal noise, spread sigma
+e = sigma * randn(size(x));      % size(x) gives noise the exact dimensions of x
 y = x + e;
 ```
 
@@ -63,7 +63,7 @@ print(y.tolist())  # [3, 1, 3, 1, 3]
 # realistic noise: random, but the same every run
 rng = np.random.default_rng(42)  # fix the seed
 sigma = 0.2
-e = sigma * rng.standard_normal(x.shape)
+e = sigma * rng.standard_normal(x.shape)  # x.shape matches dimensions of x
 y = x + e
 ```
 
@@ -86,11 +86,13 @@ $$
 \end{aligned}
 $$
 
-The voice values are nearly equal, so their average is still the voice. On the five-sample example, take the first three recorded samples $[3, 1, 3]$. The clean part averages to $(2 + 2 + 2)/3 = 2$, and the noise part averages to $(1 - 1 + 1)/3 = 1/3 \approx 0.33$. Two of the three noise bumps cancel out, so the error shrinks from $1$ to $0.33$ while the clean $2$ stays unchanged. Watch the same cancellation on pure random noise:
+The voice values are nearly equal, so their average is still the voice. This formula calculates one cleaned sample from a group of $M$ samples. To clean the entire recording, we slide this averaging window across the signal—a moving average, which the next lesson formalizes as a convolution.
+
+On the five-sample example, take the first three recorded samples $[3, 1, 3]$. The clean part averages to $(2 + 2 + 2)/3 = 2$, and the noise part averages to $(1 - 1 + 1)/3 = 1/3 \approx 0.33$. Two of the three noise bumps cancel out, so the error shrinks from $1$ to $0.33$ while the clean $2$ stays unchanged. Watch the same cancellation on pure random noise:
 
 <NoiseAveraging />
 
-There is a rule for how much random noise shrinks: **averaging $M$ independent random samples shrinks their standard deviation by a factor of $\sqrt{M}$**. Why $\sqrt{M}$ and not $M$? When you add $M$ independent noise samples, positive and negative bumps partly cancel. Because of that, their [variances](/courses/computational-mathematics/norms-and-trace#the-trace) (squared standard deviations) add up instead of their standard deviations, growing from $\sigma^2$ to $M\sigma^2$. Taking the square root gives a sum with standard deviation $\sqrt{M}\,\sigma$, and dividing by $M$ for the average leaves
+There is a rule for how much random noise shrinks: **averaging $M$ independent random samples shrinks their standard deviation by a factor of $\sqrt{M}$**. Why $\sqrt{M}$ and not $M$? When you add $M$ independent noise samples, positive and negative bumps partly cancel. Because of that, their [variances](/courses/computational-mathematics/norms-and-trace#the-trace) (squared standard deviations) add up instead of their standard deviations, growing from $\sigma^2$ to $M\sigma^2$. Taking the square root gives a sum with standard deviation $\sqrt{M}\,\sigma$. Dividing that sum by $M$ scales its standard deviation by $1/M$ (since $\text{std}(c X) = |c| \cdot \text{std}(X)$ for any constant $c$), leaving
 
 $$
 \frac{\sqrt{M}\,\sigma}{M} = \frac{\sigma}{\sqrt{M}}

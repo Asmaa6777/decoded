@@ -34,14 +34,14 @@ $$
 Averaging 3 numbers is a weighted sum with the kernel $[\tfrac13,\ \tfrac13,\ \tfrac13]$. Every number gets the same weight, and the three weights add up to $\tfrac13 + \tfrac13 + \tfrac13 = 1$.
 
 <Callout tone="orange" label="Common mistake">
-Forgetting to divide the kernel by $M$, so the weights do not add up to 1. Convolving with $[1,\ 1,\ 1]$ adds three neighbours without dividing by 3, which makes the signal 3 times louder ($\text{sum} = 3$). To keep the volume of a steady signal unchanged, the weights in `h` must add up to 1, as in `ones(1, M) / M` or $[\tfrac14,\ \tfrac12,\ \tfrac14]$.
+Forgetting to divide the kernel by $M$, so the weights do not add up to 1. Convolving with $[1,\ 1,\ 1]$ adds three neighbours without dividing by 3, which triples the volume ($\text{sum} = 3$). A sum of weights greater than 1 amplifies the signal; a sum less than 1 attenuates it. To keep the volume of a steady signal unchanged ($1.0 \times$), the weights in `h` must add up to 1, as in `ones(1, M) / M` or $[\tfrac14,\ \tfrac12,\ \tfrac14]$.
 </Callout>
 
 ## Step 3: a window that slides
 
-A signal is a long list of numbers, while the kernel here has only 3 weights. Look at 3 numbers at a time through a **window**. Take the weighted sum of what is inside, write down the answer, then move the window one step to the right and repeat.
+A signal is a long list of numbers, while the kernel here has only 3 weights. Look at 3 numbers at a time through a **window** centered on the current sample $n$, reaching one sample to the left ($n-1$) and one to the right ($n+1$). Take the weighted sum of what is inside, write down the answer, then move the window one step to the right and repeat.
 
-Each window position gives one output number. The full list of outputs is the **convolution** of the signal with the kernel. At the first and last positions, the window extends past the ends of the signal. We pad the signal with a zero at each end (the dashed cells) so the window always holds 3 numbers.
+Each window position gives one output number. The full list of outputs is the **convolution** of the signal with the kernel. At the first and last positions, the window extends past the ends of the signal. Because a kernel of odd length $M$ reaches $(M-1)/2$ samples to each side (here $(3-1)/2 = 1$ sample), we pad the signal with one zero at each end (the dashed cells) so every window holds 3 numbers.
 
 For the noisy signal $[3\ 1\ 3\ 1\ 3]$, padding with a zero on the left and right gives $[0\ 3\ 1\ 3\ 1\ 3\ 0]$. Sliding the 3-weight average kernel $[\tfrac13,\ \tfrac13,\ \tfrac13]$ across all five window positions produces:
 
@@ -89,7 +89,7 @@ $$
 
 Here $\sum_k$ means "add up over every index $k$ in the kernel". Multiply each weight $h(k)$ by the signal value $y(n-k)$ it lines up with, then add the products. Why $n - k$ with a minus sign? It comes from [multiplying polynomials](/courses/computational-mathematics/multiplying-and-dividing#convolution), where the coefficient at position $n$ collects every pair of indices $k$ and $n - k$ that add up to $n$. As $k$ moves left to right across the kernel, $n - k$ moves right to left across the signal. That minus sign means the kernel is **flipped** (read backward) before sliding. Our kernels ($[\tfrac13,\ \tfrac13,\ \tfrac13]$, $[\tfrac14,\ \tfrac12,\ \tfrac14]$ and $[0,\ 1,\ 0]$) are symmetric, so flipping them changes nothing.
 
-An uneven kernel shows the flip clearly. Take $h = [1,\ 2,\ 3]$ (indexed $k = -1, 0, 1$) on the spike $[0\ 0\ 6\ 0\ 0]$, where the 6 sits at index 3. The non-zero terms occur when $n - k = 3$. At $n = 2, 3, 4$, the outputs are $6h(-1) = 6$, $6h(0) = 12$ and $6h(1) = 18$, giving $[0\ 6\ 12\ 18\ 0]$. On polynomial coefficients, `conv([1 2], [1 3])` returns `[1 5 6]` because $(s + 2)(s + 3) = s^2 + 5s + 6$. Smoothing a recording and multiplying polynomials use the same operation.
+An uneven kernel shows the flip clearly. Take $h = [1,\ 2,\ 3]$ with weights indexed $k = -1, 0, 1$, so $h(-1) = 1$, $h(0) = 2$ and $h(1) = 3$. In the formula, $h(1)$ multiplies $y(n - 1)$ and $h(-1)$ multiplies $y(n + 1)$. Viewed left to right across the window $[y(n-1), y(n), y(n+1)]$, the weights applied are $[h(1), h(0), h(-1)] = [3, 2, 1]$—the kernel reversed. On the spike $[0\ 0\ 6\ 0\ 0]$ where the 6 sits at index 3, at $n = 2$ the window $[0, 0, 6]$ meets weights $[3, 2, 1]$, giving $3(0) + 2(0) + 1(6) = 6$. At $n = 3$, $[0, 6, 0]$ gives $2(6) = 12$. At $n = 4$, $[6, 0, 0]$ gives $3(6) = 18$. The output is $[0\ 6\ 12\ 18\ 0]$. On polynomial coefficients, `conv([1 2], [1 3])` returns `[1 5 6]` because $(s + 2)(s + 3) = s^2 + 5s + 6$. Smoothing a recording and multiplying polynomials use the same operation.
 
 ## In code
 
@@ -127,7 +127,7 @@ import numpy as np
 
 def conv_same(x, h):
     """MATLAB's conv(x, h, 'same'): the centre of the full result."""
-    start = len(h) // 2
+    start = len(h) // 2          # skips (M-1)//2 boundary samples to keep the middle N
     return np.convolve(x, h)[start:start + len(x)]
 
 h = np.ones(3) / 3               # the kernel [1/3 1/3 1/3]

@@ -29,7 +29,7 @@ You can't hear 3 Hz; it's far too slow. People hear from about 20 Hz to 20,000 H
 
 <ToneButtons />
 
-A 440 Hz tone completes 440 cycles every second, so one cycle takes $1/440 \approx 0.00227$ seconds, or about $2.3$ milliseconds. A **millisecond** (ms) is a thousandth of a second ($10^{-3}$ s). Doubling the frequency from 220 Hz to 440 Hz makes the wave vibrate twice as fast. Your ear hears that doubling as one **octave** higher, the musical step from one note to the next note with the same name.
+The buttons above play 110, 220, 440 and 880 Hz tones. A 440 Hz tone completes 440 cycles every second, so one cycle takes $1/440 \approx 0.00227$ seconds, or about $2.3$ milliseconds. A **millisecond** (ms) is a thousandth of a second ($10^{-3}$ s). Doubling the frequency from 220 Hz to 440 Hz makes the wave vibrate twice as fast. Your ear hears each frequency doubling as one **octave** higher, the musical step from one note to the next note with the same name.
 
 ## Sampling: what "44,100 per second" means
 
@@ -39,7 +39,7 @@ The sample rate is also measured in hertz, because hertz simply means "per secon
 
 <SamplingDemo />
 
-Now set the wave to $f = 5$ Hz and the sample rate to $F_s = 7$ Hz. Every $1/7$ of a second the wave advances by $5/7$ of a cycle. Advancing by $5/7$ of a full turn reaches the same point as stepping *backward* by $2/7$ of a turn ($1 - 5/7 = 2/7$). As a result, the recorded dots fall on a slow 2 Hz wave moving the other way ($7 - 5 = 2$ Hz). The computer keeps only the dots, so after recording it cannot tell the real 5 Hz wave from a 2 Hz wave. Sampling too slowly makes a fast wave look like a slower one. This mistake is called **aliasing**, the same idea behind [jagged edges in computer graphics](/courses/computer-graphics/aliasing).
+Now set the wave to $f = 5$ Hz and the sample rate to $F_s = 7$ Hz. Every $1/7$ of a second the wave advances by $5/7$ of a cycle. Advancing by $5/7$ of a full turn reaches the same point as stepping *backward* by $2/7$ of a turn ($1 - 5/7 = 2/7$). For sine, $\sin(2\pi \cdot \tfrac{5}{7} n) = \sin(2\pi n - 2\pi \cdot \tfrac{2}{7} n) = -\sin(2\pi \cdot \tfrac{2}{7} n)$, which is an inverted 2 Hz wave ($7 - 5 = 2$ Hz). The computer keeps only the dots, so after recording it cannot tell the real 5 Hz wave from a 2 Hz wave. Sampling too slowly makes a fast wave look like a slower one. This mistake is called **aliasing**, the same idea behind [jagged edges in computer graphics](/courses/computer-graphics/aliasing).
 
 The rule that prevents it is the **Nyquist rule**:
 
@@ -53,7 +53,7 @@ You must take *more* than 2 samples per cycle of the fastest wave you want to ke
 Confusing the wave's frequency $f$ with the sample rate $F_s$, because both are written in Hz. $f$ belongs to the sound in the air and tells how fast the wave vibrates. $F_s$ is set by the recorder and tells how often it measures. A 440 Hz note recorded at $F_s = 44{,}100$ Hz gives $44{,}100 / 440 \approx 100.2$ samples per cycle. Also watch the Nyquist factor of 2: keeping frequencies up to 20,000 Hz requires $F_s > 40{,}000$ Hz, not 20,000 Hz.
 </Callout>
 
-That rule explains the number 44,100. Human hearing stops near 20,000 Hz, so recording it takes more than $2 \times 20{,}000 = 40{,}000$ samples per second. CDs use $F_s = 44{,}100$ Hz to leave room for the hardware filter that blocks frequencies above 20,000 Hz before sampling. Most audio files still use 44,100 or 48,000 Hz.
+That rule explains the number 44,100. Human hearing stops near 20,000 Hz, so recording it takes more than $2 \times 20{,}000 = 40{,}000$ samples per second. The value $F_s = 44{,}100$ Hz leaves a transition band for the analog filter that blocks frequencies above 20 kHz before sampling, and historically matched early digital tape mastering formats (which stored 3 samples per video line on 25 Hz PAL and 30 Hz NTSC gear). Most audio files still use 44,100 or 48,000 Hz.
 
 | | Value | Why |
 |---|---|---|
@@ -63,11 +63,11 @@ That rule explains the number 44,100. Human hearing stops near 20,000 Hz, so rec
 
 ## A recording is a vector
 
-Once a sound is a list of numbers, it is a [column vector](/courses/computational-mathematics/matrices-and-matlab#writing-a-matrix-down). Every vector tool in this course now works on audio: [adding vectors](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting), [scaling them](/courses/computational-mathematics/matrices-and-matlab#multiplying-by-a-scalar), measuring their length with a norm, and `conv`.
+Once a sound is a list of numbers, it is a [vector](/courses/computational-mathematics/matrices-and-matlab#writing-a-matrix-down)—a column vector in MATLAB, or a 1D array of shape `(N,)` in NumPy, which behaves as a vector without needing a column dimension. Every vector tool in this course now works on audio: [adding vectors](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting), [scaling them](/courses/computational-mathematics/matrices-and-matlab#multiplying-by-a-scalar), measuring their length with a norm, and `conv`.
 
 In the project you will load a real recording with `audioread` (MATLAB) or `soundfile.read` (Python). A **mono** recording has one microphone channel and loads as a single column of samples. A **stereo** recording has left and right channels and loads as a 2-column matrix. Below, a 440 Hz sine wave replaces the audio file so the code runs anywhere.
 
-Why `sin(2*pi*440*t)`? The sine function $\sin(\theta)$ completes one full cycle as its angle $\theta$ goes from $0$ to $2\pi$ radians (about $6.283$). Multiplying the time $t$ in seconds by $2\pi \cdot 440$ makes the angle advance by $440$ full turns every second, which gives a 440 Hz wave. Sample $n$ (counting from $n = 0$) happens at time $t = n / F_s$ seconds. For $n = 0, 1, 2$, those times are $0$, $1/44{,}100 \approx 22.7\ \mu\text{s}$ and $2/44{,}100 \approx 45.4\ \mu\text{s}$. Plotting the first 400 samples shows $400 / 44{,}100 \approx 0.00907$ seconds (about 9 ms), which holds $440 \times 0.00907 \approx 4$ cycles of the tone:
+Why `sin(2*pi*440*t)`? Trigonometric functions like $\sin(\theta)$ evaluate angles in radians, where a full $360^\circ$ circle is $2\pi$ radians (about $6.283$). Multiplying the time $t$ in seconds by $2\pi \cdot 440$ converts $440$ cycles per second into radians per second, making the wave complete 440 cycles each second. Sample $n$ (indexed from $n = 0$ at time $t = 0$) happens at time $t = n / F_s$ seconds. In MATLAB, array indices start at 1, so sample $n$ is stored in `x(n + 1)`. In Python, indices start at 0, so sample $n$ is `x[n]`. For $n = 0, 1, 2$, those times are $0$, $1/44{,}100 \approx 22.7\ \mu\text{s}$ and $2/44{,}100 \approx 45.4\ \mu\text{s}$. Plotting the first 400 samples shows $400 / 44{,}100 \approx 0.00907$ seconds (about 9 ms), which holds $440 \times 0.00907 \approx 4$ cycles of the tone:
 
 <CodeTabs>
 
@@ -87,7 +87,7 @@ ans =
          0    0.0626    0.1251
 
 % with a real file instead:
-% [x, Fs] = audioread('voice.wav');   % stereo gives 2 columns
+% [x, Fs] = audioread('voice.wav');   % returns samples x and file sample rate Fs
 plot(t(1:400), x(1:400))         % the first 9 ms (~4 cycles)
 ```
 
@@ -103,12 +103,12 @@ print(np.round(x[:3], 4).tolist())  # [0.0, 0.0626, 0.1251]
 
 # with a real file instead (pip install soundfile):
 # import soundfile as sf
-# x, Fs = sf.read("voice.wav")   # stereo gives 2 columns
+# x, Fs = sf.read("voice.wav")   # returns samples x and file sample rate Fs
 ```
 
 </CodeTabs>
 
-Check the second sample ($n = 1$) by hand: at $t = 1/44{,}100$ s, the angle is $2\pi \times 440 / 44{,}100 \approx 0.06269$ radians, and $\sin(0.06269) \approx 0.0626$.
+Check the second sample ($n = 1$, stored in `x(2)` in MATLAB and `x[1]` in Python) by hand: at $t = 1/44{,}100$ s, the angle is $2\pi \times 440 / 44{,}100 \approx 0.06269$ radians, and $\sin(0.06269) \approx 0.0626$.
 
 <Callout tone="sky" label="Where this goes in AI">
 Speech models such as Whisper start the same way: a recording becomes a vector of samples, usually resampled to $F_s = 16{,}000$ Hz. By the Nyquist rule, 16,000 samples per second keeps frequencies up to $16{,}000 / 2 = 8{,}000$ Hz. That range covers human speech while cutting the vector to about a third of its CD length. The machine learning model learns everything about your voice from that list of numbers.
