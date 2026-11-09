@@ -57,6 +57,73 @@ export const std = (v: number[]) => {
   return Math.sqrt(v.reduce((s, a) => s + (a - m) ** 2, 0) / v.length);
 };
 
+/** Probability density function for normal distribution N(0, sigma^2). */
+export function gaussianPdf(x: number, sigma: number): number {
+  if (sigma <= 0) return 0;
+  return (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-(x * x) / (2 * sigma * sigma));
+}
+
+export type HistogramBin = {
+  start: number;
+  end: number;
+  mid: number;
+  count: number;
+  density: number;
+  theoretical: number;
+};
+
+/** Bins samples into a histogram and compares empirical density to theoretical Gaussian PDF. */
+export function gaussianHistogram(samples: number[], sigma: number, numBins = 21, rangeFactor = 3): HistogramBin[] {
+  const minX = -rangeFactor * sigma;
+  const maxX = rangeFactor * sigma;
+  const binWidth = (maxX - minX) / numBins;
+  const counts = Array(numBins).fill(0);
+  const n = samples.length;
+
+  for (const v of samples) {
+    if (v < minX) {
+      counts[0]++;
+    } else if (v >= maxX) {
+      counts[numBins - 1]++;
+    } else {
+      const idx = Math.min(numBins - 1, Math.floor((v - minX) / binWidth));
+      counts[idx]++;
+    }
+  }
+
+  return counts.map((count, i) => {
+    const start = minX + i * binWidth;
+    const end = start + binWidth;
+    const mid = start + binWidth / 2;
+    const density = count / (Math.max(1, n) * binWidth);
+    const theoretical = gaussianPdf(mid, sigma);
+    return { start, end, mid, count, density, theoretical };
+  });
+}
+
+export type TradeoffPoint = {
+  m: number;
+  snrDb: number;
+  totalError: number;
+  blurError: number;
+  noiseError: number;
+};
+
+/** Decomposes total error into signal blur (distortion) and residual noise for every kernel length M. */
+export function tradeoffDecomposition(clean: number[], noise: number[], maxM = 61): TradeoffPoint[] {
+  return Array.from({ length: maxM }, (_, i) => {
+    const m = i + 1;
+    const cleanHat = movingAverage(clean, m);
+    const noiseHat = movingAverage(noise, m);
+    const xHat = cleanHat.map((c, idx) => c + noiseHat[idx]);
+    const blurError = errorNorm(clean, cleanHat);
+    const noiseError = norm(noiseHat);
+    const totalError = errorNorm(clean, xHat);
+    const snrDb = snr(clean, xHat);
+    return { m, snrDb, totalError, blurError, noiseError };
+  });
+}
+
 /** A wave of frequency f measured Fs times a second, for `seconds` seconds. */
 export function sampleTimes(Fs: number, seconds: number): number[] {
   return Array.from({ length: Math.floor(Fs * seconds) + 1 }, (_, n) => n / Fs);

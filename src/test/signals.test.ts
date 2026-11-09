@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  apparentFrequency, convFrames, convFull, convSame, errorNorm, gaussian, movingAverage, movingAverageKernel, playgroundClean, snr, std, sumSquares, voiceLike,
+  apparentFrequency, convFrames, convFull, convSame, errorNorm, gaussian, gaussianHistogram, gaussianPdf, movingAverage, movingAverageKernel, playgroundClean, snr, std, sumSquares, tradeoffDecomposition, voiceLike,
 } from "@/lib/signals";
 
 const round = (v: number[], d = 4) => v.map((a) => Number(a.toFixed(d)));
@@ -59,6 +59,20 @@ describe("noise", () => {
     expect(ratio).toBeGreaterThan(2.8);
     expect(ratio).toBeLessThan(3.2);
   });
+  it("computes theoretical Gaussian PDF and histogram matching bell curve", () => {
+    const sigma = 0.2;
+    // PDF at 0 should be 1 / (sigma * sqrt(2pi)) ≈ 1.9947
+    expect(gaussianPdf(0, sigma)).toBeCloseTo(1 / (sigma * Math.sqrt(2 * Math.PI)), 4);
+    expect(gaussianPdf(sigma, sigma)).toBeCloseTo(gaussianPdf(0, sigma) * Math.exp(-0.5), 4);
+    expect(gaussianPdf(-sigma, sigma)).toBe(gaussianPdf(sigma, sigma));
+
+    const samples = gaussian(5000, 42).map((v) => v * sigma);
+    const bins = gaussianHistogram(samples, sigma, 21, 3);
+    expect(bins).toHaveLength(21);
+    const midBin = bins[10]; // centre bin around 0
+    expect(midBin.density).toBeGreaterThan(1.5);
+    expect(midBin.theoretical).toBeCloseTo(gaussianPdf(0, sigma), 1);
+  });
 });
 
 describe("sampling", () => {
@@ -84,6 +98,30 @@ describe("the trade-off", () => {
     expect(best).toBeLessThan(61);
     expect(curve[best - 1]).toBeGreaterThan(curve[0]);
     expect(curve[60]).toBeLessThan(curve[best - 1]);
+  });
+  it("decomposes error into growing blur and decaying noise", () => {
+    const clean = playgroundClean();
+    const e = gaussian(clean.length, 42);
+    const noise = e.map((v) => 0.2 * v);
+    const decomp = tradeoffDecomposition(clean, noise, 61);
+    expect(decomp).toHaveLength(61);
+
+    // M=1: zero blur, full noise
+    expect(decomp[0].blurError).toBeCloseTo(0, 4);
+    expect(decomp[0].noiseError).toBeGreaterThan(decomp[10].noiseError);
+
+    // blur error grows monotonically
+    expect(decomp[10].blurError).toBeGreaterThan(decomp[0].blurError);
+    expect(decomp[30].blurError).toBeGreaterThan(decomp[10].blurError);
+
+    // noise error shrinks monotonically
+    expect(decomp[0].noiseError).toBeGreaterThan(decomp[10].noiseError);
+    expect(decomp[10].noiseError).toBeGreaterThan(decomp[30].noiseError);
+
+    // optimal M minimizes total error
+    const minErrM = decomp.slice().sort((a, b) => a.totalError - b.totalError)[0].m;
+    const maxSnrM = decomp.slice().sort((a, b) => b.snrDb - a.snrDb)[0].m;
+    expect(minErrM).toBe(maxSnrM);
   });
   it("builds a voice-like sound with peak 1", () => {
     const v = voiceLike(8000, 0.5);

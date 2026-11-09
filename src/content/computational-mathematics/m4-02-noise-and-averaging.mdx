@@ -1,5 +1,5 @@
 import { Callout, CodeTabs } from "@/components/mdx/MdxComponents";
-import { NoiseAdd, NoiseAveraging } from "@/components/mdx/SignalVisualizers";
+import { NoiseAdd, GaussianBellVisualizer, NoiseAveraging } from "@/components/mdx/SignalVisualizers";
 
 # Project: Noise and Why Averaging Works
 
@@ -30,6 +30,8 @@ Big recordings hide what is going on, so start with five samples. The clean valu
 The next two lessons reuse this example: **the clean signal is [2 2 2 2 2] and the recorded signal is [3 1 3 1 3]**.
 
 Real noise does not alternate cleanly between $+1$ and $-1$. Instead, each $e(n)$ is drawn at random from a **normal distribution** (also called a **Gaussian distribution**). This distribution has a bell-shaped curve where values near the **mean** (average) are common and large jumps are rare. Here the mean is 0, so positive and negative bumps are equally likely and the noise does not shift the signal up or down on average. The noise strength $\sigma$ (sigma) is the [standard deviation](/courses/computational-mathematics/matrices-and-matlab#adding-and-subtracting), which measures the typical size of a bump. In code, `randn` draws numbers with mean 0 and standard deviation 1, and [multiplying by the scalar](/courses/computational-mathematics/matrices-and-matlab#multiplying-by-a-scalar) $\sigma$ scales their spread to $\sigma$.
+
+<GaussianBellVisualizer />
 
 To make an experiment repeatable, fix the **random seed**, the starting number of the [random number generator](/courses/computational-mathematics/stream-ciphers#how-it-works). Every run then gets the same sequence of noise:
 
@@ -78,7 +80,10 @@ Two neighbouring samples at 44,100 Hz are only 22.7 microseconds apart. A 250 Hz
 So average a few neighbours. Because $y(n) = x(n) + e(n)$, the average of $M$ recorded samples splits into the average of the voice plus the average of the noise:
 
 $$
-\frac{y(1) + \cdots + y(M)}{M} = \frac{x(1) + \cdots + x(M)}{M} + \frac{e(1) + \cdots + e(M)}{M}
+\begin{aligned}
+\frac{y(1) + \cdots + y(M)}{M} &= \frac{x(1) + \cdots + x(M)}{M} \\
+&\quad + \frac{e(1) + \cdots + e(M)}{M}
+\end{aligned}
 $$
 
 The voice values are nearly equal, so their average is still the voice. On the five-sample example, take the first three recorded samples $[3, 1, 3]$. The clean part averages to $(2 + 2 + 2)/3 = 2$, and the noise part averages to $(1 - 1 + 1)/3 = 1/3 \approx 0.33$. Two of the three noise bumps cancel out, so the error shrinks from $1$ to $0.33$ while the clean $2$ stays unchanged. Watch the same cancellation on pure random noise:

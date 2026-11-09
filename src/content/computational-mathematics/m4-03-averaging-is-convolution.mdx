@@ -10,7 +10,10 @@ import { ConvolutionStepper } from "@/components/mdx/SignalVisualizers";
 You already do this when you work out a course grade. Say the exam counts 50%, the project 30% and quizzes 20%, and you scored 80, 90 and 70:
 
 $$
-0.5 \cdot 80 + 0.3 \cdot 90 + 0.2 \cdot 70 = 40 + 27 + 14 = 81
+\begin{aligned}
+0.5 \cdot 80 &+ 0.3 \cdot 90 + 0.2 \cdot 70 \\
+&= 40 + 27 + 14 = 81
+\end{aligned}
 $$
 
 Each number gets a **weight** saying how much it counts. Multiply each number by its weight, then add everything up. This is a **weighted sum**, and it is the [dot product](/courses/computational-mathematics/transpose-and-products#the-dot-product) of the scores with the weights. A [linear model](/courses/computational-mathematics/multiplying-matrices#the-rule)'s prediction, $w \cdot x$, is the same calculation. Notice that the weights add up to $0.5 + 0.3 + 0.2 = 1$. When the weights sum to $1$, the weighted sum keeps the scale of the inputs. Scoring 80 on every part gives $0.5 \cdot 80 + 0.3 \cdot 80 + 0.2 \cdot 80 = 80$.
@@ -22,7 +25,10 @@ The list of weights, here $[0.5,\ 0.3,\ 0.2]$, is what convolution calls the **k
 The average of 3, 1 and 3 is $(3 + 1 + 3)/3 = 7/3 \approx 2.33$. Dividing by 3 at the end is the same as multiplying each number by $\tfrac13$ before adding:
 
 $$
-\frac{3 + 1 + 3}{3} = \tfrac13 \cdot 3 + \tfrac13 \cdot 1 + \tfrac13 \cdot 3 = 1 + \tfrac13 + 1 = \frac{7}{3} \approx 2.33
+\begin{aligned}
+\frac{3 + 1 + 3}{3} &= \tfrac13 \cdot 3 + \tfrac13 \cdot 1 + \tfrac13 \cdot 3 \\
+&= 1 + \tfrac13 + 1 = \frac{7}{3} \approx 2.33
+\end{aligned}
 $$
 
 Averaging 3 numbers is a weighted sum with the kernel $[\tfrac13,\ \tfrac13,\ \tfrac13]$. Every number gets the same weight, and the three weights add up to $\tfrac13 + \tfrac13 + \tfrac13 = 1$.
@@ -90,7 +96,10 @@ An uneven kernel shows the flip clearly. Take $h = [1,\ 2,\ 3]$ (indexed $k = -1
 MATLAB's `conv(y, h)` computes the **full** convolution, which includes every position where the kernel touches even one sample of `y`. For a signal of length $N$ and a kernel of length $M$, the full convolution has length $N + M - 1$ (here $5 + 3 - 1 = 7$):
 
 $$
-\text{conv}([3\ 1\ 3\ 1\ 3],\ [\tfrac13\ \tfrac13\ \tfrac13]) = [1,\ 1.3333,\ 2.3333,\ 1.6667,\ 2.3333,\ 1.3333,\ 1]
+\begin{aligned}
+&\text{conv}([3\ 1\ 3\ 1\ 3],\ [\tfrac13\ \tfrac13\ \tfrac13]) \\
+&\quad = [1,\ 1.3333,\ 2.3333,\ 1.6667,\ 2.3333,\ 1.3333,\ 1]
+\end{aligned}
 $$
 
 The extra $1$ at each end is where the kernel touches only the first or last $3$ ($\tfrac13 \cdot 3 = 1$). Passing `'same'` drops those outer ends and keeps the middle $N$ numbers. The output then has the **same length** as `y`, matching the 5 positions of the stepper:
