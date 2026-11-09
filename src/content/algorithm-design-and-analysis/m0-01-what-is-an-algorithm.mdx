@@ -25,10 +25,10 @@ Here is the sorting problem, written the way textbooks state it:
 
 One particular input is called an **instance** of the problem. $\langle 8, 1, 4, 9, 3, 7 \rangle$ is an instance of sorting, and the right output for it is $\langle 1, 3, 4, 7, 8, 9 \rangle$. A problem has infinitely many instances. An algorithm has to handle all of them.
 
-Notice that the problem statement does not dictate *how* to sort. Selection sort, merge sort, and quick sort are three different algorithms for this single problem, and module 1 covers each of them.
+The problem statement does not specify *how* to sort. Selection sort, merge sort, and quick sort are three different algorithms for this single problem, and module 1 covers each of them.
 
 <Callout tone="orange" label="Common mistake: mixing up problem and instance">
-Asked for "an instance of the searching problem", students often describe the problem again ("find a value in an array"). An instance is one concrete input with actual values: "find 7 in ⟨3, 7, 1⟩". The problem is the whole set of such inputs, plus the rule for what the right output is.
+When asked for an instance of the searching problem, students often describe the problem again: "find a value in an array." An instance is one concrete input with actual values: "find 7 in ⟨3, 7, 1⟩." The problem is the whole set of such inputs, paired with the rule defining the correct output.
 </Callout>
 
 ## What "well-defined" demands
@@ -55,9 +55,9 @@ Many course notes list these **properties of an algorithm** in plain sentences i
 | Should be efficient and flexible, and use as little memory as possible | Efficiency |
 | Should be concise and compact, so its correctness is easy to check | Understandable |
 
-"Flexible" means it works on every valid input rather than just one test case. The next section calls this property *generality*.
+"Flexible" means the procedure works on every valid input rather than just one sample input. The next section calls this property *generality*.
 
-Finiteness and effectiveness are easy to confuse, because both talk about "finite". **Finiteness** is about the whole algorithm: the number of steps must run out. **Effectiveness** is about each single step: it must be something you can actually do. "Add 1 to x, forever" fails finiteness, though every step is easy. "Write down every digit of π" fails effectiveness, because that one step never finishes.
+Finiteness and effectiveness are easy to confuse because both involve limits on steps. **Finiteness** applies to the whole algorithm: the total number of steps must end. **Effectiveness** applies to each single step: each operation must be possible to complete. For example, "add 1 to x, forever" fails finiteness, even though each addition is easy. "Write down every digit of π" fails effectiveness because that single operation can never finish.
 
 ## What design and analysis aim for
 
@@ -71,14 +71,14 @@ A good algorithm is judged on five things:
 - **Efficiency:** time and space. Most of this course is about measuring this.
 - **Simplicity:** a simpler algorithm is easier to understand, prove and code, and has fewer places for bugs to hide.
 - **Generality:** it handles the full range of inputs, including the special cases: an empty array, one element, all values equal.
-- **Optimality:** no other algorithm for the same problem can do better. For example, no sort that works by comparing elements can beat about $n \log n$ comparisons in the worst case (here $n$ is the number of items, and $\log n$, which the [next lesson](/courses/algorithm-design-and-analysis/counting-steps#growth-is-what-matters) explains, is the number of times you can halve $n$), so merge sort is optimal in that sense. Advanced Algorithms [proves this lower bound](/courses/advanced-algorithms/sorting-lower-bounds#the-lower-bound).
-- **Coding:** how the algorithm's objects and operations will be represented in the programming language you choose. An algorithm that needs "the smallest remaining item" quickly needs a data structure that can give it.
+- **Optimality:** no other algorithm for the same problem can run faster or use less space. For example, no sort that compares elements can beat about $n \log n$ comparisons in the worst case (here $n$ is the number of items, and $\log n$, which the [next lesson](/courses/algorithm-design-and-analysis/counting-steps#growth-is-what-matters) explains, counts how many times you can halve $n$), so merge sort is optimal in that sense. Advanced Algorithms [proves this lower bound](/courses/advanced-algorithms/sorting-lower-bounds#the-lower-bound).
+- **Implementation:** how the algorithm's data and operations map to code. An algorithm that frequently requests the smallest remaining item needs a suitable data structure to supply it quickly.
 
-The same list appears as the **basic issues** of the subject: how to design algorithms, how to express them, how to prove them correct, how to analyze their efficiency, and whether they are optimal.
+Textbooks often group these goals as the **basic issues** of algorithm study: designing algorithms, expressing them in code, proving them correct, analyzing efficiency, and evaluating optimality.
 
 ## Correctness
 
-An algorithm is **correct** if, for *every* valid input instance, it halts (stops) and gives the right output.
+An algorithm is **correct** if, for *every* valid input instance, it halts and produces the correct output.
 
 That means every valid input. A sorting algorithm that works on 99.9% of arrays and silently scrambles the rest is still incorrect. Testing can show that a bug exists, but only reasoning can prove none exist. For loops, that reasoning is a [loop invariant](/courses/discrete-mathematics/loop-invariants#what-a-loop-invariant-is).
 
@@ -99,20 +99,20 @@ The question "which sort is best?" has no single answer without context. The bes
 
 ## Algorithm vs. program
 
-People use the two words interchangeably, but they mean different things.
+People often use the two words interchangeably, although they refer to different concepts.
 
 | Algorithm | Program |
 | --- | --- |
 | Abstract and general | Concrete and specific |
 | Written in pseudocode, a diagram, or plain English | Written in a real language (Java, Python, C) |
 | Describes *how* to solve the problem | *Implements* that description so a machine can run it |
-| Can't be executed directly | Runs on a computer |
+| Cannot execute directly on hardware | Runs on a computer |
 
-**Pseudocode** is the middle ground between English and code: exact steps, written with loops and `if`s like a program, but without a real language's details such as types, semicolons or imports. There's no single official syntax; it only has to be unambiguous. The [example at the end of this lesson](#a-first-algorithm-three-ways) shows one.
+**Pseudocode** sits between plain prose and working code: exact steps written with loops and conditionals, without language-specific syntax like types, semicolons, or imports. There is no single official syntax; the steps only need to be clear and unambiguous. The [example at the end of this lesson](#a-first-algorithm-three-ways) shows one.
 
 One algorithm can become a thousand programs. [Binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half) is one idea, and there's a version of it in the Java standard library (`Arrays.binarySearch`), in every database index, and in the `git bisect` command.
 
-This course writes everything in **Java**, because that's what most university labs use. Keep the distinction in mind, though. When an exam asks you to "write the algorithm," it usually wants the idea as clear steps or pseudocode, not a class that compiles.
+This course uses **Java** because most university computer science labs teach it. Keep the distinction in mind: when an exam asks you to "write the algorithm," it usually expects the logic as clear steps or pseudocode, not a fully compiled Java class.
 
 ## How an algorithm gets made
 
@@ -147,11 +147,11 @@ Designing an algorithm is an iterative cycle where writing code comes last. Here
    - **Exact or approximate solving:** do you need the exact best answer, or is a good-enough one acceptable? For the hard problems below, exact answers can take too long, so people settle for close ones.
    - **The algorithm design technique:** brute force, [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer), greedy, or [dynamic programming](/courses/algorithm-design-and-analysis/dynamic-programming). You'll learn all four here. This is also when you pick your data structures.
 3. **Design an algorithm:** write the steps.
-4. **Prove correctness:** show it gives the right output for every input, or at least convince yourself carefully.
+4. **Prove correctness:** prove it produces the correct output for every valid input.
 5. **Analyze the algorithm:** how much time and memory does it need?
 6. **Code the algorithm** in a programming language.
 
-The arrows going back up are the important part. If the proof fails, or the analysis says it's too slow, you return to step 3 and redesign. If no design with your current technique works, you go back further to step 2 and pick a different technique or settle for an approximate answer.
+The feedback arrows capture the real design cycle. If a correctness proof fails, or the complexity analysis shows the approach is too slow, you return to step 3 to redesign. When no design with your chosen technique succeeds, you step back to step 2 to choose a different technique or accept an approximation.
 
 Writing code comes *last*. If you jump straight to step 6, you end up resolving logic and efficiency issues by trial and error in a debugger late at night.
 
@@ -179,11 +179,11 @@ Most problems fall into a few families. Exams often ask you to list them with an
 
 Sorting, searching, string processing, graph and numerical problems are often called the **important problem types**, because so many other algorithms use them as building blocks.
 
-Then there are the **hard problems**: the Traveling Salesman Problem (the shortest route that visits every city once and comes home), the Knapsack Problem (the most value that fits in a bag), and Graph Coloring (colour a map's regions so no two neighbours share a colour, using as few colours as possible). Nobody knows a fast algorithm for any of them. The known ones are not much better than trying every possibility, and the number of possibilities explodes: 20 cities can be toured in more than $10^{16}$ different orders. These problems belong to the *NP-complete* class, which [Advanced Algorithms defines](/courses/advanced-algorithms/p-and-np#np-complete).
+Then there are the **hard problems**: the Traveling Salesman Problem (the shortest route that visits every city once and returns home), the Knapsack Problem (the most value that fits in a bag with a weight limit), and Graph Coloring (color a map's regions so no two neighbors share a color, using as few colors as possible). No known algorithm solves these efficiently in the general case. Existing exact algorithms check nearly every possibility, and the number of combinations grows rapidly: 20 cities can be visited in more than $10^{16}$ distinct routes. These problems belong to the *NP-complete* class, which [Advanced Algorithms defines](/courses/advanced-algorithms/p-and-np#np-complete).
 
 Two things in that list look like contradictions, and exams like to test them:
 
-- **Shortest path is not a hard problem.** Some notes list "the shortest path" next to the Traveling Salesman Problem as hard. Finding the shortest path between two places is fast: [Dijkstra's algorithm](/courses/advanced-algorithms/shortest-paths#dijkstras-algorithm) does it in **polynomial time** (its step count grows like a power of the input size, such as $n^2$, never like $2^n$), which is why the table above lists it as an ordinary graph problem. The hard one is the shortest *tour* that has to pass through every city.
+- **Finding a shortest path is not an intractable problem.** Some notes list the shortest path alongside the Traveling Salesman Problem. Finding the shortest path between two nodes is efficient: [Dijkstra's algorithm](/courses/advanced-algorithms/shortest-paths#dijkstras-algorithm) runs in **polynomial time** (its step count grows as a power of the input size, such as $n^2$, rather than exponentially like $2^n$). That is why the table above categorizes it as a standard graph problem. The computationally hard problem is finding the shortest *tour* visiting every city.
 - **The knapsack problem appears in two places.** It is NP-complete in general, yet dynamic programming solves it efficiently when the weight capacity is small, as the [knapsack analysis](/courses/algorithm-design-and-analysis/dynamic-programming#analysis) explains.
 
 ## Data structures
@@ -254,7 +254,7 @@ Trace it on the instance ⟨8, 1, 4, 9, 3, 7⟩, one row per loop pass:
 
 The loop ends after $i = 5 = n - 1$ and returns 9. The loop starts at 1, not 0, because `a[0]` is already in `max`; comparing it with itself would waste a step.
 
-A common mistake is to start with `max ← 0` instead of `max ← a[0]`. That works on the trace above, and fails on ⟨−5, −2, −9⟩, where it returns 0, a number that isn't even in the array.
+A common mistake is to initialize with `max ← 0` instead of `max ← a[0]`. That initialization works on positive numbers, but fails on ⟨−5, −2, −9⟩, where it returns 0, a value not present in the input array.
 
 Now check it against the definition. Input: an array. Output: one number. Definite: every step is exact. Finite: the loop runs exactly $n - 1$ times. Correct? Almost. If the array is **empty**, `a[0]` throws an exception. Either the problem promises at least one element, or the algorithm has to handle the empty case. Testing edge cases like empty inputs is a central part of verifying correctness.
 

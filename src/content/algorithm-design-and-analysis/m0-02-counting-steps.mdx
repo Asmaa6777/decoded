@@ -9,7 +9,7 @@ The goal of analysis is to **compare algorithms**, primarily by running time, bu
 
 ## Why not just time it?
 
-You could time both programs with a stopwatch, and you'll do exactly that in the next lesson. But a stopwatch measures your laptop, your JVM (the Java Virtual Machine, the program that runs Java code), whatever else is running, and the one input you happened to try. On a faster machine the numbers change even though the *algorithm* stayed the same.
+You could time both programs with a stopwatch, as you will in the next lesson. However, a wall-clock timer reflects hardware specifications, JVM warm-up, background operating system processes, and the specific test input. On a faster computer the measured times decrease even though the underlying *algorithm* has not changed.
 
 So instead of seconds, we count **steps**:
 
@@ -18,18 +18,18 @@ So instead of seconds, we count **steps**:
   - for a polynomial, its degree;
   - for a matrix, the number of elements in it;
   - for a graph, the number of vertices and edges;
-  - for a single number, such as when testing whether it's prime, the number of bits in its binary representation. The work depends on how long the number is to write down, not on its value: 1,000,000 needs 20 bits, and a number twice as long in bits is about a million times bigger.
+  - for a single number, such as when testing whether it is prime, the number of bits in its binary representation. The cost depends on the number of bits needed to store the value, not the value alone: 1,000,000 takes 20 bits in binary, while a 40-bit number is over a trillion.
 - **The basic operation** (also called the **key operation**). The operation that contributes most to the running time: the step that does the real work and runs most often. In a sorting algorithm it's usually a comparison (`a[j] < a[min]`); otherwise it's often an assignment inside the innermost loop.
 - **Count how many times the basic operation runs, as a function of $n$.**
 
-That function is the algorithm's **time complexity**. This course writes it $T(n)$; many notes write $f(n)$ and call it the **complexity of the algorithm**, the running time or memory it needs in terms of the input size $n$. It doesn't depend on the hardware or the language, so it describes the algorithm itself.
+That function is the algorithm's **time complexity**. This course writes it as $T(n)$. Many course notes write $f(n)$ and call it the **complexity of the algorithm**, measuring the running time or memory required for an input of size $n$. Because it does not depend on specific hardware or programming languages, it characterizes the algorithm itself.
 
 ## Space is a cost too
 
 **Space complexity** is how much memory the algorithm needs, also as a function of $n$. It has two parts:
 
-- A **fixed part** that doesn't depend on the input: the code itself and a few simple variables like `i`, `max`, `temp`.
-- A **variable part** that grows with the input: extra arrays allocated during execution (dynamic memory allocation) and the **recursion stack**. Every recursive call that has not yet returned occupies memory.
+- A **fixed part** independent of input size: program instructions and simple variables like `i`, `max`, and `temp`.
+- A **variable part** that scales with input size: memory dynamically allocated for additional data structures, along with the **recursion stack**. Every recursive call awaiting completion occupies stack memory.
 
 Written as a formula, the space needed by an algorithm $X$ is
 
@@ -37,9 +37,9 @@ $$
 S(X) = C + S(I)
 $$
 
-where $C$ is the fixed part and $S(I)$ is the variable part, which depends on $I$, the *instance characteristics* (the size of this particular input). For `findMax` from the last lesson, $S(I)$ is zero: it only ever needs `max` and `i`, however long the array is. A recursive version that calls itself once per element would keep $n$ calls on the stack at once, so its $S(I)$ grows like $n$.
+where $C$ is the fixed part and $S(I)$ is the variable part, which depends on $I$, the *instance characteristics* (the size and attributes of this particular input). For `findMax` from the previous lesson, $S(I)$ is zero: it only uses `max` and `i`, regardless of array length. A recursive version making one recursive call per element maintains $n$ stack frames simultaneously, so its $S(I)$ grows proportionally to $n$.
 
-While this course focuses primarily on time, memory usage matters as well. [Merge sort](/courses/algorithm-design-and-analysis/merge-sort#merge-sort-in-one-paragraph), coming up in module 1, gains its speed by using extra memory.
+Although this course focuses primarily on execution time, memory usage remains an important constraint. For example, [merge sort](/courses/algorithm-design-and-analysis/merge-sort#merge-sort-in-one-paragraph) achieves fast running time by allocating auxiliary memory.
 
 ## Best, worst and average case
 
@@ -64,13 +64,13 @@ Pick a case and step through it, watching the comparison counter:
 
 <SearchVisualizer algorithm="linear" array={[34, 7, 23, 32, 5, 62, 14, 48, 19]} target={34} cases />
 
-The worst case gives an **upper bound** on the running time, and the best case gives a **lower bound**. To find either, you have to know which input causes the most (or fewest) operations. For linear search, the best case needs a constant number of comparisons whatever $n$ is, written $\Omega(1)$, and the worst case needs $n$, written $O(n)$.
+The worst case provides an **upper bound** on running time, while the best case provides a **lower bound**. Identifying either requires determining which input triggers the maximum or minimum number of operations. For linear search, the best case requires a constant number of comparisons regardless of $n$, written $\Omega(1)$, while the worst case requires $n$ comparisons, written $O(n)$.
 
 ### Working out the average case
 
 Assume every case is equally likely: `x` is at position 1, or position 2, …, or position $n$, or not in the array at all. That's $n + 1$ cases. Count the comparisons in each, add them up, and divide by $n + 1$:
 
-- `x` at position $i$ takes $i$ comparisons. Positions 1 to $n$ together take $1 + 2 + \cdots + n = \frac{n(n+1)}{2}$. (Why: pair the first term with the last, $1 + n$, the second with the second-to-last, $2 + (n-1)$, and so on. Every pair adds up to $n + 1$, and there are $n/2$ pairs.)
+- Finding `x` at index $i$ requires $i$ comparisons. Searching all positions 1 through $n$ totals $1 + 2 + \cdots + n = \frac{n(n+1)}{2}$ comparisons. To verify the formula, pair the first term with the last ($1 + n$), the second with the second-to-last ($2 + n - 1$), and so on. Each of the $n/2$ pairs sums to $n + 1$.
 - `x` missing takes $n$ comparisons.
 
 Add them and divide by the $n + 1$ cases. Split the fraction into its two parts, and the first part's $(n + 1)$ cancels:
@@ -79,7 +79,7 @@ $$
 \text{average} = \frac{\frac{n(n+1)}{2} + n}{n + 1} = \frac{\frac{n(n+1)}{2}}{n+1} + \frac{n}{n+1} = \frac{n}{2} + \frac{n}{n+1}
 $$
 
-The second term is always just under 1, so the average is a little under $\frac{n}{2} + 1$. For the 9-element array above: $\frac{45 + 9}{10} = 5.4$ comparisons. It still grows in proportion to $n$, so the average case is linear too.
+The second term remains less than 1 for all $n \ge 1$, so the average stays slightly below $\frac{n}{2} + 1$. For the 9-element array shown above, the calculation gives $\frac{45 + 9}{10} = 5.4$ comparisons. Because this value grows proportionally with $n$, the average case has linear complexity.
 
 A common mistake is dividing by $n$ and forgetting the case where the target value is not in the array. The average must account for all possible outcomes, including the "not found" case as the $(n+1)$-th possibility.
 
@@ -93,11 +93,9 @@ When $n$ is small, everything is fast and the details don't matter. When $n$ is 
 
 <GrowthTable initialN={30} />
 
-This comparison illustrates the practical importance of analysis. At a scale of one million items, the gap between an $O(n^2)$ algorithm and an $O(n \log n)$ algorithm is the difference between several hours of computation and a fraction of a second.
+At a scale of one million items, the gap between an $O(n^2)$ algorithm and an $O(n \log n)$ algorithm separates hours of computation from a fraction of a second.
 
 ## The three notations
-
-To describe how running time scales, we need a precise mathematical vocabulary.
 
 > **Asymptotic notations** are mathematical tools for describing how efficient an algorithm is, in time or in space, as the input size grows. The three most common are **Big-O**, **Omega** and **Theta** notation.
 
@@ -111,11 +109,11 @@ $$
 
 Read it as *"it grows no faster than $g$."* People use Big-O for the **worst case**.
 
-The two constants provide flexibility. $c$ is a constant multiplier that absorbs constant coefficients, while $n_0$ is a threshold that ignores small inputs. To show $3n + 10 = O(n)$, find constants $c$ and $n_0$ that satisfy the inequality. Choosing $c = 4$ gives $3n + 10 \le 4n$. Subtracting $3n$ from both sides yields $10 \le n$. The inequality holds for every $n \ge 10$, so $c = 4$ and $n_0 = 10$ confirm that $3n + 10 = O(n)$. For $n = 5$ the inequality fails ($25 \gt 20$), which is acceptable because the condition only applies from 10 onward.
+The definition uses two constants. The multiplier $c$ absorbs constant factors, while $n_0$ establishes the threshold where asymptotic behavior begins. To prove $3n + 10 = O(n)$, choose constants $c$ and $n_0$ satisfying the inequality. Setting $c = 4$ gives $3n + 10 \le 4n$. Subtracting $3n$ from both sides yields $10 \le n$. The condition holds for all $n \ge 10$, so $c = 4$ and $n_0 = 10$ confirm that $3n + 10 = O(n)$. At $n = 5$ the inequality fails ($25 \gt 20$), which is allowed because the definition only requires the bound to hold for $n \ge n_0$.
 
-The same trick fails for $n^2 = O(n)$: you'd need $n^2 \le c \cdot n$, which means $n \le c$, and that breaks as soon as $n$ passes whatever $c$ you picked. No constant is big enough, so $n^2$ is **not** $O(n)$.
+The same approach fails for $n^2 = O(n)$: the condition requires $n^2 \le c \cdot n$, which simplifies to $n \le c$. That inequality fails for any input larger than the chosen constant $c$. Because no fixed constant $c$ bounds $n$ for all values, $n^2$ is **not** $O(n)$.
 
-Big-O is the most widely used notation. It allows you to **compare algorithms** independently of hardware, **predict performance** on large inputs, and **classify** algorithms into standard growth families.
+Big-O is the most widely used notation. It allows you to **compare algorithms** across different machines and classify them into standard growth rates.
 
 **Omega (Ω) is a lower bound.** $T(n) = \Omega(g(n))$ means $T(n)$ is at least $c \cdot g(n)$ for large $n$: *"it grows at least as fast as $g$."* It's often used for the **best case**.
 
@@ -125,7 +123,7 @@ $$
 c_1 \cdot g(n) \le T(n) \le c_2 \cdot g(n) \quad \text{for all } n \ge n_0
 $$
 
-*"It grows exactly like $g$."* For example, $3n + 10 = \Theta(n)$: it's at least $3n$ for every $n$ (so $c_1 = 3$) and at most $4n$ from $n = 10$ on (so $c_2 = 4$, $n_0 = 10$).
+*"It grows at the same rate as $g$."* For example, $3n + 10 = \Theta(n)$: the value is at least $3n$ for all $n \ge 1$ (setting $c_1 = 3$) and at most $4n$ for all $n \ge 10$ (setting $c_2 = 4$ and $n_0 = 10$).
 
 <Callout tone="violet" label="The everyday version">
 In practice, people say "Big-O" for everything and mean "how it grows in the worst case." That's fine in conversation. On an exam, be precise: O is ≤, Ω is ≥, Θ is both.
@@ -164,11 +162,11 @@ for (int i = 0; i < n; i++)       // n
 
 $T(n) = c_0 + c_1 n^2$, so **$O(n^2)$**.
 
-Two of the classes below need a word first.
+Two complexity rates deserve specific explanation:
 
-**Logarithm.** $\log_2 n$ answers: how many times can you halve $n$ before you reach 1? $\log_2 8 = 3$, because $8 \to 4 \to 2 \to 1$ is three halvings. $\log_2 1024 = 10$, and $\log_2$ of a million is about 20. It grows extremely slowly, which is why algorithms that halve the problem at each step, like binary search, are so fast. In Big-O the base doesn't matter (changing the base only multiplies by a constant), so people just write $\log n$.
+**Logarithmic.** $\log_2 n$ counts how many times you can halve $n$ before reaching 1. For example, $\log_2 8 = 3$ because $8 \to 4 \to 2 \to 1$ takes three halvings. Similarly, $\log_2 1024 = 10$, and $\log_2(1{,}000{,}000) \approx 20$. Logarithmic functions grow very slowly, explaining why divide-and-conquer algorithms like binary search run quickly. In asymptotic notation the base is omitted because changing logarithmic bases only multiplies by a constant factor, written simply as $\log n$.
 
-**Exponential and factorial.** $2^n$ doubles every time $n$ grows by one: it's the number of subsets of $n$ items, since each item is either in or out. $n! = n \times (n-1) \times \cdots \times 1$ is the number of orders to put $n$ items in. Both explode: $2^{30}$ is over a billion, and $20!$ is over $10^{18}$.
+**Exponential and factorial.** An exponential term $2^n$ doubles with each unit increase in $n$, representing counts such as the number of possible subsets for $n$ items. A factorial $n! = n \times (n-1) \times \cdots \times 1$ represents the number of orderings for $n$ items. Both grow extremely rapidly: $2^{30}$ exceeds one billion, while $20!$ exceeds $2 \times 10^{18}$.
 
 The common classes, from fastest to slowest:
 
@@ -183,7 +181,7 @@ The common classes, from fastest to slowest:
 | $O(2^n)$ | exponential | trying every subset (brute-force knapsack) |
 | $O(n!)$ | factorial | trying every order (brute-force Traveling Salesman) |
 
-"Linear" means the running time grows **in direct proportion** to the input. Double the input and you double the time.
+"Linear" means running time scales **in direct proportion** to input size. Doubling the input doubles the execution time.
 
 <Callout tone="orange" label="Common mistake: leaving extra terms in">
 Answers like $O(3n)$, $O(n^2 + n)$ or $O(\frac{n}{2})$ aren't wrong as bounds, but they aren't simplified, and exams expect the simplest form: $O(n)$, $O(n^2)$, $O(n)$. The point of Big-O is to name the class from the table, so apply the two rules above until only one term is left, with no constant in front.
@@ -251,10 +249,10 @@ $$
 1 + 2 + 3 + \cdots + n = \frac{n(n+1)}{2} = \frac{n^2}{2} + \frac{n}{2}
 $$
 
-and for $n = 4$ that gives $\frac{4 \cdot 5}{2} = 10$, matching the table. Each inner iteration executes two assignments, giving $n(n+1)$ operations, plus $n$ executions of `sum = 1` and one initial assignment `x = 1`. Keeping only the dominant term and dropping the constant factor $\frac{1}{2}$ yields **$O(n^2)$** (quadratic time). Even though the inner loop does about half the work of a full $n \times n$ loop, $\frac{1}{2} n^2$ still grows quadratically.
+For $n = 4$, the formula yields $\frac{4 \cdot 5}{2} = 10$, matching the count in the table. Each inner loop pass runs two assignments, contributing $n(n+1)$ total operations, alongside $n$ evaluations of `sum = 1` and the initial assignment `x = 1`. Dropping constant factors and lower-order terms leaves **$O(n^2)$** (quadratic time). Even though the inner loop performs half the iterations of a full $n \times n$ grid, $\frac{1}{2} n^2$ still scales quadratically.
 
 <Callout tone="orange" label="A classic mistake">
-Nested loops are not automatically $O(n^2)$. If the inner loop runs a fixed number of times, such as always 3 iterations, the total is $3n = O(n)$. Conversely, an inner loop that runs up to $i$ remains $O(n^2)$, as demonstrated above. Count how many times the inner loop actually runs instead of simply counting loop levels.
+Nested loops are not automatically $O(n^2)$. If the inner loop runs a fixed number of times (such as exactly 3 iterations), the total cost is $3n = O(n)$. Conversely, an inner loop running up to $i$ remains $O(n^2)$, as shown above. Always count how many times the inner operations execute instead of assuming each nesting level adds a factor of $n$.
 </Callout>
 
 <LeetCodeProblems
