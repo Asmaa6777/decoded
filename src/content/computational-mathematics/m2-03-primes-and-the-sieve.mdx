@@ -122,7 +122,7 @@ is_prime(1) = false;
 
 for p = 2:floor(sqrt(n))
     if is_prime(p)
-        is_prime(p*p:p:n) = false;    % strike out the multiples
+        is_prime(p*p:p:n) = false;    % strike out multiples: start at p^2, step by p up to n
     end
 end
 find(is_prime)       % primes(30) does all of this in one call
@@ -176,7 +176,7 @@ $$
 \end{aligned}
 $$
 
-Evaluating from right to left gives the same sum: $9 - 1 + 6 - 2 + 3 - 1 + 8 = 22$. Because 22 is a multiple of 11, 11 divides $8132619$. An alternating sum of 0 also confirms divisibility by 11, because $0 = 0 \cdot 11$ (for example, $121 \to 1 - 2 + 1 = 0$).
+Evaluating from right to left gives the same sum: $9 - 1 + 6 - 2 + 3 - 1 + 8 = 22$. (For numbers with an even number of digits, reading left-to-right versus right-to-left flips the overall sign, such as $-11$ versus $+11$; this does not affect divisibility because $11 \mid -S$ exactly when $11 \mid S$.) Because 22 is a multiple of 11, 11 divides $8132619$. An alternating sum of 0 also confirms divisibility by 11, because $0 = 0 \cdot 11$ (for example, $121 \to 1 - 2 + 1 = 0$).
 
 <CodeTabs>
 

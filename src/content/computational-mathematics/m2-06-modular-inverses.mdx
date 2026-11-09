@@ -98,7 +98,7 @@ If $x$ comes out negative, take `mod(x, n)`. For example, if $x = -5$ with $n = 
 
 Division modulo a prime protects sensitive training workflows in machine learning. In **federated learning**, thousands of mobile devices train a shared model without transmitting raw user data. Each device sends only model parameter updates. **Secure aggregation** ensures the server learns only the sum of these updates, never an individual update. To tolerate devices dropping offline during training, these systems use **Shamir secret sharing**.
 
-The secret is the intercept $f(0)$ of a line, such as $f(x) = 23 + 17x \pmod{97}$. Participants receive points along the line as shares. A single point reveals nothing because infinitely many lines pass through it. Any two points determine the line and recover $f(0)$. Finding the intercept requires dividing by $x_2 - x_1$, which modulo a prime means multiplying by its modular inverse:
+The secret is the intercept $f(0)$ of a line, such as $f(x) = 23 + 17x \pmod{97}$. Participants receive points along the line as shares. A single point reveals nothing because infinitely many lines pass through it. Any two points $(x_1, y_1)$ and $(x_2, y_2)$ determine the line. Setting $x = 0$ in the two-point line equation gives intercept $f(0) = \frac{y_1 x_2 - y_2 x_1}{x_2 - x_1}$. Computing that intercept requires dividing by $x_2 - x_1$, which modulo a prime means multiplying by its modular inverse:
 
 <CodeTabs>
 
@@ -107,7 +107,7 @@ p = 97;
 x1 = 1;  y1 = 40;     % two shares: points on f(x) = 23 + 17x mod 97
 x2 = 2;  y2 = 57;
 
-[~, d] = gcd(x2 - x1, p);                   % d is the inverse of x2 - x1
+[~, d] = gcd(x2 - x1, p);                   % [~, d] captures Bézout x: the inverse mod p
 secret = mod((y1*x2 - y2*x1) * d, p)
 
 secret =

@@ -54,6 +54,7 @@ Mod helps machine learning models handle huge numbers of categories. A recommend
 
 ```matlab
 s = 'user_42';
+% double(s) turns characters into ASCII integer codes (e.g. 'u' -> 117)
 h = sum(double(s) .* 31 .^ (numel(s)-1:-1:0));
 bucket = mod(h, 1000)
 
@@ -133,12 +134,12 @@ where $a_n = a \bmod n$ and $b_n = b \bmod n$. You can reduce numbers midway thr
 - **Subtraction:** $[(11 \bmod 8) - (15 \bmod 8)] \bmod 8 = (3 - 7) \bmod 8 = 4$. Directly: $(11 - 15) \bmod 8 = -4 \bmod 8 = 4$.
 - **Multiplication:** $[(11 \bmod 8) \cdot (15 \bmod 8)] \bmod 8 = (3 \cdot 7) \bmod 8 = 5$. Directly: $(11 \cdot 15) \bmod 8 = 165 \bmod 8 = 5$.
 
-That also makes big powers easy. To find $10^7 \bmod 17$, square repeatedly and reduce quotients along the way:
+That also makes big powers easy. To find $10^7 \bmod 17$, square repeatedly and reduce remainders along the way:
 
 $$
 \begin{aligned}
 10^2 &= 100 = 5 \cdot 17 + 15 \\
-&\equiv -2 \pmod{17} \\
+&\equiv -2 \pmod{17} \quad (15 - 17 = -2) \\
 10^4 &= (10^2)^2 \equiv (-2)^2 \\
 &= 4 \pmod{17} \\
 10^7 &= 10 \cdot 10^2 \cdot 10^4 \\
@@ -201,7 +202,7 @@ $$
 For instance, $2 \cdot 3 \equiv 2 \cdot 7 \pmod 8$, because both equal 6 modulo 8. Because $\gcd(2, 8) = 2$, cancelling 2 changes the modulus from 8 to $8/2 = 4$. That gives $3 \equiv 7 \pmod 4$, even though $3 \not\equiv 7 \pmod 8$.
 
 <Callout tone="orange" label="Common errors">
-- **Reducing exponents modulo $n$:** Bases can be reduced at any step, but exponents cannot. By Euler's theorem, powers repeat modulo $\phi(n)$, not modulo $n$. For example, $2^5 \bmod 3 = 32 \bmod 3 = 2$. Reducing the exponent modulo 3 gives $2^{5 \bmod 3} = 2^2 = 4 \equiv 1 \pmod 3$, which is incorrect.
+- **Reducing exponents modulo $n$:** Bases can be reduced at any step, but exponents cannot. As you'll see in [Primality and Euler's Totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function), powers repeat modulo $\phi(n)$ (the count of coprime residues), not modulo $n$. For example, $2^5 \bmod 3 = 32 \bmod 3 = 2$. Reducing the exponent modulo 3 gives $2^{5 \bmod 3} = 2^2 = 4 \equiv 1 \pmod 3$, which is incorrect.
 - **Cancelling factors without dividing the modulus:** If $2x \equiv 6 \pmod 8$, dividing both sides by 2 gives $x \equiv 3 \pmod 4$, not $x \equiv 3 \pmod 8$. In the original modulus 8, there are two solutions: $x = 3$ and $x = 7$.
 </Callout>
 

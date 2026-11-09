@@ -13,7 +13,7 @@ $$
 (n - 1)! \equiv -1 \pmod{n}
 $$
 
-The proof relies on pairing numbers with their modular inverses. Modulo a prime $n$, each integer from 1 to $n - 1$ has a unique [inverse modulo $n$](/courses/computational-mathematics/modular-inverses). These pairs multiply to 1, leaving only numbers that serve as their own inverse. An integer $x$ satisfies $x^2 \equiv 1 \pmod n$ precisely when $x^2 - 1 \equiv (x - 1)(x + 1) \equiv 0 \pmod n$. Because $n$ is prime, $n$ must divide one of the factors: $x \equiv 1$ or $x \equiv -1 \equiv n - 1$. The remaining integers $\{2, 3, \dots, n - 2\}$ form disjoint inverse pairs. For $n = 13$, the values from 2 to 11 pair up as follows:
+The proof relies on pairing numbers with their modular inverses. Modulo a prime $n$, each integer from 1 to $n - 1$ has a unique [inverse modulo $n$](/courses/computational-mathematics/modular-inverses). These pairs multiply to 1, leaving only numbers that serve as their own inverse. A number is its own inverse when multiplying it by itself yields 1: $x^2 \equiv 1 \pmod n$, which means $x^2 - 1 \equiv (x - 1)(x + 1) \equiv 0 \pmod n$. Because $n$ is prime, $n$ must divide one of the factors: $x \equiv 1$ or $x \equiv -1 \equiv n - 1$. The remaining integers $\{2, 3, \dots, n - 2\}$ form disjoint inverse pairs. For $n = 13$, the values from 2 to 11 pair up as follows:
 
 $$
 \begin{aligned}
@@ -39,13 +39,13 @@ $$
 <CodeTabs>
 
 ```matlab
-mod(factorial(13 - 1), 13) - 13    % -1, so 13 is prime
+mod(factorial(13 - 1), 13) - 13    % mod gives 12; subtract 13 to show 12 == -1 (mod 13)
 ```
 
 ```python
 import math
 
-# Python's integers never overflow, so even large factorials stay exact
+# 12! % 13 gives 12; subtract 13 to show 12 == -1 (mod 13)
 print(math.factorial(13 - 1) % 13 - 13)  # -1
 ```
 
@@ -136,8 +136,7 @@ Some values and formulas follow directly:
 $$
 \begin{aligned}
 \phi(n) &= \phi(p_1^{a_1}) \cdots \phi(p_r^{a_r}) \\
-&= n \left(1 - \frac{1}{p_1}\right) \\
-&\quad \cdots \left(1 - \frac{1}{p_r}\right)
+&= n \left(1 - \frac{1}{p_1}\right) \cdots \left(1 - \frac{1}{p_r}\right)
 \end{aligned}
 $$
 

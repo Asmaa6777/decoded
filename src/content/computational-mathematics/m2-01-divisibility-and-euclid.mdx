@@ -112,7 +112,7 @@ Here $a \bmod b$ is the remainder $r$ from the division algorithm. The [next les
 - Any common divisor $d$ of $a$ and $b$ divides the difference $r = a - qb$.
 - Any common divisor $d$ of $b$ and $r$ divides the sum $a = qb + r$.
 
-Both pairs $(a, b)$ and $(b, r)$ have the same common divisors, so their greatest common divisors are identical. Setting $r_0 = b$, we calculate successive quotients $q_i$ and remainders $r_i$ with $0 \le r_i < r_{i-1}$:
+Both pairs $(a, b)$ and $(b, r)$ have the same common divisors, so their greatest common divisors are identical. With $r_1$ being the first remainder, each step divides the previous divisor by the previous remainder until the remainder reaches zero:
 
 $$
 \begin{aligned}
@@ -165,11 +165,11 @@ A simple `while` loop carries out the successive reductions:
 ```matlab
 % The Euclidean algorithm in MATLAB
 a = 247;  b = 143;
-r = a - b * floor(a / b);
+r = mod(a, b);                        % remainder: a - b * floor(a / b)
 while r ~= 0
     a = b;
     b = r;
-    r = a - b * floor(a / b);
+    r = mod(a, b);
 end
 gcd_result = b
 
@@ -187,7 +187,7 @@ print(a)  # 13
 
 </CodeTabs>
 
-Testing the same reduction on $a = 18$ and $b = 50$:
+Testing the same reduction on $a = 18$ and $b = 50$: if the smaller number is given first, the first division $18 = 0 \cdot 50 + 18$ automatically swaps them to $(50, 18)$. From there:
 
 $$
 \begin{aligned}

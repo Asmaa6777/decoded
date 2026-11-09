@@ -37,15 +37,15 @@ For $25^{193} \bmod 469$, the binary form of the exponent is $193 = (11000001)_2
 | Bit | Value | Operation | Computation modulo 469 | Reduced |
 | --- | --- | --- | --- | --- |
 | $e_7$ | 1 | start | $25 \bmod 469$ | 25 |
-| $e_6$ | 1 | square, multiply | $(25^2 \cdot 25) = 15625 = 33 \cdot 469 + 148$ | 148 |
+| $e_6$ | 1 | square, multiply | $25^2 = 625 \equiv 156$; $156 \cdot 25 = 3900 \equiv 148$ | 148 |
 | $e_5$ | 0 | square | $148^2 = 21904 = 46 \cdot 469 + 330$ | 330 |
 | $e_4$ | 0 | square | $330^2 = 108900 = 232 \cdot 469 + 92$ | 92 |
 | $e_3$ | 0 | square | $92^2 = 8464 = 18 \cdot 469 + 22$ | 22 |
 | $e_2$ | 0 | square | $22^2 = 484 = 1 \cdot 469 + 15$ | 15 |
 | $e_1$ | 0 | square | $15^2 = 225 < 469$ | 225 |
-| $e_0$ | 1 | square, multiply | $(225^2 \cdot 25) = 1265625 = 2698 \cdot 469 + 263$ | 263 |
+| $e_0$ | 1 | square, multiply | $225^2 \equiv 442 \equiv -27$; $(-27) \cdot 25 = -675 \equiv 263$ | 263 |
 
-Therefore $25^{193} \equiv 263 \pmod{469}$. (In practice, reducing between the square and the multiplication keeps numbers smaller: $225^2 \equiv 442 \equiv -27$, and $(-27) \cdot 25 = -675 \equiv 263 \pmod{469}$.)
+Therefore $25^{193} \equiv 263 \pmod{469}$. Reducing between the square and the multiplication keeps numbers small: instead of computing $225^2 \cdot 25 = 1265625$, reducing $225^2 \equiv 442 \equiv -27$ allows computing $(-27) \cdot 25 = -675 \equiv 263 \pmod{469}$ by hand.
 
 Step through the calculation below to see each squaring and multiplication animate:
 
@@ -95,7 +95,7 @@ Repeated squaring applies to any associative multiplication, including square ma
 
 ```matlab
 P = [0.9 0.1; 0.5 0.5];    % from state 1: stay 90%, move 10%
-P^64                       % ^ on a matrix squares repeatedly, like the loop above
+P^64                       % ^ on a matrix squares repeatedly (matrix power, not P.^64)
 
 ans =
     0.8333    0.1667

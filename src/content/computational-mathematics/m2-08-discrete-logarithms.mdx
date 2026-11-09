@@ -157,15 +157,17 @@ Trace the arithmetic step by step with prime $p = 19$ and base $a = 2$:
 3. Alice receives $B = 14$ and raises it to her secret $x = 5$:
    $$
    \begin{aligned}
-   B^x &\equiv 14^5 \equiv (-5)^5 \\
-   &= -3125 \equiv 10 \pmod{19}
+   B^x &\equiv 14^5 \equiv (-5)^5 = ((-5)^2)^2 \cdot (-5) \\
+   &\equiv 6^2 \cdot (-5) = 36 \cdot (-5) \\
+   &\equiv (-2) \cdot (-5) = 10 \pmod{19}
    \end{aligned}
    $$
 4. Bob receives $A = 13$ and raises it to his secret $y = 7$:
    $$
    \begin{aligned}
-   A^y &\equiv 13^7 \equiv (-6)^7 \\
-   &= -279936 \equiv 10 \pmod{19}
+   A^y &\equiv 13^7 \equiv (-6)^7 = ((-6)^2)^3 \cdot (-6) \\
+   &\equiv (-2)^3 \cdot (-6) = (-8) \cdot (-6) \\
+   &= 48 \equiv 10 \pmod{19}
    \end{aligned}
    $$
 
@@ -179,7 +181,7 @@ Both compute the same shared key, $10$. An observer intercepting $A = 13$ and $B
 p = 19;  a = 2;
 x = 5;  y = 7;                    % the two private exponents
 
-powermod(powermod(a, y, p), x, p) % one side: (a^y)^x
+powermod(powermod(a, y, p), x, p) % one side: (a^y)^x (needs Symbolic Math Toolbox)
 powermod(powermod(a, x, p), y, p) % the other side: (a^x)^y, the same 10
 ```
 
@@ -205,7 +207,7 @@ There's a second problem of this kind. Given a [composite](/courses/computationa
 
 <Callout tone="orange" label="Common errors">
 - **Reducing discrete logarithms modulo $p$:** Exponents and logarithms operate in modular arithmetic modulo $\phi(p) = p - 1$, not modulo $p$. For example, adding two discrete logarithms requires reducing modulo $p - 1$.
-- **Attempting continuous logarithms:** Using standard math `log(b) / log(a)` fails completely in modular arithmetic. Continuous logarithms require smooth, monotonic curves; modular powers jump pseudo-randomly over $\mathbb{Z}_p$.
+- **Attempting continuous logarithms:** Using standard math `log(b) / log(a)` fails completely in modular arithmetic. Continuous logarithms require smooth, monotonic curves; modular powers jump pseudo-randomly over the residues $\{0, 1, \dots, p - 1\}$ (often written $\mathbb{Z}_p$).
 - **Swapping base and target:** In $\log_a(b) = k$, $a$ is the base that is raised to the power $k$, and $b$ is the target value ($a^k \equiv b \pmod p$). Confusing them with $\log_b(a)$ or evaluating $a^b \pmod p$ yields unrelated numbers.
 </Callout>
 

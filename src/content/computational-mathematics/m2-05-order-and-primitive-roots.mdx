@@ -135,7 +135,7 @@ $$
 
 Because $7^{12} \equiv 1 \pmod{45}$, the order of 7 modulo 45 is 12, not 24. Therefore, 7 is not a primitive root of 45. (In fact, 45 has no primitive roots. For every integer $a$ coprime to 45, $a^{12} \equiv 1 \pmod{45}$.)
 
-When primitive roots exist (such as modulo any prime $p$), there are exactly $\phi(\phi(p)) = \phi(p - 1)$ of them. Modulo 7, there are $\phi(6) = \phi(2 \cdot 3) = 6 \cdot \frac{1}{2} \cdot \frac{2}{3} = 2$ primitive roots: 3 and 5. Modulo 19, there are $\phi(18) = 18 \cdot \frac{1}{2} \cdot \frac{2}{3} = 6$ primitive roots.
+When primitive roots exist (such as modulo any prime $p$), there are exactly $\phi(\phi(p)) = \phi(p - 1)$ of them. Why? If $g$ is a primitive root, its power $g^k$ generates the entire cycle if and only if the exponent $k$ shares no common factors with the cycle length $p - 1$. The count of such coprime exponents is $\phi(p - 1)$. Modulo 7, there are $\phi(6) = \phi(2 \cdot 3) = 6 \cdot \frac{1}{2} \cdot \frac{2}{3} = 2$ primitive roots: 3 and 5. Modulo 19, there are $\phi(18) = 18 \cdot \frac{1}{2} \cdot \frac{2}{3} = 6$ primitive roots.
 
 <CodeTabs>
 
@@ -153,7 +153,7 @@ print([pow(5, k, 7) for k in range(1, 7)])  # [5, 4, 6, 2, 3, 1]
 
 </CodeTabs>
 
-That long cycle allows computers to generate pseudorandom numbers. Machine learning relies heavily on pseudorandom sequences: initial model weights, dataset shuffling, and dropout masks all derive from a random number generator. A **Lehmer generator** produces this exact power sequence by repeatedly multiplying by $a$ modulo a prime. Choosing a primitive root for $a$ yields the maximum possible period before values repeat:
+That long cycle allows computers to generate pseudorandom numbers. Machine learning relies heavily on pseudorandom sequences: initial model weights, dataset shuffling, and dropout masks all derive from a random number generator. A **Lehmer generator** produces this exact power sequence by repeatedly multiplying by $a$ modulo a prime. Choosing a primitive root for $a$ yields the maximum possible period before values repeat. Modulo 7, the full cycle has length $p - 1 = 6$, so generating 7 steps shows the sequence cycling back to 3:
 
 <CodeTabs>
 
