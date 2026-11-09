@@ -3,22 +3,20 @@ import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualize
 
 # Insertion Sort: Sorting Like a Card Player
 
-If you've ever picked up a hand of playing cards and put it in order, you've done insertion sort.
-
-The cards you've sorted so far are in your left hand. You pick up the next card with your right hand, slide it along until it's in the right spot (pushing the bigger cards over to make room), and drop it in. You repeat until the table is empty, and that's the whole algorithm.
+Insertion sort mirrors how people commonly organize playing cards in hand. A person holds sorted cards in one hand, picks the next card from the table, shifts larger cards aside to make space, and places the card in its sorted spot. Repeating this procedure until no cards remain completes the sort.
 
 ## The idea
 
-At any moment the array has two parts:
+In **insertion sort**, the algorithm maintains two contiguous partitions of an array:
 
-- **Left side:** already sorted among themselves (your hand).
-- **Right side:** not looked at yet (the cards on the table).
+- **Left partition:** elements that are already sorted relative to each other.
+- **Right partition:** elements awaiting placement.
 
-Each step takes the first element of the right side, the **key**, and inserts it in the correct place on the left. To make room, every element on the left that's bigger than the key **shifts one position right**.
+Each step extracts the first element of the unsorted partition, known as the **key**, and inserts it into its proper position within the sorted segment. To make space, every sorted element larger than the key **shifts one position right**.
 
 <SortVisualizer algorithm="insertion" initial={[12, 11, 13, 5, 6, 3, 9]} />
 
-Watch the purple **key** chip. While it's "in your hand," the bars bigger than it slide right one by one and leave a gap. When the loop finds an element that isn't bigger, or runs off the left end, the key drops into the gap.
+In the visualizer above, watch the purple **key** indicator. As elements larger than the key shift right, they leave open the target slot. When the comparison encounters an element less than or equal to the key, or reaches the beginning of the array, the key drops into place.
 
 The notes walk through 6, 2, 11, 7, 5. The first element counts as already sorted, so the work starts with the second:
 
@@ -29,7 +27,7 @@ The notes walk through 6, 2, 11, 7, 5. The first element counts as already sorte
 | 7 | 11, 6 | 7 < 11: shift 11; 7 > 6, stop | **2 6 7 11** 5 |
 | 5 | 11, 7, 6, 2 | 5 < 11, 7, 6: shift all three; 5 > 2, stop | **2 5 6 7 11** |
 
-The "compared with" column runs from the **end** of the sorted part backwards. That's why 11 only needs one comparison: it's bigger than the last card in your hand, so it's bigger than all of them.
+Comparisons proceed backwards from the end of the sorted prefix. Because 11 is greater than 6 (the largest value in the sorted prefix), it requires only a single comparison.
 
 The notes' pseudocode, in the textbook's notation:
 
@@ -44,11 +42,11 @@ for i ← 1 to n − 1 do
     A[j + 1] ← key
 ```
 
-The last line runs once per key, after the `while` loop ends, not inside it.
+The assignment `A[j + 1] ← key` executes once per outer iteration, immediately after the inner `while` loop finishes.
 
 ### An exam answer in steps
 
-A past exam's answer sheet sorts 1, 12, 46, 6, 37, 5, 46, 3, 32 this way, one line per key that moves. Keys that are already bigger than everything before them (12, the first 46, and the second 46) don't move, so the sheet skips them:
+Exams frequently ask for step-by-step traces showing each shifted key. For the sequence 1, 12, 46, 6, 37, 5, 46, 3, 32, values that are already larger than the preceding prefix (12, the first 46, and the second 46) remain in place:
 
 | Key | Smaller than | Array after |
 | --- | --- | --- |
@@ -58,52 +56,52 @@ A past exam's answer sheet sorts 1, 12, 46, 6, 37, 5, 46, 3, 32 this way, one li
 | 3 | 46, 46, 37, 12, 6, 5 | 1 **3** 5 6 12 37 46 46 32 |
 | 32 | 46, 46, 37 | 1 3 5 6 12 **32** 37 46 46 |
 
-The second 46 stops behind the first, since the loop only shifts values strictly bigger than the key. That's what keeps insertion sort stable, as explained below. Each line moves a key **leftwards into place** past the bigger ones, which is how you tell an insertion sort answer from a [selection sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#selection-sort-find-the-smallest-put-it-first) one, where each line swaps the smallest remaining value to the front.
+The duplicate value 46 remains behind the first 46 because the condition shifts only values strictly greater than the key. This strict inequality preserves stability. Each step shifts an element leftward into position, which distinguishes an insertion sort trace from [selection sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#selection-sort-find-the-smallest-put-it-first), where each pass swaps the minimum value forward.
 
-Insertion sort **shifts** where [bubble sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#bubble-sort-fix-the-neighbours) swaps, so each move costs one assignment instead of three. That small detail makes it quicker than bubble sort in practice, even though both have the same [Big-O](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations).
+Additionally, insertion sort **shifts** elements rather than performing repeated swaps like [bubble sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#bubble-sort-fix-the-neighbours). Shifting requires one assignment per step rather than three, making insertion sort noticeably faster in practice despite sharing the same [Big-O](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations) worst-case class.
 
 ## Analysis
 
 The basic operation is the comparison `a[j] > key` in the `while` condition.
 
-**Worst case: reverse-sorted input.** Every new key is smaller than everything in your hand, so it travels all the way to the front. The $i$-th key does $i$ comparisons:
+- **Worst case** (reverse-sorted input): each incoming key is smaller than all preceding elements, shifting all the way to the front. The $i$-th element requires $i$ comparisons, producing:
 
 $$
 1 + 2 + \dots + (n-1) = \frac{n(n-1)}{2} = O(n^2)
 $$
 
-**Best case: already sorted input.** Every key is bigger than the last card in your hand. The `while` loop checks once, fails, and the key stays put. That's one comparison per element: **$O(n)$**.
+- **Best case** (already sorted input): every key is greater than the preceding element. The `while` condition fails immediately on its first check, leaving the key in place. This requires one comparison per element, yielding **$O(n)$** comparisons.
 
-**Average case:** on random input, each key is smaller than about half of the cards already in your hand, so it travels about halfway. That's half of the worst case's $n(n-1)/2$, roughly $n^2/4$ comparisons, which is still $O(n^2)$: halving doesn't change the class.
+- **Average case**: for randomly ordered input, each key travels roughly halfway through the sorted prefix. This requires approximately $n^2 / 4$ comparisons, which remains $O(n^2)$.
 
-The notes sum it up in a table: best case $n$, average case $n^2$, worst case $n^2$. They also say it plainly: insertion sort is not efficient on large data sets (the average and worst cases show that), but it makes fewer comparisons when the array is partially sorted.
+Insertion sort is inefficient for large random datasets due to its quadratic worst and average cases. However, it requires significantly fewer operations when the array is already partially sorted.
 
-Try it: type `1, 2, 3, 4, 5, 6, 7` into the visualizer and count the steps. Then try `7, 6, 5, 4, 3, 2, 1`.
+Test this behavior in the visualizer: enter `1, 2, 3, 4, 5, 6, 7` to count the minimal comparisons, and then enter `7, 6, 5, 4, 3, 2, 1` to observe the worst case.
 
 ## Why it's the best of the simple sorts
 
-Insertion sort's running time depends on **how unsorted** the input is. If every element is only a few positions from where it belongs (a *nearly sorted* array), each key shifts only a few places and the whole sort runs in close to linear time.
+The execution time of **insertion sort** depends directly on the initial order of input elements. If every item is within a few positions of where it belongs (a nearly sorted array), each key shifts only a few places, allowing the sort to complete in nearly linear time.
 
-Real data is often nearly sorted: a list of transactions ordered by time except for a few late arrivals, or a leaderboard where only a couple of scores changed.
+Real-world datasets often exhibit this property, such as transaction logs with occasional delayed entries or leaderboard updates where only a few scores change.
 
-Other properties:
+Key characteristics:
 
-- **In place:** it only needs the `key` and `j` variables, so $O(1)$ extra space.
-- **Stable:** it only shifts elements that are *strictly* bigger (`a[j] > key`), so equal values never pass each other. Change `>` to `>=` and it stops being stable, which is a common exam trap.
-- **Online:** it can sort data *as it arrives*. You don't need the whole array up front, because each new element is just the next card.
+- **In place:** it uses only temporary variables `key` and `j`, requiring $O(1)$ auxiliary memory.
+- **Stable:** it shifts only elements strictly greater than the key (`a[j] > key`), ensuring equal elements maintain their relative order. Changing `>` to `>=` disrupts stability, which is a frequent question on exams.
+- **Online:** it can process streaming data as items arrive incrementally, without needing the entire collection in advance.
 
 <Callout tone="sky" label="The headline facts">
-Insertion sort: $O(n^2)$ average and worst, $O(n)$ best, in place, stable. Great on small or nearly sorted input.
+Insertion sort: $O(n^2)$ average and worst, $O(n)$ best, in place, stable. Highly effective on small or nearly sorted input.
 </Callout>
 
 ## Where this shows up today
 
 <ApplicationsGrid>
   <PracticalApplication title="Java's own sort" tool="JDK">
-    The sorting algorithms inside the JDK hand very small subarrays (a few dozen elements) to insertion sort, because on tiny inputs its low overhead beats the $O(n \log n)$ algorithms.
+    The sorting algorithms inside the JDK hand small subarrays to insertion sort because its low computational overhead outperforms divide-and-conquer methods on tiny inputs.
   </PracticalApplication>
   <PracticalApplication title="Live leaderboards" tool="GAMES">
-    When one score changes, the list is almost sorted. One insertion step moves that player to their new rank without re-sorting everyone.
+    When a single score changes, the leaderboard is nearly sorted. One insertion step places that player into their new rank without re-sorting all entries.
   </PracticalApplication>
 </ApplicationsGrid>
 
@@ -123,11 +121,11 @@ public static void insertionSort(int[] array) {
 }
 ```
 
-The line `key = array[i]` has to come first. The first shift, `array[j + 1] = array[j]`, writes into position `i`, so without a saved copy the key would be overwritten and lost. Forgetting it is a common bug: the sort runs, and the result has a duplicated value and a missing one.
+Saving `key = array[i]` before the loop is required. The first shift operation, `array[j + 1] = array[j]`, overwrites index `i`. Without saving the value first, that element is overwritten and lost.
 
-Watch the order in the `while` condition: `j >= 0` must come **before** `array[j] > key`. Java's `&&` stops at the first false, so when `j` reaches `-1` it never tries to read `array[-1]`. Swap the order and the program crashes on the first key that belongs at the very front.
+In the `while` condition, `j >= 0` must precede `array[j] > key`. Java evaluates boolean `&&` with short-circuit evaluation: once `j >= 0` evaluates to false at index `-1`, execution stops before evaluating `array[-1]`. Reversing this condition causes an `ArrayIndexOutOfBoundsException` whenever an element belongs at index 0.
 
-Time it against [selection sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#selection-sort-find-the-smallest-put-it-first) on a random array of 5,000 numbers. Then sort the array first and time both again. Selection sort's time barely changes, while insertion sort's drops to almost nothing.
+Compare its performance against [selection sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#selection-sort-find-the-smallest-put-it-first) on 5,000 random integers. Then test both algorithms on an already sorted array. Selection sort takes the same time as before, whereas insertion sort finishes almost instantaneously.
 
 <LeetCodeProblems
   problems={[

@@ -3,43 +3,41 @@ import { SortVisualizer, LeetCodeProblems, MergeSortTree } from "@/components/md
 
 # Divide and Conquer: Merge Sort
 
-Selection, bubble and [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea) all work the same basic way: fix one element at a time, and to fix each one, look at (almost) everything else. That's where the $n^2$ comes from: $n$ elements, $n$ work each.
+Selection, bubble, and [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea) share the same underlying structure: each pass places one element by scanning the rest of the array. That repeated scanning produces quadratic $O(n^2)$ complexity.
 
-A cleverer loop won't beat $n^2$. You need a different *strategy*, and the first one we'll study is the most important design idea in this course.
+Breaking past the $n^2$ barrier requires a different algorithmic strategy: dividing problems into smaller subproblems.
 
 ## Divide and conquer
 
-Three steps:
+**Divide and conquer** is a design strategy based on recursion. It solves a computational problem through three steps:
 
 1. **Divide** the problem into smaller subproblems of the same kind.
-2. **Conquer** each subproblem by solving it recursively. Once a subproblem is small enough, solve it directly. That's the **base case**.
-3. **Combine** the sub-solutions into a solution for the whole problem.
+2. **Conquer** each subproblem by solving it recursively. When a subproblem is small enough, solve it directly. That stopping condition is the **base case**.
+3. **Combine** the subproblem solutions into a solution for the original problem.
 
-This is **recursion**: a method that solves a problem by calling itself on a smaller version of the same problem. Every recursive method needs a **base case**, an input small enough to answer directly, without calling itself again; otherwise it would call itself forever. Divide and conquer is recursion where you make the problem smaller *in a way that makes combining cheap*.
+This strategy relies on **recursion**, where a method solves a task by calling itself on smaller instances of the same problem. Every recursive method requires a **base case** to terminate execution without recursing further. Divide and conquer partitions problems specifically so that the combine step remains computationally efficient.
 
-The notes describe it twice. Once as two parts, **divide** (split into subproblems and solve them recursively) and **conquer** (build the answer from the sub-answers), and once as the three steps above. The two-part version folds "solve" into divide and calls the combine step "conquer". If an exam asks for the steps, give the three: divide, conquer, combine.
+Course notes describe the pattern in two ways: either as three explicit phases (divide, conquer, combine), or as two phases (divide and conquer, where conquering includes combining). If an exam question asks for the steps of divide and conquer, list the standard three: divide, conquer, combine.
 
-The notes list three places the strategy is used: the **maximum and minimum problem** (find the largest and smallest of each half, then compare the two winners), [binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half), and sorting, with merge sort and quick sort.
+The notes cite three examples of divide and conquer: the **maximum and minimum problem** (finding the minimum and maximum of each half, then comparing the two winners), [binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half), and sorting (merge sort and quick sort).
 
 ## Merge sort in one paragraph
 
-To sort an array: split it in half, sort the left half, sort the right half, then **merge** the two sorted halves into one sorted array. How do you sort each half? The same way: split it, sort the halves, merge. Keep splitting until the pieces have one element each. A one-element array is already sorted, so that's the base case, and everything else is merging.
+In **merge sort**, the algorithm splits an array in half, sorts each half recursively, and merges the two sorted halves into one sorted array. The base case occurs when a subarray contains fewer than two elements, which is already sorted by definition. All ordering work takes place during the merge step.
 
-Here's the notes' example, `30, 20, 40, 5, 90, 80, 10`:
+Here is the notes' example, `30, 20, 40, 5, 90, 80, 10`:
 
 <MergeSortTree input={[30, 20, 40, 5, 90, 80, 10]} />
 
-With an odd number of elements, one half gets the extra one. The notes put it on the left (4 and 3), and the lab code below puts it on the right (3 and 4, because `n / 2` rounds down). Either works, and the final answer is the same.
-
-The top half of the picture is *divide*. The bottom half is *combine*. All the actual sorting happens on the way back up.
+When an array contains an odd number of elements, one half receives the extra item. Whether the extra item sits on the left or the right does not affect correctness. In the recursion tree above, descending levels represent the divide step, while ascending levels represent the combine step where sorted subarrays merge.
 
 ## The merge step
 
-Merging two sorted lists is easy, and it's where merge sort does its work. Think of two sorted piles of exam papers, smallest on top. Look at the top paper of each pile, take the smaller one, and put it on the output pile. Repeat. When one pile runs out, put the rest of the other pile on top, since it's already sorted.
+Merging two sorted arrays is the central operation of merge sort. Consider two sorted piles of papers arranged with the smallest numbers on top. Comparing the top items from each pile, taking the smaller one, and placing it into an output pile repeated until one pile is empty completes the merge. The remaining items from the other pile are then appended directly to the output.
 
-Each comparison places exactly one element, so merging two halves with $n$ elements in total takes **$O(n)$** time. (The notes write $\Theta(n)$: the merge fills all $n$ output slots, so it can't take less either.)
+Because each comparison places at least one element into its final sorted position, merging two sorted subarrays containing $n$ total elements takes $\Theta(n)$ time.
 
-The notes merge `L = 2, 6, 11` and `R = 4, 5, 7` into `A` with three indexes: `i` for the left list, `j` for the right, `k` for the output.
+The notes merge `L = 2, 6, 11` and `R = 4, 5, 7` into `A` with three indices: `i` for the left list, `j` for the right, `k` for the output.
 
 | Step | Compare | Take | A so far | i, j, k after |
 | --- | --- | --- | --- | --- |
@@ -50,9 +48,9 @@ The notes merge `L = 2, 6, 11` and `R = 4, 5, 7` into `A` with three indexes: `i
 | 5 | 11 vs 7 | 7 | 2 4 5 6 7 | 2, 3, 5 |
 | 6 | R is empty | 11 | 2 4 5 6 7 11 | 3, 3, 6 |
 
-At step 6 the right list has run out, so the rest of the left list (just 11) is copied over without comparing. That's safe because the left list is already sorted.
+At step 6 the right list has run out, so the rest of the left list (just 11) is copied over without comparing. That is safe because the left list is already sorted.
 
-The notes give the textbook's pseudocode for the merge. A past exam asked for exactly this, so it's worth being able to write it:
+The notes give the textbook's pseudocode for the merge:
 
 ```text
 ALGORITHM Merge(B[0..p − 1], C[0..q − 1], A[0..p + q − 1])
@@ -76,55 +74,55 @@ The sky-coloured window below is the piece being worked on, and the orange buffe
 
 <SortVisualizer algorithm="merge" initial={[8, 3, 2, 9, 7, 1, 5, 4]} />
 
-That's the notes' second example, 8, 3, 2, 9, 7, 1, 5, 4. By levels: the pairs merge to 3 8, 2 9, 1 7, 4 5; then the fours to 2 3 8 9 and 1 4 5 7; then the whole to 1 2 3 4 5 7 8 9.
+That is the notes' second example: 8, 3, 2, 9, 7, 1, 5, 4. Tracing by levels: the pairs merge to 3 8, 2 9, 1 7, 4 5; then the quadruplets to 2 3 8 9 and 1 4 5 7; then the full array to 1 2 3 4 5 7 8 9.
 
 ## Analysis: where $n \log n$ comes from
 
-Look at the split diagram again as layers.
+Examining the recursion tree by levels explains the running time:
 
-- **How many layers?** Each layer halves the pieces. Starting from $n$, you can halve about $\log_2 n$ times before reaching size 1: that's what [a logarithm counts](/courses/algorithm-design-and-analysis/counting-steps#getting-the-big-o-without-the-algebra). With 8 elements, the pieces go 8 → 4 → 2 → 1, three layers, and $\log_2 8 = 3$. For a million elements, that's only about 20 layers.
-- **How much work per layer?** Every element gets merged exactly once on each layer. That's $O(n)$ work per layer.
+- **Number of levels:** each level halves subarray lengths. An array of size $n$ can be halved $\log_2 n$ times before reaching subarrays of size 1, matching the definition of [logarithmic scaling](/courses/algorithm-design-and-analysis/counting-steps#getting-the-big-o-without-the-algebra). For 8 elements, the subarrays divide across 3 levels ($\log_2 8 = 3$). For one million elements, the tree requires only about 20 levels.
+- **Work per level:** merging all subarrays across any single level processes all $n$ elements, requiring $\Theta(n)$ operations per level.
 
 $$
-\underbrace{\log_2 n}_{\text{layers}} \times \underbrace{n}_{\text{work per layer}} = O(n \log n)
+\underbrace{\log_2 n}_{\text{levels}} \times \underbrace{n}_{\text{work per level}} = \Theta(n \log n)
 $$
 
-Merge sort *always* splits exactly in half, whatever the data looks like, so best, average and worst case are all **$O(n \log n)$**. No input makes it slow.
+Because merge sort always splits arrays evenly down the middle regardless of element values, best, average, and worst-case complexities are all **$\Theta(n \log n)$**.
 
-Go back to the [growth table](/courses/algorithm-design-and-analysis/counting-steps) and compare $n^2$ with $n \log n$ at a million. One takes hours and the other a fraction of a second.
+Comparing $n^2$ with $n \log n$ in the [growth table](/courses/algorithm-design-and-analysis/counting-steps) illustrates the difference at scale: at one million elements, quadratic algorithms take hours, while $n \log n$ takes fractions of a second.
 
 <Callout tone="orange" label="The price">
-Merge sort is **not in place**. The merge step needs a temporary array as big as the piece being merged, which is $O(n)$ extra memory. When memory is tight, that matters. ([Quick sort](/courses/algorithm-design-and-analysis/quick-sort#the-idea), next lesson, avoids it.)
+Merge sort is **not in place**. The merge operation requires a temporary array sized to the elements being merged, consuming $O(n)$ auxiliary memory. When memory is limited, this extra space requirement is significant. [Quick sort](/courses/algorithm-design-and-analysis/quick-sort#the-idea), covered in the next lesson, sorts in place.
 </Callout>
 
 <Callout tone="orange" label="Common mistakes in the merge">
-Two bugs show up in almost every first attempt. **Forgetting the leftovers:** the main loop stops when *one* half runs out, and without the two `while` loops after it, the rest of the other half is never copied. **Writing `<` instead of `<=`:** on equal values it takes from the right half first, which still sorts correctly but makes merge sort unstable.
+Two implementation bugs occur frequently. **Omitting remaining elements:** the main merge loop terminates when either half runs out. Without the following cleanup loops, elements from the unfinished half are omitted. **Writing `<` instead of `<=`: ** when comparing elements from left and right halves, using strict `<` pulls from the right half first on equal values. The array still sorts, but the sort is no longer stable.
 </Callout>
 
-Two more properties:
+Two additional properties:
 
-- **Stable.** When the two fronts are equal, the merge takes from the *left* half first (`a[i] <= a[j]`). Equal elements keep their original order.
-- **Great for huge data.** Merging only ever reads each list front to back, so it works even when the data is too big for memory and lives on disk.
+- **Stable:** when elements at the front of both halves are equal, the merge step selects from the left half first (`a[i] <= a[j]`). Equal elements retain their relative initial order.
+- **Efficient for external storage:** merging reads arrays sequentially from front to back, making it suitable for datasets that exceed available RAM and reside on disk.
 
-Advanced Algorithms applies the same strategy to powering numbers and multiplying matrices, in [divide and conquer](/courses/advanced-algorithms/divide-and-conquer).
+Advanced Algorithms applies the same divide-and-conquer strategy to exponentiation and matrix multiplication, in [divide and conquer](/courses/advanced-algorithms/divide-and-conquer).
 
 ## Where this shows up today
 
 <ApplicationsGrid>
   <PracticalApplication title="Sorting objects in Java" tool="JDK">
-    `Collections.sort` and `Arrays.sort` on objects use **TimSort**, a refined merge sort. It's stable, so sorting a list of people by age keeps same-age people in their previous order.
+    `Collections.sort` and `Arrays.sort` on reference objects use **TimSort**, an adaptive hybrid derived from merge sort and insertion sort that preserves stability.
   </PracticalApplication>
   <PracticalApplication title="Databases and big data" tool="EXTERNAL SORT">
-    When a database sorts more rows than fit in RAM, it sorts chunks that do fit, writes them to disk, then merges the sorted chunks: merge sort's combine step at gigabyte scale.
+    When database queries require sorting tables that exceed physical memory, systems sort in-memory chunks, write them to disk, and merge the sorted runs using multi-way external merges.
   </PracticalApplication>
   <PracticalApplication title="Storage engines" tool="COMPACTION">
-    RocksDB and Cassandra keep sorted files on disk and merge them in the background with the same "compare the fronts, take the smaller" loop.
+    LSM-tree storage systems like RocksDB and Cassandra maintain sorted SSTables on disk and consolidate them through background compaction using merge passes.
   </PracticalApplication>
 </ApplicationsGrid>
 
 ## The lab version
 
-Labs often write merge sort slightly differently. Instead of passing index ranges, each call copies its halves into **new** arrays. It's the same algorithm and a bit easier to read:
+Labs often write merge sort by allocating sub-arrays directly on each recursive call:
 
 ```java
 public static void mergeSort(int[] input) {
@@ -153,9 +151,9 @@ private static void merge(int[] input, int[] left, int[] right) {
 }
 ```
 
-The lab sheet's `main` calls `printArray(array1)` **before** `generateRandomArray`, so the first line it prints is 100 zeros, not the input. Move the print below the call to see the numbers you're about to sort.
+The lab sheet called `printArray(array1)` before `generateRandomArray`, causing the initial terminal printout to display uninitialized zeros. Moving the print statement after array generation displays the actual numbers before sorting.
 
-Run it on 100,000 random numbers and time it. Then try insertion sort on the same 100,000, and go make a cup of tea while it runs.
+Benchmarking merge sort on 100,000 random integers demonstrates its practical speed: it finishes in fractions of a second, whereas quadratic insertion sort on the same input requires minutes.
 
 <LeetCodeProblems
   problems={[

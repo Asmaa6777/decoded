@@ -3,19 +3,19 @@ import { SortVisualizer, StabilityCompare, LeetCodeProblems } from "@/components
 
 # Selection Sort and Bubble Sort
 
-A **sorting algorithm** puts the elements of a list in order: numerical order for numbers, lexical (dictionary) order for strings, ascending or descending. The problem looks small, but sorted data is what makes fast searching possible (module 2), sorting is the first step of many data-analysis and machine-learning pipelines, and it has been studied so thoroughly that it's the standard way to *teach* algorithm analysis.
+A **sorting algorithm** arranges elements in a specific order: numerical order for numbers, alphabetical order for strings, either ascending or descending. Sorting makes fast searching possible, forms the initial step in many data processing pipelines, and serves as the standard introduction to algorithm analysis.
 
-We start with the two simplest sorts. Both are slow, and you can see and count exactly where the time goes, which makes them good practice for analysis.
+We begin with two simple algorithms: selection sort and bubble sort. Both require quadratic time, but their operations are easy to trace and count step by step.
 
 ## Selection sort: find the smallest, put it first
 
-The idea fits in one sentence: **find the smallest element and swap it into position 0, find the smallest of what's left and swap it into position 1, and repeat.**
+In **selection sort**, the algorithm finds the smallest element and swaps it into index 0, finds the smallest remaining element and swaps it into index 1, and repeats until the array is ordered.
 
 The array is split in two: a sorted part on the left that grows by one each pass, and an unsorted part on the right that shrinks. Press **Play**, or **Step** through it one comparison at a time and watch the highlighted line of Java underneath move with you.
 
 <SortVisualizer algorithm="selection" initial={[3, 7, 8, 5, 2, 1, 9, 5, 4]} />
 
-That input is the kind of list exam questions ask you to sort "in steps." The answer looks like this, one line per pass:
+Exams often ask students to trace sorting pass by pass. The trace below shows each pass for this input:
 
 | Pass | Smallest of the rest | Array after the swap |
 | --- | --- | --- |
@@ -29,9 +29,9 @@ That input is the kind of list exam questions ask you to sort "in steps." The an
 | 7 | 7 | **1 2 3 4 5 5 7** 9 8 |
 | 8 | 8 | **1 2 3 4 5 5 7 8 9** |
 
-Nine elements take eight passes. After pass 8 the last element is already in place, since there's nothing left to compare it with.
+Sorting nine elements takes eight passes. After pass 8, the single remaining element is already in its correct final position.
 
-The notes use a smaller example, 6, 2, 11, 7, 5. Pass 1 finds 2 and swaps it with 6, giving 2, 6, 11, 7, 5. Pass 2 finds 5 and swaps it with 6, giving 2, 5, 11, 7, 6. Pass 3 swaps 6 with 11, giving 2, 5, 6, 7, 11. Pass 4 finds that 7 is already the smaller of 7 and 11, so nothing moves.
+The notes use a smaller example: 6, 2, 11, 7, 5. Pass 1 finds 2 and swaps it with 6, producing 2, 6, 11, 7, 5. Pass 2 finds 5 and swaps it with 6, producing 2, 5, 11, 7, 6. Pass 3 swaps 6 with 11, producing 2, 5, 6, 7, 11. Pass 4 finds that 7 is already the smaller of 7 and 11, leaving the array unchanged.
 
 The notes write the algorithm in the textbook's pseudocode, where `←` means "gets" (assignment) and `A[0..n − 1]` is an array of $n$ elements:
 
@@ -44,7 +44,7 @@ for i ← 0 to n − 2 do
     swap A[i] and A[min]
 ```
 
-The outer loop stops at $n - 2$, the second-to-last index, for the reason above: by then the last element has nowhere else to go.
+The outer loop stops at index $n - 2$, the second-to-last position. By that point, the final element is already in place.
 
 ### Analysis
 
@@ -54,19 +54,19 @@ $$
 (n-1) + (n-2) + \dots + 1 = \frac{n(n-1)}{2}
 $$
 
-That's $\Theta(n^2)$, and it's the same number **whatever the input looks like**. An already sorted array still costs $n(n-1)/2$ comparisons, because selection sort never checks whether it could stop early. Best, average and worst case are all $O(n^2)$. (Step through the visualizer with `1, 2, 3, 4, 5` to watch it do all that useless work.)
+The comparison count is $\Theta(n^2)$, and it remains identical regardless of input order. Even an already sorted array requires $n(n-1)/2$ comparisons, because basic selection sort never checks whether the array is already ordered. Best, average, and worst cases are all $O(n^2)$. (Step through the visualizer with `1, 2, 3, 4, 5` to observe this redundant work.)
 
 <Callout tone="orange" label="Common mistake: swapping too early">
-Students often swap every time they find something smaller than `A[i]`, instead of only remembering its index in `min` and swapping once at the end of the pass. The array still ends up sorted, but it's no longer selection sort: it does many swaps per pass instead of one, and an exam trace of it won't match the expected answer. Each pass of selection sort ends with **exactly one** swap (sometimes of an element with itself).
+Students often swap every time they find a value smaller than `A[min]`, rather than recording its index in `min` and swapping once at the end of the pass. Swapping repeatedly still sorts the array, but it alters the algorithm: it performs multiple swaps per pass instead of one, and exam trace answers will not match the expected state. Each pass of selection sort must end with **exactly one** swap (which may swap an element with itself).
 </Callout>
 
-Where selection sort does well is **swaps**: at most $n - 1$ of them, one per pass. If writing to memory is expensive, as on flash storage that wears out, that's a real advantage.
+Selection sort minimizes write operations, performing at most $n - 1$ **swaps**, or at most one swap per pass. When write operations to physical storage are costly or cause hardware wear, this low write count is useful.
 
-It's also **in place**, which means it sorts inside the original array instead of building a sorted copy somewhere else. It needs no extra array, only a couple of index variables, so its [space complexity](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too) is $O(1)$.
+Selection sort is also **in place**, meaning it reorganizes elements within the original array rather than allocating auxiliary memory. It requires only a few index variables, so its [space complexity](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too) is $O(1)$.
 
 ## Bubble sort: fix the neighbours
 
-Bubble sort only ever looks at **two neighbours at a time**. If they're in the wrong order, it swaps them. One walk across the array, called a **pass** (the notes also say a **scan**), carries the biggest element all the way to the end. People say it "bubbles up"; the notes say it "bubbles down" to its correct position. Both mean the same move. Then the next pass does the same for the next biggest, and so on.
+**Bubble sort** repeatedly inspects two adjacent elements at a time. If they are in the wrong order, it swaps them. One complete traversal across the array, called a **pass** (or **scan**), moves the largest remaining element to the end of the unsorted segment. In literature this is described as "bubbling up" or "bubbling down" to its correct position. Subsequent passes repeat this process for the remaining elements.
 
 Here is the notes' example, 6, 2, 11, 7, 5. On each pass `i`, the index `j` walks from 0 and compares `A[j]` with `A[j + 1]`:
 
@@ -82,7 +82,7 @@ Here is the notes' example, 6, 2, 11, 7, 5. On each pass `i`, the index `j` walk
 | | 1 | 6 > 5, swap | 2 5 **6 7 11** |
 | i = 3 | 0 | 2 < 5, no swap | **2 5 6 7 11** |
 
-Each pass compares one pair fewer, because the end of the array is already done: 4 + 3 + 2 + 1 = 10 comparisons and 4 swaps. Pass `i = 3` swaps nothing, since 2 and 5 are already in place.
+Each pass makes one fewer comparison because the suffix of the array is already sorted: 4 + 3 + 2 + 1 = 10 comparisons and 4 swaps. Pass `i = 3` makes zero swaps because 2 and 5 are already in order.
 
 The notes' pseudocode:
 
@@ -95,35 +95,35 @@ for i ← 0 to n − 2 do
 
 <SortVisualizer algorithm="bubble" initial={[5, 1, 4, 2, 8, 3]} />
 
-That pseudocode always runs all $n - 1$ passes, even when the array is sorted after the first one. The notes call the fix the **optimization of bubble sort**, and the visualizer uses it: a `swapped` flag. If a full pass makes **no swaps at all**, every neighbour is in order, so the whole array is sorted and we can stop. Try it with `1, 2, 3, 4, 5, 6` and watch it quit after one pass.
+This basic pseudocode always executes all $n - 1$ passes, even if the array becomes sorted early. An optimized variant adds a boolean `swapped` flag. If a complete pass finishes with **zero swaps**, all adjacent elements are in order, meaning the entire array is sorted and the algorithm can terminate immediately. Test this behavior in the visualizer with `1, 2, 3, 4, 5, 6` to observe it finish after one pass.
 
 ### Analysis
 
-- **Worst case** (reverse-sorted input): every pair of elements is in the wrong order, and each swap fixes exactly one such pair, so every comparison causes a swap. $n(n-1)/2$ comparisons and $n(n-1)/2$ swaps. $O(n^2)$.
-- **Best case** (already sorted, with the `swapped` flag): one pass of $n - 1$ comparisons, zero swaps, stop. **$O(n)$.**
-- **Average case:** the notes reason that it needs about $n/2$ passes of $O(n)$ comparisons each, and $n/2 \times n$ is still $O(n^2)$.
+- **Worst case** (reverse-sorted input): every adjacent pair is inverted, so every comparison triggers a swap. This requires $n(n-1)/2$ comparisons and $n(n-1)/2$ swaps, giving $O(n^2)$.
+- **Best case** (already sorted, using the `swapped` flag): one pass of $n - 1$ comparisons makes zero swaps, triggering an early exit in **$O(n)$** time.
+- **Average case:** the algorithm performs approximately $n/2$ passes of $O(n)$ comparisons each, yielding $O(n^2)$ total comparisons.
 
 <Callout tone="orange" label="Common mistake: the inner loop's last index">
-The inner loop compares `A[j]` with `A[j + 1]`, so `j` must stop one short of the last index it could reach. In Java that's `j < array.length - 1 - i`. Write `j < array.length - i` and on the first pass `j + 1` reaches `array.length`, which throws `ArrayIndexOutOfBoundsException`.
+Because the inner loop accesses both `A[j]` and `A[j + 1]`, `j` must stop before reaching the final index. In Java, the loop bound is `j < array.length - 1 - i`. Setting `j < array.length - i` causes `j + 1` to evaluate to `array.length` on the first pass, throwing an `ArrayIndexOutOfBoundsException`.
 </Callout>
 
-Without the flag, bubble sort is $O(n^2)$ even in the best case. The notes give the best case as $O(n)$ right after the pseudocode without the flag, and that pseudocode can't stop early, so it does $n(n-1)/2$ comparisons on sorted input too. The $O(n)$ answer belongs to the optimized version. On "what is the best case of bubble sort?", mentioning the flag is what gets full marks.
+Without the flag, bubble sort requires $O(n^2)$ time even on sorted inputs, because the nested loops always run to completion. The $O(n)$ best-case bound applies strictly to the version with early termination. When answering questions regarding the best case of bubble sort, explicitly mention the early termination flag to justify the $O(n)$ running time.
 
 <Callout tone="orange" label="Which one is better?">
-Neither, really, since both are $O(n^2)$ on typical input. Selection sort does far fewer swaps, and bubble sort can stop early on nearly sorted data. Real code uses `Arrays.sort` instead of either. You learn them because they make the cost of an algorithm easy to see.
+Neither algorithm is suitable for large datasets, as both run in $O(n^2)$ on random input. Selection sort performs significantly fewer swaps, whereas bubble sort with an early exit flag can detect sorted data in linear time. Production systems rely on faster algorithms like `Arrays.sort`. These two sorts are studied primarily because their operation counts and nested loop structures illustrate algorithmic analysis clearly.
 </Callout>
 
 ## Stability
 
-A sort is **stable** if equal elements keep the relative order they started in. Bubble sort is stable: it only swaps neighbours that are *strictly* out of order, so two equal values never jump over each other. Selection sort is **not** stable, because its long-distance swap can move an element past an equal one.
+A sorting algorithm is **stable** if elements with equal keys preserve their original relative order after sorting. Bubble sort is stable: it only swaps adjacent elements when they are strictly out of order, so equal values never cross each other. Selection sort is **not stable** because its long-range swaps can displace an earlier duplicate past a later one.
 
 The selection sort example at the top of this lesson has two 5s, tagged 5ᵃ and 5ᵇ in the order they start. Here is where each algorithm leaves them:
 
 <StabilityCompare initial={[3, 7, 8, 5, 2, 1, 9, 5, 4]} />
 
-Step through the first visualizer to see the moment it happens: in pass 4, swapping the minimum 4 into index 3 throws 5ᵃ to the far end, behind 5ᵇ.
+Step through the visualizer above to observe this behavior: in pass 4, swapping the minimum value 4 into index 3 moves 5ᵃ past 5ᵇ.
 
-Here's why that matters. Sort a list of students by name, then sort it again by grade with a stable sort, and students with the same grade stay in alphabetical order. An unstable sort can scramble that first ordering.
+Stability is important during multi-criteria sorting. For example, sorting records by student name and then re-sorting by grade using a stable sort keeps students with equal grades in alphabetical order. An unstable sort can disrupt that initial ordering.
 
 ## Side by side
 
@@ -140,10 +140,10 @@ Here's why that matters. Sort a list of students by name, then sort it again by 
 
 <ApplicationsGrid>
   <PracticalApplication title="Tiny arrays inside fast sorts" tool="LIBRARIES">
-    Production sorting routines switch to a simple quadratic sort for very small pieces, where low overhead beats a clever algorithm. They usually pick [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea), which is the next lesson.
+    Production sorting routines switch to simple quadratic sorts for small partitions, where minimal overhead outperforms complex divide-and-conquer logic. They typically use [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea), discussed in the next lesson.
   </PracticalApplication>
   <PracticalApplication title="Top-k selection" tool="DATA">
-    "Give me the 3 cheapest flights" doesn't need a full sort. Three passes of selection sort find them. For the $k$ cheapest of $n$, that's $k$ passes of at most $n$ comparisons, $O(kn)$, which beats sorting everything when $k$ is small.
+    Finding the $k$ smallest values in a dataset does not require sorting all elements. Running $k$ passes of selection sort identifies the $k$ lowest elements in $O(kn)$ comparisons, which is faster than sorting the entire array when $k$ is small.
   </PracticalApplication>
 </ApplicationsGrid>
 
@@ -175,12 +175,12 @@ public static void bubbleSort(int[] array) {
 }
 ```
 
-The lab sorts **the same** random numbers with both: it fills `array_1`, makes `array_2 = array_1.clone()`, and times each sort with `System.currentTimeMillis()`. Without the copy, the second sort would get an array the first one had already sorted, and bubble sort would look unfairly fast.
+The lab benchmarks both algorithms on identical datasets: it populates `array_1`, clones it into `array_2 = array_1.clone()`, and measures execution times using `System.currentTimeMillis()`. Without creating an independent copy, the second algorithm would receive an already sorted array, distorting the timing comparison.
 
-Then run the experiment: time both at 2,000 and 4,000 elements. Doubling $n$ should roughly quadruple both times.
+Measure execution times at input sizes of 2,000 and 4,000 elements. Because both algorithms have quadratic complexity, doubling $n$ approximately quadruples execution time.
 
 <Callout tone="orange" label="Errors in the lab sheet">
-The lab's `main` calls `Selection_Sort(array_1)`, but the method is named `SelectionSort`, so it won't compile until the names match. Its `BubbleSort` loops `i <= array.length - 1`, one pass more than needed: the last pass compares nothing, so the result is still right. Its `swap` takes `(x, y, array)`, with the array last. The version above uses the toolkit's `swap(array, i, j)`.
+The original lab handout calls `Selection_Sort(array_1)`, whereas the method definition is named `SelectionSort`; matching the identifiers resolves the compilation error. Additionally, its `BubbleSort` loop uses `i <= array.length - 1`, executing one redundant pass where no comparisons occur. Its helper method signature places the array parameter last as `(x, y, array)`, while the code above uses the standardized toolkit method `swap(array, i, j)`.
 </Callout>
 
 <LeetCodeProblems

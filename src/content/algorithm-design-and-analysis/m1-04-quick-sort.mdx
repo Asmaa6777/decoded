@@ -3,44 +3,46 @@ import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualize
 
 # Quick Sort: Pick a Pivot
 
-[Merge sort](/courses/algorithm-design-and-analysis/merge-sort#merge-sort-in-one-paragraph) does the easy part first (split blindly down the middle) and the hard part last (merge carefully). Quick sort reverses that order. It does the careful work **up front**, so afterwards there's nothing left to combine.
+[Merge sort](/courses/algorithm-design-and-analysis/merge-sort#merge-sort-in-one-paragraph) executes its simplest phase first (splitting arrays down the middle) and its complex phase last (merging sorted subarrays). Quick sort reverses that order. It performs the sorting work **up front** during partitioning, leaving no combination work at the end.
 
 ## The idea
 
-1. Pick one element, the **pivot**.
-2. **Partition** the array: move everything smaller than the pivot to its left and everything bigger to its right. The pivot is now in its **final position** and will never move again.
-3. Quick sort the left part, then quick sort the right part.
+**Quick sort** is a divide-and-conquer sorting algorithm that organizes elements around a chosen value called the **pivot**:
 
-There's no combine step. Once both sides are sorted the whole array is sorted, because everything on the left is smaller than the pivot and everything on the right is bigger. All the work happens in partitioning.
+1. Select a **pivot** element from the array.
+2. **Partition** the array: rearrange elements so that all values smaller than the pivot move to its left, and all values greater move to its right. The pivot is now in its **final position** and will never move again.
+3. Recursively apply quick sort to the left subarray and the right subarray.
 
-It's still [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer): divide is "partition," conquer is "recurse," and combine is empty.
+There is no combine step. Once both partitions are sorted, the entire array is in order because all elements on the left are smaller than the pivot and all elements on the right are larger. All sorting logic occurs during partitioning.
+
+This structure follows [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer): divide corresponds to partitioning, conquer corresponds to recursion, and the combine step requires no additional work.
 
 ## Partitioning with two pointers
 
-There are several ways to partition. The lab uses the **first element as the pivot** and two pointers walking towards each other:
+There are multiple ways to partition an array. The lab uses the **first element as the pivot** and converges two pointers from opposite ends:
 
-- `right` starts at the end and moves left **while** its element is ≥ the pivot (that element is already on the correct side).
-- Then `left` starts at the beginning and moves right **while** its element is ≤ the pivot. Its first step passes over the pivot itself.
-- When both have stopped, `right` is on something too small for the right side and `left` is on something too big for the left side. **Swap them**, which puts both on the correct side, and keep going.
-- When the pointers meet, swap the pivot from the front into the meeting point.
+- `right` begins at the end and moves leftward while pointing to an element greater than or equal to the pivot.
+- `left` begins at the start and moves rightward while pointing to an element less than or equal to the pivot. Its initial step advances past the pivot itself.
+- When both pointers stop, `right` marks a value smaller than the pivot and `left` marks a value larger than the pivot. **Swapping them** places both elements into their proper partitions, and the traversal continues.
+- When the pointers meet, swapping the pivot with the element at the meeting point places the pivot into its final location.
 
 <SortVisualizer algorithm="quick" initial={[25, 10, 30, 15, 20, 28]} />
 
-The purple bar is the pivot. Each partition ends with one bar turning mint, meaning that pivot is locked into its final spot. Then the window shrinks to one side and the same thing happens on a smaller piece.
+The purple indicator marks the active pivot. Each partition step concludes when the pivot bar turns mint, indicating it is locked into its permanent position. The active boundary then focuses on one subarray, repeating the process on smaller segments.
 
 ### Why `right` has to move first
 
-At the end, the pivot swaps with whatever sits where the pointers met. That value goes to the front, onto the left side, so it must be **no bigger than the pivot**. Moving `right` first guarantees it: `right` only stops on a value smaller than the pivot, and if it runs into `left` instead, `left` is standing on the pivot or on a small value it already swapped in.
+When the two pointers meet, the algorithm swaps the pivot with the value at that meeting point. Because that value moves to index 0 (the left partition), it must be **no larger than the pivot**. Advancing the `right` pointer first guarantees this condition: `right` only halts on values smaller than the pivot, or meets `left` at an already validated location.
 
-Move `left` first and it can stop on a big value with nothing left for `right` to do, so the final swap throws that big value to the front. With [25, 10, 30], `left` walks past 25 and 10 and stops on 30, where it meets `right`. The swap gives 30, 10, 25: the 30 ended up left of 25. That's the bug students most often write. (With a **last**-element pivot it's the other way round: `left` moves first.)
+If `left` moves first, it can halt on a value larger than the pivot when `right` cannot advance. Swapping the pivot into that position would place a larger value at index 0, corrupting the partition. For example, on the array `[25, 10, 30]`, advancing `left` first passes 25 and 10 to halt at 30, where it meets `right`. Swapping produces `[30, 10, 25]`, placing 30 to the left of 25. (When choosing the **last** element as the pivot, the order reverses: `left` must advance first.)
 
 ### The notes' version: loc, left and right
 
-The notes trace a different two-pointer method on the array 25, 10, 30, 15, 20, 28. Here the pivot doesn't wait at the front. It **moves with every swap**, and `loc` always points at it. Whichever pointer isn't on the pivot does the walking:
+The course notes illustrate a variation using pointers `loc`, `left`, and `right` on the sequence 25, 10, 30, 15, 20, 28. In this scheme, the pivot does not remain stationary at index 0. It **moves with each swap**, and `loc` continuously tracks its position. Whichever pointer is not pointing at the pivot performs the traversal:
 
-- When `loc` = `left`, walk `right` leftwards while `a[loc] < a[right]`. When `a[loc] > a[right]`, swap them, and `loc` moves to `right`.
-- When `loc` = `right`, walk `left` rightwards while `a[left] < a[loc]`. When `a[left] > a[loc]`, swap them, and `loc` moves to `left`.
-- Stop when `loc`, `left` and `right` all point at the same place.
+- When `loc = left`, advance `right` leftward while `a[loc] < a[right]`. When `a[loc] > a[right]`, swap them, updating `loc` to `right`.
+- When `loc = right`, advance `left` rightward while `a[left] < a[loc]`. When `a[left] > a[loc]`, swap them, updating `loc` to `left`.
+- Terminate when `loc`, `left`, and `right` all point to the same index.
 
 | Step | What happens | Array | loc, left, right |
 | --- | --- | --- | --- |
@@ -54,9 +56,9 @@ The notes trace a different two-pointer method on the array 25, 10, 30, 15, 20, 
 | 7 | 25 > 15, swap; pivot goes right | 20 10 15 **25** 30 28 | 3, 2, 3 |
 | 8 | 15 < 25, move `left` | 20 10 15 **25** 30 28 | 3, 3, 3 |
 
-All three meet at index 3, so 25 is in its final place, with 20, 10, 15 on its left and 30, 28 on its right. The lab's method, in the visualizer above, also puts 25 at index 3, but leaves the left side as 15, 10, 20. Both are correct: partitioning only promises which **side** each element is on, not the order within a side.
+All three pointers meet at index 3, establishing 25 in its final position with smaller values to its left and larger values to its right. The visualizer method also places 25 at index 3, leaving the left partition ordered as 15, 10, 20. Both outcomes are correct: partitioning guarantees only which **partition** each element enters, not its internal order.
 
-The notes also give the textbook's pseudocode for the same idea, named **Hoare partition** after Tony Hoare, who invented quick sort. It is the lab's two-pointer method written with `repeat … until` loops. Here is the textbook's top level, where `s` is the **split position**, the pivot's final index:
+The notes also provide the classic pseudocode for this partition, named **Hoare partition** after Tony Hoare, who invented quick sort. It expresses this two-pointer scan using `repeat … until` loops. Here is the high-level recursion where `s` denotes the **split position** (the pivot's final index):
 
 ```text
 ALGORITHM Quicksort(A[l..r])
@@ -68,57 +70,53 @@ if l < r
 
 ## Analysis: it depends on the pivot
 
-Partitioning a piece of size $n$ takes $O(n)$: each pointer step does one comparison, and together the pointers cross the piece once. The running time depends on *how evenly* the pivot splits the array.
+Partitioning a subarray of size $n$ requires $O(n)$ time because the two pointers traverse the subarray once. Overall performance depends on how evenly the pivot splits the array into subarrays.
 
-**Good case: the pivot lands near the middle.** Each partition cuts the problem roughly in half. As with merge sort, that gives about $\log_2 n$ levels of $O(n)$ work each, so **$O(n \log n)$**.
+- **Balanced partitions (average case):** when the pivot divides subarrays roughly in half, the recursion tree reaches a depth of approximately $\log_2 n$ levels. Each level performs $O(n)$ partitioning work, yielding **$O(n \log n)$** total time. Even uneven splits, such as a 25/75 ratio, still reduce subproblem sizes exponentially, preserving $O(n \log n)$ asymptotic growth. On randomly ordered inputs, quick sort achieves $O(n \log n)$ on average. Advanced Algorithms provides a rigorous mathematical proof in [randomized quicksort](/courses/advanced-algorithms/quicksort#randomized-quicksort).
 
-This is what usually happens on random data, so the **average case is $O(n \log n)$**. The pivot doesn't have to hit the exact middle. Even a lopsided split such as a quarter on one side and three quarters on the other still shrinks every piece by a fixed fraction, so the number of levels still grows like $\log n$; only the constant gets bigger. On random data, at least half of all possible pivots give a split at least that good. Advanced Algorithms [proves the average](/courses/advanced-algorithms/quicksort#randomized-quicksort).
-
-**Bad case: the pivot is always the smallest or biggest element.** Then one side is empty and the other has $n - 1$ elements, so $O(n)$ work has made the problem only one element smaller. Do that $n$ times:
+- **Unbalanced partitions (worst case):** if the pivot is consistently the smallest or largest element, one partition remains empty while the other contains $n - 1$ elements. Partitioning shrinks the problem by only one element at a cost of $O(n)$ operations:
 
 $$
 n + (n-1) + (n-2) + \dots + 1 = O(n^2)
 $$
 
-With a first-element pivot, this happens on data that's **already sorted in ascending order**, which is the case the notes name: every pivot is the smallest remaining element, so `right` walks all the way down and the left side is empty. Reverse-sorted data is just as bad, since every pivot is then the largest. Try `1, 2, 3, 4, 5, 6, 7, 8` in the visualizer and watch every partition peel off just one element.
+When using the first element as the pivot, this worst case occurs on inputs that are **already sorted in ascending or descending order**. Every chosen pivot is either the minimum or maximum remaining element, producing $n$ recursive levels. Test this in the visualizer with `1, 2, 3, 4, 5, 6, 7, 8` to observe each partition strip away only a single element.
 
-The notes write the worst case as $f(n) = n \times (n-1)$. The exact count is the sum above, about $n^2/2$, but both are $O(n^2)$, which is the answer that matters. Likewise their best case, $f(n) = n \times \log_2 n$, describes the ideal where every pivot splits its piece exactly in half.
+The notes represent the worst case as $f(n) = n \times (n-1)$, and the best case as $f(n) = n \times \log_2 n$. Both formulations correspond asymptotically to $O(n^2)$ and $O(n \log n)$.
 
 <Callout tone="orange" label="Common mistake: thinking one partition sorts the sides">
-After a partition, everything left of the pivot is smaller and everything right of it is bigger, but each side is still in any order: 25 10 30 15 20 28 partitions to 15 10 20 **25** 30 28, and 15 10 20 isn't sorted. Only the pivot is in its final place. That's why quick sort has to recurse on both sides.
+A partition step separates elements into lower and higher groups, but does not sort those groups internally. For instance, partitioning `25, 10, 30, 15, 20, 28` around 25 yields `15, 10, 20, 25, 30, 28`. The subarray `15, 10, 20` remains unsorted; only 25 has reached its final sorted index. Quick sort must recursively sort both partitions.
 </Callout>
 
-So the input that's best for [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea) is the worst for naive quick sort.
+Consequently, input that represents the best case for [insertion sort](/courses/algorithm-design-and-analysis/insertion-sort#the-idea) represents the worst case for naive quick sort.
 
 ### Picking a better pivot
 
-The fix is to choose the pivot more carefully. Common choices:
+Selecting pivots deliberately mitigates unbalanced partitioning. Standard strategies include:
 
-- **First** or **last** element: simple, but bad on sorted input. The lab uses the first.
-- **Middle** element: handles sorted input well.
-- **Random** element: makes the worst case extremely unlikely on *any* input.
-- **Median of three**: the median of the first, middle and last elements. A cheap way to avoid bad pivots.
+- **First** or **last** element: straightforward to implement, but quadratic on pre-sorted arrays.
+- **Middle** element: handles pre-sorted data efficiently.
+- **Random** element: makes worst-case inputs virtually impossible regardless of input ordering.
+- **Median of three**: uses the median of the first, middle, and last elements to avoid extreme values.
 
 <Callout tone="violet" label="Quick sort vs merge sort">
-Merge sort is always $O(n \log n)$ and [stable](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#stability), but needs $O(n)$ extra memory. Quick sort is $O(n \log n)$ on average and $O(n^2)$ in the worst case, and it isn't stable. It sorts **in place**, though, and is usually faster in practice because it moves less data around and uses the CPU cache well. (The **cache** is a small, very fast memory inside the processor. Reading neighbouring array slots one after another, as both pointers do, keeps the data in the cache.)
+Merge sort guarantees $O(n \log n)$ worst-case time and provides [stability](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#stability), but requires $O(n)$ auxiliary memory. Quick sort requires $O(n \log n)$ average time and $O(n^2)$ worst-case time, and is unstable. However, quick sort operates **in place** and typically executes faster in practice because it minimizes data movement and exhibits strong CPU cache locality. The **CPU cache** is high-speed memory within the processor, and sequential array access keeps data readily available without repeated fetches from main memory.
 </Callout>
 
 ## Strengths and weaknesses
 
-Quick sort is often the fastest general-purpose sort in practice. It sorts in place. The notes say it needs "no temporary memory", meaning no second array like merge sort's; it still uses $O(\log n)$ extra space on average for the [recursion stack](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too). It's also easy to parallelize, since after partitioning the two sides are completely independent.
+Quick sort is frequently the fastest general-purpose sorting algorithm in practical applications. It operates in place without allocating a second array, though it consumes $O(\log n)$ auxiliary space on average on the [call stack](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too). It also parallelizes readily because partitions can be sorted independently.
 
-Against that, its worst case is $O(n^2)$, and it isn't stable: the long-distance swaps can reorder equal elements.
-
-Advanced Algorithms proves the expected running time when the pivot is chosen at random, in [randomized quicksort](/courses/advanced-algorithms/quicksort#randomized-quicksort).
+Its primary limitations are its quadratic worst-case time on poorly chosen pivots and its lack of stability due to long-range swaps.
 
 ## Where this shows up today
 
 <ApplicationsGrid>
   <PracticalApplication title="Sorting primitives in Java" tool="JDK">
-    `Arrays.sort(int[])` uses **dual-pivot quick sort**: two pivots, three partitions. For primitive numbers stability doesn't matter (two equal 7s are indistinguishable), so speed wins.
+    `Arrays.sort(int[])` uses **dual-pivot quick sort**: two pivots, three partitions. For primitive values, stability is irrelevant, allowing execution speed to take priority.
   </PracticalApplication>
   <PracticalApplication title="Finding the median fast" tool="QUICKSELECT">
-    Partition once, then recurse into only the side that contains position $k$. That finds the $k$-th smallest element in $O(n)$ on average without sorting everything.
+    Partitioning once and recursing into only the subarray containing index $k$ isolates the $k$-th smallest element in $O(n)$ average time without sorting the full array.
   </PracticalApplication>
 </ApplicationsGrid>
 
@@ -150,7 +148,7 @@ public static int partition(int[] array, int lowIndex, int highIndex, int pivot)
 }
 ```
 
-Call it as `quickSort(array, 0, array.length - 1)`. Then run the experiment that shows the worst case: time it on 50,000 random numbers, then on 50,000 numbers that are already sorted. If the sorted run crashes with a `StackOverflowError`, you've hit the worst case: $n$ levels of recursion instead of $\log n$.
+Invoke the method using `quickSort(array, 0, array.length - 1)`. To observe worst-case behavior, benchmark execution on 50,000 random integers and then on 50,000 pre-sorted integers. When run on sorted inputs, a first-element pivot triggers $n$ levels of nested recursion instead of $\log_2 n$, which may cause a `StackOverflowError`.
 
 <LeetCodeProblems
   problems={[

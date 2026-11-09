@@ -2,7 +2,7 @@ import { Quiz } from "@/components/mdx/MdxComponents";
 
 # Quiz: Analysis & Sorting
 
-Eight questions on everything so far: what an algorithm is, Big-O, and the five sorts. Get 6 right to pass. Each answer locks in when you click it and shows an explanation, which is worth reading even when you're right.
+Eight questions covering algorithm definitions, asymptotic notation, and the core sorting techniques. Score at least 6 out of 8 to pass. Each selection locks in when clicked and reveals an explanation.
 
 <Quiz
   courseSlug="algorithm-design-and-analysis"
@@ -19,7 +19,7 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the five 
         { id: "d", text: "When it compiles without warnings" },
       ],
       correctOptionId: "b",
-      explanation: "Correctness covers every valid input, including the ones you never tried. Tests can reveal bugs, but they can't prove there are none.",
+      explanation: "Correctness requires producing the correct output for every valid input. Passing specific test cases helps identify defects, but cannot prove that no errors remain.",
     },
     {
       id: "q2",
@@ -31,7 +31,7 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the five 
         { id: "d", text: "O(500)" },
       ],
       correctOptionId: "c",
-      explanation: "Keep the fastest-growing term and drop its constant. For large n, the n² term dominates everything else.",
+      explanation: "Identify the highest-order term and omit constant multipliers. As n grows large, the n² term dominates all lower-order terms.",
     },
     {
       id: "q3",
@@ -43,7 +43,7 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the five 
         { id: "d", text: "Little-o (o)" },
       ],
       correctOptionId: "c",
-      explanation: "O is an upper bound (grows no faster than), Ω is a lower bound (grows at least as fast as), and Θ is both at once.",
+      explanation: "Big-O gives an asymptotic upper bound, Omega gives an asymptotic lower bound, and Theta specifies a tight bound matching both simultaneously.",
     },
     {
       id: "q4",
@@ -55,7 +55,7 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the five 
         { id: "d", text: "[4, 1, 2, 3]" },
       ],
       correctOptionId: "a",
-      explanation: "Pass 1 finds the smallest element (1, at index 1) and swaps it with index 0. Nothing else moves. [1, 3, 2, 4] is what bubble sort gives you after one pass.",
+      explanation: "Pass 1 identifies the minimum element (1, at index 1) and swaps it with index 0, producing [1, 4, 3, 2]. The state [1, 3, 2, 4] corresponds to bubble sort after one pass.",
     },
     {
       id: "q5",
@@ -67,7 +67,7 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the five 
         { id: "d", text: "O(n²)" },
       ],
       correctOptionId: "b",
-      explanation: "On sorted input, one pass of n − 1 comparisons makes no swaps, so the flag stops the algorithm. Without the flag it would still be O(n²).",
+      explanation: "On sorted input, one pass of n − 1 comparisons performs zero swaps, prompting the flag to terminate execution early in O(n) time. Without the early exit flag, the algorithm always runs in O(n²) time.",
     },
     {
       id: "q6",
@@ -79,7 +79,7 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the five 
         { id: "d", text: "They are all exactly the same" },
       ],
       correctOptionId: "b",
-      explanation: "Insertion sort's work depends on how far elements are from their final places, so it's close to O(n) on nearly sorted data. Selection sort always does n(n−1)/2 comparisons, and a first-element-pivot quick sort is at its worst on sorted data.",
+      explanation: "Insertion sort performs work proportional to how far elements are displaced from their sorted positions, achieving near O(n) performance on nearly sorted inputs. Selection sort always executes n(n−1)/2 comparisons, and a first-element pivot quick sort degrades to O(n²) on sorted data.",
     },
     {
       id: "q7",
@@ -91,7 +91,7 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the five 
         { id: "d", text: "Insertion sort and quick sort" },
       ],
       correctOptionId: "c",
-      explanation: "Both split the problem into smaller subproblems and recurse. Merge sort does its real work in the combine step (merge), quick sort in the divide step (partition).",
+      explanation: "Both algorithms recursively partition problems into smaller subproblems. Merge sort performs its primary sorting during the combine step (merge), whereas quick sort performs its sorting during the divide step (partition).",
     },
     {
       id: "q8",
@@ -103,7 +103,7 @@ Eight questions on everything so far: what an algorithm is, Big-O, and the five 
         { id: "d", text: "It isn't; quick sort is always O(n log n)" },
       ],
       correctOptionId: "b",
-      explanation: "Each partition costs O(n) but only removes one element from the problem. n + (n−1) + … + 1 = O(n²). A middle, random or median-of-three pivot avoids this.",
+      explanation: "Each partition step takes O(n) time but separates only one element from the problem. The sum n + (n−1) + … + 1 produces O(n²). Choosing a middle, randomized, or median-of-three pivot avoids this unbalanced partitioning.",
     },
   ]}
 />
