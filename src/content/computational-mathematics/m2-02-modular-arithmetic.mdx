@@ -48,7 +48,7 @@ print((pd.Series([23, 24, 25]) % 24).tolist())  # [23, 0, 1]
 In C, Java and JavaScript, the `%` operator keeps the sign of the first number, so `-11 % 7` gives `-4`. MATLAB's `mod` and Python's `%` give `3`. This difference is a common source of bugs.
 </Callout>
 
-Mod is how machine learning copes with too many categories. A recommendation model can't keep a separate column for each of a billion user IDs or every word ever typed. The **hashing trick** turns each one into a number with a hash function and keeps only that number mod the number of buckets, so any ID lands in one of, say, 1000 columns. Here's a simple string hash, which multiplies the running total by 31 and adds each character's code:
+Mod helps machine learning models handle huge numbers of categories. A recommendation system cannot store a separate column for each of a billion user IDs. The **hashing trick** maps each identifier to a number, then reduces that number modulo the count of buckets. Every ID lands in one of, say, 1000 columns. The code below shows a simple string hash. It multiplies the running total by 31 and adds the character code of each letter:
 
 <CodeTabs>
 
@@ -72,13 +72,13 @@ print(h % 1000)  # 794
 
 </CodeTabs>
 
-Two different IDs sometimes share a bucket, and the model just learns to live with it. It's the same trade a [hash table](/courses/advanced-algorithms/hashing) makes.
+Two different IDs sometimes share a bucket, and the model tolerates the collision. A [hash table](/courses/advanced-algorithms/hashing) makes the same compromise.
 
 ## Congruence
 
-Two integers are **congruent modulo $n$** if they leave the same remainder when divided by $n$, written $a \equiv b \pmod{n}$. They land on the same spot on the clock. For example, $73 \equiv 4 \pmod{23}$ (since $73 = 3 \cdot 23 + 4$) and $21 \equiv -9 \pmod{10}$ (since $21 = 2 \cdot 10 + 1$ and $-9 = -1 \cdot 10 + 1$).
+Two integers are **congruent modulo $n$** if they leave the same remainder when divided by $n$, written $a \equiv b \pmod{n}$. They land on the same spot on the clock. For example, $73 \equiv 4 \pmod{23}$ because $73 = 3 \cdot 23 + 4$. Similarly, $21 \equiv -9 \pmod{10}$ because $21 = 2 \cdot 10 + 1$ and $-9 = -1 \cdot 10 + 1$.
 
-Why does having the same remainder match condition 1 below? If $a = q_1 n + r$ and $b = q_2 n + r$, subtracting them yields $a - b = (q_1 - q_2)n$, an exact multiple of $n$. Conversely, if $a - b = k n$, then $a = b + kn$, meaning $a$ and $b$ differ by whole circuits of the clock.
+Why does having the same remainder match condition 1 below? If $a = q_1 n + r$ and $b = q_2 n + r$, subtracting them yields $a - b = (q_1 - q_2)n$, a multiple of $n$. Conversely, if $a - b = k n$, then $a = b + kn$, so $a$ and $b$ differ by whole circuits around the clock.
 
 Congruence behaves much like equality. Properties 2 to 4 below make it an [equivalence relation](/courses/discrete-mathematics/relations#equivalence-relations), which splits the integers into $n$ classes, one per remainder:
 
@@ -87,7 +87,7 @@ Congruence behaves much like equality. Properties 2 to 4 below make it an [equiv
 3. If $a \equiv b$ then $b \equiv a$.
 4. If $a \equiv b$ and $b \equiv c$, then $a \equiv c$.
 
-The clock picture solves a real problem in machine learning. Give a model the hour of the day as a plain number and it thinks 23:00 and 00:00 are as far apart as possible, when they're an hour apart. The fix is to place each hour on a circle, as the clock above does, and feed the model the point's two coordinates. Hours that are close on the clock are then close in the data:
+The clock representation solves a practical problem in machine learning. Feeding a model the hour of day as a raw number makes 23:00 and 00:00 appear far apart, even though they differ by one hour. The fix places each hour on a circle and gives the model the resulting coordinates $(x, y)$. Hours close on the clock stay close in Euclidean space:
 
 <CodeTabs>
 
@@ -127,11 +127,11 @@ $$
 \end{aligned}
 $$
 
-So you can shrink the numbers partway through and still get the right answer. We can verify all three operations with $11 \bmod 8 = 3$ and $15 \bmod 8 = 7$:
+You can reduce numbers midway through a calculation and preserve the result. We verify all three operations with $11 \bmod 8 = 3$ and $15 \bmod 8 = 7$:
 
-- **Addition:** $[(11 \bmod 8) + (15 \bmod 8)] \bmod 8 = (3 + 7) \bmod 8 = 10 \bmod 8 = 2$, which matches $(11 + 15) \bmod 8 = 26 \bmod 8 = 2$.
-- **Subtraction:** $[(11 \bmod 8) - (15 \bmod 8)] \bmod 8 = (3 - 7) \bmod 8 = -4 \bmod 8 = 4$, which matches $(11 - 15) \bmod 8 = -4 \bmod 8 = 4$.
-- **Multiplication:** $[(11 \bmod 8) \cdot (15 \bmod 8)] \bmod 8 = (3 \cdot 7) \bmod 8 = 21 \bmod 8 = 5$, which matches $(11 \cdot 15) \bmod 8 = 165 \bmod 8 = 5$.
+- **Addition:** $[(11 \bmod 8) + (15 \bmod 8)] \bmod 8 = (3 + 7) \bmod 8 = 2$. Directly: $(11 + 15) \bmod 8 = 26 \bmod 8 = 2$.
+- **Subtraction:** $[(11 \bmod 8) - (15 \bmod 8)] \bmod 8 = (3 - 7) \bmod 8 = 4$. Directly: $(11 - 15) \bmod 8 = -4 \bmod 8 = 4$.
+- **Multiplication:** $[(11 \bmod 8) \cdot (15 \bmod 8)] \bmod 8 = (3 \cdot 7) \bmod 8 = 5$. Directly: $(11 \cdot 15) \bmod 8 = 165 \bmod 8 = 5$.
 
 That also makes big powers easy. To find $10^7 \bmod 17$, square repeatedly and reduce quotients along the way:
 
@@ -143,7 +143,7 @@ $$
 \end{aligned}
 $$
 
-(Notice that $10^7$ requires all three factors $10^1 \cdot 10^2 \cdot 10^4$; using positive numbers gives $10 \cdot 15 \cdot 4 = 600 = 35 \cdot 17 + 5 \equiv 5 \pmod{17}$.) Similarly, for $10^{10} \bmod 17$:
+(Computing $10^7$ uses all three factors $10^1 \cdot 10^2 \cdot 10^4$. Positive factors give $10 \cdot 15 \cdot 4 = 600 = 35 \cdot 17 + 5 \equiv 5 \pmod{17}$.) Similarly, for $10^{10} \bmod 17$:
 
 $$
 10^8 = (10^4)^2 \equiv 4^2 = 16 \equiv -1 \pmod{17} \implies 10^{10} = 10^8 \cdot 10^2 \equiv (-1) \cdot (-2) = 2 \pmod{17}
@@ -179,17 +179,17 @@ print(pow(10, 10, 17))  # 2
 
 If $(a + b) \equiv (a + c) \pmod n$, you can always cancel $a$ by subtracting it from both sides to get $b \equiv c$.
 
-For multiplication, cancellation is restricted. If $a \cdot b \equiv a \cdot c \pmod n$, then $n$ must divide $a(b - c)$. When $a$ is [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $n$ ($\gcd(a, n) = 1$), $n$ shares no factors with $a$, which forces $n$ to divide $b - c$, giving $b \equiv c \pmod n$. But when $\gcd(a, n) = d > 1$, the shared factor $d$ absorbs part of $n$, yielding the general cancellation rule:
+Multiplication allows cancellation only under specific conditions. If $a \cdot b \equiv a \cdot c \pmod n$, then $n$ divides $a(b - c)$. When $a$ and $n$ are [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) ($\gcd(a, n) = 1$), $n$ shares no factors with $a$. That forces $n$ to divide $b - c$, which gives $b \equiv c \pmod n$. When $\gcd(a, n) = d > 1$, the shared factor $d$ absorbs part of $n$. That leads to the general cancellation rule:
 
 $$
 a \cdot b \equiv a \cdot c \pmod n \implies b \equiv c \pmod{\frac{n}{\gcd(a, n)}}
 $$
 
-For instance, $2 \cdot 3 \equiv 2 \cdot 7 \pmod 8$, since both equal 6 modulo 8. Here $\gcd(2, 8) = 2$, so cancelling 2 changes the modulus from 8 to $8/2 = 4$: $3 \equiv 7 \pmod 4$ (both are 3), yet $3 \not\equiv 7 \pmod 8$.
+For instance, $2 \cdot 3 \equiv 2 \cdot 7 \pmod 8$, because both equal 6 modulo 8. Because $\gcd(2, 8) = 2$, cancelling 2 changes the modulus from 8 to $8/2 = 4$. That gives $3 \equiv 7 \pmod 4$, even though $3 \not\equiv 7 \pmod 8$.
 
 <Callout tone="orange" label="Common errors">
-- **Reducing exponents modulo $n$:** While bases can be reduced at any time ($a \cdot b \bmod n = (a \bmod n \cdot b \bmod n) \bmod n$), exponents cannot. Powers repeat modulo $\phi(n)$ by Euler's theorem, not modulo $n$. For example, $2^5 \bmod 3 = 32 \bmod 3 = 2$, but reducing the exponent gives $2^{5 \bmod 3} = 2^2 = 4 \equiv 1 \pmod 3$, which is incorrect.
-- **Cancelling factors without dividing the modulus:** If $2x \equiv 6 \pmod 8$, dividing both sides by 2 gives $x \equiv 3 \pmod 4$, not $x \equiv 3 \pmod 8$. In the original modulus 8, there are two distinct solutions: $x = 3$ and $x = 7$.
+- **Reducing exponents modulo $n$:** Bases can be reduced at any step, but exponents cannot. By Euler's theorem, powers repeat modulo $\phi(n)$, not modulo $n$. For example, $2^5 \bmod 3 = 32 \bmod 3 = 2$. Reducing the exponent modulo 3 gives $2^{5 \bmod 3} = 2^2 = 4 \equiv 1 \pmod 3$, which is incorrect.
+- **Cancelling factors without dividing the modulus:** If $2x \equiv 6 \pmod 8$, dividing both sides by 2 gives $x \equiv 3 \pmod 4$, not $x \equiv 3 \pmod 8$. In the original modulus 8, there are two solutions: $x = 3$ and $x = 7$.
 </Callout>
 
 ## Where you'll meet this

@@ -13,13 +13,13 @@ $$
 a^k \equiv 1 \pmod n
 $$
 
-The [Euler-Fermat theorem](/courses/computational-mathematics/primality-and-the-totient#the-euler-fermat-theorem) guarantees such a $k$ exists, and it also tells us the order is at most $\phi(n)$. In fact, the order $k$ must divide $\phi(n)$ exactly. Why? Divide $\phi(n)$ by $k$:
+The [Euler-Fermat theorem](/courses/computational-mathematics/primality-and-the-totient#the-euler-fermat-theorem) guarantees such an exponent $k$ exists, with $k \le \phi(n)$. Furthermore, the order $k$ must divide $\phi(n)$ evenly. Why? Divide $\phi(n)$ by $k$:
 
 $$
 \phi(n) = q \cdot k + r, \qquad 0 \le r < k
 $$
 
-Then $a^{\phi(n)} = a^{qk + r} = (a^k)^q \cdot a^r \equiv 1^q \cdot a^r = a^r \pmod n$. But Euler's theorem guarantees $a^{\phi(n)} \equiv 1 \pmod n$, so $a^r \equiv 1 \pmod n$. Since $k$ was defined as the *smallest* positive power reaching 1, and $0 \le r < k$, the remainder must be zero ($r = 0$). Hence $k \mid \phi(n)$.
+Then $a^{\phi(n)} = a^{qk + r} = (a^k)^q \cdot a^r \equiv 1^q \cdot a^r = a^r \pmod n$. Euler's theorem gives $a^{\phi(n)} \equiv 1 \pmod n$, so $a^r \equiv 1 \pmod n$. Because $k$ is the smallest positive exponent yielding 1, and $0 \le r < k$, the remainder must be zero ($r = 0$). Therefore $k \mid \phi(n)$.
 
 Other standard names for $\operatorname{ord}_n(a)$ include:
 
@@ -47,9 +47,9 @@ $$
 \end{aligned}
 $$
 
-The powers immediately repeat in a cycle of length 3 ($7, 11, 1, 7, 11, \dots$), which shows $\operatorname{ord}_{19}(7) = 3$.
+The powers repeat in a cycle of length 3 ($7, 11, 1, 7, 11, \dots$), confirming $\operatorname{ord}_{19}(7) = 3$.
 
-Each power is a hop on the ring below, and the sequence closes as soon as it returns to 1:
+Each power represents a transition on the ring below. The cycle closes once the sequence returns to 1:
 
 <PowerCycleVisualizer />
 
@@ -87,15 +87,15 @@ print(order(3, 16))  # 4
 
 ## Primitive roots
 
-$a$ is a **primitive root** of $n$ if its order is as large as it can be, $\operatorname{ord}_n(a) = \phi(n)$. Its powers then reach every number [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $n$.
+An integer $a$ is a **primitive root** of $n$ if its order attains the maximum possible value, $\operatorname{ord}_n(a) = \phi(n)$. Its powers generate all elements [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $n$.
 
-3 is a primitive root of 7, since its powers run through all six non-zero values:
+For example, 3 is a primitive root of 7 because its powers generate all six non-zero residues:
 
 $$
 3^1 \equiv 3,\ 3^2 \equiv 2,\ 3^3 \equiv 6,\ 3^4 \equiv 4,\ 3^5 \equiv 5,\ 3^6 \equiv 1 \pmod 7
 $$
 
-2 isn't, because $2^3 \equiv 1 \pmod 7$ cuts it short. The other primitive root of 7 is 5:
+The integer 2 is not a primitive root, because $2^3 \equiv 1 \pmod 7$ repeats early. The other primitive root of 7 is 5:
 
 $$
 5^1 \equiv 5,\ 5^2 \equiv 4,\ 5^3 \equiv 6,\ 5^4 \equiv 2,\ 5^5 \equiv 3,\ 5^6 \equiv 1 \pmod 7
@@ -118,9 +118,9 @@ $$
 \end{aligned}
 $$
 
-Because $7^{12} \equiv 1 \pmod{45}$, the order of 7 modulo 45 is 12, not 24. Therefore, 7 is **not** a primitive root of 45. (In fact, 45 has no primitive roots at all: for any integer $a$ coprime to 45, $a^{12} \equiv 1 \pmod{45}$.)
+Because $7^{12} \equiv 1 \pmod{45}$, the order of 7 modulo 45 is 12, not 24. Therefore, 7 is not a primitive root of 45. (In fact, 45 has no primitive roots. For every integer $a$ coprime to 45, $a^{12} \equiv 1 \pmod{45}$.)
 
-When primitive roots do exist (for instance, modulo any prime $p$), there are always exactly $\phi(\phi(p)) = \phi(p - 1)$ of them. Modulo 7, $\phi(6) = \phi(2 \cdot 3) = 6 \cdot \frac{1}{2} \cdot \frac{2}{3} = 2$ primitive roots exist: 3 and 5. Modulo 19, there are $\phi(18) = 18 \cdot \frac{1}{2} \cdot \frac{2}{3} = 6$ primitive roots.
+When primitive roots exist (such as modulo any prime $p$), there are exactly $\phi(\phi(p)) = \phi(p - 1)$ of them. Modulo 7, there are $\phi(6) = \phi(2 \cdot 3) = 6 \cdot \frac{1}{2} \cdot \frac{2}{3} = 2$ primitive roots: 3 and 5. Modulo 19, there are $\phi(18) = 18 \cdot \frac{1}{2} \cdot \frac{2}{3} = 6$ primitive roots.
 
 <CodeTabs>
 
@@ -138,7 +138,7 @@ print([pow(5, k, 7) for k in range(1, 7)])  # [5, 4, 6, 2, 3, 1]
 
 </CodeTabs>
 
-That long cycle is how computers fake randomness, and machine learning runs on fake randomness: the starting weights of a network, the order the training examples are shuffled into, and the neurons that **dropout** switches off at random all come from a random number generator. The simplest kind, a **Lehmer generator**, is exactly this power sequence: it keeps multiplying by $a$ modulo a prime. Choose a primitive root for $a$ and the numbers run through every value before they repeat, the longest period possible:
+That long cycle allows computers to generate pseudorandom numbers. Machine learning relies heavily on pseudorandom sequences: initial model weights, dataset shuffling, and dropout masks all derive from a random number generator. A **Lehmer generator** produces this exact power sequence by repeatedly multiplying by $a$ modulo a prime. Choosing a primitive root for $a$ yields the maximum possible period before values repeat:
 
 <CodeTabs>
 
@@ -167,7 +167,7 @@ print([next(g) for _ in range(7)])  # [3, 2, 6, 4, 5, 1, 3]
 
 </CodeTabs>
 
-Real libraries use far larger generators, but the idea of a **seed**, the starting value, is the same. The same seed always produces the same "random" numbers, which is what makes a training run repeatable. It's also a trap: some models swing a lot from one seed to the next, so a result reported from a single lucky seed may not hold up. Careful research reports several.
+Production libraries use larger generators, but the function of a **seed** remains identical. The same seed produces the same sequence of numbers, making experiments reproducible. Some models show high sensitivity across seeds. A result obtained from a single seed can be misleading, so rigorous benchmarks report metrics averaged over several seeds.
 
 <CodeTabs>
 
@@ -194,11 +194,11 @@ print(first == second)  # True
 
 ## The whole picture
 
-This table shows the powers of every base at once. Three things stand out:
+This table displays powers for every base simultaneously. Three properties emerge:
 
 - Every sequence ends in 1.
-- The length of each sequence divides $\phi(n)$.
-- A few rows use the full length. Those are the primitive roots. For 19, they are 2, 3, 10, 13, 14 and 15.
+- The length of each cycle divides $\phi(n)$.
+- A subset of rows reaches the full period $\phi(n)$. Those rows correspond to primitive roots. For 19, they are 2, 3, 10, 13, 14, and 15.
 
 <PowersTable />
 
@@ -235,12 +235,12 @@ print([a for a in range(1, 19) if order(a, 19) == 18])  # [2, 3, 10, 13, 14, 15]
 
 </CodeTabs>
 
-If $a$ is a primitive root of a prime $p$, then $a^1, a^2, \dots, a^{p-1}$ are all distinct modulo $p$, and they cover each of $1, \dots, p - 1$ exactly once. The next lessons rely on this.
+If $a$ is a primitive root of a prime $p$, the powers $a^1, a^2, \dots, a^{p-1}$ are distinct modulo $p$. They cover each element of $\{1, \dots, p - 1\}$ exactly once. The next lessons rely on this.
 
 <Callout tone="orange" label="Common errors">
 - **Testing only $a^{\phi(n)} \equiv 1$:** By Euler's theorem, $a^{\phi(n)} \equiv 1 \pmod n$ for *every* coprime $a$. To prove $a$ is a primitive root, you must verify that no *proper divisor* $d$ of $\phi(n)$ gives $a^d \equiv 1 \pmod n$.
 - **Confusing exponents with values:** If $\operatorname{ord}_n(a) = k$, then $a^x \equiv a^y \pmod n$ if and only if $x \equiv y \pmod k$. Exponents live modulo $k$, while the results live modulo $n$.
-- **Assuming all moduli have primitive roots:** Primitive roots exist only for $n = 2, 4, p^k, 2p^k$ (for odd primes $p$). Moduli like 8, 12, 15, and 45 do not possess any primitive roots.
+- **Assuming all moduli have primitive roots:** Primitive roots exist only for $n = 2, 4, p^k, 2p^k$ (for odd primes $p$). Moduli like 8, 12, 15, and 45 have no primitive roots.
 </Callout>
 
 ## Where you'll meet this

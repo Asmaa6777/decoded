@@ -3,7 +3,7 @@ import { DiscreteLogSearch } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Discrete Logarithms
 
-The [last lesson](/courses/computational-mathematics/fast-exponentiation) showed that $a^k \bmod p$ is fast to compute. This lesson is about going backwards, finding $k$ when you know the result. Nobody knows a fast way to do that in general, and public-key cryptography is built on that gap.
+The [previous lesson](/courses/computational-mathematics/fast-exponentiation) showed that $a^k \bmod p$ computes quickly. This lesson examines the inverse problem: finding $k$ when given the result. No general efficient algorithm is known on classical computers, and public-key cryptography relies on that asymmetry.
 
 ## Logarithms, modulo a prime
 
@@ -19,9 +19,9 @@ $$
 b \equiv a^k \pmod p, \qquad 0 \le k \le p - 2
 $$
 
-This exponent $k$ is the **discrete logarithm** of $b$ for the base $a$ modulo $p$, denoted $\log_a(b)$ or the **index** $\operatorname{ind}_a(b)$. (Because $a^0 \equiv a^{p-1} \equiv 1 \pmod p$, discrete logarithms can be represented in $\{0, 1, \dots, p - 2\}$ or $\{1, 2, \dots, p - 1\}$; tables of discrete logarithms often assign $\log_a(1) = p - 1$.)
+This exponent $k$ is the **discrete logarithm** of $b$ for the base $a$ modulo $p$, denoted $\log_a(b)$ or the **index** $\operatorname{ind}_a(b)$. (Because $a^0 \equiv a^{p-1} \equiv 1 \pmod p$, discrete logarithms can be chosen from $\{0, 1, \dots, p - 2\}$ or $\{1, 2, \dots, p - 1\}$. Tables often set $\log_a(1) = p - 1$.)
 
-The ordinary logarithm rules still hold, but their arithmetic reduces modulo $\phi(p) = p - 1$, [Euler's totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) of $p$, rather than modulo $p$. Why? Because powers repeat every $p - 1$ steps by Fermat's Little Theorem ($a^{p-1} \equiv 1 \pmod p$). Multiplying two values adds their exponents:
+Standard logarithm rules remain valid, but exponents reduce modulo $\phi(p) = p - 1$, [Euler's totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) of $p$, instead of modulo $p$. Why? Powers cycle every $p - 1$ steps by Fermat's Little Theorem ($a^{p-1} \equiv 1 \pmod p$). Multiplying two values adds their exponents:
 
 $$
 b \cdot c \equiv a^{\log_a b} \cdot a^{\log_a c} = a^{\log_a b + \log_a c} \pmod p
@@ -62,20 +62,20 @@ print({pow(2, k, 9): k for k in range(6)})  # {1: 0, 2: 1, 4: 2, 8: 3, 7: 4, 5: 
 
 ## Try finding one
 
-Pick a base and a target modulo 19. The chords jump around with no visible pattern, so the search gets no hint about whether it's close:
+Pick a base and a target modulo 19. Chords jump across the circle without a smooth pattern, giving no hint about whether a guess is close:
 
 <DiscreteLogSearch />
 
-Modulo 19 you can finish by hand, where searching for $b = 11$ with base $a = 2$ gives $2^{12} \equiv 11 \pmod{19}$, so $\log_2(11) = 12$.
+Modulo 19, the search is small enough to finish by hand. Searching for $b = 11$ with base $a = 2$ gives $2^{12} \equiv 11 \pmod{19}$, so $\log_2(11) = 12$.
 
 For larger numbers, brute force tests successive powers:
 
 - **$\log_3(37) \pmod{101}$:** testing powers of 3 finds $3^{24} \equiv 37 \pmod{101}$, giving the discrete logarithm $k = 24$.
 - **$\log_{63}(1454) \pmod{2017}$:** testing powers of 63 modulo the prime 2017 finds $63^{245} \equiv 1454 \pmod{2017}$, giving $k = 245$.
 
-With a prime of hundreds of digits, this linear search would never end. Better algorithms exist, such as baby-step giant-step and the number field sieve, but none of them are fast enough at cryptographic sizes.
+For primes with hundreds of digits, linear search is impossible. Specialized algorithms like baby-step giant-step and the index calculus method improve on brute force, but remain computationally intractable for cryptographic keys.
 
-The brute-force search is a few lines, and it's a good way to watch the time grow as $p$ does:
+A brute-force search requires only a few lines of code, illustrating how search time scales with modulus size:
 
 <CodeTabs>
 
@@ -119,7 +119,7 @@ print(pow(63, 245, 2017))            # 1454
 | Forward | Compute $a^k \bmod p$ | Fast, about $\log k$ multiplications |
 | Backward | Find $k$ from $a^k \bmod p$ | No known fast method on classical computers |
 
-That gap lets two people agree on a secret in public. In **Diffie-Hellman**, they share a prime $p$ and a base $a$. Each picks a private exponent, $x$ and $y$, and sends the other $A = a^x \bmod p$ or $B = a^y \bmod p$ in the open. Both can then compute $(a^y)^x = a^{xy} = (a^x)^y \pmod p$, but an eavesdropper who saw only $A$ and $B$ would need to solve a discrete logarithm to find $x$ or $y$.
+This computational asymmetry enables key agreement over public channels. In **Diffie-Hellman**, two parties agree on a prime $p$ and a base $a$. Each generates a private exponent, $x$ and $y$, and transmits $A = a^x \bmod p$ and $B = a^y \bmod p$ publicly. Both compute $(a^y)^x = a^{xy} = (a^x)^y \pmod p$ to find the shared secret. An eavesdropper intercepting $A$ and $B$ must solve a discrete logarithm to recover $x$ or $y$.
 
 Trace the arithmetic step by step with prime $p = 19$ and base $a = 2$:
 
@@ -140,7 +140,7 @@ Trace the arithmetic step by step with prime $p = 19$ and base $a = 2$:
    A^y \equiv 13^7 \equiv (-6)^7 = -279936 = -14734 \cdot 19 + 10 \equiv 10 \pmod{19}
    $$
 
-Both arrive at the identical shared key $10$. An observer who intercepts $A = 13$ and $B = 14$ cannot compute $2^{35} \equiv 10 \pmod{19}$ without solving $2^x \equiv 13 \pmod{19}$ or $2^y \equiv 14 \pmod{19}$.
+Both compute the same shared key, $10$. An observer intercepting $A = 13$ and $B = 14$ cannot compute $2^{35} \equiv 10 \pmod{19}$ without solving $2^x \equiv 13 \pmod{19}$ or $2^y \equiv 14 \pmod{19}$.
 
 <CodeTabs>
 
@@ -163,10 +163,10 @@ print(pow(pow(a, y, p), x, p) == pow(pow(a, x, p), y, p))  # True
 
 AI systems depend on this one-way street for protection, even though no model ever computes a discrete log:
 
-- **Secure aggregation.** Phones taking part in federated learning use Diffie-Hellman to agree, pair by pair, on random masks to add to their updates. Each pair of masks cancels out in the sum, so the server sees the total update and none of the individual ones.
-- **Signed models.** Downloading pretrained weights means trusting a large file you can't inspect. A digital signature, built on this kind of one-way maths, proves who published it and that nobody has tampered with it since.
+- **Secure aggregation.** Phones participating in federated learning use Diffie-Hellman to establish pairwise random masks. Each pair of masks cancels out in the aggregate sum, allowing the server to record the total update without seeing individual contributions.
+- **Signed models.** Downloading pretrained weights requires trusting binary files. A digital signature, built on this asymmetric arithmetic, verifies publisher identity and proves that no one has modified the weights.
 
-Notice the contrast with how neural networks learn. Gradient descent works because small changes in the input make small changes in the output, so there's always a slope to follow. The powers on the ring above jump around with no such pattern, so there's no slope at all, and that's a large part of why these functions resist being learned.
+Contrast this behavior with neural network training. Gradient descent relies on smooth functions where small input adjustments produce small output changes. On the modular ring, powers jump unpredictably without an underlying slope. That absence of smooth gradients prevents continuous optimizers from learning discrete logarithms.
 
 ## Integer factorization
 

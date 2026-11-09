@@ -16,7 +16,7 @@ Write $m$ in binary and read it from left to right. Start with $a$ for the first
 - **Always** square the running value.
 - If the bit is **1**, also multiply by $a$.
 
-Why does binary representation make this work? Any exponent $m$ is a sum of powers of 2: $m = \sum_{i=0}^k b_i 2^i$, with bits $b_i \in \{0, 1\}$. Reading from left to right, squaring the running accumulator doubles its exponent ($(a^k)^2 = a^{2k}$), which shifts the binary exponent left by one place. If the incoming bit is 1, multiplying by $a$ adds 1 ($a^{2k} \cdot a = a^{2k+1}$). If the bit is 0, no extra multiplication is done. Crucially, reducing modulo $n$ after every operation keeps intermediate numbers below $n^2$.
+Why does binary representation make this work? Any exponent $m$ decomposes into powers of 2: $m = \sum_{i=0}^k b_i 2^i$, with bits $b_i \in \{0, 1\}$. Reading from left to right, squaring the accumulator doubles its exponent ($(a^k)^2 = a^{2k}$), which shifts the binary exponent left by one bit. If the next bit is 1, multiplying by $a$ adds 1 ($a^{2k} \cdot a = a^{2k+1}$). When the bit is 0, no multiplication is performed. Reducing modulo $n$ after each step keeps intermediate values below $n^2$.
 
 For $a^{100}$, we have $100 = (1100100)_2$, so the bits build the exponent like this:
 
@@ -45,7 +45,7 @@ For $25^{193} \bmod 469$, the binary form of the exponent is $193 = (11000001)_2
 | $e_1$ | 0 | square | $15^2 = 225 < 469$ | 225 |
 | $e_0$ | 1 | square, multiply | $(225^2 \cdot 25) = 1265625 = 2698 \cdot 469 + 263$ | 263 |
 
-Hence $25^{193} \equiv 263 \pmod{469}$. (In practice, reducing between the square and the multiplication keeps numbers even smaller: $225^2 \equiv 442 \equiv -27$, and $(-27) \cdot 25 = -675 \equiv 263 \pmod{469}$.)
+Therefore $25^{193} \equiv 263 \pmod{469}$. (In practice, reducing between the square and the multiplication keeps numbers smaller: $225^2 \equiv 442 \equiv -27$, and $(-27) \cdot 25 = -675 \equiv 263 \pmod{469}$.)
 
 Step through the calculation below to see each squaring and multiplication animate:
 
@@ -87,9 +87,9 @@ print(pow(25, 193, 469))  # 263
 
 ## How much it saves
 
-The count of multiplications grows with the number of binary digits in $m$, which is about $\log_2 m$, rather than with $m$ itself. For a 2048-bit exponent, that's at most about 4096 multiplications, instead of a number with more than 600 digits. Advanced Algorithms analyses the same idea as [divide and conquer](/courses/advanced-algorithms/divide-and-conquer), and uses it on matrices to compute Fibonacci numbers.
+The number of multiplications scales with the binary length of $m$, roughly $\log_2 m$, instead of $m$ itself. A 2048-bit exponent takes at most about 4,096 multiplications, avoiding a 600-digit number of operations. Advanced Algorithms analyses this strategy as [divide and conquer](/courses/advanced-algorithms/divide-and-conquer), applying it to matrices to compute Fibonacci numbers.
 
-Repeated squaring works for anything you can multiply, and matrices are where machine learning uses it. A **Markov chain** moves between states at random, say a web surfer clicking from page to page, and a **transition matrix** $P$ holds the probability of each move. $P^k$ gives the probabilities after $k$ steps, and a high power shows where the chain settles in the long run. That long-run share of time on each page is what Google's original **PageRank** measured. Here 64 steps take only 6 squarings:
+Repeated squaring applies to any associative multiplication, including square matrices in machine learning. A **Markov chain** transitions between discrete states with specified probabilities recorded in a **transition matrix** $P$. The power $P^k$ gives the state distribution after $k$ steps, and high powers reveal the stationary distribution. Google's original **PageRank** algorithm used this stationary share. Computing 64 steps requires only 6 squarings:
 
 <CodeTabs>
 
@@ -113,13 +113,13 @@ print(np.round(np.linalg.matrix_power(P, 64)[0], 4).tolist())  # [0.8333, 0.1667
 
 </CodeTabs>
 
-Both rows end up the same: wherever the chain starts, it spends five-sixths of its time in state 1. **Diffusion models**, the image generators behind tools like Stable Diffusion, lean on the same kind of shortcut. Training adds noise to an image over hundreds of small steps, and a closed-form formula jumps straight to any step, so training never has to simulate them one by one.
+Both rows converge to identical distributions: regardless of starting state, the chain spends five-sixths of its time in state 1. **Diffusion models** use an analogous shortcut. Image generation trains across hundreds of noise steps. Instead of simulating each noise step sequentially, a closed-form equation evaluates any arbitrary timestep directly.
 
 <Callout tone="orange" label="Common errors">
-- **Forgetting to square on bit 1:** A common misconception is that bit 0 means "square" and bit 1 means "multiply". In reality, *every* bit after the first requires squaring the accumulator; bit 1 requires squaring *followed by* multiplying by $a$.
-- **Processing bits in the wrong direction:** Left-to-right square-and-multiply starts at the most significant bit and multiplies into the squared total. Right-to-left starts at the least significant bit and squares the base into an accumulator. Mixing the two produces incorrect results.
+- **Forgetting to square on bit 1:** A common mistake assumes bit 0 means square and bit 1 means multiply. Every bit after the first requires squaring. A bit value of 1 adds a multiplication by $a$ right after the squaring step.
+- **Processing bits in the wrong direction:** Left-to-right square-and-multiply begins at the most significant bit and multiplies into the squared total. Right-to-left begins at the least significant bit and squares the base into an accumulator. Mixing the two produces incorrect results.
 - **Reducing exponents modulo $n$:** Exponents do not reduce modulo $n$ ($a^m \bmod n \ne a^{m \bmod n} \bmod n$).
-- **Writing `mod(a^m, n)` in code:** In MATLAB, `mod(25^193, 469)` is wrong. `25^193` overflows IEEE 754 doubles, wiping out the low digits before `mod` runs. Use `powermod(25, 193, 469)` from the Symbolic Math Toolbox, or reduce at each step as in the code panel. In Python, prefer `pow(a, m, n)` over `a**m % n`.
+- **Writing `mod(a^m, n)` in code:** In MATLAB, `mod(25^193, 469)` is incorrect. The value `25^193` overflows double-precision floats, discarding lower digits before `mod` executes. Use `powermod(25, 193, 469)` or reduce at each step. In Python, prefer `pow(a, m, n)` over `a**m % n`.
 </Callout>
 
 ## Where you'll meet this

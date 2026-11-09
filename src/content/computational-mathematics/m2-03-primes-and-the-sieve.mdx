@@ -3,11 +3,11 @@ import { SieveVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Primes and the Sieve
 
-Primes are the atoms of whole-number arithmetic. Every other number is built from them in exactly one way, and the fact that [recovering them from their product](/courses/computational-mathematics/discrete-logarithms#integer-factorization) is so hard underlies a large part of cryptography.
+Primes are the elementary building blocks of whole-number arithmetic. Every integer greater than 1 factors uniquely into primes. The computational difficulty of [factoring large products](/courses/computational-mathematics/discrete-logarithms#integer-factorization) secures many cryptographic algorithms.
 
 ## Prime and composite
 
-A positive integer $n > 1$ is **prime** if its only positive [divisors](/courses/computational-mathematics/divisibility-and-euclid#divisibility) are 1 and $n$. Otherwise it's **composite**. The integer 1 is defined as neither prime nor composite (a **unit**); if 1 were counted as prime, uniqueness in the theorem below would fail because any number could be multiplied by $1$ arbitrarily many times ($6 = 2 \cdot 3 = 1 \cdot 2 \cdot 3 = 1^2 \cdot 2 \cdot 3$).
+A positive integer $n > 1$ is **prime** if its only positive [divisors](/courses/computational-mathematics/divisibility-and-euclid#divisibility) are 1 and $n$. Otherwise it is **composite**. The integer 1 is classified as a **unit**, neither prime nor composite. If 1 were considered prime, unique factorization would fail. Any number could multiply by 1 repeatedly ($6 = 2 \cdot 3 = 1 \cdot 2 \cdot 3 = 1^2 \cdot 2 \cdot 3$).
 
 The **Fundamental Theorem of Arithmetic** says every integer $n > 1$ can be written as a product of primes in only one way, apart from their order:
 
@@ -44,13 +44,13 @@ print(factor(11011))  # [7, 11, 11, 13]
 
 </CodeTabs>
 
-Primes do quiet work in machine learning through **hashing**. A good hash spreads inputs evenly over its buckets, and multiplying by a number and then reducing modulo a large prime $p$ is a classic way to scramble them. **Universal hash functions** have the form
+Machine learning models rely on prime numbers for **hashing**. Effective hash functions distribute inputs uniformly across buckets. Multiplying an input by a constant and reducing modulo a large prime $p$ provides strong dispersion. **Universal hash functions** have the form
 
 $$
 h(x) = \bigl((ax + b) \bmod p\bigr) \bmod m
 $$
 
-with $a$ and $b$ chosen at random. Whatever the data looks like, any two different inputs then collide with a probability of only about $1/m$, so no unlucky pattern in the keys can pile them into a few buckets.
+with $a$ and $b$ chosen uniformly at random. Regardless of input distribution, any two distinct keys collide with probability at most $1/m$. That bound prevents hostile or skewed patterns from clustering into a few buckets.
 
 <CodeTabs>
 
@@ -77,11 +77,11 @@ print(h(42))  # 471
 
 </CodeTabs>
 
-**MinHash** runs a whole family of these functions over a document's words to build a short signature, so two documents with similar signatures are near-duplicates, and you never have to compare every pair. Teams building large language models use it to clean their training text, because the web repeats itself endlessly: duplicates waste training time, make the model memorise instead of generalise, and can leak test questions into the training data.
+**MinHash** applies a family of these hash functions to document tokens to construct compact signatures. Two documents with similar signatures represent near-duplicates, eliminating pairwise document comparisons. Teams training large language models use MinHash to filter web data. Duplicate text wastes compute budget, promotes memorization over generalization, and risks leaking evaluation data into the training corpus.
 
 ## You only need to check up to the square root
 
-If $n$ has no prime divisor less than or equal to $\sqrt{n}$, then $n$ is prime. The reason is simple: if $n$ were composite, it could be factored into two integers $n = a \cdot b$. If both factors were strictly greater than $\sqrt{n}$, their product would be $a \cdot b > \sqrt{n} \cdot \sqrt{n} = n$, a contradiction. So every composite number must have at least one factor less than or equal to $\sqrt{n}$.
+If $n$ has no prime divisor less than or equal to $\sqrt{n}$, then $n$ is prime. If $n$ were composite, it would factor into two integers $n = a \cdot b$. If both factors were strictly greater than $\sqrt{n}$, their product would satisfy $a \cdot b > \sqrt{n} \cdot \sqrt{n} = n$, which is impossible. Every composite number must therefore have at least one factor less than or equal to $\sqrt{n}$.
 
 <CodeTabs>
 
@@ -109,7 +109,7 @@ This method for listing small primes is over two thousand years old:
 3. Strike out all its multiples, starting at $p^2$ (every smaller multiple $k \cdot p$ with $k < p$ has already been struck out by a prime factor of $k$).
 4. Repeat until you pass $\sqrt{n}$. Whatever remains is prime.
 
-For $n = 100$, calculating $\sqrt{100} = 10$, you can stop as soon as you finish striking out multiples of the primes up to 10 (that is, 2, 3, 5, and 7). The next remaining candidate prime is 11, which exceeds 10, so every composite number up to 100 has already had its prime factor struck out. Step through it and watch how little work is left after the first few primes:
+For $n = 100$, $\sqrt{100} = 10$. The process stops after crossing out multiples of primes up to 10: 2, 3, 5, and 7. The next prime candidate is 11, which exceeds 10. Every composite number up to 100 already has its smallest factor eliminated. Step through the visualizer to see how quickly the active numbers thin out:
 
 <SieveVisualizer />
 
@@ -170,7 +170,7 @@ $$
 8 - 1 + 3 - 2 + 6 - 1 + 9 = 22 = 2 \cdot 11
 $$
 
-(From right to left, $9 - 1 + 6 - 2 + 3 - 1 + 8 = 22$ gives the exact same result.) Since 22 is a multiple of 11, 11 divides $8132619$. Notice that a sum of 0 also means divisible by 11, since $0 = 0 \cdot 11$ (for instance, $121 \to 1 - 2 + 1 = 0$).
+Evaluating from right to left gives the same sum: $9 - 1 + 6 - 2 + 3 - 1 + 8 = 22$. Because 22 is a multiple of 11, 11 divides $8132619$. An alternating sum of 0 also confirms divisibility by 11, because $0 = 0 \cdot 11$ (for example, $121 \to 1 - 2 + 1 = 0$).
 
 <CodeTabs>
 
@@ -187,8 +187,8 @@ print(17865843 % 3, 8132619 % 11)  # 0 0
 
 <Callout tone="orange" label="Common errors">
 - **Counting 1 as prime:** 1 is a unit, not a prime. Primes are strictly greater than 1 ($p \ge 2$).
-- **Checking up to $n/2$ instead of $\sqrt{n}$:** While checking up to $n/2$ will find factors, it does massively more work than needed. For $n = 1{,}000{,}000$, $\sqrt{n} = 1{,}000$ operations versus $500{,}000$.
-- **Alternating sum sign slips:** When checking divisibility by 11, don't mix up addition and subtraction midway through the digits, and remember that an alternating sum of 0 is a valid multiple of 11.
+- **Checking up to $n/2$ instead of $\sqrt{n}$:** Checking up to $n/2$ finds all factors, but performs unnecessary operations. For $n = 1{,}000{,}000$, testing to $\sqrt{n}$ takes 1,000 steps instead of 500,000.
+- **Alternating sum sign errors:** When testing divisibility by 11, preserve consistent alternating signs across all digits. An alternating sum of 0 is a valid multiple of 11.
 </Callout>
 
 ## Where you'll meet this

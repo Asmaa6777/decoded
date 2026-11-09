@@ -7,7 +7,7 @@ Every secure connection your browser opens rests on arithmetic with whole number
 
 ## Divisibility
 
-A nonzero integer $b$ **divides** $a$ if $a = m \cdot b$ for some integer $m$, which means division leaves no remainder. We write $b \mid a$ and call $b$ a **divisor** (or factor) of $a$. Notice the vertical bar $\mid$ is a complete mathematical statement ("$b$ divides $a$"), not a division operation or fraction like $a/b$ or $b/a$. If $b$ does not divide $a$, we write $b \nmid a$. The positive divisors of 24 are 1, 2, 3, 4, 6, 8, 12 and 24.
+A nonzero integer $b$ **divides** $a$ if $a = m \cdot b$ for some integer $m$, meaning division leaves no remainder. We write $b \mid a$ and call $b$ a **divisor** (or factor) of $a$. The vertical bar $\mid$ expresses a relation ("$b$ divides $a$"), unlike a slash $a/b$ which computes a quotient. If $b$ does not divide $a$, we write $b \nmid a$. The positive divisors of 24 are 1, 2, 3, 4, 6, 8, 12 and 24.
 
 <CodeTabs>
 
@@ -27,7 +27,7 @@ print([d for d in range(1, n + 1) if n % d == 0])  # [1, 2, 4, 5, 10, 20, 25, 50
 
 </CodeTabs>
 
-Divisibility decides real design choices in AI. A **vision transformer**, the kind of model behind many image recognisers, cuts each picture into square patches and reads them like words in a sentence. The patch size has to divide the image size exactly, or the last row and column of patches would hang off the edge. The standard 224-pixel image with 16-pixel patches works, because $16 \mid 224$: it gives $14 \times 14 = 196$ patches.
+Divisibility shapes practical architecture choices in AI. A **vision transformer**, a model used for image recognition, divides each image into square patches and processes them like words in a sentence. The patch size must divide the image width and height evenly. Otherwise, edge patches overflow the border. A 224-pixel image with 16-pixel patches works evenly because $16 \mid 224$, yielding $14 \times 14 = 196$ patches.
 
 ## The division algorithm
 
@@ -37,10 +37,10 @@ $$
 a = q \cdot n + r, \qquad 0 \le r < n, \qquad q = \left\lfloor \frac{a}{n} \right\rfloor
 $$
 
-Here $\lfloor x \rfloor$ is the **floor function**, meaning the largest integer not greater than $x$. The condition $0 \le r < n$ guarantees that the remainder is never negative, and that matters when dividing negative numbers:
+Here $\lfloor x \rfloor$ is the **floor function**, which returns the largest integer less than or equal to $x$. The rule $0 \le r < n$ ensures the remainder is never negative. That rule is especially important when dividing negative numbers:
 
 - For $a = 11$ and $n = 7$: $11 / 7 \approx 1.57$, so $q = \lfloor 1.57 \rfloor = 1$. The remainder is $r = 11 - 1 \cdot 7 = 4$.
-- For $a = -11$ and $n = 7$: $-11 / 7 \approx -1.57$. The floor rounds down toward $-\infty$, so $q = \lfloor -1.57 \rfloor = -2$, not $-1$. The remainder is $r = -11 - (-2) \cdot 7 = -11 + 14 = 3$, which satisfies $0 \le r < 7$. If you had chosen $q = -1$, the remainder would be $-4$, which violates $r \ge 0$.
+- For $a = -11$ and $n = 7$: $-11 / 7 \approx -1.57$. The floor function rounds down toward $-\infty$, so $q = \lfloor -1.57 \rfloor = -2$. The remainder is $r = -11 - (-2) \cdot 7 = 3$, which satisfies $0 \le r < 7$. Choosing $q = -1$ gives $r = -4$, which violates $r \ge 0$.
 
 <CodeTabs>
 
@@ -56,7 +56,7 @@ print(divmod(-11, 7))  # (-2, 3)
 
 </CodeTabs>
 
-Every training loop does this division. A model learns from small **batches** of examples at a time, so splitting 1000 examples into batches of 32 gives a quotient and a remainder: 31 full batches, and a short final batch of 8. That leftover batch is why PyTorch has a `drop_last` option to throw it away, since an unusually small batch makes for a noisy training step.
+Every machine learning training loop uses this division. Models update their parameters on small **batches** of data. Splitting 1000 examples into batches of 32 gives 31 full batches and a leftover batch of 8. That small final batch introduces noisy gradient updates. Because of that variance, libraries like PyTorch offer a `drop_last` option to discard it.
 
 <CodeTabs>
 
@@ -79,7 +79,7 @@ $$
 \gcd(a, b) = \max \{k \in \mathbb{Z}^+ : k \mid a \text{ and } k \mid b\}
 $$
 
-Here $\mathbb{Z}^+$ denotes the set of **positive integers** $\{1, 2, 3, \dots\}$. More formally, a positive integer $c = \gcd(a, b)$ satisfies two conditions: $c$ is a divisor of both $a$ and $b$, and any integer dividing both $a$ and $b$ also divides $c$. Because the greatest common divisor is defined to be positive, signs do not change the answer:
+Here $\mathbb{Z}^+$ denotes the set of **positive integers** $\{1, 2, 3, \dots\}$. More formally, a positive integer $c = \gcd(a, b)$ satisfies two conditions: $c$ divides both $a$ and $b$, and every common divisor of $a$ and $b$ also divides $c$. Because greatest common divisors are positive, signs do not change the result:
 
 $$
 \gcd(a, b) = \gcd(|a|, |b|) = \gcd(-a, b) = \gcd(a, -b) = \gcd(-a, -b)
@@ -87,21 +87,21 @@ $$
 
 For example, $\gcd(60, 24) = \gcd(60, -24) = 12$. By convention, $\gcd(0, 0) = 0$.
 
-Two numbers are **coprime** (or relatively prime) if their only common positive factor is 1, which means $\gcd(a, b) = 1$. Neither number has to be prime: the positive divisors of 8 are 1, 2, 4, 8 and those of 15 are 1, 3, 5, 15, so $\gcd(8, 15) = 1$.
+Two numbers are **coprime** (or relatively prime) if their only common positive factor is 1, so $\gcd(a, b) = 1$. Neither number needs to be prime. The positive divisors of 8 are 1, 2, 4, 8, while those of 15 are 1, 3, 5, 15. Therefore $\gcd(8, 15) = 1$.
 
 ## The Euclidean algorithm
 
-Listing divisors becomes hopeless for large numbers. Euclid's method needs one fact:
+Listing all divisors is too slow for large numbers. Euclid's algorithm relies on one identity:
 
 $$
 \gcd(a, b) = \gcd(b, a \bmod b)
 $$
 
-Here $a \bmod b$ is the remainder $r$ from the division algorithm above, and the [next lesson](/courses/computational-mathematics/modular-arithmetic#the-mod-operation) is all about it. Why does this equality hold? Since $a = qb + r$, we know $r = a - qb$:
-- Any common divisor $d$ of $a$ and $b$ must also divide the combination $r = a - qb$.
-- Any common divisor $d$ of $b$ and $r$ must also divide the sum $a = qb + r$.
+Here $a \bmod b$ is the remainder $r$ from the division algorithm. The [next lesson](/courses/computational-mathematics/modular-arithmetic#the-mod-operation) explores modular arithmetic in detail. Why does this equality hold? Because $a = qb + r$, we have $r = a - qb$:
+- Any common divisor $d$ of $a$ and $b$ divides the difference $r = a - qb$.
+- Any common divisor $d$ of $b$ and $r$ divides the sum $a = qb + r$.
 
-Because the pair $(a, b)$ and the pair $(b, r)$ share the exact same set of common divisors, their greatest common divisors must be equal. Setting $r_0 = b$, we find successive quotients $q_i$ and remainders $r_i$ with $0 \le r_i < r_{i-1}$:
+Both pairs $(a, b)$ and $(b, r)$ have the same common divisors, so their greatest common divisors are identical. Setting $r_0 = b$, we calculate successive quotients $q_i$ and remainders $r_i$ with $0 \le r_i < r_{i-1}$:
 
 $$
 \begin{aligned}
@@ -113,9 +113,9 @@ r_{n-1} &= q_{n+1} r_n + 0
 \end{aligned}
 $$
 
-When a remainder hits zero, the last non-zero remainder is the gcd: $r_n = \gcd(a, b)$.
+When a remainder reaches zero, the last non-zero remainder is the gcd: $r_n = \gcd(a, b)$.
 
-It has a nice picture. Cut as many squares of side $b$ as you can from an $a$-by-$b$ rectangle. Then repeat on the leftover piece. The final square tiles everything before it, and its side is the gcd:
+A geometric layout illustrates this process. Cut as many squares of side $b$ as possible from an $a$-by-$b$ rectangle. Repeat the cut on the leftover strip. The final square tiles the entire rectangle, and its side length equals the gcd:
 
 <EuclidTilesVisualizer />
 
@@ -199,8 +199,8 @@ $$
 The last non-zero remainder is 6, so $\gcd(78, 24) = 6$.
 
 <Callout tone="orange" label="Common errors">
-- **Confusing $b \mid a$ with division:** $3 \mid 12$ is a true statement ("3 divides 12"), not the value $3/12 = 0.25$ or $12/3 = 4$. Remember that the divisor comes first: $12 \mid 3$ is false.
-- **Reporting 0 as the gcd:** The Euclidean algorithm terminates when the remainder becomes 0. The greatest common divisor is the *last non-zero remainder* (or the divisor in that final line), not 0 and not the quotient.
+- **Confusing $b \mid a$ with division:** $3 \mid 12$ is a relational statement ("3 divides 12"). It does not evaluate to $3/12 = 0.25$ or $12/3 = 4$. Remember that the divisor comes first: $12 \mid 3$ is false.
+- **Reporting 0 as the gcd:** The Euclidean algorithm terminates when a remainder reaches 0. The greatest common divisor is the *last non-zero remainder* (or the divisor in that final line). It is never 0 or the quotient.
 </Callout>
 
 MATLAB's built-in `gcd` computes this directly, and works elementwise on vectors:
@@ -226,7 +226,7 @@ print(np.gcd([250, 1050, 6022], [180, 1150, 5622]).tolist())  # [10, 50, 2]
 
 </CodeTabs>
 
-The Algorithm Design course writes the same algorithm in Java and [steps through it](/courses/algorithm-design-and-analysis/euclid-gcd), if you'd like to see it run as code.
+The Algorithm Design course implements this algorithm in Java and [steps through its execution](/courses/algorithm-design-and-analysis/euclid-gcd).
 
 ## Where you'll meet this
 
@@ -235,6 +235,6 @@ The Algorithm Design course writes the same algorithm in Java and [steps through
 The public exponent has to be coprime to a value computed from the key's two primes, and that's checked with a gcd.
 </PracticalApplication>
 <PracticalApplication title="Simplifying fractions" tool="Python fractions, spreadsheets">
-Exact fraction types reduce every result by dividing the top and bottom by their gcd, which stops the numbers growing out of control.
+Exact fraction types simplify results by dividing the numerator and denominator by their gcd, preventing numbers from growing unboundedly.
 </PracticalApplication>
 </ApplicationsGrid>

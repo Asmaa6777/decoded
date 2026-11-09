@@ -9,12 +9,12 @@ Modular arithmetic has no fractions, so how do you divide? You multiply by an **
 
 If $\gcd(a, n) = 1$, the equation $a \cdot x \equiv b \pmod n$ has a solution, and it's unique modulo $n$. So $a$ has an inverse exactly when it's [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $n$:
 
-- **Existence:** By Bézout's identity below, $\gcd(a, n) = 1$ means integers $x$ and $y$ satisfy $ax + ny = 1$. Taking this modulo $n$, the $ny$ term vanishes ($ny \equiv 0$), leaving $a \cdot x \equiv 1 \pmod n$.
-- **Uniqueness:** If two integers $x_1$ and $x_2$ both satisfy $a x_1 \equiv a x_2 \equiv 1 \pmod n$, then $a(x_1 - x_2) \equiv 0 \pmod n$, meaning $n \mid a(x_1 - x_2)$. Since $\gcd(a, n) = 1$, $n$ shares no factors with $a$, forcing $n \mid (x_1 - x_2)$, which proves $x_1 \equiv x_2 \pmod n$.
+- **Existence:** By Bézout's identity, $\gcd(a, n) = 1$ implies integers $x$ and $y$ satisfy $ax + ny = 1$. Reducing modulo $n$ eliminates $ny$ ($ny \equiv 0$), leaving $a \cdot x \equiv 1 \pmod n$.
+- **Uniqueness:** Suppose two integers satisfy $a x_1 \equiv a x_2 \equiv 1 \pmod n$. Then $a(x_1 - x_2) \equiv 0 \pmod n$, so $n \mid a(x_1 - x_2)$. Because $\gcd(a, n) = 1$, $n$ shares no factors with $a$. That forces $n \mid (x_1 - x_2)$, proving $x_1 \equiv x_2 \pmod n$.
 
 For example, 2 has no inverse modulo 4, because $2x$ is always even and can't equal 1 modulo an even number.
 
-When the modulus is a prime $p$, [Fermat's Little Theorem](/courses/computational-mathematics/primality-and-the-totient#fermats-little-theorem) provides an alternative direct formula: since $a^{p-1} \equiv 1 \pmod p$, multiplying by $a^{-1}$ shows that $a^{-1} \equiv a^{p-2} \pmod p$. For composite moduli, however, the extended Euclidean algorithm is the universal tool.
+When the modulus is a prime $p$, [Fermat's Little Theorem](/courses/computational-mathematics/primality-and-the-totient#fermats-little-theorem) gives a direct formula. Because $a^{p-1} \equiv 1 \pmod p$, multiplying by $a^{-1}$ gives $a^{-1} \equiv a^{p-2} \pmod p$. For composite moduli, the extended Euclidean algorithm provides the general solution.
 
 ## The extended Euclidean algorithm
 
@@ -30,7 +30,7 @@ To find $x$ and $y$, run [Euclid's algorithm](/courses/computational-mathematics
 
 | Step | Division | Rearranged | Back substitution | Simplified |
 | --- | --- | --- | --- | --- |
-| 1 | $130 = 2 \cdot 61 + 8$ | $8 = 130 - 2 \cdot 61$ | — | $8 = 1(130) - 2(61)$ |
+| 1 | $130 = 2 \cdot 61 + 8$ | $8 = 130 - 2 \cdot 61$ | - | $8 = 1(130) - 2(61)$ |
 | 2 | $61 = 7 \cdot 8 + 5$ | $5 = 61 - 7 \cdot 8$ | $61 - 7(130 - 2 \cdot 61)$ | $5 = -7(130) + 15(61)$ |
 | 3 | $8 = 1 \cdot 5 + 3$ | $3 = 8 - 1 \cdot 5$ | $(130 - 2 \cdot 61) - 1(-7 \cdot 130 + 15 \cdot 61)$ | $3 = 8(130) - 17(61)$ |
 | 4 | $5 = 1 \cdot 3 + 2$ | $2 = 5 - 1 \cdot 3$ | $(-7 \cdot 130 + 15 \cdot 61) - 1(8 \cdot 130 - 17 \cdot 61)$ | $2 = -15(130) + 32(61)$ |
@@ -96,9 +96,9 @@ print(pow(17, -1, 61))  # 18
 If $x$ comes out negative, take `mod(x, n)`. For example, if $x = -5$ with $n = 18$, the same inverse is $13$.
 </Callout>
 
-Division modulo a prime protects some of the most sensitive training in machine learning. **Federated learning** trains one model across thousands of phones without collecting anyone's data: each phone sends only an update. **Secure aggregation** goes further, so the server learns only the sum of everyone's updates and not any single one. Those protocols must survive phones dropping out midway, and they use **Shamir secret sharing** to do it.
+Division modulo a prime protects sensitive training workflows in machine learning. In **federated learning**, thousands of mobile devices train a shared model without transmitting raw user data. Each device sends only model parameter updates. **Secure aggregation** ensures the server learns only the sum of these updates, never an individual update. To tolerate devices dropping offline during training, these systems use **Shamir secret sharing**.
 
-The idea fits in a line. Hide the secret as the value at $x = 0$ of a line, say $f(x) = 23 + 17x$ modulo 97, and hand out points on it as shares. One point says nothing, since infinitely many lines pass through it, but any two pin the line down and give back $f(0)$. Drawing that line means dividing by $x_2 - x_1$, which modulo a prime means multiplying by its inverse:
+The secret is the intercept $f(0)$ of a line, such as $f(x) = 23 + 17x \pmod{97}$. Participants receive points along the line as shares. A single point reveals nothing because infinitely many lines pass through it. Any two points determine the line and recover $f(0)$. Finding the intercept requires dividing by $x_2 - x_1$, which modulo a prime means multiplying by its modular inverse:
 
 <CodeTabs>
 
@@ -134,9 +134,9 @@ print(secret)  # 23
 
 <ApplicationsGrid>
 <PracticalApplication title="Building an RSA private key" tool="OpenSSL">
-The private exponent $d$ is the inverse of the public exponent $e$ modulo a value derived from the primes. OpenSSL finds it with this same family of algorithm.
+The private exponent $d$ is the inverse of the public exponent $e$ modulo a value derived from the primes. OpenSSL computes it using the extended Euclidean algorithm.
 </PracticalApplication>
 <PracticalApplication title="Elliptic curve signatures" tool="ECDSA, Bitcoin">
-Every point addition on an elliptic curve involves a division, and in a finite field that means a modular inverse.
+Every point addition on an elliptic curve requires division, which in a finite field means multiplying by a modular inverse.
 </PracticalApplication>
 </ApplicationsGrid>
