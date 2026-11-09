@@ -21,6 +21,10 @@ import {
   InsertionShiftVisualizer,
   TwoWayMergeVisualizer,
   PartitionVisualizer,
+  BinarySearchUnsortedVisualizer,
+  BinarySearchBoundaryVisualizer,
+  EuclidTilingVisualizer,
+  GcdComparisonVisualizer,
 } from "@/components/mdx/AlgoVisualizers";
 
 beforeAll(() => {
@@ -215,5 +219,60 @@ describe("visualizers step all the way through", () => {
     fireEvent.click(screen.getByRole("button", { name: /Left pointer first/ }));
     stepToEnd(container);
     expect(screen.getAllByText(/Partition corrupted!/).length).toBeGreaterThan(0);
+  });
+
+  it("binary search unsorted visualizer steps through and catches silent data loss on unsorted data", () => {
+    const { container } = render(<BinarySearchUnsortedVisualizer />);
+    stepToEnd(container);
+    expect(screen.getAllByText(/Silent Failure/).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: /Sorted array/ }));
+    stepToEnd(container);
+    expect(screen.getAllByText(/Found:/).length).toBeGreaterThan(0);
+  });
+
+  it("binary search boundary visualizer demonstrates premature exit and infinite loop traps", () => {
+    const { container } = render(<BinarySearchBoundaryVisualizer />);
+    // Correct mode finds target
+    stepToEnd(container);
+    expect(screen.getAllByText(/Target Found/).length).toBeGreaterThan(0);
+
+    // Bug 1: low < high misses boundary
+    fireEvent.click(screen.getByRole("button", { name: /low < high/ }));
+    stepToEnd(container);
+    expect(screen.getAllByText(/Off-by-one boundary failure/).length).toBeGreaterThan(0);
+
+    // Bug 2: low = mid infinite loop trap
+    fireEvent.click(screen.getByRole("button", { name: /low = mid/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Loop bug: \[10, 20\]/ }));
+    stepToEnd(container);
+    expect(screen.getAllByText(/Infinite Loop Trap/).length).toBeGreaterThan(0);
+  });
+
+  it("Euclid tiling visualizer steps through rectangle square tiling to completion", () => {
+    const { container } = render(<EuclidTilingVisualizer m={60} n={24} />);
+    stepToEnd(container);
+    expect(screen.getAllByText(/Floor fully tiled/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/gcd\(60, 24\) = 12/).length).toBeGreaterThan(0);
+  });
+
+  it("GCD comparison visualizer renders brute force vs Euclid operation metrics", () => {
+    render(<GcdComparisonVisualizer m={210} n={45} />);
+    expect(screen.getByText(/Brute force approach/)).toBeDefined();
+    expect(screen.getByText(/Euclid's algorithm/)).toBeDefined();
+    expect(screen.getByText("31")).toBeDefined(); // 31 candidate tests
+    expect(screen.getByText("3")).toBeDefined(); // 3 divisions
+    expect(screen.getByText(/10.3× fewer operations with Euclid/)).toBeDefined();
+  });
+
+  it("Euclid visualizer toggles between correct sequence and overwrite bug", () => {
+    const { container } = render(<EuclidVisualizer m={60} n={24} />);
+    stepToEnd(container);
+    expect(screen.getAllByText(/= 12/).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: /Overwrite bug/ }));
+    stepToEnd(container);
+    expect(screen.getAllByText(/= 0/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Assignment bug active/)).toBeDefined();
   });
 });

@@ -466,7 +466,13 @@ export function searchFrames(algorithm: SearchAlgorithm, input: number[], target
 
 /* ------------------------------ GCD ------------------------------ */
 
-export type GcdState = { rows: { m: number; n: number; r: number | null }[]; m: number; n: number; result?: number };
+export type GcdState = {
+  rows: { m: number; n: number; r: number | null }[];
+  m: number;
+  n: number;
+  result?: number;
+  buggy?: boolean;
+};
 
 export const JAVA_GCD = [
   "static int gcd(int m, int n) {",
@@ -479,14 +485,46 @@ export const JAVA_GCD = [
   "}",
 ];
 
-export function gcdFrames(m0: number, n0: number): Frame<GcdState>[] {
+export const JAVA_GCD_BUGGY = [
+  "static int gcd(int m, int n) {",
+  "    while (n != 0) {",
+  "        int r = m % n;                    // remainder",
+  "        n = r;                            // BUG: overwrites n before m receives it",
+  "        m = n;                            // m receives r instead of previous n",
+  "    }",
+  "    return m;",
+  "}",
+];
+
+export function gcdFrames(m0: number, n0: number, swapOrder: "correct" | "buggy" = "correct"): Frame<GcdState>[] {
   let m = m0;
   let n = n0;
   const rows: GcdState["rows"] = [];
   const frames: Frame<GcdState>[] = [];
   let steps = 0;
-  const push = (line: number, message: string, result?: number) =>
-    frames.push({ state: { rows: rows.map((r) => ({ ...r })), m, n, result }, line, message, stats: { divisions: steps } });
+  const push = (line: number, message: string, result?: number, buggy = false) =>
+    frames.push({ state: { rows: rows.map((r) => ({ ...r })), m, n, result, buggy }, line, message, stats: { divisions: steps } });
+
+  if (swapOrder === "buggy") {
+    push(0, `gcd(${m}, ${n}) with the assignment order bug (n = r before m = n).`, undefined, true);
+    let iterations = 0;
+    while (n !== 0 && iterations < 20) {
+      iterations++;
+      push(1, `n = ${n} is not 0, so loop continues.`, undefined, true);
+      const r = m % n;
+      steps++;
+      rows.push({ m, n, r });
+      push(2, `r = ${m} % ${n} = ${r} (${m} = ${Math.floor(m / n)} × ${n} + ${r}).`, undefined, true);
+      const oldN = n;
+      n = r;
+      push(3, `BUG: Executed n = r first. n is now ${n}, but original n (${oldN}) is lost!`, undefined, true);
+      m = n;
+      push(4, `Executed m = n. m receives ${m} (which is r, not original n). State is now gcd(${m}, ${n}).`, undefined, true);
+    }
+    rows.push({ m, n, r: null });
+    push(6, `n is 0, so loop halts. Returned ${m}! Bug produced an incorrect answer of ${m} instead of correct GCD.`, m, true);
+    return frames;
+  }
 
   push(0, `gcd(${m}, ${n}): find the largest number that divides both.`);
   while (n !== 0) {
@@ -1918,4 +1956,555 @@ export function partitionFrames(
   }
 
   return frames;
+}
+
+/* -------------------- binary search on unsorted data -------------------- */
+
+export type BinarySearchUnsortedState = {
+  array: number[];
+  low: number;
+  high: number;
+  mid?: number;
+  target: number;
+  discarded?: [number, number];
+  discardedContainsTarget?: boolean;
+  foundIndex?: number;
+  returnedValue?: number;
+  isSorted: boolean;
+};
+
+export const JAVA_BINARY_SEARCH_UNSORTED = [
+  "static int binarySearch(int[] a, int x) {",
+  "    int low = 0, high = a.length - 1;",
+  "    while (low <= high) {",
+  "        int mid = low + (high - low) / 2;",
+  "        if (a[mid] == x) return mid;",
+  "        else if (a[mid] < x) low = mid + 1;   // assumes left half is <= a[mid]!",
+  "        else high = mid - 1;                  // assumes right half is >= a[mid]!",
+  "    }",
+  "    return -1;                                // silent failure if unsorted!",
+  "}",
+];
+
+export function binarySearchUnsortedFrames(
+  input: number[],
+  target: number,
+  enforceSorted = false
+): Frame<BinarySearchUnsortedState>[] {
+  const a = enforceSorted ? [...input].sort((x, y) => x - y) : [...input];
+  const isSorted = a.every((v, i) => i === 0 || a[i - 1] <= v);
+  const frames: Frame<BinarySearchUnsortedState>[] = [];
+  let comparisons = 0;
+
+  const push = (
+    line: number,
+    message: string,
+    s: {
+      low: number;
+      high: number;
+      mid?: number;
+      discarded?: [number, number];
+      discardedContainsTarget?: boolean;
+      foundIndex?: number;
+      returnedValue?: number;
+    }
+  ) =>
+    frames.push({
+      state: { array: a, target, isSorted, ...s },
+      line,
+      message,
+      stats: { comparisons },
+    });
+
+  let low = 0;
+  let high = a.length - 1;
+  push(
+    0,
+    `Search for target ${target} in ${isSorted ? "sorted" : "UNSORTED"} array [${a.join(", ")}].` +
+      (isSorted
+        ? " Sorted order ensures binary search works."
+        : " Without sorting, binary search invariants break!"),
+    { low, high }
+  );
+
+  push(1, `Initial search bounds: low = 0, high = ${high}.`, { low, high });
+
+  while (low <= high) {
+    const mid = low + Math.floor((high - low) / 2);
+    comparisons++;
+
+    push(3, `Calculate mid = low + (high - low)/2 = ${mid}. Middle element is a[${mid}] = ${a[mid]}.`, {
+      low,
+      high,
+      mid,
+    });
+
+    if (a[mid] === target) {
+      push(4, `Found target ${target} at index ${mid}! Return ${mid}.`, {
+        low,
+        high,
+        mid,
+        foundIndex: mid,
+        returnedValue: mid,
+      });
+      return frames;
+    }
+
+    if (a[mid] < target) {
+      const discardedRange: [number, number] = [low, mid];
+      const targetInDiscarded = a.slice(low, mid + 1).includes(target);
+      const targetIdx = a.slice(low, mid + 1).indexOf(target) + low;
+
+      push(
+        5,
+        `a[${mid}] (${a[mid]}) < ${target}. Assuming ascending order, algorithm discards left half [${low}..${mid}] and sets low = ${mid + 1}.` +
+          (targetInDiscarded
+            ? ` SILENT BUG: The discarded half actually contained target ${target} at index ${targetIdx}! Because data is unsorted, target was wrongly thrown away.`
+            : ""),
+        {
+          low,
+          high,
+          mid,
+          discarded: discardedRange,
+          discardedContainsTarget: targetInDiscarded,
+        }
+      );
+      low = mid + 1;
+    } else {
+      const discardedRange: [number, number] = [mid, high];
+      const targetInDiscarded = a.slice(mid, high + 1).includes(target);
+      const targetIdx = a.slice(mid, high + 1).indexOf(target) + mid;
+
+      push(
+        6,
+        `a[${mid}] (${a[mid]}) > ${target}. Assuming ascending order, algorithm discards right half [${mid}..${high}] and sets high = ${mid - 1}.` +
+          (targetInDiscarded
+            ? ` SILENT BUG: The discarded half actually contained target ${target} at index ${targetIdx}! Because data is unsorted, target was wrongly thrown away.`
+            : ""),
+        {
+          low,
+          high,
+          mid,
+          discarded: discardedRange,
+          discardedContainsTarget: targetInDiscarded,
+        }
+      );
+      high = mid - 1;
+    }
+  }
+
+  const actualTargetIndex = a.indexOf(target);
+  const wasSilentFailure = actualTargetIndex !== -1;
+
+  push(
+    8,
+    wasSilentFailure
+      ? `SILENT FAILURE: Returned -1 ('Not Found') even though target ${target} is present in the array at index ${actualTargetIndex}! Binary search silently failed because the array was not sorted.`
+      : `Target ${target} is not in the array. Binary search finished with return -1.`,
+    { low, high, returnedValue: -1 }
+  );
+
+  return frames;
+}
+
+/* -------------------- binary search boundary bugs -------------------- */
+
+export type BinarySearchBoundaryMode = "correct" | "strict_less" | "low_assign_mid";
+
+export type BinarySearchBoundaryState = {
+  array: number[];
+  low: number;
+  high: number;
+  mid?: number;
+  target: number;
+  mode: BinarySearchBoundaryMode;
+  foundIndex?: number;
+  returnedValue?: number;
+  infiniteLoop?: boolean;
+  bugTriggered?: string;
+};
+
+export const JAVA_BINARY_SEARCH_BOUNDARY: Record<BinarySearchBoundaryMode, string[]> = {
+  correct: [
+    "int low = 0, high = a.length - 1;",
+    "while (low <= high) {                     // checks 1-element candidate window",
+    "    int mid = low + (high - low) / 2;",
+    "    if (a[mid] == x) return mid;",
+    "    else if (a[mid] < x) low = mid + 1;   // advances past mid",
+    "    else high = mid - 1;                  // retreats before mid",
+    "}",
+    "return -1;",
+  ],
+  strict_less: [
+    "int low = 0, high = a.length - 1;",
+    "while (low < high) {                      // BUG: terminates when low == high!",
+    "    int mid = low + (high - low) / 2;",
+    "    if (a[mid] == x) return mid;",
+    "    else if (a[mid] < x) low = mid + 1;",
+    "    else high = mid - 1;",
+    "}",
+    "return -1;                                // never checked the last candidate!",
+  ],
+  low_assign_mid: [
+    "int low = 0, high = a.length - 1;",
+    "while (low <= high) {",
+    "    int mid = low + (high - low) / 2;",
+    "    if (a[mid] == x) return mid;",
+    "    else if (a[mid] < x) low = mid;       // BUG: doesn't advance past mid!",
+    "    else high = mid - 1;",
+    "}",
+    "return -1;",
+  ],
+};
+
+export function binarySearchBoundaryFrames(
+  mode: BinarySearchBoundaryMode,
+  input: number[],
+  target: number
+): Frame<BinarySearchBoundaryState>[] {
+  const a = [...input].sort((x, y) => x - y);
+  const frames: Frame<BinarySearchBoundaryState>[] = [];
+  let comparisons = 0;
+
+  const push = (
+    line: number,
+    message: string,
+    s: {
+      low: number;
+      high: number;
+      mid?: number;
+      foundIndex?: number;
+      returnedValue?: number;
+      infiniteLoop?: boolean;
+      bugTriggered?: string;
+    }
+  ) =>
+    frames.push({
+      state: { array: a, target, mode, ...s },
+      line,
+      message,
+      stats: { comparisons },
+    });
+
+  let low = 0;
+  let high = a.length - 1;
+
+  push(0, `Initialize low = 0, high = ${high}. Search target = ${target}.`, { low, high });
+
+  const seenStates = new Set<string>();
+
+  while (true) {
+    const loopConditionHolds = mode === "strict_less" ? low < high : low <= high;
+
+    if (!loopConditionHolds) {
+      push(
+        1,
+        mode === "strict_less"
+          ? `Condition (low < high) is FALSE (${low} < ${high} is false). Loop terminates early!`
+          : `Condition (low <= high) is FALSE (${low} <= ${high} is false). Window exhausted.`,
+        { low, high }
+      );
+      break;
+    }
+
+    const stateKey = `${low},${high}`;
+    if (mode === "low_assign_mid" && seenStates.has(stateKey)) {
+      push(
+        4,
+        `INFINITE LOOP DETECTED! Window [${low}, ${high}] repeated without shrinking because low = mid (${low}) never advanced past mid. Loop will run forever.`,
+        {
+          low,
+          high,
+          infiniteLoop: true,
+          bugTriggered: "Infinite loop trap: low = mid never advances past mid when two elements remain.",
+        }
+      );
+      return frames;
+    }
+    seenStates.add(stateKey);
+
+    push(
+      1,
+      mode === "strict_less"
+        ? `Condition (low < high) is TRUE (${low} < ${high}). Window size is ${high - low + 1}.`
+        : `Condition (low <= high) is TRUE (${low} <= ${high}). Window size is ${high - low + 1}.`,
+      { low, high }
+    );
+
+    const mid = low + Math.floor((high - low) / 2);
+    comparisons++;
+
+    push(2, `mid = ${low} + (${high} - ${low}) / 2 = ${mid}. Middle element is a[${mid}] = ${a[mid]}.`, {
+      low,
+      high,
+      mid,
+    });
+
+    if (a[mid] === target) {
+      push(3, `a[${mid}] == ${target}. Target found at index ${mid}! Return ${mid}.`, {
+        low,
+        high,
+        mid,
+        foundIndex: mid,
+        returnedValue: mid,
+      });
+      return frames;
+    }
+
+    if (a[mid] < target) {
+      if (mode === "low_assign_mid") {
+        push(
+          4,
+          `a[${mid}] (${a[mid]}) < ${target}. BUG: Executing low = mid sets low = ${mid} (instead of mid + 1 = ${mid + 1}).`,
+          { low: mid, high, mid }
+        );
+        low = mid;
+      } else {
+        push(
+          4,
+          `a[${mid}] (${a[mid]}) < ${target}. Set low = mid + 1 = ${mid + 1}.`,
+          { low: mid + 1, high, mid }
+        );
+        low = mid + 1;
+      }
+    } else {
+      push(
+        5,
+        `a[${mid}] (${a[mid]}) > ${target}. Set high = mid - 1 = ${mid - 1}.`,
+        { low, high: mid - 1, mid }
+      );
+      high = mid - 1;
+    }
+  }
+
+  // After loop
+  if (mode === "strict_less" && low === high && a[low] === target) {
+    push(
+      7,
+      `PREMATURE EXIT BUG! Target ${target} is located at index ${low}, but loop condition low < high terminated before inspecting index ${low}! Method returns -1.`,
+      {
+        low,
+        high,
+        returnedValue: -1,
+        bugTriggered: `Off-by-one boundary failure: target ${target} exists at index ${low}, but low < high terminated early.`,
+      }
+    );
+  } else {
+    push(7, `Search terminated. Target ${target} not found in array. Return -1.`, {
+      low,
+      high,
+      returnedValue: -1,
+    });
+  }
+
+  return frames;
+}
+
+/* -------------------- Euclid rectangle square tiling -------------------- */
+
+export type EuclidTile = {
+  x: number;
+  y: number;
+  size: number;
+  step: number;
+  orientation: "horizontal" | "vertical";
+};
+
+export type EuclidTilingState = {
+  m: number;
+  n: number;
+  totalWidth: number;
+  totalHeight: number;
+  tiles: EuclidTile[];
+  remaining?: { x: number; y: number; w: number; h: number };
+  equation: string;
+  stepNum: number;
+  gcd?: number;
+  done: boolean;
+};
+
+export const JAVA_EUCLID_TILING = [
+  "// Euclid's algorithm as geometric rectangle tiling",
+  "// An m × n rectangle is tiled with squares:",
+  "while (n != 0) {",
+  "    int q = m / n;          // fits q squares of size n × n",
+  "    int r = m % n;          // leaves remaining strip of r × n",
+  "    m = n;",
+  "    n = r;",
+  "}",
+  "// Final square size is gcd(m, n)",
+];
+
+export function euclidTilingFrames(m0: number, n0: number): Frame<EuclidTilingState>[] {
+  const totalWidth = Math.max(m0, n0);
+  const totalHeight = Math.min(m0, n0);
+  const frames: Frame<EuclidTilingState>[] = [];
+  let steps = 0;
+
+  const push = (
+    line: number,
+    message: string,
+    s: {
+      tiles: EuclidTile[];
+      remaining?: { x: number; y: number; w: number; h: number };
+      equation: string;
+      stepNum: number;
+      gcd?: number;
+      done?: boolean;
+    }
+  ) =>
+    frames.push({
+      state: {
+        m: m0,
+        n: n0,
+        totalWidth,
+        totalHeight,
+        done: s.done ?? false,
+        ...s,
+      },
+      line,
+      message,
+      stats: { steps },
+    });
+
+  let rem = { x: 0, y: 0, w: totalWidth, h: totalHeight };
+  const currentTiles: EuclidTile[] = [];
+
+  push(
+    0,
+    `Tile a ${totalWidth} × ${totalHeight} rectangle with squares. Finding the largest possible square tile computes gcd(${m0}, ${n0}).`,
+    {
+      tiles: [],
+      remaining: { ...rem },
+      equation: `Initial floor: ${totalWidth} × ${totalHeight}`,
+      stepNum: 0,
+    }
+  );
+
+  let step = 0;
+  while (rem.w > 0 && rem.h > 0 && step < 20) {
+    step++;
+    steps++;
+
+    if (rem.w >= rem.h) {
+      const size = rem.h;
+      const q = Math.floor(rem.w / size);
+      const r = rem.w % size;
+
+      for (let i = 0; i < q; i++) {
+        currentTiles.push({
+          x: rem.x + i * size,
+          y: rem.y,
+          size,
+          step,
+          orientation: "horizontal",
+        });
+      }
+
+      const nextRem = r > 0 ? { x: rem.x + q * size, y: rem.y, w: r, h: size } : undefined;
+      const eq = `${rem.w} = ${q} × ${size} + ${r}`;
+
+      push(
+        3,
+        `Fit ${q} square${q > 1 ? "s" : ""} of size ${size} × ${size} across width ${rem.w}. ` +
+          (r > 0
+            ? `Remaining strip is ${r} × ${size}. Now tile that remainder.`
+            : `Remainder is 0! The floor is completely tiled.`),
+        {
+          tiles: [...currentTiles],
+          remaining: nextRem,
+          equation: eq,
+          stepNum: step,
+        }
+      );
+
+      rem = nextRem ?? { x: 0, y: 0, w: 0, h: 0 };
+    } else {
+      const size = rem.w;
+      const q = Math.floor(rem.h / size);
+      const r = rem.h % size;
+
+      for (let i = 0; i < q; i++) {
+        currentTiles.push({
+          x: rem.x,
+          y: rem.y + i * size,
+          size,
+          step,
+          orientation: "vertical",
+        });
+      }
+
+      const nextRem = r > 0 ? { x: rem.x, y: rem.y + q * size, w: size, h: r } : undefined;
+      const eq = `${rem.h} = ${q} × ${size} + ${r}`;
+
+      push(
+        3,
+        `Fit ${q} square${q > 1 ? "s" : ""} of size ${size} × ${size} down height ${rem.h}. ` +
+          (r > 0
+            ? `Remaining strip is ${size} × ${r}. Now tile that remainder.`
+            : `Remainder is 0! The floor is completely tiled.`),
+        {
+          tiles: [...currentTiles],
+          remaining: nextRem,
+          equation: eq,
+          stepNum: step,
+        }
+      );
+
+      rem = nextRem ?? { x: 0, y: 0, w: 0, h: 0 };
+    }
+  }
+
+  const finalSize = currentTiles.length > 0 ? currentTiles[currentTiles.length - 1].size : 1;
+
+  push(
+    8,
+    `Tiling complete! The largest square that evenly tiles the whole ${totalWidth} × ${totalHeight} floor has side length ${finalSize}. Therefore, gcd(${m0}, ${n0}) = ${finalSize}.`,
+    {
+      tiles: [...currentTiles],
+      remaining: undefined,
+      equation: `gcd(${m0}, ${n0}) = ${finalSize}`,
+      stepNum: step,
+      gcd: finalSize,
+      done: true,
+    }
+  );
+
+  return frames;
+}
+
+/* -------------------- GCD comparison: Brute Force vs Euclid -------------------- */
+
+export function gcdComparisonSummary(m: number, n: number) {
+  const minVal = Math.min(m, n);
+  const maxVal = Math.max(m, n);
+
+  let gcd = 1;
+  let bruteForceTests = 0;
+  for (let d = minVal; d >= 1; d--) {
+    bruteForceTests++;
+    if (minVal % d === 0 && maxVal % d === 0) {
+      gcd = d;
+      break;
+    }
+  }
+
+  let euclidDivisions = 0;
+  let a = maxVal;
+  let b = minVal;
+  while (b !== 0) {
+    const r = a % b;
+    euclidDivisions++;
+    a = b;
+    b = r;
+  }
+
+  return {
+    m,
+    n,
+    gcd,
+    bruteForceTests,
+    euclidDivisions,
+    speedupRatio: +(bruteForceTests / Math.max(1, euclidDivisions)).toFixed(1),
+  };
 }

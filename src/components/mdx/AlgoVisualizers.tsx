@@ -26,9 +26,22 @@ import {
   JAVA_PARTITION,
   type PartitionState,
   type PartitionMode,
+  binarySearchUnsortedFrames,
+  JAVA_BINARY_SEARCH_UNSORTED,
+  type BinarySearchUnsortedState,
+  binarySearchBoundaryFrames,
+  JAVA_BINARY_SEARCH_BOUNDARY,
+  type BinarySearchBoundaryState,
+  type BinarySearchBoundaryMode,
+  euclidTilingFrames,
+  JAVA_EUCLID_TILING,
+  type EuclidTilingState,
+  type EuclidTile,
+  gcdComparisonSummary,
   JAVA_SORT,
   JAVA_SEARCH,
   JAVA_GCD,
+  JAVA_GCD_BUGGY,
   JAVA_TRAVERSAL,
   JAVA_MST,
   JAVA_KNAPSACK,
@@ -1088,23 +1101,38 @@ export function SearchVisualizer({
 export function EuclidVisualizer({ m = 210, n = 45 }: { m?: number; n?: number }) {
   const [vals, setVals] = useState({ m, n });
   const [text, setText] = useState({ m: String(m), n: String(n) });
-  const frames = useMemo(() => gcdFrames(vals.m, vals.n), [vals]);
+  const [order, setOrder] = useState<"correct" | "buggy">("correct");
+  const frames = useMemo(() => gcdFrames(vals.m, vals.n, order), [vals, order]);
   const apply = () => {
     const a = Number(text.m);
     const b = Number(text.n);
     if (Number.isInteger(a) && Number.isInteger(b) && a > 0 && b >= 0 && a < 1e9 && b < 1e9) setVals({ m: a, n: b });
   };
+  const setPreset = (pm: number, pn: number) => {
+    setVals({ m: pm, n: pn });
+    setText({ m: String(pm), n: String(pn) });
+  };
   return (
     <Stepper
       title="Euclid's algorithm"
       frames={frames}
-      code={JAVA_GCD}
+      code={order === "buggy" ? JAVA_GCD_BUGGY : JAVA_GCD}
       render={(s) => (
         <div className="flex flex-col gap-4">
           <div className="font-display text-2xl md:text-3xl font-semibold">
             gcd(<span className="text-sky">{s.m}</span>, <span className="text-orange">{s.n}</span>)
-            {s.result !== undefined && <span className="text-mint"> = {s.result}</span>}
+            {s.result !== undefined && (
+              <span className={s.buggy ? "text-orange" : "text-mint"}>
+                {" "}
+                = {s.result} {s.buggy && "(Incorrect — assignment order bug)"}
+              </span>
+            )}
           </div>
+          {s.buggy && (
+            <div className="text-xs font-mono p-2.5 rounded-lg border border-orange/40 bg-orange/10 text-orange">
+              <strong>Assignment bug active:</strong> n was overwritten with r before m received n, so m received r instead!
+            </div>
+          )}
           <table className="font-mono text-sm border-collapse w-full max-w-md">
             <thead>
               <tr className="text-xs text-muted-foreground border-b border-border">
@@ -1117,10 +1145,21 @@ export function EuclidVisualizer({ m = 210, n = 45 }: { m?: number; n?: number }
               {s.rows.map((r, i) => {
                 const latest = i === s.rows.length - 1;
                 return (
-                  <tr key={i} className={`border-b border-border/50 ${latest ? "bg-neon/10" : ""}`}>
+                  <tr
+                    key={i}
+                    className={`border-b border-border/50 ${
+                      latest ? (s.buggy ? "bg-orange/15" : "bg-neon/10") : ""
+                    }`}
+                  >
                     <td className="py-1.5 pr-4">{r.m}</td>
                     <td className="py-1.5 pr-4">{r.n}</td>
-                    <td className="py-1.5">{r.r === null ? <span className="text-mint">stop — n is 0</span> : r.r}</td>
+                    <td className="py-1.5">
+                      {r.r === null ? (
+                        <span className={s.buggy ? "text-orange" : "text-mint"}>stop — n is 0</span>
+                      ) : (
+                        r.r
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -1129,12 +1168,52 @@ export function EuclidVisualizer({ m = 210, n = 45 }: { m?: number; n?: number }
         </div>
       )}
       inputs={
-        <div className="flex flex-wrap items-center gap-2">
-          <input aria-label="m" className={`${inputCls} w-28`} value={text.m} inputMode="numeric" onChange={(e) => setText((t) => ({ ...t, m: e.target.value }))} onKeyDown={(e) => e.key === "Enter" && apply()} />
-          <input aria-label="n" className={`${inputCls} w-28`} value={text.n} inputMode="numeric" onChange={(e) => setText((t) => ({ ...t, n: e.target.value }))} onKeyDown={(e) => e.key === "Enter" && apply()} />
-          <button type="button" className={btn} onClick={apply}>
-            Run gcd
-          </button>
+        <div className="flex flex-col gap-2 font-mono text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Sequence:</span>
+            <button
+              type="button"
+              className={`${btn} ${order === "correct" ? "border-mint text-mint bg-mint/10 font-semibold" : ""}`}
+              onClick={() => setOrder("correct")}
+            >
+              m = n; n = r; (Correct)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${order === "buggy" ? "border-orange text-orange bg-orange/10 font-semibold" : ""}`}
+              onClick={() => setOrder("buggy")}
+            >
+              n = r; m = n; (Overwrite bug)
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              aria-label="m"
+              className={`${inputCls} w-24`}
+              value={text.m}
+              inputMode="numeric"
+              onChange={(e) => setText((t) => ({ ...t, m: e.target.value }))}
+              onKeyDown={(e) => e.key === "Enter" && apply()}
+            />
+            <input
+              aria-label="n"
+              className={`${inputCls} w-24`}
+              value={text.n}
+              inputMode="numeric"
+              onChange={(e) => setText((t) => ({ ...t, n: e.target.value }))}
+              onKeyDown={(e) => e.key === "Enter" && apply()}
+            />
+            <button type="button" className={btn} onClick={apply}>
+              Run gcd
+            </button>
+            <span className="text-muted-foreground ml-1">Presets:</span>
+            <button type="button" className={btn} onClick={() => setPreset(210, 45)}>
+              (210, 45)
+            </button>
+            <button type="button" className={btn} onClick={() => setPreset(60, 24)}>
+              Bug demo: (60, 24)
+            </button>
+          </div>
         </div>
       }
     />
@@ -2799,5 +2878,685 @@ export function PartitionVisualizer({
         </div>
       }
     />
+  );
+}
+
+/* ------------------ binary search on unsorted data ------------------ */
+
+export function BinarySearchUnsortedVisualizer() {
+  const [mode, setMode] = useState<"unsorted" | "sorted">("unsorted");
+  const [array, setArray] = useState<number[]>([4, 9, 1, 7, 3]);
+  const [target, setTarget] = useState<number>(9);
+  const [targetText, setTargetText] = useState<string>("9");
+
+  const frames = useMemo(
+    () => binarySearchUnsortedFrames(array, target, mode === "sorted"),
+    [array, target, mode]
+  );
+
+  const applyTarget = () => {
+    const val = Number(targetText);
+    if (Number.isInteger(val)) setTarget(val);
+  };
+
+  const setPreset = (arr: number[], tgt: number) => {
+    setArray(arr);
+    setTarget(tgt);
+    setTargetText(String(tgt));
+  };
+
+  return (
+    <Stepper
+      title="Binary search: sorted vs unsorted"
+      frames={frames}
+      code={JAVA_BINARY_SEARCH_UNSORTED}
+      legend={[
+        ["bg-sky", "active range"],
+        ["bg-neon", "middle element"],
+        ["bg-orange", "wrongly discarded target"],
+        ["bg-mint", "found"],
+      ]}
+      render={(s) => {
+        const {
+          array: a,
+          low,
+          high,
+          mid,
+          target: tgt,
+          discarded,
+          discardedContainsTarget,
+          foundIndex,
+          returnedValue,
+          isSorted,
+        } = s;
+
+        return (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+              <span className="text-muted-foreground">Status:</span>
+              {isSorted ? (
+                <span className="px-2 py-0.5 rounded border border-mint/40 bg-mint/10 text-mint font-semibold">
+                  Sorted array (binary search invariants hold)
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded border border-orange/40 bg-orange/10 text-orange font-semibold">
+                  Unsorted array (binary search invariant violated)
+                </span>
+              )}
+              <span className="text-muted-foreground ml-auto">
+                Target: <strong className="text-foreground">{tgt}</strong>
+              </span>
+            </div>
+
+            {discardedContainsTarget && (
+              <div className="text-xs font-mono p-2.5 rounded-lg border border-orange/50 bg-orange/15 text-orange flex items-start gap-2">
+                <span className="font-bold text-sm">⚠️</span>
+                <div>
+                  <strong>Silent Bug Struck:</strong> Discarded subarray contained target {tgt}! Because the array is
+                  not sorted, assuming elements before mid are &le; {a[mid ?? 0]} threw away the correct answer.
+                </div>
+              </div>
+            )}
+
+            {returnedValue === -1 && a.includes(tgt) && (
+              <div className="text-xs font-mono p-2.5 rounded-lg border border-orange/50 bg-orange/15 text-orange flex items-start gap-2">
+                <span className="font-bold text-sm">❌</span>
+                <div>
+                  <strong>Silent Failure:</strong> Returned -1 (&ldquo;Not Found&rdquo;) even though {tgt} is at index{" "}
+                  {a.indexOf(tgt)}! No crash occurred, but the return value is wrong.
+                </div>
+              </div>
+            )}
+
+            {returnedValue !== undefined && returnedValue >= 0 && (
+              <div className="text-xs font-mono p-2.5 rounded-lg border border-mint/50 bg-mint/15 text-mint flex items-start gap-2">
+                <span className="font-bold text-sm">✓</span>
+                <div>
+                  <strong>Found:</strong> Successfully located target {tgt} at index {returnedValue}.
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-x-auto py-2">
+              <div className="flex items-center gap-2 min-w-max mx-auto justify-center">
+                {a.map((val, idx) => {
+                  const isMid = idx === mid;
+                  const isFound = idx === foundIndex;
+                  const inActiveRange = idx >= low && idx <= high;
+                  const isDiscarded = discarded && idx >= discarded[0] && idx <= discarded[1];
+                  const isTargetInDiscarded = isDiscarded && val === tgt;
+
+                  let cellStyle = "border-border/40 bg-secondary/30 text-muted-foreground opacity-50";
+                  if (isFound) {
+                    cellStyle = "border-mint bg-mint/20 text-mint font-bold ring-2 ring-mint/40";
+                  } else if (isTargetInDiscarded) {
+                    cellStyle = "border-orange bg-orange/20 text-orange font-bold ring-2 ring-orange/60 animate-pulse";
+                  } else if (isMid) {
+                    cellStyle = "border-neon bg-neon/20 text-neon font-bold";
+                  } else if (inActiveRange) {
+                    cellStyle = "border-sky/50 bg-sky/10 text-foreground font-semibold";
+                  } else if (isDiscarded) {
+                    cellStyle = "border-border/30 bg-secondary/20 text-muted-foreground/60 line-through";
+                  }
+
+                  return (
+                    <div key={idx} className="flex flex-col items-center gap-1">
+                      <div
+                        className={`w-12 h-14 sm:w-14 sm:h-16 flex flex-col items-center justify-center font-mono rounded-xl border-2 transition-all duration-200 motion-reduce:transition-none ${cellStyle}`}
+                      >
+                        <span className="text-base sm:text-lg font-bold">{val}</span>
+                        <span className="text-[10px] text-muted-foreground">[{idx}]</span>
+                      </div>
+                      <div className="h-4 flex items-center justify-center font-mono text-[10px]">
+                        {idx === low && idx === high ? (
+                          <span className="text-sky font-bold">L,H</span>
+                        ) : idx === low ? (
+                          <span className="text-sky font-semibold">low</span>
+                        ) : idx === high ? (
+                          <span className="text-sky font-semibold">high</span>
+                        ) : idx === mid ? (
+                          <span className="text-neon font-semibold">mid</span>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      }}
+      inputs={
+        <div className="flex flex-col gap-2.5 font-mono text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Mode:</span>
+            <button
+              type="button"
+              className={`${btn} ${mode === "unsorted" ? "border-orange text-orange bg-orange/10 font-semibold" : ""}`}
+              onClick={() => setMode("unsorted")}
+            >
+              Unsorted array (Silent failure bug)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${mode === "sorted" ? "border-mint text-mint bg-mint/10 font-semibold" : ""}`}
+              onClick={() => setMode("sorted")}
+            >
+              Sorted array (Correct)
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Target:</span>
+            <input
+              aria-label="Target"
+              className={`${inputCls} w-20`}
+              value={targetText}
+              inputMode="numeric"
+              onChange={(e) => setTargetText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyTarget()}
+            />
+            <button type="button" className={btn} onClick={applyTarget}>
+              Set target
+            </button>
+            <span className="text-muted-foreground">Presets:</span>
+            <button type="button" className={btn} onClick={() => setPreset([4, 9, 1, 7, 3], 9)}>
+              Notes: [4, 9, 1, 7, 3] (target 9)
+            </button>
+            <button type="button" className={btn} onClick={() => setPreset([20, 5, 80, 42, 12], 20)}>
+              [20, 5, 80, 42, 12] (target 20)
+            </button>
+          </div>
+        </div>
+      }
+    />
+  );
+}
+
+/* ------------------ binary search boundary bugs ------------------ */
+
+export function BinarySearchBoundaryVisualizer() {
+  const [mode, setMode] = useState<BinarySearchBoundaryMode>("correct");
+  const [array, setArray] = useState<number[]>([10, 25, 40, 70, 85]);
+  const [target, setTarget] = useState<number>(85);
+  const [targetText, setTargetText] = useState<string>("85");
+
+  const frames = useMemo(
+    () => binarySearchBoundaryFrames(mode, array, target),
+    [mode, array, target]
+  );
+
+  const applyTarget = () => {
+    const val = Number(targetText);
+    if (Number.isInteger(val)) setTarget(val);
+  };
+
+  const setPreset = (arr: number[], tgt: number, m?: BinarySearchBoundaryMode) => {
+    setArray(arr);
+    setTarget(tgt);
+    setTargetText(String(tgt));
+    if (m) setMode(m);
+  };
+
+  return (
+    <Stepper
+      title="Binary search: boundary conditions & loop bugs"
+      frames={frames}
+      code={JAVA_BINARY_SEARCH_BOUNDARY[mode]}
+      legend={[
+        ["bg-sky", "search window"],
+        ["bg-neon", "mid pointer"],
+        ["bg-orange", "bug alert"],
+        ["bg-mint", "found"],
+      ]}
+      render={(s) => {
+        const { array: a, low, high, mid, target: tgt, foundIndex, returnedValue, infiniteLoop, bugTriggered } = s;
+
+        return (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Active mode:</span>
+                <span className="px-2 py-0.5 rounded border border-border bg-secondary font-semibold">
+                  {mode === "correct"
+                    ? "while (low <= high) & mid ± 1"
+                    : mode === "strict_less"
+                    ? "while (low < high) [BUG]"
+                    : "low = mid [BUG]"}
+                </span>
+              </div>
+              <div>
+                Target: <strong className="text-foreground">{tgt}</strong>
+              </div>
+            </div>
+
+            {infiniteLoop && (
+              <div className="text-xs font-mono p-3 rounded-lg border border-orange/50 bg-orange/15 text-orange flex items-start gap-2">
+                <span className="font-bold text-base">⚠️</span>
+                <div>
+                  <strong>Infinite Loop Trap:</strong> Pointers low={low} and high={high} stopped moving! Because low =
+                  mid did not advance past mid, the search window never shrinks. The while loop runs forever.
+                </div>
+              </div>
+            )}
+
+            {bugTriggered && !infiniteLoop && (
+              <div className="text-xs font-mono p-3 rounded-lg border border-orange/50 bg-orange/15 text-orange flex items-start gap-2">
+                <span className="font-bold text-base">❌</span>
+                <div>
+                  <strong>Boundary Bug:</strong> {bugTriggered}
+                </div>
+              </div>
+            )}
+
+            {returnedValue !== undefined && returnedValue >= 0 && (
+              <div className="text-xs font-mono p-2.5 rounded-lg border border-mint/50 bg-mint/15 text-mint flex items-start gap-2">
+                <span className="font-bold text-base">✓</span>
+                <div>
+                  <strong>Target Found:</strong> Located key {tgt} at array index {returnedValue}.
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-x-auto py-2">
+              <div className="flex items-center gap-2 min-w-max mx-auto justify-center">
+                {a.map((val, idx) => {
+                  const isMid = idx === mid;
+                  const isFound = idx === foundIndex;
+                  const inActiveRange = idx >= low && idx <= high;
+
+                  let cellStyle = "border-border/40 bg-secondary/30 text-muted-foreground opacity-50";
+                  if (isFound) {
+                    cellStyle = "border-mint bg-mint/20 text-mint font-bold ring-2 ring-mint/40";
+                  } else if (isMid) {
+                    cellStyle = "border-neon bg-neon/20 text-neon font-bold";
+                  } else if (inActiveRange) {
+                    cellStyle = "border-sky/50 bg-sky/10 text-foreground font-semibold";
+                  }
+
+                  return (
+                    <div key={idx} className="flex flex-col items-center gap-1">
+                      <div
+                        className={`w-12 h-14 sm:w-14 sm:h-16 flex flex-col items-center justify-center font-mono rounded-xl border-2 transition-all duration-200 motion-reduce:transition-none ${cellStyle}`}
+                      >
+                        <span className="text-base sm:text-lg font-bold">{val}</span>
+                        <span className="text-[10px] text-muted-foreground">[{idx}]</span>
+                      </div>
+                      <div className="h-4 flex items-center justify-center font-mono text-[10px]">
+                        {idx === low && idx === high && idx === mid ? (
+                          <span className="text-orange font-bold">L,M,H</span>
+                        ) : idx === low && idx === high ? (
+                          <span className="text-sky font-bold">L,H</span>
+                        ) : idx === low && idx === mid ? (
+                          <span className="text-sky font-bold">L,M</span>
+                        ) : idx === high && idx === mid ? (
+                          <span className="text-sky font-bold">M,H</span>
+                        ) : idx === low ? (
+                          <span className="text-sky font-semibold">low</span>
+                        ) : idx === high ? (
+                          <span className="text-sky font-semibold">high</span>
+                        ) : idx === mid ? (
+                          <span className="text-neon font-semibold">mid</span>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      }}
+      inputs={
+        <div className="flex flex-col gap-2.5 font-mono text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Mode:</span>
+            <button
+              type="button"
+              className={`${btn} ${mode === "correct" ? "border-mint text-mint bg-mint/10 font-semibold" : ""}`}
+              onClick={() => setMode("correct")}
+            >
+              low &le; high (Correct)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${mode === "strict_less" ? "border-orange text-orange bg-orange/10 font-semibold" : ""}`}
+              onClick={() => setMode("strict_less")}
+            >
+              low &lt; high (Bug 1: misses boundary)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${mode === "low_assign_mid" ? "border-orange text-orange bg-orange/10 font-semibold" : ""}`}
+              onClick={() => setMode("low_assign_mid")}
+            >
+              low = mid (Bug 2: infinite loop)
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Target:</span>
+            <input
+              aria-label="Target"
+              className={`${inputCls} w-20`}
+              value={targetText}
+              inputMode="numeric"
+              onChange={(e) => setTargetText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyTarget()}
+            />
+            <button type="button" className={btn} onClick={applyTarget}>
+              Set target
+            </button>
+            <span className="text-muted-foreground">Presets:</span>
+            <button type="button" className={btn} onClick={() => setPreset([10, 25, 40, 70, 85], 85, "strict_less")}>
+              Boundary bug: [10..85] (target 85)
+            </button>
+            <button type="button" className={btn} onClick={() => setPreset([10, 20], 20, "low_assign_mid")}>
+              Loop bug: [10, 20] (target 20)
+            </button>
+            <button type="button" className={btn} onClick={() => setPreset([10, 25, 40, 70, 85], 85, "correct")}>
+              Normal: [10..85] (target 85)
+            </button>
+          </div>
+        </div>
+      }
+    />
+  );
+}
+
+/* ------------------ Euclid rectangle square tiling ------------------ */
+
+export function EuclidTilingVisualizer({ m = 60, n = 24 }: { m?: number; n?: number }) {
+  const [vals, setVals] = useState({ m, n });
+  const [text, setText] = useState({ m: String(m), n: String(n) });
+
+  const frames = useMemo(() => euclidTilingFrames(vals.m, vals.n), [vals]);
+
+  const apply = () => {
+    const a = Number(text.m);
+    const b = Number(text.n);
+    if (Number.isInteger(a) && Number.isInteger(b) && a > 0 && b > 0 && a <= 2000 && b <= 2000) {
+      setVals({ m: a, n: b });
+    }
+  };
+
+  const setPreset = (pm: number, pn: number) => {
+    setVals({ m: pm, n: pn });
+    setText({ m: String(pm), n: String(pn) });
+  };
+
+  const stepColors = [
+    { fill: "rgba(56, 189, 248, 0.2)", stroke: "rgba(56, 189, 248, 0.9)" },
+    { fill: "rgba(168, 85, 247, 0.2)", stroke: "rgba(168, 85, 247, 0.9)" },
+    { fill: "rgba(234, 179, 8, 0.2)", stroke: "rgba(234, 179, 8, 0.9)" },
+    { fill: "rgba(52, 211, 153, 0.2)", stroke: "rgba(52, 211, 153, 0.9)" },
+    { fill: "rgba(251, 146, 60, 0.2)", stroke: "rgba(251, 146, 60, 0.9)" },
+  ];
+
+  return (
+    <Stepper
+      title="Euclid's algorithm: geometric square tiling"
+      frames={frames}
+      code={JAVA_EUCLID_TILING}
+      render={(s) => {
+        const { totalWidth, totalHeight, tiles, remaining, equation, gcd, done } = s;
+
+        return (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+              <div className="text-muted-foreground">
+                Floor: <span className="text-foreground font-bold">{totalWidth}</span> ×{" "}
+                <span className="text-foreground font-bold">{totalHeight}</span>
+              </div>
+              {gcd !== undefined && (
+                <div className="px-2 py-0.5 rounded border border-mint/40 bg-mint/10 text-mint font-semibold">
+                  gcd({s.m}, {s.n}) = {gcd} (largest square tile)
+                </div>
+              )}
+            </div>
+
+            <div className="w-full flex items-center justify-center p-2 rounded-xl border border-border bg-card/60 overflow-hidden">
+              <svg
+                viewBox={`0 0 ${totalWidth} ${totalHeight}`}
+                className="w-full max-h-64 sm:max-h-72 object-contain transition-all duration-200 motion-reduce:transition-none"
+              >
+                {/* Background floor */}
+                <rect
+                  x={0}
+                  y={0}
+                  width={totalWidth}
+                  height={totalHeight}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={Math.max(1, totalWidth / 200)}
+                  className="text-border"
+                />
+
+                {/* Placed square tiles */}
+                {tiles.map((tile, i) => {
+                  const color = stepColors[(tile.step - 1) % stepColors.length];
+                  const strokeW = Math.max(0.5, totalWidth / 250);
+                  const fontSize = Math.max(totalWidth / 35, Math.min(tile.size * 0.28, totalWidth / 12));
+
+                  return (
+                    <g key={i}>
+                      <rect
+                        x={tile.x}
+                        y={tile.y}
+                        width={tile.size}
+                        height={tile.size}
+                        fill={color.fill}
+                        stroke={color.stroke}
+                        strokeWidth={strokeW}
+                        className="transition-all duration-200 motion-reduce:transition-none"
+                      />
+                      {tile.size > totalWidth * 0.05 && (
+                        <text
+                          x={tile.x + tile.size / 2}
+                          y={tile.y + tile.size / 2}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fill="currentColor"
+                          fontSize={fontSize}
+                          className="font-mono font-bold text-foreground opacity-90 select-none pointer-events-none"
+                        >
+                          {tile.size}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+
+                {/* Remaining un-tiled strip */}
+                {remaining && remaining.w > 0 && remaining.h > 0 && (
+                  <rect
+                    x={remaining.x}
+                    y={remaining.y}
+                    width={remaining.w}
+                    height={remaining.h}
+                    fill="rgba(251, 146, 60, 0.12)"
+                    stroke="rgba(251, 146, 60, 0.85)"
+                    strokeWidth={Math.max(1, totalWidth / 200)}
+                    strokeDasharray={`${Math.max(2, totalWidth / 50)} ${Math.max(2, totalWidth / 50)}`}
+                    className="transition-all duration-200 motion-reduce:transition-none"
+                  />
+                )}
+              </svg>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg border border-border bg-secondary/50 font-mono text-xs">
+              <div>
+                <span className="text-muted-foreground mr-1">Division:</span>
+                <span className="text-foreground font-semibold">{equation}</span>
+              </div>
+              {done && (
+                <span className="text-mint font-semibold">Floor fully tiled with {tiles.length} squares!</span>
+              )}
+            </div>
+          </div>
+        );
+      }}
+      inputs={
+        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+          <input
+            aria-label="m"
+            className={`${inputCls} w-20`}
+            value={text.m}
+            inputMode="numeric"
+            onChange={(e) => setText((t) => ({ ...t, m: e.target.value }))}
+            onKeyDown={(e) => e.key === "Enter" && apply()}
+          />
+          <span className="text-muted-foreground">×</span>
+          <input
+            aria-label="n"
+            className={`${inputCls} w-20`}
+            value={text.n}
+            inputMode="numeric"
+            onChange={(e) => setText((t) => ({ ...t, n: e.target.value }))}
+            onKeyDown={(e) => e.key === "Enter" && apply()}
+          />
+          <button type="button" className={btn} onClick={apply}>
+            Tile floor
+          </button>
+          <span className="text-muted-foreground ml-1">Presets:</span>
+          <button type="button" className={btn} onClick={() => setPreset(60, 24)}>
+            60 × 24
+          </button>
+          <button type="button" className={btn} onClick={() => setPreset(210, 45)}>
+            210 × 45
+          </button>
+          <button type="button" className={btn} onClick={() => setPreset(24, 9)}>
+            24 × 9
+          </button>
+          <button type="button" className={btn} onClick={() => setPreset(55, 34)}>
+            55 × 34
+          </button>
+        </div>
+      }
+    />
+  );
+}
+
+/* -------------------- GCD comparison: Brute Force vs Euclid -------------------- */
+
+export function GcdComparisonVisualizer({ m = 210, n = 45 }: { m?: number; n?: number }) {
+  const [vals, setVals] = useState({ m, n });
+  const [text, setText] = useState({ m: String(m), n: String(n) });
+
+  const summary = useMemo(() => gcdComparisonSummary(vals.m, vals.n), [vals]);
+
+  const apply = () => {
+    const a = Number(text.m);
+    const b = Number(text.n);
+    if (Number.isInteger(a) && Number.isInteger(b) && a > 0 && b > 0 && a <= 1e9 && b <= 1e9) {
+      setVals({ m: a, n: b });
+    }
+  };
+
+  const setPreset = (pm: number, pn: number) => {
+    setVals({ m: pm, n: pn });
+    setText({ m: String(pm), n: String(pn) });
+  };
+
+  return (
+    <div className="my-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3 mb-4 font-mono text-xs">
+        <div>
+          <span className="font-display text-base font-semibold text-foreground">
+            GCD Comparison: Brute Force vs Euclid
+          </span>
+          <span className="text-muted-foreground ml-2">
+            gcd({vals.m}, {vals.n}) = <strong className="text-mint">{summary.gcd}</strong>
+          </span>
+        </div>
+        <div className="px-2.5 py-1 rounded-full border border-sky/40 bg-sky/10 text-sky font-semibold">
+          {summary.speedupRatio}&times; fewer operations with Euclid
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Brute force card */}
+        <div className="flex flex-col gap-2.5 p-4 rounded-xl border border-border bg-secondary/30">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-sm text-foreground">Brute force approach</span>
+            <span className="font-mono text-xs px-2 py-0.5 rounded bg-secondary text-muted-foreground">
+              O(min(m, n))
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Tests candidate divisors starting at min({vals.m}, {vals.n}) = {Math.min(vals.m, vals.n)} counting downward until finding one that divides both.
+          </p>
+          <div className="mt-auto pt-2 border-t border-border/50 flex flex-col gap-1 font-mono text-xs">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Divisors tested:</span>
+              <strong className="text-orange">{summary.bruteForceTests.toLocaleString()}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Checked range:</span>
+              <span>
+                {Math.min(vals.m, vals.n)} &rarr; {summary.gcd}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Euclid's algorithm card */}
+        <div className="flex flex-col gap-2.5 p-4 rounded-xl border border-sky/30 bg-sky/5">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-sm text-foreground">Euclid&apos;s algorithm</span>
+            <span className="font-mono text-xs px-2 py-0.5 rounded bg-sky/20 text-sky font-semibold">
+              O(log(min(m, n)))
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Replaces (m, n) with (n, m mod n) each step. Cuts problem size at least in half every two steps.
+          </p>
+          <div className="mt-auto pt-2 border-t border-sky/20 flex flex-col gap-1 font-mono text-xs">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Division steps:</span>
+              <strong className="text-mint">{summary.euclidDivisions.toLocaleString()}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Halving rate:</span>
+              <span className="text-sky font-semibold">Exponential reduction</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-border flex flex-wrap items-center gap-2 font-mono text-xs">
+        <span className="text-muted-foreground">Inputs:</span>
+        <input
+          aria-label="m"
+          className={`${inputCls} w-24`}
+          value={text.m}
+          inputMode="numeric"
+          onChange={(e) => setText((t) => ({ ...t, m: e.target.value }))}
+          onKeyDown={(e) => e.key === "Enter" && apply()}
+        />
+        <input
+          aria-label="n"
+          className={`${inputCls} w-24`}
+          value={text.n}
+          inputMode="numeric"
+          onChange={(e) => setText((t) => ({ ...t, n: e.target.value }))}
+          onKeyDown={(e) => e.key === "Enter" && apply()}
+        />
+        <button type="button" className={btn} onClick={apply}>
+          Compare
+        </button>
+        <span className="text-muted-foreground ml-1">Presets:</span>
+        <button type="button" className={btn} onClick={() => setPreset(210, 45)}>
+          (210, 45)
+        </button>
+        <button type="button" className={btn} onClick={() => setPreset(97, 20)}>
+          Coprime: (97, 20)
+        </button>
+        <button type="button" className={btn} onClick={() => setPreset(89, 55)}>
+          Fibonacci: (89, 55)
+        </button>
+        <button type="button" className={btn} onClick={() => setPreset(31415, 14142)}>
+          Large: (31415, 14142)
+        </button>
+      </div>
+    </div>
   );
 }

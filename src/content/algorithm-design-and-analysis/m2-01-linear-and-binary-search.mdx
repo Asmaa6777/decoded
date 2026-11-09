@@ -1,5 +1,10 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { SearchVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import {
+  SearchVisualizer,
+  BinarySearchUnsortedVisualizer,
+  BinarySearchBoundaryVisualizer,
+  LeetCodeProblems,
+} from "@/components/mdx/AlgoVisualizers";
 
 # Linear vs Binary Search
 
@@ -129,11 +134,15 @@ static int binarySearch(int[] a, int x) {
 Running binary search on an unsorted array does not produce a runtime crash. Instead, it quietly returns incorrect answers. For example, if you search for 9 in $[4, 9, 1, 7, 3]$, the middle element is 1. Because $9 > 1$, the search discards the left half, which is where 9 was located. The method returns `-1` even though 9 is in the array. When data might not be sorted, sort it first or use linear search.
 </Callout>
 
+<BinarySearchUnsortedVisualizer />
+
 Binary search is straightforward to describe, but implementations easily harbor boundary mistakes. Verify these three details:
 
 1. **Use `low <= high`.** If you write `low < high`, the loop terminates when a single candidate element remains, missing targets located at the boundaries.
 2. **`low = mid + 1` and `high = mid - 1`.** Because `a[mid]` did not match the target, you must exclude it from the next window. Writing `low = mid` can trap the loop in an infinite cycle when two elements remain.
 3. **Use `low + (high - low) / 2` instead of `(low + high) / 2`.** When searching a large array, `low + high` can exceed the maximum positive 32-bit integer ($2^{31} - 1$) and overflow into a negative value. This arithmetic overflow bug remained in Java's `Arrays.binarySearch` for nine years before its discovery in 2006.
+
+<BinarySearchBoundaryVisualizer />
 
 To test your implementation, populate an array with even numbers using `array[i] = i * 2`, which is sorted by construction. Searching for `8` returns index `4`, while searching for `7` returns `-1`. Note that lab exercises often print `"Found at location: " + (x + 1)`, reporting a one-based position (5) rather than the zero-based array index (4).
 

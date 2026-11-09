@@ -1,5 +1,10 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { EuclidVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import {
+  EuclidVisualizer,
+  EuclidTilingVisualizer,
+  GcdComparisonVisualizer,
+  LeetCodeProblems,
+} from "@/components/mdx/AlgoVisualizers";
 
 # Euclid's GCD: A 2,300-Year-Old Algorithm
 
@@ -30,6 +35,8 @@ static int gcdBruteForce(int m, int n) {
 
 This method is correct, but in the worst case (coprime inputs) it checks every integer down to 1. That requires $O(\min(m, n))$ iterations. For two 10-digit numbers, that involves billions of division operations.
 
+<GcdComparisonVisualizer m={210} n={45} />
+
 ## Euclid's idea
 
 **Euclid's algorithm** computes the greatest common divisor using a single recurrence relation:
@@ -51,6 +58,10 @@ $$
 $$
 
 First, $60 \bmod 24 = 12$ because $60 = 2 \cdot 24 + 12$. Next, $24 \bmod 12 = 0$. Because the second value is now 0, the process halts and returns 12.
+
+Geometrically, Euclid's division tiles an $m \times n$ floor with squares of size $n \times n$, then recursively tiles the remaining strip with squares of size $r \times r$. The side length of the final square that perfectly tiles the floor is $\gcd(m, n)$:
+
+<EuclidTilingVisualizer m={60} n={24} />
 
 ## Watch it run
 

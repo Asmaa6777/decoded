@@ -28,6 +28,10 @@ import {
   JAVA_TWO_WAY_MERGE,
   partitionFrames,
   JAVA_PARTITION,
+  binarySearchUnsortedFrames,
+  binarySearchBoundaryFrames,
+  euclidTilingFrames,
+  gcdComparisonSummary,
   type SortAlgorithm,
 } from "@/lib/algorithms";
 
@@ -142,6 +146,13 @@ describe("gcdFrames", () => {
       expect(f[f.length - 1].state.result).toBe(gcd(m, n));
       f.forEach((fr) => expect(fr.line).toBeLessThan(JAVA_GCD.length));
     }
+  });
+
+  it("buggy assignment order produces incorrect result 0 on gcd(60, 24)", () => {
+    const f = gcdFrames(60, 24, "buggy");
+    const last = f[f.length - 1];
+    expect(last.state.result).toBe(0);
+    expect(last.state.buggy).toBe(true);
   });
 });
 
@@ -506,5 +517,83 @@ describe("partitionFrames", () => {
     expect(last.state.corrupted).toBe(true);
     expect(last.state.array).toEqual([30, 10, 25]); // 30 swapped to index 0!
     expect(last.state.corruptedReason).toContain("Partition corrupted");
+  });
+});
+
+describe("binarySearchUnsortedFrames", () => {
+  it("detects silent corruption on notes example [4, 9, 1, 7, 3] searching for 9", () => {
+    const frames = binarySearchUnsortedFrames([4, 9, 1, 7, 3], 9);
+    const last = frames[frames.length - 1];
+    expect(last.state.returnedValue).toBe(-1); // returns -1 even though 9 is present!
+    expect(last.message).toContain("SILENT FAILURE");
+    // At least one frame should flag that the discarded half contained 9
+    const discardedTargetFrame = frames.find((f) => f.state.discardedContainsTarget);
+    expect(discardedTargetFrame).toBeDefined();
+    expect(discardedTargetFrame?.message).toContain("SILENT BUG");
+  });
+
+  it("finds target correctly when sorted mode is enforced", () => {
+    const frames = binarySearchUnsortedFrames([4, 9, 1, 7, 3], 9, true);
+    const last = frames[frames.length - 1];
+    expect(last.state.foundIndex).toBe(4);
+    expect(last.state.returnedValue).toBe(4);
+  });
+});
+
+describe("binarySearchBoundaryFrames", () => {
+  it("correct mode finds target at boundaries", () => {
+    const frames = binarySearchBoundaryFrames("correct", [10, 25, 40, 70, 85], 85);
+    const last = frames[frames.length - 1];
+    expect(last.state.foundIndex).toBe(4);
+    expect(last.state.returnedValue).toBe(4);
+  });
+
+  it("strict_less mode (low < high) prematurely terminates on boundary target 85", () => {
+    const frames = binarySearchBoundaryFrames("strict_less", [10, 25, 40, 70, 85], 85);
+    const last = frames[frames.length - 1];
+    expect(last.state.returnedValue).toBe(-1);
+    expect(last.state.bugTriggered).toContain("Off-by-one boundary failure");
+  });
+
+  it("low_assign_mid detects infinite loop trap", () => {
+    const frames = binarySearchBoundaryFrames("low_assign_mid", [10, 20], 20);
+    const last = frames[frames.length - 1];
+    expect(last.state.infiniteLoop).toBe(true);
+    expect(last.state.bugTriggered).toContain("Infinite loop trap");
+  });
+});
+
+describe("euclidTilingFrames", () => {
+  it("completely tiles 60x24 rectangle with squares and returns gcd 12", () => {
+    const frames = euclidTilingFrames(60, 24);
+    const last = frames[frames.length - 1];
+    expect(last.state.done).toBe(true);
+    expect(last.state.gcd).toBe(12);
+    // Total area of all tiles must equal 60 * 24 = 1440
+    const totalArea = last.state.tiles.reduce((acc, t) => acc + t.size * t.size, 0);
+    expect(totalArea).toBe(1440);
+  });
+
+  it("completely tiles 210x45 rectangle with squares and returns gcd 15", () => {
+    const frames = euclidTilingFrames(210, 45);
+    const last = frames[frames.length - 1];
+    expect(last.state.done).toBe(true);
+    expect(last.state.gcd).toBe(15);
+    const totalArea = last.state.tiles.reduce((acc, t) => acc + t.size * t.size, 0);
+    expect(totalArea).toBe(210 * 45);
+  });
+});
+
+describe("gcdComparisonSummary", () => {
+  it("computes correct operation counts for brute force vs Euclid", () => {
+    const s1 = gcdComparisonSummary(45, 210);
+    expect(s1.gcd).toBe(15);
+    expect(s1.bruteForceTests).toBe(31); // 45 down to 15
+    expect(s1.euclidDivisions).toBe(3); // 210 % 45 = 30, 45 % 30 = 15, 30 % 15 = 0
+
+    const s2 = gcdComparisonSummary(97, 20);
+    expect(s2.gcd).toBe(1);
+    expect(s2.bruteForceTests).toBe(20); // 20 down to 1
+    expect(s2.euclidDivisions).toBe(5);
   });
 });
