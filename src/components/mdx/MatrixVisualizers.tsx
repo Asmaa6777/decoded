@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { btn, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
+import { btn, FocusPanel, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import { inverseFrames, MATLAB_INVERSE, apply2, det2, dotAngle, type DotAngle, diagOf, diagOnly, kron, kronFrames, MAGIC4, MATLAB_KRON, MATLAB_NORM, normFrames, tril, triu, type NormKind, elementwiseFrames, MAGIC3, MATLAB_ELEMENTWISE, MATLAB_MATMUL, matMulFrames, type Map2, MATLAB_VECTOR_PRODUCT, pascal, transpose, vectorProductFrames, type ElementwiseOp, type Mat, type VectorProductKind } from "@/lib/matrix";
 
 /* ============================================================
@@ -12,13 +12,9 @@ import { inverseFrames, MATLAB_INVERSE, apply2, det2, dotAngle, type DotAngle, d
 
 export function Panel({ title, legend, children }: { title: string; legend?: [string, string][]; children: React.ReactNode }) {
   return (
-    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
-        <div className="eyebrow text-mint">{title}</div>
-        {legend && <Legend items={legend} />}
-      </div>
-      <div className="p-5 flex flex-col gap-4 overflow-x-auto">{children}</div>
-    </div>
+    <FocusPanel title={title} eyebrowTone="text-mint" legend={legend}>
+      {children}
+    </FocusPanel>
   );
 }
 

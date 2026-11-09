@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { btn, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
+import { btn, FocusPanel, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import {
   BOUNDED_WAITING_CODE,
   boundedWaitingFrames,
@@ -153,13 +153,9 @@ import { exists, initialShell, promptPath, readFile, run, type ShellState } from
 
 export function Panel({ title, legend, children }: { title: string; legend?: [string, string][]; children: React.ReactNode }) {
   return (
-    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
-        <div className="eyebrow text-mint">{title}</div>
-        {legend && <Legend items={legend} />}
-      </div>
-      <div className="p-5 flex flex-col gap-4">{children}</div>
-    </div>
+    <FocusPanel title={title} eyebrowTone="text-mint" legend={legend} bodyClass="p-5 flex flex-col gap-4">
+      {children}
+    </FocusPanel>
   );
 }
 

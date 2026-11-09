@@ -316,3 +316,66 @@ export function dlogFrames(a: number, b: number, n: number): Frame<DlogState>[] 
   }
   return frames;
 }
+
+/* ---------------------------- Diffie-Hellman --------------------------- */
+
+export type DHStage = "params" | "alice_pub" | "bob_pub" | "exchange" | "compute_key";
+
+export type DHState = {
+  p: number;
+  a: number;
+  x: number;
+  y: number;
+  A: number;
+  B: number;
+  sharedKey: number;
+  stage: DHStage;
+};
+
+export const MATLAB_DH = [
+  "p = 19;  a = 2;",
+  "x = 5;   y = 7;                     % private exponents",
+  "A = powermod(a, x, p);             % Alice's public key: 13",
+  "B = powermod(a, y, p);             % Bob's public key: 14",
+  "KA = powermod(B, x, p)             % Alice computes: 10",
+  "KB = powermod(A, y, p)             % Bob computes: 10",
+];
+
+export function diffieHellmanFrames(p: number, a: number, x: number, y: number): Frame<DHState>[] {
+  const A = modPow(a, x, p);
+  const B = modPow(a, y, p);
+  const sharedKey = modPow(B, x, p);
+
+  return [
+    {
+      state: { p, a, x, y, A, B, sharedKey, stage: "params" },
+      line: 0,
+      message: `Alice and Bob agree in public on prime p = ${p} and base a = ${a}. Alice secretly picks private key x = ${x}. Bob secretly picks private key y = ${y}.`,
+      stats: { "prime p": p, "base a": a },
+    },
+    {
+      state: { p, a, x, y, A, B, sharedKey, stage: "alice_pub" },
+      line: 2,
+      message: `Alice computes her public key: A = a^x mod p = ${a}^${x} mod ${p} = ${A}. She can publish A safely because finding x requires solving a discrete logarithm.`,
+      stats: { "Alice secret x": x, "Alice public A": A },
+    },
+    {
+      state: { p, a, x, y, A, B, sharedKey, stage: "bob_pub" },
+      line: 3,
+      message: `Bob computes his public key: B = a^y mod p = ${a}^${y} mod ${p} = ${B}. He can publish B safely on the open network.`,
+      stats: { "Bob secret y": y, "Bob public B": B },
+    },
+    {
+      state: { p, a, x, y, A, B, sharedKey, stage: "exchange" },
+      line: 3,
+      message: `Public exchange: Alice sends A = ${A} to Bob, and Bob sends B = ${B} to Alice. Eve observes p = ${p}, a = ${a}, A = ${A}, and B = ${B}, but discrete logarithms protect the private keys.`,
+      stats: { "public A": A, "public B": B },
+    },
+    {
+      state: { p, a, x, y, A, B, sharedKey, stage: "compute_key" },
+      line: 4,
+      message: `Alice calculates B^x mod p = ${B}^${x} mod ${p} = ${sharedKey}. Bob calculates A^y mod p = ${A}^${y} mod ${p} = ${sharedKey}. Both arrive at the exact same shared key ${sharedKey} without ever transmitting it.`,
+      stats: { "shared key": sharedKey },
+    },
+  ];
+}

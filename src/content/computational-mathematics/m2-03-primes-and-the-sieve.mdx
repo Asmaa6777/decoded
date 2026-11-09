@@ -47,7 +47,7 @@ print(factor(11011))  # [7, 11, 11, 13]
 Machine learning models rely on prime numbers for **hashing**. Effective hash functions distribute inputs uniformly across buckets. Multiplying an input by a constant and reducing modulo a large prime $p$ provides strong dispersion. **Universal hash functions** have the form
 
 $$
-h(x) = \bigl((ax + b) \bmod p\bigr) \bmod m
+h(x) = ((ax + b) \bmod p) \bmod m
 $$
 
 with $a$ and $b$ chosen uniformly at random. Regardless of input distribution, any two distinct keys collide with probability at most $1/m$. That bound prevents hostile or skewed patterns from clustering into a few buckets.
@@ -159,7 +159,10 @@ Some factors can be spotted from the decimal digits of $n$, and modular arithmet
 Take $17865843$. It ends in 3, so it isn't divisible by 2 or 5. Its digits add up to:
 
 $$
-1 + 7 + 8 + 6 + 5 + 8 + 4 + 3 = 42
+\begin{aligned}
+&1 + 7 + 8 + 6 \\
+&\quad + 5 + 8 + 4 + 3 = 42
+\end{aligned}
 $$
 
 If $42$ is not immediately obvious, sum its digits again: $4 + 2 = 6 = 2 \cdot 3$, confirming that 3 divides $17865843$.
@@ -167,7 +170,10 @@ If $42$ is not immediately obvious, sum its digits again: $4 + 2 = 6 = 2 \cdot 3
 For $8132619$, taking the alternating sum $\sum (-1)^{j-1} d_j$ gives:
 
 $$
-8 - 1 + 3 - 2 + 6 - 1 + 9 = 22 = 2 \cdot 11
+\begin{aligned}
+&8 - 1 + 3 - 2 \\
+&\quad + 6 - 1 + 9 = 22 = 2 \cdot 11
+\end{aligned}
 $$
 
 Evaluating from right to left gives the same sum: $9 - 1 + 6 - 2 + 3 - 1 + 8 = 22$. Because 22 is a multiple of 11, 11 divides $8132619$. An alternating sum of 0 also confirms divisibility by 11, because $0 = 0 \cdot 11$ (for example, $121 \to 1 - 2 + 1 = 0$).

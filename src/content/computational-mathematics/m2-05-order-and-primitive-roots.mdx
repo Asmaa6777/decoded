@@ -30,7 +30,10 @@ Other standard names for $\operatorname{ord}_n(a)$ include:
 For $\operatorname{ord}_{16}(3)$:
 
 $$
-3^1 \equiv 3,\quad 3^2 \equiv 9,\quad 3^3 \equiv 11,\quad 3^4 \equiv 1 \pmod{16}
+\begin{aligned}
+3^1 &\equiv 3, \quad 3^2 \equiv 9 \\
+3^3 &\equiv 11, \quad 3^4 \equiv 1 \pmod{16}
+\end{aligned}
 $$
 
 So the order is 4.
@@ -39,11 +42,11 @@ Likewise, consider the powers of $7$ modulo $19$:
 
 $$
 \begin{aligned}
-7^1 &= 7 \equiv 7 \pmod{19} \\
-7^2 &= 49 = 2 \cdot 19 + 11 \equiv 11 \pmod{19} \\
-7^3 &= 343 = 18 \cdot 19 + 1 \equiv 1 \pmod{19} \\
-7^4 &= 2401 = 126 \cdot 19 + 7 \equiv 7 \pmod{19} \\
-7^5 &= 16807 = 884 \cdot 19 + 11 \equiv 11 \pmod{19}
+7^1 &\equiv 7 \pmod{19} \\
+7^2 &= 49 \equiv 11 \pmod{19} \\
+7^3 &= 343 \equiv 1 \pmod{19} \\
+7^4 &= 2401 \equiv 7 \pmod{19} \\
+7^5 &= 16807 \equiv 11 \pmod{19}
 \end{aligned}
 $$
 
@@ -92,29 +95,41 @@ An integer $a$ is a **primitive root** of $n$ if its order attains the maximum p
 For example, 3 is a primitive root of 7 because its powers generate all six non-zero residues:
 
 $$
-3^1 \equiv 3,\ 3^2 \equiv 2,\ 3^3 \equiv 6,\ 3^4 \equiv 4,\ 3^5 \equiv 5,\ 3^6 \equiv 1 \pmod 7
+\begin{aligned}
+3^1 &\equiv 3,\ 3^2 \equiv 2,\ 3^3 \equiv 6 \\
+3^4 &\equiv 4,\ 3^5 \equiv 5,\ 3^6 \equiv 1 \pmod 7
+\end{aligned}
 $$
 
 The integer 2 is not a primitive root, because $2^3 \equiv 1 \pmod 7$ repeats early. The other primitive root of 7 is 5:
 
 $$
-5^1 \equiv 5,\ 5^2 \equiv 4,\ 5^3 \equiv 6,\ 5^4 \equiv 2,\ 5^5 \equiv 3,\ 5^6 \equiv 1 \pmod 7
+\begin{aligned}
+5^1 &\equiv 5,\ 5^2 \equiv 4,\ 5^3 \equiv 6 \\
+5^4 &\equiv 2,\ 5^5 \equiv 3,\ 5^6 \equiv 1 \pmod 7
+\end{aligned}
 $$
 
 To test whether 7 is a primitive root of 45, first compute Euler's totient:
 
 $$
-\phi(45) = \phi(3^2 \cdot 5) = 45 \left(1 - \frac{1}{3}\right)\left(1 - \frac{1}{5}\right) = 45 \cdot \frac{2}{3} \cdot \frac{4}{5} = 24
+\begin{aligned}
+\phi(45) &= \phi(3^2 \cdot 5) \\
+&= 45 \left(1 - \frac{1}{3}\right)\left(1 - \frac{1}{5}\right) \\
+&= 45 \cdot \frac{2}{3} \cdot \frac{4}{5} = 24
+\end{aligned}
 $$
 
 Now compute the powers of 7 modulo 45, multiplying by 7 and reducing at each step:
 
 $$
 \begin{aligned}
-7^1 &\equiv 7, & 7^2 &= 49 = 1 \cdot 45 + 4 \equiv 4, & 7^3 &= 7 \cdot 4 = 28, \\
-7^4 &= 7 \cdot 28 = 196 = 4 \cdot 45 + 16 \equiv 16, & 7^5 &= 7 \cdot 16 = 112 = 2 \cdot 45 + 22 \equiv 22, & 7^6 &= 7 \cdot 22 = 154 = 3 \cdot 45 + 19 \equiv 19, \\
-7^7 &= 7 \cdot 19 = 133 = 3 \cdot 45 - 2 \equiv -2 \equiv 43, & 7^8 &\equiv 7 \cdot (-2) = -14 \equiv 31, & 7^9 &= 7 \cdot 31 = 217 = 4 \cdot 45 + 37 \equiv 37, \\
-7^{10} &= 7 \cdot 37 = 259 = 5 \cdot 45 + 34 \equiv 34, & 7^{11} &= 7 \cdot 34 = 238 = 5 \cdot 45 + 13 \equiv 13, & 7^{12} &= 7 \cdot 13 = 91 = 2 \cdot 45 + 1 \equiv 1 \pmod{45}
+7^1 &\equiv 7, & 7^2 &\equiv 4, \\
+7^3 &\equiv 28, & 7^4 &\equiv 16, \\
+7^5 &\equiv 22, & 7^6 &\equiv 19, \\
+7^7 &\equiv 43, & 7^8 &\equiv 31, \\
+7^9 &\equiv 37, & 7^{10} &\equiv 34, \\
+7^{11} &\equiv 13, & 7^{12} &\equiv 1 \pmod{45}
 \end{aligned}
 $$
 

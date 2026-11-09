@@ -34,7 +34,10 @@ Divisibility shapes practical architecture choices in AI. A **vision transformer
 Divide any integer $a$ by a positive integer $n$ and you get one quotient and one remainder:
 
 $$
-a = q \cdot n + r, \qquad 0 \le r < n, \qquad q = \left\lfloor \frac{a}{n} \right\rfloor
+\begin{aligned}
+a &= q \cdot n + r, \qquad 0 \le r < n \\
+q &= \left\lfloor \frac{a}{n} \right\rfloor
+\end{aligned}
 $$
 
 Here $\lfloor x \rfloor$ is the **floor function**, which returns the largest integer less than or equal to $x$. The rule $0 \le r < n$ ensures the remainder is never negative. That rule is especially important when dividing negative numbers:
@@ -76,13 +79,21 @@ print(divmod(1000, 32))  # (31, 8)
 The **greatest common divisor** of $a$ and $b$, written $\gcd(a, b)$, is the largest positive integer that divides both numbers:
 
 $$
-\gcd(a, b) = \max \{k \in \mathbb{Z}^+ : k \mid a \text{ and } k \mid b\}
+\begin{aligned}
+\gcd(a, b) = \max \{k \in \mathbb{Z}^+ : {} &k \mid a, \\
+&k \mid b\}
+\end{aligned}
 $$
 
 Here $\mathbb{Z}^+$ denotes the set of **positive integers** $\{1, 2, 3, \dots\}$. More formally, a positive integer $c = \gcd(a, b)$ satisfies two conditions: $c$ divides both $a$ and $b$, and every common divisor of $a$ and $b$ also divides $c$. Because greatest common divisors are positive, signs do not change the result:
 
 $$
-\gcd(a, b) = \gcd(|a|, |b|) = \gcd(-a, b) = \gcd(a, -b) = \gcd(-a, -b)
+\begin{aligned}
+\gcd(a, b) &= \gcd(|a|, |b|) \\
+&= \gcd(-a, b) \\
+&= \gcd(a, -b) \\
+&= \gcd(-a, -b)
+\end{aligned}
 $$
 
 For example, $\gcd(60, 24) = \gcd(60, -24) = 12$. By convention, $\gcd(0, 0) = 0$.

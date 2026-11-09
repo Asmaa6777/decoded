@@ -91,6 +91,144 @@ function CodePanel({ code, line, label }: { code: string[]; line: number; label:
 /** Focus mode scales the picture to fill the screen, but never past this. */
 const FOCUS_MAX_ZOOM = 2.4;
 
+/**
+ * Shared focus-mode container for interactive panels and visualizers.
+ * Opens full screen (or a fixed overlay where Fullscreen API is unavailable),
+ * scales the content to fit the screen height, and exits on Escape or button click.
+ */
+export function FocusPanel({
+  title,
+  eyebrowTone = "text-mint",
+  legend,
+  extraHeader,
+  cardClass = "not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground",
+  headerClass = "flex flex-wrap items-center justify-between gap-3 px-5 pt-4",
+  bodyClass = "p-5 flex flex-col gap-4 overflow-x-auto",
+  children,
+}: {
+  title: string;
+  eyebrowTone?: string;
+  legend?: [string, string][];
+  extraHeader?: ReactNode;
+  cardClass?: string;
+  headerClass?: string;
+  bodyClass?: string;
+  children: ReactNode;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const pictureRef = useRef<HTMLDivElement>(null);
+  const [focus, setFocus] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [measure, setMeasure] = useState(0);
+  const fittedFor = useRef(-1);
+
+  const refit = useCallback(() => {
+    setZoom(1);
+    setMeasure((m) => m + 1);
+  }, []);
+
+  const enterFocus = () => {
+    setFocus(true);
+    refit();
+    rootRef.current?.requestFullscreen?.().catch(() => {});
+  };
+
+  const exitFocus = () => {
+    setFocus(false);
+    setZoom(1);
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  };
+
+  useEffect(() => {
+    if (!focus) return;
+    const onChange = () => {
+      if (!document.fullscreenElement) setFocus(false);
+    };
+    const onResize = refit;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        exitFocus();
+      }
+    };
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("fullscreenchange", onChange);
+    window.addEventListener("resize", onResize);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener("fullscreenchange", onChange);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [focus, refit]);
+
+  useLayoutEffect(() => {
+    const stage = stageRef.current;
+    const pic = pictureRef.current;
+    if (!focus || !stage || !pic || pic.offsetHeight === 0) return;
+    const pad = 32;
+    const room = (stage.clientHeight - pad) * 0.96;
+    if (fittedFor.current !== measure) {
+      fittedFor.current = measure;
+      const fit = Math.min(FOCUS_MAX_ZOOM, room / pic.offsetHeight);
+      if (fit > 1.05) setZoom(fit);
+    } else if (zoom > 1 && stage.scrollHeight > stage.clientHeight + 1) {
+      setZoom(Math.max(1, (room * zoom) / (stage.scrollHeight - pad)));
+    }
+  }, [focus, zoom, measure, children]);
+
+  return (
+    <div
+      ref={rootRef}
+      role={focus ? "dialog" : undefined}
+      aria-modal={focus ? "true" : undefined}
+      aria-label={focus ? `${title}, focus mode` : undefined}
+      className={focus ? "not-prose fixed inset-0 z-50 flex flex-col bg-background text-foreground" : cardClass}
+    >
+      <div className={focus ? "flex flex-wrap items-center justify-between gap-3 px-5 sm:px-8 pt-4" : headerClass}>
+        <div className={`eyebrow ${eyebrowTone}`}>{title}</div>
+        <div className="flex flex-wrap items-center gap-4">
+          {extraHeader}
+          {legend && <Legend items={legend} />}
+          {focus ? (
+            <button type="button" className={btn} onClick={exitFocus}>
+              ✕ Exit
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={`${btn} !px-3 !py-1`}
+              onClick={enterFocus}
+              aria-label={`Open ${title} in focus mode`}
+              title="Focus mode: full screen, no distractions"
+            >
+              ⛶ Focus
+            </button>
+          )}
+        </div>
+      </div>
+
+      {focus ? (
+        <>
+          <div ref={stageRef} className="flex-1 min-h-0 min-w-0 overflow-auto px-5 sm:px-8 py-4 flex flex-col">
+            <div ref={pictureRef} className="my-auto flex flex-col gap-4" style={{ zoom }}>
+              {children}
+            </div>
+          </div>
+          <div className="hidden sm:block px-5 sm:px-8 pb-4 pt-2 border-t border-border font-mono text-xs text-muted-foreground">
+            esc exit
+          </div>
+        </>
+      ) : (
+        <div className={bodyClass}>{children}</div>
+      )}
+    </div>
+  );
+}
+
 export function Stepper<S>({
   title,
   frames,
@@ -823,34 +961,31 @@ export function StabilityCompare({ initial = [3, 7, 8, 5, 2, 1, 9, 5, 4] }: { in
     rows.push([SORT_TITLES[algo].toLowerCase(), frames[frames.length - 1].state]);
   }
   return (
-    <div className={vizCard}>
-      <div className={`${vizHeader} eyebrow text-sky`}>Stable or not?</div>
-      <div className="p-5 overflow-x-auto flex flex-col gap-4">
-        {rows.map(([label, s], r) => {
-          const tags = equalTags(s);
-          const kept = keptEqualOrder(s);
-          const cols = { gridTemplateColumns: `repeat(${s.array.length}, minmax(34px, 1fr))` };
-          return (
-            <div key={label} className="min-w-fit">
-              <div className="mb-1 flex flex-wrap items-baseline gap-x-3 font-mono text-xs text-muted-foreground">
-                {label}
-                {r > 0 && kept !== null && (
-                  <span className={kept ? "text-mint" : "text-orange"}>{kept ? "equal values kept their order: stable" : "equal values swapped order: not stable"}</span>
-                )}
-              </div>
-              <div className="grid gap-1" style={cols}>
-                {s.array.map((v, i) => (
-                  <div key={i} className={`h-12 flex items-center justify-center font-mono text-base rounded-xl ${tags[i] ? cellBorder.violet : "bg-secondary"}`}>
-                    {v}
-                    {tags[i] && <sup className="text-violet font-semibold">{tags[i]}</sup>}
-                  </div>
-                ))}
-              </div>
+    <FocusPanel title="Stable or not?" eyebrowTone="text-sky" cardClass={vizCard} headerClass={vizHeader}>
+      {rows.map(([label, s], r) => {
+        const tags = equalTags(s);
+        const kept = keptEqualOrder(s);
+        const cols = { gridTemplateColumns: `repeat(${s.array.length}, minmax(34px, 1fr))` };
+        return (
+          <div key={label} className="min-w-fit">
+            <div className="mb-1 flex flex-wrap items-baseline gap-x-3 font-mono text-xs text-muted-foreground">
+              {label}
+              {r > 0 && kept !== null && (
+                <span className={kept ? "text-mint" : "text-orange"}>{kept ? "equal values kept their order: stable" : "equal values swapped order: not stable"}</span>
+              )}
             </div>
-          );
-        })}
-      </div>
-    </div>
+            <div className="grid gap-1" style={cols}>
+              {s.array.map((v, i) => (
+                <div key={i} className={`h-12 flex items-center justify-center font-mono text-base rounded-xl ${tags[i] ? cellBorder.violet : "bg-secondary"}`}>
+                  {v}
+                  {tags[i] && <sup className="text-violet font-semibold">{tags[i]}</sup>}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </FocusPanel>
   );
 }
 
@@ -1338,45 +1473,42 @@ export function GrowthTable({ initialN = 100 }: { initialN?: number }) {
   const [i, setI] = useState(Math.max(0, GROWTH_NS.indexOf(initialN)));
   const n = GROWTH_NS[i];
   return (
-    <div className={vizCard}>
-      <div className={`${vizHeader} eyebrow text-sky`}>How the work grows with n</div>
-      <div className="p-5 flex flex-col gap-4">
-        <label className="flex flex-wrap items-center gap-4 font-mono text-xs">
-          <span className="text-muted-foreground">input size</span>
-          <input type="range" min={0} max={GROWTH_NS.length - 1} value={i} onChange={(e) => setI(Number(e.target.value))} className="flex-1 min-w-[160px] accent-current" aria-label="Input size n" />
-          <span className="font-display text-xl font-semibold text-violet w-28">n = {n.toLocaleString("en-US")}</span>
-        </label>
-        <div className="overflow-x-auto">
-          <table className="w-full font-mono text-xs border-collapse">
-            <thead>
-              <tr className="text-xs text-muted-foreground border-b border-border">
-                <th className="text-left py-2 pr-4 font-normal">growth</th>
-                <th className="text-right py-2 pr-4 font-normal">basic operations</th>
-                <th className="text-right py-2 font-normal">time at ~10⁸ ops/sec</th>
-              </tr>
-            </thead>
-            <tbody>
-              {GROWTH.map((g) => {
-                const ops = g.f(n);
-                const bad = ops / 1e8 > 1;
-                return (
-                  <tr key={g.label} className="border-b border-border/50">
-                    <td className="py-2 pr-4">
-                      <span className="font-semibold">{g.label}</span> <span className="text-muted-foreground">{g.name}</span>
-                    </td>
-                    <td className="py-2 pr-4 text-right">{formatOps(ops)}</td>
-                    <td className={`py-2 text-right ${bad ? "text-orange" : "text-mint"}`}>{humanTime(ops)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Drag the slider. Up to n = 30 every row looks harmless. At a million, the slow rows take hours or longer, and avoiding them is what this course is about.
-        </p>
+    <FocusPanel title="How the work grows with n" eyebrowTone="text-sky" cardClass={vizCard} headerClass={vizHeader}>
+      <label className="flex flex-wrap items-center gap-4 font-mono text-xs">
+        <span className="text-muted-foreground">input size</span>
+        <input type="range" min={0} max={GROWTH_NS.length - 1} value={i} onChange={(e) => setI(Number(e.target.value))} className="flex-1 min-w-[160px] accent-current" aria-label="Input size n" />
+        <span className="font-display text-xl font-semibold text-violet w-28">n = {n.toLocaleString("en-US")}</span>
+      </label>
+      <div className="overflow-x-auto">
+        <table className="w-full font-mono text-xs border-collapse">
+          <thead>
+            <tr className="text-xs text-muted-foreground border-b border-border">
+              <th className="text-left py-2 pr-4 font-normal">growth</th>
+              <th className="text-right py-2 pr-4 font-normal">basic operations</th>
+              <th className="text-right py-2 font-normal">time at ~10⁸ ops/sec</th>
+            </tr>
+          </thead>
+          <tbody>
+            {GROWTH.map((g) => {
+              const ops = g.f(n);
+              const bad = ops / 1e8 > 1;
+              return (
+                <tr key={g.label} className="border-b border-border/50">
+                  <td className="py-2 pr-4">
+                    <span className="font-semibold">{g.label}</span> <span className="text-muted-foreground">{g.name}</span>
+                  </td>
+                  <td className="py-2 pr-4 text-right">{formatOps(ops)}</td>
+                  <td className={`py-2 text-right ${bad ? "text-orange" : "text-mint"}`}>{humanTime(ops)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-    </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Drag the slider. Up to n = 30 every row looks harmless. At a million, the slow rows take hours or longer, and avoiding them is what this course is about.
+      </p>
+    </FocusPanel>
   );
 }
 
@@ -1483,49 +1615,49 @@ export function MergeSortTree({ input = [38, 27, 43, 3, 9, 82, 10] }: { input?: 
   };
 
   return (
-    <div className={vizCard}>
-      <div className={vizHeader}>
-        <div className="eyebrow text-sky">Merge sort, level by level</div>
-        <Legend items={[["bg-sky", "base case"], ["bg-orange", "merged"], ["bg-mint", "done"]]} />
-      </div>
-      <div className="p-5 overflow-x-auto">
-        <div className="grid gap-y-2 gap-x-3 min-w-fit" style={{ gridTemplateColumns: "auto 1fr" }}>
-          {rows.map((row, r) => (
-            <div key={r} className="contents">
-              <div
-                className={`font-mono text-xs self-center text-right ${
-                  r === depth ? "text-sky" : r > depth ? "text-orange" : "text-muted-foreground"
-                } ${row.kind === "output" ? "!text-mint" : ""}`}
-              >
-                {row.label}
-              </div>
-              <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${n}, minmax(34px, 1fr))` }}>
-                {row.pieces.map((p) => {
-                  const vals = input.slice(p.lo, p.hi + 1);
-                  if (row.sorted) vals.sort((a, b) => a - b);
-                  const dim = p.carried && row.kind !== "base";
-                  return (
-                    <div
-                      key={`${p.lo}-${p.hi}`}
-                      style={{ gridColumn: `${p.lo + 1} / ${p.hi + 2}` }}
-                      className={`h-9 flex items-center justify-around px-1 font-mono text-[13px] border rounded-lg transition-opacity ${
-                        dim ? "border-dashed border-border text-muted-foreground opacity-60" : boxTone[row.kind]
-                      }`}
-                    >
-                      {vals.map((v, i) => (
-                        <span key={i}>{v}</span>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
+    <FocusPanel
+      title="Merge sort, level by level"
+      eyebrowTone="text-sky"
+      legend={[["bg-sky", "base case"], ["bg-orange", "merged"], ["bg-mint", "done"]]}
+      cardClass={vizCard}
+      headerClass={vizHeader}
+    >
+      <div className="grid gap-y-2 gap-x-3 min-w-fit" style={{ gridTemplateColumns: "auto 1fr" }}>
+        {rows.map((row, r) => (
+          <div key={r} className="contents">
+            <div
+              className={`font-mono text-xs self-center text-right ${
+                r === depth ? "text-sky" : r > depth ? "text-orange" : "text-muted-foreground"
+              } ${row.kind === "output" ? "!text-mint" : ""}`}
+            >
+              {row.label}
             </div>
-          ))}
-        </div>
-        <p className="mt-4 text-xs text-muted-foreground leading-relaxed">
-          Each box sits under the slice of the array it came from. Dashed boxes are pieces that were already size 1 and are just waiting for the others.
-        </p>
+            <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${n}, minmax(34px, 1fr))` }}>
+              {row.pieces.map((p) => {
+                const vals = input.slice(p.lo, p.hi + 1);
+                if (row.sorted) vals.sort((a, b) => a - b);
+                const dim = p.carried && row.kind !== "base";
+                return (
+                  <div
+                    key={`${p.lo}-${p.hi}`}
+                    style={{ gridColumn: `${p.lo + 1} / ${p.hi + 2}` }}
+                    className={`h-9 flex items-center justify-around px-1 font-mono text-[13px] border rounded-lg transition-opacity ${
+                      dim ? "border-dashed border-border text-muted-foreground opacity-60" : boxTone[row.kind]
+                    }`}
+                  >
+                    {vals.map((v, i) => (
+                      <span key={i}>{v}</span>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
-    </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Each box sits under the slice of the array it came from. Dashed boxes are pieces that were already size 1 and are just waiting for the others.
+      </p>
+    </FocusPanel>
   );
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrayCells, btn, inputCls, Legend, Stepper, Toggle, vizCard, vizHeader } from "@/components/mdx/AlgoVisualizers";
+import { ArrayCells, btn, FocusPanel, inputCls, Stepper, Toggle, vizCard, vizHeader } from "@/components/mdx/AlgoVisualizers";
 import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, probeText, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, CPP_MIN_MAX_MERGE, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, type Seg, expectedProbes, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
@@ -11,13 +11,9 @@ import { humanTime, formatOps } from "@/lib/algorithms";
 
 function Panel({ title, legend, children }: { title: string; legend?: [string, string][]; children: React.ReactNode }) {
   return (
-    <div className={vizCard}>
-      <div className={vizHeader}>
-        <div className="eyebrow text-violet">{title}</div>
-        {legend && <Legend items={legend} />}
-      </div>
-      <div className="p-5 flex flex-col gap-5">{children}</div>
-    </div>
+    <FocusPanel title={title} eyebrowTone="text-violet" legend={legend} cardClass={vizCard} headerClass={vizHeader} bodyClass="p-5 flex flex-col gap-5">
+      {children}
+    </FocusPanel>
   );
 }
 

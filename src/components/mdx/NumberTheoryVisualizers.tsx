@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { btn, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
 import { Panel } from "@/components/mdx/MatrixVisualizers";
-import { dlogFrames, fastPowFrames, logTable, MATLAB_DLOG, MATLAB_FASTPOW, cycleFrames, extendedFrames, isPrimitiveRoot, MATLAB_EXT, MATLAB_ORDER, order, powers, factorize, gcd, MATLAB_SIEVE, MATLAB_WILSON, phi, sieveFrames, wilsonFrames, euclidTiles, MATLAB_EUCLID, mod, tileFrames } from "@/lib/numberTheory";
+import { diffieHellmanFrames, dlogFrames, fastPowFrames, logTable, MATLAB_DH, MATLAB_DLOG, MATLAB_FASTPOW, cycleFrames, extendedFrames, isPrimitiveRoot, MATLAB_EXT, MATLAB_ORDER, order, powers, factorize, gcd, MATLAB_SIEVE, MATLAB_WILSON, phi, sieveFrames, wilsonFrames, euclidTiles, MATLAB_EUCLID, mod, tileFrames } from "@/lib/numberTheory";
 
 /* ------------------------------- Euclid tiles ------------------------------ */
 
@@ -349,29 +349,31 @@ export function ExtendedEuclidVisualizer() {
       legend={[["bg-sky", "going down"], ["bg-neon", "climbing back"], ["bg-mint", "x and y known"]]}
       inputs={<Toggle<string> value={preset} onChange={setPreset} options={[["b", "61 and 17"], ["a", "130 and 61"], ["c", "240 and 46"]]} />}
       render={(s) => (
-        <table className="font-mono text-[13px] border-separate border-spacing-y-1 min-w-[340px]">
-          <thead>
-            <tr className="text-[10px] uppercase tracking-widest text-muted-foreground text-left">
-              <th className="pr-5 font-normal">division</th>
-              <th className="pr-3 font-normal text-right">x</th>
-              <th className="font-normal text-right">y</th>
-            </tr>
-          </thead>
-          <tbody>
-            {s.rows.map((r, i) => {
-              const shown = i <= s.down;
-              const known = s.up !== null && i >= s.up;
-              const live = s.up === i;
-              return (
-                <tr key={i} className="transition-opacity duration-300 motion-reduce:transition-none" style={{ opacity: shown ? 1 : 0.12 }}>
-                  <td className={`pr-5 rounded-l-sm px-2 py-1 transition-colors duration-300 ${live ? "bg-neon/25" : i === s.down && s.up === null ? "bg-sky/25" : ""}`}>{r.a} = {r.q} × {r.b} + {r.r}</td>
-                  <td className={`pr-3 text-right transition-opacity duration-500 ${live ? "bg-neon/25" : ""} ${known ? "text-mint opacity-100" : "opacity-0"}`}>{r.x}</td>
-                  <td className={`pl-3 pr-2 text-right rounded-r-sm transition-opacity duration-500 ${live ? "bg-neon/25" : ""} ${known ? "text-mint opacity-100" : "opacity-0"}`}>{r.y}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto max-w-full">
+          <table className="font-mono text-[13px] border-separate border-spacing-y-1 min-w-[320px]">
+            <thead>
+              <tr className="text-[10px] uppercase tracking-widest text-muted-foreground text-left">
+                <th className="pr-5 font-normal">division</th>
+                <th className="pr-3 font-normal text-right">x</th>
+                <th className="font-normal text-right">y</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s.rows.map((r, i) => {
+                const shown = i <= s.down;
+                const known = s.up !== null && i >= s.up;
+                const live = s.up === i;
+                return (
+                  <tr key={i} className="transition-opacity duration-300 motion-reduce:transition-none" style={{ opacity: shown ? 1 : 0.12 }}>
+                    <td className={`pr-5 rounded-l-sm px-2 py-1 transition-colors duration-300 ${live ? "bg-neon/25" : i === s.down && s.up === null ? "bg-sky/25" : ""}`}>{r.a} = {r.q} × {r.b} + {r.r}</td>
+                    <td className={`pr-3 text-right transition-opacity duration-500 ${live ? "bg-neon/25" : ""} ${known ? "text-mint opacity-100" : "opacity-0"}`}>{r.x}</td>
+                    <td className={`pl-3 pr-2 text-right rounded-r-sm transition-opacity duration-500 ${live ? "bg-neon/25" : ""} ${known ? "text-mint opacity-100" : "opacity-0"}`}>{r.y}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     />
   );
@@ -395,7 +397,7 @@ export function FastModPowVisualizer() {
       inputs={<Toggle<string> value={preset} onChange={setPreset} options={Object.entries(FAST_PRESETS).map(([k, [x, y, z]]) => [k, `${x}^${y} mod ${z}`] as [string, string])} />}
       render={(s) => (
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-1 font-mono">
+          <div className="flex items-center gap-1 font-mono overflow-x-auto max-w-full pb-1">
             <span className="text-[11px] text-muted-foreground mr-2">{s.m} =</span>
             {s.bits.split("").map((b, i) => (
               <div
@@ -469,27 +471,163 @@ export function DiscreteLogSearch() {
       render={(s) => (
         <div className="flex flex-wrap items-center gap-5">
           <CycleRing n={s.n} seq={s.seq} target={s.target} />
-          <table className="font-mono text-[11px] border-separate border-spacing-[2px]">
-            <tbody>
-              {[0, 1].map((half) => {
-                const nums = Array.from({ length: 9 }, (_, i) => i + 1 + half * 9);
-                return (
-                  <tr key={half} className="align-top">
-                    <td className="p-0">
-                      <table className="border-separate border-spacing-[2px]">
-                        <tbody>
-                          <tr><td className="pr-1 text-muted-foreground">b</td>{nums.map((v) => <td key={v} className={`w-6 text-center ${v === s.target ? "text-orange font-bold" : ""}`}>{v}</td>)}</tr>
-                          <tr><td className="pr-1 text-muted-foreground">log</td>{nums.map((v) => <td key={v} className={`w-6 h-6 text-center rounded-[2px] transition-colors duration-300 ${s.seq.includes(v) ? "bg-mint/25" : "bg-background/60 text-transparent"}`}>{table[v]}</td>)}</tr>
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto max-w-full">
+            <table className="font-mono text-[11px] border-separate border-spacing-[2px]">
+              <tbody>
+                {[0, 1].map((half) => {
+                  const nums = Array.from({ length: 9 }, (_, i) => i + 1 + half * 9);
+                  return (
+                    <tr key={half} className="align-top">
+                      <td className="p-0">
+                        <table className="border-separate border-spacing-[2px]">
+                          <tbody>
+                            <tr><td className="pr-1 text-muted-foreground">b</td>{nums.map((v) => <td key={v} className={`w-6 text-center ${v === s.target ? "text-orange font-bold" : ""}`}>{v}</td>)}</tr>
+                            <tr><td className="pr-1 text-muted-foreground">log</td>{nums.map((v) => <td key={v} className={`w-6 h-6 text-center rounded-[2px] transition-colors duration-300 ${s.seq.includes(v) ? "bg-mint/25" : "bg-background/60 text-transparent"}`}>{table[v]}</td>)}</tr>
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
+    />
+  );
+}
+
+/* --------------------------- Diffie-Hellman -------------------------- */
+
+const DH_PRESETS: Record<string, [number, number, number, number]> = {
+  ex: [19, 2, 5, 7],
+  p23: [23, 5, 6, 15],
+  p17: [17, 3, 4, 9],
+};
+
+export function DiffieHellmanVisualizer() {
+  const [preset, setPreset] = useState("ex");
+  const [p, a, x, y] = DH_PRESETS[preset];
+  const frames = useMemo(() => diffieHellmanFrames(p, a, x, y), [p, a, x, y]);
+
+  return (
+    <Stepper
+      title="Diffie-Hellman key exchange"
+      frames={frames}
+      code={MATLAB_DH}
+      codeLabel="MATLAB"
+      legend={[
+        ["bg-violet", "Alice (private)"],
+        ["bg-sky", "Bob (private)"],
+        ["bg-orange", "Public network / Eve"],
+        ["bg-mint", "Shared secret"],
+      ]}
+      inputs={
+        <Toggle<string>
+          value={preset}
+          onChange={setPreset}
+          options={[
+            ["ex", "p=19, a=2 (x=5, y=7)"],
+            ["p23", "p=23, a=5 (x=6, y=15)"],
+            ["p17", "p=17, a=3 (x=4, y=9)"],
+          ]}
+        />
+      }
+      render={(s) => {
+        const showAlicePub = s.stage !== "params";
+        const showBobPub = s.stage !== "params" && s.stage !== "alice_pub";
+        const isExchanged = s.stage === "exchange" || s.stage === "compute_key";
+        const hasKey = s.stage === "compute_key";
+
+        return (
+          <div className="flex flex-col gap-4 font-mono text-[12px]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Alice */}
+              <div className="flex flex-col gap-2 rounded-md border border-violet/40 bg-violet/5 p-3">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-violet">Alice</div>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span>Secret x:</span>
+                  <span className="font-bold text-violet px-1.5 py-0.5 rounded bg-violet/20">{s.x}</span>
+                </div>
+                <div className="flex flex-col gap-1 border-t border-border/50 pt-2">
+                  <span className="text-[10px] uppercase text-muted-foreground">Public key A = a^x mod p</span>
+                  <div className={`transition-opacity duration-300 motion-reduce:transition-none ${showAlicePub ? "opacity-100 text-foreground font-semibold" : "opacity-30 text-muted-foreground"}`}>
+                    {s.a}<sup>{s.x}</sup> mod {s.p} = <span className="text-violet font-bold">{s.A}</span>
+                  </div>
+                </div>
+                {hasKey && (
+                  <div className="flex flex-col gap-1 border-t border-mint/40 pt-2 mt-auto">
+                    <span className="text-[10px] uppercase text-mint font-semibold">Shared secret K_A = B^x mod p</span>
+                    <div className="text-mint font-bold text-sm">
+                      {s.B}<sup>{s.x}</sup> mod {s.p} = {s.sharedKey}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Wire / Eve */}
+              <div className="flex flex-col gap-2 rounded-md border border-orange/40 bg-orange/5 p-3">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-orange">Public Wire / Eve</div>
+                <div className="text-muted-foreground text-[11px]">
+                  Shared params: <span className="text-foreground">p = {s.p}, a = {s.a}</span>
+                </div>
+                <div className="flex flex-col gap-1.5 border-t border-border/50 pt-2">
+                  <span className="text-[10px] uppercase text-muted-foreground">Transmitted over wire</span>
+                  <div className="flex items-center justify-between">
+                    <span>Alice sends A:</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[11px] transition-all duration-300 motion-reduce:transition-none ${isExchanged ? "bg-violet/20 text-violet font-bold" : "text-muted-foreground/40"}`}>
+                      {isExchanged ? s.A : ""}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Bob sends B:</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[11px] transition-all duration-300 motion-reduce:transition-none ${isExchanged ? "bg-sky/20 text-sky font-bold" : "text-muted-foreground/40"}`}>
+                      {isExchanged ? s.B : ""}
+                    </span>
+                  </div>
+                </div>
+                <div className="border-t border-orange/30 pt-2 mt-auto text-[10px] text-muted-foreground">
+                  {isExchanged ? (
+                    <span className="text-orange">Eve sees {s.p}, {s.a}, {s.A}, {s.B}. Discrete log log_{s.a}({s.A}) mod {s.p} is too hard</span>
+                  ) : (
+                    <span>Waiting for public keys...</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Bob */}
+              <div className="flex flex-col gap-2 rounded-md border border-sky/40 bg-sky/5 p-3">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-sky">Bob</div>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span>Secret y:</span>
+                  <span className="font-bold text-sky px-1.5 py-0.5 rounded bg-sky/20">{s.y}</span>
+                </div>
+                <div className="flex flex-col gap-1 border-t border-border/50 pt-2">
+                  <span className="text-[10px] uppercase text-muted-foreground">Public key B = a^y mod p</span>
+                  <div className={`transition-opacity duration-300 motion-reduce:transition-none ${showBobPub ? "opacity-100 text-foreground font-semibold" : "opacity-30 text-muted-foreground"}`}>
+                    {s.a}<sup>{s.y}</sup> mod {s.p} = <span className="text-sky font-bold">{s.B}</span>
+                  </div>
+                </div>
+                {hasKey && (
+                  <div className="flex flex-col gap-1 border-t border-mint/40 pt-2 mt-auto">
+                    <span className="text-[10px] uppercase text-mint font-semibold">Shared secret K_B = A^y mod p</span>
+                    <div className="text-mint font-bold text-sm">
+                      {s.A}<sup>{s.y}</sup> mod {s.p} = {s.sharedKey}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {hasKey && (
+              <div className="rounded-md border border-mint/50 bg-mint/10 p-2.5 text-center text-mint font-semibold text-xs">
+                Both parties independently arrived at the same secret key K = {s.sharedKey} (a^(xy) mod p)
+              </div>
+            )}
+          </div>
+        );
+      }}
     />
   );
 }

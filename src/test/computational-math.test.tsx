@@ -6,7 +6,7 @@ import { render, fireEvent, cleanup } from "@testing-library/react";
 import { CodeTabs } from "@/components/mdx/MdxComponents";
 import { getCourse, flattenLessons } from "@/content/registry";
 import { affineDecrypt, affineEncrypt, affineTable, bitsToText, flowFrames, keystream, shiftDecrypt, shiftEncrypt, textToBits, VALID_K1, xorBits, xorFrames } from "@/lib/ciphers";
-import { discreteLog, dlogFrames, fastPowFrames, logTable, modPow, cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
+import { diffieHellmanFrames, discreteLog, dlogFrames, fastPowFrames, logTable, modPow, cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
 import { conv, convFrames, divisionFrames, coverUpFrames, deconv, fitQuality, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
 import { adjoint, cofactors, det, dotAngle, fraction, scale, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
 
@@ -468,6 +468,28 @@ describe("fast powers and discrete logs", () => {
   it("satisfies the log rules with a primitive root", () => {
     const t = logTable(2, 19);
     expect(t[(4 * 6) % 19]).toBe((t[4] + t[6]) % 18);
+  });
+
+  it("steps through Diffie-Hellman key exchange matching worked examples", () => {
+    const frames = diffieHellmanFrames(19, 2, 5, 7);
+    expect(frames).toHaveLength(5);
+    const last = frames.at(-1)!.state;
+    expect(last.A).toBe(13);
+    expect(last.B).toBe(14);
+    expect(last.sharedKey).toBe(10);
+    expect(last.stage).toBe("compute_key");
+    expect(frames.at(-1)!.message).toContain("shared key 10");
+
+    // Check additional presets
+    const p23 = diffieHellmanFrames(23, 5, 6, 15).at(-1)!.state;
+    expect(p23.A).toBe(8);
+    expect(p23.B).toBe(19);
+    expect(p23.sharedKey).toBe(2);
+
+    const p17 = diffieHellmanFrames(17, 3, 4, 9).at(-1)!.state;
+    expect(p17.A).toBe(13);
+    expect(p17.B).toBe(14);
+    expect(p17.sharedKey).toBe(13);
   });
 });
 

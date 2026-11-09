@@ -1,5 +1,5 @@
 import { Callout, CodeTabs, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { DiscreteLogSearch } from "@/components/mdx/NumberTheoryVisualizers";
+import { DiscreteLogSearch, DiffieHellmanVisualizer } from "@/components/mdx/NumberTheoryVisualizers";
 
 # Discrete Logarithms
 
@@ -10,13 +10,20 @@ The [previous lesson](/courses/computational-mathematics/fast-exponentiation) sh
 An ordinary logarithm undoes a power: if $y = x^{\log_x y}$, then $\log_x y$ is the exponent. Three rules go with it:
 
 $$
-\log_x 1 = 0, \qquad \log_x (yz) = \log_x y + \log_x z, \qquad \log_x (y^r) = r \log_x y
+\begin{aligned}
+\log_x 1 &= 0 \\
+\log_x (yz) &= \log_x y + \log_x z \\
+\log_x (y^r) &= r \log_x y
+\end{aligned}
 $$
 
 Now take a [primitive root](/courses/computational-mathematics/order-and-primitive-roots#primitive-roots) $a$ of a prime $p$. Its powers hit every value from 1 to $p - 1$ exactly once, so for any $b$ in that range there's a unique exponent $k$ with
 
 $$
-b \equiv a^k \pmod p, \qquad 0 \le k \le p - 2
+\begin{aligned}
+b &\equiv a^k \pmod p \\
+0 &\le k \le p - 2
+\end{aligned}
 $$
 
 This exponent $k$ is the **discrete logarithm** of $b$ for the base $a$ modulo $p$, denoted $\log_a(b)$ or the **index** $\operatorname{ind}_a(b)$. (Because $a^0 \equiv a^{p-1} \equiv 1 \pmod p$, discrete logarithms can be chosen from $\{0, 1, \dots, p - 2\}$ or $\{1, 2, \dots, p - 1\}$. Tables often set $\log_a(1) = p - 1$.)
@@ -24,13 +31,19 @@ This exponent $k$ is the **discrete logarithm** of $b$ for the base $a$ modulo $
 Standard logarithm rules remain valid, but exponents reduce modulo $\phi(p) = p - 1$, [Euler's totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) of $p$, instead of modulo $p$. Why? Powers cycle every $p - 1$ steps by Fermat's Little Theorem ($a^{p-1} \equiv 1 \pmod p$). Multiplying two values adds their exponents:
 
 $$
-b \cdot c \equiv a^{\log_a b} \cdot a^{\log_a c} = a^{\log_a b + \log_a c} \pmod p
+\begin{aligned}
+b \cdot c &\equiv a^{\log_a b} \cdot a^{\log_a c} \\
+&= a^{\log_a b + \log_a c} \pmod p
+\end{aligned}
 $$
 
 Since exponents on base $a$ cycle with period $p - 1$, we have:
 
 $$
-\log_a(bc) \equiv \log_a(b) + \log_a(c) \pmod{p - 1}
+\begin{aligned}
+\log_a(bc) &\equiv \log_a b \\
+&\quad + \log_a c \pmod{p - 1}
+\end{aligned}
 $$
 
 ## A small example
@@ -38,7 +51,11 @@ $$
 It also works for some non-prime moduli. For $n = 9$, $\phi(9) = 6$ and 2 is a primitive root:
 
 $$
-2^0 = 1,\ 2^1 = 2,\ 2^2 = 4,\ 2^3 = 8,\ 2^4 \equiv 7,\ 2^5 \equiv 5 \pmod 9
+\begin{aligned}
+2^0 &= 1, \quad 2^1 = 2, \quad 2^2 = 4 \\
+2^3 &= 8, \quad 2^4 \equiv 7 \\
+2^5 &\equiv 5 \pmod 9
+\end{aligned}
 $$
 
 Rearranged, that gives a table of logs:
@@ -125,22 +142,36 @@ Trace the arithmetic step by step with prime $p = 19$ and base $a = 2$:
 
 1. Alice chooses secret $x = 5$ and computes her public key:
    $$
-   A = 2^5 \bmod 19 = 32 \bmod 19 = 13
+   \begin{aligned}
+   A &= 2^5 \bmod 19 \\
+   &= 32 \bmod 19 = 13
+   \end{aligned}
    $$
 2. Bob chooses secret $y = 7$ and computes his public key:
    $$
-   B = 2^7 \bmod 19 = 128 = 6 \cdot 19 + 14 \equiv 14 \pmod{19}
+   \begin{aligned}
+   B &= 2^7 \bmod 19 \\
+   &= 128 \equiv 14 \pmod{19}
+   \end{aligned}
    $$
 3. Alice receives $B = 14$ and raises it to her secret $x = 5$:
    $$
-   B^x \equiv 14^5 \equiv (-5)^5 = -3125 = -165 \cdot 19 + 10 \equiv 10 \pmod{19}
+   \begin{aligned}
+   B^x &\equiv 14^5 \equiv (-5)^5 \\
+   &= -3125 \equiv 10 \pmod{19}
+   \end{aligned}
    $$
 4. Bob receives $A = 13$ and raises it to his secret $y = 7$:
    $$
-   A^y \equiv 13^7 \equiv (-6)^7 = -279936 = -14734 \cdot 19 + 10 \equiv 10 \pmod{19}
+   \begin{aligned}
+   A^y &\equiv 13^7 \equiv (-6)^7 \\
+   &= -279936 \equiv 10 \pmod{19}
+   \end{aligned}
    $$
 
 Both compute the same shared key, $10$. An observer intercepting $A = 13$ and $B = 14$ cannot compute $2^{35} \equiv 10 \pmod{19}$ without solving $2^x \equiv 13 \pmod{19}$ or $2^y \equiv 14 \pmod{19}$.
+
+<DiffieHellmanVisualizer />
 
 <CodeTabs>
 

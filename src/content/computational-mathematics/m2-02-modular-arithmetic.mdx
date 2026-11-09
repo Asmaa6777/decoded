@@ -121,13 +121,13 @@ Addition, subtraction and multiplication all respect the modulus:
 
 $$
 \begin{aligned}
-[(a \bmod n) + (b \bmod n)] \bmod n &= (a + b) \bmod n \\
-[(a \bmod n) - (b \bmod n)] \bmod n &= (a - b) \bmod n \\
-[(a \bmod n) \cdot (b \bmod n)] \bmod n &= (a \cdot b) \bmod n
+(a + b) \bmod n &= (a_n + b_n) \bmod n \\
+(a - b) \bmod n &= (a_n - b_n) \bmod n \\
+(a \cdot b) \bmod n &= (a_n \cdot b_n) \bmod n
 \end{aligned}
 $$
 
-You can reduce numbers midway through a calculation and preserve the result. We verify all three operations with $11 \bmod 8 = 3$ and $15 \bmod 8 = 7$:
+where $a_n = a \bmod n$ and $b_n = b \bmod n$. You can reduce numbers midway through a calculation and preserve the result. We verify all three operations with $11 \bmod 8 = 3$ and $15 \bmod 8 = 7$:
 
 - **Addition:** $[(11 \bmod 8) + (15 \bmod 8)] \bmod 8 = (3 + 7) \bmod 8 = 2$. Directly: $(11 + 15) \bmod 8 = 26 \bmod 8 = 2$.
 - **Subtraction:** $[(11 \bmod 8) - (15 \bmod 8)] \bmod 8 = (3 - 7) \bmod 8 = 4$. Directly: $(11 - 15) \bmod 8 = -4 \bmod 8 = 4$.
@@ -137,16 +137,26 @@ That also makes big powers easy. To find $10^7 \bmod 17$, square repeatedly and 
 
 $$
 \begin{aligned}
-10^2 &= 100 = 5 \cdot 17 + 15 \equiv 15 \equiv -2 \pmod{17} \\
-10^4 &= (10^2)^2 \equiv (-2)^2 = 4 \pmod{17} \\
-10^7 &= 10 \cdot 10^2 \cdot 10^4 \equiv 10 \cdot (-2) \cdot 4 = -80 = -5 \cdot 17 + 5 \equiv 5 \pmod{17}
+10^2 &= 100 = 5 \cdot 17 + 15 \\
+&\equiv -2 \pmod{17} \\
+10^4 &= (10^2)^2 \equiv (-2)^2 \\
+&= 4 \pmod{17} \\
+10^7 &= 10 \cdot 10^2 \cdot 10^4 \\
+&\equiv 10 \cdot (-2) \cdot 4 \\
+&= -80 = -5 \cdot 17 + 5 \\
+&\equiv 5 \pmod{17}
 \end{aligned}
 $$
 
 (Computing $10^7$ uses all three factors $10^1 \cdot 10^2 \cdot 10^4$. Positive factors give $10 \cdot 15 \cdot 4 = 600 = 35 \cdot 17 + 5 \equiv 5 \pmod{17}$.) Similarly, for $10^{10} \bmod 17$:
 
 $$
-10^8 = (10^4)^2 \equiv 4^2 = 16 \equiv -1 \pmod{17} \implies 10^{10} = 10^8 \cdot 10^2 \equiv (-1) \cdot (-2) = 2 \pmod{17}
+\begin{aligned}
+10^8 &= (10^4)^2 \equiv 4^2 = 16 \\
+&\equiv -1 \pmod{17} \\
+10^{10} &= 10^8 \cdot 10^2 \equiv (-1) \cdot (-2) \\
+&= 2 \pmod{17}
+\end{aligned}
 $$
 
 [Fast Exponentiation](/courses/computational-mathematics/fast-exponentiation) turns this trick into an algorithm that handles exponents hundreds of digits long.
@@ -182,7 +192,10 @@ If $(a + b) \equiv (a + c) \pmod n$, you can always cancel $a$ by subtracting it
 Multiplication allows cancellation only under specific conditions. If $a \cdot b \equiv a \cdot c \pmod n$, then $n$ divides $a(b - c)$. When $a$ and $n$ are [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) ($\gcd(a, n) = 1$), $n$ shares no factors with $a$. That forces $n$ to divide $b - c$, which gives $b \equiv c \pmod n$. When $\gcd(a, n) = d > 1$, the shared factor $d$ absorbs part of $n$. That leads to the general cancellation rule:
 
 $$
-a \cdot b \equiv a \cdot c \pmod n \implies b \equiv c \pmod{\frac{n}{\gcd(a, n)}}
+\begin{aligned}
+a \cdot b &\equiv a \cdot c \pmod n \implies \\
+b &\equiv c \pmod{\frac{n}{\gcd(a, n)}}
+\end{aligned}
 $$
 
 For instance, $2 \cdot 3 \equiv 2 \cdot 7 \pmod 8$, because both equal 6 modulo 8. Because $\gcd(2, 8) = 2$, cancelling 2 changes the modulus from 8 to $8/2 = 4$. That gives $3 \equiv 7 \pmod 4$, even though $3 \not\equiv 7 \pmod 8$.
