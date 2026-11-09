@@ -3,9 +3,9 @@ import { GrowthTable, SearchVisualizer, LeetCodeProblems } from "@/components/md
 
 # Counting Steps: Big-O, Omega and Theta
 
-Two programs give exactly the same answer. One finishes in a blink and the other takes an afternoon, and neither has a bug. The difference is the *algorithm*, and **analysis** is how you see that difference before you run anything.
+Two programs can produce the exact same answer, yet one finishes in milliseconds while the other runs for hours. Neither program has a bug. The difference lies in the *algorithm*, and **analysis** allows you to identify that difference before running any code.
 
-The goal of analysis is to **compare algorithms**, mainly by running time, but also by memory and by how much effort they take a programmer to write and get right. *Running time analysis* means one specific question: how does the running time increase as the problem gets bigger?
+The goal of analysis is to **compare algorithms**, primarily by running time, but also by memory usage and implementation complexity. *Running time analysis* answers one specific question: how does execution time grow as the input size increases?
 
 ## Why not just time it?
 
@@ -29,7 +29,7 @@ That function is the algorithm's **time complexity**. This course writes it $T(n
 **Space complexity** is how much memory the algorithm needs, also as a function of $n$. It has two parts:
 
 - A **fixed part** that doesn't depend on the input: the code itself and a few simple variables like `i`, `max`, `temp`.
-- A **variable part** that grows with the input: extra arrays you allocate while running (dynamic memory allocation) and, easy to forget, the **recursion stack**. Every recursive call that hasn't returned yet takes up memory.
+- A **variable part** that grows with the input: extra arrays allocated during execution (dynamic memory allocation) and the **recursion stack**. Every recursive call that has not yet returned occupies memory.
 
 Written as a formula, the space needed by an algorithm $X$ is
 
@@ -39,7 +39,7 @@ $$
 
 where $C$ is the fixed part and $S(I)$ is the variable part, which depends on $I$, the *instance characteristics* (the size of this particular input). For `findMax` from the last lesson, $S(I)$ is zero: it only ever needs `max` and `i`, however long the array is. A recursive version that calls itself once per element would keep $n$ calls on the stack at once, so its $S(I)$ grows like $n$.
 
-This course mostly measures time, but watch memory as well. [Merge sort](/courses/algorithm-design-and-analysis/merge-sort#merge-sort-in-one-paragraph), coming up in module 1, gets its speed by using extra memory.
+While this course focuses primarily on time, memory usage matters as well. [Merge sort](/courses/algorithm-design-and-analysis/merge-sort#merge-sort-in-one-paragraph), coming up in module 1, gains its speed by using extra memory.
 
 ## Best, worst and average case
 
@@ -81,9 +81,9 @@ $$
 
 The second term is always just under 1, so the average is a little under $\frac{n}{2} + 1$. For the 9-element array above: $\frac{45 + 9}{10} = 5.4$ comparisons. It still grows in proportion to $n$, so the average case is linear too.
 
-The common mistake is to divide by $n$ and forget the "not found" case. The question says *all* cases, and "not there" is one of them.
+A common mistake is dividing by $n$ and forgetting the case where the target value is not in the array. The average must account for all possible outcomes, including the "not found" case as the $(n+1)$-th possibility.
 
-We usually report the **worst case**, because it's a *guarantee*: whatever input you give it, it won't be slower than this. The best case is nice to know, but you can't count on it. The average case is often the most realistic, but it needs assumptions about what inputs look like, like "every case is equally likely" above.
+Engineers usually report the **worst case** because it guarantees that the algorithm will never take longer than this upper bound. The best case is helpful context but rare in practice. The average case is often realistic, but it requires assumptions about the input distribution, such as assuming every position is equally likely.
 
 ## Growth is what matters
 
@@ -93,11 +93,11 @@ When $n$ is small, everything is fast and the details don't matter. When $n$ is 
 
 <GrowthTable initialN={30} />
 
-This table is why analysis exists. At a million items, the gap between an $O(n^2)$ algorithm and an $O(n \log n)$ one is the gap between hours and a fraction of a second.
+This comparison illustrates the practical importance of analysis. At a scale of one million items, the gap between an $O(n^2)$ algorithm and an $O(n \log n)$ algorithm is the difference between several hours of computation and a fraction of a second.
 
 ## The three notations
 
-We need a way to say "grows like."
+To describe how running time scales, we need a precise mathematical vocabulary.
 
 > **Asymptotic notations** are mathematical tools for describing how efficient an algorithm is, in time or in space, as the input size grows. The three most common are **Big-O**, **Omega** and **Theta** notation.
 
@@ -111,11 +111,11 @@ $$
 
 Read it as *"it grows no faster than $g$."* People use Big-O for the **worst case**.
 
-The two letters in the definition are the room it gives you. $c$ is a constant multiplier, so constant factors don't count. $n_0$ is a starting point, so small inputs don't count. To show $3n + 10 = O(n)$, find any $c$ and $n_0$ that work. Try $c = 4$: is $3n + 10 \le 4n$? Subtract $3n$ from both sides: $10 \le n$. So it holds for every $n \ge 10$, and $c = 4$, $n_0 = 10$ prove it. For $n = 5$ it fails ($25 \gt 20$), which is fine, because $n_0$ says we only care from 10 on.
+The two constants provide flexibility. $c$ is a constant multiplier that absorbs constant coefficients, while $n_0$ is a threshold that ignores small inputs. To show $3n + 10 = O(n)$, find constants $c$ and $n_0$ that satisfy the inequality. Choosing $c = 4$ gives $3n + 10 \le 4n$. Subtracting $3n$ from both sides yields $10 \le n$. The inequality holds for every $n \ge 10$, so $c = 4$ and $n_0 = 10$ confirm that $3n + 10 = O(n)$. For $n = 5$ the inequality fails ($25 \gt 20$), which is acceptable because the condition only applies from 10 onward.
 
 The same trick fails for $n^2 = O(n)$: you'd need $n^2 \le c \cdot n$, which means $n \le c$, and that breaks as soon as $n$ passes whatever $c$ you picked. No constant is big enough, so $n^2$ is **not** $O(n)$.
 
-Big-O is the notation you'll use most, for three reasons. It lets you **compare algorithms** and pick the most efficient one for a problem. It **predicts performance** on large inputs you haven't tried. And it **classifies** algorithms into the groups in the table further down.
+Big-O is the most widely used notation. It allows you to **compare algorithms** independently of hardware, **predict performance** on large inputs, and **classify** algorithms into standard growth families.
 
 **Omega (Ω) is a lower bound.** $T(n) = \Omega(g(n))$ means $T(n)$ is at least $c \cdot g(n)$ for large $n$: *"it grows at least as fast as $g$."* It's often used for the **best case**.
 
@@ -191,7 +191,7 @@ Answers like $O(3n)$, $O(n^2 + n)$ or $O(\frac{n}{2})$ aren't wrong as bounds, b
 
 ## A worked example
 
-Exams love algorithms written as numbered steps. What does this one output, and what's its Big-O, and what type is it?
+Exams frequently present algorithms as numbered steps. Consider this example: what does it output, what is its Big-O, and which complexity class does it belong to?
 
 ```text
 Step 1: Declare N and F as integers.
@@ -222,7 +222,7 @@ static long factorial(int n) {
 
 ## A loop that depends on the outer loop
 
-A common homework question: what's the Big-O of this?
+A common exam problem asks for the Big-O of dependent nested loops:
 
 ```java
 int x = 1;
@@ -235,7 +235,7 @@ for (int i = 1; i <= n; i++) {
 }
 ```
 
-The inner loop doesn't run $n$ times every time. It runs $i$ times, and $i$ changes. Make a table for $n = 4$:
+The inner loop does not run $n$ times during every pass. It runs $i$ times, and $i$ changes. Make a table for $n = 4$:
 
 | $i$ | inner loop runs |
 | --- | --- |
@@ -251,10 +251,10 @@ $$
 1 + 2 + 3 + \cdots + n = \frac{n(n+1)}{2} = \frac{n^2}{2} + \frac{n}{2}
 $$
 
-and for $n = 4$ that's $\frac{4 \cdot 5}{2} = 10$, matching the table. Each inner run does two assignments, so there are $n(n+1)$ of them, plus $n$ runs of `sum = 1` and one `x = 1`. Keep the biggest term and drop the constant $\frac{1}{2}$: **$O(n^2)$**, quadratic. The inner loop only does about half the work of a full $n \times n$ loop, but half of $n^2$ still grows like $n^2$.
+and for $n = 4$ that gives $\frac{4 \cdot 5}{2} = 10$, matching the table. Each inner iteration executes two assignments, giving $n(n+1)$ operations, plus $n$ executions of `sum = 1` and one initial assignment `x = 1`. Keeping only the dominant term and dropping the constant factor $\frac{1}{2}$ yields **$O(n^2)$** (quadratic time). Even though the inner loop does about half the work of a full $n \times n$ loop, $\frac{1}{2} n^2$ still grows quadratically.
 
 <Callout tone="orange" label="A classic mistake">
-Nested loops aren't always $O(n^2)$. If the inner loop runs a fixed number of times, say always 3, the total is $3n = O(n)$. And the reverse trap: an inner loop that runs "only" up to $i$ is still $O(n^2)$, as above. Count how many times the inner loop *actually* runs instead of counting brackets.
+Nested loops are not automatically $O(n^2)$. If the inner loop runs a fixed number of times, such as always 3 iterations, the total is $3n = O(n)$. Conversely, an inner loop that runs up to $i$ remains $O(n^2)$, as demonstrated above. Count how many times the inner loop actually runs instead of simply counting loop levels.
 </Callout>
 
 <LeetCodeProblems

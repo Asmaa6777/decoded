@@ -3,9 +3,9 @@ import { LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Practical: Arrays, Swaps and a Stopwatch
 
-Almost every algorithms lab has the same shape: make an array of random numbers, print it, run an algorithm on it, print it again, and time how long it took. The algorithm changes every week, but the code around it stays the same.
+Most algorithm labs follow the same pattern: generate an array of random numbers, print it, run an algorithm, print the result, and measure elapsed time. The algorithm changes each week, but the code around it stays the same.
 
-So we'll write that code once and go through every line. You'll reuse it in every sorting and searching lesson after this one.
+We will write that helper code once and examine each line. You can reuse it across every sorting and searching lesson that follows.
 
 ## Arrays in Java, quickly
 
@@ -33,7 +33,7 @@ A few facts that matter for algorithms:
 
 - An array has a **fixed size**, set when you create it. `c.length` gives it, with no parentheses, because it's a field and not a method.
 - Indexes go from `0` to `length - 1`. Reading `c[10]` above throws `ArrayIndexOutOfBoundsException`.
-- Reading or writing `a[i]` is **$O(1)$**: instant, however big the array is. That's why sorting algorithms work on arrays.
+- Reading or writing `a[i]` is **$O(1)$**: it takes constant time regardless of array size. That makes arrays the standard structure for sorting algorithms.
 
 Two-dimensional arrays work the same way, as an array of arrays:
 
@@ -97,9 +97,9 @@ public class AlgoLab {
 
 `Math.random()` returns a `double` (a number with a decimal part) in $[0, 1)$: at least 0 and less than 1. Multiply by `dataRange` and **cast** to `int`. A cast, written `(int)`, converts the value to an `int` by cutting off the decimal part. With `dataRange = 100`, a random 0.734 becomes 73.4 and then 73. The largest possible result is just under 100, which cuts to 99, so you get a whole number from `0` up to `dataRange - 1`.
 
-The brackets matter: `(int) Math.random() * dataRange` casts first, and since `Math.random()` is always below 1, that's always 0. Every element comes out 0.
+Parentheses matter: `(int) Math.random() * dataRange` applies the cast first. Because `Math.random()` is always less than 1, `(int)` truncates it to 0 before the multiplication, leaving every element as 0.
 
-`swap` needs the third variable, `temp`. Trace `swap(array, 0, 1)` on [5, 9]: `temp` = 5, then `array[0]` = 9, then `array[1]` = `temp` = 5, giving [9, 5]. The common mistake is to skip `temp` and write `array[x] = array[y]; array[y] = array[x];`. The first line overwrites the 5 before anyone saved it, so you get [9, 9].
+The `swap` method requires a temporary variable `temp`. Tracing `swap(array, 0, 1)` on `[5, 9]` shows why: `temp` stores 5, `array[0]` becomes 9, and `array[1]` receives `temp` (5), producing `[9, 5]`. A common mistake is omitting `temp` and writing `array[x] = array[y]; array[y] = array[x];`. The first assignment overwrites the 5 before it can be copied to the second slot, leaving `[9, 9]`.
 
 <Callout tone="violet" label="Why swap needs the array">
 A beginner's version is `swap(int x, int y)`, which swaps two ints. It compiles and runs, and does nothing. Java passes **primitive** values (the basic types `int`, `long`, `double`, `boolean` and so on) by **copy**, so the method swaps its own private copies and the caller never sees it. An array isn't a primitive. A variable of type `int[]` holds a **reference**, which is the address of where the array lives in memory. Passing the array copies the address, so the method reaches the *same* array and changes it in place.
@@ -109,7 +109,7 @@ Some labs put the parameters in a different order, like `swap(x, y, array)`. The
 
 ## The trap: copying an array
 
-This bug ruins more sorting experiments than anything else:
+A common trap occurs when trying to duplicate an array for testing:
 
 ```java
 int[] original = new int[10];
@@ -137,12 +137,12 @@ long end = System.currentTimeMillis();
 System.out.println("Took " + (end - start) + " ms");
 ```
 
-`currentTimeMillis()` counts milliseconds. For small arrays everything takes "0 ms" because the work finishes before the clock ticks. There are two fixes:
+Because `currentTimeMillis()` measures in milliseconds, small arrays often register as 0 ms when execution finishes between clock updates. Two adjustments solve this:
 
 - Use `System.nanoTime()` instead. It counts nanoseconds and is meant for measuring durations.
-- Make the array bigger. Analysis is about *large* $n$ anyway.
+- Increase array size $n$ so the operation takes measurable time.
 
-Put **only** the algorithm between the two clock readings. Some lab handouts time a loop that fills an array *and* prints every element. Printing to the screen is far slower than filling the array, so that measures `System.out.print`, not the algorithm.
+Time **only** the algorithm itself. Avoid placing array generation or printing inside the timed block. Console output is much slower than in-memory operations, so including it measures `System.out.print` rather than the algorithm.
 
 ## Putting it together
 
@@ -169,7 +169,7 @@ public static void main(String[] args) {
 
 ## Your turn: three warm-up exercises
 
-These are the usual first-lab exercises. Write them yourself before peeking.
+These are standard introductory lab exercises. Try solving them before reading the solutions.
 
 **1. Print the largest number in a random array.** (You saw the idea in [the first lesson](/courses/algorithm-design-and-analysis/what-is-an-algorithm#a-first-algorithm-three-ways).)
 
@@ -199,18 +199,18 @@ static void printPositions(int[] a, int x) {
 }
 ```
 
-Why `long` for the total: an `int` can't hold more than about 2.1 billion ($2^{31} - 1$). A million numbers of up to 10,000 each can add up to 10 billion. Past the limit, an `int` doesn't stop with an error. It **overflows**, wrapping around to a large negative number, and the program carries on with the wrong answer.
+The `sum` method uses `long` for the accumulator because a standard 32-bit `int` cannot exceed approximately 2.1 billion ($2^{31} - 1$). An array of one million values up to 10,000 can sum to 10 billion. When exceeding the integer limit, Java does not throw an error; instead, the value **overflows**, wrapping into a negative number while execution continues with corrupted data.
 
 All three are $O(n)$: one pass, constant work per element. The third always looks at every element, so its best case is $n$ comparisons as well. That's different from the [linear search](/courses/algorithm-design-and-analysis/counting-steps#best-worst-and-average-case) that stops at the first match.
 
 ## The real experiment
 
-This is where the stopwatch earns its place. Once you have [selection sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#selection-sort-find-the-smallest-put-it-first) (next lesson), run it at sizes 1,000, 2,000, 4,000 and 8,000 and write the times down.
+Timing code allows you to verify theoretical growth rates empirically. Once you implement [selection sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#selection-sort-find-the-smallest-put-it-first) in the next lesson, test it with arrays of 1,000, 2,000, 4,000, and 8,000 elements.
 
 If an algorithm is $O(n^2)$, doubling $n$ should roughly **quadruple** the time, because $(2n)^2 = 4n^2$. If it's $O(n)$, doubling $n$ should roughly double it. When your own measurements match the math, [Big-O](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations) becomes a prediction you can check.
 
 <Callout tone="sky" label="Make it fair">
-Use `.clone()` so every algorithm sorts the same input. Run each size a few times and take the middle value, since the first run is often slow while the JVM warms up: at first it runs your code slowly while it works out which parts run often, then it compiles those parts to fast machine code.
+Use `.clone()` so each sorting algorithm receives identical input data. Run multiple trials at each size and record the median time. The initial run is often slower because the JVM warms up: it initially interprets bytecode and identifies frequently executed sections before compiling them to optimized machine code.
 </Callout>
 
 <LeetCodeProblems
