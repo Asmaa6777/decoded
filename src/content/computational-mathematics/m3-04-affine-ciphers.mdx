@@ -7,21 +7,48 @@ A shift cipher only adds. If we multiply as well, we get a larger key space, and
 
 ## The cipher
 
-An **affine transformation** uses a pair of keys, $k_1$ and $k_2$:
+An **affine cipher** (or **affine transformation**) uses a pair of integer keys $k_1, k_2 \in \mathbb{Z}$. Here $\mathbb{Z}$ is the set of integers $\{\dots, -2, -1, 0, 1, 2, \dots\}$, with $0 \le k_1, k_2, m \le 25$:
 
 $$
-E_{(k_1, k_2)}(m) = k_1 m + k_2 \pmod{26}
+\begin{aligned}
+f_{(k_1, k_2)} &= E_{(k_1, k_2)}(m) \\
+&\equiv k_1 \cdot m + k_2 \pmod{26}
+\end{aligned}
 $$
 
-If that shape looks familiar, it should. Every layer of a neural network computes $wx + b$, a multiplication followed by a shift, and "affine" is the name for exactly that in both fields. It's why a layer's $b$ is called the **bias**: without it, the layer can only scale, so a layer with no bias is linear but not affine.
+If that shape looks familiar, it should. Every layer of a neural network computes $wx + b$, a multiplication followed by a shift. "Affine" is the name for that combination in both fields. Here $m$ is a single number rather than a vector of features, but the structure is identical: scale by $k_1$, then offset by $k_2$. That is why $b$ in a layer is called the **bias**. Without $b$, the layer can only scale its input, sending $0$ to $0$. A layer with no bias is linear; adding $b$ makes it affine.
 
-To decrypt, subtract $k_2$ and then multiply by the inverse of $k_1$:
+To find the decryption formula, solve $c \equiv k_1 \cdot m + k_2 \pmod{26}$ for $m$. Encryption multiplies by $k_1$ first and adds $k_2$ second. Decryption undoes those steps in the [opposite order](/courses/discrete-mathematics/functions#composition). First, subtract $k_2$ from both sides to get $c - k_2 \equiv k_1 \cdot m \pmod{26}$. Next, multiply both sides by $k_1^{-1}$, the multiplicative inverse of $k_1$ modulo 26. That is the integer satisfying $k_1^{-1} \cdot k_1 \equiv 1 \pmod{26}$:
 
 $$
-D_{(k_1, k_2)}(c) = k_1^{-1}(c - k_2) \pmod{26}
+\begin{aligned}
+f_{(k_1, k_2)}^{-1} &= D_{(k_1, k_2)}(c) \\
+&\equiv k_1^{-1} \cdot (c - k_2) \pmod{26}
+\end{aligned}
 $$
 
-The inverse only exists when $\gcd(k_1, 26) = 1$ ([here's why](/courses/computational-mathematics/modular-inverses#when-an-inverse-exists)), and this is a hard requirement. Drag $k_1$ and watch the lines. When $k_1$ shares a factor with 26, they bunch up on fewer letters, and that information is gone for good:
+Substituting $c = k_1 \cdot m + k_2$ confirms that it recovers $m$:
+
+$$
+\begin{aligned}
+k_1^{-1} \cdot \bigl((k_1 \cdot m + k_2) - k_2\bigr) &= (k_1^{-1} \cdot k_1) \cdot m \\
+&\equiv 1 \cdot m = m \pmod{26}
+\end{aligned}
+$$
+
+<Callout tone="orange" label="Usual mistakes: wrong order of operations and ordinary fractions">
+Three errors come up again and again when decrypting an affine cipher:
+
+1. **Multiplying before subtracting.** Writing $k_1^{-1} \cdot c - k_2 \pmod{26}$ instead of $k_1^{-1} \cdot (c - k_2) \pmod{26}$ forgets the parentheses. Because encryption adds $k_2$ last, decryption must subtract $k_2$ first.
+2. **Using a decimal fraction $1 / k_1$ instead of the modular inverse $k_1^{-1}$.** In modulo-26 arithmetic, $7^{-1}$ is not $1/7 \approx 0.1429$. It is the integer $15$, because $7 \times 15 = 105 = 4 \times 26 + 1 \equiv 1 \pmod{26}$.
+3. **Picking an even $k_1$ or $k_1 = 13$.** Any $k_1$ sharing a factor of $2$ or $13$ with $26$ lacks an inverse modulo $26$. Messages encrypted with such keys cannot be uniquely decrypted.
+</Callout>
+
+The inverse $k_1^{-1}$ exists only when $\gcd(k_1, 26) = 1$, as [explained in modular inverses](/courses/computational-mathematics/modular-inverses#when-an-inverse-exists). This is a strict requirement. When $\gcd(k_1, 26) = g > 1$, adding $26 / g$ to letter $m$ changes $k_1 m + k_2$ by $k_1(26 / g) = 26(k_1 / g)$. Modulo 26, that change is $0$. That causes $m$ and $m + 26 / g$ to produce the same ciphertext letter. As a result, only $26 / g$ distinct outputs remain.
+
+For example, take $k_1 = 13$ and $k_2 = 5$, where $\gcd(13, 26) = 13$. Every even letter $m = 2t$ gives $13(2t) + 5 = 26t + 5 \equiv 5\ (F)$. Every odd letter $m = 2t + 1$ gives $13(2t + 1) + 5 = 26t + 18 \equiv 18\ (S)$. All 26 letters collapse into just $F$ and $S$.
+
+More generally, the modulus 26 can be replaced by any alphabet size $n$. In practice, designers often pick a [prime number](/courses/computational-mathematics/primes-and-the-sieve#prime-and-composite) $p$ for the alphabet size. A prime shares no factor with any integer $1 \le k_1 < p$, which guarantees that every non-zero multiplier has an inverse. Drag $k_1$ in the visualizer to see the mappings:
 
 <AffineMapVisualizer />
 
@@ -41,22 +68,22 @@ print(len(set((7 * np.arange(26) + 5) % 26)))  # 26
 
 </CodeTabs>
 
-This collapse is the same thing as a [singular matrix](/courses/computational-mathematics/determinants-and-inverses#the-inverse): both send different inputs to the same output, so the information is lost and nothing can undo it. Most neural network layers are happy to throw information away. **Normalizing flows** can't, because they generate images or sounds by running their layers backwards, so they're built only from layers that are guaranteed to be invertible, the network version of insisting that $\gcd(k_1, 26) = 1$.
+This collapse is the same phenomenon as a [singular matrix](/courses/computational-mathematics/determinants-and-inverses#the-inverse). Both send different inputs to the same output, so information is lost and cannot be recovered. Most neural network layers can discard information. **Normalizing flows** are an exception. They generate images or audio by running their layers backward, so they require layers that are invertible. That requirement is the neural-network equivalent of requiring $\gcd(k_1, 26) = 1$.
 
 ## Worked example: encrypting
 
-Encrypt SECURITY with $k_1 = 7$ and $k_2 = 21$:
+Encrypt SECURITY with $k_1 = 7$ and $k_2 = 21$, using $E_{(7, 21)}(m) = (7m + 21) \bmod 26$:
 
-| Letter | $m$ | $7m + 21$ | mod 26 | Result |
-| --- | --- | --- | --- | --- |
-| S | 18 | 147 | 17 | R |
-| E | 4 | 49 | 23 | X |
-| C | 2 | 35 | 9 | J |
-| U | 20 | 161 | 5 | F |
-| R | 17 | 140 | 10 | K |
-| I | 8 | 77 | 25 | Z |
-| T | 19 | 154 | 24 | Y |
-| Y | 24 | 189 | 7 | H |
+| Letter | $m$ | $7m + 21$ | Divide by 26 ($26q + r$) | $\bmod\ 26$ | Result |
+| --- | --- | --- | --- | --- | --- |
+| S | 18 | $7(18) + 21 = 147$ | $5 \times 26 + 17$ | 17 | R |
+| E | 4 | $7(4) + 21 = 49$ | $1 \times 26 + 23$ | 23 | X |
+| C | 2 | $7(2) + 21 = 35$ | $1 \times 26 + 9$ | 9 | J |
+| U | 20 | $7(20) + 21 = 161$ | $6 \times 26 + 5$ | 5 | F |
+| R | 17 | $7(17) + 21 = 140$ | $5 \times 26 + 10$ | 10 | K |
+| I | 8 | $7(8) + 21 = 77$ | $2 \times 26 + 25$ | 25 | Z |
+| T | 19 | $7(19) + 21 = 154$ | $5 \times 26 + 24$ | 24 | Y |
+| Y | 24 | $7(24) + 21 = 189$ | $7 \times 26 + 7$ | 7 | H |
 
 So SECURITY becomes RXJFKZYH.
 
@@ -79,16 +106,37 @@ print("".join(chr(n + 65) for n in (7 * m + 21) % 26))  # RXJFKZYH
 
 ## Worked example: decrypting
 
-To decrypt VLXIJH, first find the inverse of 7 modulo 26 with the [extended Euclidean algorithm](/courses/computational-mathematics/modular-inverses#the-extended-euclidean-algorithm). It's 15, since $7 \cdot 15 = 105 = 4 \cdot 26 + 1$:
+To decrypt VLXIJH with $k_1 = 7$ and $k_2 = 21$, first find $7^{-1} \bmod 26$ with the [extended Euclidean algorithm](/courses/computational-mathematics/modular-inverses#the-extended-euclidean-algorithm). Dividing down gives:
 
-| Letter | $c$ | $15(c - 21)$ | mod 26 | Result |
-| --- | --- | --- | --- | --- |
-| V | 21 | 0 | 0 | A |
-| L | 11 | -150 | 6 | G |
-| X | 23 | 30 | 4 | E |
-| I | 8 | -195 | 13 | N |
-| J | 9 | -180 | 2 | C |
-| H | 7 | -210 | 24 | Y |
+$$
+\begin{aligned}
+26 &= 3 \times 7 + 5 \\
+7 &= 1 \times 5 + 2 \\
+5 &= 2 \times 2 + 1
+\end{aligned}
+$$
+
+Substituting back from the bottom equation:
+
+$$
+\begin{aligned}
+1 &= 5 - 2 \times 2 \\
+  &= 5 - 2 \times (7 - 1 \times 5) = 5 - 2 \times 7 + 2 \times 5 = 3 \times 5 - 2 \times 7 \\
+  &= 3 \times (26 - 3 \times 7) - 2 \times 7 \\
+  &= 3 \times 26 - 11 \times 7
+\end{aligned}
+$$
+
+Reducing modulo 26 drops $3 \times 26$, leaving $(-11) \times 7 \equiv 1 \pmod{26}$. Adding 26 converts this negative result into the standard positive range: $7^{-1} \equiv -11 \equiv 26 - 11 = 15 \pmod{26}$ (check: $7 \times 15 = 105 = 4 \times 26 + 1$). Now apply $D_{(7, 21)}(c) = 15(c - 21) \bmod 26$ to each letter of VLXIJH. You can multiply $15(c - 21)$ directly or [reduce $(c - 21) \bmod 26$ first](/courses/computational-mathematics/modular-arithmetic#you-can-reduce-at-any-time) to keep the values positive; both give the exact same remainder:
+
+| Letter | $c$ | $c - 21$ | $15(c - 21)$ or $15(c - 21 \bmod 26)$ | Divide by 26 ($26q + r$) | $\bmod\ 26$ | Result |
+| --- | --- | --- | --- | --- | --- | --- |
+| V | 21 | $0$ | $0$ | $0 \times 26 + 0$ | 0 | A |
+| L | 11 | $-10 \equiv 16$ | $-150$ or $240$ | $-6 \times 26 + 6$ or $9 \times 26 + 6$ | 6 | G |
+| X | 23 | $2$ | $30$ | $1 \times 26 + 4$ | 4 | E |
+| I | 8 | $-13 \equiv 13$ | $-195$ or $195$ | $-8 \times 26 + 13$ or $7 \times 26 + 13$ | 13 | N |
+| J | 9 | $-12 \equiv 14$ | $-180$ or $210$ | $-7 \times 26 + 2$ or $8 \times 26 + 2$ | 2 | C |
+| H | 7 | $-14 \equiv 12$ | $-210$ or $180$ | $-9 \times 26 + 24$ or $6 \times 26 + 24$ | 24 | Y |
 
 The message is AGENCY.
 
@@ -96,7 +144,8 @@ The message is AGENCY.
 
 ```matlab
 c = double('VLXIJH') - 65;
-[~, k1inv] = gcd(7, 26);                  % 15, or -11, which is the same mod 26
+% [g, x, y] = gcd(7, 26) solves 7*x + 26*y = 1; x = -11. mod handles negative k1inv automatically
+[~, k1inv] = gcd(7, 26);
 char(mod(k1inv * (c - 21), 26) + 65)      % AGENCY
 ```
 
@@ -110,11 +159,104 @@ print("".join(chr(k1inv * (n - 21) % 26 + 65) for n in c))  # AGENCY
 
 ## How strong is it?
 
-There are 12 valid values for $k_1$, because [Euler's totient](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) gives $\phi(26) = 12$, and 26 for $k_2$. That makes $12 \times 26 = 312$ keys, which a computer tries instantly. It also maps each letter to one fixed letter, so letter frequencies still give it away.
+How many valid keys $(k_1, k_2)$ exist for an affine cipher modulo 26? The multiplier $k_1$ must be [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to $26 = 2 \times 13$. Because $26 = 2 \times 13$ is the product of two distinct primes, [Euler's totient function](/courses/computational-mathematics/primality-and-the-totient#eulers-totient-function) gives $\phi(26) = \phi(2)\phi(13) = (2 - 1)(13 - 1) = 12$ choices for $k_1$. These are the 12 odd numbers in $1 \dots 25$ other than $13$:
 
-<Callout tone="sky" label="Try it yourself">
-Use $k_1 = 11$ and $k_2 = 23$ to encrypt THE NATIONAL SECURITY AGENCY. The inverse of 11 modulo 26 is 19, so you can check your answer by decrypting with $19(c - 23)$.
-</Callout>
+$$
+k_1 \in \{1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25\}
+$$
+
+The shift $k_2$ can be any of the 26 numbers $0 \le k_2 \le 25$. By the [product rule](/courses/discrete-mathematics/sum-and-product-rules#the-product-rule), that gives $12 \times 26 = 312$ possible key pairs. The pair $(1, 0)$ leaves the text unchanged, leaving 311 non-trivial keys. A modern computer searches all of them in under a millisecond.
+
+Each plaintext letter still maps to one fixed ciphertext letter. Because of that, frequency analysis breaks an affine cipher without searching all 312 keys. Suppose the two most common ciphertext letters are $c_E$ and $c_T$. Matching them to $E\ (4)$ and $T\ (19)$ produces two linear equations:
+
+$$
+\begin{aligned}
+4k_1 + k_2 &\equiv c_E \pmod{26} \\
+19k_1 + k_2 &\equiv c_T \pmod{26}
+\end{aligned}
+$$
+
+Subtracting the first equation from the second eliminates $k_2$:
+
+$$
+15k_1 \equiv c_T - c_E \pmod{26}
+$$
+
+Since $15^{-1} \equiv 7 \pmod{26}$, multiplying by $7$ gives $k_1 = 7(c_T - c_E) \bmod 26$. Substituting $k_1$ back into the first equation then yields $k_2 = (c_E - 4k_1) \bmod 26$.
+
+Now try one on your own. Encrypt **THE NATIONAL SECURITY AGENCY** using $f_{(11, 23)}(m) \equiv 11m + 23 \pmod{26}$. Then apply the inverse $f_{(11, 23)}^{-1}(c) \equiv 11^{-1}(c - 23) \pmod{26}$ to check your result.
+
+<details>
+<summary>Show the answer</summary>
+
+First, find $11^{-1} \bmod 26$ using the extended Euclidean algorithm:
+$$
+\begin{aligned}
+26 &= 2 \times 11 + 4 \\
+11 &= 2 \times 4 + 3 \\
+4 &= 1 \times 3 + 1
+\end{aligned}
+$$
+Substituting back gives:
+
+$$
+\begin{aligned}
+1 &= 4 - 1 \times (11 - 2 \times 4) = 3 \times 4 - 11 \\
+  &= 3 \times (26 - 2 \times 11) - 11 \\
+  &= 3 \times 26 - 7 \times 11
+\end{aligned}
+$$
+
+This yields $11^{-1} \equiv -7 \equiv 19 \pmod{26}$ (check: $11 \times 19 = 209 = 8 \times 26 + 1$). Now work through each distinct letter of the message:
+
+| Plain | $m$ | $11m + 23$ | $\bmod\ 26$ | Cipher | $19(c - 23)$ | $\bmod\ 26$ | Back |
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| T | 19 | $232 = 8 \times 26 + 24$ | 24 | Y | $19(1) = 19$ | 19 | T |
+| H | 7 | $100 = 3 \times 26 + 22$ | 22 | W | $19(-1) = -1 \times 26 + 7$ | 7 | H |
+| E | 4 | $67 = 2 \times 26 + 15$ | 15 | P | $19(-8) = -6 \times 26 + 4$ | 4 | E |
+| N | 13 | $166 = 6 \times 26 + 10$ | 10 | K | $19(-13) = -10 \times 26 + 13$ | 13 | N |
+| A | 0 | $23 = 0 \times 26 + 23$ | 23 | X | $19(0) = 0$ | 0 | A |
+| I | 8 | $111 = 4 \times 26 + 7$ | 7 | H | $19(-16) = -12 \times 26 + 8$ | 8 | I |
+| O | 14 | $177 = 6 \times 26 + 21$ | 21 | V | $19(-2) = -2 \times 26 + 14$ | 14 | O |
+| L | 11 | $144 = 5 \times 26 + 14$ | 14 | O | $19(-9) = -7 \times 26 + 11$ | 11 | L |
+| S | 18 | $221 = 8 \times 26 + 13$ | 13 | N | $19(-10) = -8 \times 26 + 18$ | 18 | S |
+| C | 2 | $45 = 1 \times 26 + 19$ | 19 | T | $19(-4) = -3 \times 26 + 2$ | 2 | C |
+| U | 20 | $243 = 9 \times 26 + 9$ | 9 | J | $19(-14) = -11 \times 26 + 20$ | 20 | U |
+| R | 17 | $210 = 8 \times 26 + 2$ | 2 | C | $19(-21) = -16 \times 26 + 17$ | 17 | R |
+| Y | 24 | $287 = 11 \times 26 + 1$ | 1 | B | $19(-22) = -17 \times 26 + 24$ | 24 | Y |
+| G | 6 | $89 = 3 \times 26 + 11$ | 11 | L | $19(-12) = -9 \times 26 + 6$ | 6 | G |
+
+Putting the words back together:
+
+- **Ciphertext:** `YWP KXYHVKXO NPTJCHYB XLPKTB`
+- **Decrypted:** `THE NATIONAL SECURITY AGENCY`
+
+<CodeTabs>
+
+```matlab
+msg = 'THE NATIONAL SECURITY AGENCY';
+enc = msg;
+idx = msg ~= ' ';          % logical mask: true at letters, false at spaces
+enc(idx) = char(mod(11 * (double(msg(idx)) - 65) + 23, 26) + 65);
+enc                        % YWP KXYHVKXO NPTJCHYB XLPKTB
+
+dec = enc;
+dec(idx) = char(mod(19 * (double(enc(idx)) - 65 - 23), 26) + 65);
+dec                        % THE NATIONAL SECURITY AGENCY
+```
+
+```python
+msg = "THE NATIONAL SECURITY AGENCY"
+enc = "".join(chr((11 * (ord(ch) - 65) + 23) % 26 + 65) if ch != " " else " " for ch in msg)
+dec = "".join(chr(19 * (ord(ch) - 65 - 23) % 26 + 65) if ch != " " else " " for ch in enc)
+
+print(enc)  # YWP KXYHVKXO NPTJCHYB XLPKTB
+print(dec)  # THE NATIONAL SECURITY AGENCY
+```
+
+</CodeTabs>
+
+</details>
 
 ## Where you'll meet this
 
@@ -123,6 +265,6 @@ Use $k_1 = 11$ and $k_2 = 23$ to encrypt THE NATIONAL SECURITY AGENCY. The inver
 Every AES round substitutes bytes, and that substitution combines a modular-style inverse with an affine transformation over bits.
 </PracticalApplication>
 <PracticalApplication title="Checking RSA keys" tool="OpenSSL">
-RSA key generation asks the same question you asked here: is the exponent [coprime](/courses/computational-mathematics/divisibility-and-euclid#greatest-common-divisor) to the modulus it has to be inverted under? If it isn't, the value is rejected.
+RSA key generation asks the same question you asked here: is the exponent coprime to the modulus it has to be inverted under? If it isn't, the value is rejected.
 </PracticalApplication>
 </ApplicationsGrid>

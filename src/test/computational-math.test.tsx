@@ -5,7 +5,7 @@ import path from "path";
 import { render, fireEvent, cleanup } from "@testing-library/react";
 import { CodeTabs } from "@/components/mdx/MdxComponents";
 import { getCourse, flattenLessons } from "@/content/registry";
-import { affineDecrypt, affineEncrypt, affineTable, bitsToText, flowFrames, keystream, shiftDecrypt, shiftEncrypt, textToBits, VALID_K1, xorBits, xorFrames } from "@/lib/ciphers";
+import { affineDecrypt, affineEncrypt, affineTable, bitsToText, crackShiftByFrequency, findPeakLetter, flowFrames, keystream, letterCounts, letterFrequencies, shiftDecrypt, shiftEncrypt, textToBits, VALID_K1, xorBits, xorFrames } from "@/lib/ciphers";
 import { diffieHellmanFrames, discreteLog, dlogFrames, fastPowFrames, logTable, modPow, cycleFrames, extendedFrames, extendedRows, isPrimitiveRoot, order, powers, primitiveRoots, factorize, inverseMod, isPrime, phi, sieveFrames, wilsonFrames, euclidSteps, euclidTiles, gcd, mod, tileFrames } from "@/lib/numberTheory";
 import { conv, convFrames, divisionFrames, coverUpFrames, deconv, fitQuality, polyder, polyfit, polyFromRoots, polyText, polyval, polyvalm, realRoots, residue, roots, sumSquaredError } from "@/lib/polynomial";
 import { adjoint, cofactors, det, dotAngle, fraction, scale, inverseFrames, inverseText, minorMatrix, minors, diagOf, kron, kronFrames, MAGIC4, norm1, normFrames, normFro, normInf, trace, tril, triu, add, apply2, det2, dot, identity, matMulFrames, mul, elementwiseFrames, MAGIC3, pascal, sub, transpose, vectorProductFrames } from "@/lib/matrix";
@@ -265,6 +265,22 @@ describe("the number theory quiz's hand calculations", () => {
     expect(modPow(3, 7, 13)).toBe(3); // q20
     expect(discreteLog(11, 2, 19)).toBe(12); // q21
     expect(modPow(14, 5, 19)).toBe(10); // q22
+  });
+});
+
+describe("the cryptography quiz's hand calculations", () => {
+  it("has the right answer for every calculation question", () => {
+    expect(xorBits([1, 1, 0, 1, 1, 1, 0], [1, 0, 0, 1, 0, 1, 0])).toEqual([0, 1, 0, 0, 1, 0, 0]); // q6
+    expect(0b01000011 ^ 0b01000001).toBe(0b00000010); // q8
+    expect(shiftEncrypt("IBM", 3)).toBe("LEP"); // q10
+    expect(shiftEncrypt("NIST", 4)).toBe("RMWX"); // q11
+    expect(shiftEncrypt("ZOO", 7)).toBe("GVV"); // q12
+    expect(shiftDecrypt("VHFFNGBVTMBHG", 19)).toBe("COMMUNICATION"); // q13
+    expect(VALID_K1.length * 26).toBe(312); // q16
+    expect(inverseMod(7, 26)).toBe(15); // q17
+    expect(affineEncrypt("AB", 7, 21)).toBe("VC"); // q18
+    expect(affineDecrypt("VL", 7, 21)).toBe("AG"); // q19
+    expect(Array.from(new Set(affineTable(13, 5))).sort((a, b) => a - b)).toEqual([5, 18]); // q20
   });
 });
 
@@ -529,6 +545,11 @@ describe("ciphers", () => {
     expect(shiftEncrypt("IBM", 3)).toBe("LEP");
     expect(shiftEncrypt("NIST", 4)).toBe("RMWX");
     expect(shiftEncrypt("ENCRYPTION", 7)).toBe("LUJYFWAPVU");
+    expect(shiftDecrypt("YWHEBKNJEW", 22)).toBe("CALIFORNIA");
+    expect(shiftDecrypt("ZIBGVIY", 21)).toBe("ENGLAND");
+    expect(shiftDecrypt("XYWLSJNCIH", 20)).toBe("DECRYPTION");
+    expect(shiftDecrypt("VHFFNGBVTMBHG", 19)).toBe("COMMUNICATION");
+    expect(shiftDecrypt("JVTLIZKP", 17)).toBe("SECURITY");
     expect(shiftEncrypt("XYZ", 3)).toBe("ABC");
     expect(shiftDecrypt(shiftEncrypt("ATTACK AT DAWN", 11), 11)).toBe("ATTACK AT DAWN");
   });
@@ -536,7 +557,8 @@ describe("ciphers", () => {
   it("runs the worked affine cipher both ways", () => {
     expect(affineEncrypt("SECURITY", 7, 21)).toBe("RXJFKZYH");
     expect(affineDecrypt("VLXIJH", 7, 21)).toBe("AGENCY");
-    expect(affineDecrypt(affineEncrypt("THE NATIONAL SECURITY AGENCY", 11, 23), 11, 23)).toBe("THE NATIONAL SECURITY AGENCY");
+    expect(affineEncrypt("THE NATIONAL SECURITY AGENCY", 11, 23)).toBe("YWP KXYHVKXO NPTJCHYB XLPKTB");
+    expect(affineDecrypt("YWP KXYHVKXO NPTJCHYB XLPKTB", 11, 23)).toBe("THE NATIONAL SECURITY AGENCY");
     expect((11 * 19) % 26).toBe(1);
     expect((7 * 15) % 26).toBe(1);
   });
@@ -550,6 +572,10 @@ describe("ciphers", () => {
   });
 
   it("encrypts and decrypts a bit stream with the same operation", () => {
+    const m9 = [0, 1, 1, 0, 0, 1, 1, 1, 0];
+    const k9 = [1, 0, 0, 1, 0, 0, 1, 0, 1];
+    expect(xorBits(m9, k9)).toEqual([1, 1, 1, 1, 0, 1, 0, 1, 1]);
+    expect(xorBits(xorBits(m9, k9), k9)).toEqual(m9);
     const m = textToBits("HI");
     const k = keystream(44257, m.length);
     const c = xorBits(m, k);
@@ -563,5 +589,24 @@ describe("ciphers", () => {
     const f = flowFrames("HELLO", 3);
     expect(f).toHaveLength(5);
     expect(f[2].state.cipher).toBe("KHOOR");
+  });
+
+  it("analyzes letter frequencies and cracks a shift cipher by peak matching", () => {
+    const plain = "DEFEND THE EAST WALL OF THE CASTLE";
+    const cipher = shiftEncrypt(plain, 3);
+    const counts = letterCounts(cipher);
+    expect(counts).toHaveLength(26);
+    expect(counts[7]).toBe(6); // 'H' appears 6 times (from 'E' shifted by 3)
+    const peak = findPeakLetter(cipher);
+    expect(peak.letter).toBe("H");
+    expect(peak.count).toBe(6);
+    const freqs = letterFrequencies(cipher);
+    expect(freqs).toHaveLength(26);
+    const sumFreq = freqs.reduce((a, b) => a + b, 0);
+    expect(Math.round(sumFreq)).toBe(100);
+    const cracked = crackShiftByFrequency(cipher, "E");
+    expect(cracked.peak).toBe("H");
+    expect(cracked.key).toBe(3);
+    expect(cracked.decrypted).toBe(plain);
   });
 });
