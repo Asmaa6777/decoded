@@ -3,196 +3,193 @@ import { GraphTraversal, LeetCodeProblems } from "@/components/mdx/AlgoVisualize
 
 # Graphs: BFS and DFS
 
-So far everything has lived in an array: a straight line of values with a first and a last. A lot of data isn't shaped like that, such as cities connected by roads, people connected by friendships, web pages connected by links, or courses connected by prerequisites. All of these are **graphs**.
+Earlier lessons stored data in arrays, where elements sit in a sequence with a fixed start and end. Many collections of information do not fit a linear sequence. Road maps connect cities, social networks connect friends, the web connects pages through hyperlinks, and academic curricula connect courses through prerequisites. In computer science, these interconnected networks are **graphs**.
 
 ## What a graph is
 
-A [graph](/courses/discrete-mathematics/graphs#what-a-graph-is) $G = (V, E)$ is two sets:
+A [graph](/courses/discrete-mathematics/graphs#what-a-graph-is) $G = (V, E)$ consists of two sets:
 
-- $V$, the **vertices** (also called nodes): the things. Usually $n = |V|$.
-- $E$, the **edges** (also called arcs): the connections between pairs of vertices. Usually $m = |E|$.
+- $V$, the set of **vertices** (also called nodes), representing individual entities or locations. The number of vertices is denoted $n = |V|$.
+- $E$, the set of **edges** (also called arcs), representing links between pairs of vertices. The number of edges is denoted $m = |E|$.
 
-Edges come in a few kinds:
+An edge is written as a pair $(u, v)$, naming the two endpoints. Edges fall into three main categories:
 
-- **Undirected:** the connection goes both ways, like a friendship or a two-way street.
-- **Directed:** one way only, like a follow on social media or a one-way street. Drawn with an arrow.
-- **Weighted:** each edge carries a number, such as a distance, a cost or a time. A weighted graph is also called a **network**.
+- **Undirected:** the connection works in both directions, like a two-way street or a mutual friendship. The pairs $(u, v)$ and $(v, u)$ refer to the same edge.
+- **Directed:** the connection runs in one specified direction, like a one-way street or a web hyperlink. The edge points from $u$ to $v$, drawn with an arrow, so $(u, v)$ is distinct from $(v, u)$.
+- **Weighted:** each edge carries a numerical value representing cost, distance, latency, or capacity. A graph with weighted edges is called a **weighted graph** or **network**.
 
-Some vocabulary you'll need:
+Standard graph terminology:
 
-An edge is written as a pair, (starting vertex, ending vertex). For an undirected edge, (A, B) and (B, A) are the same edge. For a directed edge they're two different edges.
+- Two vertices are **adjacent** (or neighbors) if an edge connects them directly. Two edges are **adjacent edges** if they share a common vertex.
+- The **degree** of a vertex is the count of edges connected to it, also described as edges **incident** with that vertex. In an undirected line graph A-B-C, vertex B has degree 2, while A and C each have degree 1.
+- A **path** is an ordered sequence of vertices where each consecutive pair is adjacent. The **length** of a path is the number of edges it traverses. For example, the path A, B, C, D contains three edges and has length 3. A path that visits no vertex more than once is a **simple path**.
+- A **cycle** is a path of length at least 1 that starts and finishes at the same vertex without repeating any other vertices. A graph containing no cycles is **acyclic**.
 
-Some vocabulary you'll need:
+Course materials often categorize graphs into five structural forms: **undirected** (containing only undirected edges), **directed** (containing only directed edges), **cyclic graph** (containing at least one cycle), **acyclic** (containing no cycles), and **weighted**. Two details deserve attention:
 
-- Two vertices are **adjacent** if an edge connects them. Two edges are **adjacent edges** if they share a vertex.
-- The **degree** of a vertex is the number of edges that touch it (the notes say edges **incident** with it). In the graph A–B–C, B has degree 2 and A has degree 1.
-- A **path** is a sequence of vertices where each one is adjacent to the next. Its **length** is the number of edges in it, so the path A, B, C, D has length 3. A path that never repeats a vertex is a **simple path**.
-- A **cycle** is a path that starts and ends at the same vertex: a closed simple path. A graph with no cycles is **acyclic**.
-
-The notes sort graphs into five types: **undirected** (only undirected edges), **directed** (only directed edges), **cycle graph** (has a cycle), **acyclic** (has none) and **weighted**. Two of their definitions need care:
-
-- What the notes call a "cycle graph" (any graph with a cycle) is usually called a **cyclic graph**. In most textbooks, a *cycle graph* is a graph that is nothing but one ring, like A–B–C–A.
-- The notes say a weighted graph's values are non-negative and equal the length between the vertices. Distances are the usual example, but weights can be any number, including negative ones (a profit and loss, for instance). Some algorithms, such as Dijkstra's shortest paths, only work when weights are non-negative, which is why it matters.
+- The lecture notes refer to any graph containing a cycle as a "cycle graph." Standard textbook terminology refers to such a structure as a **cyclic graph**, reserving the term *cycle graph* ($C_n$) specifically for a single circular polygon of $n$ vertices, such as A-B-C-A.
+- The lecture notes assume edge weights are always non-negative distances. In broader computer science, edge weights can represent arbitrary values, including negative numbers such as financial transactions or net energy changes. Certain algorithms, such as Dijkstra's shortest-path algorithm, require non-negative weights to guarantee correctness, while others, such as Bellman-Ford, accommodate negative values.
 
 ## Storing a graph in Java
 
-The most common way is an **adjacency list**: for every vertex, a list of its neighbours. With vertices numbered `0` to `n - 1`:
+The primary representation in algorithms is an **adjacency list**, which stores an explicit list of neighbors for every vertex. Numbering vertices from `0` to `n - 1`:
 
 ```java
 int n = 7;
 List<List<Integer>> adj = new ArrayList<>();
 for (int i = 0; i < n; i++) adj.add(new ArrayList<>());
 
-// undirected edge between u and v: add it in both directions
+// Undirected edge between u and v: record the connection in both directions
 static void addEdge(List<List<Integer>> adj, int u, int v) {
     adj.get(u).add(v);
     adj.get(v).add(u);
 }
 ```
 
-`List<List<Integer>>` reads from the inside out: a `List<Integer>` is one vertex's list of neighbours, and the outer list holds one of those per vertex, so `adj.get(3)` is vertex 3's neighbours. For the triangle 0–1, 1–2, 2–0, `adj` is `[[1, 2], [0, 2], [1, 0]]`: each edge appears twice, once in each end's list.
+The type `List<List<Integer>>` nests lists: an inner `List<Integer>` stores the neighbors of one vertex, while the outer list indexes each vertex by its integer identifier. Calling `adj.get(3)` yields the list of neighbors for vertex 3. For a triangle with edges 0-1, 1-2, and 2-0, `adj` contains `[[1, 2], [0, 2], [1, 0]]`. Each undirected edge appears twice, once in the neighbor list of each endpoint.
 
-The alternative is an **adjacency matrix**: an `n × n` grid of booleans where `matrix[u][v]` says whether the edge exists. It answers "are u and v connected?" in $O(1)$, but it uses $O(n^2)$ memory even when the graph has hardly any edges. Adjacency lists use $O(n + m)$: one list per vertex, plus one entry per edge end. A road map of 10,000 towns, each with about 4 roads, needs 100 million matrix cells but only about 40,000 list entries (20,000 roads, each listed at both ends).
+An alternative representation is an **adjacency matrix**, a two-dimensional `n × n` boolean array where `matrix[u][v]` indicates whether an edge connects vertex $u$ to vertex $v$. Checking whether an edge exists between two specific vertices takes $O(1)$ time in an adjacency matrix. However, the matrix allocates $\Theta(n^2)$ memory regardless of edge density.
+
+An adjacency list requires $O(n + m)$ space, allocating one list header per vertex and one element per edge endpoint ($2m$ entries total for undirected graphs). In sparse graphs where $m \ll n^2$, the difference in memory is substantial. A road network with 10,000 towns and an average of 4 roads per town requires 100,000,000 entries in an adjacency matrix, but only 40,000 entries in an adjacency list.
 
 ## Traversal: visit everything, once
 
-**Traversing** a graph means visiting every vertex reachable from a starting point, **each exactly once**. The "once" is the hard part. Unlike an array, a graph can have cycles, and a naive walk would go round and round forever. The fix is always to keep a `visited` array and never enter a vertex twice.
+**Graph traversal** (or **traversing** a graph) is the process of visiting every vertex reachable from a selected start vertex, visiting each vertex exactly once. Because graphs can contain cycles, an unconstrained search can revisit vertices indefinitely. Graph traversal algorithms maintain a `visited` array to guarantee that no vertex is processed more than once.
 
-Here's what goes wrong without it. Take the triangle A–B, B–C, C–A and start a DFS at A with no record of what's been seen. A goes to B, B goes to its first neighbour A, A goes to B again, and so on forever, until Java runs out of stack and throws `StackOverflowError`. With `visited`, B sees that A is already done and moves on to C.
+Consider a triangle graph with edges A-B, B-C, and C-A. Starting a search at vertex A without tracking visited vertices causes an infinite loop: A explores neighbor B, B immediately explores neighbor A, and the search oscillates between them until the program exhausts memory. Marking vertices as **visited** allows vertex B to recognize that vertex A has already been handled, directing exploration forward to vertex C.
 
-The notes put it as: mark each vertex as visited while avoiding cycles. A vertex is either **visited** or **not visited**.
-
-There are two basic orders to visit vertices in, and they differ only in the data structure that holds the vertices waiting to be explored.
+Standard graph traversals place vertices into two operational states: **visited** and **not visited**. The two foundational graph traversal algorithms, breadth-first search and depth-first search, differ primarily in the underlying data structure used to manage discovered vertices awaiting exploration.
 
 ## Breadth-first search: ripples in a pond
 
-**BFS** explores in **layers**: first the start vertex, then everything one edge away, then everything two edges away, like a ripple spreading out from a stone dropped in water.
+**Breadth-first search** (**BFS**) explores a graph level by level, radiating outward from a start vertex. The algorithm visits the start vertex first, then all vertices one edge away, followed by all vertices two edges away, expanding through successive concentric layers.
 
-It uses a **[queue](/courses/data-structures/queues-and-deques#the-interface)**, which is first in, first out. When you visit a vertex, every unvisited neighbour joins the *back* of the line, so vertices are explored in exactly the order they were discovered.
+BFS manages vertices waiting for exploration with a **[queue](/courses/data-structures/queues-and-deques#the-interface)**, following a first-in, first-out (FIFO) discipline. When a vertex is explored, all of its unvisited neighbors are enqueued at the back. This ensures that vertices discovered earlier are evaluated before vertices discovered later.
 
 <GraphTraversal algorithm="bfs" />
 
-Watch the queue at the bottom. Vertex 0's neighbours (1 and 2) are all handled before any of *their* neighbours. The mint edges form the **BFS tree**, the route by which each vertex was first reached.
+In the visualizer, observe how the queue operates at each step. Neighbors of vertex 0 (vertices 1 and 2) are evaluated before exploring the neighbors of vertex 1 or vertex 2. The highlighted edges trace the **BFS tree**, representing the edge along which each vertex was first reached.
 
-### The notes' BFS example
+### Tracing the lecture BFS example
 
-The notes' version, step by step:
+The standard BFS algorithm executes four main steps:
 
-1. Put the start vertex at the back of a queue.
-2. Take the front vertex of the queue and add it to the visited list.
-3. Add each of its neighbours that hasn't been visited (or queued) to the back of the queue.
+1. Insert the start vertex into the back of a queue and mark it as visited.
+2. Remove the vertex at the front of the queue.
+3. For each unvisited neighbor of this vertex, mark it as visited and enqueue it at the back.
 4. Repeat steps 2 and 3 until the queue is empty.
 
-Their example graph has vertices 1 to 10 and edges 1–2, 1–4, 2–3, 2–5, 2–7, 2–8, 3–4, 3–9, 3–10, 5–6, 5–7, 5–8 and 7–8. Starting from 1, their answer is **1 4 2 3 5 8 7 10 9 6**:
+The lecture example examines a 10-vertex graph with vertices 1 through 10 and edges 1-2, 1-4, 2-3, 2-5, 2-7, 2-8, 3-4, 3-9, 3-10, 5-6, 5-7, 5-8, and 7-8. Starting at vertex 1, the lecture trace produces the visit sequence **1 4 2 3 5 8 7 10 9 6**:
 
-| Take from the queue | New neighbours added | Queue after |
+| Dequeued vertex | Discovered neighbors added | Queue state |
 | --- | --- | --- |
-| 1 | 4, 2 | 4 2 |
-| 4 | 3 | 2 3 |
-| 2 | 5, 8, 7 (3 is already queued) | 3 5 8 7 |
-| 3 | 10, 9 | 5 8 7 10 9 |
-| 5 | 6 (7 and 8 are already queued) | 8 7 10 9 6 |
-| 8, 7, 10, 9, 6 | nothing new | empty |
+| 1 | 4, 2 | 4, 2 |
+| 4 | 3 | 2, 3 |
+| 2 | 5, 8, 7 (vertex 3 is already queued) | 3, 5, 8, 7 |
+| 3 | 10, 9 | 5, 8, 7, 10, 9 |
+| 5 | 6 (vertices 7 and 8 are already queued) | 8, 7, 10, 9, 6 |
+| 8, 7, 10, 9, 6 | None | Empty |
 
-Notice the notes take 4 before 2, and 8 before 7: they add neighbours in the order they appear in the drawing. With neighbours in numerical order, as in the Java below, the same graph gives 1 2 4 3 5 7 8 9 10 6. **Both are correct BFS orders.** BFS fixes the layers (1; then 2 and 4; then 3, 5, 7, 8; then 9, 10, 6), but the order within a layer depends on the order you list neighbours in. On an exam, say which order you use, usually alphabetical or numerical, and stick to it.
+In this trace, vertex 4 is dequeued before vertex 2, and vertex 8 is queued before vertex 7, reflecting the counter-clockwise layout order in the lecture diagram. Sorting neighbor lists numerically produces the sequence 1, 2, 4, 3, 5, 7, 8, 9, 10, 6. Both visit sequences represent valid BFS orderings. BFS determines the sequence of layers: layer 0 contains vertex 1; layer 1 contains vertices 2 and 4; layer 2 contains vertices 3, 5, 7, and 8; and layer 3 contains vertices 9, 10, and 6. Within any individual layer, the specific visit order depends on how the adjacency lists sort neighbors. In academic exercises, explicitly declare whether neighbor traversal follows numerical, alphabetical, or diagram order.
 
-In an unweighted graph, the path BFS finds to each vertex is a **shortest path** (fewest edges), because the ripple reaches each vertex as early as it possibly can.
+On unweighted graphs, BFS identifies a **shortest path** (a path with the minimum number of edges) from the start vertex to every reachable vertex, because it discovers all vertices at distance $k$ before any vertex at distance $k + 1$.
 
 ## Depth-first search: the maze explorer
 
-**DFS** picks a direction and goes as **deep** as it can. When it hits a dead end (a vertex with no unvisited neighbours), it **backtracks** to the last vertex that still has an unexplored path, and goes deep again from there. It's how you'd explore a maze with a piece of chalk.
+**Depth-first search** (**DFS**) explores a graph along a single path as deeply as possible before retreating. When the search reaches a vertex with no remaining unvisited neighbors, it **backtracks** to the most recently visited vertex that still has unexplored outgoing edges, continuing forward exploration from that point.
 
-It uses a **stack**, which is last in, first out. The most recently discovered vertex is explored first. The simplest way to write DFS uses recursion, and then the stack is Java's own **call stack**: each recursive call is pushed when you go deeper, and popped when you backtrack.
+DFS manages pending vertices using a **stack**, which operates on a last-in, first-out (LIFO) basis. The most recently discovered vertex is explored first. When implemented recursively, DFS uses the program's runtime **call stack**, pushing a frame for each deeper recursive call and popping the frame upon backtracking.
 
 <GraphTraversal algorithm="dfs" />
 
-With the same graph and start, the order is very different. DFS dives 0 → 1 → 3 → 6 → 4 → 2 → 5, one long path, before it ever comes back. Use the toggle under the controls to switch between BFS and DFS on the same picture.
+On the same graph, DFS produces a substantially different exploration path than BFS, traversing sequentially 0 to 1, 3, 6, 4, 2, and 5 along a single deep branch before returning.
 
-### The notes' DFS: an explicit stack
+### Tracing the lecture DFS example
 
-The notes write DFS without recursion, with a stack whose size is the number of vertices:
+An explicit, iterative DFS implementation uses a stack sized up to the total number of vertices:
 
-1. Pick a start vertex, visit it, and push it on the stack.
-2. Look at the vertex on **top** of the stack. Visit any one of its neighbours that hasn't been visited, and push it.
-3. Repeat step 2 until the top vertex has no unvisited neighbours.
-4. Then **backtrack**: pop the top vertex. A popped vertex is a **dead end**.
-5. Repeat steps 2 to 4 until the stack is empty.
+1. Select a start vertex, mark it as visited, and push it onto the stack.
+2. Examine the vertex on the top of the stack. If it has an unvisited neighbor, mark that neighbor as visited and push it onto the stack.
+3. Repeat step 2 until the vertex on top of the stack has no remaining unvisited neighbors.
+4. Backtrack by popping that top vertex off the stack.
+5. Repeat steps 2 through 4 until the stack is empty.
 
-Their example graph has vertices A to G and edges A–B, A–D, A–E, B–C, B–E, C–E, C–F, C–G, D–E, E–F and F–G. Taking neighbours alphabetically and starting at A:
+The lecture example analyzes a 7-vertex graph with vertices A through G and edges A-B, A-D, A-E, B-C, B-E, C-E, C-F, C-G, D-E, E-F, and F-G. Selecting neighbors alphabetically and starting at vertex A yields this trace:
 
-| Step | Top of stack | Action | Stack (bottom → top) |
+| Step | Top of stack | Evaluation | Stack contents (bottom to top) |
 | --- | --- | --- | --- |
-| 1 | | visit A, push | A |
-| 2 | A | B is unvisited: visit, push | A B |
-| 3 | B | C is unvisited: visit, push | A B C |
-| 4 | C | E is unvisited: visit, push | A B C E |
-| 5 | E | D is unvisited: visit, push | A B C E D |
-| 6 | D | A and E are visited: pop D | A B C E |
-| 7 | E | F is unvisited: visit, push | A B C E F |
-| 8 | F | G is unvisited: visit, push | A B C E F G |
-| 9 to 14 | | nothing new anywhere: pop G, F, E, C, B, A | empty |
+| 1 | None | Visit vertex A, push onto stack | A |
+| 2 | A | B is unvisited: visit B, push onto stack | A, B |
+| 3 | B | C is unvisited: visit C, push onto stack | A, B, C |
+| 4 | C | E is unvisited: visit E, push onto stack | A, B, C, E |
+| 5 | E | D is unvisited: visit D, push onto stack | A, B, C, E, D |
+| 6 | D | Neighbors A and E are already visited: pop D | A, B, C, E |
+| 7 | E | F is unvisited: visit F, push onto stack | A, B, C, E, F |
+| 8 | F | G is unvisited: visit G, push onto stack | A, B, C, E, F, G |
+| 9 to 14 | Various | No unvisited neighbors remain: pop G, F, E, C, B, A | Empty |
 
-The visit order is **A B C E D F G**. The edges used to reach each new vertex, A–B, B–C, C–E, E–D, E–F and F–G, form the **DFS spanning tree**: it connects all 7 vertices with 6 edges and no cycle. The other five edges, which led to vertices already visited, are what the notes label **back edges**.
+The resulting traversal order is **A B C E D F G**. The tree edges traversed to discover new vertices (A-B, B-C, C-E, E-D, E-F, and F-G) form a **DFS spanning tree**, connecting all 7 vertices using 6 edges with no cycles. The remaining five edges connect vertices to ancestors already present in the search tree, categorized in graph theory as **back edges**.
 
-The recursive Java below does exactly this. Each recursive call is a push, and each `return` is a pop.
+A recursive implementation mirrors this behavior directly: each recursive invocation pushes a stack frame, and each method return pops that frame upon reaching a dead end.
 
 ## Analysis
 
-Both algorithms do the same amount of work, just in a different order:
+Using an adjacency list, both BFS and DFS exhibit identical asymptotic performance:
 
-- Every vertex is marked visited and processed **once**: $O(V)$.
-- Every edge is looked at a constant number of times when scanning neighbour lists (once from each end in an undirected graph): $O(E)$.
+- Each vertex is marked visited and processed once: $\Theta(V)$.
+- Each edge is inspected a constant number of times when scanning adjacency lists (twice in an undirected graph, once from each endpoint): $\Theta(E)$.
 
-Total: **$O(V + E)$** for both (the notes give this for each algorithm), with an adjacency list. Space is $O(V)$ for the `visited` array plus the queue or stack.
+The overall time complexity is **$\Theta(V + E)$**. Space complexity is $O(V)$, requiring an array of size $V$ for tracking visited states and either a queue (BFS) or a recursion stack (DFS) holding at most $V$ vertices.
 
 <Callout tone="orange" label="Common mistake: O(V × E)">
-The loop structure (for each vertex, loop over its neighbours) looks like nested loops, so students often answer $O(V \times E)$. But the inner loop doesn't run over *all* $E$ edges for every vertex. It runs over that vertex's own neighbours only. Add those up over every vertex and you get each edge twice, $2E$ in total. The two loops share out the edges between them; they don't multiply.
+Because the code contains a loop over vertices enclosing a loop over neighbors, students often mistakenly conclude that the running time is $O(V \times E)$. The inner loop does not iterate over all $E$ edges for every vertex; it scans only the edges incident to the current vertex. Summing vertex degrees over the entire graph evaluates each edge exactly twice, contributing $2E$ total operations. The loops distribute the edges across all vertices rather than multiplying them.
 </Callout>
 
-(With an adjacency matrix, finding a vertex's neighbours means scanning a whole row, so both become $O(V^2)$.)
+When using an adjacency matrix, identifying the neighbors of any vertex requires scanning a row of length $V$. Across all $V$ vertices, this inspection requires $\Theta(V^2)$ time, reducing traversal efficiency on sparse graphs.
 
-| | BFS | DFS |
+| Property | Breadth-First Search (BFS) | Depth-First Search (DFS) |
 | --- | --- | --- |
-| Data structure | Queue (FIFO) | Stack (LIFO) / recursion |
-| Explores | Level by level | One path as deep as possible, then backtracks |
-| Shortest paths (unweighted) | Yes | No |
-| Time | $O(V + E)$ | $O(V + E)$ |
+| Underlying structure | Queue (FIFO) | Stack (LIFO) or recursive call stack |
+| Exploration strategy | Level by level across concentric layers | Deeply along a single path, then backtracks |
+| Shortest path on unweighted graphs | Guaranteed (minimum edge count) | Not guaranteed |
+| Time complexity (adjacency list) | $O(V + E)$ | $O(V + E)$ |
+| Space complexity | $O(V)$ | $O(V)$ |
 
-<Callout tone="orange" label="Mark when you add, not when you leave">
-In BFS, mark a vertex visited the moment you **add it to the queue**, not when you take it out. Otherwise different neighbours can add the same vertex several times before it's processed. The result is still correct, but the wasted work is a common cause of "time limit exceeded."
+<Callout tone="orange" label="Mark vertices upon enqueue">
+In BFS, mark a vertex as visited the moment it enters the queue, rather than waiting until it is removed. If the visited flag is set only upon dequeuing, several adjacent vertices can discover and enqueue the same vertex multiple times before it is processed. This redundant queue allocation wastes memory and computation, often causing timeout errors on automated grading platforms.
 </Callout>
 
-<Callout tone="orange" label="BFS is not recursive">
-The notes call breadth-first search "a recursive algorithm". It isn't: BFS is a loop around a queue, as in their own four steps above. DFS is the one that's naturally recursive, because its stack can be the call stack.
+<Callout tone="orange" label="BFS is iterative, not recursive">
+The lecture slides describe breadth-first search as a recursive algorithm. In practice, standard BFS is an iterative algorithm structured around a queue. DFS maps directly to recursion because the runtime call stack provides the necessary LIFO discipline.
 </Callout>
 
-### Homework: spanning trees of the A to S graph
+### Spanning trees of the A to S graph
 
-The notes' homework asks for the "minimum spanning tree" of this graph by DFS and by BFS, starting from A. Its edges are A–B, A–S, S–C, S–G, C–D, C–E, C–F, F–G, G–H and E–H: nine vertices, ten edges.
+The lecture problem set requests the spanning tree of a 9-vertex graph produced by DFS and BFS, starting from vertex A. The graph has vertices A, B, C, D, E, F, G, H, and S, connected by 10 edges: A-B, A-S, S-C, S-G, C-D, C-E, C-F, F-G, G-H, and E-H.
 
-Taking neighbours alphabetically:
+Breaking ties alphabetically:
 
-- **DFS** visits A B S C D E H G F. From C it goes to D (a dead end, so it pops back to C), then E, H, G and F. Tree edges: A–B, A–S, S–C, C–D, C–E, E–H, H–G, G–F.
-- **BFS** visits A B S C G D E F H. Layers: A; then B and S; then C and G; then D, E, F and H. Tree edges: A–B, A–S, S–C, S–G, C–D, C–E, C–F, G–H.
+- **DFS** produces the visit order A B S C D E H G F. From vertex C, the search visits D, hits a dead end, backtracks to C, and advances through E, H, G, and F. The resulting tree edges are A-B, A-S, S-C, C-D, C-E, E-H, H-G, and G-F.
+- **BFS** produces the visit order A B S C G D E F H. The layers unfold as follows: layer 0 contains A; layer 1 contains B and S; layer 2 contains C and G; and layer 3 contains D, E, F, and H. The resulting tree edges are A-B, A-S, S-C, S-G, C-D, C-E, C-F, and G-H.
 
-Both trees have 8 edges, because a spanning tree of 9 vertices always has $9 - 1 = 8$. The edges have no weights, so every spanning tree is equally "minimum", and the word adds nothing here. With weighted edges, DFS and BFS would **not** find the minimum one; that takes [Prim's or Kruskal's algorithm](/courses/algorithm-design-and-analysis/greedy-and-mst#minimum-spanning-trees).
+Both resulting spanning trees contain exactly 8 edges, adhering to the mathematical property that any spanning tree of $n$ vertices contains exactly $n - 1$ edges. Because the graph edges are unweighted, every valid spanning tree has identical uniform weight. In graphs with weighted edges, finding an actual minimum weight spanning tree requires specialized greedy methods such as [Prim's or Kruskal's algorithm](/courses/algorithm-design-and-analysis/greedy-and-mst#minimum-spanning-trees).
 
-Advanced Algorithms takes this further, from BFS on unweighted graphs to weighted ones, in [shortest paths](/courses/advanced-algorithms/shortest-paths#unweighted-graphs).
+The Advanced Algorithms course expands on these concepts, generalizing BFS from unweighted shortest paths to weighted networks in [shortest paths](/courses/advanced-algorithms/shortest-paths#unweighted-graphs).
 
 ## Where this shows up today
 
 <ApplicationsGrid>
   <PracticalApplication title="Social networks" tool="BFS">
-    "People you may know" and "3rd-degree connection" are BFS layers. Your friends are layer 1, their friends layer 2.
+    Friend recommendation systems and connection degrees rely on BFS layers. Direct connections form layer 1, while mutual acquaintances form layer 2.
   </PracticalApplication>
   <PracticalApplication title="Web crawlers" tool="BFS">
-    Search engines discover pages by BFS over links: visit a page, queue up every link on it, never fetch the same URL twice.
+    Search engine spiders discover pages by running BFS across web hyperlinks: fetching a document, enqueueing newly discovered URLs, and tracking visited addresses to prevent duplicate indexing.
   </PracticalApplication>
   <PracticalApplication title="Build tools and package managers" tool="DFS">
-    Maven, Gradle and npm order dependencies with a DFS-based **topological sort** (an order where everything comes after the things it depends on), and detect circular dependencies when DFS finds a cycle.
+    Build engines such as Maven, Gradle, and npm order task and package dependencies using a DFS-based **topological sort**, sequencing prerequisites before dependent artifacts and detecting circular dependencies as graph cycles.
   </PracticalApplication>
   <PracticalApplication title="Flood fill and garbage collection" tool="DFS">
-    The paint-bucket tool in an image editor is DFS over neighbouring pixels. Java's garbage collector traverses the graph of objects reachable from your variables; whatever it doesn't reach is freed.
+    Graphics paint-bucket operations execute DFS over adjacent matching pixels. The Java Virtual Machine garbage collector traverses the reference graph of reachable objects from root variables, reclaiming unreachable objects.
   </PracticalApplication>
 </ApplicationsGrid>
 
@@ -246,13 +243,13 @@ public class GraphTraversal {
 }
 ```
 
-It's the same graph as the visualizers above, so you can check your output against them.
+The sample graph matches the structure illustrated in the visualizer above, enabling direct verification of traversal orders.
 
 <LeetCodeProblems
   problems={[
-    { id: 1971, title: "Find if Path Exists in Graph", slug: "find-if-path-exists-in-graph", why: "Build the adjacency list from an edge list, then run BFS or DFS from the source. Plain graph traversal with nothing else on top." },
-    { id: 733, title: "Flood Fill", slug: "flood-fill", why: "The paint-bucket tool. A grid is a graph where each cell's neighbours are up, down, left and right." },
-    { id: 104, title: "Maximum Depth of Binary Tree", slug: "maximum-depth-of-binary-tree", why: "A tree is a graph with no cycles. Solve it with recursive DFS, then again with BFS counting layers." },
-    { id: 637, title: "Average of Levels in Binary Tree", slug: "average-of-levels-in-binary-tree", why: "BFS one layer at a time: process exactly queue.size() nodes per round." },
+    { id: 1971, title: "Find if Path Exists in Graph", slug: "find-if-path-exists-in-graph", why: "Build an adjacency list from the edge list, then execute BFS or DFS starting from the source vertex to confirm reachability." },
+    { id: 733, title: "Flood Fill", slug: "flood-fill", why: "Model the 2D grid as a graph where each cell connects to its four cardinal neighbors, then update matching adjacent pixels using traversal." },
+    { id: 104, title: "Maximum Depth of Binary Tree", slug: "maximum-depth-of-binary-tree", why: "Trees are acyclic connected graphs. Calculate maximum height using either recursive DFS or layer-counting BFS." },
+    { id: 637, title: "Average of Levels in Binary Tree", slug: "average-of-levels-in-binary-tree", why: "Process vertices level by level with BFS, evaluating exactly queue.size() elements per tree depth to compute level averages." },
   ]}
 />
