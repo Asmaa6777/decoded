@@ -1,5 +1,5 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { SortVisualizer, LeetCodeProblems, InsertionShiftVisualizer } from "@/components/mdx/AlgoVisualizers";
 
 # Insertion Sort: Sorting Like a Card Player
 
@@ -59,6 +59,10 @@ Exams frequently ask for step-by-step traces showing each shifted key. For the s
 The duplicate value 46 remains behind the first 46 because the condition shifts only values strictly greater than the key. This strict inequality preserves stability. Each step shifts an element leftward into position, which distinguishes an insertion sort trace from [selection sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#selection-sort-find-the-smallest-put-it-first), where each pass swaps the minimum value forward.
 
 Additionally, insertion sort **shifts** elements rather than performing repeated swaps like [bubble sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#bubble-sort-fix-the-neighbours). Shifting requires one assignment per step rather than three, making insertion sort noticeably faster in practice despite sharing the same [Big-O](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations) worst-case class.
+
+In the comparison stepper below, toggle between **Shifting** and **Adjacent Swapping**. Watch how shifting saves the key into a temporary variable, slides larger elements right into the open gap in single writes, and drops the key into place in one final write. Swapping calls `swap` repeatedly, using three writes for every shifted position.
+
+<InsertionShiftVisualizer initial={[6, 2, 11, 7, 5]} />
 
 ## Analysis
 

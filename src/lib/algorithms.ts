@@ -1053,3 +1053,869 @@ export function swapFrames(
   });
   return frames;
 }
+
+/* ------------------------ bubble sort early exit ------------------------ */
+
+export const JAVA_BUBBLE_EARLY_EXIT = {
+  with_flag: [
+    "public static void bubbleSortWithFlag(int[] array) {",
+    "    for (int i = 0; i < array.length - 1; i++) {",
+    "        boolean swapped = false;",
+    "        for (int j = 0; j < array.length - 1 - i; j++) {",
+    "            if (array[j + 1] < array[j]) {",
+    "                swap(array, j, j + 1);",
+    "                swapped = true;",
+    "            }",
+    "        }",
+    "        if (!swapped) break; // early exit: array is sorted",
+    "    }",
+    "}",
+  ],
+  without_flag: [
+    "public static void bubbleSortNoFlag(int[] array) {",
+    "    for (int i = 0; i < array.length - 1; i++) {",
+    "        // no swapped flag check",
+    "        for (int j = 0; j < array.length - 1 - i; j++) {",
+    "            if (array[j + 1] < array[j]) {",
+    "                swap(array, j, j + 1);",
+    "            }",
+    "        }",
+    "        // continues unconditionally for all passes",
+    "    }",
+    "}",
+  ],
+};
+
+export type BubbleEarlyExitState = {
+  array: number[];
+  i: number;
+  j?: number;
+  swappedThisPass: boolean;
+  totalSwaps: number;
+  totalComparisons: number;
+  passCount: number;
+  stoppedEarly: boolean;
+  compare?: [number, number];
+  write?: [number, number];
+  sorted: number[];
+  mode: "with_flag" | "without_flag";
+};
+
+export function bubbleEarlyExitFrames(
+  input: number[],
+  mode: "with_flag" | "without_flag" = "with_flag"
+): Frame<BubbleEarlyExitState>[] {
+  const a = [...input];
+  const n = a.length;
+  const frames: Frame<BubbleEarlyExitState>[] = [];
+  const sorted: number[] = [];
+  let totalComparisons = 0;
+  let totalSwaps = 0;
+
+  const push = (
+    line: number,
+    message: string,
+    s: {
+      i: number;
+      j?: number;
+      swappedThisPass: boolean;
+      stoppedEarly?: boolean;
+      compare?: [number, number];
+      write?: [number, number];
+    }
+  ) => {
+    frames.push({
+      state: {
+        array: [...a],
+        i: s.i,
+        j: s.j,
+        swappedThisPass: s.swappedThisPass,
+        totalSwaps,
+        totalComparisons,
+        passCount: s.i + 1,
+        stoppedEarly: Boolean(s.stoppedEarly),
+        compare: s.compare,
+        write: s.write,
+        sorted: [...sorted],
+        mode,
+      },
+      line,
+      message,
+      stats: { comparisons: totalComparisons, swaps: totalSwaps },
+    });
+  };
+
+  if (n <= 1) {
+    if (n === 1) sorted.push(0);
+    push(0, `Array of size ${n} is already sorted.`, { i: 0, swappedThisPass: false });
+    return frames;
+  }
+
+  push(
+    0,
+    `Starting bubble sort (${mode === "with_flag" ? "with early exit flag" : "without flag"}). Input has ${n} elements.`,
+    { i: 0, swappedThisPass: false }
+  );
+
+  let stoppedEarly = false;
+  let lastPass = 0;
+
+  for (let i = 0; i < n - 1; i++) {
+    lastPass = i;
+    let swapped = false;
+    push(
+      mode === "with_flag" ? 2 : 1,
+      `Pass ${i + 1} of ${n - 1}: reset swapped = false. Scanning indices 0 to ${n - 2 - i}.`,
+      { i, swappedThisPass: swapped }
+    );
+
+    for (let j = 0; j < n - 1 - i; j++) {
+      totalComparisons++;
+      const outOfOrder = a[j + 1] < a[j];
+      push(
+        mode === "with_flag" ? 4 : 4,
+        `Compare a[${j}] (${a[j]}) and a[${j + 1}] (${a[j + 1]}): ${outOfOrder ? "out of order!" : "in order."}`,
+        { i, j, swappedThisPass: swapped, compare: [j, j + 1] }
+      );
+
+      if (outOfOrder) {
+        const temp = a[j];
+        a[j] = a[j + 1];
+        a[j + 1] = temp;
+        swapped = true;
+        totalSwaps++;
+        push(
+          mode === "with_flag" ? 5 : 5,
+          `Swap a[${j}] and a[${j + 1}]. Set swapped = true.`,
+          { i, j, swappedThisPass: swapped, write: [j, j + 1] }
+        );
+      }
+    }
+
+    sorted.push(n - 1 - i);
+
+    if (mode === "with_flag") {
+      if (!swapped) {
+        for (let k = 0; k < n; k++) {
+          if (!sorted.includes(k)) sorted.push(k);
+        }
+        stoppedEarly = true;
+        push(
+          9,
+          `Pass ${i + 1} finished with 0 swaps! swapped is still false, proving the array is fully sorted. Early exit breaks out of the loop after ${totalComparisons} comparisons.`,
+          { i, swappedThisPass: false, stoppedEarly: true }
+        );
+        break;
+      } else {
+        push(
+          9,
+          `Pass ${i + 1} finished with swaps. swapped is true, so early exit does not trigger. Continue to next pass.`,
+          { i, swappedThisPass: true }
+        );
+      }
+    } else {
+      push(
+        mode === "without_flag" ? 8 : 7,
+        `Pass ${i + 1} finished. Flag check omitted: outer loop will execute all ${n - 1} passes regardless of order.`,
+        { i, swappedThisPass: swapped }
+      );
+    }
+  }
+
+  for (let k = 0; k < n; k++) {
+    if (!sorted.includes(k)) sorted.push(k);
+  }
+
+  const finalMsg = stoppedEarly
+    ? `Completed early at pass ${frames[frames.length - 1].state.passCount}/${n - 1}! Total comparisons: ${totalComparisons} (saved ${(n * (n - 1)) / 2 - totalComparisons} comparisons).`
+    : `Completed all ${n - 1} passes. Total comparisons: ${totalComparisons}, swaps: ${totalSwaps}.`;
+
+  push(mode === "with_flag" ? 11 : 9, finalMsg, {
+    i: lastPass,
+    swappedThisPass: false,
+    stoppedEarly,
+  });
+
+  return frames;
+}
+
+/* ------------------------ insertion shift vs swap ------------------------ */
+
+export const JAVA_INSERTION_SHIFT = {
+  shift: [
+    "public static void insertionSortShift(int[] a) {",
+    "    for (int i = 1; i < a.length; i++) {",
+    "        int key = a[i];              // write to key variable (1 write)",
+    "        int j = i - 1;",
+    "        while (j >= 0 && a[j] > key) {",
+    "            a[j + 1] = a[j];          // 1 write: shift element right",
+    "            j--;",
+    "        }",
+    "        a[j + 1] = key;              // 1 write: drop key into gap",
+    "    }",
+    "}",
+  ],
+  swap: [
+    "public static void insertionSortSwap(int[] a) {",
+    "    for (int i = 1; i < a.length; i++) {",
+    "        int j = i;",
+    "        while (j > 0 && a[j - 1] > a[j]) {",
+    "            swap(a, j, j - 1);       // 3 writes per swap!",
+    "            j--;",
+    "        }",
+    "    }",
+    "}",
+  ],
+};
+
+export type InsertionShiftState = {
+  array: (number | null)[];
+  key: number | null;
+  keyOrigin?: number;
+  gap?: number;
+  i: number;
+  j?: number;
+  compare?: [number, number];
+  write?: number[];
+  writes: number;
+  comparisons: number;
+  sorted: number[];
+  mode: "shift" | "swap";
+};
+
+export function insertionShiftFrames(
+  input: number[],
+  mode: "shift" | "swap" = "shift"
+): Frame<InsertionShiftState>[] {
+  const a: (number | null)[] = [...input];
+  const n = a.length;
+  const frames: Frame<InsertionShiftState>[] = [];
+  const sorted: number[] = [0];
+  let writes = 0;
+  let comparisons = 0;
+
+  const push = (
+    line: number,
+    message: string,
+    s: {
+      key: number | null;
+      keyOrigin?: number;
+      gap?: number;
+      i: number;
+      j?: number;
+      compare?: [number, number];
+      write?: number[];
+    }
+  ) => {
+    frames.push({
+      state: {
+        array: [...a],
+        key: s.key,
+        keyOrigin: s.keyOrigin,
+        gap: s.gap,
+        i: s.i,
+        j: s.j,
+        compare: s.compare,
+        write: s.write,
+        writes,
+        comparisons,
+        sorted: [...sorted],
+        mode,
+      },
+      line,
+      message,
+      stats: { comparisons, writes },
+    });
+  };
+
+  if (n <= 1) {
+    push(0, `Array has ${n} element(s): already sorted.`, { key: null, i: 0 });
+    return frames;
+  }
+
+  push(
+    0,
+    `Starting insertion sort using ${mode === "shift" ? "shifting (1 write per shift + key)" : "adjacent swapping (3 writes per swap)"}.`,
+    { key: null, i: 1 }
+  );
+
+  if (mode === "shift") {
+    for (let i = 1; i < n; i++) {
+      const key = a[i] as number;
+      writes++; // write to key variable
+      a[i] = null; // gap created
+      let gap: number | undefined = i;
+      let j = i - 1;
+
+      push(2, `i = ${i}: Lift key = ${key} into variable. Slot ${i} becomes an open gap. (Writes: ${writes})`, {
+        key,
+        keyOrigin: i,
+        gap,
+        i,
+        j,
+      });
+
+      while (j >= 0) {
+        comparisons++;
+        const cmpVal = a[j] as number;
+        const shouldShift = cmpVal > key;
+        push(
+          4,
+          `Compare a[${j}] (${cmpVal}) > key (${key}): ${shouldShift ? "yes, shift right!" : "no, found insertion position."}`,
+          { key, keyOrigin: i, gap, i, j, compare: [j, gap] }
+        );
+
+        if (!shouldShift) break;
+
+        a[j + 1] = a[j];
+        a[j] = null;
+        gap = j;
+        writes++; // 1 write per shift
+        push(5, `Shift a[${j}] (${cmpVal}) into slot ${j + 1}. Open gap moves to slot ${j}. (Writes: ${writes})`, {
+          key,
+          keyOrigin: i,
+          gap,
+          i,
+          j,
+          write: [j + 1],
+        });
+        j--;
+      }
+
+      a[j + 1] = key;
+      writes++; // write key into gap
+      gap = undefined;
+      for (let k = 0; k <= i; k++) {
+        if (!sorted.includes(k)) sorted.push(k);
+      }
+      push(8, `Drop key ${key} into gap at slot ${j + 1}. Sorted prefix is now 0..${i}. (Writes: ${writes})`, {
+        key: null,
+        i,
+        write: [j + 1],
+      });
+    }
+  } else {
+    // swap mode
+    for (let i = 1; i < n; i++) {
+      let j = i;
+      push(2, `i = ${i}: Consider element a[${i}] = ${a[i]}.`, { key: null, i, j });
+
+      while (j > 0) {
+        comparisons++;
+        const leftVal = a[j - 1] as number;
+        const curVal = a[j] as number;
+        const outOfOrder = leftVal > curVal;
+
+        push(
+          3,
+          `Compare a[${j - 1}] (${leftVal}) > a[${j}] (${curVal}): ${outOfOrder ? "out of order, must swap!" : "in order, stop."}`,
+          { key: null, i, j, compare: [j - 1, j] }
+        );
+
+        if (!outOfOrder) break;
+
+        const temp = a[j];
+        a[j] = a[j - 1];
+        a[j - 1] = temp;
+        writes += 3; // 3 writes per swap!
+
+        push(
+          4,
+          `Swap a[${j}] and a[${j - 1}] via temp (3 writes: temp = a[j]; a[j] = a[j-1]; a[j-1] = temp). Total writes: ${writes}.`,
+          { key: null, i, j: j - 1, write: [j - 1, j] }
+        );
+        j--;
+      }
+
+      for (let k = 0; k <= i; k++) {
+        if (!sorted.includes(k)) sorted.push(k);
+      }
+    }
+  }
+
+  push(
+    mode === "shift" ? 9 : 7,
+    `Array fully sorted! Total comparisons: ${comparisons}, Total memory writes: ${writes}. (${mode === "shift" ? "Shifting minimizes writes." : "Swapping incurred 3x writes per inversion!"})`,
+    { key: null, i: n - 1 }
+  );
+
+  return frames;
+}
+
+/* ------------------------ two-way merge subroutine ------------------------ */
+
+export const JAVA_TWO_WAY_MERGE = {
+  lte: [
+    "static void merge(int[] L, int[] R, int[] A) {",
+    "    int i = 0, j = 0, k = 0;",
+    "    while (i < L.length && j < R.length) {",
+    "        if (L[i] <= R[j]) {              // <= preserves stability!",
+    "            A[k++] = L[i++];",
+    "        } else {",
+    "            A[k++] = R[j++];",
+    "        }",
+    "    }",
+    "    while (i < L.length) A[k++] = L[i++]; // copy leftovers from L",
+    "    while (j < R.length) A[k++] = R[j++]; // copy leftovers from R",
+    "}",
+  ],
+  lt: [
+    "static void mergeUnstable(int[] L, int[] R, int[] A) {",
+    "    int i = 0, j = 0, k = 0;",
+    "    while (i < L.length && j < R.length) {",
+    "        if (L[i] < R[j]) {               // BUG: strict < takes R first on equal keys!",
+    "            A[k++] = L[i++];",
+    "        } else {",
+    "            A[k++] = R[j++];",
+    "        }",
+    "    }",
+    "    while (i < L.length) A[k++] = L[i++];",
+    "    while (j < R.length) A[k++] = R[j++];",
+    "}",
+  ],
+};
+
+export type MergeItem = {
+  value: number;
+  id: string;
+  tag?: string; // "a" or "b" when duplicates exist between L and R
+};
+
+export type TwoWayMergeState = {
+  left: (MergeItem | null)[];
+  right: (MergeItem | null)[];
+  output: (MergeItem | null)[];
+  i: number;
+  j: number;
+  k: number;
+  condition: "lte" | "lt";
+  compare?: boolean;
+  takeSource?: "L" | "R";
+  stabilityBroken?: boolean;
+  comparisons: number;
+  writes: number;
+  phase: "init" | "compare" | "take" | "drain_left" | "drain_right" | "complete";
+};
+
+export function twoWayMergeFrames(
+  leftVals: number[],
+  rightVals: number[],
+  condition: "lte" | "lt" = "lte"
+): Frame<TwoWayMergeState>[] {
+  const frames: Frame<TwoWayMergeState>[] = [];
+  const totalN = leftVals.length + rightVals.length;
+
+  const left: (MergeItem | null)[] = leftVals.map((v, idx) => {
+    const hasDuplicate = rightVals.includes(v);
+    return { value: v, id: `L${idx}`, tag: hasDuplicate ? "a" : undefined };
+  });
+  const right: (MergeItem | null)[] = rightVals.map((v, idx) => {
+    const hasDuplicate = leftVals.includes(v);
+    return { value: v, id: `R${idx}`, tag: hasDuplicate ? "b" : undefined };
+  });
+  const output: (MergeItem | null)[] = new Array(totalN).fill(null);
+
+  let i = 0;
+  let j = 0;
+  let k = 0;
+  let comparisons = 0;
+  let writes = 0;
+  let stabilityBroken = false;
+
+  const push = (
+    line: number,
+    message: string,
+    meta: {
+      compare?: boolean;
+      takeSource?: "L" | "R";
+      phase: TwoWayMergeState["phase"];
+    }
+  ) => {
+    frames.push({
+      state: {
+        left: [...left],
+        right: [...right],
+        output: [...output],
+        i,
+        j,
+        k,
+        condition,
+        compare: meta.compare,
+        takeSource: meta.takeSource,
+        stabilityBroken,
+        comparisons,
+        writes,
+        phase: meta.phase,
+      },
+      line,
+      message,
+      stats: { comparisons, writes },
+    });
+  };
+
+  push(
+    1,
+    `Initialize pointers i = 0 (Left), j = 0 (Right), k = 0 (Output A). Merging ${leftVals.length} + ${rightVals.length} = ${totalN} elements.`,
+    { phase: "init" }
+  );
+
+  while (i < leftVals.length && j < rightVals.length) {
+    comparisons++;
+    const lItem = left[i]!;
+    const rItem = right[j]!;
+    const lVal = lItem.value;
+    const rVal = rItem.value;
+
+    const isEqual = lVal === rVal;
+    let takeLeft: boolean;
+
+    if (condition === "lte") {
+      takeLeft = lVal <= rVal;
+    } else {
+      takeLeft = lVal < rVal;
+    }
+
+    const compMessage = isEqual
+      ? `Compare fronts: L[${i}] (${lVal}${lItem.tag ? "ᵃ" : ""}) vs R[${j}] (${rVal}${rItem.tag ? "ᵇ" : ""}): EQUAL keys! Condition ${condition === "lte" ? "L[i] <= R[j] takes Left (stable)" : "L[i] < R[j] evaluates false and takes Right (breaks stability!)"}.`
+      : `Compare fronts: L[${i}] (${lVal}) vs R[${j}] (${rVal}). ${takeLeft ? `L[${i}] is smaller.` : `R[${j}] is smaller.`}`;
+
+    push(3, compMessage, { compare: true, phase: "compare" });
+
+    if (isEqual && !takeLeft) {
+      stabilityBroken = true;
+    }
+
+    writes++;
+    if (takeLeft) {
+      output[k] = lItem;
+      left[i] = null;
+      push(
+        4,
+        `Take L[${i}] (${lVal}${lItem.tag ? "ᵃ" : ""}) into A[${k}]. Advance i to ${i + 1}, k to ${k + 1}.`,
+        { takeSource: "L", phase: "take" }
+      );
+      i++;
+    } else {
+      output[k] = rItem;
+      right[j] = null;
+      push(
+        6,
+        `Take R[${j}] (${rVal}${rItem.tag ? "ᵇ" : ""}) into A[${k}]. Advance j to ${j + 1}, k to ${k + 1}.${isEqual ? " Notice: duplicate from Right crossed duplicate from Left!" : ""}`,
+        { takeSource: "R", phase: "take" }
+      );
+      j++;
+    }
+    k++;
+  }
+
+  if (i < leftVals.length) {
+    push(
+      9,
+      `Right array is exhausted (j = ${j}). Copy remaining ${leftVals.length - i} element(s) from Left directly into A without comparisons.`,
+      { phase: "drain_left" }
+    );
+    while (i < leftVals.length) {
+      writes++;
+      output[k] = left[i];
+      left[i] = null;
+      push(
+        9,
+        `Copy L[${i}] (${output[k]!.value}) straight to A[${k}].`,
+        { takeSource: "L", phase: "drain_left" }
+      );
+      i++;
+      k++;
+    }
+  } else if (j < rightVals.length) {
+    push(
+      10,
+      `Left array is exhausted (i = ${i}). Copy remaining ${rightVals.length - j} element(s) from Right directly into A without comparisons.`,
+      { phase: "drain_right" }
+    );
+    while (j < rightVals.length) {
+      writes++;
+      output[k] = right[j];
+      right[j] = null;
+      push(
+        10,
+        `Copy R[${j}] (${output[k]!.value}) straight to A[${k}].`,
+        { takeSource: "R", phase: "drain_right" }
+      );
+      j++;
+      k++;
+    }
+  }
+
+  const finalNote = stabilityBroken
+    ? "Merge finished, but equal elements were inverted (unstable due to '<')!"
+    : "Merge finished successfully in linear Theta(n) time and preserved stability (due to '<=').";
+
+  push(0, `${finalNote} Total comparisons: ${comparisons}, Total writes: ${writes}.`, {
+    phase: "complete",
+  });
+
+  return frames;
+}
+
+/* ------------------------ two-pointer partition ------------------------ */
+
+export const JAVA_PARTITION = {
+  right_first: [
+    "public static int partition(int[] a, int low, int high) {",
+    "    int pivot = a[low];                    // first element is pivot",
+    "    int left = low, right = high;",
+    "    while (left < right) {",
+    "        while (a[right] >= pivot && left < right) right--;",
+    "        while (a[left] <= pivot && left < right) left++;",
+    "        if (left < right) swap(a, left, right);",
+    "    }",
+    "    swap(a, low, right);                   // pivot lands in its final spot",
+    "    return right;",
+    "}",
+  ],
+  left_first: [
+    "public static int partitionBuggy(int[] a, int low, int high) {",
+    "    int pivot = a[low];                    // first element is pivot",
+    "    int left = low, right = high;",
+    "    while (left < right) {",
+    "        while (a[left] <= pivot && left < right) left++; // BUG: left moves first!",
+    "        while (a[right] >= pivot && left < right) right--;",
+    "        if (left < right) swap(a, left, right);",
+    "    }",
+    "    swap(a, low, right);                   // BUG: swaps pivot with element > pivot!",
+    "    return right;",
+    "}",
+  ],
+};
+
+export type PartitionMode = "right_first" | "left_first";
+
+export type PartitionState = {
+  array: number[];
+  low: number;
+  high: number;
+  pivot: number;
+  left: number;
+  right: number;
+  meetingIdx?: number;
+  compare?: number[];
+  write?: [number, number];
+  corrupted?: boolean;
+  corruptedReason?: string;
+  comparisons: number;
+  swaps: number;
+  mode: PartitionMode;
+  done: boolean;
+};
+
+export function partitionFrames(
+  input: number[],
+  mode: PartitionMode = "right_first"
+): Frame<PartitionState>[] {
+  const a = [...input];
+  const n = a.length;
+  const frames: Frame<PartitionState>[] = [];
+  const low = 0;
+  const high = n - 1;
+  const pivot = a[low];
+  let left = low;
+  let right = high;
+  let comparisons = 0;
+  let swaps = 0;
+
+  const push = (
+    line: number,
+    message: string,
+    meta: {
+      compare?: number[];
+      write?: [number, number];
+      meetingIdx?: number;
+      corrupted?: boolean;
+      corruptedReason?: string;
+      done?: boolean;
+    } = {}
+  ) => {
+    frames.push({
+      state: {
+        array: [...a],
+        low,
+        high,
+        pivot,
+        left,
+        right,
+        meetingIdx: meta.meetingIdx,
+        compare: meta.compare,
+        write: meta.write,
+        corrupted: meta.corrupted,
+        corruptedReason: meta.corruptedReason,
+        comparisons,
+        swaps,
+        mode,
+        done: Boolean(meta.done),
+      },
+      line,
+      message,
+      stats: { comparisons, swaps },
+    });
+  };
+
+  if (n <= 1) {
+    push(0, `Subarray of size ${n}: partition trivial.`, { done: true });
+    return frames;
+  }
+
+  push(
+    1,
+    `Select pivot = a[${low}] = ${pivot}. Left pointer at ${left}, right pointer at ${high}. Mode: ${mode === "right_first" ? "right pointer moves first (correct)" : "left pointer moves first (buggy)"}.`
+  );
+
+  if (mode === "right_first") {
+    while (left < right) {
+      push(3, `Outer loop: left (${left}) < right (${right}). Scan right pointer leftward.`, {
+        compare: [right],
+      });
+
+      while (left < right) {
+        comparisons++;
+        const ok = a[right] >= pivot;
+        push(
+          4,
+          `Compare a[${right}] (${a[right]}) >= pivot (${pivot}): ${ok ? "yes, belongs on right. Advance right leftward." : "no, smaller than pivot! Stop right pointer here."}`,
+          { compare: [right] }
+        );
+        if (!ok) break;
+        right--;
+      }
+
+      push(5, `Scan left pointer rightward while a[left] <= pivot.`, { compare: [left] });
+
+      while (left < right) {
+        comparisons++;
+        const ok = a[left] <= pivot;
+        const isPivotItself = left === low;
+        push(
+          5,
+          `Compare a[${left}] (${a[left]}) <= pivot (${pivot})${isPivotItself ? " (pivot itself)" : ""}: ${ok ? "yes, belongs on left. Advance left rightward." : "no, larger than pivot! Stop left pointer here."}`,
+          { compare: [left] }
+        );
+        if (!ok) break;
+        left++;
+      }
+
+      if (left < right) {
+        const temp = a[left];
+        a[left] = a[right];
+        a[right] = temp;
+        swaps++;
+        push(
+          6,
+          `Both pointers stopped. Swap a[${left}] (${a[left]}) and a[${right}] (${a[right]}). Now smaller value is left and larger value is right.`,
+          { write: [left, right] }
+        );
+      }
+    }
+
+    const meetingIdx = right;
+    const finalMeetingVal = a[meetingIdx];
+    if (low !== meetingIdx) {
+      const temp = a[low];
+      a[low] = a[meetingIdx];
+      a[meetingIdx] = temp;
+      swaps++;
+    }
+
+    const leftValid = a.slice(0, meetingIdx).every((v) => v <= pivot);
+    const rightValid = a.slice(meetingIdx + 1).every((v) => v >= pivot);
+    const valid = leftValid && rightValid;
+
+    push(
+      8,
+      `Pointers met at index ${meetingIdx} (value ${finalMeetingVal}). Swap pivot ${pivot} into index ${meetingIdx}. Partition complete! All elements left are <= ${pivot}, all right are >= ${pivot}.`,
+      {
+        write: [low, meetingIdx],
+        meetingIdx,
+        done: true,
+        corrupted: !valid,
+      }
+    );
+  } else {
+    // left_first (buggy)
+    while (left < right) {
+      push(3, `Outer loop: left (${left}) < right (${right}). Scan left pointer rightward first!`, {
+        compare: [left],
+      });
+
+      while (left < right) {
+        comparisons++;
+        const ok = a[left] <= pivot;
+        const isPivotItself = left === low;
+        push(
+          4,
+          `Compare a[${left}] (${a[left]}) <= pivot (${pivot})${isPivotItself ? " (pivot itself)" : ""}: ${ok ? "yes, belongs on left. Advance left rightward." : "no, larger than pivot! Stop left pointer here."}`,
+          { compare: [left] }
+        );
+        if (!ok) break;
+        left++;
+      }
+
+      push(5, `Scan right pointer leftward while a[right] >= pivot.`, { compare: [right] });
+
+      while (left < right) {
+        comparisons++;
+        const ok = a[right] >= pivot;
+        push(
+          5,
+          `Compare a[${right}] (${a[right]}) >= pivot (${pivot}): ${ok ? "yes, belongs on right. Advance right leftward." : "no, smaller than pivot! Stop right pointer here."}`,
+          { compare: [right] }
+        );
+        if (!ok) break;
+        right--;
+      }
+
+      if (left < right) {
+        const temp = a[left];
+        a[left] = a[right];
+        a[right] = temp;
+        swaps++;
+        push(
+          6,
+          `Both pointers stopped. Swap a[${left}] (${a[left]}) and a[${right}] (${a[right]}).`,
+          { write: [left, right] }
+        );
+      }
+    }
+
+    const meetingIdx = right;
+    const finalMeetingVal = a[meetingIdx];
+    if (low !== meetingIdx) {
+      const temp = a[low];
+      a[low] = a[meetingIdx];
+      a[meetingIdx] = temp;
+      swaps++;
+    }
+
+    const leftValid = a.slice(0, meetingIdx).every((v) => v <= pivot);
+    const rightValid = a.slice(meetingIdx + 1).every((v) => v >= pivot);
+    const valid = leftValid && rightValid;
+
+    const corruptedReason = !valid
+      ? `Partition corrupted! Pointers met at index ${meetingIdx} holding ${finalMeetingVal} (which is > pivot ${pivot}). Swapping placed ${finalMeetingVal} at index 0 (left of pivot)!`
+      : undefined;
+
+    push(
+      8,
+      !valid
+        ? `${corruptedReason} Moving left first failed.`
+        : `Pointers met at index ${meetingIdx}. Pivot swapped into position.`,
+      {
+        write: [low, meetingIdx],
+        meetingIdx,
+        done: true,
+        corrupted: !valid,
+        corruptedReason,
+      }
+    );
+  }
+
+  return frames;
+}

@@ -1,5 +1,5 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { SortVisualizer, StabilityCompare, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { SortVisualizer, StabilityCompare, LeetCodeProblems, BubbleEarlyExitVisualizer } from "@/components/mdx/AlgoVisualizers";
 
 # Selection Sort and Bubble Sort
 
@@ -95,7 +95,11 @@ for i ← 0 to n − 2 do
 
 <SortVisualizer algorithm="bubble" initial={[5, 1, 4, 2, 8, 3]} />
 
-This basic pseudocode always executes all $n - 1$ passes, even if the array becomes sorted early. An optimized variant adds a boolean `swapped` flag. If a complete pass finishes with **zero swaps**, all adjacent elements are in order, meaning the entire array is sorted and the algorithm can terminate immediately. Test this behavior in the visualizer with `1, 2, 3, 4, 5, 6` to observe it finish after one pass.
+This basic pseudocode always executes all $n - 1$ passes, even if the array becomes sorted early. An optimized variant adds a boolean `swapped` flag. If a complete pass finishes with **zero swaps**, all adjacent elements are in order, meaning the entire array is sorted and the algorithm can terminate immediately.
+
+The comparison stepper below contrasts both versions. Select the **Sorted** preset with **With swapped flag** enabled to observe the algorithm terminate after a single linear pass ($O(n)$ best case). Then switch to **Without flag** to watch the standard loops execute all 5 passes despite the array already being sorted.
+
+<BubbleEarlyExitVisualizer initial={[1, 2, 3, 4, 5, 6]} />
 
 ### Analysis
 

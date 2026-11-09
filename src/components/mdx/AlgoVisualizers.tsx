@@ -13,6 +13,19 @@ import {
   swapFrames,
   JAVA_SWAP,
   type SwapState,
+  bubbleEarlyExitFrames,
+  JAVA_BUBBLE_EARLY_EXIT,
+  type BubbleEarlyExitState,
+  insertionShiftFrames,
+  JAVA_INSERTION_SHIFT,
+  type InsertionShiftState,
+  twoWayMergeFrames,
+  JAVA_TWO_WAY_MERGE,
+  type TwoWayMergeState,
+  partitionFrames,
+  JAVA_PARTITION,
+  type PartitionState,
+  type PartitionMode,
   JAVA_SORT,
   JAVA_SEARCH,
   JAVA_GCD,
@@ -2181,5 +2194,610 @@ export function MergeSortTree({ input = [38, 27, 43, 3, 9, 82, 10] }: { input?: 
         Each box sits under the slice of the array it came from. Dashed boxes are pieces that were already size 1 and are just waiting for the others.
       </p>
     </FocusPanel>
+  );
+}
+
+/* -------------------- BubbleEarlyExitVisualizer -------------------- */
+
+export function BubbleEarlyExitVisualizer({
+  initial = [1, 2, 3, 4, 5, 6],
+}: {
+  initial?: number[];
+}) {
+  const [data, setData] = useState<number[]>(initial);
+  const [mode, setMode] = useState<"with_flag" | "without_flag">("with_flag");
+  const frames = useMemo(() => bubbleEarlyExitFrames(data, mode), [data, mode]);
+  const code = mode === "with_flag" ? JAVA_BUBBLE_EARLY_EXIT.with_flag : JAVA_BUBBLE_EARLY_EXIT.without_flag;
+
+  return (
+    <Stepper
+      title="Bubble sort: early exit flag vs full quadratic passes"
+      frames={frames}
+      code={code}
+      legend={[
+        ["bg-neon", "comparing adjacent pair"],
+        ["bg-orange", "swapping out-of-order pair"],
+        ["bg-mint", "settled / sorted suffix"],
+      ]}
+      render={(s: BubbleEarlyExitState) => (
+        <div className="flex flex-col gap-4 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">swapped flag:</span>
+              <span
+                className={`px-2 py-0.5 rounded-full font-semibold border ${
+                  s.swappedThisPass
+                    ? "border-orange bg-orange/20 text-orange"
+                    : "border-border bg-secondary text-muted-foreground"
+                }`}
+              >
+                {s.swappedThisPass ? "true (swaps occurred)" : "false (no swaps yet)"}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <span>Pass <strong className="text-foreground">{s.passCount}</strong></span>
+              <span>Comparisons: <strong className="text-foreground">{s.totalComparisons}</strong></span>
+              <span>Swaps: <strong className="text-foreground">{s.totalSwaps}</strong></span>
+            </div>
+          </div>
+
+          <div className="flex justify-center overflow-x-auto py-2">
+            <div className="flex gap-2 min-w-fit">
+              {s.array.map((val, idx) => {
+                const isComparing = s.compare?.includes(idx);
+                const isSwapped = s.write?.includes(idx);
+                const isSorted = s.sorted.includes(idx);
+
+                return (
+                  <div
+                    key={idx}
+                    className={`w-12 h-14 sm:w-14 sm:h-16 flex flex-col items-center justify-center font-mono rounded-xl border-2 transition-all duration-200 motion-reduce:transition-none ${
+                      isSwapped
+                        ? "border-orange bg-orange/25 text-foreground font-bold ring-2 ring-orange/50 scale-105"
+                        : isComparing
+                        ? "border-neon bg-neon/20 text-foreground font-bold ring-2 ring-neon/50"
+                        : isSorted
+                        ? "border-mint/60 bg-mint/15 text-foreground font-semibold"
+                        : "border-border/60 bg-secondary/40 text-foreground"
+                    }`}
+                  >
+                    <span className="text-base sm:text-lg font-bold">{val}</span>
+                    <span className="text-[10px] text-muted-foreground">[{idx}]</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {s.stoppedEarly && (
+            <div className="rounded-lg border border-mint/40 bg-mint/10 px-3 py-2 text-xs font-mono text-mint flex items-center justify-between">
+              <span>Early exit triggered! Pass ended with zero swaps, proving order in linear time.</span>
+              <span className="font-bold">O(n) best-case reached</span>
+            </div>
+          )}
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Mode:</span>
+            <button
+              type="button"
+              className={`${btn} ${mode === "with_flag" ? "border-mint text-mint bg-mint/10 font-semibold" : ""}`}
+              onClick={() => setMode("with_flag")}
+            >
+              With swapped flag (Optimized)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${mode === "without_flag" ? "border-orange text-orange bg-orange/10 font-semibold" : ""}`}
+              onClick={() => setMode("without_flag")}
+            >
+              Without flag (Standard nested loop)
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">Presets:</span>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setData([1, 2, 3, 4, 5, 6])}
+            >
+              Sorted
+            </button>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setData([2, 1, 3, 4, 5, 6])}
+            >
+              Nearly sorted
+            </button>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setData([6, 5, 4, 3, 2, 1])}
+            >
+              Reversed
+            </button>
+          </div>
+        </div>
+      }
+    />
+  );
+}
+
+/* -------------------- InsertionShiftVisualizer -------------------- */
+
+export function InsertionShiftVisualizer({
+  initial = [6, 2, 11, 7, 5],
+}: {
+  initial?: number[];
+}) {
+  const [data, setData] = useState<number[]>(initial);
+  const [mode, setMode] = useState<"shift" | "swap">("shift");
+  const frames = useMemo(() => insertionShiftFrames(data, mode), [data, mode]);
+  const code = mode === "shift" ? JAVA_INSERTION_SHIFT.shift : JAVA_INSERTION_SHIFT.swap;
+
+  return (
+    <Stepper
+      title="Insertion sort: shifting into open gap vs adjacent swapping"
+      frames={frames}
+      code={code}
+      legend={[
+        ["bg-violet", "key variable (in hand)"],
+        ["bg-neon", "comparing with key / left element"],
+        ["bg-orange", "element shifted or swapped"],
+        ["bg-mint", "sorted prefix boundary"],
+      ]}
+      render={(s: InsertionShiftState) => (
+        <div className="flex flex-col gap-4 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+            {s.mode === "shift" ? (
+              <div className="flex items-center gap-3">
+                <span className="text-muted-foreground font-semibold">key variable:</span>
+                <div
+                  className={`w-14 h-12 rounded-xl flex items-center justify-center font-mono text-base border-2 transition-all duration-200 motion-reduce:transition-none ${
+                    s.key !== null
+                      ? "border-violet bg-violet/20 text-foreground font-bold shadow-sm ring-2 ring-violet/40"
+                      : "border-dashed border-border bg-secondary/30 text-muted-foreground/40"
+                  }`}
+                >
+                  {s.key !== null ? s.key : "empty"}
+                </div>
+              </div>
+            ) : (
+              <span className="text-orange font-semibold">(No key register: repeatedly invokes 3-write swap)</span>
+            )}
+
+            <div className="flex items-center gap-4 text-muted-foreground">
+              <span>Comparisons: <strong className="text-foreground">{s.comparisons}</strong></span>
+              <span>Memory writes: <strong className={s.mode === "shift" ? "text-mint font-bold" : "text-orange font-bold"}>{s.writes}</strong></span>
+            </div>
+          </div>
+
+          <div className="flex justify-center overflow-x-auto py-2">
+            <div className="flex gap-2 min-w-fit">
+              {s.array.map((val, idx) => {
+                const isGap = val === null;
+                const isComparing = s.compare?.includes(idx);
+                const isWritten = s.write?.includes(idx);
+                const isSortedPrefix = s.sorted.includes(idx);
+
+                return (
+                  <div
+                    key={idx}
+                    className={`w-12 h-14 sm:w-14 sm:h-16 flex flex-col items-center justify-center font-mono rounded-xl border-2 transition-all duration-200 motion-reduce:transition-none ${
+                      isGap
+                        ? "border-dashed border-violet/70 bg-violet/10 text-violet font-semibold ring-2 ring-violet/30"
+                        : isWritten
+                        ? "border-orange bg-orange/25 text-foreground font-bold ring-2 ring-orange/50 scale-105"
+                        : isComparing
+                        ? "border-neon bg-neon/20 text-foreground font-bold ring-2 ring-neon/50"
+                        : isSortedPrefix
+                        ? "border-mint/50 bg-mint/10 text-foreground"
+                        : "border-border/60 bg-secondary/40 text-muted-foreground opacity-80"
+                    }`}
+                  >
+                    <span className="text-base sm:text-lg font-bold">{isGap ? "gap" : val}</span>
+                    <span className="text-[10px] text-muted-foreground">[{idx}]</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Strategy:</span>
+            <button
+              type="button"
+              className={`${btn} ${mode === "shift" ? "border-violet text-violet bg-violet/10 font-semibold" : ""}`}
+              onClick={() => setMode("shift")}
+            >
+              Shifting (1 write/shift)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${mode === "swap" ? "border-orange text-orange bg-orange/10 font-semibold" : ""}`}
+              onClick={() => setMode("swap")}
+            >
+              Adjacent Swapping (3 writes/shift)
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">Presets:</span>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setData([6, 2, 11, 7, 5])}
+            >
+              Notes example
+            </button>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setData([1, 12, 46, 6, 37, 5, 3])}
+            >
+              Exam trace
+            </button>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setData([7, 6, 5, 4, 3, 2, 1])}
+            >
+              Reversed
+            </button>
+          </div>
+        </div>
+      }
+    />
+  );
+}
+
+/* -------------------- TwoWayMergeVisualizer -------------------- */
+
+export function TwoWayMergeVisualizer({
+  initialLeft = [2, 6, 11],
+  initialRight = [4, 5, 7],
+}: {
+  initialLeft?: number[];
+  initialRight?: number[];
+}) {
+  const [leftArr, setLeftArr] = useState<number[]>(initialLeft);
+  const [rightArr, setRightArr] = useState<number[]>(initialRight);
+  const [condition, setCondition] = useState<"lte" | "lt">("lte");
+  const frames = useMemo(() => twoWayMergeFrames(leftArr, rightArr, condition), [leftArr, rightArr, condition]);
+  const code = condition === "lte" ? JAVA_TWO_WAY_MERGE.lte : JAVA_TWO_WAY_MERGE.lt;
+
+  return (
+    <Stepper
+      title="The merge step: two sorted inputs combined in Θ(n) time"
+      frames={frames}
+      code={code}
+      legend={[
+        ["bg-neon", "active pointer (i or j) compared"],
+        ["bg-orange", "element taken into output A"],
+        ["bg-sky", "cleanup drain (no comparisons)"],
+      ]}
+      render={(s: TwoWayMergeState) => (
+        <div className="flex flex-col gap-4 py-2">
+          {s.stabilityBroken && (
+            <div className="rounded-lg border border-orange/50 bg-orange/10 px-3 py-2 text-xs font-mono text-orange">
+              Stability bug detected! The duplicate from Right crossed ahead of Left because strict &lt; was used.
+            </div>
+          )}
+          {(s.phase === "drain_left" || s.phase === "drain_right") && (
+            <div className="rounded-lg border border-sky/50 bg-sky/10 px-3 py-2 text-xs font-mono text-sky">
+              Cleanup phase: One array is exhausted. Copying remaining elements directly with zero comparisons!
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Left list */}
+            <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-border/60 bg-secondary/20">
+              <div className="flex justify-between items-center text-xs font-mono text-muted-foreground">
+                <span className="font-semibold text-foreground">Left subarray L</span>
+                <span>pointer i = <strong className="text-foreground">{s.i}</strong></span>
+              </div>
+              <div className="flex gap-2 overflow-x-auto py-1">
+                {s.left.map((item, idx) => {
+                  const isCurrent = idx === s.i;
+                  const isDrained = item === null;
+                  return (
+                    <div
+                      key={idx}
+                      className={`w-12 h-14 flex flex-col items-center justify-center font-mono rounded-xl border-2 transition-all duration-200 motion-reduce:transition-none ${
+                        isDrained
+                          ? "border-dashed border-border/40 bg-secondary/10 text-muted-foreground/30"
+                          : isCurrent
+                          ? "border-neon bg-neon/20 text-foreground font-bold ring-2 ring-neon/40 scale-105"
+                          : "border-border/60 bg-card text-foreground"
+                      }`}
+                    >
+                      <span className="text-base font-bold">
+                        {item ? item.value : "—"}
+                        {item?.tag && <sup className="text-violet font-semibold">{item.tag}</sup>}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">L[{idx}]</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right list */}
+            <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-border/60 bg-secondary/20">
+              <div className="flex justify-between items-center text-xs font-mono text-muted-foreground">
+                <span className="font-semibold text-foreground">Right subarray R</span>
+                <span>pointer j = <strong className="text-foreground">{s.j}</strong></span>
+              </div>
+              <div className="flex gap-2 overflow-x-auto py-1">
+                {s.right.map((item, idx) => {
+                  const isCurrent = idx === s.j;
+                  const isDrained = item === null;
+                  return (
+                    <div
+                      key={idx}
+                      className={`w-12 h-14 flex flex-col items-center justify-center font-mono rounded-xl border-2 transition-all duration-200 motion-reduce:transition-none ${
+                        isDrained
+                          ? "border-dashed border-border/40 bg-secondary/10 text-muted-foreground/30"
+                          : isCurrent
+                          ? "border-neon bg-neon/20 text-foreground font-bold ring-2 ring-neon/40 scale-105"
+                          : "border-border/60 bg-card text-foreground"
+                      }`}
+                    >
+                      <span className="text-base font-bold">
+                        {item ? item.value : "—"}
+                        {item?.tag && <sup className="text-violet font-semibold">{item.tag}</sup>}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">R[{idx}]</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Merged output */}
+          <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-border/60 bg-secondary/30">
+            <div className="flex justify-between items-center text-xs font-mono text-muted-foreground">
+              <span className="font-semibold text-foreground">Merged output A</span>
+              <span>pointer k = <strong className="text-foreground">{s.k}</strong></span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto py-1">
+              {s.output.map((item, idx) => {
+                const isJustWritten = idx === s.k - 1 && s.phase !== "complete";
+                return (
+                  <div
+                    key={idx}
+                    className={`w-12 h-14 flex flex-col items-center justify-center font-mono rounded-xl border-2 transition-all duration-200 motion-reduce:transition-none ${
+                      item === null
+                        ? "border-dashed border-border/50 bg-secondary/20 text-muted-foreground/40"
+                        : isJustWritten
+                        ? "border-orange bg-orange/20 text-foreground font-bold ring-2 ring-orange/40 scale-105"
+                        : "border-mint/60 bg-mint/15 text-foreground font-semibold"
+                    }`}
+                  >
+                    <span className="text-base font-bold">
+                      {item ? item.value : "—"}
+                      {item?.tag && <sup className="text-violet font-semibold">{item.tag}</sup>}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">A[{idx}]</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Condition:</span>
+            <button
+              type="button"
+              className={`${btn} ${condition === "lte" ? "border-mint text-mint bg-mint/10 font-semibold" : ""}`}
+              onClick={() => setCondition("lte")}
+            >
+              L[i] &lt;= R[j] (Stable)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${condition === "lt" ? "border-orange text-orange bg-orange/10 font-semibold" : ""}`}
+              onClick={() => setCondition("lt")}
+            >
+              L[i] &lt; R[j] (Unstable bug)
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">Presets:</span>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => {
+                setLeftArr([2, 6, 11]);
+                setRightArr([4, 5, 7]);
+              }}
+            >
+              Notes: [2,6,11] & [4,5,7]
+            </button>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => {
+                setLeftArr([1, 5, 8]);
+                setRightArr([3, 5, 9]);
+              }}
+            >
+              Duplicates: 5ᵃ & 5ᵇ
+            </button>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => {
+                setLeftArr([2, 3]);
+                setRightArr([1, 4, 5, 6]);
+              }}
+            >
+              Left drains first
+            </button>
+          </div>
+        </div>
+      }
+    />
+  );
+}
+
+/* -------------------- PartitionVisualizer -------------------- */
+
+export function PartitionVisualizer({
+  initial = [25, 10, 30, 15, 20, 28],
+}: {
+  initial?: number[];
+}) {
+  const [data, setData] = useState<number[]>(initial);
+  const [mode, setMode] = useState<PartitionMode>("right_first");
+  const frames = useMemo(() => partitionFrames(data, mode), [data, mode]);
+  const code = mode === "right_first" ? JAVA_PARTITION.right_first : JAVA_PARTITION.left_first;
+
+  return (
+    <Stepper
+      title="Two-pointer partition: pivot placement & why right pointer moves first"
+      frames={frames}
+      code={code}
+      legend={[
+        ["bg-violet", "pivot value"],
+        ["bg-neon", "active pointer comparison"],
+        ["bg-orange", "swapped pointers"],
+        ["bg-mint", "pivot locked in final spot"],
+      ]}
+      render={(s: PartitionState) => (
+        <div className="flex flex-col gap-4 py-2">
+          {s.corrupted && (
+            <div className="rounded-lg border border-orange/50 bg-orange/10 px-3 py-2 text-xs font-mono text-orange">
+              {s.corruptedReason ?? "Partition corrupted! Elements greater than pivot ended up to its left."}
+            </div>
+          )}
+          {s.done && !s.corrupted && (
+            <div className="rounded-lg border border-mint/50 bg-mint/10 px-3 py-2 text-xs font-mono text-mint">
+              Partition successful! Pivot {s.pivot} locked at index {s.meetingIdx}. Left partition &le; {s.pivot}, Right partition &ge; {s.pivot}.
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground font-semibold">Pivot:</span>
+              <span className="px-2 py-0.5 rounded-md border border-violet bg-violet/20 font-bold text-violet">
+                {s.pivot} (from index {s.low})
+              </span>
+            </div>
+            <div className="flex items-center gap-4 text-muted-foreground">
+              <span>left = <strong className="text-foreground">{s.left}</strong></span>
+              <span>right = <strong className="text-foreground">{s.right}</strong></span>
+              <span>Swaps: <strong className="text-foreground">{s.swaps}</strong></span>
+            </div>
+          </div>
+
+          <div className="flex justify-center overflow-x-auto py-2">
+            <div className="flex gap-2 min-w-fit">
+              {s.array.map((val, idx) => {
+                const isPivot = s.done ? idx === s.meetingIdx : idx === s.low;
+                const isLeft = idx === s.left;
+                const isRight = idx === s.right;
+                const isMeeting = isLeft && isRight;
+                const isComparing = s.compare?.includes(idx);
+                const isSwapped = s.write?.includes(idx);
+
+                let tone = "border-border/60 bg-secondary/40 text-foreground";
+                if (s.done && isPivot) {
+                  tone = "border-mint bg-mint/20 text-foreground font-bold ring-2 ring-mint/40";
+                } else if (isSwapped) {
+                  tone = "border-orange bg-orange/25 text-foreground font-bold ring-2 ring-orange/50 scale-105";
+                } else if (isComparing) {
+                  tone = "border-neon bg-neon/20 text-foreground font-bold ring-2 ring-neon/50";
+                } else if (isPivot) {
+                  tone = "border-violet bg-violet/20 text-foreground font-bold";
+                } else if (s.done) {
+                  tone = idx < s.meetingIdx!
+                    ? "border-sky/40 bg-sky/10 text-foreground"
+                    : "border-violet/40 bg-violet/10 text-foreground";
+                }
+
+                return (
+                  <div key={idx} className="flex flex-col items-center gap-1">
+                    <div
+                      className={`w-12 h-14 sm:w-14 sm:h-16 flex flex-col items-center justify-center font-mono rounded-xl border-2 transition-all duration-200 motion-reduce:transition-none ${tone}`}
+                    >
+                      <span className="text-base sm:text-lg font-bold">{val}</span>
+                      <span className="text-[10px] text-muted-foreground">[{idx}]</span>
+                    </div>
+                    <div className="h-4 flex items-center justify-center font-mono text-[10px]">
+                      {isMeeting ? (
+                        <span className="text-orange font-bold">meet</span>
+                      ) : isLeft && isRight ? (
+                        <span className="text-orange font-bold">L,R</span>
+                      ) : isLeft ? (
+                        <span className="text-neon font-bold">L→</span>
+                      ) : isRight ? (
+                        <span className="text-neon font-bold">←R</span>
+                      ) : isPivot ? (
+                        <span className="text-violet font-semibold">p</span>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      inputs={
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Mode:</span>
+            <button
+              type="button"
+              className={`${btn} ${mode === "right_first" ? "border-mint text-mint bg-mint/10 font-semibold" : ""}`}
+              onClick={() => setMode("right_first")}
+            >
+              Right pointer first (Correct)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${mode === "left_first" ? "border-orange text-orange bg-orange/10 font-semibold" : ""}`}
+              onClick={() => setMode("left_first")}
+            >
+              Left pointer first (The bug)
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">Presets:</span>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setData([25, 10, 30, 15, 20, 28])}
+            >
+              Notes: [25, 10, 30...]
+            </button>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setData([25, 10, 30])}
+            >
+              Bug demo: [25, 10, 30]
+            </button>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setData([10, 20, 30, 40, 50])}
+            >
+              Pre-sorted
+            </button>
+          </div>
+        </div>
+      }
+    />
   );
 }

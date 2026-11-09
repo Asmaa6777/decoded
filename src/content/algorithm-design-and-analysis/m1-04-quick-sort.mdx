@@ -1,5 +1,5 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { SortVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import { SortVisualizer, LeetCodeProblems, PartitionVisualizer } from "@/components/mdx/AlgoVisualizers";
 
 # Quick Sort: Pick a Pivot
 
@@ -35,6 +35,10 @@ The purple indicator marks the active pivot. Each partition step concludes when 
 When the two pointers meet, the algorithm swaps the pivot with the value at that meeting point. Because that value moves to index 0 (the left partition), it must be **no larger than the pivot**. Advancing the `right` pointer first guarantees this condition: `right` only halts on values smaller than the pivot, or meets `left` at an already validated location.
 
 If `left` moves first, it can halt on a value larger than the pivot when `right` cannot advance. Swapping the pivot into that position would place a larger value at index 0, corrupting the partition. For example, on the array `[25, 10, 30]`, advancing `left` first passes 25 and 10 to halt at 30, where it meets `right`. Swapping produces `[30, 10, 25]`, placing 30 to the left of 25. (When choosing the **last** element as the pivot, the order reverses: `left` must advance first.)
+
+Test both pointer directions in the two-pointer partition visualizer below. Stepping through with **Right pointer first** locks pivot 25 into index 3 with smaller elements left and larger elements right. Then select the preset `[25, 10, 30]` and switch to **Left pointer first** to watch moving `left` first cause the pointers to meet at 30, swapping 30 into index 0 and corrupting the partition.
+
+<PartitionVisualizer initial={[25, 10, 30, 15, 20, 28]} />
 
 ### The notes' version: loc, left and right
 

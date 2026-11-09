@@ -20,6 +20,14 @@ import {
   loopGridInfo,
   swapFrames,
   JAVA_SWAP,
+  bubbleEarlyExitFrames,
+  JAVA_BUBBLE_EARLY_EXIT,
+  insertionShiftFrames,
+  JAVA_INSERTION_SHIFT,
+  twoWayMergeFrames,
+  JAVA_TWO_WAY_MERGE,
+  partitionFrames,
+  JAVA_PARTITION,
   type SortAlgorithm,
 } from "@/lib/algorithms";
 
@@ -364,5 +372,139 @@ describe("swapFrames", () => {
       expect(f.line).toBeGreaterThanOrEqual(0);
       expect(f.line).toBeLessThan(JAVA_SWAP.buggy.length);
     }
+  });
+});
+
+describe("bubbleEarlyExitFrames", () => {
+  it("stops after pass 1 on already sorted input with flag (O(n))", () => {
+    const input = [1, 2, 3, 4, 5, 6];
+    const frames = bubbleEarlyExitFrames(input, "with_flag");
+    const last = frames[frames.length - 1];
+    expect(last.state.stoppedEarly).toBe(true);
+    expect(last.state.passCount).toBe(1);
+    expect(last.stats.comparisons).toBe(5);
+    expect(last.stats.swaps).toBe(0);
+    expect(last.state.array).toEqual([1, 2, 3, 4, 5, 6]);
+    for (const f of frames) {
+      expect(f.line).toBeGreaterThanOrEqual(0);
+      expect(f.line).toBeLessThan(JAVA_BUBBLE_EARLY_EXIT.with_flag.length);
+    }
+  });
+
+  it("runs all n-1 passes on sorted input without flag (O(n²))", () => {
+    const input = [1, 2, 3, 4, 5, 6];
+    const frames = bubbleEarlyExitFrames(input, "without_flag");
+    const last = frames[frames.length - 1];
+    expect(last.state.stoppedEarly).toBe(false);
+    expect(last.state.passCount).toBe(5);
+    expect(last.stats.comparisons).toBe(15);
+    expect(last.stats.swaps).toBe(0);
+    for (const f of frames) {
+      expect(f.line).toBeGreaterThanOrEqual(0);
+      expect(f.line).toBeLessThan(JAVA_BUBBLE_EARLY_EXIT.without_flag.length);
+    }
+  });
+
+  it("sorts reverse-ordered input completely", () => {
+    const input = [6, 5, 4, 3, 2, 1];
+    const frames = bubbleEarlyExitFrames(input, "with_flag");
+    const last = frames[frames.length - 1];
+    expect(last.state.array).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(last.stats.swaps).toBe(15);
+  });
+});
+
+describe("insertionShiftFrames", () => {
+  it("shift mode ends sorted and has valid line pointers", () => {
+    const input = [12, 11, 13, 5, 6, 3, 9];
+    const frames = insertionShiftFrames(input, "shift");
+    const last = frames[frames.length - 1];
+    expect(last.state.array).toEqual([3, 5, 6, 9, 11, 12, 13]);
+    for (const f of frames) {
+      expect(f.line).toBeGreaterThanOrEqual(0);
+      expect(f.line).toBeLessThan(JAVA_INSERTION_SHIFT.shift.length);
+    }
+  });
+
+  it("swap mode ends sorted and uses ~3x more writes than shift mode on reverse input", () => {
+    const input = [5, 4, 3, 2, 1];
+    const shiftFrames = insertionShiftFrames(input, "shift");
+    const swapFramesList = insertionShiftFrames(input, "swap");
+
+    const shiftLast = shiftFrames[shiftFrames.length - 1];
+    const swapLast = swapFramesList[swapFramesList.length - 1];
+
+    expect(shiftLast.state.array).toEqual([1, 2, 3, 4, 5]);
+    expect(swapLast.state.array).toEqual([1, 2, 3, 4, 5]);
+
+    // For 10 inversions in reverse array of 5 elements:
+    // swap uses 3 writes per swap = 30 writes
+    // shift uses 1 write per shift (10) + 2 writes per outer loop (8) = 18 writes
+    expect(swapLast.stats.writes).toBeGreaterThan(shiftLast.stats.writes);
+    expect(swapLast.stats.writes).toBe(30);
+  });
+});
+
+describe("twoWayMergeFrames", () => {
+  it("merges two sorted halves in linear time", () => {
+    const L = [2, 6, 11];
+    const R = [4, 5, 7];
+    const frames = twoWayMergeFrames(L, R, "lte");
+    const last = frames[frames.length - 1];
+    const mergedValues = last.state.output.map((x) => x?.value);
+    expect(mergedValues).toEqual([2, 4, 5, 6, 7, 11]);
+    expect(last.stats.comparisons).toBe(5); // step 6 drained without comparison
+    expect(last.state.stabilityBroken).toBe(false);
+    for (const f of frames) {
+      expect(f.line).toBeGreaterThanOrEqual(0);
+      expect(f.line).toBeLessThan(JAVA_TWO_WAY_MERGE.lte.length);
+    }
+  });
+
+  it("preserves stability with <= on duplicate elements", () => {
+    const L = [1, 5, 8];
+    const R = [3, 5, 9];
+    const frames = twoWayMergeFrames(L, R, "lte");
+    const last = frames[frames.length - 1];
+    const tags = last.state.output.map((x) => (x?.value === 5 ? x.tag : null)).filter(Boolean);
+    expect(tags).toEqual(["a", "b"]); // 5ᵃ (Left) before 5ᵇ (Right)
+    expect(last.state.stabilityBroken).toBe(false);
+  });
+
+  it("breaks stability with < condition on duplicate elements", () => {
+    const L = [1, 5, 8];
+    const R = [3, 5, 9];
+    const frames = twoWayMergeFrames(L, R, "lt");
+    const last = frames[frames.length - 1];
+    const tags = last.state.output.map((x) => (x?.value === 5 ? x.tag : null)).filter(Boolean);
+    expect(tags).toEqual(["b", "a"]); // 5ᵇ (Right) jumped ahead of 5ᵃ (Left)
+    expect(last.state.stabilityBroken).toBe(true);
+  });
+});
+
+describe("partitionFrames", () => {
+  it("right_first correctly partitions around pivot and keeps line bounds", () => {
+    const input = [25, 10, 30, 15, 20, 28];
+    const frames = partitionFrames(input, "right_first");
+    const last = frames[frames.length - 1];
+    expect(last.state.corrupted).toBe(false);
+    expect(last.state.meetingIdx).toBe(3);
+    expect(last.state.array[3]).toBe(25);
+    // elements left are <= 25, right are >= 25
+    expect(last.state.array.slice(0, 3).every((v) => v <= 25)).toBe(true);
+    expect(last.state.array.slice(4).every((v) => v >= 25)).toBe(true);
+    for (const f of frames) {
+      expect(f.line).toBeGreaterThanOrEqual(0);
+      expect(f.line).toBeLessThan(JAVA_PARTITION.right_first.length);
+    }
+  });
+
+  it("left_first corrupts partition on [25, 10, 30]", () => {
+    const input = [25, 10, 30];
+    const frames = partitionFrames(input, "left_first");
+    const last = frames[frames.length - 1];
+    expect(last.state.corrupted).toBe(true);
+    expect(last.state.array).toEqual([30, 10, 25]); // 30 swapped to index 0!
+    expect(last.state.corruptedReason).toContain("Partition corrupted");
   });
 });

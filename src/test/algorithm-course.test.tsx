@@ -17,6 +17,10 @@ import {
   NestedLoopGrid,
   ArraySwapVisualizer,
   ArrayReferenceVisualizer,
+  BubbleEarlyExitVisualizer,
+  InsertionShiftVisualizer,
+  TwoWayMergeVisualizer,
+  PartitionVisualizer,
 } from "@/components/mdx/AlgoVisualizers";
 
 beforeAll(() => {
@@ -57,7 +61,7 @@ describe("Algorithm Design & Analysis course", () => {
 });
 
 function stepToEnd(root: HTMLElement) {
-  const step = within(root).getByRole("button", { name: /step/i });
+  const step = within(root).getByRole("button", { name: /^step/i });
   let guard = 0;
   while (!(step as HTMLButtonElement).disabled && guard++ < 2000) fireEvent.click(step);
   return guard;
@@ -170,5 +174,46 @@ describe("visualizers step all the way through", () => {
     fireEvent.click(screen.getByRole("button", { name: /copy = original\.clone\(\)/ }));
     fireEvent.click(screen.getByRole("button", { name: /Execute: copy\[0\] = 99/ }));
     expect(screen.getByText(/Independent/)).toBeDefined();
+  });
+
+  it("bubble early exit visualizer toggles with/without flag and steps through", () => {
+    const { container } = render(<BubbleEarlyExitVisualizer initial={[1, 2, 3, 4, 5, 6]} />);
+    stepToEnd(container);
+    expect(screen.getByText(/O\(n\) best-case reached/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: /Without flag/ }));
+    stepToEnd(container);
+    expect(screen.getByText(/Completed all 5 passes/)).toBeDefined();
+  });
+
+  it("insertion shift visualizer compares shifting vs adjacent swapping", () => {
+    const { container } = render(<InsertionShiftVisualizer initial={[6, 2, 11, 7, 5]} />);
+    stepToEnd(container);
+    expect(screen.getByText(/Shifting minimizes writes/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: /Adjacent Swapping/ }));
+    stepToEnd(container);
+    expect(screen.getByText(/Swapping incurred 3x writes/)).toBeDefined();
+  });
+
+  it("two-way merge visualizer steps through and catches stability bug with <", () => {
+    const { container } = render(<TwoWayMergeVisualizer initialLeft={[1, 5, 8]} initialRight={[3, 5, 9]} />);
+    stepToEnd(container);
+    expect(screen.getByText(/preserved stability/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: /Unstable bug/ }));
+    stepToEnd(container);
+    expect(screen.getByText(/Stability bug detected/)).toBeDefined();
+  });
+
+  it("partition visualizer demonstrates correct partition and left-first bug", () => {
+    const { container } = render(<PartitionVisualizer initial={[25, 10, 30, 15, 20, 28]} />);
+    stepToEnd(container);
+    expect(screen.getByText(/Partition successful!/)).toBeDefined();
+
+    fireEvent.click(screen.getByRole("button", { name: /Bug demo: \[25, 10, 30\]/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Left pointer first/ }));
+    stepToEnd(container);
+    expect(screen.getAllByText(/Partition corrupted!/).length).toBeGreaterThan(0);
   });
 });

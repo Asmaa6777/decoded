@@ -1,5 +1,5 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { SortVisualizer, LeetCodeProblems, MergeSortTree } from "@/components/mdx/AlgoVisualizers";
+import { SortVisualizer, LeetCodeProblems, MergeSortTree, TwoWayMergeVisualizer } from "@/components/mdx/AlgoVisualizers";
 
 # Divide and Conquer: Merge Sort
 
@@ -49,6 +49,10 @@ The notes merge `L = 2, 6, 11` and `R = 4, 5, 7` into `A` with three indices: `i
 | 6 | R is empty | 11 | 2 4 5 6 7 11 | 3, 3, 6 |
 
 At step 6 the right list has run out, so the rest of the left list (just 11) is copied over without comparing. That is safe because the left list is already sorted.
+
+Step through this two-way merge in the visualizer below. Pointers `i` and `j` compare front elements and place the smaller one into output `A[k]`. When one subarray runs out, watch the cleanup phase copy over the remaining elements directly without comparisons. Use the condition toggle to see how strict `<` breaks stability on equal values.
+
+<TwoWayMergeVisualizer initialLeft={[2, 6, 11]} initialRight={[4, 5, 7]} />
 
 The notes give the textbook's pseudocode for the merge:
 
