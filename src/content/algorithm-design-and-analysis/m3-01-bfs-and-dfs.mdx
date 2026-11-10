@@ -1,5 +1,11 @@
 import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
-import { GraphTraversal, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
+import {
+  GraphTraversal,
+  AdjacencyVisualizer,
+  BfsQueueExplosionVisualizer,
+  ShortestPathCompareVisualizer,
+  LeetCodeProblems,
+} from "@/components/mdx/AlgoVisualizers";
 
 # Graphs: BFS and DFS
 
@@ -52,6 +58,8 @@ An alternative representation is an **adjacency matrix**, a two-dimensional `n Ã
 
 An adjacency list requires $O(n + m)$ space, allocating one list header per vertex and one element per edge endpoint ($2m$ entries total for undirected graphs). In sparse graphs where $m \ll n^2$, the difference in memory is substantial. A road network with 10,000 towns and an average of 4 roads per town requires 100,000,000 entries in an adjacency matrix, but only 40,000 entries in an adjacency list.
 
+<AdjacencyVisualizer />
+
 ## Traversal: visit everything, once
 
 **Graph traversal** (or **traversing** a graph) is the process of visiting every vertex reachable from a selected start vertex, visiting each vertex exactly once. Because graphs can contain cycles, an unconstrained search can revisit vertices indefinitely. Graph traversal algorithms maintain a `visited` array to guarantee that no vertex is processed more than once.
@@ -91,6 +99,8 @@ The lecture example examines a 10-vertex graph with vertices 1 through 10 and ed
 | 8, 7, 10, 9, 6 | None | Empty |
 
 In this trace, vertex 4 is dequeued before vertex 2, and vertex 8 is queued before vertex 7, reflecting the counter-clockwise layout order in the lecture diagram. Sorting neighbor lists numerically produces the sequence 1, 2, 4, 3, 5, 7, 8, 9, 10, 6. Both visit sequences represent valid BFS orderings. BFS determines the sequence of layers: layer 0 contains vertex 1; layer 1 contains vertices 2 and 4; layer 2 contains vertices 3, 5, 7, and 8; and layer 3 contains vertices 9, 10, and 6. Within any individual layer, the specific visit order depends on how the adjacency lists sort neighbors. In academic exercises, explicitly declare whether neighbor traversal follows numerical, alphabetical, or diagram order.
+
+<GraphTraversal algorithm="bfs" preset="lecture-bfs" />
 
 On unweighted graphs, BFS identifies a **shortest path** (a path with the minimum number of edges) from the start vertex to every reachable vertex, because it discovers all vertices at distance $k$ before any vertex at distance $k + 1$.
 
@@ -132,6 +142,8 @@ The resulting traversal order is **A B C E D F G**. The tree edges traversed to 
 
 A recursive implementation mirrors this behavior directly: each recursive invocation pushes a stack frame, and each method return pops that frame upon reaching a dead end.
 
+<GraphTraversal algorithm="dfs" preset="lecture-dfs" />
+
 ## Analysis
 
 Using an adjacency list, both BFS and DFS exhibit identical asymptotic performance:
@@ -155,9 +167,13 @@ When using an adjacency matrix, identifying the neighbors of any vertex requires
 | Time complexity (adjacency list) | $O(V + E)$ | $O(V + E)$ |
 | Space complexity | $O(V)$ | $O(V)$ |
 
+<ShortestPathCompareVisualizer />
+
 <Callout tone="orange" label="Mark vertices upon enqueue">
 In BFS, mark a vertex as visited the moment it enters the queue, rather than waiting until it is removed. If the visited flag is set only upon dequeuing, several adjacent vertices can discover and enqueue the same vertex multiple times before it is processed. This redundant queue allocation wastes memory and computation, often causing timeout errors on automated grading platforms.
 </Callout>
+
+<BfsQueueExplosionVisualizer />
 
 <Callout tone="orange" label="BFS is iterative, not recursive">
 The lecture slides describe breadth-first search as a recursive algorithm. In practice, standard BFS is an iterative algorithm structured around a queue. DFS maps directly to recursion because the runtime call stack provides the necessary LIFO discipline.
@@ -173,6 +189,8 @@ Breaking ties alphabetically:
 - **BFS** produces the visit order A B S C G D E F H. The layers unfold as follows: layer 0 contains A; layer 1 contains B and S; layer 2 contains C and G; and layer 3 contains D, E, F, and H. The resulting tree edges are A-B, A-S, S-C, S-G, C-D, C-E, C-F, and G-H.
 
 Both resulting spanning trees contain exactly 8 edges, adhering to the mathematical property that any spanning tree of $n$ vertices contains exactly $n - 1$ edges. Because the graph edges are unweighted, every valid spanning tree has identical uniform weight. In graphs with weighted edges, finding an actual minimum weight spanning tree requires specialized greedy methods such as [Prim's or Kruskal's algorithm](/courses/algorithm-design-and-analysis/greedy-and-mst#minimum-spanning-trees).
+
+<GraphTraversal preset="spanning-as" />
 
 The Advanced Algorithms course expands on these concepts, generalizing BFS from unweighted shortest paths to weighted networks in [shortest paths](/courses/advanced-algorithms/shortest-paths#unweighted-graphs).
 

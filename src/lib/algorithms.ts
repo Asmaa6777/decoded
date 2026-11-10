@@ -547,6 +547,134 @@ export function gcdFrames(m0: number, n0: number, swapOrder: "correct" | "buggy"
 export type GraphNode = { id: number; x: number; y: number; label?: string }; // label replaces the id when drawn, e.g. the notes' letters
 export type GraphEdge = { from: number; to: number; weight?: number };
 
+export type GraphPreset = {
+  id: string;
+  name: string;
+  description: string;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  start?: number;
+  directed?: boolean;
+};
+
+export const GRAPH_PRESETS: Record<string, GraphPreset> = {
+  default: {
+    id: "default",
+    name: "Default 7-node",
+    description: "7-node diamond-and-cycle graph",
+    nodes: [
+      { id: 0, x: 60, y: 120 },
+      { id: 1, x: 170, y: 50 },
+      { id: 2, x: 170, y: 190 },
+      { id: 3, x: 290, y: 30 },
+      { id: 4, x: 290, y: 130 },
+      { id: 5, x: 290, y: 220 },
+      { id: 6, x: 400, y: 90 },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 0, to: 2 },
+      { from: 1, to: 3 },
+      { from: 1, to: 4 },
+      { from: 2, to: 4 },
+      { from: 2, to: 5 },
+      { from: 3, to: 6 },
+      { from: 4, to: 6 },
+    ],
+    start: 0,
+  },
+  "lecture-bfs": {
+    id: "lecture-bfs",
+    name: "Lecture 10-node (BFS)",
+    description: "The 10-vertex graph from the BFS lecture trace (vertices 1–10)",
+    nodes: [
+      { id: 0, label: "1", x: 50, y: 140 },
+      { id: 1, label: "2", x: 150, y: 80 },
+      { id: 2, label: "3", x: 260, y: 230 },
+      { id: 3, label: "4", x: 150, y: 220 },
+      { id: 4, label: "5", x: 260, y: 50 },
+      { id: 5, label: "6", x: 380, y: 50 },
+      { id: 6, label: "7", x: 260, y: 110 },
+      { id: 7, label: "8", x: 260, y: 170 },
+      { id: 8, label: "9", x: 380, y: 200 },
+      { id: 9, label: "10", x: 380, y: 260 },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 0, to: 3 },
+      { from: 1, to: 2 },
+      { from: 1, to: 4 },
+      { from: 1, to: 6 },
+      { from: 1, to: 7 },
+      { from: 2, to: 3 },
+      { from: 2, to: 8 },
+      { from: 2, to: 9 },
+      { from: 4, to: 5 },
+      { from: 4, to: 6 },
+      { from: 4, to: 7 },
+      { from: 6, to: 7 },
+    ],
+    start: 0,
+  },
+  "lecture-dfs": {
+    id: "lecture-dfs",
+    name: "Lecture 7-node A–G (DFS)",
+    description: "The 7-vertex graph from the DFS lecture trace with alphabetical order",
+    nodes: [
+      { id: 0, label: "A", x: 50, y: 130 },
+      { id: 1, label: "B", x: 160, y: 50 },
+      { id: 2, label: "C", x: 280, y: 50 },
+      { id: 3, label: "D", x: 160, y: 210 },
+      { id: 4, label: "E", x: 220, y: 130 },
+      { id: 5, label: "F", x: 320, y: 180 },
+      { id: 6, label: "G", x: 410, y: 100 },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 0, to: 3 },
+      { from: 0, to: 4 },
+      { from: 1, to: 2 },
+      { from: 1, to: 4 },
+      { from: 2, to: 4 },
+      { from: 2, to: 5 },
+      { from: 2, to: 6 },
+      { from: 3, to: 4 },
+      { from: 4, to: 5 },
+      { from: 5, to: 6 },
+    ],
+    start: 0,
+  },
+  "spanning-as": {
+    id: "spanning-as",
+    name: "Lecture 9-node A–S Spanning",
+    description: "The 9-vertex graph from the lecture problem set for BFS vs DFS spanning trees",
+    nodes: [
+      { id: 0, label: "A", x: 50, y: 120 },
+      { id: 1, label: "B", x: 130, y: 40 },
+      { id: 2, label: "C", x: 240, y: 100 },
+      { id: 3, label: "D", x: 330, y: 30 },
+      { id: 4, label: "E", x: 350, y: 100 },
+      { id: 5, label: "F", x: 340, y: 180 },
+      { id: 6, label: "G", x: 260, y: 220 },
+      { id: 7, label: "H", x: 430, y: 160 },
+      { id: 8, label: "S", x: 140, y: 170 },
+    ],
+    edges: [
+      { from: 0, to: 1 },
+      { from: 0, to: 8 },
+      { from: 8, to: 2 },
+      { from: 8, to: 6 },
+      { from: 2, to: 3 },
+      { from: 2, to: 4 },
+      { from: 2, to: 5 },
+      { from: 5, to: 6 },
+      { from: 6, to: 7 },
+      { from: 4, to: 7 },
+    ],
+    start: 0,
+  },
+};
+
 export type TraversalState = {
   visited: number[];
   current?: number;
@@ -2506,5 +2634,383 @@ export function gcdComparisonSummary(m: number, n: number) {
     bruteForceTests,
     euclidDivisions,
     speedupRatio: +(bruteForceTests / Math.max(1, euclidDivisions)).toFixed(1),
+  };
+}
+
+/* ------------------ Adjacency representations ------------------ */
+
+export type AdjacencySummary = {
+  nodeCount: number;
+  edgeCount: number;
+  directed: boolean;
+  matrix: number[][];
+  list: number[][];
+  matrixMemoryBytes: number;
+  listMemoryBytes: number;
+  densityPercent: number;
+  isSymmetric: boolean;
+};
+
+export function getAdjacencySummary(
+  nodeCount: number,
+  edges: GraphEdge[],
+  directed = false
+): AdjacencySummary {
+  const matrix: number[][] = Array.from({ length: nodeCount }, () =>
+    Array(nodeCount).fill(0)
+  );
+  const list = adjacency(nodeCount, edges, directed);
+
+  for (const e of edges) {
+    if (e.from < nodeCount && e.to < nodeCount) {
+      matrix[e.from][e.to] = 1;
+      if (!directed) {
+        matrix[e.to][e.from] = 1;
+      }
+    }
+  }
+
+  const maxEdges = directed
+    ? nodeCount * (nodeCount - 1)
+    : (nodeCount * (nodeCount - 1)) / 2;
+  const densityPercent =
+    maxEdges > 0 ? Math.round((edges.length / maxEdges) * 100) : 0;
+  const listEntries = directed ? edges.length : 2 * edges.length;
+  const matrixMemoryBytes = nodeCount * nodeCount;
+  const listMemoryBytes = nodeCount * 4 + listEntries * 4;
+
+  let isSymmetric = true;
+  for (let r = 0; r < nodeCount; r++) {
+    for (let c = 0; c < nodeCount; c++) {
+      if (matrix[r][c] !== matrix[c][r]) {
+        isSymmetric = false;
+        break;
+      }
+    }
+    if (!isSymmetric) break;
+  }
+
+  return {
+    nodeCount,
+    edgeCount: edges.length,
+    directed,
+    matrix,
+    list,
+    matrixMemoryBytes,
+    listMemoryBytes,
+    densityPercent,
+    isSymmetric,
+  };
+}
+
+/* ------------------ BFS Queue Explosion Bug ------------------ */
+
+export type BfsQueueExplosionState = {
+  mode: "enqueue" | "dequeue";
+  visited: number[];
+  queue: number[];
+  current?: number;
+  checking?: [number, number];
+  order: number[];
+  totalEnqueues: number;
+  maxQueueLength: number;
+  duplicateEnqueues: number;
+  redundantPops: number;
+  duplicateValuesInQueue: number[];
+};
+
+export const JAVA_BFS_QUEUE_EXPLOSION = {
+  enqueue: [
+    "static void bfsCorrect(List<List<Integer>> adj, int start) {",
+    "    boolean[] visited = new boolean[adj.size()];",
+    "    Queue<Integer> queue = new ArrayDeque<>();",
+    "    visited[start] = true;              // Mark immediately",
+    "    queue.add(start);",
+    "    while (!queue.isEmpty()) {",
+    "        int v = queue.poll();",
+    "        for (int w : adj.get(v)) {",
+    "            if (!visited[w]) {",
+    "                visited[w] = true;      // MARK ON ENQUEUE: duplicates blocked!",
+    "                queue.add(w);",
+    "            }",
+    "        }",
+    "    }",
+    "}",
+  ],
+  dequeue: [
+    "static void bfsBuggy(List<List<Integer>> adj, int start) {",
+    "    boolean[] visited = new boolean[adj.size()];",
+    "    Queue<Integer> queue = new ArrayDeque<>();",
+    "    queue.add(start);",
+    "    while (!queue.isEmpty()) {",
+    "        int v = queue.poll();",
+    "        visited[v] = true;              // BUG: MARK ON DEQUEUE (too late!)",
+    "        for (int w : adj.get(v)) {",
+    "            if (!visited[w]) {",
+    "                queue.add(w);          // duplicate w pushed again by other paths!",
+    "            }",
+    "        }",
+    "    }",
+    "}",
+  ],
+};
+
+export function bfsQueueExplosionFrames(
+  mode: "enqueue" | "dequeue" = "enqueue"
+): Frame<BfsQueueExplosionState>[] {
+  const nodeCount = 6;
+  const edges: GraphEdge[] = [
+    { from: 0, to: 1 },
+    { from: 0, to: 2 },
+    { from: 0, to: 3 },
+    { from: 1, to: 4 },
+    { from: 1, to: 5 },
+    { from: 2, to: 4 },
+    { from: 2, to: 5 },
+    { from: 3, to: 4 },
+    { from: 3, to: 5 },
+  ];
+  const adj = adjacency(nodeCount, edges, false);
+  const frames: Frame<BfsQueueExplosionState>[] = [];
+
+  const visited = new Set<number>();
+  const queue: number[] = [];
+  const order: number[] = [];
+  let totalEnqueues = 0;
+  let maxQueueLength = 0;
+  let duplicateEnqueues = 0;
+  let redundantPops = 0;
+
+  const getDuplicates = () => {
+    const counts = new Map<number, number>();
+    for (const x of queue) counts.set(x, (counts.get(x) ?? 0) + 1);
+    const dups: number[] = [];
+    for (const [x, count] of counts.entries()) {
+      if (count > 1) dups.push(x);
+    }
+    return dups;
+  };
+
+  const pushFrame = (
+    line: number,
+    message: string,
+    current?: number,
+    checking?: [number, number]
+  ) => {
+    maxQueueLength = Math.max(maxQueueLength, queue.length);
+    frames.push({
+      state: {
+        mode,
+        visited: [...visited],
+        queue: [...queue],
+        current,
+        checking,
+        order: [...order],
+        totalEnqueues,
+        maxQueueLength,
+        duplicateEnqueues,
+        redundantPops,
+        duplicateValuesInQueue: getDuplicates(),
+      },
+      line,
+      message,
+      stats: {
+        "queue length": queue.length,
+        "peak queue": maxQueueLength,
+        "total enqueued": totalEnqueues,
+        "duplicate pushes": duplicateEnqueues,
+      },
+    });
+  };
+
+  if (mode === "enqueue") {
+    visited.add(0);
+    queue.push(0);
+    totalEnqueues++;
+    pushFrame(4, "Mark start node 0 as visited and enqueue it. Queue: [0].");
+
+    while (queue.length > 0) {
+      const v = queue.shift()!;
+      order.push(v);
+      pushFrame(6, `Dequeue node ${v} from front of queue.`, v);
+
+      for (const w of adj[v]) {
+        if (!visited.has(w)) {
+          visited.add(w);
+          queue.push(w);
+          totalEnqueues++;
+          pushFrame(
+            9,
+            `Neighbor ${w} is unvisited. Mark visited[${w}]=true immediately and enqueue ${w}.`,
+            v,
+            [v, w]
+          );
+        } else {
+          pushFrame(
+            8,
+            `Neighbor ${w} is already visited (or marked in queue). Skip it!`,
+            v,
+            [v, w]
+          );
+        }
+      }
+    }
+
+    pushFrame(
+      14,
+      `Queue empty! Traversal finished cleanly with ${totalEnqueues} enqueues. Peak queue length was ${maxQueueLength}. No duplicate work.`
+    );
+  } else {
+    queue.push(0);
+    totalEnqueues++;
+    pushFrame(3, "Enqueue start node 0 WITHOUT marking it visited yet. Queue: [0].");
+
+    let guard = 0;
+    while (queue.length > 0 && guard++ < 30) {
+      const v = queue.shift()!;
+      if (visited.has(v)) {
+        redundantPops++;
+        pushFrame(
+          6,
+          `⚠️ REDUNDANT POP: Dequeue duplicate node ${v}! It was already processed earlier.`,
+          v
+        );
+      } else {
+        visited.add(v);
+        order.push(v);
+        pushFrame(
+          7,
+          `Dequeue node ${v} and mark visited[${v}]=true (marks only now!).`,
+          v
+        );
+      }
+
+      for (const w of adj[v]) {
+        if (!visited.has(w)) {
+          const isDuplicate = queue.includes(w);
+          queue.push(w);
+          totalEnqueues++;
+          if (isDuplicate) {
+            duplicateEnqueues++;
+            pushFrame(
+              10,
+              `⚠️ BUG TRAP: Enqueue node ${w} AGAIN! Node ${w} is already in the queue, but because visited[${w}] is false, it gets enqueued again.`,
+              v,
+              [v, w]
+            );
+          } else {
+            pushFrame(
+              10,
+              `Enqueue neighbor ${w}. Note: visited[${w}] remains false while waiting in the queue!`,
+              v,
+              [v, w]
+            );
+          }
+        } else {
+          pushFrame(9, `Neighbor ${w} is marked visited. Skip.`, v, [v, w]);
+        }
+      }
+    }
+
+    pushFrame(
+      13,
+      `Done. Notice the disaster: ${totalEnqueues} enqueues (nearly 2× the 6 nodes!) and peak queue size ${maxQueueLength}. Wasted time and exploded memory!`
+    );
+  }
+
+  return frames;
+}
+
+/* ------------------ Shortest Path Comparison ------------------ */
+
+export type ShortestPathSummary = {
+  start: number;
+  target: number;
+  bfsPath: number[];
+  bfsHops: number;
+  bfsLayers: Record<number, number>;
+  bfsVisitedOrder: number[];
+  dfsPath: number[];
+  dfsHops: number;
+  dfsVisitedOrder: number[];
+  isBfsShorter: boolean;
+  extraHops: number;
+};
+
+export function shortestPathSummary(
+  nodeCount: number,
+  edges: GraphEdge[],
+  start: number,
+  target: number,
+  directed = false
+): ShortestPathSummary {
+  const adj = adjacency(nodeCount, edges, directed);
+
+  // BFS with layers and predecessors
+  const bfsLayers: Record<number, number> = { [start]: 0 };
+  const bfsParent: Record<number, number> = {};
+  const bfsVisited = new Set<number>([start]);
+  const bfsVisitedOrder: number[] = [];
+  const queue: number[] = [start];
+
+  while (queue.length > 0) {
+    const v = queue.shift()!;
+    bfsVisitedOrder.push(v);
+    if (v === target) break;
+    for (const w of adj[v]) {
+      if (!bfsVisited.has(w)) {
+        bfsVisited.add(w);
+        bfsParent[w] = v;
+        bfsLayers[w] = bfsLayers[v] + 1;
+        queue.push(w);
+      }
+    }
+  }
+
+  const bfsPath: number[] = [];
+  if (bfsVisited.has(target)) {
+    let curr = target;
+    while (curr !== undefined) {
+      bfsPath.unshift(curr);
+      curr = bfsParent[curr];
+    }
+  }
+
+  // DFS traversal path
+  const dfsVisited = new Set<number>();
+  const dfsVisitedOrder: number[] = [];
+  let dfsPath: number[] = [];
+
+  const dfs = (v: number, currentPath: number[]): boolean => {
+    dfsVisited.add(v);
+    dfsVisitedOrder.push(v);
+    const newPath = [...currentPath, v];
+    if (v === target) {
+      dfsPath = newPath;
+      return true;
+    }
+    for (const w of adj[v]) {
+      if (!dfsVisited.has(w)) {
+        if (dfs(w, newPath)) return true;
+      }
+    }
+    return false;
+  };
+  dfs(start, []);
+
+  const bfsHops = Math.max(0, bfsPath.length - 1);
+  const dfsHops = Math.max(0, dfsPath.length - 1);
+
+  return {
+    start,
+    target,
+    bfsPath,
+    bfsHops,
+    bfsLayers,
+    bfsVisitedOrder,
+    dfsPath,
+    dfsHops,
+    isBfsShorter: bfsHops < dfsHops,
+    extraHops: Math.max(0, dfsHops - bfsHops),
   };
 }

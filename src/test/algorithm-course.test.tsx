@@ -25,6 +25,9 @@ import {
   BinarySearchBoundaryVisualizer,
   EuclidTilingVisualizer,
   GcdComparisonVisualizer,
+  AdjacencyVisualizer,
+  BfsQueueExplosionVisualizer,
+  ShortestPathCompareVisualizer,
 } from "@/components/mdx/AlgoVisualizers";
 
 beforeAll(() => {
@@ -274,5 +277,46 @@ describe("visualizers step all the way through", () => {
     stepToEnd(container);
     expect(screen.getAllByText(/= 0/).length).toBeGreaterThan(0);
     expect(screen.getByText(/Assignment bug active/)).toBeDefined();
+  });
+
+  it("AdjacencyVisualizer renders matrix, list, switches presets and handles interaction", () => {
+    const { container } = render(<AdjacencyVisualizer initialPreset="triangle" />);
+    expect(screen.getByText(/Graph Storage: Adjacency Matrix vs Adjacency List/)).toBeDefined();
+    expect(screen.getByText(/Symmetric \(M = Mᵀ\)/)).toBeDefined();
+    expect(screen.getByText(/Triangle \(3\)/)).toBeDefined();
+
+    // Switch to Directed DAG
+    fireEvent.click(screen.getByRole("button", { name: /Directed DAG/ }));
+    expect(screen.getByText(/Asymmetric/)).toBeDefined();
+
+    // Switch to House
+    fireEvent.click(screen.getByRole("button", { name: /House \(5\)/ }));
+    expect(screen.getByText(/5 × 5 = 25/)).toBeDefined();
+  });
+
+  it("BfsQueueExplosionVisualizer steps through and catches duplicate enqueues in buggy mode", () => {
+    const { container } = render(<BfsQueueExplosionVisualizer />);
+    stepToEnd(container);
+    expect(screen.getByText(/cleanly with 6 enqueues/i)).toBeDefined();
+
+    // Switch to dequeue bug mode
+    fireEvent.click(screen.getByRole("button", { name: /Mark on dequeue/ }));
+    stepToEnd(container);
+    expect(screen.getByText(/Notice the disaster/i)).toBeDefined();
+    expect(screen.getByText("Duplicate Enqueues")).toBeDefined();
+  });
+
+  it("ShortestPathCompareVisualizer renders comparison between BFS shortest path and DFS path", () => {
+    render(<ShortestPathCompareVisualizer />);
+    expect(screen.getByText(/Unweighted Shortest Path: BFS vs DFS/)).toBeDefined();
+    expect(screen.getByText(/Guaranteed Shortest Path/)).toBeDefined();
+    expect(screen.getByText(/Breadth-First Search \(BFS\)/)).toBeDefined();
+    expect(screen.getByText(/Depth-First Search \(DFS\)/)).toBeDefined();
+  });
+
+  it("GraphTraversal supports presets", () => {
+    const { container } = render(<GraphTraversal preset="lecture-bfs" />);
+    stepToEnd(container);
+    expect(screen.getByText(/1 → 2 → 4 → 3 → 5 → 7 → 8 → 9 → 10 → 6/)).toBeDefined();
   });
 });

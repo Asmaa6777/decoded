@@ -38,6 +38,11 @@ import {
   type EuclidTilingState,
   type EuclidTile,
   gcdComparisonSummary,
+  GRAPH_PRESETS,
+  getAdjacencySummary,
+  bfsQueueExplosionFrames,
+  JAVA_BFS_QUEUE_EXPLOSION,
+  shortestPathSummary,
   JAVA_SORT,
   JAVA_SEARCH,
   JAVA_GCD,
@@ -1267,6 +1272,9 @@ export function GraphSvg({
   nodeClass,
   showWeights,
   directed,
+  onNodeClick,
+  onNodeHover,
+  onEdgeHover,
 }: {
   nodes: GraphNode[];
   edges: GraphEdge[];
@@ -1274,6 +1282,9 @@ export function GraphSvg({
   nodeClass: (id: number) => string;
   showWeights?: boolean;
   directed?: boolean; // draw an arrowhead where each edge meets its "to" node
+  onNodeClick?: (id: number) => void;
+  onNodeHover?: (id: number | null) => void;
+  onEdgeHover?: (edge: [number, number] | null) => void;
 }) {
   const w = Math.max(...nodes.map((n) => n.x)) + 50;
   const h = Math.max(...nodes.map((n) => n.y)) + 40;
@@ -1285,7 +1296,12 @@ export function GraphSvg({
         const b = pos.get(e.to)!;
         const st = edgeClass(e, i);
         return (
-          <g key={i}>
+          <g
+            key={i}
+            onMouseEnter={() => onEdgeHover?.([e.from, e.to])}
+            onMouseLeave={() => onEdgeHover?.(null)}
+            className={onEdgeHover ? "cursor-pointer" : ""}
+          >
             <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className={`${st.stroke} transition-all`} strokeWidth={st.width} strokeDasharray={st.dash} strokeLinecap="round" />
             {directed && <Arrowhead from={a} to={b} className={st.stroke.replace("stroke-", "fill-")} />}
             {showWeights && e.weight !== undefined && (
@@ -1300,9 +1316,15 @@ export function GraphSvg({
         );
       })}
       {nodes.map((n) => (
-        <g key={n.id}>
+        <g
+          key={n.id}
+          onClick={() => onNodeClick?.(n.id)}
+          onMouseEnter={() => onNodeHover?.(n.id)}
+          onMouseLeave={() => onNodeHover?.(null)}
+          className={onNodeClick || onNodeHover ? "cursor-pointer" : ""}
+        >
           <circle cx={n.x} cy={n.y} r={19} strokeWidth={2} className={`transition-colors duration-300 ${nodeClass(n.id)}`} />
-          <text x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" fontSize={14} className="font-mono fill-current font-medium">
+          <text x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" fontSize={14} className="font-mono fill-current font-medium select-none">
             {n.label ?? n.id}
           </text>
         </g>
@@ -1349,18 +1371,29 @@ export function Toggle<T extends string>({ value, options, onChange }: { value: 
 
 export function GraphTraversal({
   algorithm = "bfs",
-  nodes = DEFAULT_NODES,
-  edges = DEFAULT_EDGES,
-  start = 0,
+  nodes: customNodes,
+  edges: customEdges,
+  start: customStart,
   directed = false,
+  preset: initialPreset,
+  allowPresetChange = true,
 }: {
   algorithm?: "bfs" | "dfs";
   nodes?: GraphNode[];
   edges?: GraphEdge[];
   start?: number;
   directed?: boolean;
+  preset?: string;
+  allowPresetChange?: boolean;
 }) {
+  const [selectedPreset, setSelectedPreset] = useState<string>(initialPreset ?? "default");
   const [kind, setKind] = useState(algorithm);
+
+  const activePreset = GRAPH_PRESETS[selectedPreset] ?? GRAPH_PRESETS.default;
+  const nodes = customNodes ?? (initialPreset || selectedPreset !== "default" ? activePreset.nodes : DEFAULT_NODES);
+  const edges = customEdges ?? (initialPreset || selectedPreset !== "default" ? activePreset.edges : DEFAULT_EDGES);
+  const start = customStart ?? activePreset.start ?? 0;
+
   const names = useMemo(() => {
     const out: string[] = [];
     for (const n of nodes) out[n.id] = n.label ?? String(n.id);
@@ -1407,14 +1440,32 @@ export function GraphTraversal({
         </div>
       )}
       inputs={
-        <Toggle<"bfs" | "dfs">
-          value={kind}
-          onChange={setKind}
-          options={[
-            ["bfs", "BFS (queue)"],
-            ["dfs", "DFS (stack)"],
-          ]}
-        />
+        <div className="flex flex-wrap items-center justify-between gap-2 w-full">
+          <Toggle<"bfs" | "dfs">
+            value={kind}
+            onChange={setKind}
+            options={[
+              ["bfs", "BFS (queue)"],
+              ["dfs", "DFS (stack)"],
+            ]}
+          />
+          {allowPresetChange && !customNodes && (
+            <div className="flex items-center gap-1.5 font-mono text-xs">
+              <span className="text-muted-foreground hidden sm:inline">Graph:</span>
+              <select
+                aria-label="Select graph preset"
+                value={selectedPreset}
+                onChange={(e) => setSelectedPreset(e.target.value)}
+                className="px-2.5 py-1 rounded-full border border-border bg-card text-foreground font-mono text-xs focus:outline-none focus:ring-1 focus:ring-sky"
+              >
+                <option value="default">Default 7-node</option>
+                <option value="lecture-bfs">Lecture 10-node (BFS)</option>
+                <option value="lecture-dfs">Lecture 7-node A–G (DFS)</option>
+                <option value="spanning-as">Lecture 9-node A–S Spanning</option>
+              </select>
+            </div>
+          )}
+        </div>
       }
     />
   );
@@ -3556,6 +3607,697 @@ export function GcdComparisonVisualizer({ m = 210, n = 45 }: { m?: number; n?: n
         <button type="button" className={btn} onClick={() => setPreset(31415, 14142)}>
           Large: (31415, 14142)
         </button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------ Adjacency Visualizer ------------------ */
+
+export function AdjacencyVisualizer({
+  initialPreset = "triangle",
+}: {
+  initialPreset?: "triangle" | "house" | "sparse" | "dag";
+}) {
+  const [preset, setPreset] = useState<"triangle" | "house" | "sparse" | "dag">(initialPreset);
+  const [selectedNode, setSelectedNode] = useState<number | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<number | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<[number, number] | null>(null);
+  const [queryU, setQueryU] = useState<number>(0);
+  const [queryV, setQueryV] = useState<number>(1);
+
+  const presetConfig = useMemo(() => {
+    switch (preset) {
+      case "triangle":
+        return {
+          nodes: [
+            { id: 0, label: "0", x: 70, y: 150 },
+            { id: 1, label: "1", x: 190, y: 50 },
+            { id: 2, label: "2", x: 190, y: 220 },
+          ],
+          edges: [
+            { from: 0, to: 1 },
+            { from: 1, to: 2 },
+            { from: 2, to: 0 },
+          ],
+          directed: false,
+          label: "Triangle (3 nodes)",
+        };
+      case "house":
+        return {
+          nodes: [
+            { id: 0, label: "0", x: 60, y: 130 },
+            { id: 1, label: "1", x: 160, y: 50 },
+            { id: 2, label: "2", x: 160, y: 210 },
+            { id: 3, label: "3", x: 270, y: 50 },
+            { id: 4, label: "4", x: 270, y: 210 },
+          ],
+          edges: [
+            { from: 0, to: 1 },
+            { from: 0, to: 2 },
+            { from: 1, to: 2 },
+            { from: 1, to: 3 },
+            { from: 2, to: 4 },
+            { from: 3, to: 4 },
+          ],
+          directed: false,
+          label: "House (5 nodes)",
+        };
+      case "dag":
+        return {
+          nodes: [
+            { id: 0, label: "0", x: 60, y: 120 },
+            { id: 1, label: "1", x: 160, y: 50 },
+            { id: 2, label: "2", x: 160, y: 190 },
+            { id: 3, label: "3", x: 280, y: 120 },
+          ],
+          edges: [
+            { from: 0, to: 1 },
+            { from: 0, to: 2 },
+            { from: 1, to: 3 },
+            { from: 2, to: 3 },
+            { from: 0, to: 3 },
+          ],
+          directed: true,
+          label: "Directed DAG (4 nodes)",
+        };
+      case "sparse":
+      default:
+        return {
+          nodes: GRAPH_PRESETS.default.nodes,
+          edges: GRAPH_PRESETS.default.edges,
+          directed: false,
+          label: "Sparse Graph (7 nodes)",
+        };
+    }
+  }, [preset]);
+
+  const summary = useMemo(
+    () => getAdjacencySummary(presetConfig.nodes.length, presetConfig.edges, presetConfig.directed),
+    [presetConfig]
+  );
+
+  const activeNode = selectedNode ?? hoveredNode;
+  const activeEdge = hoveredCell;
+
+  const isEdgeHighlighted = (e: GraphEdge) => {
+    if (activeEdge) {
+      if (presetConfig.directed) {
+        return e.from === activeEdge[0] && e.to === activeEdge[1];
+      }
+      return (
+        (e.from === activeEdge[0] && e.to === activeEdge[1]) ||
+        (e.from === activeEdge[1] && e.to === activeEdge[0])
+      );
+    }
+    if (activeNode !== null) {
+      return e.from === activeNode || (!presetConfig.directed && e.to === activeNode);
+    }
+    return false;
+  };
+
+  const isNodeHighlighted = (id: number) => {
+    if (activeNode !== null) return id === activeNode;
+    if (activeEdge !== null) return id === activeEdge[0] || id === activeEdge[1];
+    return false;
+  };
+
+  const isEdgeQueryConnected = summary.matrix[queryU]?.[queryV] === 1;
+  const listNeighborsForQuery = summary.list[queryU] ?? [];
+
+  return (
+    <div className="my-6 rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+        <div>
+          <h3 className="text-base sm:text-lg font-bold font-display text-foreground">
+            Graph Storage: Adjacency Matrix vs Adjacency List
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Click nodes, cells, or neighbors to trace connections across both representations.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5 font-mono text-xs">
+          {(["triangle", "house", "sparse", "dag"] as const).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => {
+                setPreset(p);
+                setSelectedNode(null);
+                setHoveredCell(null);
+                setQueryU(0);
+                setQueryV(1);
+              }}
+              className={`px-3 py-1 rounded-full border transition-colors ${
+                preset === p
+                  ? "bg-sky text-slate-950 font-bold border-sky shadow-xs"
+                  : "bg-secondary/60 text-muted-foreground border-border hover:text-foreground hover:bg-secondary"
+              }`}
+            >
+              {p === "triangle" ? "Triangle (3)" : p === "house" ? "House (5)" : p === "sparse" ? "Sparse (7)" : "Directed DAG (4)"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="lg:col-span-5 flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-secondary/30">
+          <div className="text-xs font-mono text-muted-foreground mb-2 flex items-center justify-between w-full">
+            <span>Graph Diagram ({presetConfig.directed ? "Directed" : "Undirected"})</span>
+            {activeNode !== null && (
+              <span className="text-sky font-bold">Node {activeNode} focused</span>
+            )}
+          </div>
+          <GraphSvg
+            nodes={presetConfig.nodes}
+            edges={presetConfig.edges}
+            directed={presetConfig.directed}
+            onNodeClick={(id) => setSelectedNode((prev) => (prev === id ? null : id))}
+            onNodeHover={(id) => setHoveredNode(id)}
+            edgeClass={(e) =>
+              isEdgeHighlighted(e)
+                ? { stroke: "stroke-sky", width: 3.5 }
+                : { stroke: "stroke-border", width: 2 }
+            }
+            nodeClass={(id) =>
+              isNodeHighlighted(id)
+                ? "fill-sky/25 stroke-sky font-bold"
+                : "fill-card stroke-muted-foreground/60"
+            }
+          />
+          <div className="text-[11px] text-muted-foreground mt-2 text-center">
+            {selectedNode !== null ? (
+              <span>Node {selectedNode} selected. Click it again to unpin.</span>
+            ) : (
+              <span>Hover or click any node to trace its row &amp; adjacency list.</span>
+            )}
+          </div>
+        </div>
+
+        <div className="lg:col-span-7 flex flex-col gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col rounded-xl border border-border bg-secondary/20 p-3">
+              <div className="flex items-center justify-between text-xs font-mono text-foreground font-semibold mb-2">
+                <span>Adjacency Matrix</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {summary.isSymmetric ? "Symmetric (M = Mᵀ)" : "Asymmetric"}
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-center font-mono text-xs border-collapse">
+                  <thead>
+                    <tr>
+                      <th className="p-1 text-muted-foreground text-[10px] border-b border-border">u \ v</th>
+                      {Array.from({ length: summary.nodeCount }, (_, i) => (
+                        <th
+                          key={i}
+                          className={`p-1 text-[11px] border-b border-border ${
+                            activeNode === i ? "text-sky font-bold bg-sky/10 rounded-t" : "text-muted-foreground"
+                          }`}
+                        >
+                          {presetConfig.nodes[i]?.label ?? i}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {summary.matrix.map((row, r) => (
+                      <tr
+                        key={r}
+                        className={activeNode === r ? "bg-sky/10" : ""}
+                        onMouseEnter={() => setHoveredNode(r)}
+                        onMouseLeave={() => setHoveredNode(null)}
+                      >
+                        <td className={`p-1 font-bold text-[11px] border-r border-border ${activeNode === r ? "text-sky" : "text-muted-foreground"}`}>
+                          {presetConfig.nodes[r]?.label ?? r}
+                        </td>
+                        {row.map((val, c) => {
+                          const isHoveredCell = hoveredCell && hoveredCell[0] === r && hoveredCell[1] === c;
+                          const isConnected = val === 1;
+                          return (
+                            <td
+                              key={c}
+                              onMouseEnter={() => setHoveredCell([r, c])}
+                              onMouseLeave={() => setHoveredCell(null)}
+                              className={`p-1 cursor-pointer transition-colors border border-border/40 text-[11px] ${
+                                isHoveredCell
+                                  ? "bg-neon/30 text-neon font-bold ring-1 ring-neon"
+                                  : isConnected
+                                    ? "bg-sky/20 text-sky font-bold"
+                                    : "text-muted-foreground/60 hover:bg-muted/40"
+                              }`}
+                              title={`matrix[${r}][${c}] = ${val}`}
+                            >
+                              {val}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-2">
+                Allocates <span className="font-mono text-foreground">{summary.nodeCount} × {summary.nodeCount} = {summary.matrixMemoryBytes}</span> entries (Θ(V²) space).
+              </div>
+            </div>
+
+            <div className="flex flex-col rounded-xl border border-border bg-secondary/20 p-3">
+              <div className="flex items-center justify-between text-xs font-mono text-foreground font-semibold mb-2">
+                <span>Adjacency List</span>
+                <span className="text-[11px] text-muted-foreground">List&lt;List&lt;Integer&gt;&gt;</span>
+              </div>
+              <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto font-mono text-xs">
+                {summary.list.map((neighbors, u) => {
+                  const isNodeActive = activeNode === u;
+                  return (
+                    <div
+                      key={u}
+                      onMouseEnter={() => setHoveredNode(u)}
+                      onMouseLeave={() => setHoveredNode(null)}
+                      className={`flex items-center gap-2 p-1.5 rounded-lg border transition-colors ${
+                        isNodeActive
+                          ? "border-sky bg-sky/15 text-foreground"
+                          : "border-border/60 bg-card/60 text-muted-foreground hover:border-border"
+                      }`}
+                    >
+                      <span className={`w-14 font-bold text-[11px] ${isNodeActive ? "text-sky" : "text-foreground"}`}>
+                        adj[{presetConfig.nodes[u]?.label ?? u}]:
+                      </span>
+                      <div className="flex flex-wrap gap-1 items-center">
+                        {neighbors.length === 0 ? (
+                          <span className="text-[11px] italic text-muted-foreground">empty</span>
+                        ) : (
+                          neighbors.map((v, idx) => {
+                            const isCellMatch = hoveredCell && hoveredCell[0] === u && hoveredCell[1] === v;
+                            return (
+                              <span
+                                key={idx}
+                                onMouseEnter={(e) => {
+                                  e.stopPropagation();
+                                  setHoveredCell([u, v]);
+                                }}
+                                onMouseLeave={() => setHoveredCell(null)}
+                                className={`px-2 py-0.5 rounded text-[11px] border cursor-pointer transition-all ${
+                                  isCellMatch
+                                    ? "bg-neon text-slate-950 font-bold border-neon"
+                                    : "bg-secondary text-foreground border-border hover:border-sky"
+                                }`}
+                              >
+                                {presetConfig.nodes[v]?.label ?? v}
+                              </span>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-2">
+                Allocates <span className="font-mono text-foreground">{summary.nodeCount}</span> list headers + <span className="font-mono text-foreground">{presetConfig.directed ? summary.edgeCount : 2 * summary.edgeCount}</span> elements (O(V + E) space).
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-secondary/30 p-3 font-mono text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <span className="font-semibold text-foreground">Interactive Query Benchmark:</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Check edge:</span>
+                <select
+                  value={queryU}
+                  onChange={(e) => setQueryU(Number(e.target.value))}
+                  aria-label="Source vertex u"
+                  className="rounded border border-border bg-background px-1.5 py-0.5 text-xs text-foreground"
+                >
+                  {presetConfig.nodes.map((n) => (
+                    <option key={n.id} value={n.id}>
+                      {n.label ?? n.id}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-muted-foreground">→</span>
+                <select
+                  value={queryV}
+                  onChange={(e) => setQueryV(Number(e.target.value))}
+                  aria-label="Target vertex v"
+                  className="rounded border border-border bg-background px-1.5 py-0.5 text-xs text-foreground"
+                >
+                  {presetConfig.nodes.map((n) => (
+                    <option key={n.id} value={n.id}>
+                      {n.label ?? n.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+              <div className="p-2 rounded border border-border bg-card">
+                <div className="font-semibold text-sky mb-1">Matrix: matrix[{queryU}][{queryV}]</div>
+                <div className="text-muted-foreground">
+                  Result: <span className="font-bold text-foreground">{isEdgeQueryConnected ? "Connected (1)" : "Not connected (0)"}</span>
+                </div>
+                <div className="text-muted-foreground">
+                  Cost: <span className="text-mint font-bold">1 operation (O(1) direct cell index)</span>
+                </div>
+              </div>
+              <div className="p-2 rounded border border-border bg-card">
+                <div className="font-semibold text-sky mb-1">List: scan adj[{queryU}]</div>
+                <div className="text-muted-foreground">
+                  Elements scanned: <span className="font-bold text-foreground">{listNeighborsForQuery.length}</span> (deg({queryU}))
+                </div>
+                <div className="text-muted-foreground">
+                  Cost: <span className="text-foreground font-bold">O(deg({queryU})) list traversal</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------ BFS Queue Explosion Bug ------------------ */
+
+export function BfsQueueExplosionVisualizer() {
+  const [mode, setMode] = useState<"enqueue" | "dequeue">("enqueue");
+  const frames = useMemo(() => bfsQueueExplosionFrames(mode), [mode]);
+
+  const nodes: GraphNode[] = [
+    { id: 0, x: 50, y: 130 },
+    { id: 1, x: 170, y: 50 },
+    { id: 2, x: 170, y: 130 },
+    { id: 3, x: 170, y: 210 },
+    { id: 4, x: 300, y: 90 },
+    { id: 5, x: 300, y: 170 },
+  ];
+  const edges: GraphEdge[] = [
+    { from: 0, to: 1 },
+    { from: 0, to: 2 },
+    { from: 0, to: 3 },
+    { from: 1, to: 4 },
+    { from: 1, to: 5 },
+    { from: 2, to: 4 },
+    { from: 2, to: 5 },
+    { from: 3, to: 4 },
+    { from: 3, to: 5 },
+  ];
+
+  return (
+    <Stepper
+      title="BFS trap: Mark on enqueue vs mark on dequeue"
+      frames={frames}
+      code={JAVA_BFS_QUEUE_EXPLOSION[mode]}
+      legend={[
+        ["bg-neon", "current / checking"],
+        ["bg-sky", "in queue"],
+        ["bg-mint", "visited & finished"],
+        ["bg-orange", "duplicate copy in queue"],
+      ]}
+      render={(s) => {
+        const { queue, visited, current, checking, duplicateValuesInQueue, totalEnqueues, maxQueueLength, duplicateEnqueues } = s;
+
+        return (
+          <div className="flex flex-col gap-4">
+            <GraphSvg
+              nodes={nodes}
+              edges={edges}
+              edgeClass={(e) =>
+                sameEdge(e, checking)
+                  ? { stroke: "stroke-neon", width: 4 }
+                  : { stroke: "stroke-border", width: 2 }
+              }
+              nodeClass={(id) =>
+                id === current
+                  ? "fill-neon/40 stroke-neon font-bold"
+                  : duplicateValuesInQueue.includes(id)
+                    ? "fill-orange/30 stroke-orange font-bold animate-pulse"
+                    : visited.includes(id)
+                      ? "fill-mint/25 stroke-mint"
+                      : queue.includes(id)
+                        ? "fill-sky/20 stroke-sky"
+                        : "fill-card stroke-muted-foreground/60"
+              }
+            />
+
+            <div className="flex flex-col gap-2 p-3 rounded-xl border border-border bg-secondary/30">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+                <span className="font-semibold text-foreground">Queue contents (front → back):</span>
+                {duplicateValuesInQueue.length > 0 && (
+                  <span className="px-2 py-0.5 rounded border border-orange/40 bg-orange/15 text-orange font-bold text-[11px] animate-pulse">
+                    ⚠️ {duplicateValuesInQueue.length} duplicate node(s) detected in queue!
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 min-h-8 font-mono text-xs">
+                {queue.length === 0 ? (
+                  <span className="text-muted-foreground italic text-xs">queue is empty</span>
+                ) : (
+                  queue.map((nodeId, idx) => {
+                    const isDup = queue.slice(0, idx).includes(nodeId);
+                    return (
+                      <span
+                        key={idx}
+                        className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${
+                          isDup
+                            ? "border-orange bg-orange/20 text-orange font-bold shadow-xs ring-1 ring-orange/50"
+                            : "border-sky bg-sky/15 text-sky"
+                        }`}
+                      >
+                        {nodeId} {isDup && <span className="text-[10px] ml-1 opacity-90">(dup)</span>}
+                      </span>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-xs">
+              <div className="p-2.5 rounded-lg border border-border bg-card">
+                <div className="text-muted-foreground text-[10px]">Queue Size</div>
+                <div className="text-base font-bold text-foreground">{queue.length}</div>
+              </div>
+              <div className="p-2.5 rounded-lg border border-border bg-card">
+                <div className="text-muted-foreground text-[10px]">Peak Queue Size</div>
+                <div className="text-base font-bold text-sky">{maxQueueLength}</div>
+              </div>
+              <div className="p-2.5 rounded-lg border border-border bg-card">
+                <div className="text-muted-foreground text-[10px]">Total Enqueued</div>
+                <div className={`text-base font-bold ${totalEnqueues > 6 ? "text-orange" : "text-mint"}`}>
+                  {totalEnqueues}
+                </div>
+              </div>
+              <div className="p-2.5 rounded-lg border border-border bg-card">
+                <div className="text-muted-foreground text-[10px]">Duplicate Enqueues</div>
+                <div className={`text-base font-bold ${duplicateEnqueues > 0 ? "text-orange" : "text-mint"}`}>
+                  {duplicateEnqueues}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }}
+      inputs={
+        <Toggle<"enqueue" | "dequeue">
+          value={mode}
+          onChange={setMode}
+          options={[
+            ["enqueue", "Mark on enqueue (Correct: O(V) queue)"],
+            ["dequeue", "Mark on dequeue (Buggy: queue explodes)"],
+          ]}
+        />
+      }
+    />
+  );
+}
+
+/* ------------------ Shortest Path Comparison Visualizer ------------------ */
+
+export function ShortestPathCompareVisualizer() {
+  const [start, setStart] = useState<number>(0);
+  const [target, setTarget] = useState<number>(6);
+  const [viewMode, setViewMode] = useState<"both" | "bfs" | "dfs">("both");
+
+  const nodes = GRAPH_PRESETS.default.nodes;
+  const edges = GRAPH_PRESETS.default.edges;
+
+  const summary = useMemo(
+    () => shortestPathSummary(nodes.length, edges, start, target, false),
+    [nodes, edges, start, target]
+  );
+
+  const isBfsPathEdge = (e: GraphEdge) => {
+    for (let i = 0; i < summary.bfsPath.length - 1; i++) {
+      const u = summary.bfsPath[i];
+      const v = summary.bfsPath[i + 1];
+      if ((e.from === u && e.to === v) || (e.from === v && e.to === u)) return true;
+    }
+    return false;
+  };
+
+  const isDfsPathEdge = (e: GraphEdge) => {
+    for (let i = 0; i < summary.dfsPath.length - 1; i++) {
+      const u = summary.dfsPath[i];
+      const v = summary.dfsPath[i + 1];
+      if ((e.from === u && e.to === v) || (e.from === v && e.to === u)) return true;
+    }
+    return false;
+  };
+
+  const layerColors: Record<number, string> = {
+    0: "fill-neon/30 stroke-neon text-neon",
+    1: "fill-sky/20 stroke-sky text-sky",
+    2: "fill-violet/20 stroke-violet text-violet",
+    3: "fill-mint/20 stroke-mint text-mint",
+  };
+
+  return (
+    <div className="my-6 rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+        <div>
+          <h3 className="text-base sm:text-lg font-bold font-display text-foreground">
+            Unweighted Shortest Path: BFS vs DFS
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            BFS guarantees the minimum number of edges by expanding concentric layers. DFS dives deep and can take many unnecessary hops.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+          <div className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">Start:</span>
+            <select
+              value={start}
+              onChange={(e) => setStart(Number(e.target.value))}
+              aria-label="Start node"
+              className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground font-mono"
+            >
+              {nodes.map((n) => (
+                <option key={n.id} value={n.id}>
+                  Node {n.id}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">Target:</span>
+            <select
+              value={target}
+              onChange={(e) => setTarget(Number(e.target.value))}
+              aria-label="Target node"
+              className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground font-mono"
+            >
+              {nodes.map((n) => (
+                <option key={n.id} value={n.id}>
+                  Node {n.id}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+        <div className="lg:col-span-6 flex flex-col items-center justify-center p-3 rounded-xl border border-border bg-secondary/30">
+          <div className="flex items-center justify-between w-full text-xs font-mono text-muted-foreground mb-2">
+            <span>Graph Layers from Node {start}</span>
+            <Toggle<"both" | "bfs" | "dfs">
+              value={viewMode}
+              onChange={setViewMode}
+              options={[
+                ["both", "Both paths"],
+                ["bfs", "BFS only"],
+                ["dfs", "DFS only"],
+              ]}
+            />
+          </div>
+          <GraphSvg
+            nodes={nodes}
+            edges={edges}
+            edgeClass={(e) => {
+              const onBfs = isBfsPathEdge(e);
+              const onDfs = isDfsPathEdge(e);
+              if (viewMode === "bfs") {
+                return onBfs
+                  ? { stroke: "stroke-mint", width: 4 }
+                  : { stroke: "stroke-border", width: 2 };
+              }
+              if (viewMode === "dfs") {
+                return onDfs
+                  ? { stroke: "stroke-orange", width: 4 }
+                  : { stroke: "stroke-border", width: 2 };
+              }
+              if (onBfs && onDfs) {
+                return { stroke: "stroke-mint", width: 4 };
+              }
+              if (onBfs) return { stroke: "stroke-mint", width: 4 };
+              if (onDfs) return { stroke: "stroke-orange", width: 3, dash: "5 4" };
+              return { stroke: "stroke-border", width: 2 };
+            }}
+            nodeClass={(id) => {
+              if (id === start) return "fill-neon/30 stroke-neon font-bold";
+              if (id === target) return "fill-mint/30 stroke-mint font-bold ring-2 ring-mint";
+              const layer = summary.bfsLayers[id] ?? 0;
+              return layerColors[layer] ?? "fill-card stroke-muted-foreground";
+            }}
+          />
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-3 font-mono text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-neon/80" /> Start (d=0)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-sky/80" /> Layer 1 (d=1)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-violet/80" /> Layer 2 (d=2)
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-mint/80" /> Layer 3 (d=3)
+            </span>
+          </div>
+        </div>
+
+        <div className="lg:col-span-6 flex flex-col gap-3 font-mono text-xs">
+          <div className="p-3.5 rounded-xl border border-mint/40 bg-mint/5">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-bold text-mint text-sm">Breadth-First Search (BFS)</span>
+              <span className="px-2 py-0.5 rounded-full bg-mint/15 text-mint font-semibold text-[11px]">
+                Guaranteed Shortest Path
+              </span>
+            </div>
+            <div className="text-foreground font-semibold text-sm mb-1">
+              Path: {summary.bfsPath.join(" → ")}
+            </div>
+            <div className="text-muted-foreground text-[11px] mb-2">
+              Length: <span className="text-foreground font-bold">{summary.bfsHops} edge{summary.bfsHops === 1 ? "" : "s"}</span> ({summary.bfsPath.length} vertices)
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              BFS explores all vertices at distance <em>k</em> before distance <em>k+1</em>. The very first time target node {target} is reached, no path with fewer edges can exist.
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-xl border border-orange/40 bg-orange/5">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-bold text-orange text-sm">Depth-First Search (DFS)</span>
+              <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                summary.extraHops > 0 ? "bg-orange/15 text-orange" : "bg-secondary text-muted-foreground"
+              }`}>
+                {summary.extraHops > 0 ? `Suboptimal (+${summary.extraHops} extra hops)` : "Same length on this path"}
+              </span>
+            </div>
+            <div className="text-foreground font-semibold text-sm mb-1">
+              Path: {summary.dfsPath.join(" → ")}
+            </div>
+            <div className="text-muted-foreground text-[11px] mb-2">
+              Length: <span className="text-foreground font-bold">{summary.dfsHops} edge{summary.dfsHops === 1 ? "" : "s"}</span> ({summary.dfsPath.length} vertices)
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              DFS dives deeply along the first available branch. If that branch happens to twist through other vertices before reaching {target}, DFS commits to it and returns a much longer path.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

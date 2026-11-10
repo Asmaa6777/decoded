@@ -32,6 +32,10 @@ import {
   binarySearchBoundaryFrames,
   euclidTilingFrames,
   gcdComparisonSummary,
+  GRAPH_PRESETS,
+  getAdjacencySummary,
+  bfsQueueExplosionFrames,
+  shortestPathSummary,
   type SortAlgorithm,
 } from "@/lib/algorithms";
 
@@ -595,5 +599,113 @@ describe("gcdComparisonSummary", () => {
     expect(s2.gcd).toBe(1);
     expect(s2.bruteForceTests).toBe(20); // 20 down to 1
     expect(s2.euclidDivisions).toBe(5);
+  });
+});
+
+describe("GRAPH_PRESETS", () => {
+  it("includes all 4 defined graph presets", () => {
+    expect(GRAPH_PRESETS.default).toBeDefined();
+    expect(GRAPH_PRESETS["lecture-bfs"]).toBeDefined();
+    expect(GRAPH_PRESETS["lecture-dfs"]).toBeDefined();
+    expect(GRAPH_PRESETS["spanning-as"]).toBeDefined();
+  });
+
+  it("lecture-bfs preset runs BFS in exact numerical order", () => {
+    const p = GRAPH_PRESETS["lecture-bfs"];
+    const names = p.nodes.map((n) => n.label ?? String(n.id));
+    const frames = traversalFrames("bfs", p.nodes.length, p.edges, p.start ?? 0, false, names);
+    const last = frames[frames.length - 1];
+    // 0..9 mapped to labels "1".."10"
+    // Order: 1, 2, 4, 3, 5, 7, 8, 9, 10, 6
+    const visitLabels = last.state.order.map((i) => names[i]);
+    expect(visitLabels).toEqual(["1", "2", "4", "3", "5", "7", "8", "9", "10", "6"]);
+  });
+
+  it("lecture-dfs preset runs DFS in exact alphabetical order", () => {
+    const p = GRAPH_PRESETS["lecture-dfs"];
+    const names = p.nodes.map((n) => n.label ?? String(n.id));
+    const frames = traversalFrames("dfs", p.nodes.length, p.edges, p.start ?? 0, false, names);
+    const last = frames[frames.length - 1];
+    const visitLabels = last.state.order.map((i) => names[i]);
+    expect(visitLabels).toEqual(["A", "B", "C", "E", "D", "F", "G"]);
+  });
+
+  it("spanning-as preset builds spanning trees with 8 edges", () => {
+    const p = GRAPH_PRESETS["spanning-as"];
+    const bfsFrames = traversalFrames("bfs", p.nodes.length, p.edges, p.start ?? 0);
+    const dfsFrames = traversalFrames("dfs", p.nodes.length, p.edges, p.start ?? 0);
+    expect(bfsFrames.at(-1)!.state.treeEdges).toHaveLength(8);
+    expect(dfsFrames.at(-1)!.state.treeEdges).toHaveLength(8);
+  });
+});
+
+describe("getAdjacencySummary", () => {
+  it("computes symmetric matrix for undirected graph", () => {
+    const edges = [{ from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 0 }];
+    const s = getAdjacencySummary(3, edges, false);
+    expect(s.isSymmetric).toBe(true);
+    expect(s.matrix).toEqual([
+      [0, 1, 1],
+      [1, 0, 1],
+      [1, 1, 0],
+    ]);
+    expect(s.list).toEqual([
+      [1, 2],
+      [0, 2],
+      [0, 1],
+    ]);
+    expect(s.matrixMemoryBytes).toBe(9);
+  });
+
+  it("computes asymmetric matrix for directed graph", () => {
+    const edges = [{ from: 0, to: 1 }, { from: 1, to: 2 }];
+    const s = getAdjacencySummary(3, edges, true);
+    expect(s.isSymmetric).toBe(false);
+    expect(s.matrix[0][1]).toBe(1);
+    expect(s.matrix[1][0]).toBe(0);
+  });
+});
+
+describe("bfsQueueExplosionFrames", () => {
+  it("enqueue mode finishes without duplicates and bounded queue length", () => {
+    const frames = bfsQueueExplosionFrames("enqueue");
+    const last = frames[frames.length - 1];
+    expect(last.state.duplicateEnqueues).toBe(0);
+    expect(last.state.totalEnqueues).toBe(6);
+    expect(last.state.maxQueueLength).toBe(4);
+    expect(last.state.order).toHaveLength(6);
+  });
+
+  it("dequeue mode triggers multiple duplicate enqueues and exploded queue length", () => {
+    const frames = bfsQueueExplosionFrames("dequeue");
+    const last = frames[frames.length - 1];
+    expect(last.state.duplicateEnqueues).toBe(4);
+    expect(last.state.totalEnqueues).toBe(10);
+    expect(last.state.redundantPops).toBe(4);
+    expect(last.state.maxQueueLength).toBe(6);
+  });
+});
+
+describe("shortestPathSummary", () => {
+  it("verifies BFS guarantees shortest path compared to DFS", () => {
+    // 0 connects to 1, 2, 3; 1, 2, 3 connect to 4; 4 connects to 5
+    const edges = [
+      { from: 0, to: 1 },
+      { from: 0, to: 2 },
+      { from: 0, to: 3 },
+      { from: 1, to: 4 },
+      { from: 2, to: 4 },
+      { from: 3, to: 4 },
+      { from: 4, to: 5 },
+    ];
+    const s = shortestPathSummary(6, edges, 0, 5, false);
+    expect(s.bfsHops).toBe(3); // 0 -> 1 -> 4 -> 5
+    expect(s.dfsHops).toBe(3);
+    expect(s.bfsLayers[5]).toBe(3);
+    expect(s.bfsLayers[0]).toBe(0);
+
+    // Target 4: BFS is 2 hops (0 -> 1 -> 4)
+    const s2 = shortestPathSummary(6, edges, 0, 4, false);
+    expect(s2.bfsHops).toBe(2);
   });
 });
