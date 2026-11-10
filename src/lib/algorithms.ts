@@ -3010,6 +3010,7 @@ export function shortestPathSummary(
     bfsVisitedOrder,
     dfsPath,
     dfsHops,
+    dfsVisitedOrder,
     isBfsShorter: bfsHops < dfsHops,
     extraHops: Math.max(0, dfsHops - bfsHops),
   };
