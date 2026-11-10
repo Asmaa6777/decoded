@@ -1,38 +1,354 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { MemoryUnit } from "@/components/mdx/LogicVisualizers";
 
 # The Memory Unit: Putting It All Together
 
-Now you can build RAM using nothing but parts from this course. Think of a wall of numbered lockers. Each locker holds one **word**, which is a group of bits that always moves together, and the number on its door is its **address**.
+We have built basic logic gates, assembled them into combinational arithmetic adders and multiplexers, introduced feedback loops to create latches and edge-triggered flip-flops, and chained flip-flops into multi-bit registers and counters.
 
-| Part | Built from | Job |
-|---|---|---|
-| Storage cells | [Latches](/courses/logic-design/d-latch-and-clock) or [registers](/courses/logic-design/registers) | One row per word |
-| Address lines | Wires | Say which word you want |
-| [Decoder](/courses/logic-design/comparators-decoders-encoders) | AND gates | Turns the address into one active row |
-| Read/write control | AND gates | Decides whether the row loads or outputs |
-| Data lines | Wires | Carry the word in or out |
+Now, we combine all of these fundamental components to build the primary memory of a computer: **Random-Access Memory (RAM)**.
 
-Choose an address with the blue bits, and notice that the decoder selects one row. Then write something in and read it back.
+Think of computer memory as a massive grid of numbered post-office boxes:
+- Each box stores a fixed-length group of bits called a **word**.
+- The unique identification number on each box is its **address**.
+- An internal combinational [decoder](/courses/logic-design/comparators-decoders-encoders#decoders-pick-exactly-one) converts any binary address into a physical electrical signal that opens one specific box.
+
+| Subsystem | Underlying Circuit | Architectural Function |
+|:---|:---|:---|
+| **Storage Cells** | Cross-coupled [latches](/courses/logic-design/d-latch-and-clock) or [flip-flops](/courses/logic-design/flip-flops) | Store binary bits in organized rows and columns |
+| **Address Bus** | $k$ unidirectional address lines | Specify which memory word is selected |
+| **Address Decoder** | Combinational AND gate network | Decodes $k$ address bits to activate exactly one word line ($2^k$) |
+| **Read / Write Control** | Steering gates (/CS, /WE, /OE) | Selects whether cells capture data (Write) or drive data (Read) |
+| **Data Bus** | $n$ bidirectional wires with [tri-state buffers](#tri-state-logic-and-shared-system-buses) | Transmit the $n$-bit data word into or out of the selected location |
 
 <MemoryUnit />
 
-## How the pieces work together
+---
 
-To **write**, the decoder activates one row, and that row's Load line goes high. Only that row takes the data, while every other row holds its value. To **read**, the decoder activates a row and the selected cells drive the output lines through a kind of [mux](/courses/logic-design/multiplexers). Everything else stays disconnected.
+## Memory Capacity and Address Mathematics
 
-No matter which address you ask for, the path through the decoder is the same length. That's what "random access" means: every location takes the same time to reach.
-
-## The size formula
-
-With $k$ address lines, you can name $2^k$ words. So capacity is:
+The capacity of a memory unit is governed by the number of **address lines** ($k$) and the number of **data bits per word** ($n$):
 
 $$
-\text{capacity} = 2^k \times \text{word size}
+\text{Capacity} = 2^k \times n \text{ bits} = \frac{1}{8}(2^k \times n) \text{ bytes}
 $$
 
-This memory has 3 address lines and a 4-bit word: $2^3 \times 4 = 32$ bits. A chip with 10 address lines and 8-bit words holds 1,024 bytes (1 KB). The 8086's [20 address lines](/courses/microprocessors/segments-and-addresses) let it reach $2^{20}$ bytes, or 1 MB.
+- An address bus of $k$ bits can uniquely address $2^k$ distinct memory words.
+- In the interactive simulation above, $k = 3$ address lines access $2^3 = 8$ words of $n = 4$ bits each, yielding a capacity of $8 \times 4 = 32$ bits.
+- A memory with 10 address lines and 8-bit words holds $2^{10} \times 8 = 1,024 \text{ bytes}$ ($1\text{ KB}$).
+- A 16-bit address bus accesses $2^{16} = 65,536 \text{ words}$ ($64\text{ KB}$).
+- The [8086 processor's 20 address lines](/courses/microprocessors/segments-and-addresses) address $2^{20} = 1,048,576 \text{ bytes}$ ($1\text{ MB}$).
 
-<Callout tone="neon" label="You've finished the climb">
-Switches made gates, gates made adders and decoders, feedback made latches, and latches made registers and memory. An ALU, registers and memory, joined by muxes and controlled by a counter, are a CPU. The [Microprocessors course](/courses/microprocessors/inside-the-8086) shows you a real one, and [Computer Architecture](/courses/computer-architecture/architecture-and-organization) shows how to make it fast.
+### The True Meaning of "Random Access"
+
+In sequential storage media (such as magnetic tapes or shift-register FIFOs), accessing a piece of data requires mechanically or electrically winding past all intervening data. Access time depends entirely on where the data is stored.
+
+In **Random-Access Memory (RAM)**, the word "random" means that **any arbitrary memory location can be accessed in the exact same amount of time**, regardless of its physical address coordinate. This is because address selection is performed by a combinational decoder: the signal propagation delay through the decoder gates is identical for every address line.
+
+---
+
+## The Internal 1-Bit Binary Storage Cell (BC)
+
+At the intersection of each word row and bit column sits an elementary 1-bit **Binary Cell (BC)**:
+
+```
+                      Data In (I)
+                           |
+                           v
+                     +-----------+
+                     | Steering  |
+      Select ------->|   Gates   |
+                     +-----------+
+                           |
+                           v
+                     +-----------+
+                     |  D Latch  |
+                     +-----------+
+                           |
+                           v
+                     +-----------+
+  Read/Write ------->| Tri-State |
+                     |  Buffer   |
+                     +-----------+
+                           |
+                           v
+                      Data Out (Y)
+```
+
+The binary cell contains three primary functions:
+1. **Bistable Storage:** A cross-coupled latch or flip-flop that stores the bit.
+2. **Select Line ($Sel$):** Driven by the address decoder. When $Sel = 0$, the cell is completely disconnected from internal data buses. When $Sel = 1$, the cell is activated for a read or write operation.
+3. **Read/Write Control ($R/W'$):**
+   - **Write ($R/W' = 0$):** The input steering gate opens, routing the external data input bit $I$ into the latch.
+   - **Read ($R/W' = 1$):** The output tri-state buffer is enabled, driving the stored bit onto the internal output bit line.
+
+---
+
+## Address Decoding: 1D vs 2D Coincident Decoding
+
+How does a memory unit decode addresses efficiently when scaling to millions of words?
+
+### 1D (Linear) Decoding
+
+In a 1D decoding architecture, a single $k$-to-$2^k$ decoder converts the $k$-bit address directly into $2^k$ word select lines.
+- For a small $16 \times 4$ RAM ($k = 4$), a 4-to-16 decoder requires 16 four-input AND gates. This is simple and effective.
+- But consider a modest $1\text{K} \times 8$ memory ($k = 10$). A 10-to-1024 decoder requires **1,024 ten-input AND gates**!
+- For a $64\text{K}$ memory ($k = 16$), it would require **65,536 sixteen-input gates**.
+
+The routing congestion and silicon area make 1D decoding impossible for large memories.
+
+### 2D (Coincident) Decoding: The Grid Matrix
+
+To solve this scaling bottleneck, commercial RAM chips organize storage cells into a two-dimensional square matrix:
+
+```
+                       Column Address (A9..A5)
+                                 |
+                                 v
+                        +-----------------+
+                        | 5-to-32 Column  |
+                        |     Decoder     |
+                        +-----------------+
+                                 |
+                                 | 32 Column Lines
+                                 v
+     Row Address       +--------------------+
+      (A4..A0)  -----> | 32 x 32 Array      |
+                       | of Binary Cells    |
+        5-to-32        | (1024 Total Cells) |
+      Row Decoder      +--------------------+
+                                 |
+                                 v
+                            Data Output
+```
+
+For a 1024-word memory ($k = 10$ address lines):
+1. The 10 address bits are split into two 5-bit halves:
+   - 5 bits ($A_4 \dots A_0$) drive a **Row Decoder** ($5$-to-$32$), activating one of 32 horizontal word lines.
+   - 5 bits ($A_9 \dots A_5$) drive a **Column Decoder** ($5$-to-$32$), activating one of 32 vertical bit lines.
+2. A binary storage cell is selected if and only if **both its row line and column line are active simultaneously** (coincidence selection).
+3. **Massive Gate Reduction:**
+   - 1D Decoding: 1,024 AND gates (each with 10 inputs).
+   - 2D Decoding: $32 + 32 = \mathbf{64}$ AND gates (each with only 5 inputs)!
+   The gate count is reduced by over $93\%$.
+
+---
+
+## Tri-State Logic and Shared System Buses
+
+In a computer, multiple subsystems (RAM, ROM, CPU, disk controllers, network cards) must exchange data over a common set of shared physical wires called the **system data bus**.
+
+If two conventional logic gates were connected to the same wire, and one tried to output logic 1 ($+5\text{ V}$) while the other output logic 0 ($0\text{ V}$), a direct low-resistance short circuit would form. The resulting catastrophic current spike (called **bus contention** or a **bus fight**) would overheat and destroy the semiconductor transistors.
+
+To share a bus safely, circuits use **tri-state buffers** (three-state logic):
+
+```
+       Input (A) -----[ > ]-----+----- Output (Y)
+                        ^
+                        |
+                    Enable (EN)
+```
+
+A tri-state buffer has three possible electrical output states:
+1. **Logic 0:** Low voltage ($0\text{ V}$).
+2. **Logic 1:** High voltage ($+3.3\text{ V}$ or $+5\text{ V}$).
+3. **High-Impedance ($\text{Hi-Z}$):** The output transistors are completely switched off. The terminal acts as an open circuit (virtual infinite electrical resistance), disconnecting the device from the wire.
+
+When a memory chip is not actively being read, its internal tri-state output buffers are placed in $\text{Hi-Z}$. This allows other chips to transmit data across the shared wires without interference.
+
+---
+
+## Control Signals and Memory Timing Cycles
+
+Communication between a processor and a RAM chip is governed by three primary active-LOW control signals:
+- **/CS (Chip Select) / /CE (Chip Enable):** Enables the chip. When HIGH (1), the chip enters low-power standby and forces all outputs into $\text{Hi-Z}$.
+- **/WE (Write Enable):** Commands a Write when LOW (0) and a Read when HIGH (1).
+- **/OE (Output Enable):** Controls the tri-state output buffers during a read operation, preventing bus contention during address changes.
+
+```
+Read Cycle Timing:
+Addresses    ----+=========================+----------------
+                 |<----- Access Time t_AA ------>|
+                 |                         |
+/CS, /OE     ----+-------------------------+----------------
+                                           |
+Data Out     ------------------------------+======= Valid ==
+```
+
+- **Read Access Time ($t_{AA}$):** The maximum time interval from the moment stable addresses appear on the bus until valid data emerges at the data output pins.
+- **Write Pulse Width ($t_W$):** The minimum duration /WE must be held LOW to guarantee data is permanently captured by the internal cells.
+
+---
+
+## Memory Technologies: SRAM vs DRAM vs ROM
+
+| Feature | Static RAM (SRAM) | Dynamic RAM (DRAM) | Read-Only Memory (ROM) |
+|:---|:---|:---|:---|
+| **Storage Element** | 6-transistor (6T) CMOS bistable latch | 1 transistor + 1 capacitor (1T-1C) | Hardwired diode / transistor matrix |
+| **Speed / Access Time** | Extremely fast ($0.5 - 5\text{ ns}$) | Moderate ($10 - 20\text{ ns}$) | Fast ($5 - 15\text{ ns}$) |
+| **Silicon Density** | Low (large 6T cell area) | Extremely high (tiny 1T-1C cell) | Very high |
+| **Cost per Bit** | High | Very low | Low |
+| **Volatility** | Volatile (loses data on power loss) | Volatile (loses data on power loss) | Non-volatile (retains data permanently) |
+| **Refresh Needed?** | No refresh required | **Must be refreshed** every $64\text{ ms}$ | No |
+| **Primary Use** | CPU L1/L2/L3 caches, register files | Main system memory (DDR4, DDR5) | Boot firmware (BIOS/UEFI), lookup tables |
+
+Because DRAM stores each bit as a microscopic electrostatic charge on a capacitor, that charge leaks away through silicon sub-threshold leakage within milliseconds. A DRAM controller must perform periodic **refresh cycles** (reading and re-amplifying every row thousands of times per second) to preserve stored data.
+
+---
+
+## Memory Expansion: Combining Smaller Chips
+
+Engineers routinely combine standard commercial memory ICs to build memory modules with larger word sizes or larger address capacities.
+
+### 1. Expanding Word Length (Increasing Bits per Word)
+
+**Objective:** Build a $1\text{K} \times 8$ memory system using two $1\text{K} \times 4$ RAM chips.
+- Both chips have 10 address lines ($A_9 \dots A_0$) and 4 data lines.
+- **Connection:**
+  - Connect all 10 address lines ($A_9 \dots A_0$) in parallel to both chips.
+  - Connect the /CS and /WE control lines in parallel to both chips.
+  - Split the 8-bit data bus: Chip 0 connects to the lower nibble ($D_3 \dots D_0$), and Chip 1 connects to the upper nibble ($D_7 \dots D_4$).
+- Both chips activate at the same address simultaneously, each supplying half of the 8-bit word.
+
+### 2. Expanding Word Capacity (Increasing Number of Words)
+
+**Objective:** Build a $4\text{K} \times 8$ memory system using four $1\text{K} \times 8$ RAM chips.
+- A $4\text{K}$ memory requires $2^{12} = 4096$ words $\implies \mathbf{12}$ address lines ($A_{11} \dots A_0$).
+- Each $1\text{K}$ chip has only 10 address pins ($A_9 \dots A_0$).
+- **Connection:**
+  - Lower 10 address lines ($A_9 \dots A_0$) connect in parallel to all four chips.
+  - The upper 2 address lines ($A_{11}, A_{10}$) connect to a **2-to-4 decoder**.
+  - The four active-LOW outputs of the decoder connect to the active-LOW Chip Select (/CS) pins of the four individual chips:
+    - Address range `0x000` to `0x3FF`: Decoder selects Chip 0 (/CS0 = 0).
+    - Address range `0x400` to `0x7FF`: Decoder selects Chip 1 (/CS1 = 0).
+    - Address range `0x800` to `0xBFF`: Decoder selects Chip 2 (/CS2 = 0).
+    - Address range `0xC00` to `0xFFF`: Decoder selects Chip 3 (/CS3 = 0).
+  - All four chips connect their 8 data pins directly to the shared 8-bit system data bus ($D_7 \dots D_0$).
+  - Because only the single selected chip enables its tri-state buffers, **bus contention is completely avoided**.
+
+```
+                           A11, A10 (High Address Bits)
+                              |
+                              v
+                     +-----------------+
+                     | 2-to-4 Decoder  |
+                     +-----------------+
+                       |    |    |    |
+           /CS0 -------+    |    |    |
+           /CS1 ------------+    |    |
+           /CS2 -----------------+    |
+           /CS3 ----------------------+
+                       |    |    |    |
+                       v    v    v    v
+                    +----+----+----+----+
+                    |RAM0|RAM1|RAM2|RAM3|  (Four 1K x 8 Chips)
+                    +----+----+----+----+
+                       |    |    |    |
+                       +----+----+----+-----> Shared 8-Bit Data Bus (D7..D0)
+                       ^
+                       |
+     A9..A0 -----------+ (Parallel to All Chips)
+```
+
+<Callout tone="neon" label="The Complete Computer Hierarchy">
+You have reached the summit of digital logic design. Every computer processor is built from these exact building blocks:
+- **ALU:** [Adders](/courses/logic-design/adders) and logic gates performing math.
+- **Registers:** [Flip-flops](/courses/logic-design/flip-flops) and [multiplexers](/courses/logic-design/multiplexers) holding active operands.
+- **Control Unit:** [Counters](/courses/logic-design/counters) and [decoders](/courses/logic-design/comparators-decoders-encoders) stepping through instructions.
+- **Memory:** Binary cells, decoders, and tri-state buses holding programs and data.
+The [Microprocessors course](/courses/microprocessors/inside-the-8086) explores how these units execute real assembly code.
 </Callout>
+
+---
+
+## Past-Exam Practice
+
+### Problem 1: Memory System Expansion Architecture
+
+Design an **$8\text{K} \times 16$** memory system using commercial **$2\text{K} \times 8$** Static RAM chips.
+1. How many $2\text{K} \times 8$ chips are required?
+2. How many address lines are required for the total $8\text{K}$ memory?
+3. How many address lines connect directly to each chip, and how many are used for chip selection?
+4. Specify the size of the decoder required to generate the Chip Select signals.
+5. Draw the complete interconnection block diagram showing address bus distribution, chip select decoder wiring, and data bus assignments.
+
+<ModelAnswer>
+1. **Number of Chips:**
+   - Total bits: $8\text{K} \times 16 = 8 \times 1024 \times 16 = 131,072\text{ bits}$.
+   - Chip capacity: $2\text{K} \times 8 = 2 \times 1024 \times 8 = 16,384\text{ bits}$.
+   - Chips required: $131,072 / 16,384 = 8$ chips.
+   - The chips are organized into 4 banks of 2 chips each (each bank provides 16 bits of width).
+
+2. **Total Address Lines:**
+   - $8\text{K} = 8 \times 1024 = 8192\text{ words} = 2^{13}$, which requires **13 address lines** ($A_{12} \dots A_0$).
+
+3. **Address Partitioning:**
+   - Each $2\text{K} \times 8$ chip has $2048 = 2^{11}$ words, requiring **11 address lines** ($A_{10} \dots A_0$).
+   - The lowest 11 address lines ($A_{10} \dots A_0$) connect in parallel to all 8 memory chips.
+   - The remaining **2 high-order address lines** ($A_{12}, A_{11}$) are used for bank selection.
+
+4. **Decoder Size:**
+   - The 2 high-order address lines ($A_{12}, A_{11}$) drive a **2-to-4 active-LOW decoder**.
+   - Output 0 (/Y0) enables Bank 0 (Chips 0 and 1, addresses `0x0000` to `0x07FF`).
+   - Output 1 (/Y1) enables Bank 1 (Chips 2 and 3, addresses `0x0800` to `0x0FFF`).
+   - Output 2 (/Y2) enables Bank 2 (Chips 4 and 5, addresses `0x1000` to `0x17FF`).
+   - Output 3 (/Y3) enables Bank 3 (Chips 6 and 7, addresses `0x1800` to `0x1FFF`).
+
+5. **Data Bus Routing:**
+   - In every bank of two chips:
+     - The first chip connects to data bus lines $D_7 \dots D_0$ (low byte).
+     - The second chip connects to data bus lines $D_{15} \dots D_8$ (high byte).
+   - All 4 low-byte chips wire their data pins to $D_7 \dots D_0$, and all 4 high-byte chips wire their data pins to $D_{15} \dots D_8$.
+   - /WE connects in parallel to all 8 chips.
+</ModelAnswer>
+
+### Problem 2: 2D Coincident Decoding Address Resolution
+
+A $4096 \times 1$ Static RAM chip uses a 2D coincident decoding array arranged as a $64 \times 64$ matrix of binary cells. Address lines $A_{11} \dots A_6$ connect to a 6-to-64 Row Decoder, and address lines $A_5 \dots A_0$ connect to a 6-to-64 Column Decoder.
+Determine which row line and which column line are activated when hexadecimal address $\text{B}37_{16}$ is applied to the chip.
+
+<ModelAnswer>
+1. **Convert Hexadecimal Address to 12-Bit Binary:**
+   $$\text{B}37_{16} = 1011 \quad 0011 \quad 0111_2$$
+   $$A_{11} A_{10} A_9 A_8 A_7 A_6 A_5 A_4 A_3 A_2 A_1 A_0 = 101100110111_2$$
+
+2. **Extract Row Address ($A_{11} \dots A_6$):**
+   $$\text{RowBits} = 101100_2$$
+   Convert to decimal:
+   $$1 \cdot 32 + 0 \cdot 16 + 1 \cdot 8 + 1 \cdot 4 + 0 \cdot 2 + 0 \cdot 1 = 32 + 8 + 4 = 44_{10}$$
+   **Row line 44** is activated.
+
+3. **Extract Column Address ($A_5 \dots A_0$):**
+   $$\text{ColumnBits} = 110111_2$$
+   Convert to decimal:
+   $$1 \cdot 32 + 1 \cdot 16 + 0 \cdot 8 + 1 \cdot 4 + 1 \cdot 2 + 1 \cdot 1 = 32 + 16 + 4 + 2 + 1 = 55_{10}$$
+   **Column line 55** is activated.
+
+The cell located at the physical intersection of **Row 44** and **Column 55** is accessed.
+</ModelAnswer>
+
+### Problem 3: Static RAM Timing Cycle Verification
+
+A Static RAM chip datasheet specifies the following read timing characteristics:
+- Address Access Time: $t_{AA} = 12\text{ ns}$
+- Chip Select Access Time: $t_{CO} = 8\text{ ns}$
+- Output Enable Access Time: $t_{OE} = 5\text{ ns}$
+- Output Hold Time from Address Change: $t_{OH} = 3\text{ ns}$
+
+1. In a synchronous microprocessor bus cycle, addresses are asserted at $t = 0\text{ ns}$, and /CS and /OE are asserted simultaneously at $t = 2\text{ ns}$. At what earliest time is valid data guaranteed to be available on the data bus?
+2. What is the absolute minimum bus clock cycle period $T_{cyc}$ if the CPU requires a data setup time of $t_{su(CPU)} = 2.5\text{ ns}$ before the latching clock edge?
+
+<ModelAnswer>
+1. **Earliest Valid Data Time:**
+   Data becomes valid after the longest of the required access delays:
+   - Delay from address valid: $t = 0\text{ ns} + t_{AA} = 0 + 12\text{ ns} = 12\text{ ns}$.
+   - Delay from Chip Select: $t = 2\text{ ns} + t_{CO} = 2 + 8\text{ ns} = 10\text{ ns}$.
+   - Delay from Output Enable: $t = 2\text{ ns} + t_{OE} = 2 + 5\text{ ns} = 7\text{ ns}$.
+   The worst-case bottleneck is the address access time ($t_{AA}$).
+   Therefore, valid data is guaranteed at $t = 12\text{ ns}$.
+
+2. **Minimum Bus Clock Cycle Period:**
+   The CPU latches data on the clock edge at the end of the bus cycle. Data must be valid at least $t_{su(CPU)}$ prior to that edge:
+   $$T_{cyc} \ge t_{valid} + t_{su(CPU)} = 12\text{ ns} + 2.5\text{ ns} = 14.5\text{ ns}$$
+   The maximum safe operating bus frequency is:
+   $$f_{bus(max)} = 1 / (14.5\text{ ns}) \approx 68.96\text{ MHz}$$
+</ModelAnswer>

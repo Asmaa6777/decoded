@@ -1,57 +1,421 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { EdgeLab, MasterSlave, JkLab } from "@/components/mdx/LogicVisualizers";
 
 # Flip-Flops: Changing Only on the Edge
 
-A [latch](/courses/logic-design/d-latch-and-clock) is a window: while it's open, anything can come through. A **flip-flop** is a camera flash: it captures its input at one instant, the clock edge, and ignores what happens the rest of the time. It stores one bit, and it changes at most once per clock pulse.
+A [latch](/courses/logic-design/d-latch-and-clock) is level-sensitive: as long as its enable line remains high, its window is open, allowing any input fluctuation to pass directly to the output. In contrast, an **edge-triggered flip-flop** acts like a high-speed camera shutter: it samples its input at one precise, infinitesimal transition—the clock edge—and ignores the input during the entire remainder of the clock cycle.
 
-Here's the difference on the same clock and data. Change D by clicking the cells, especially while the clock is high, and compare the blue and green traces.
+By sampling only on transitions, flip-flops eliminate transparency hazards and make it possible to build complex, reliable sequential networks.
+
+Below, compare how a level-sensitive latch and an edge-triggered flip-flop respond to the identical clock and data signals. Click data cells to change $D$ while the clock is high, and observe how only the latch reflects those mid-pulse changes:
 
 <EdgeLab />
 
-## How to freeze an instant
+## Clock Edge Terminology and Circuit Symbols
 
-Gates can't literally detect an instant, but two latches can fake it. A **master-slave flip-flop** puts two latches in a row, with an inverter on the clock so they take turns. It works like an airlock: there are two doors, and they're never open at the same time, so nothing can pass straight through.
+In logic diagrams, a small dynamic indicator triangle ($\vartriangle$) on an input pin denotes **edge triggering**:
+
+```
+      Positive-Edge (Rising)           Negative-Edge (Falling)
+           +---------+                      +---------+
+       D --| D     Q |-- Q              D --| D     Q |-- Q
+           |         |                      |         |
+     CLK --|>        |                CLK --|o>       |
+           |       Q'|-- Q'                 |       Q'|-- Q'
+           +---------+                      +---------+
+```
+
+1. **Positive-Edge Triggered (Rising Edge $\uparrow$):** State transitions occur precisely as the clock voltage switches from logic 0 to logic 1 ($0 \to 1$). Represented by a bare triangle.
+2. **Negative-Edge Triggered (Falling Edge $\downarrow$):** State transitions occur precisely as the clock voltage switches from logic 1 to logic 0 ($1 \to 0$). Represented by an inversion bubble placed in front of the dynamic indicator triangle.
+
+---
+
+## How to Freeze an Instant: The Master-Slave Architecture
+
+Physical semiconductor gates cannot measure an infinitesimal mathematical instant. Instead, edge triggering is achieved by cascading two distinct latches in series under complementary clock control. This structure is known as a **master-slave flip-flop**.
+
+The circuit acts as an electronic **airlock**: there are two sequential doors, and because the clock driving the second door is inverted, the two doors can never be open at the same time.
+
+```
+                  +---------------- Master ---------------+   +----------------- Slave ---------------+
+                  |                                       |   |                                       |
+             D ---+---\                                   |   |---\                                   |
+                       \___ [ NAND 1 ]----+-- /S          |        \___ [ NAND 5 ]----+-- /S          |
+           CLK ---+---/                   |     \         |   +---/                   |     \         |
+                  |                       |      [NAND 3]-+---+                       |      [NAND 7]-+---+--- Q
+                  |                       |     /         |   |                       |     /         |   |
+                  |                       +-- Q_M         |   |                       +-- Q           |   |
+                  |                       |               |   |                       |               |   |
+                  |                       |               |   |                       |               |   |
+                  |                       |               |   |                       |               |   |
+                  |                       |               |   |                       |               |   |
+                  |                       +-- Q'_M        |   |                       +-- Q'          |   |
+                  |                       |     \         |   |                       |     \         |   |
+                  |                       |      [NAND 4]-+   |                       |      [NAND 8]-+---+--- Q'
+                  |   +---\               |     /             |   +---\               |     /
+                  |        \___ [ NAND 2 ]+-- /R              |        \___ [ NAND 6 ]+-- /R
+                  +---[NOT]-/                                 +---[NOT]-/ (Inverted Clock)
+```
 
 <MasterSlave />
 
-- **Clock low**: the master is open and follows D. The slave is shut, so Q doesn't change.
-- **Clock rises**: the master shuts, freezing whatever D was right then. The slave opens and copies the master to Q.
-- **Clock high**: the master's shut, so changes in D can't get in.
+### The Four Operational Phases
 
-The only moment that matters for D is the rising edge, which gives you an **edge-triggered** D flip-flop. Falling-edge versions swap the roles of the two latches. On a diagram, a small triangle at the clock input means "edge-triggered".
+1. **Clock Low ($CLK = 0$):**
+   - The master latch is enabled ($C_M = 1$ via internal inversion). The master is transparent, continuously following data input $D$. The internal node $Q_M = D$.
+   - The slave latch is disabled ($C_S = 0$). The slave is latched shut, holding the previous output $Q$ stable.
+   - Any transitions on $D$ reach the master's internal nodes, but cannot pass to output $Q$.
 
-<Callout tone="orange" label="A note on terms">
-Some books use "flip-flop" for any 1-bit storage, including latches. Most modern usage is the one here: a latch responds to a level and a flip-flop responds to an edge. If you're ever unsure, look for the triangle on the clock pin.
-</Callout>
+2. **Rising Clock Edge ($0 \to 1$ Transition):**
+   - As $CLK$ crosses the logic threshold, the master latch immediately disables, permanently freezing whatever value $D$ held at that exact instant on node $Q_M$.
+   - A fraction of a nanosecond later, the slave latch enables. It reads the frozen state $Q_M$ and copies it to primary output $Q$.
 
-## The JK flip-flop
+3. **Clock High ($CLK = 1$):**
+   - The master latch remains completely disabled. Any subsequent noise, spikes, or transitions on $D$ are blocked at the master's inputs and cannot alter $Q_M$.
+   - The slave latch remains transparent, holding $Q = Q_M$.
 
-The SR design wasted one input combination. The JK flip-flop puts it to use: J acts like Set, K acts like Reset, and J = K = 1 means **toggle**, or switch to the opposite value.
+4. **Falling Clock Edge ($1 \to 0$ Transition):**
+   - The slave latch disables first, locking output $Q$ in place.
+   - The master latch then re-enables, opening its window to begin tracking the next data bit on $D$ in preparation for the next cycle.
 
-It's built from a D flip-flop plus a little feedback:
+Because data never has an unobstructed combinational path from primary input $D$ to primary output $Q$, **race-around feedback oscillations are physically impossible**.
+
+---
+
+## The Four Canonical Flip-Flop Types
+
+Digital systems rely on four standard flip-flop varieties: **D**, **T**, **JK**, and **SR**. Each has distinct input characteristics and next-state equations.
+
+### 1. The D Flip-Flop (Data / Delay)
+
+The **D flip-flop** is the undisputed workhorse of modern digital design, used in registers, pipeline stages, and CPU datapaths. Whatever logic value is present on $D$ at the active clock edge appears at output $Q$:
 
 $$
-D = JQ' + K'Q
+Q(t+1) = D
 $$
 
-Read that as: "become 1 if J says set and we're currently 0, or stay 1 if we're currently 1 and K isn't resetting us". Test it out.
+| $CLK$ | $D$ | $Q(t)$ | $Q(t+1)$ | Operation |
+|:---:|:---:|:---:|:---:|:---|
+| $\uparrow$ | 0 | X | 0 | Reset ($Q_{next} = 0$) |
+| $\uparrow$ | 1 | X | 1 | Set ($Q_{next} = 1$) |
+| 0 or 1 | X | $Q(t)$ | $Q(t)$ | Hold (Clock inactive) |
+
+**Excitation Requirement:**
+To achieve any desired transition $Q(t) \to Q(t+1)$, simply drive:
+$$D = Q(t+1)$$
+
+---
+
+### 2. The T Flip-Flop (Toggle)
+
+The **T flip-flop** has a single control input, $T$ (Toggle).
+- When $T = 0$, the flip-flop holds its state: $Q(t+1) = Q(t)$.
+- When $T = 1$, the flip-flop inverts its state on each clock edge: $Q(t+1) = Q'(t)$.
+
+Its characteristic equation is governed by the [XOR function](/courses/logic-design/logic-gates#exclusive-or-xor-and-exclusive-nor-xnor):
+
+$$
+Q(t+1) = T \oplus Q(t) = T Q'(t) + T' Q(t)
+$$
+
+| $CLK$ | $T$ | $Q(t)$ | $Q(t+1)$ | Operation |
+|:---:|:---:|:---:|:---:|:---|
+| $\uparrow$ | 0 | 0 | 0 | Hold ($Q_{next} = Q$) |
+| $\uparrow$ | 0 | 1 | 1 | Hold ($Q_{next} = Q$) |
+| $\uparrow$ | 1 | 0 | 1 | Toggle ($Q_{next} = Q'$) |
+| $\uparrow$ | 1 | 1 | 0 | Toggle ($Q_{next} = Q'$) |
+
+**T Flip-Flop Excitation Table:**
+
+| $Q(t) \to Q(t+1)$ | Desired Transition | Required $T$ Input |
+|:---:|:---:|:---:|
+| $0 \to 0$ | No change | 0 |
+| $0 \to 1$ | Toggle | 1 |
+| $1 \to 0$ | Toggle | 1 |
+| $1 \to 1$ | No change | 0 |
+
+Notice that the required input is simply:
+$$T = Q(t) \oplus Q(t+1)$$
+
+#### Frequency Division Application
+Connecting $T = 1$ permanently forces the output to toggle on every active clock edge. Because two clock edges are required to complete one full cycle of $Q$ ($0 \to 1 \to 0$), the output frequency is exactly half the input clock frequency:
+$$f_{out} = f_{clk} / 2$$
+Cascading $n$ T flip-flops divides the clock frequency by $2^n$.
+
+---
+
+### 3. The JK Flip-Flop
+
+The **JK flip-flop** refines the SR concept by resolving the forbidden state. Named after Jack Kilby (inventor of the integrated circuit), it repurposes the $1, 1$ input condition to perform a deterministic **toggle**:
+- $J = 1, K = 0$: Set ($Q \to 1$)
+- $J = 0, K = 1$: Reset ($Q \to 0$)
+- $J = 0, K = 0$: Hold ($Q \to Q$)
+- $J = 1, K = 1$: Toggle ($Q \to Q'$)
 
 <JkLab />
 
-| CLK | J | K | Q next |
-|---|---|---|---|
-| none | x | x | No change |
-| edge | 0 | 0 | No change |
-| edge | 0 | 1 | 0 |
-| edge | 1 | 0 | 1 |
-| edge | 1 | 1 | Toggle |
+#### Characteristic Equation
+By analyzing its Karnaugh map, the next-state equation is:
 
-Toggle is what makes counting possible: tie J and K to 1, and the output flips on each clock edge. You'll use that in the [counters lesson](/courses/logic-design/counters).
+$$
+Q(t+1) = J Q'(t) + K' Q(t)
+$$
 
-## Choosing a type
+Reading this equation logically: "the next state will be 1 if $J$ commands a set while we are currently 0 ($J Q'$), or if we are already 1 and $K$ does not command a reset ($K' Q$)".
 
-- **SR latch**: the basic building block, and rarely used directly.
-- **D latch**: simple and cheap storage where timing is under control.
-- **D flip-flop**: the workhorse. Nearly every [register](/courses/logic-design/registers) in a CPU uses it.
-- **JK flip-flop**: the most flexible, because it can act as any of the others.
+#### JK Flip-Flop Excitation Table
+
+The excitation table is a vital tool for sequential state machine synthesis because it contains generous don't-care conditions ($\text{X}$):
+
+| $Q(t) \to Q(t+1)$ | Desired Transition | Required $J$ | Required $K$ | Reason |
+|:---:|:---:|:---:|:---:|:---|
+| $0 \to 0$ | Hold 0 or Reset | 0 | X | $J$ must be 0 to prevent setting; $K$ can be 0 (hold) or 1 (reset) |
+| $0 \to 1$ | Set or Toggle | 1 | X | $J$ must be 1 to initiate $0 \to 1$; $K$ can be 0 (set) or 1 (toggle) |
+| $1 \to 0$ | Reset or Toggle | X | 1 | $K$ must be 1 to initiate $1 \to 0$; $J$ can be 0 (reset) or 1 (toggle) |
+| $1 \to 1$ | Hold 1 or Set | X | 0 | $K$ must be 0 to prevent resetting; $J$ can be 0 (hold) or 1 (set) |
+
+---
+
+### 4. The SR Flip-Flop
+
+The edge-triggered SR flip-flop behaves identically to the SR latch, but samples $S$ and $R$ exclusively on clock transitions:
+
+$$
+Q(t+1) = S + R' Q(t) \qquad (S \cdot R = 0)
+$$
+
+The condition $S = K = 1$ remains forbidden.
+
+---
+
+## Systematic Flip-Flop Conversion Methodology
+
+A classic engineering task is converting an available flip-flop type (e.g. an existing D flip-flop) into a different desired type (e.g. a JK or T flip-flop).
+
+The universal 4-step procedure:
+1. **Write the characteristic table** of the desired flip-flop, listing all combinations of inputs and current state $Q(t)$, and determine the next state $Q(t+1)$.
+2. **Apply the excitation table** of the available flip-flop to determine what input values must be applied to drive each transition $Q(t) \to Q(t+1)$.
+3. **Plot Karnaugh maps** for each input of the available flip-flop in terms of the desired inputs and $Q(t)$.
+4. **Extract minimal Boolean expressions** and draw the combinational driving circuit.
+
+### Example: Converting a D Flip-Flop into a JK Flip-Flop
+
+- Desired: JK Flip-Flop
+- Available: D Flip-Flop (Excitation rule: $D = Q(t+1)$)
+
+| $J$ | $K$ | $Q(t)$ | Desired $Q(t+1)$ | Required $D$ Input |
+|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | 0 | 0 |
+| 0 | 0 | 1 | 1 | 1 |
+| 0 | 1 | 0 | 0 | 0 |
+| 0 | 1 | 1 | 0 | 0 |
+| 1 | 0 | 0 | 1 | 1 |
+| 1 | 0 | 1 | 1 | 1 |
+| 1 | 1 | 0 | 1 | 1 |
+| 1 | 1 | 1 | 0 | 0 |
+
+Plotting $D$ on a 3-variable Karnaugh map with variables $J, K, Q$:
+- Cells with $D = 1$: $m_1 (001), m_4 (100), m_5 (101), m_6 (110)$.
+- Grouping $m_4, m_6$ (where $J=1, Q=0$): yields $J Q'$.
+- Grouping $m_1, m_5$ (where $K=0, Q=1$): yields $K' Q$.
+
+The synthesized driving logic is:
+
+$$
+D = J Q' + K' Q
+$$
+
+A standard D flip-flop combined with two AND gates, one OR gate, and one inverter functions as a full-featured JK flip-flop!
+
+---
+
+## Asynchronous Inputs: Preset and Clear
+
+In addition to synchronous inputs ($D, J, K, T$) that are sampled strictly on clock edges, real-world flip-flops include **asynchronous direct inputs**:
+- **Preset (PRE, active-LOW):** Asynchronously forces $Q \to 1$ immediately.
+- **Clear (CLR, active-LOW):** Asynchronously forces $Q \to 0$ immediately.
+
+```
+                  +--------\ PRE (Active-LOW)
+                  |        |
+              +---|--------|---+
+          D --| D |        | Q |-- Q
+              |   +--------+   |
+        CLK --|>               |
+              |   +--------+   |
+              +---|--------|---+
+                  |        |
+                  +--------/ CLR (Active-LOW)
+```
+
+Because they are active-LOW, normal clocked operation requires holding both PRE = 1 and CLR = 1.
+- If CLR drops to 0, output $Q$ falls to 0 within nanoseconds, completely overriding the clock and data lines.
+- Asynchronous inputs connect directly to the internal cross-coupled latch gates, bypassing steering logic.
+- They are indispensable for **Power-On Reset (POR)** circuits, ensuring all registers in a CPU wake up in a known zero state upon power application.
+
+---
+
+## Dynamic Timing Constraints and Maximum Clock Frequency
+
+In synchronous digital systems, all flip-flops are clocked simultaneously. For data to transfer reliably from one flip-flop to the next through combinational logic, signals must satisfy strict physical timing budgets:
+
+```
+    FF 1                                                 FF 2
+  +------+                                             +------+
+  |    Q |----+                                  +---->| D    |
+  |      |    |      +--------------------+      |     |      |
+  |> CLK |    +----->| Combinational Logic|------+     |> CLK |
+  +------+           | Delay: t_comb      |            +------+
+     ^               +--------------------+               ^
+     |                                                    |
+  ---+------------------ Common Clock --------------------+
+```
+
+### 1. Setup Time Constraint and $f_{max}$
+
+The **setup time ($t_{su}$)** requires that data arriving at the input of FF 2 be completely stable for at least $t_{su}$ before the next clock edge arrives.
+
+Tracing the path from one clock edge to the next:
+1. The active clock edge triggers FF 1. After clock-to-Q delay ($t_{c-q}$), FF 1 produces valid output.
+2. The signal propagates through intermediate combinational logic, taking worst-case delay $t_{comb(max)}$.
+3. The signal must arrive at FF 2 at least $t_{su}$ prior to the subsequent clock edge.
+
+Therefore, the minimum clock period $T_{c(min)}$ is bounded by:
+
+$$
+T_{c(min)} \ge t_{c-q} + t_{comb(max)} + t_{su}
+$$
+
+The **maximum operating clock frequency ($f_{max}$)** of the digital system is:
+
+$$
+f_{max} = 1 / T_{min} = 1 / (t_{cq} + t_{comb} + t_{su})
+$$
+
+If logic delay $t_{comb}$ is too large, the system clock frequency must be decreased to prevent setup timing violations.
+
+### 2. Hold Time Constraint (The Race Condition)
+
+The **hold time ($t_h$)** requires that data remain stable for at least $t_h$ *after* the active clock edge.
+
+When the clock edge arrives:
+- FF 2 captures its current input.
+- Simultaneously, FF 1 begins changing its output to the new value.
+- That new value races through combinational logic toward FF 2.
+- If that new value arrives at FF 2 *before* FF 2's hold time has expired, FF 2 will mistakenly capture the new value instead of the old one!
+
+To prevent this contamination race, the minimum propagation delay along the path must exceed the hold time:
+
+$$
+t_{c-q(min)} + t_{comb(min)} \ge t_h
+$$
+
+> [!WARNING]
+> Notice that the clock period $T_c$ does **not** appear anywhere in the hold time equation!
+> If a circuit violates hold time, **slowing down the clock will not fix it**. Hold violations represent fatal structural race conditions that can only be resolved by inserting physical delay buffers into the data path.
+
+---
+
+## Past-Exam Practice
+
+### Problem 1: Flip-Flop Conversion Synthesis
+
+Synthesize a **T flip-flop** using an available edge-triggered **JK flip-flop**.
+1. Write the conversion table mapping desired input $T$ and state $Q(t)$ to required $J$ and $K$ inputs.
+2. Derive the minimal Boolean expressions for $J$ and $K$.
+3. Draw the structural schematic.
+
+<ModelAnswer>
+1. **Conversion Table:**
+   We construct the table using the JK excitation requirements:
+   - Transition $0 \to 0$: $J = 0, K = \text{X}$
+   - Transition $0 \to 1$: $J = 1, K = \text{X}$
+   - Transition $1 \to 0$: $J = \text{X}, K = 1$
+   - Transition $1 \to 1$: $J = \text{X}, K = 0$
+
+   | $T$ | $Q(t)$ | Desired $Q(t+1)$ | Required $J$ | Required $K$ |
+   |:---:|:---:|:---:|:---:|:---:|
+   | 0 | 0 | 0 | 0 | X |
+   | 0 | 1 | 1 | X | 0 |
+   | 1 | 0 | 1 | 1 | X |
+   | 1 | 1 | 0 | X | 1 |
+
+2. **Deriving Equations:**
+   - For $J$:
+     - When $Q = 0$: $J = T$ (for $T=0 \implies J=0$; for $T=1 \implies J=1$).
+     - When $Q = 1$: $J = \text{X}$ (don't care).
+     - By taking the don't cares as matching $T$, we simply get:
+       $$J = T$$
+   - For $K$:
+     - When $Q = 0$: $K = \text{X}$ (don't care).
+     - When $Q = 1$: $K = T$ (for $T=0 \implies K=0$; for $T=1 \implies K=1$).
+     - Taking the don't cares as matching $T$, we get:
+       $$K = T$$
+
+3. **Structural Implementation:**
+   Tie both the $J$ and $K$ inputs together and connect them to input $T$:
+   $$J = K = T$$
+   A JK flip-flop with its inputs tied together forms a hardware T flip-flop.
+</ModelAnswer>
+
+### Problem 2: Timing Budget and Maximum Clock Frequency
+
+A digital processor datapath has two D flip-flops connected through an arithmetic logic block. The component datasheets list the following timing parameters:
+- Flip-Flop Clock-to-Q delay: $t_{c-q(max)} = 2.2\text{ ns}$, $t_{c-q(min)} = 0.9\text{ ns}$
+- Flip-Flop Setup time: $t_{su} = 1.4\text{ ns}$
+- Flip-Flop Hold time: $t_h = 1.0\text{ ns}$
+- Combinational logic path delay: $t_{comb(max)} = 5.4\text{ ns}$, $t_{comb(min)} = 0.3\text{ ns}$
+
+1. Calculate the minimum allowable clock period $T_{c(min)}$ and the maximum operating frequency $f_{max}$.
+2. Check whether the datapath satisfies the hold time constraint. If a violation exists, calculate the hold time slack and specify the design remedy.
+
+<ModelAnswer>
+1. **Setup Time and $f_{max}$ Calculation:**
+   The setup time constraint requires:
+   $$T_{c(min)} = t_{c-q(max)} + t_{comb(max)} + t_{su}$$
+   Substitute the numerical values:
+   $$T_{c(min)} = 2.2\text{ ns} + 5.4\text{ ns} + 1.4\text{ ns} = 9.0\text{ ns}$$
+   The maximum operating clock frequency is:
+   $$f_{max} = 1 / T_{min} = 1 / (9.0 \times 10^{-9}\text{ s}) \approx 111.11\text{ MHz}$$
+
+2. **Hold Time Verification:**
+   The hold time constraint requires:
+   $$t_{c-q(min)} + t_{comb(min)} \ge t_h$$
+   Evaluate the minimum path delay:
+   $$t_{path(min)} = 0.9\text{ ns} + 0.3\text{ ns} = 1.2\text{ ns}$$
+   Compare against hold time requirement:
+   $$1.2\text{ ns} \ge 1.0\text{ ns}$$
+   The hold time constraint is satisfied!
+   $$\text{Slack} = (t_{c-q(min)} + t_{comb(min)}) - t_h = 1.2\text{ ns} - 1.0\text{ ns} = +0.2\text{ ns}$$
+   Because slack is positive, no hold time violation occurs. If the slack had been negative, physical delay buffers (pairs of inverters) would need to be inserted into the data line to artificially increase $t_{comb(min)}$.
+</ModelAnswer>
+
+### Problem 3: Asynchronous Preset and Clear Timing Trace
+
+A positive-edge-triggered D flip-flop has active-LOW asynchronous inputs /PRE and /CLR. Initially $Q = 0$.
+Trace output $Q$ across the following sequential events:
+1. $t = 5\text{ ns}$: $D = 1$. Clock is idle at 0.
+2. $t = 10\text{ ns}$: Clock rising edge arrives.
+3. $t = 15\text{ ns}$: /CLR falls to 0 while clock is 1 and $D = 1$.
+4. $t = 20\text{ ns}$: /CLR rises back to 1.
+5. $t = 25\text{ ns}$: Another clock rising edge arrives with $D = 0$.
+
+<ModelAnswer>
+1. **At $t = 5\text{ ns}$:**
+   - $D$ rises to 1. Because the flip-flop is edge-triggered and no clock edge occurs, $Q$ remains at 0.
+2. **At $t = 10\text{ ns}$:**
+   - The rising clock edge arrives with $D = 1$. Both asynchronous inputs are inactive (/PRE = 1, /CLR = 1).
+   - The flip-flop samples $D=1$ and sets $Q \to 1$.
+3. **At $t = 15\text{ ns}$:**
+   - /CLR drops to 0. Asynchronous clear overrides the clock and data inputs immediately!
+   - Output $Q$ is forced to 0 within nanoseconds, despite $D = 1$ and clock remaining high.
+4. **At $t = 20\text{ ns}$:**
+   - /CLR returns to 1 (inactive). The flip-flop does not revert to 1; it remains in its cleared state ($Q = 0$) until the next active clock edge.
+5. **At $t = 25\text{ ns}$:**
+   - A rising clock edge arrives with $D = 0$.
+   - The flip-flop samples $D=0$ and maintains $Q = 0$.
+</ModelAnswer>
+
+---
+
+With individual bits safely captured at clock edges, we can assemble groups of flip-flops to store multi-bit words and shift data between components. The [next lesson](/courses/logic-design/registers) explores registers and shift registers.

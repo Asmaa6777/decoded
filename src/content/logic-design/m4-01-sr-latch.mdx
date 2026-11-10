@@ -1,74 +1,308 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SrLatchNor, SrLatchNand } from "@/components/mdx/CircuitVisualizers";
 
 # The SR Latch: How a Circuit Remembers
 
-Every circuit so far has had a short memory. Change the inputs and the old output is gone. But a computer has to hold numbers, so at some point a circuit has to keep a bit after the input that set it has gone away. How can a pile of gates do that?
+Every circuit studied in combinational logic has had zero memory. Change the inputs, and within a few nanoseconds of propagation delay, the old output is completely gone. But a computer must store data, hold intermediate calculations, and track its location in a program. At some fundamental point, a digital circuit must remember a bit long after the electrical input pulse that created it has vanished.
 
-## Start with something familiar
+How can a network of simple logic gates hold onto a value without any moving parts? The answer lies in one foundational concept: **feedback**.
 
-Imagine a lamp with two push buttons, labelled **ON** and **OFF**. They spring back when you let go. Press ON and the lamp lights. Let go, and it stays lit. Press OFF, and it goes dark. Let go, and it stays dark.
+## The Bistable Element: Two Inverters in a Loop
 
-Look at the lamp while nobody's touching the buttons. Is it on or off? You can't tell from the buttons, because they look the same either way. The lamp is remembering which button you pressed last.
+The most primitive digital memory circuit consists of two [inverters](/courses/logic-design/logic-gates#not-gate-inverter-and-buffer) connected in a closed feedback loop: the output of the first inverter drives the input of the second, and the output of the second inverter wires directly back into the input of the first.
 
-That's all an **SR latch** is. S stands for **Set** (the ON button) and R stands for **Reset** (the OFF button). The output, called **Q**, is the lamp. It stores 1 bit.
+```
+       +-----[ NOT 1 ]----( Q' )----+
+       |                            |
+       +--------------+             |
+                      |             |
+       +--------------+             |
+       |                            |
+       +-----[ NOT 2 ]----( Q )-----+
+```
 
-## The trick: a gate that feeds itself
+This configuration is called a **bistable element** (or bistable multivibrator) because it has two stable electrical equilibrium states:
+1. **State 1 ($Q = 1$):** If $Q = 1$, the input to NOT 1 is 1. NOT 1 outputs $Q' = 0$. That 0 feeds into NOT 2, which outputs $Q = 1$. The circuit reinforces itself indefinitely.
+2. **State 2 ($Q = 0$):** If $Q = 0$, the input to NOT 1 is 0. NOT 1 outputs $Q' = 1$. That 1 feeds into NOT 2, which outputs $Q = 0$. Again, the state holds indefinitely.
 
-Memory comes from one new idea, **feedback**: an output wired back into an input. Take two NOR gates and cross them, so each gate's output goes into the other. Recall that a NOR gives 1 only when all of its inputs are 0. Put another way, **any 1 going into a NOR forces its output to 0**.
+Between these two stable states lies a third theoretical point: the **metastable** state. If both inverters sit exactly at their switching threshold voltage ($V_{th} \approx V_{DD}/2$), the loop has high analog gain. Any infinitesimal thermal noise or electrical fluctuation will immediately tip the circuit into either State 1 or State 2.
 
-The two gates now hold each other in place, like two people leaning against each other. Suppose Q is 1. That 1 goes to the bottom gate and forces its output to 0. That 0 goes back to the top gate, which, with R also at 0, outputs 1. So Q stays 1. The output is holding itself up.
+While a cross-coupled inverter loop can retain a bit indefinitely as long as power is applied, it suffers from a fatal limitation: **it has no external inputs**. Once powered on, there is no way for external circuitry to alter the stored bit without shorting internal nodes to power or ground. To make memory useful, we must replace the simple inverters with gates that accept external control signals.
 
-The circuit is live. Press **Press Set**, using the slow-motion pace if you like, and watch the signal go around the loop:
+## The NOR SR Latch (Active-HIGH)
+
+Replacing the two inverters with 2-input [NOR gates](/courses/logic-design/logic-gates#nand-and-nor-gates) creates the **SR latch**. One input of each NOR gate receives feedback from the other gate's output, while the remaining inputs serve as external control terminals:
+- **$S$ (Set):** An active-HIGH input that commands the latch to store a binary 1 ($Q \to 1$).
+- **$R$ (Reset):** An active-HIGH input that commands the latch to store a binary 0 ($Q \to 0$).
+- **$Q$:** The primary normal output representing the stored bit.
+- **$Q'$ (or $\bar{Q}$):** The complementary output, which should always hold the logical inverse of $Q$.
+
+Recall the governing rule of a NOR gate: **any 1 on any input forces the output to 0**. Conversely, an output can be 1 only if *all* inputs are 0.
+
+```
+             R -----\
+                     \___ [ NOR 1 ]----+----- Q
+               +----/                  |
+               |                       |
+               |      +----------------+
+               |      |
+               +------+----------------+
+                      |                |
+               +----\ |                |
+               |     \___ [ NOR 2 ]----+----- Q'
+             S -----/
+```
+
+The circuit below is fully interactive. Click **Press Set** to trace the signal step-by-step through the feedback loop:
 
 <SrLatchNor />
 
-## What happened when you pressed Set
+### Step-by-Step Transition Analysis
 
-Starting with Q = 0 and Q' = 1, here's what you saw:
+Starting from an initial reset state where $Q = 0$ and $Q' = 1$:
 
-1. **S goes to 1.** The gates haven't reacted yet.
-2. **The bottom NOR reacts.** It has a 1 on an input now, so Q' drops to 0.
-3. **The top NOR reacts.** Both its inputs are now 0 (R and the new Q'), so Q rises to 1.
-4. **Q reaches the bottom NOR**, which keeps Q' at 0. Now S isn't needed.
-5. **S goes back to 0.** Nothing changes, because Q is holding Q' down all by itself.
+1. **Quiescent Hold ($S = 0, R = 0$):**
+   The top gate (NOR 1) sees inputs $R = 0$ and $Q' = 1$. Because $Q' = 1$, the output is forced to $Q = 0$.
+   The bottom gate (NOR 2) sees inputs $S = 0$ and $Q = 0$. Because both inputs are 0, its output is $Q' = 1$. The circuit is in static equilibrium, holding $Q = 0$.
 
-The final state looks exactly like the starting inputs (S = 0, R = 0), yet Q has changed from 0 to 1. Same inputs, different output: the circuit's past is now part of its state. That's why this family of circuits is called **sequential**, in contrast to the **combinational** circuits you've seen so far.
+2. **Applying the Set Pulse ($S = 1, R = 0$):**
+   - At $t = 0$, $S$ rises to 1.
+   - After one gate propagation delay ($t_{pd}$), the bottom gate reacts. Because its input $S = 1$, its output drops: $Q' \to 0$.
+   - After a second propagation delay, the top gate reacts to the change on $Q'$. It now sees $R = 0$ and $Q' = 0$. Because both inputs are 0, its output rises: $Q \to 1$.
+   - The new $Q = 1$ feeds back to the bottom gate, holding its output at $Q' = 0$ regardless of what happens to $S$.
 
-## The function table
+3. **Releasing the Set Pulse ($S \to 0, R = 0$):**
+   When $S$ drops back to 0, NOR 2 still sees $Q = 1$ on its other terminal. Therefore, $Q'$ remains clamped at 0, and $Q$ remains clamped at 1. The bit has been stored.
 
-| S | R | Q | Q' | What it means |
-|---|---|---|---|---|
-| 1 | 0 | 1 | 0 | Set: store a 1 |
-| 0 | 0 | 1 | 0 | Hold (after a set) |
-| 0 | 1 | 0 | 1 | Reset: store a 0 |
-| 0 | 0 | 0 | 1 | Hold (after a reset) |
-| 1 | 1 | 0 | 0 | Forbidden |
+4. **Applying the Reset Pulse ($S = 0, R = 1$):**
+   - When $R$ rises to 1, NOR 1 immediately forces $Q \to 0$.
+   - This 0 reaches NOR 2. With $S = 0$ and $Q = 0$, NOR 2 drives $Q' \to 1$.
+   - The 1 on $Q'$ feeds back to NOR 1, keeping $Q = 0$ even after $R$ returns to 0.
 
-Q' (often drawn as Q with a bar) is meant to be the opposite of Q, so you get both versions of the bit for free.
+### Characteristic Equation and Function Tables
 
-## The forbidden input
+The formal behavior of the NOR SR latch is characterized by its **next-state table** (also called a state transition table), which maps current inputs $S, R$ and the current state $Q(t)$ to the next state $Q(t+1)$:
 
-What about pressing both buttons? Press **Both, then release** and watch.
+| $S$ | $R$ | $Q(t)$ | $Q(t+1)$ | $Q'(t+1)$ | Operation / Description |
+|:---:|:---:|:---:|:---:|:---:|:---|
+| 0 | 0 | 0 | 0 | 1 | Hold / No Change ($Q_{next} = Q$) |
+| 0 | 0 | 1 | 1 | 0 | Hold / No Change ($Q_{next} = Q$) |
+| 0 | 1 | 0 | 0 | 1 | Reset ($Q_{next} = 0$) |
+| 0 | 1 | 1 | 0 | 1 | Reset ($Q_{next} = 0$) |
+| 1 | 0 | 0 | 1 | 0 | Set ($Q_{next} = 1$) |
+| 1 | 0 | 1 | 1 | 0 | Set ($Q_{next} = 1$) |
+| 1 | 1 | 0 | 0 | 0 | Forbidden / Invalid ($Q = Q' = 0$) |
+| 1 | 1 | 1 | 0 | 0 | Forbidden / Invalid ($Q = Q' = 0$) |
 
-While both are held, each gate has a 1 on its input, so both outputs go to 0. Q and Q' are now equal, which already breaks the promise that they're opposites. The real trouble comes on release. Both gates see all 0s at the same moment, so both switch to 1. Now each sees a 1, so both switch back to 0, and so on. In this simulation that goes on forever. In real hardware, one gate is always very slightly faster, so the latch ends up in one state or the other, and you can't predict which. A memory that might hold either value isn't memory, so we simply never use this input.
+We derive the algebraic **characteristic equation** for the next state $Q(t+1)$ directly from the NOR logic:
+
+$$
+Q(t+1) = (R + Q'(t))' = (R + (S + Q(t))')'
+$$
+
+Applying [De Morgan's theorems](/courses/logic-design/boolean-algebra#de-morgans-theorems-and-function-complementation):
+
+$$
+Q(t+1) = R' \cdot (S + Q(t)) = S R' + R' Q(t)
+$$
+
+Under normal legal operation, $S$ and $R$ are never asserted simultaneously, meaning the condition $S \cdot R = 0$ must hold. When $S = 1$, legal operation guarantees $R = 0$ (so $R' = 1$), meaning $S R' = S$. Thus, the standard characteristic equation is:
+
+$$
+Q(t+1) = S + R' Q(t) \qquad (S \cdot R = 0)
+$$
+
+### Excitation Table
+
+In sequential circuit synthesis, we frequently know the desired transition from current state $Q(t)$ to next state $Q(t+1)$ and must determine the required inputs $(S, R)$. This mapping is called an **excitation table**:
+
+| $Q(t) \to Q(t+1)$ | Desired Transition | Required $S$ | Required $R$ | Explanation |
+|:---:|:---:|:---:|:---:|:---|
+| $0 \to 0$ | Hold 0 or Reset | 0 | X | $S$ must be 0 to avoid setting; $R$ may be 0 (hold) or 1 (reset) |
+| $0 \to 1$ | Set | 1 | 0 | Must assert $S=1$; $R$ must be 0 to avoid forbidden input |
+| $1 \to 0$ | Reset | 0 | 1 | Must assert $R=1$; $S$ must be 0 to avoid forbidden input |
+| $1 \to 1$ | Hold 1 or Set | X | 0 | $R$ must be 0 to avoid resetting; $S$ may be 0 (hold) or 1 (set) |
+
+The don't-care conditions ($\text{X}$) allow logic minimization when designing sequential state machines.
+
+### The Forbidden Input and Metastability
+
+What happens if both $S = 1$ and $R = 1$ are applied simultaneously?
+
+1. While both inputs remain high, the 1 on $S$ forces $Q' = 0$, and the 1 on $R$ forces $Q = 0$. This violates the fundamental definition that $Q$ and $Q'$ must be logical complements of each other.
+2. The catastrophic failure occurs when both inputs are **released simultaneously** ($S: 1 \to 0$ and $R: 1 \to 0$).
+   - Both NOR gates simultaneously see all 0s at their inputs.
+   - Both outputs switch from 0 to 1 after one gate delay ($t_{pd}$).
+   - Now both gates see 1s on their cross-coupled inputs and switch their outputs back to 0.
+   - Both outputs oscillate between 0 and 1 continuously until internal electrical noise or physical component asymmetry causes one gate to switch slightly ahead of the other.
+   - The latch eventually falls into either State 1 or State 2, but the resulting state is entirely unpredictable.
+
+Because unpredictable digital memory violates the determinism required by computer systems, the input combination $S = R = 1$ is strictly **forbidden**.
+
+---
 
 ## The NAND version
 
-You can also build a latch from NANDs. It works the same way but on inverted signals, because **any 0 going into a NAND forces its output to 1**. So its inputs rest at 1, and you pull one down to 0 to act on it. A signal that does its job at 0 is called **active low**.
+You can also build an SR latch from cross-coupled NAND gates. It works the same way but on inverted signals, because any 0 going into a NAND forces its output to 1. So its inputs rest at 1, and you pull one down to 0 to act on it. A signal that does its job at 0 is called **active low**. Its control inputs are designated **$\bar{S}$** and **$\bar{R}$**.
+
+```
+            /S -----\
+                     \___ [ NAND 1 ]----+----- Q
+               +----/                   |
+               |                        |
+               |      +-----------------+
+               |      |
+               +------+-----------------+
+                      |                 |
+               +----\ |                 |
+               |     \___ [ NAND 2 ]----+----- Q'
+            /R -----/
+```
 
 <SrLatchNand />
 
-| S | R | Q | Q' | What it means |
-|---|---|---|---|---|
-| 0 | 1 | 1 | 0 | Set |
-| 1 | 1 | 1 | 0 | Hold |
-| 1 | 0 | 0 | 1 | Reset |
-| 1 | 1 | 0 | 1 | Hold |
-| 0 | 0 | 1 | 1 | Forbidden |
+### Function Table of the Active-LOW Latch
 
-<Callout tone="neon" label="Why you should care">
-Registers, caches and every "state" in a processor come down to this loop. Fast [SRAM](/courses/computer-organization/ram-and-rom) stores each bit in a pair of cross-coupled inverters, which is the same idea.
+| $\bar{S}$ | $\bar{R}$ | $Q(t+1)$ | $Q'(t+1)$ | Operation / Description |
+|:---:|:---:|:---:|:---:|:---|
+| 1 | 1 | $Q(t)$ | $Q'(t)$ | Hold / Quiescent state ($Q_{next} = Q$) |
+| 0 | 1 | 1 | 0 | Set ($Q_{next} = 1$) |
+| 1 | 0 | 0 | 1 | Reset ($Q_{next} = 0$) |
+| 0 | 0 | 1 | 1 | Forbidden / Invalid ($Q = Q' = 1$) |
+
+Notice the exact duality:
+- For the NOR latch, the normal quiescent hold state is $S = 0, R = 0$, and pulses are active-HIGH (1).
+- For the NAND latch, the normal quiescent hold state is $\bar{S} = 1, \bar{R} = 1$, and pulses are active-LOW (0).
+- The forbidden condition for the NAND latch is $\bar{S} = 0, \bar{R} = 0$, which forces both outputs to 1. Releasing both simultaneously causes identical race and metastability hazards.
+
+---
+
+## Practical Application: Switch Debouncing
+
+In the physical world, mechanical switches (pushbuttons, toggles, keys) do not make clean, instantaneous contact. When metal contacts strike each other, mechanical elasticity causes them to bounce and separate repeatedly for several milliseconds before settling into solid electrical contact.
+
+```
+Mechanical Switch Voltage:
+3.3V --+       +--+  +-+ +------------------- (Settled HIGH)
+       |       |  |  | | |
+  0V --+-------+  +--+ +-+------------------- (Chattering / Bouncing)
+       |<--- 5 to 20 ms --->|
+```
+
+If a mechanical switch is connected directly to a high-speed digital counter or processor interrupt, the digital logic will detect dozens of false rising and falling edges, counting dozens of events for a single physical button press.
+
+The standard industrial solution is the **SR latch switch debouncer**:
+
+```
+           +3.3V (Vcc)
+             |
+            [R1] Pull-up
+             |
+        A ---+----------------- /S (NAND Latch)
+         \                                  \___ Q (Clean Output)
+          o-- Common (GND)                  /
+        B ---+----------------- /R (NAND Latch)
+             |
+            [R2] Pull-up
+             |
+           +3.3V (Vcc)
+```
+
+1. An SPDT (Single-Pole Double-Throw) switch connects common ground to either terminal A or terminal B.
+2. Both terminals are held at logic 1 through pull-up resistors $R_1$ and $R_2$.
+3. When the switch is flipped to terminal A, the very first microscopic contact pulls $\bar{S} \to 0$. Because $\bar{R} = 1$, this immediately sets $Q = 1$ within nanoseconds.
+4. When the mechanical contact bounces off terminal A into the air, terminal A is pulled back to 1 by resistor $R_1$. The latch now sees $\bar{S} = 1, \bar{R} = 1$, which is the **Hold** state! $Q$ remains solidly at 1.
+5. All subsequent mechanical bounces on terminal A toggle the latch between Set ($\bar{S} = 0$) and Hold ($\bar{S} = 1$). In both states, $Q = 1$.
+6. The latch will never reset to 0 until the switch travels all the way across to make contact with terminal B, pulling $\bar{R} \to 0$.
+
+The output $Q$ produces a pristine, bounce-free digital step that can safely drive high-speed digital logic.
+
+<Callout tone="neon" label="Hardware Foundation">
+Cross-coupled storage is the foundation of high-speed processor registers and on-chip caches. The 6-transistor (6T) [SRAM](/courses/computer-organization/ram-and-rom) cell used in modern L1 and L2 caches is a microscopic CMOS implementation of this cross-coupled loop, holding billions of bits simultaneously.
 </Callout>
 
-There's one problem left: this latch reacts the instant S or R changes. In a computer with millions of these, we need them all to change together, on command. The [next lesson](/courses/logic-design/d-latch-and-clock) adds that control.
+---
+
+## Past-Exam Practice
+
+### Problem 1: NOR SR Latch Timing and Delay Analysis
+
+An active-HIGH NOR SR latch has identical gates, each with a propagation delay of $t_{pd} = 2\text{ ns}$. Initially, $Q = 0$ and $Q' = 1$ with $S = 0, R = 0$.
+1. At $t = 10\text{ ns}$, an active-HIGH pulse of width $t_w = 1\text{ ns}$ is applied to the $S$ input ($S$ rises to 1 at $t = 10\text{ ns}$ and returns to 0 at $t = 11\text{ ns}$). Trace the outputs $Q$ and $Q'$ from $t = 10\text{ ns}$ to $t = 16\text{ ns}$. Does the latch set successfully?
+2. What is the minimum input pulse width $t_{w(min)}$ required to guarantee that the latch sets reliably?
+
+<ModelAnswer>
+1. **Timing Trace:**
+   - At $t = 10\text{ ns}$: $S$ rises to 1. The input to NOR 2 is now $S = 1, Q = 0$.
+   - At $t = 11\text{ ns}$: $S$ falls back to 0. Notice that this happens *before* the propagation delay of NOR 2 ($t_{pd} = 2\text{ ns}$) has elapsed!
+   - At $t = 12\text{ ns}$: The output of NOR 2 begins responding to the earlier input state. However, because $S$ was only high for $1\text{ ns}$, which is shorter than the gate's inertial delay and propagation delay ($2\text{ ns}$), the internal nodes fail to charge fully. Even if $Q'$ momentarily dips toward ground, at $t = 12\text{ ns}$ both $S = 0$ and $Q = 0$, so NOR 2 immediately pulls $Q'$ back to 1.
+   - The signal never reaches the threshold required to trigger NOR 1. Therefore, $Q$ remains at 0 and $Q'$ remains at 1.
+   - The latch **fails to set**. The narrow pulse is rejected as an incomplete glitch.
+
+2. **Minimum Pulse Width Requirement:**
+   - To guarantee a permanent state change, the input pulse on $S$ must remain active until the feedback loop closes and becomes self-sustaining.
+   - $S = 1$ causes $Q'$ to fall to 0 (takes $1 \times t_{pd}$).
+   - $Q' = 0$ causes $Q$ to rise to 1 (takes a second $1 \times t_{pd}$).
+   - Once $Q = 1$, that 1 feeds back to NOR 2, locking $Q' = 0$ independently of $S$.
+   - Therefore, the minimum input pulse width must equal at least one gate delay, and safely two gate delays:
+     $$t_{w(min)} \ge 2 \times t_{pd} = 2 \times 2\text{ ns} = 4\text{ ns}$$
+     (In physical design, $t_{w(min)}$ must strictly exceed the loop loop-closure time to avoid entering a metastable state).
+</ModelAnswer>
+
+### Problem 2: NAND Debouncer Logic Verification
+
+A student constructs a switch debouncer using two cross-coupled 2-input NAND gates with active-LOW inputs $\bar{S}$ and $\bar{R}$. Pull-up resistors connect both inputs to $+5\text{ V}$.
+1. State the logic levels on $\bar{S}, \bar{R}, Q$, and $Q'$ when the switch is at rest in position A (connected to ground on $\bar{S}$).
+2. The switch is flipped toward position B. During mechanical transit, the switch arm is disconnected from both contacts for $2\text{ ms}$. State the logic levels on all terminals during this flight interval.
+3. Upon arriving at position B, the switch bounces 6 times over a $4\text{ ms}$ period, repeatedly making contact with ground and bouncing into open air. Explain why output $Q$ experiences zero glitches.
+
+<ModelAnswer>
+1. **Position A:**
+   - $\bar{S}$ is connected to ground: $\bar{S} = 0$.
+   - $\bar{R}$ is pulled up to $+5\text{ V}$: $\bar{R} = 1$.
+   - By the NAND latch function table: $Q = 1$ and $Q' = 0$.
+
+2. **In-Flight Disconnection ($2\text{ ms}$):**
+   - When the mechanical wiper leaves terminal A, both terminal A and terminal B are pulled up to $+5\text{ V}$ through their respective resistors.
+   - Inputs become $\bar{S} = 1$ and $\bar{R} = 1$.
+   - In a NAND latch, $\bar{S} = 1, \bar{R} = 1$ corresponds to the **Hold** state ($Q_{next} = Q$).
+   - Therefore, $Q$ remains stably at 1 and $Q'$ remains stably at 0 throughout the flight time.
+
+3. **Bouncing at Terminal B:**
+   - When the switch makes its very first contact with terminal B, $\bar{R}$ drops to 0 while $\bar{S} = 1$.
+   - This asserts the Reset condition: $Q$ drops to 0 and $Q'$ rises to 1 within nanoseconds.
+   - When the contact bounces off terminal B into open air, $\bar{R}$ is pulled back to 1. The inputs are now $\bar{S} = 1, \bar{R} = 1$ (Hold). The latch holds $Q = 0, Q' = 1$.
+   - Every bounce simply alternates the inputs between Reset ($\bar{S}=1, \bar{R}=0$) and Hold ($\bar{S}=1, \bar{R}=1$).
+   - Because $Q = 0$ in both states, output $Q$ never leaves 0. Zero glitches occur, producing a single clean falling edge.
+</ModelAnswer>
+
+### Problem 3: Excitation Mapping for an SR Latch
+
+A sequential controller must drive a NOR SR latch through the following state sequence on successive clock intervals:
+$$Q: 0 \longrightarrow 1 \longrightarrow 1 \longrightarrow 0 \longrightarrow 0$$
+Using the NOR SR excitation table, determine the required sequence of $(S, R)$ inputs for each transition. Indicate any don't-care values.
+
+<ModelAnswer>
+Using the excitation table for an SR latch:
+- For $0 \to 0$: $S = 0, R = \text{X}$
+- For $0 \to 1$: $S = 1, R = 0$
+- For $1 \to 0$: $S = 0, R = 1$
+- For $1 \to 1$: $S = \text{X}, R = 0$
+
+Mapping each transition step-by-step:
+1. Transition 1 ($0 \to 1$): Desired next state is 1. Requires Set.
+   $$S_1 = 1, \quad R_1 = 0$$
+2. Transition 2 ($1 \to 1$): Desired next state is 1. Must not Reset; Set is optional.
+   $$S_2 = \text{X}, \quad R_2 = 0$$
+3. Transition 3 ($1 \to 0$): Desired next state is 0. Requires Reset.
+   $$S_3 = 0, \quad R_3 = 1$$
+4. Transition 4 ($0 \to 0$): Desired next state is 0. Must not Set; Reset is optional.
+   $$S_4 = 0, \quad R_4 = \text{X}$$
+
+Summary input sequence:
+$$(S, R) = (1, 0) \longrightarrow (\text{X}, 0) \longrightarrow (0, 1) \longrightarrow (0, \text{X})$$
+</ModelAnswer>
+
+---
+
+While the SR latch successfully stores data, it reacts immediately to changes on its inputs whenever they occur. In complex digital systems containing millions of memory elements, state transitions must occur synchronously under the command of a common control signal. The [next lesson](/courses/logic-design/d-latch-and-clock) introduces control gating and the D latch.

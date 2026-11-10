@@ -1,53 +1,317 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { GatedSrLatch, DLatch } from "@/components/mdx/CircuitVisualizers";
 import { ClockExplorer } from "@/components/mdx/LogicVisualizers";
 
 # Control Inputs and the D Latch
 
-The plain [SR latch](/courses/logic-design/sr-latch) obeys its inputs immediately. Imagine an office where anyone can change the shared whiteboard at any moment. You'd want a rule: only write when the meeting leader says "now". In a circuit, that "now" signal is called a **control input** or **enable**, written C.
+The unclocked [SR latch](/courses/logic-design/sr-latch) responds immediately to its inputs at all times. In a complex digital system containing millions of logic gates, this free-running behavior creates chaos. Combinational logic blocks produce transient electrical glitches as signals race through paths of different lengths. If memory elements reacted to every temporary intermediate voltage spike, data would be corrupted constantly.
 
-## Adding a door
+To build predictable computing machines, state updates must be synchronized. Memory elements must only listen to their inputs when commanded by a dedicated control line. In digital electronics, this synchronization signal is called the **enable** input ($EN$) or the system **clock** ($C$ or $CLK$).
 
-Put a NAND gate in front of each input. You've seen [AND gates used as doors](/courses/logic-design/logic-gates), and this is the same thing. When C is 0, both of these gates output 1 regardless of S and R, and 1 is the resting state of a NAND latch, so the latch holds. When C is 1, S and R get through.
+## Adding Control: The Gated SR Latch
+
+We can place a control "gatekeeper" in front of the basic cross-coupled NAND latch by adding two front-end [NAND gates](/courses/logic-design/logic-gates#nand-and-nor-gates) steered by a common control input $C$:
+
+```
+             S -------\
+                       \___ [ NAND 1 ]----+----- /S (NAND Latch)
+             C ---+---/                   |
+                  |                       |
+                  +---+                   |
+                      |                   |
+             C -------+---\               |
+                           \___ [ NAND 2 ]+----- /R (NAND Latch)
+             R -----------/
+```
 
 <GatedSrLatch />
 
-Use the buttons in order: set S while C is 0 (nothing happens), then open C (now it takes effect).
+### Analysis of Operation
 
-Because this latch pays attention to the **level** of C (is it 1 right now?), we call it **level-sensitive** or **level-triggered**. The forbidden input is still there, though: C=1, S=1, R=1.
+The two front-end NAND gates act as steering doors:
+1. **Disable Mode ($C = 0$):**
+   Recall that any 0 input to a NAND gate unconditionally forces its output to 1.
+   When $C = 0$, both front-end NAND gates output a logic 1, regardless of the values on $S$ and $R$.
+   The internal active-LOW cross-coupled NAND latch sees inputs $\bar{S} = 1$ and $\bar{R} = 1$. As established in the [SR latch lesson](/courses/logic-design/sr-latch#the-nand-version), $(1, 1)$ is the **Hold** state ($Q_{next} = Q$).
+   Thus, while $C = 0$, the latch is completely insulated from noise and state changes on $S$ and $R$.
 
-## The D latch: removing the forbidden input
+2. **Enable Mode ($C = 1$):**
+   When $C = 1$, the front-end NAND gates act as simple inverters.
+   - If $S = 1$ and $R = 0$, then $\bar{S} = (1 \cdot 1)' = 0$ and $\bar{R} = (0 \cdot 1)' = 1$. This sets the internal latch ($Q \to 1$).
+   - If $S = 0$ and $R = 1$, then $\bar{S} = (0 \cdot 1)' = 1$ and $\bar{R} = (1 \cdot 1)' = 0$. This resets the internal latch ($Q \to 0$).
+   - If $S = 0$ and $R = 0$, then $\bar{S} = 1$ and $\bar{R} = 1$, maintaining the current state.
 
-S and R are only ever useful as opposites: one says "store 1" and the other says "store 0". So let's use just one wire. Connect S to a new input D (for data) and R to its inverse:
+Because this latch responds to the steady voltage **level** of the control line ($C = 1$), it is termed **level-sensitive** (or level-triggered).
+
+However, the fatal flaw of the SR latch remains: if an error causes $S = 1$ and $R = 1$ simultaneously while $C = 1$, both internal inputs become $\bar{S} = 0, \bar{R} = 0$, driving the circuit into the **forbidden state**.
+
+---
+
+## The Gated D Latch: Eliminating the Forbidden Input
+
+In digital memory, the inputs $S$ and $R$ are only ever useful when they are exact opposites: asserting $S$ stores a 1, and asserting $R$ stores a 0. An input combination that asserts both is illegal, while asserting neither holds the current state.
+
+We can completely eliminate the forbidden state by reducing the data interface to a single binary input, called **$D$** (for **Data**), and generating the complementary reset signal internally using an inverter:
 
 $$
 S = D \qquad R = D'
 $$
 
-Now S and R can never both be 1. The forbidden state has been designed out.
+```
+             D ---+-------------------\
+                  |                    \___ [ NAND 1 ]----+----- /S
+                  |     C -------+----/                   |
+                  |              |                        |
+                  |              +----+                   |
+                  |                   |                   |
+                  |     C ------------+---\               |
+                  |                        \___ [ NAND 2 ]+----- /R
+                  +----[ NOT ]------------/
+```
+
+With this single structural modification, $S$ and $R$ can never be 1 at the same time. The forbidden state is permanently engineered out of the circuit!
 
 <DLatch />
 
-| C | D | Q |
-|---|---|---|
-| 0 | x | No change |
-| 1 | 0 | 0 |
-| 1 | 1 | 1 |
+### Functional Characteristics and Truth Table
 
-The `x` means "doesn't matter". Think of a camera: with C = 1 the shutter is open and Q follows D live, and when C falls to 0, the shutter closes and Q keeps the last thing it saw. It's called **transparent** while C is 1.
+The operation of the gated D latch is captured in its function table:
 
-## The clock
+| $C$ (Enable) | $D$ (Data) | $Q(t+1)$ | $Q'(t+1)$ | Operational State |
+|:---:|:---:|:---:|:---:|:---|
+| 0 | X | $Q(t)$ | $Q'(t)$ | Latched / Hold (No Change) |
+| 1 | 0 | 0 | 1 | Transparent: Reset ($Q \to 0$) |
+| 1 | 1 | 1 | 0 | Transparent: Set ($Q \to 1$) |
 
-In a real design, C is connected to the [clock](/courses/logic-design/signals), so all the latches open and close together. Circuits that act on a clock like this are called **synchronous**. Circuits that don't are **asynchronous**.
+The symbol **X** represents a don't-care condition: as long as $C = 0$, the value on the data line $D$ has zero impact on the stored state.
+
+### Derivation of the Characteristic Equation
+
+We can derive the algebraic next-state equation for the gated D latch by examining its Karnaugh map:
+
+| $C$ | $D$ | $Q(t)$ | $Q(t+1)$ |
+|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | 0 |
+| 0 | 0 | 1 | 1 |
+| 0 | 1 | 0 | 0 |
+| 0 | 1 | 1 | 1 |
+| 1 | 0 | 0 | 0 |
+| 1 | 0 | 1 | 0 |
+| 1 | 1 | 0 | 1 |
+| 1 | 1 | 1 | 1 |
+
+Group the minterms $m_1, m_3, m_6, m_7$:
+- Minterms $m_1, m_3$ group as $C' Q(t)$.
+- Minterms $m_6, m_7$ group as $C D$.
+
+This yields the fundamental **characteristic equation** of the D latch:
+
+$$
+Q(t+1) = C' Q(t) + C D
+$$
+
+- When $C = 0$: $Q(t+1) = (1)Q(t) + (0)D = Q(t)$. The latch acts as a closed storage cell.
+- When $C = 1$: $Q(t+1) = (0)Q(t) + (1)D = D$. The latch acts as an open window.
+
+Because $Q$ directly mirrors $D$ while $C = 1$, the latch is described as **transparent** during its high-enable interval.
+
+---
+
+## The Clock Signal
+
+In synchronous systems, the control signal $C$ is driven by a periodic square wave called the system **clock** ($CLK$). The clock acts as the heartbeat of the digital processor, coordinating the movement of bits through arithmetic logic and memory.
 
 <ClockExplorer />
 
-A clock signal gives us three moments to act on:
+### Waveform Anatomy
 
-- **Level**: while the clock is high (or low). This is what a latch uses.
-- **Rising edge**: the instant it goes from 0 to 1.
-- **Falling edge**: the instant it goes from 1 to 0.
+A periodic clock waveform is characterized by several fundamental timing parameters:
 
-<Callout tone="orange" label="The trouble with staying open">
-While the clock is high, a latch's output can change as many times as its input does. If that output feeds, through some logic, back into its own input, the signal can race around the loop several times in a single clock pulse. To count reliably, you need something that changes exactly once per clock. That is the next lesson.
+```
+        |<---------------- Period T ---------------->|
+        +-----------------------+                    +-----------
+        |   High Time (t_H)     |   Low Time (t_L)   |
+  0V ---+                       +--------------------+
+        ^                       ^
+   Rising Edge             Falling Edge
+   (0 -> 1)                (1 -> 0)
+```
+
+1. **Clock Period ($T$):** The total time required to complete one full cycle (seconds).
+2. **Clock Frequency ($f$):** The number of cycles completed per second:
+   $$f = \frac{1}{T} \qquad (\text{Hertz, Hz})$$
+3. **Pulse Width / High Time ($t_H$ or $t_w$):** The duration during which the clock voltage remains at logic 1.
+4. **Duty Cycle:** The ratio of the active pulse width to the total period, expressed as a percentage: $(t_H / T) \times 100\%$. A symmetrical square wave has a $50\%$ duty cycle ($t_H = t_L = T/2$).
+5. **Edges:** The transitions between binary states:
+   - **Rising edge** (positive edge, $\uparrow$): The transition from logic 0 to logic 1.
+   - **Falling edge** (negative edge, $\downarrow$): The transition from logic 1 to logic 0.
+
+---
+
+## The Transparency Dilemma: The Feedback Race Hazard
+
+While transparency makes the D latch simple and fast, it creates a fatal problem when sequential circuits use feedback.
+
+Consider building a simple digital accumulator or counter where a stored bit must toggle on each clock cycle:
+
+```
+        +-----------------------------------+
+        |                                   |
+        |      +-----------+                |
+        +----->|  Inverter |----+           |
+               +-----------+    |           |
+                                v           |
+                             +----+         |
+                     D ----->|    |         |
+                             | DL |----+----+----> Q (Output)
+                   CLK ----->|    |    |
+                             +----+    +---------> Q'
+```
+
+We connect the inverted output $Q'$ back to the data input $D$.
+Suppose the clock rises to $C = 1$:
+1. At the rising edge, $Q = 0$ and $Q' = 1$, so $D = 1$.
+2. Because $C = 1$, the latch is transparent. After propagation delay $t_{pd}$, $Q$ switches from $0 \to 1$.
+3. The new $Q = 1$ causes $Q'$ to switch from $1 \to 0$ after the inverter delay $t_{inv}$.
+4. The new $D = 0$ arrives at the latch input.
+5. **Because $C$ is still high ($C = 1$), the latch is still open!** The latch accepts $D = 0$ and drives $Q$ back to $0$.
+6. This cycle repeats continuously throughout the duration of $t_H$:
+
+$$0 \longrightarrow 1 \longrightarrow 0 \longrightarrow 1 \longrightarrow 0 \dots$$
+
+The circuit oscillates uncontrollably at a frequency determined by its own gate delays. When the clock pulse finally falls back to 0 ($C \to 0$), the value frozen inside the latch is completely unpredictable—it depends on the exact picosecond the clock edge fell!
+
+This timing breakdown is known as the **race-around condition** (or feedback transparency hazard). A level-sensitive transparent latch cannot safely update its own state based on feedback.
+
+To count, accumulate, or execute instructions reliably, a circuit needs a memory element that captures data at **one single infinitesimal instant** and then immediately seals itself shut. That requires moving from level sensitivity to true **edge triggering**, which is the subject of [flip-flops](/courses/logic-design/flip-flops).
+
+---
+
+## Dynamic Timing Parameters for Latches
+
+To guarantee that a latch captures data reliably without entering an indeterminate or metastable state, input signals must obey strict dynamic timing specifications:
+
+```
+              |<- t_su ->|<- t_h ->|
+  D  ---------+----------+---------+------------------
+              |          |         |
+              |          v         |
+  C  ---------+          +----------------------------
+              |          |         |
+                         |<-- t_c-q -->|
+  Q  --------------------+-------------+--------------
+```
+
+1. **Setup Time ($t_{su}$):** The minimum time interval that data input $D$ must remain stable and unchanged *before* the falling edge of the enable signal $C$.
+2. **Hold Time ($t_h$):** The minimum time interval that data input $D$ must remain stable and unchanged *after* the falling edge of the enable signal $C$.
+3. **Propagation Delays:**
+   - **$t_{pd}(D \to Q)$:** The delay from a transition on $D$ to the resulting transition on $Q$ while $C = 1$.
+   - **$t_{pd}(C \to Q)$:** The delay from the rising edge of $C$ to the valid output on $Q$ when $D$ is already stable.
+4. **Minimum Pulse Width ($t_w$):** The minimum duration the control signal $C$ must remain high to allow internal steering nodes to fully charge and switch.
+
+If data changes within the setup or hold time aperture ($t_{su} + t_h$), the latch internal voltages may hover in the linear active region, causing **metastability**—a condition where the output lingers at an intermediate analog voltage or oscillates before resolving to a random state.
+
+<Callout tone="orange" label="Latches vs Flip-Flops in Modern Design">
+Because transparent latches are smaller and faster than edge-triggered flip-flops, high-performance processors sometimes use two-phase non-overlapping clocking with latches. However, in standard ASIC and FPGA design, edge-triggered flip-flops are universally preferred because they make static timing analysis completely immune to transparency hazards.
 </Callout>
+
+---
+
+## Past-Exam Practice
+
+### Problem 1: Gated D Latch Waveform Tracing
+
+A gated D latch has its inputs driven by the following timing signals. Assume initial state $Q = 0$, and gate propagation delay $t_{pd} = 1\text{ ns}$.
+- Clock $C$ is high ($C = 1$) during intervals $[2\text{ ns}, 8\text{ ns}]$ and $[14\text{ ns}, 20\text{ ns}]$, and low ($C = 0$) elsewhere.
+- Data $D$ transitions:
+  - $D = 0$ from $0\text{ ns}$ to $4\text{ ns}$.
+  - $D = 1$ from $4\text{ ns}$ to $6\text{ ns}$.
+  - $D = 0$ from $6\text{ ns}$ to $10\text{ ns}$.
+  - $D = 1$ from $10\text{ ns}$ to $16\text{ ns}$.
+  - $D = 0$ from $16\text{ ns}$ to $22\text{ ns}$.
+
+Trace the resulting waveform of output $Q$ from $t = 0\text{ ns}$ to $t = 22\text{ ns}$.
+
+<ModelAnswer>
+We evaluate the state of $Q$ interval-by-interval taking the $1\text{ ns}$ propagation delay into account:
+
+1. **Interval $0\text{ ns} \le t \lt 2\text{ ns}$ ($C = 0$):**
+   - The latch is disabled. $Q$ retains its initial state: $Q = 0$.
+
+2. **Interval $2\text{ ns} \le t \lt 8\text{ ns}$ ($C = 1$, First Enable Pulse):**
+   - At $t = 2\text{ ns}$, $C$ rises to 1. Since $D = 0$ and $Q = 0$, $Q$ remains 0.
+   - At $t = 4\text{ ns}$, $D$ transitions $0 \to 1$. Because $C = 1$, the latch is transparent. After $t_{pd} = 1\text{ ns}$, $Q$ rises to 1 at $t = 5\text{ ns}$.
+   - At $t = 6\text{ ns}$, $D$ transitions $1 \to 0$. Because $C$ is still 1, $Q$ falls to 0 at $t = 7\text{ ns}$.
+   - At $t = 8\text{ ns}$, $C$ falls to 0, latching the current value ($Q = 0$).
+
+3. **Interval $8\text{ ns} \le t \lt 14\text{ ns}$ ($C = 0$, Latch Closed):**
+   - At $t = 10\text{ ns}$, $D$ rises to 1.
+   - However, because $C = 0$, the latch is opaque. This data transition is completely ignored!
+   - $Q$ remains clamped at 0.
+
+4. **Interval $14\text{ ns} \le t \lt 20\text{ ns}$ ($C = 1$, Second Enable Pulse):**
+   - At $t = 14\text{ ns}$, $C$ rises to 1. Since $D$ is currently 1, $Q$ responds after $t_{pd} = 1\text{ ns}$ and rises to 1 at $t = 15\text{ ns}$.
+   - At $t = 16\text{ ns}$, $D$ drops to 0. After $t_{pd} = 1\text{ ns}$, $Q$ drops to 0 at $t = 17\text{ ns}$.
+   - From $t = 17\text{ ns}$ to $20\text{ ns}$, $D = 0$ and $C = 1$, so $Q = 0$.
+   - At $t = 20\text{ ns}$, $C$ falls to 0, latching $Q = 0$.
+
+5. **Interval $20\text{ ns} \le t \le 22\text{ ns}$ ($C = 0$):**
+   - $Q$ remains stably at 0.
+
+**Summary of $Q$:** $Q$ is 1 only during the window $5\text{ ns} \le t \lt 7\text{ ns}$ and $15\text{ ns} \le t \lt 17\text{ ns}$. All other times $Q = 0$.
+</ModelAnswer>
+
+### Problem 2: Algebraic Derivation of Latch Characteristic
+
+Prove that the cross-coupled NAND gated D latch implements the Boolean characteristic function $Q(t+1) = C' Q(t) + C D$.
+
+<ModelAnswer>
+Let the two front-end NAND steering gates be $N_1$ and $N_2$, and the cross-coupled storage gates be $N_3$ (top) and $N_4$ (bottom).
+- Front-end gate $N_1$ has inputs $D$ and $C$:
+  $$X_1 = (C \cdot D)'$$
+- Front-end gate $N_2$ has inputs $D'$ and $C$:
+  $$X_2 = (C \cdot D')'$$
+- The internal latch equations are:
+  $$Q = (X_1 \cdot Q')', \qquad Q' = (X_2 \cdot Q)'$$
+
+Substitute $Q'$ into the expression for $Q$:
+$$Q = (X_1 \cdot (X_2 \cdot Q)')' = X_1' + X_2 \cdot Q$$
+
+Now evaluate the sub-expressions:
+1. $X_1' = ((C \cdot D)')' = C \cdot D$
+2. $X_2 = (C \cdot D')' = C' + (D')' = C' + D$
+
+Substitute these back into the equation for $Q(t+1)$:
+$$Q(t+1) = C \cdot D + (C' + D) \cdot Q(t) = C D + C' Q(t) + D Q(t)$$
+
+Using the [Boolean consensus theorem](/courses/logic-design/boolean-algebra#the-consensus-theorem):
+In $C D + C' Q(t) + D Q(t)$, the third term $D Q(t)$ is the redundant consensus term between $C D$ and $C' Q(t)$. Eliminating $D Q(t)$ yields:
+$$Q(t+1) = C' Q(t) + C D$$
+This matches the standard characteristic equation.
+</ModelAnswer>
+
+### Problem 3: Calculating Safe Feedback Conditions
+
+An engineer attempts to build a frequency divider using a transparent gated D latch with $Q'$ wired back to $D$ through an inverter. The latch has propagation delay $t_{pd} = 1.2\text{ ns}$, and the external inverter has delay $t_{inv} = 0.8\text{ ns}$.
+1. What is the total loop feedback delay $t_{loop}$?
+2. What is the maximum clock high pulse width $t_H$ that can be permitted before the race-around oscillation occurs?
+3. Explain why this constraint makes transparent latches impractical for edge-synchronized counters.
+
+<ModelAnswer>
+1. **Loop Feedback Delay:**
+   The signal travels through the latch ($t_{pd}$) and then through the feedback inverter ($t_{inv}$):
+   $$t_{loop} = t_{pd} + t_{inv} = 1.2\text{ ns} + 0.8\text{ ns} = 2.0\text{ ns}$$
+
+2. **Maximum Allowable Pulse Width:**
+   To prevent the updated output from looping back and overwriting the latch a second time while the clock is still high, the clock must close ($C \to 0$) before the feedback signal propagates back to the input:
+   $$t_H \lt t_{loop} \implies t_H \lt 2.0\text{ ns}$$
+   If $t_H \ge 2.0\text{ ns}$, the output will toggle a second time (and a third, fourth time if $t_H$ is larger), producing race-around oscillation.
+
+3. **Impracticality in Digital Design:**
+   Maintaining a clock pulse width strictly narrower than $2.0\text{ ns}$ across varying temperature, power supply voltage, and semiconductor fabrication corners is virtually impossible. A small drift in clock pulse width or ambient temperature would cause the counter to corrupt its data.
+   This proves that robust sequential circuits require **edge-triggered flip-flops**, which isolate input from output regardless of how long the clock stays high.
+</ModelAnswer>
+
+---
+
+To make circuits robust against transparency hazards, we must sample inputs at an edge rather than during a level. The [next lesson](/courses/logic-design/flip-flops) explores how edge-triggered flip-flops achieve this timing isolation.

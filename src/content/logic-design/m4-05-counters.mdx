@@ -1,36 +1,317 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { CounterLab } from "@/components/mdx/LogicVisualizers";
 
 # Binary Counters
 
-Look at how the binary numbers go:
+Binary counting is the fundamental mechanism by which a digital computer measures time, steps through sequential instruction addresses, and divides high-speed clock frequencies.
+
+Examine the lowest four bits of a standard binary counting sequence:
 
 ```
-0000
-0001
-0010
-0011
-0100
+Decimal    Binary (Q3 Q2 Q1 Q0)
+  0             0  0  0  0
+  1             0  0  0  1
+  2             0  0  1  0
+  3             0  0  1  1
+  4             0  1  0  0
+  5             0  1  0  1
+  6             0  1  1  0
+  7             0  1  1  1
+  8             1  0  0  0
 ```
 
-The rightmost bit flips every step. The next bit flips every 2 steps, the next every 4, and so on. So each bit flips when all the bits to its right were 1 and roll over. It works like an odometer, where each wheel turns the next one once per revolution.
+Notice the rhythmic mathematical pattern:
+- Bit $Q_0$ toggles on **every single step**.
+- Bit $Q_1$ toggles every **2 steps** (whenever $Q_0$ was 1 and rolls over to 0).
+- Bit $Q_2$ toggles every **4 steps** (whenever both $Q_1$ and $Q_0$ were 1).
+- Bit $Q_3$ toggles every **8 steps** (whenever $Q_2, Q_1, Q_0$ were all 1).
 
-A [JK flip-flop](/courses/logic-design/flip-flops) with J = K = 1 toggles on each clock edge, so a **counter** is just a chain of those, each toggling at the right moment.
+A digital **counter** is a sequential circuit that cycles through a specified sequence of binary states upon the arrival of clock pulses. The number of unique states in the cycle is called the **modulus** (or **MOD**) of the counter. An $n$-bit counter has a maximum modulus of $2^n$.
+
+Because a [T flip-flop](/courses/logic-design/flip-flops#2-the-t-flip-flop-toggle) (or a [JK flip-flop](/courses/logic-design/flip-flops#3-the-jk-flip-flop) with $J = K = 1$) toggles on every active clock edge, a counter is constructed by interconnecting a chain of toggling flip-flops.
 
 <CounterLab />
 
-## Two ways to wire it
+---
 
-In a **ripple counter**, the first flip-flop gets the real clock and each of the others is clocked by the output of the one before it. It's cheap and simple. But each stage adds a small delay, so while the change ripples along, the outputs briefly show wrong values. For example, going from `0111` to `1000`, it passes through `0110`, `0100` and `0000`. This is the same weakness as the [ripple-carry adder](/courses/logic-design/fast-carries).
+## Two Architectural Topologies: Ripple vs Synchronous
 
-In a **synchronous counter**, all flip-flops share one clock. Each stage uses an AND gate to decide whether to toggle, according to whether all the lower bits are 1. Everything changes together with no wrong in-between values, which is why CPUs use this type. Computer Architecture covers [synchronous counter derivation and excitation tables](/courses/computer-architecture/ripple-and-synchronous-counters).
+Counters are divided into two fundamental engineering families based on how their clock signals are distributed:
 
-## Where you'll find counters
+```
+  1. Asynchronous (Ripple) Counter:
+     CLK ---> [ FF 0 ] ---> [ FF 1 ] ---> [ FF 2 ] ---> [ FF 3 ]
+                 Q0            Q1            Q2            Q3
 
-- **Dividing a frequency**: each stage runs at half the speed of the one before, so a fast crystal can produce slower clocks.
-- **Timing and counting events**: timers, digital clocks and the delay loops inside devices.
-- **Stepping through a program**: the [Program Counter](/courses/computer-organization/machine-cycle) is a counter with load. It normally counts up to the next instruction, and a jump instruction loads a new value instead.
+  2. Synchronous Counter:
+              +-------------- Common Clock ---------------+
+              |              |              |             |
+              v              v              v             v
+     CLK ---> [ FF 0 ]       [ FF 1 ]       [ FF 2 ]      [ FF 3 ]
+                 ^              ^              ^             ^
+                 |              |              |             |
+                 +---- AND -----+---- AND -----+-------------+ (Carry Logic)
+```
 
-<Callout tone="neon" label="Counting past the end">
-An $n$-bit counter counts from 0 to $2^n - 1$ and then wraps to 0. You just saw it in action with the [two's complement circle](/courses/logic-design/binary-arithmetic). That wrap-around is what a program sees as overflow.
-</Callout>
+---
+
+## Asynchronous (Ripple) Counters
+
+In an **asynchronous counter** (commonly called a **ripple counter**), the external system clock connects **only** to the clock input of the least-significant bit (FF 0). Each subsequent flip-flop receives its clock input from an output of the preceding stage.
+
+### Counting Up vs Counting Down
+
+The direction of counting depends on whether the flip-flops trigger on rising or falling clock edges, and whether they are driven by the normal output $Q$ or the inverted output $Q'$:
+
+1. **Negative-Edge Triggered ($\downarrow$):**
+   - Connecting stage $i$'s clock to the normal output $Q_{i-1}$ produces an **Up-Counter**. (When $Q_{i-1}$ rolls over from $1 \to 0$, it generates a falling edge that triggers stage $i$).
+   - Connecting stage $i$'s clock to the inverted output $Q'_{i-1}$ produces a **Down-Counter**.
+2. **Positive-Edge Triggered ($\uparrow$):**
+   - Connecting stage $i$'s clock to $Q'_{i-1}$ produces an **Up-Counter**.
+   - Connecting stage $i$'s clock to $Q_{i-1}$ produces a **Down-Counter**.
+
+### Critical Weakness 1: Accumulated Propagation Delay
+
+Because each flip-flop is clocked by the preceding one, state transitions must ripple sequentially through the entire chain like a row of falling dominoes.
+
+For an $n$-bit ripple counter where each flip-flop has a propagation delay of $t_{pd}$:
+
+$$
+t_{total} = n \times t_{pd}
+$$
+
+For an 8-bit ripple counter built with flip-flops having $t_{pd} = 6\text{ ns}$, the total ripple time is $8 \times 6\text{ ns} = 48\text{ ns}$.
+
+To allow the counter outputs to stabilize before reading, the clock period $T_{CLK}$ must strictly exceed this accumulated delay:
+
+$$
+T_{CLK} \gt n \times t_{pd} \implies f_{max} \lt 1 / (n \cdot t_{pd})
+$$
+
+As bits are added, the maximum operating frequency plummets proportionally to $1/n$.
+
+### Critical Weakness 2: Transient Decoding Glitches
+
+Consider an asynchronous counter transitioning from state $7$ (`0111`) to state $8$ (`1000`):
+
+1. External clock pulse arrives: FF 0 flips ($1 \to 0$). Intermediate state: `0110` ($6$).
+2. FF 0's transition triggers FF 1 ($1 \to 0$). Intermediate state: `0100` ($4$).
+3. FF 1's transition triggers FF 2 ($1 \to 0$). Intermediate state: `0000` ($0$).
+4. FF 2's transition triggers FF 3 ($0 \to 1$). Final settled state: `1000` ($8$).
+
+While rippling, the counter briefly outputs the intermediate false states `0110`, `0100`, and `0000`. If combinational decoding logic is attached to detect state `0000` (e.g., to trigger a memory write or an interrupt), the decoder will produce a spurious voltage spike (a **glitch**), causing unpredictable system malfunction.
+
+---
+
+## Synchronous Binary Counters
+
+In a **synchronous counter**, the common system clock connects directly to the clock terminal of **every flip-flop simultaneously**.
+
+Because all flip-flops sample their inputs on the exact same clock edge, all outputs transition at the identical instant. Propagation delays do not accumulate, and transient decoding glitches are eliminated.
+
+### Derivation of the Synchronous Toggle Logic
+
+To make each stage toggle only at the correct moment in the binary sequence:
+- Stage 0 ($Q_0$) toggles on every clock edge:
+  $$T_0 = 1$$
+- Stage 1 ($Q_1$) toggles whenever $Q_0 = 1$:
+  $$T_1 = Q_0$$
+- Stage 2 ($Q_2$) toggles whenever both $Q_0 = 1$ and $Q_1 = 1$:
+  $$T_2 = Q_0 \cdot Q_1$$
+- Stage 3 ($Q_3$) toggles whenever $Q_0 = 1, Q_1 = 1$, and $Q_2 = 1$:
+  $$T_3 = Q_0 \cdot Q_1 \cdot Q_2$$
+
+In general, flip-flop $i$ must toggle if and only if **all lower-order bits are 1**:
+
+$$
+T_i = \prod_{j=0}^{i-1} Q_j
+$$
+
+```
+         +-----------------------------------------------------------+
+         |                                                           |
+         |      +-------------------------------------+              |
+         |      |                                     |              |
+         |      |      +---------------+              |              |
+         |      |      |               |              |              |
+         v      |      v               |              |              |
+       +----+   |    +----+            v              v              |
+   1 --| T  |   +--->| T  |          +----+         +----+           |
+       |  Q0|---+    |  Q1|---+----->| &  |-- T2    | &  |-- T3      |
+       |>   |        |>   |   |      +----+         +----+           |
+       +----+        +----+   |        |   FF 2       ^   FF 3       |
+         ^             ^      +--------+--------------+              |
+         |             |                                             |
+   CLK --+-------------+---------------------------------------------+
+```
+
+### Synchronous Up/Down Counter
+
+We can make a counter count in both directions by introducing a control line $M$ (where $M = 1$ counts UP and $M = 0$ counts DOWN):
+- When counting UP ($M = 1$): Toggle stage $i$ when all preceding $Q$ bits are 1.
+- When counting DOWN ($M = 0$): Toggle stage $i$ when all preceding $Q'$ bits are 1 (i.e. all preceding $Q$ bits are 0).
+
+Using an AND-OR steering multiplexer for each stage:
+
+$$
+T_i = M \cdot (Q_{i-1} \cdots Q_0) + M' \cdot (Q'_{i-1} \cdots Q'_0)
+$$
+
+---
+
+## Synchronous Counters with Parallel Load (The 74LS161 / 74LS163)
+
+Commercial integrated counters (such as the standard 74LS161/74LS163) incorporate four distinct functions into a single 4-bit package:
+
+| Pin Name | Function | Description |
+|:---|:---|:---|
+| $CLK$ | Clock | Synchronizes all state updates on rising edges ($\uparrow$) |
+| /CLR | Clear | Resets outputs to $0000_2$ (Asynchronous on 74LS161, Synchronous on 74LS163) |
+| /LOAD | Parallel Load | When LOW, loads inputs $D_3 D_2 D_1 D_0$ into the register on next clock |
+| $ENP, ENT$ | Count Enables | Both must be HIGH for counting to occur |
+| $RCO$ | Ripple Carry Output | Goes HIGH when counter reaches maximum count ($1111_2$) and $ENT = 1$: $RCO = Q_3 Q_2 Q_1 Q_0 \cdot ENT$ |
+
+### Cascading for Multi-Byte Counters
+
+To build a 16-bit or 32-bit synchronous counter, multiple 4-bit chips are cascaded by wiring the $RCO$ output of each chip into the $ENT$ input of the subsequent chip. All chips share the identical system clock, preserving full synchronous operation across any bit width.
+
+---
+
+## Modulo-$N$ Counters and Truncated Sequences
+
+A counter designed to count from 0 up to $N - 1$ and then reset to 0 is called a **modulo-$N$** (or **Mod-$N$**) counter. When $N \lt 2^n$, the counter uses a **truncated sequence**.
+
+The most famous truncated counter is the **BCD (Binary-Coded Decimal) Decade Counter**, which counts from $0000_2$ ($0_{10}$) through $1001_2$ ($9_{10}$) and resets to $0000$ on the tenth count.
+
+### Two Truncation Design Methods
+
+#### Method 1: Synchronous Truncation with Pre-Built Counters
+When using a 4-bit synchronous counter IC:
+- **Synchronous Clear Approach (Recommended):** Detect state $N-1$ with an AND gate and assert the active-LOW synchronous clear pin /CLR. On the next clock pulse, the counter cleanly resets to 0. For BCD ($N = 10$), detect state 9 ($1001_2$) using $Q_3 \cdot Q_0$.
+- **Parallel Load Approach:** Connect the parallel inputs to $0000_2$. Detect state $N-1$ and assert the active-LOW /LOAD pin to load 0 on the next pulse. Alternatively, load offset value $16 - N$ and allow the counter to count up to 15, resetting via natural roll-over.
+
+> [!WARNING]
+> Never use an asynchronous reset to truncate a counter by decoding state $N$ (e.g. decoding state 10 with a NAND gate driving asynchronous /CLR). The instant the first internal flip-flop clears, the NAND output returns to 1, causing an infinitesimal runt pulse that can leave other flip-flops unreset!
+
+#### Method 2: Synthesizing Arbitrary State Machines from Scratch
+To design a counter for an arbitrary sequence (e.g. $0 \to 2 \to 5 \to 1 \to 0$):
+1. Construct the state transition table listing present state $Q$ and desired next state $Q_{next}$.
+2. Use the flip-flop excitation table (e.g. for JK or D flip-flops) to find required inputs.
+3. Plot Karnaugh maps for each flip-flop input, treating unreachable states as don't-cares ($\text{X}$).
+4. Verify **self-starting behavior**: check every unused state to confirm that if noise enters an unused state, the circuit transitions back into the valid sequence rather than locking up in an infinite illegal loop.
+
+---
+
+## Past-Exam Practice
+
+### Problem 1: Systematic Synthesis of a Mod-6 Counter
+
+Design a synchronous **Mod-6 counter** that counts continuously in the sequence:
+$$000_2 \longrightarrow 001_2 \longrightarrow 010_2 \longrightarrow 011_2 \longrightarrow 100_2 \longrightarrow 101_2 \longrightarrow 000_2$$
+Use three edge-triggered **JK flip-flops** ($Q_2, Q_1, Q_0$).
+1. Write the state transition table and determine the excitation inputs for $J_2, K_2, J_1, K_1, J_0, K_0$.
+2. Use Karnaugh maps to derive the minimal sum-of-products expressions for all 6 inputs.
+3. Check the unused states ($110_2$ and $111_2$) to verify that the counter is self-starting.
+
+<ModelAnswer>
+1. **State Transition and Excitation Table:**
+   We use the JK excitation rules ($0 \to 0: 0,\text{X}$; $0 \to 1: 1,\text{X}$; $1 \to 0: \text{X},1$; $1 \to 1: \text{X},0$):
+
+   | Present State ($Q_2 Q_1 Q_0$) | Next State ($Q_2^+ Q_1^+ Q_0^+$) | $J_2$ | $K_2$ | $J_1$ | $K_1$ | $J_0$ | $K_0$ |
+   |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+   | 0 0 0 | 0 0 1 | 0 | X | 0 | X | 1 | X |
+   | 0 0 1 | 0 1 0 | 0 | X | 1 | X | X | 1 |
+   | 0 1 0 | 0 1 1 | 0 | X | X | 0 | 1 | X |
+   | 0 1 1 | 1 0 0 | 1 | X | X | 1 | X | 1 |
+   | 1 0 0 | 1 0 1 | X | 0 | 0 | X | 1 | X |
+   | 1 0 1 | 0 0 0 | X | 1 | 0 | X | X | 1 |
+   | 1 1 0 (Unused) | X X X | X | X | X | X | X | X |
+   | 1 1 1 (Unused) | X X X | X | X | X | X | X | X |
+
+2. **Karnaugh Map Minimization:**
+   - **For $J_0$ and $K_0$:**
+     - $J_0$ is 1 for minterms 0, 2, 4 and don't-care for 1, 3, 5, 6, 7. A map of all 1s and Xs yields:
+       $$J_0 = 1$$
+     - $K_0$ is 1 for minterms 1, 3, 5 and don't-care for 0, 2, 4, 6, 7. A map of all 1s and Xs yields:
+       $$K_0 = 1$$
+       (Stage 0 toggles on every single clock edge).
+
+   - **For $J_1$ and $K_1$:**
+     - $J_1$: Minterm 1 is 1; minterms 0, 4, 5 are 0; 2, 3, 6, 7 are X.
+       Group minterm 1 with don't-care 3: gives $Q_2' Q_0$.
+       $$J_1 = Q_2' Q_0$$
+     - $K_1$: Minterm 3 is 1; minterm 2 is 0; 0, 1, 4, 5, 6, 7 are X.
+       Group minterm 3 with don't-cares 1, 5, 7: gives $Q_0$.
+       $$K_1 = Q_0$$
+
+   - **For $J_2$ and $K_2$:**
+     - $J_2$: Minterm 3 is 1; minterms 0, 1, 2 are 0; 4, 5, 6, 7 are X.
+       Group minterm 3 with don't-care 7: gives $Q_1 Q_0$.
+       $$J_2 = Q_1 Q_0$$
+     - $K_2$: Minterm 5 is 1; minterm 4 is 0; 0, 1, 2, 3, 6, 7 are X.
+       Group minterm 5 with don't-cares 1, 3, 7: gives $Q_0$.
+       $$K_2 = Q_0$$
+
+3. **Self-Starting Analysis:**
+   - **Test Unused State $6$ ($110_2$):**
+     - $Q_2 = 1, Q_1 = 1, Q_0 = 0$.
+     - Inputs: $J_2 = 1 \cdot 0 = 0$, $K_2 = 0$; $J_1 = 0 \cdot 0 = 0$, $K_1 = 0$; $J_0 = 1, K_0 = 1$.
+     - Next state: $Q_2$ holds ($1$), $Q_1$ holds ($1$), $Q_0$ toggles ($1$).
+     - Next state is $111_2$.
+   - **Test Unused State $7$ ($111_2$):**
+     - $Q_2 = 1, Q_1 = 1, Q_0 = 1$.
+     - Inputs: $J_2 = 1$, $K_2 = 1$; $J_1 = 0$, $K_1 = 1$; $J_0 = 1, K_0 = 1$.
+     - Next state: $Q_2$ toggles ($0$), $Q_1$ resets ($0$), $Q_0$ toggles ($0$).
+     - Next state is $000_2$!
+   - From state 6, the counter moves to state 7, and from state 7 it enters state 0 (valid sequence). The counter is fully **self-starting**.
+</ModelAnswer>
+
+### Problem 2: Synthesizing a Mod-12 Counter with a 74LS163
+
+A designer needs a Mod-12 counter (counting $0_{10}$ to $11_{10}$ and repeating). Available is a 74LS163 4-bit synchronous counter IC with active-LOW synchronous clear (/CLR).
+1. State the binary code for count 11 and count 12.
+2. Specify the decoding gate logic to connect to /CLR.
+3. Explain why decoding state 11 with synchronous clear is correct, whereas decoding state 12 would be incorrect.
+
+<ModelAnswer>
+1. **Binary Codes:**
+   - Count $11_{10} = 1011_2$ ($Q_3=1, Q_2=0, Q_1=1, Q_0=1$).
+   - Count $12_{10} = 1100_2$ ($Q_3=1, Q_2=1, Q_1=0, Q_0=0$).
+
+2. **Decoding Logic:**
+   - A 74LS163 has an active-LOW **synchronous clear** pin (/CLR). When /CLR = 0, the counter resets on the *next active clock edge*.
+   - The counter must display state 11 for one full clock period. When state 11 is reached, /CLR must be asserted so that the *next* clock edge forces the counter to 0000.
+   - Detect state 11 ($1011_2$):
+     $$\text{Detect}_{11} = Q_3 \cdot Q_2' \cdot Q_1 \cdot Q_0$$
+     Since the counter never exceeds 11 in normal operation, checking $Q_3 \cdot Q_1 \cdot Q_0$ is sufficient.
+   - Because /CLR is active-LOW, we feed this into a NAND gate:
+     $$\text{CLR}' = (Q_3 \cdot Q_1 \cdot Q_0)'$$
+
+3. **Why Decoding State 12 Would Fail:**
+   - If we decoded state 12 ($1100_2$), the counter would count:
+     $$0, 1, 2, \dots, 11, 12 \longrightarrow 0$$
+     This would create 13 distinct states ($0$ through $12$), forming a Mod-13 counter!
+   - With synchronous clear, the clear action occurs on the clock transition *after* detection. Therefore, one must detect state $N-1$ ($11$), not state $N$.
+</ModelAnswer>
+
+### Problem 3: Operating Frequency Comparison
+
+Compare the maximum operating frequency of a 6-bit ripple counter against a 6-bit synchronous counter. Both are constructed using flip-flops with propagation delay $t_{pd} = 4\text{ ns}$ and setup time $t_{su} = 2\text{ ns}$. In the synchronous counter, each stage's carry logic uses an AND gate with delay $t_{AND} = 1.5\text{ ns}$.
+
+<ModelAnswer>
+1. **Ripple Counter Frequency:**
+   In a 6-bit ripple counter, delay accumulates through all 6 stages:
+   $$T_{CLK(min)} \ge 6 \times t_{pd} + t_{su} = 6 \times 4\text{ ns} + 2\text{ ns} = 26\text{ ns}$$
+   $$f_{max(ripple)} = 1 / (26\text{ ns}) \approx 38.46\text{ MHz}$$
+
+2. **Synchronous Counter Frequency:**
+   In a synchronous counter with series carry, the critical path consists of FF 0's clock-to-Q delay, propagation through 4 cascaded carry AND gates, and the final flip-flop's setup time:
+   $$T_{CLK(min)} \ge t_{pd} + 4 \times t_{AND} + t_{su} = 4\text{ ns} + (4 \times 1.5\text{ ns}) + 2\text{ ns} = 12\text{ ns}$$
+   $$f_{max(sync)} = 1 / (12\text{ ns}) \approx 83.33\text{ MHz}$$
+
+The synchronous counter runs more than **twice as fast**, and does so with complete immunity to intermediate decoding glitches.
+</ModelAnswer>
+
+---
+
+Now that we have examined latches, flip-flops, registers, and counters, we can combine all of these components with address decoders and tri-state buses to construct a complete memory unit. The [next lesson](/courses/logic-design/memory-unit) builds computer RAM from scratch.

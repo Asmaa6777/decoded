@@ -1,35 +1,316 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { RegisterLab, ShiftRegisterLab } from "@/components/mdx/LogicVisualizers";
 
 # Registers and Shift Registers
 
-One [flip-flop](/courses/logic-design/flip-flops) holds one bit. Line up as many as you need, connect all their clocks together, and you've got a **register**: a box that holds a whole number. An 8-bit register is eight flip-flops, and they all change at the same instant.
+A single [flip-flop](/courses/logic-design/flip-flops) stores exactly one bit of data. To store binary numbers, computer instructions, and memory addresses, digital computers combine flip-flops into ordered arrays called **registers**.
 
-## Loading on command
+An $n$-bit register consists of $n$ individual flip-flops sharing a common clock and common control lines, capable of storing an $n$-bit binary word. In modern processor datapaths, registers form the primary working storage: the [Program Counter ($PC$)](/courses/computer-organization/inside-the-cpu) holds instruction addresses, the Instruction Register ($IR$) holds the current opcode, and general-purpose registers (such as $AX, BX, CX, DX$ in the [8086](/courses/microprocessors/registers)) hold intermediate operands.
 
-A CPU doesn't want every register to overwrite itself on every clock pulse. So each flip-flop gets a [2-input mux](/courses/logic-design/multiplexers) in front of it, controlled by a line called **Load**:
+## Loading Data on Command: Parallel Load
 
-- With Load = 1, the mux feeds the new data into D.
-- With Load = 0, the mux feeds the flip-flop's own Q back into D, so it just re-stores what it already has.
+A CPU cannot afford to have every register in its datapath overwrite its contents on every clock tick. A register must retain its stored word across hundreds of clock cycles, loading new data only when an explicit control signal—called **Load** or Write Enable ($WE$)—is asserted.
 
-Click some data bits, try the clock with Load off and on.
+### The Clock Gating Trap: A Critical Design Flaw
+
+A beginner might attempt to control loading by placing an AND gate directly on the clock line:
+
+$$\text{GatedClock} = \text{CLK} \cdot \text{Load}$$
+
+```
+                CLK ---------+---\
+                              \___ [ AND ]----+-----> CLK input of Flip-Flop
+               Load ---------/
+```
+
+> [!WARNING]
+> In synchronous digital design, **clock gating using simple logic gates is strictly forbidden**.
+> 1. **Clock Skew:** The AND gate inserts propagation delay into the clock path. The flip-flop receives its clock edge picoseconds or nanoseconds later than ungated flip-flops, causing fatal setup and hold time violations across the chip.
+> 2. **Glitch Hazards:** If `Load` transitions while the system clock is high, the output of the AND gate will transition mid-cycle, creating a narrow runt pulse (a glitch) that falsely clocks the flip-flop and corrupts data.
+
+### The Robust Solution: Recirculating Multiplexer Load
+
+The industry-standard solution keeps the clock connected directly to every flip-flop without any intervening gates. Instead, control is placed in the data path using a 2-to-1 [multiplexer](/courses/logic-design/multiplexers) in front of each flip-flop:
+
+```
+                      +-------------------+
+                      |                   | (Feedback Q_i)
+                      v                   |
+                 +--------+               |
+          I_i ---| 1      |               |
+                 |    MUX |-- D_i --+-----+----+
+          Q_i ---| 0      |         |     Q_i  |
+                 +--------+         |          |
+                      ^             |  FF_i    |
+                      |             |> CLK     |
+                    Load            +----------+
+                                          ^
+                                          |
+        CLK ------------------------------+
+```
+
+The multiplexer Boolean equation is:
+
+$$
+D_i = \text{Load} \cdot I_i + \text{Load}' \cdot Q_i
+$$
+
+- **Hold Mode ($\text{Load} = 0$):** The multiplexer selects channel 0 ($Q_i$). On each clock edge, the flip-flop simply re-samples its own current output and stores it again. The register retains its word indefinitely.
+- **Load Mode ($\text{Load} = 1$):** The multiplexer selects channel 1 ($I_i$). On the next clock edge, the new external data word $I$ is sampled and latched into the register.
+
+Try this below. Toggle data bits, and pulse the clock with Load enabled and disabled:
 
 <RegisterLab />
 
-Moving a value from one register to another is simple then: put the first register's output on the wires and pulse Load on the second. When the next course says `MOV AX, BX`, [that's what happens physically](/courses/microprocessors/registers).
+When an assembly instruction like `MOV AX, BX` executes in a [microprocessor](/courses/microprocessors/registers), the processor places the output of register $BX$ on the internal data bus and asserts the `Load` pin of register $AX$ for exactly one clock cycle.
+
+---
 
 ## Shift registers
 
-Wire each flip-flop's output to the next one's input, and on each clock edge every bit moves along by one. It's a line of people passing buckets.
+When flip-flops are chained in series such that the output of each stage drives the input of the next stage ($D_i = Q_{i-1}$), the circuit becomes a **shift register**.
+
+On each active clock edge, every stored bit advances one position along the chain.
 
 <ShiftRegisterLab />
 
-Three uses come up all the time:
+### The Four Fundamental Topologies
 
-- **Serial to parallel**: bits arrive one at a time on a single wire, and after 8 clocks you can read a full byte from the 8 outputs. Run it the other way for sending. This is how [serial links](/courses/logic-design/signals) connect to parallel buses.
-- **Multiplying and dividing by 2**: shifting a binary number left one place doubles it, just as shifting a decimal number left multiplies by 10. Shifting right halves it. The 8086's [`SHL` and `SHR`](/courses/microprocessors/arithmetic-and-logic) do exactly this.
-- **Delay**: a bit takes $n$ clocks to reach the end of an $n$-stage chain. Computer Architecture covers [shift register topologies and clock tracing](/courses/computer-architecture/registers-and-shift-registers).
+Shift registers form the bridge between the serial communication world (where bits travel one at a time over single wires) and the parallel computer world (where 32 or 64 bits travel simultaneously over buses).
 
-<Callout tone="neon" label="You've reached a CPU part">
-The [Program Counter, Instruction Register and Accumulator](/courses/computer-organization/inside-the-cpu) are all registers like this one. Next, one with a bit of extra logic becomes a counter, which is what steps a CPU through a program.
-</Callout>
+```
+  1. SISO:  Serial In  ---> [FF0] ---> [FF1] ---> [FF2] ---> [FF3] ---> Serial Out
+
+  2. SIPO:  Serial In  ---> [FF0] ---> [FF1] ---> [FF2] ---> [FF3]
+                              |          |          |          |
+                              v          v          v          v
+                             Q0         Q1         Q2         Q3   (Parallel Out)
+
+                             I0         I1         I2         I3   (Parallel In)
+                              |          |          |          |
+                              v          v          v          v
+  3. PISO:                 [ MUX ]    [ MUX ]    [ MUX ]    [ MUX ]
+                              |          |          |          |
+                              v          v          v          v
+               Load/Shift -> [FF0] ---> [FF1] ---> [FF2] ---> [FF3] ---> Serial Out
+
+                             I0         I1         I2         I3   (Parallel In)
+                              |          |          |          |
+  4. PIPO:                 +--v----------v----------v----------v--+
+                           |  [FF0]     [FF1]     [FF2]     [FF3] |
+                           +--|----------|----------|----------|--+
+                              v          v          v          v
+                             Q0         Q1         Q2         Q3   (Parallel Out)
+```
+
+1. **Serial-In, Serial-Out (SISO):**
+   Bits enter one by one at the input and exit one by one at the output. An $n$-stage SISO register functions as a precise digital **time delay**: an input pulse emerges at the output exactly $n$ clock cycles later.
+2. **Serial-In, Parallel-Out (SIPO):**
+   Data arrives bit-by-bit on a single external line (e.g., from an Ethernet cable or USB line). After $n$ clock cycles, all $n$ bits are captured and can be read simultaneously across $n$ parallel wires. This deserialization is the foundation of network receivers and UARTs.
+3. **Parallel-In, Serial-Out (PISO):**
+   An entire $n$-bit parallel word is loaded simultaneously in one clock cycle. Over the subsequent $n$ cycles, bits are shifted out one at a time onto a single communication wire. This serialization is the foundation of network transmitters.
+4. **Parallel-In, Parallel-Out (PIPO):**
+   Data is loaded in parallel in one cycle and read out in parallel in subsequent cycles. This is the standard general-purpose CPU storage register.
+
+---
+
+## The Universal Shift Register (The 74LS194 Architecture)
+
+A **universal shift register** combines all operational modes into a single reconfigurable circuit. It can load in parallel, shift right, shift left, and hold its contents.
+
+Two mode-control lines, $S_1$ and $S_0$, select the operational mode using a 4-to-1 multiplexer in front of each flip-flop:
+
+| $S_1$ | $S_0$ | Operational Mode | Function Description | Multiplexer Input Equation |
+|:---:|:---:|:---|:---|:---|
+| 0 | 0 | **Hold** | Retain current contents (No change) | $D_i = Q_i$ |
+| 0 | 1 | **Shift Right** | Shift toward least-significant bit | $D_i = Q_{i-1}$ (with $D_0 = \text{SIR}$) |
+| 1 | 0 | **Shift Left** | Shift toward most-significant bit | $D_i = Q_{i+1}$ (with $D_{n-1} = \text{SIL}$) |
+| 1 | 1 | **Parallel Load** | Load external parallel word $I$ | $D_i = I_i$ |
+
+- **$\text{SIR}$ (Serial Input Right):** The serial bit shifted into the MSB during a shift-right operation.
+- **$\text{SIL}$ (Serial Input Left):** The serial bit shifted into the LSB during a shift-left operation.
+- **Clear (CLR, active-LOW):** An asynchronous master reset that forces all flip-flops to 0.
+
+By driving the mode lines $(S_1, S_0)$, a processor or controller can dynamically reconfigure the register on a cycle-by-cycle basis.
+
+---
+
+## Shift Register Counters: Ring and Johnson Counters
+
+A shift register can be transformed into a cyclic sequence generator by connecting its serial output back into its serial input.
+
+### 1. The Ring Counter
+
+In a **ring counter**, the non-inverted serial output of the final stage is connected directly back to the serial input of the first stage:
+
+$$D_0 = Q_{n-1}$$
+
+```
+        +----------------------------------------------------+
+        |                                                    |
+        +-----> [ FF0 ] ----> [ FF1 ] ----> [ FF2 ] ----> [ FF3 ]
+                  |             |             |             |
+                  Q0            Q1            Q2            Q3
+```
+
+To operate correctly, the register is pre-loaded with a single logic 1 (e.g. `1000`). On successive clock pulses, that single 1 circulates endlessly around the ring:
+
+$$1000 \longrightarrow 0100 \longrightarrow 0010 \longrightarrow 0001 \longrightarrow 1000 \dots$$
+
+- **Properties:** An $n$-bit ring counter has exactly $n$ distinct states.
+- **Advantage:** Each state is **one-hot encoded** (only one bit is 1 at any time). It requires **zero decoding gates** to generate non-overlapping multi-phase clock pulses or step a sequencer through $n$ sequential execution phases.
+- **Weakness:** If electrical noise creates an extra 1 (e.g. `1010`) or clears the 1 (`0000`), the counter remains trapped in an illegal cycle. Robust designs use a self-starting feedback gate: $D_0 = Q_1' \cdot Q_2' \cdot Q_3'$.
+
+### 2. The Johnson Counter (Twisted-Ring Counter)
+
+In a **Johnson counter** (also known as a Moebius counter), the *inverted* output of the final stage is fed back into the serial input of the first stage:
+
+$$D_0 = Q'_{n-1}$$
+
+Starting from an initial cleared state (`0000`), the sequence of states for a 4-bit Johnson counter is:
+
+| Step / State | $Q_0$ | $Q_1$ | $Q_2$ | $Q_3$ | Next Input ($D_0 = Q_3'$) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | 0 | 0 | 1 |
+| 1 | 1 | 0 | 0 | 0 | 1 |
+| 2 | 1 | 1 | 0 | 0 | 1 |
+| 3 | 1 | 1 | 1 | 0 | 1 |
+| 4 | 1 | 1 | 1 | 1 | 0 |
+| 5 | 0 | 1 | 1 | 1 | 0 |
+| 6 | 0 | 0 | 1 | 1 | 0 |
+| 7 | 0 | 0 | 0 | 1 | 0 |
+| (Returns to 0) | 0 | 0 | 0 | 0 | 1 |
+
+- **Double Capacity:** An $n$-bit Johnson counter yields **$2n$ distinct states** using only $n$ flip-flops (4 flip-flops provide 8 states, whereas a ring counter would provide only 4).
+- **Glitch-Free Decoding:** Notice that between any two consecutive states, **exactly one bit changes** (a [Gray code property](/courses/logic-design/codes-and-floating-point#gray-code-one-bit-at-a-time)). This guarantees that combinational decoders connected to the outputs will never produce transient decoding glitches!
+- **Minimal Decoding Logic:** Any of the $2n$ states can be decoded using a simple 2-input AND gate:
+  - State 0: $Q_0' Q_3'$
+  - State 1: $Q_0 Q_1'$
+  - State 2: $Q_1 Q_2'$
+  - State 3: $Q_2 Q_3'$
+  - State 4: $Q_0 Q_3$
+  - State 5: $Q_0' Q_1$
+  - State 6: $Q_1' Q_2$
+  - State 7: $Q_2' Q_3$
+
+---
+
+## Arithmetic Applications of Shifting
+
+Shift registers are not merely storage; they are hardware arithmetic accelerators:
+
+1. **Logical Shift Left ($LSL$):** Shifting an unsigned binary number left by 1 position (inserting 0 at LSB) multiplies the number by 2:
+   $$00001011_2 (11_{10}) \ll 1 = 00010110_2 (22_{10})$$
+2. **Logical Shift Right ($LSR$):** Shifting an unsigned binary number right by 1 position (inserting 0 at MSB) divides the number by 2 (discarding remainder):
+   $$00010110_2 (22_{10}) \gg 1 = 00001011_2 (11_{10})$$
+3. **Arithmetic Shift Right ($ASR$):** For signed two's complement numbers, shifting right must replicate the sign bit (MSB) to preserve the negative sign:
+   $$11111000_2 (-8_{10}) \to 11111100_2 (-4_{10})$$
+
+In assembly language, the processor's [`SHL`, `SHR`, and `SAR` instructions](/courses/microprocessors/arithmetic-and-logic) map directly onto hardware shift register operations.
+
+---
+
+## Past-Exam Practice
+
+### Problem 1: Universal Shift Register State Trace
+
+A 4-bit universal shift register ($Q_3 Q_2 Q_1 Q_0$) initially holds the binary word $1010_2$.
+The control inputs $(S_1, S_0)$ and serial inputs are applied as follows across four consecutive clock pulses:
+1. Clock 1: $S_1 = 0, S_0 = 1$ (Shift Right) with serial input $\text{SIR} = 1$.
+2. Clock 2: $S_1 = 1, S_0 = 0$ (Shift Left) with serial input $\text{SIL} = 0$.
+3. Clock 3: $S_1 = 1, S_0 = 1$ (Parallel Load) with parallel inputs $I_3 I_2 I_1 I_0 = 0111$.
+4. Clock 4: $S_1 = 0, S_0 = 0$ (Hold).
+
+Determine the 4-bit state $Q_3 Q_2 Q_1 Q_0$ after each clock pulse.
+
+<ModelAnswer>
+We trace the state step-by-step:
+- **Initial State:** $Q_3 Q_2 Q_1 Q_0 = 1010_2$
+
+1. **Clock 1 ($S_1 = 0, S_0 = 1$, Shift Right):**
+   - Each bit shifts toward the right ($Q_i \to Q_{i-1}$).
+   - $Q_0$ (which held 0) falls off.
+   - $\text{SIR} = 1$ enters into $Q_3$.
+   - $Q_3 = 1, Q_2 = 1, Q_1 = 0, Q_0 = 1$.
+   - **Result after Clock 1:** $1101_2$.
+
+2. **Clock 2 ($S_1 = 1, S_0 = 0$, Shift Left):**
+   - Each bit shifts toward the left ($Q_i \to Q_{i+1}$).
+   - $Q_3$ (which held 1) falls off.
+   - $\text{SIL} = 0$ enters into $Q_0$.
+   - $Q_3 = 1, Q_2 = 0, Q_1 = 1, Q_0 = 0$.
+   - **Result after Clock 2:** $1010_2$.
+
+3. **Clock 3 ($S_1 = 1, S_0 = 1$, Parallel Load):**
+   - The register ignores previous contents and loads the parallel inputs $I_3 I_2 I_1 I_0 = 0111$.
+   - **Result after Clock 3:** $0111_2$.
+
+4. **Clock 4 ($S_1 = 0, S_0 = 0$, Hold):**
+   - The register recirculates its current state ($D_i = Q_i$).
+   - **Result after Clock 4:** $0111_2$.
+</ModelAnswer>
+
+### Problem 2: 4-Bit Johnson Counter Decoding and Self-Correction
+
+A 4-bit Johnson counter uses four D flip-flops with $D_0 = Q_3'$.
+1. Write the 8 valid states in sequence.
+2. Deriving the decoding expression for State 2 ($1100_2$) and State 6 ($0011_2$) using 2-input AND gates. Show why only 2 inputs are needed.
+3. The counter has $2^4 = 16$ possible states, of which 8 are valid. List the 8 invalid states. What happens if noise knocks the counter into the invalid state $0101_2$? How can self-correcting feedback be implemented?
+
+<ModelAnswer>
+1. **Valid 8-State Sequence:**
+   $0000 \to 1000 \to 1100 \to 1110 \to 1111 \to 0111 \to 0011 \to 0001 \to 0000$.
+
+2. **Decoding Logic:**
+   - Look at State 2 ($Q_0 Q_1 Q_2 Q_3 = 1100_2$):
+     Notice the boundary between 1s and 0s: $Q_1 = 1$ and $Q_2 = 0$.
+     In the entire 8-state sequence, the condition $(Q_1 = 1 \text{ and } Q_2 = 0)$ occurs **only** in State 2!
+     In all other valid states:
+     - State 0: $Q_1=0, Q_2=0$
+     - State 1: $Q_1=0, Q_2=0$
+     - State 3: $Q_1=1, Q_2=1$
+     - State 4: $Q_1=1, Q_2=1$
+     - State 5: $Q_1=1, Q_2=1$
+     - State 6: $Q_1=0, Q_2=1$
+     - State 7: $Q_1=0, Q_2=0$
+     Therefore, State 2 is uniquely decoded by:
+     $$\text{Decode}_2 = Q_1 \cdot Q_2'$$
+   - Similarly, for State 6 ($0011_2$), the transition from 0 to 1 occurs between $Q_1$ and $Q_2$:
+     $$\text{Decode}_6 = Q_1' \cdot Q_2$$
+     A 2-input AND gate is completely sufficient to decode any state.
+
+3. **Invalid States and Self-Correction:**
+   - The 8 invalid states are: $0010, 0100, 0110, 1001, 1010, 1011, 0101, 1101$.
+   - If the counter enters $0101$:
+     $D_0 = Q_3' = 1' = 0$.
+     Next state: $0010 \to 1001 \to 0100 \to 1010 \to 0101 \dots$
+     The counter enters a trapped secondary cycle of 6 states that never returns to the valid 8-state sequence!
+   - **Self-Correcting Logic:**
+     To force self-correction, we modify the feedback equation for $D_0$:
+     $$D_0 = Q_3' \cdot (Q_1' + Q_2)$$
+     Alternatively, detecting the all-ones state to inhibit reload ensures that any invalid sequence drains into the primary cycle within 4 clock cycles.
+</ModelAnswer>
+
+### Problem 3: PISO Register Design Analysis
+
+A 4-bit Parallel-In Serial-Out (PISO) shift register must load parallel inputs $I_3 I_2 I_1 I_0$ when $\text{Shift}/\text{Load}' = 0$, and shift data toward the serial output at $Q_3$ when $\text{Shift}/\text{Load}' = 1$.
+1. Write the Boolean equation for the input multiplexer of flip-flop $i$ ($D_i$).
+2. How many clock cycles are required to completely transmit an 8-bit byte through an 8-bit PISO register?
+
+<ModelAnswer>
+1. **Multiplexer Equation:**
+   Let $S = \text{Shift}/\text{Load}'$.
+   - When $S = 0$ (Load), $D_i$ must receive external bit $I_i$.
+   - When $S = 1$ (Shift), $D_i$ must receive bit from previous stage $Q_{i-1}$ (with $D_0 = 0$ or serial input).
+   $$D_i = S \cdot Q_{i-1} + S' \cdot I_i$$
+
+2. **Clock Cycles for 8-bit Transmission:**
+   - 1 clock cycle is required to load the 8-bit word into the flip-flops (with $S = 0$).
+   - Upon loading, the most-significant bit $Q_7$ is immediately available at the serial output pin (0 delay cycles).
+   - 7 subsequent clock pulses (with $S = 1$) shift the remaining 7 bits out one by one.
+   - Total time: **1 load cycle + 7 shift cycles = 8 clock cycles**.
+</ModelAnswer>
+
+---
+
+With registers capable of loading, holding, and shifting binary patterns, we can add combinational steering logic to count events. The [next lesson](/courses/logic-design/counters) builds binary and modulo counters.
