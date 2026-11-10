@@ -3,15 +3,15 @@ import { BinaryAddition, TwosComplementWheel } from "@/components/mdx/LogicVisua
 
 # Binary Arithmetic and Negative Numbers
 
-Every computation inside a central processing unit, from indexing an array to rendering three-dimensional graphics, reduces to elementary arithmetic performed on binary digits. 
+Every computation in a processor, from indexing an array to drawing graphics, comes down to arithmetic on binary digits. 
 
-To design circuits that execute addition, subtraction, multiplication, and division, hardware engineers must represent both positive and negative quantities using only physical voltage signals (1s and 0s). Understanding how digital systems perform arithmetic requires exploring unsigned operations, the algebra of complements, and the standard representation: two's complement.
+To build circuits for addition, subtraction, multiplication, and division, hardware must represent positive and negative numbers with voltage levels (1s and 0s). That requires unsigned operations, complements, and the standard format: two's complement.
 
 ## Unsigned binary arithmetic
 
-In digital arithmetic, addition combines two operands: the **augend** (the first operand) and the **addend** (the number being added) to produce a **sum** and a **carry-out**. Subtraction combines the **minuend** (the quantity being reduced) and the **subtrahend** (the quantity being deducted) to produce a **difference** and a **borrow**.
+In digital arithmetic, addition combines two numbers: the **augend** (the first operand) and the **addend** (the number added) to produce a **sum** and a **carry-out**. Subtraction combines the **minuend** (the starting quantity) and the **subtrahend** (the quantity deducted) to produce a **difference** and a **borrow**.
 
-Unsigned arithmetic operates strictly on non-negative numbers $[0, 2^n - 1]$. The rules for single-bit binary addition mirror decimal column addition, but with only two allowed digits (0 and 1):
+Unsigned arithmetic works only on non-negative numbers $[0, 2^n - 1]$. The rules for single-bit binary addition follow decimal column addition, with only two allowed digits (0 and 1):
 
 - $0 + 0 = 0$, carry $0$
 - $0 + 1 = 1$, carry $0$
@@ -67,42 +67,42 @@ Difference:    0  1  1  1  1  1   (31)
 
 Verifying the result: $011111_2 = 16 + 8 + 4 + 2 + 1 = 31_{10}$, which matches $45 - 14 = 31$.
 
-While direct borrowing is intuitive for humans, constructing separate physical borrowing circuits in silicon wastes chip area and complicates the processor. Instead, modern computers convert every subtraction problem into an addition problem using **complements**.
+Direct borrowing is familiar on paper, but separate borrowing circuits in silicon take extra chip area. Instead, processors turn subtraction into addition using **complements**.
 
 ## How do you write a negative number with only 0 and 1?
 
-A physical register consists of $n$ flip-flops storing $n$ bits. Because wires cannot carry a literal negative sign, computer architects evaluated three distinct conventions to represent positive and negative values.
+A register is a bank of flip-flops storing $n$ bits. Because wires cannot carry a negative sign, hardware designers evaluated three conventions for signed numbers.
 
 ### 1. Signed-magnitude
 
-In **signed-magnitude** representation, the leftmost bit (most significant bit, MSB) is reserved strictly as a sign indicator:
+In **signed-magnitude** representation, the leftmost bit (most significant bit, MSB) serves as the sign:
 - $\text{MSB} = 0 \implies \text{positive}$
 - $\text{MSB} = 1 \implies \text{negative}$
-- The remaining $n-1$ bits represent the absolute magnitude of the number.
+- The remaining $n-1$ bits store the magnitude of the number.
 
 For an 8-bit register:
 - $+25_{10} = \mathbf{0}0011001_2$
 - $-25_{10} = \mathbf{1}0011001_2$
 
 **Drawbacks:**
-1. **Dual zero:** It has both a $+0 = 00000000_2$ and a $-0 = 10000000_2$, wasting a bit pattern and requiring conditional logic in software tests like `if (x == 0)`.
-2. **Complex hardware:** Adding two numbers requires checking their sign bits first, comparing their magnitudes, deciding whether to add or subtract, and choosing the sign of the result.
+1. **Two zeros:** Both $+0 = 00000000_2$ and $-0 = 10000000_2$ exist, wasting a bit pattern and complicating equality checks.
+2. **Complex hardware:** Adding two numbers requires checking sign bits, comparing magnitudes, deciding whether to add or subtract, and picking the sign of the result.
 
 ### 2. Signed one's complement
 
-In **signed 1's complement** (also called the diminished radix complement), positive numbers have an MSB of 0. A negative number is formed by inverting every bit of the corresponding positive number:
+In **signed 1's complement** (the diminished radix complement), positive numbers have an MSB of 0. A negative number is formed by inverting every bit of the positive value:
 
 $$
 -N = (2^n - 1) - N
 $$
 
-Subtracting any binary number from $111\dots1_2$ simply toggles every $0 \to 1$ and $1 \to 0$:
+Subtracting a binary number from $111\dots1_2$ flips every $0 \to 1$ and $1 \to 0$:
 - $+25_{10} = 00011001_2$
 - $-25_{10} = 11100110_2$
 
 **Drawbacks:**
-1. **Dual zero:** $+0 = 00000000_2$ and $-0 = 11111111_2$.
-2. **End-around carry:** When adding numbers, any carry-out from the MSB has mathematical weight $2^n \equiv 1 \pmod{2^n - 1}$. It must be routed back and added to the LSB in a second clock cycle, slowing down arithmetic execution.
+1. **Two zeros:** Both $+0 = 00000000_2$ and $-0 = 11111111_2$ exist.
+2. **End-around carry:** When adding numbers, any carry-out from the MSB has weight $2^n \equiv 1 \pmod{2^n - 1}$. It must loop back and be added to the least significant bit, which takes an extra addition step.
 
 ### 3. Signed two's complement
 
@@ -112,7 +112,7 @@ $$
 -N = 2^n - N = ((2^n - 1) - N) + 1
 $$
 
-The mathematical power of **two's complement** is that the MSB acts as a normal positional weight with a **negative value**:
+The advantage of **two's complement** is that the MSB acts as a positional weight with a **negative value**:
 
 $$
 N = -a_{n-1} 2^{n-1} + \sum_{i=0}^{n-2} a_i 2^i
@@ -131,18 +131,18 @@ $$
 $$
 
 <Callout tone="orange" label="Mistake students make">
-**Interpreting a negative two's complement number by converting the lower bits directly as a positive magnitude.** If a student sees `11011001`, they recognize the MSB is 1 (negative) and then mistakenly convert the remaining 7 bits `1011001` ($89$) to conclude the number is $-89_{10}$. In two's complement, the remaining bits do not represent positive magnitude! You must either use the negative positional weight formula ($-128 + 89 = -39$) or take the two's complement to read its magnitude (invert: `00100110`, add 1: `00100111` $= 39_{10} \implies -39_{10}$).
+**Interpreting a negative two's complement number by converting the lower bits directly as a positive magnitude.** If a student sees `11011001`, they recognize the MSB is 1 (negative) and then convert the remaining 7 bits `1011001` ($89$) to conclude the number is $-89_{10}$. In two's complement, the remaining bits do not represent positive magnitude. Use the negative positional weight ($-128 + 89 = -39$) or take the two's complement to read the magnitude (invert to `00100110`, add 1 to get `00100111` $= 39_{10} \implies -39_{10}$).
 </Callout>
 
 ### The circular number line
 
-Think of an $n$-bit register like an automotive odometer with four digits. Roll it backward from `0000` by one click, and it reads `9999`. In a vehicle, everyone understands that `9999` represents $-1$, because rolling forward by 1 returns the odometer to `0000`.
+Think of an $n$-bit register like a four-digit odometer. Roll it backward from `0000` by one click, and it reads `9999`. That `9999` acts like $-1$, because rolling forward by 1 returns the odometer to `0000`.
 
-Two's complement bends binary numbers into a continuous circle:
+Two's complement bends binary numbers into a circle:
 
 <TwosComplementWheel />
 
-Clockwise movement corresponds to addition; counter-clockwise movement corresponds to subtraction. Because addition naturally wraps around modulo $2^n$, the exact same digital adder circuit handles both unsigned integers and signed negative numbers.
+Clockwise movement is addition; counter-clockwise movement is subtraction. Because addition wraps modulo $2^n$, the same adder circuit handles both unsigned integers and signed negative numbers.
 
 ### Range and asymmetry
 
@@ -155,7 +155,7 @@ Notice that the negative range extends one value further than the positive range
 - The value $-128$ ($10000000_2$) exists, but $+128$ cannot fit in 8 bits.
 
 <Callout tone="orange" label="Mistake students make">
-**Assuming all signed numbers can be negated within the same register width.** In an 8-bit two's complement system, try negating $-128$ ($10000000_2$): invert every bit $\implies 01111111_2$, add 1 $\implies 10000000_2$ ($-128$). You get $-128$ back! Because $+128$ requires 9 bits ($0\,10000000_2$), negating the most negative number in an $n$-bit register cannot be represented and triggers an arithmetic overflow.
+**Assuming all signed numbers can be negated within the same register width.** In an 8-bit two's complement system, negating $-128$ ($10000000_2$) flips every bit to $01111111_2$ and adds 1, giving $10000000_2$ ($-128$) again. Because $+128$ requires 9 bits ($0\,10000000_2$), negating the most negative number cannot fit into the register and causes an arithmetic overflow.
 </Callout>
 
 ### Sign extension
@@ -176,7 +176,7 @@ $$
 The mathematical sum of the two new high bits is identical to the old negative MSB weight!
 
 <Callout tone="orange" label="Mistake students make">
-**Zero-extending signed negative numbers.** Padding high-order bits with zeros is only valid for unsigned integers. If you zero-extend the 4-bit signed number `1011` ($-5$) into 8 bits as `00001011`, the number becomes $+11_{10}$! Negative signed numbers must always replicate the MSB (`11111011` $= -5_{10}$).
+**Zero-extending signed negative numbers.** Padding higher bits with zeros works only for unsigned integers. If you zero-extend the 4-bit signed number `1011` ($-5$) into 8 bits as `00001011`, the number becomes $+11_{10}$. Negative signed numbers must replicate the sign bit (`11111011` $= -5_{10}$).
 </Callout>
 
 ## The recipe
@@ -189,7 +189,7 @@ For $N = 00100111_2$ ($+39_{10}$):
 3. Result: `11011001` represents $-39_{10}$ in 8-bit two's complement.
 
 <Callout tone="orange" label="Mistake students make">
-**Inverting bits without adding 1.** Students often stop after bitwise inversion, confusing 1's complement with 2's complement. Inverting bits of $+39$ yields `11011000` (which is $-40$ in two's complement, an off-by-one error). The $+1$ step is mandatory because $2^n - N = ((2^n - 1) - N) + 1$.
+**Inverting bits without adding 1.** Students often stop after inverting bits, confusing 1's complement with 2's complement. Inverting the bits of $+39$ gives `11011000` (which is $-40$ in two's complement, an off-by-one error). The $+1$ step is required because $2^n - N = ((2^n - 1) - N) + 1$.
 </Callout>
 
 ### Fast hardware inspection shortcut
@@ -214,10 +214,10 @@ $$
 
 That is why the [adder you will build](/courses/logic-design/adders) can do both jobs with a single circuit.
 
-Depending on the relative sizes of $M$ and $N$, two outcomes arise:
+Depending on the sizes of $M$ and $N$:
 
-1. **If $M \ge N$:** The difference $M - N \ge 0$. The sum $M - N + 2^n \ge 2^n$, producing a carry-out of the MSB ($2^n$). In an $n$-bit register, this $2^n$ bit cannot be stored and is **discarded**. Discarding $2^n$ leaves the correct positive difference $M - N$.
-2. **If $M < N$:** The difference $M - N < 0$. The sum $M - N + 2^n < 2^n$, so no carry-out is produced ($C_{out} = 0$). The result is negative and is already formatted in 2's complement form ($2^n - (N - M)$). To read its magnitude, take the 2's complement of the answer and prepend a minus sign.
+1. **If $M \ge N$:** The difference $M - N \ge 0$. The sum $M - N + 2^n \ge 2^n$, producing a carry-out from the MSB ($2^n$). In an $n$-bit register, this $2^n$ bit cannot be stored and is **discarded**, leaving the positive difference $M - N$.
+2. **If $M < N$:** The difference $M - N < 0$. The sum $M - N + 2^n < 2^n$, so no carry-out occurs ($C_{out} = 0$). The result is negative and already in 2's complement form ($2^n - (N - M)$). To read its magnitude, take the 2's complement of the answer and prepend a minus sign.
 
 ### Worked arithmetic cases (8-bit registers)
 
@@ -259,7 +259,7 @@ To verify magnitude: 2's complement of `11101001` is `00010110` $+ 1 = 00010111 
 Magnitude: 2's complement of `11000011` is `00111100` $+ 1 = 00111101 = 61_{10}$. Result: $-61$.
 
 <Callout tone="orange" label="Mistake students make">
-**Assuming a carry-out of 1 in two's complement subtraction indicates an error.** In unsigned addition, a carry-out of 1 indicates the sum exceeded $2^n - 1$. But in two's complement subtraction ($M + (2^n - N)$), a carry-out of 1 indicates that $M \ge N$ and the result is non-negative! The carry-out bit $2^n$ is simply discarded. It is entirely normal and expected.
+**Assuming a carry-out of 1 in two's complement subtraction indicates an error.** In unsigned addition, a carry-out of 1 indicates the sum exceeded $2^n - 1$. In two's complement subtraction ($M + (2^n - N)$), a carry-out of 1 indicates $M \ge N$ and the result is non-negative. Discarding the carry bit $2^n$ is normal and expected.
 </Callout>
 
 ### Arithmetic overflow in signed numbers
@@ -299,10 +299,10 @@ Consider the addition of the sign bits $A_{n-1}$ and $B_{n-1}$ with carry-in $C_
 Thus, $V = C_{n-1} \oplus C_n$ accurately detects signed overflow under every operational condition.
 
 <Callout tone="orange" label="Mistake students make">
-**Confusing the carry flag with the overflow flag.** Never confuse the **carry flag** ($C$) with the **overflow flag** ($V$).
-- The **carry flag** indicates whether unsigned arithmetic wrapped past the register capacity ($2^n$).
-- The **overflow flag** indicates whether signed two's complement arithmetic produced an invalid sign flip.
-CPUs maintain separate hardware status bits for both, allowing compilers and assembly programmers to [check flags](/courses/microprocessors/flags) after every operation.
+**Confusing the carry flag with the overflow flag.** The **carry flag** ($C$) and the **overflow flag** ($V$) report different conditions:
+- The **carry flag** shows whether unsigned arithmetic wrapped past the register capacity ($2^n$).
+- The **overflow flag** shows whether signed two's complement arithmetic flipped the sign incorrectly.
+CPUs keep separate status bits for both, so code can [check flags](/courses/microprocessors/flags) after each operation.
 </Callout>
 
 ## Practice problems
@@ -356,7 +356,7 @@ Convert each operand to 8-bit signed binary:
 - Carry-out of 1 is discarded. Result: $00001000_2 = +8_{10}$, which matches $+68 - 60 = +8$.
 
 <Callout tone="orange" label="Common exam pitfall">
-Students often see $C_8 = 1$ in case 3 and incorrectly claim that overflow occurred. Remember: for signed numbers, overflow is determined strictly by $V = C_7 \oplus C_8$. A carry-out of 1 with $V = 0$ simply means the result wrapped modulo $2^8$, which is normal for signed arithmetic.
+Students often see $C_8 = 1$ in case 3 and think overflow occurred. For signed numbers, overflow is determined by $V = C_7 \oplus C_8$. A carry-out of 1 with $V = 0$ means the sum wrapped modulo $2^8$, which is standard in signed arithmetic.
 </Callout>
 </ModelAnswer>
 
@@ -394,7 +394,7 @@ $$
    - Verification: $-35 - (-50) = -35 + 50 = +15$. The computation is correct.
 
 <Callout tone="orange" label="Common exam pitfall">
-When evaluating $(-35) - (-50)$, some students negate $+50$ into $-50$ and subtract directly by borrowing. In hardware arithmetic exams, you must always show subtraction as adding the two's complement of the subtrahend: $A - B = A + (-B)$. Since $B = -50$, $-B = -(-50) = +50$.
+When calculating $(-35) - (-50)$, write subtraction as adding the two's complement of the subtrahend: $A - B = A + (-B)$. Since $B = -50$, $-B = -(-50) = +50$.
 </Callout>
 </ModelAnswer>
 
@@ -456,6 +456,6 @@ In contrast, in **two's complement**:
 3. Any carry-out generated from the MSB has weight $2^n \equiv 0 \pmod{2^n}$ and is simply **discarded**. No secondary addition step is required, making two's complement faster and requiring significantly less hardware.
 
 <Callout tone="orange" label="Common exam pitfall">
-Forgetting to perform the end-around carry addition leaves a 1's complement answer off by 1. For example, adding $(+5) + (-2)$ in 4-bit 1's complement produces $0101_2 + 1101_2 = 1\,0010_2$. If the carry 1 is dropped, the result is $+2$ instead of $+3$. Adding the end-around carry ($0010_2 + 1 = 0011_2$) restores the correct answer $+3$.
+Skipping the end-around carry leaves a 1's complement answer off by 1. Adding $(+5) + (-2)$ in 4-bit 1's complement gives $0101_2 + 1101_2 = 1\,0010_2$. If the carry 1 is dropped, the result is $+2$ instead of $+3$. Adding the end-around carry ($0010_2 + 1 = 0011_2$) yields the correct sum $+3$.
 </Callout>
 </ModelAnswer>

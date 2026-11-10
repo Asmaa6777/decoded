@@ -3,41 +3,41 @@ import { PlaceValueBits, BaseConverter, FractionConverter } from "@/components/m
 
 # Number Systems
 
-Every electronic computer is built from physical switches that settle into two stable electrical states: HIGH voltage or LOW voltage. In [signals](/courses/logic-design/signals#logic-levels-and-threshold-voltages), we label these two states **1** and **0**. Because hardware relies on two physical states, the natural language of digital circuits is the binary number system.
+Computers are built from electronic switches that settle into two stable voltage states: HIGH and LOW. In [signals](/courses/logic-design/signals#logic-levels-and-threshold-voltages), we label these two states **1** and **0**. Because hardware relies on two physical states, digital circuits work in the binary number system.
 
-A single binary digit is called a **bit**—the smallest quantum of information in digital computing. To represent larger quantities, hardware engineers group bits into standard bundles:
-- A **nibble** consists of 4 bits, capable of representing $2^4 = 16$ distinct combinations (the exact capacity of one hexadecimal digit).
-- A **byte** consists of 8 bits, capable of representing $2^8 = 256$ distinct combinations, serving as the standard addressable unit of computer memory.
-- A **word** represents the natural data width processed by a central processing unit (CPU) in a single instruction cycle (e.g. 16 bits on legacy architectures, 32 bits on microcontrollers, and 64 bits on modern processors).
+A single binary digit is called a **bit**, the smallest unit of information in digital computing. To represent larger quantities, hardware groups bits into standard sizes:
+- A **nibble** is 4 bits, which can hold $2^4 = 16$ distinct values (the exact capacity of one hexadecimal digit).
+- A **byte** is 8 bits, which can hold $2^8 = 256$ distinct values. It is the standard addressable unit of computer memory.
+- A **word** is the natural data width a processor handles in one cycle (such as 16 bits on older chips, 32 bits on microcontrollers, and 64 bits on modern processors).
 
-Humans, however, think in decimal (base 10), and hardware engineers communicate byte patterns, register contents, and memory addresses in octal (base 8) and hexadecimal (base 16). Understanding digital hardware requires moving effortlessly between these number systems.
+People think in decimal (base 10). Engineers write byte patterns, register values, and memory addresses in octal (base 8) and hexadecimal (base 16). Working with digital hardware means moving comfortably between these number systems.
 
 ## Positional number representation and the radix
 
-In any **positional number system**, the numerical value of a digit depends on both the symbol itself and its position relative to the **radix point** (called the decimal point in base 10, or binary point in base 2). The base, or **radix** ($r$), specifies how many unique digit symbols exist in that system:
+In a **positional number system**, the value of a digit depends on both the symbol and its position relative to the **radix point** (the decimal point in base 10, or binary point in base 2). The base, or **radix** ($r$), specifies how many digit symbols exist in that system:
 
 $$
 \text{Digit set } \in \{0, 1, 2, \dots, r-1\}
 $$
 
-A number $N$ with $n$ integer digits and $m$ fractional digits is expressed as an ordered sequence of digit coefficients:
+A number $N$ with $n$ integer digits and $m$ fractional digits is written as a sequence of digit coefficients:
 
 $$
 N = (a_{n-1} a_{n-2} \dots a_1 a_0 . a_{-1} a_{-2} \dots a_{-m})_r
 $$
 
-The mathematical value of this sequence is given by its **polynomial expansion**:
+The numerical value of this sequence comes from its **polynomial expansion**:
 
 $$
 N = \sum_{i=-m}^{n-1} a_i r^i = a_{n-1} r^{n-1} + \dots + a_1 r^1 + a_0 r^0 + a_{-1} r^{-1} + \dots + a_{-m} r^{-m}
 $$
 
-In this expansion, each position $i$ carries a **column weight** equal to $r^i$:
+In this expansion, each position $i$ has a **column weight** equal to $r^i$:
 - The digit immediately to the left of the radix point ($a_0$) has weight $r^0 = 1$.
-- Moving leftward into higher-order integer positions, column weights multiply by $r$ at each step ($r^1, r^2, r^3, \dots, r^{n-1}$).
-- Moving rightward across the radix point into fractional positions, column weights divide by $r$ at each step ($r^{-1}, r^{-2}, r^{-3}, \dots, r^{-m}$).
+- Moving left into higher integer positions, column weights multiply by $r$ at each step ($r^1, r^2, r^3, \dots, r^{n-1}$).
+- Moving right past the radix point into fractional positions, column weights divide by $r$ at each step ($r^{-1}, r^{-2}, r^{-3}, \dots, r^{-m}$).
 
-The leftmost digit ($a_{n-1}$) carries the highest column weight and is called the **most significant digit** (MSD, or **most significant bit**, MSB, in base 2). The rightmost integer digit ($a_0$) carries the lowest integer weight and is called the **least significant digit** (LSD, or **least significant bit**, LSB, in base 2).
+The leftmost digit ($a_{n-1}$) has the highest column weight and is called the **most significant digit** (MSD, or **most significant bit**, MSB, in base 2). The rightmost integer digit ($a_0$) has the lowest integer weight and is called the **least significant digit** (LSD, or **least significant bit**, LSB, in base 2).
 
 | System | Radix ($r$) | Allowed Digits | Integer Column Weights ($r^3, r^2, r^1, r^0$) | Fractional Weights ($r^{-1}, r^{-2}, r^{-3}$) |
 |---|---|---|---|---|
@@ -53,12 +53,12 @@ $$
 $$
 
 <Callout tone="orange" label="Mistake students make">
-**Using digit symbols that equal or exceed the radix.** In any base $r$, the maximum allowable digit symbol is strictly $r - 1$. Writing $(1021)_2$ is invalid because digit 2 does not exist in binary. Similarly, $(784)_8$ is invalid because digit 8 does not exist in octal. If an expression requires a quantity of $r$, it must carry over into the next higher positional column as $(10)_r$.
+**Using digit symbols that equal or exceed the radix.** In any base $r$, the maximum allowable digit symbol is $r - 1$. Writing $(1021)_2$ is invalid because digit 2 does not exist in binary. Similarly, $(784)_8$ is invalid because digit 8 does not exist in octal. When an addition or count reaches $r$, it carries into the next column to the left as $(10)_r$.
 </Callout>
 
 ## Binary to decimal
 
-To convert **binary to decimal**, or to convert from any base $r$ to decimal, expand each digit by its positional column weight $r^i$ and calculate the arithmetic sum. A **binary** number sums powers of 2.
+To convert **binary to decimal**, or to convert from any base $r$ to decimal, multiply each digit by its column weight $r^i$ and add the products. A **binary** number sums powers of 2.
 
 Flip the bit switches below to see how each power of two contributes to the decimal total:
 
@@ -113,7 +113,7 @@ $$
 $$
 
 <Callout tone="orange" label="Mistake students make">
-**Confusing hexadecimal letter values with 1-based alphabetic indices.** Students often mistakenly write $\text{A} = 1, \text{B} = 2, \dots$ instead of $\text{A} = 10, \text{B} = 11, \text{C} = 12, \text{D} = 13, \text{E} = 14, \text{F} = 15$. Another common slip is treating $r^0$ as $0$ rather than $1$, which loses the units column entirely.
+**Confusing hexadecimal letter values with 1-based alphabetic indices.** Students often write $\text{A} = 1, \text{B} = 2, \dots$ instead of $\text{A} = 10, \text{B} = 11, \text{C} = 12, \text{D} = 13, \text{E} = 14, \text{F} = 15$. Another common slip is treating $r^0$ as $0$ rather than $1$, which loses the units column entirely.
 </Callout>
 
 ## Decimal to another base
@@ -134,7 +134,7 @@ $$
 N = r \cdot \left( a_{n-1} r^{n-2} + \dots + a_1 \right) + a_0 = r \cdot Q_0 + a_0
 $$
 
-When we divide $N$ by $r$, the quotient is $Q_0$ and the integer remainder is strictly $a_0 = N \bmod r$. The remainder is exactly the least significant digit (LSD, weight $r^0$)!
+When we divide $N$ by $r$, the quotient is $Q_0$ and the integer remainder is $a_0 = N \bmod r$. The remainder is the least significant digit (LSD, weight $r^0$).
 
 Next, dividing the quotient $Q_0$ by $r$ yields:
 
@@ -146,7 +146,7 @@ The remainder of this second division is $a_1$ (weight $r^1$). Repeating this di
 
 - The **first remainder** generated is the **least significant digit** (LSD or LSB, rightmost position, weight $r^0$).
 - The **last remainder** generated is the **most significant digit** (MSD or MSB, leftmost position, weight $r^{n-1}$).
-- Write the final converted number by reading the remainders from **bottom to top** (last generated to first generated).
+- Write the converted number by reading the remainders from **bottom to top** (last generated to first generated).
 
 Step through the division algorithm below:
 
@@ -195,12 +195,12 @@ $$
 Reading from bottom to top yields: $157_{10} = 9\text{D}_{16}$.
 
 <Callout tone="orange" label="Mistake students make">
-**Reading integer division remainders from top to bottom.** Because people write from top to bottom, students frequently write down the remainders in the order they were computed. This inverts the entire number, putting the least significant bit ($a_0$) into the most significant position. The first remainder produced by dividing by $r$ is always the units place ($a_0$); the last remainder is the highest power ($a_{n-1}$). Remainders must be read bottom-to-top.
+**Reading integer division remainders from top to bottom.** Students often write down remainders in the order they compute them. That reverses the number, placing the least significant bit ($a_0$) into the highest position. The first remainder from dividing by $r$ is always the units place ($a_0$); the last remainder is the highest power ($a_{n-1}$). Read remainders from bottom to top.
 </Callout>
 
 ## Why programmers love hex
 
-Programmers use **hexadecimal** because $16 = 2^4$: each hex digit corresponds to exactly 4 bits (one nibble), allowing long binary strings to be written compactly without arithmetic. Octal works the same way with groups of 3 bits, because $8 = 2^3$.
+Programmers use **hexadecimal** because $16 = 2^4$: each hex digit corresponds to exactly 4 bits (one nibble). That lets you write long binary strings compactly without doing arithmetic. Octal works the same way with groups of 3 bits, because $8 = 2^3$.
 
 Mathematically, any binary number can be partitioned into blocks of $k$ bits (where $r = 2^k$):
 
@@ -230,7 +230,7 @@ To convert a binary number to octal or hex:
 2. **For the fractional part:** Group bits starting from the **radix point moving right**. If the rightmost group has fewer than 3 or 4 bits, pad it on the right with trailing zeros.
 
 <Callout tone="orange" label="Mistake students make">
-**Grouping bits across the radix point or padding fractional bits on the wrong side.** Grouping must start strictly *at* the radix point and move outward in both directions. Never group across the radix point. Moreover, padding $0.1_2$ on the left into $0.0001_2$ corrupts the number from $0.5_{10}$ to $0.0625_{10}$. For fractional parts, you must pad with trailing zeros on the right: $0.1_2 \to 0.1000_2 = 0.8_{16} = 0.5_{10}$.
+**Grouping bits across the radix point or padding fractional bits on the wrong side.** Grouping must start *at* the radix point and move outward in both directions. Never group across the radix point. Padding $0.1_2$ on the left into $0.0001_2$ corrupts the number from $0.5_{10}$ to $0.0625_{10}$. For fractional parts, pad with trailing zeros on the right: $0.1_2 \to 0.1000_2 = 0.8_{16} = 0.5_{10}$.
 </Callout>
 
 ### Worked grouping examples
@@ -266,7 +266,7 @@ For example, convert $(\text{7B.4})_{16}$ to octal:
 3. Read in octal: $(173.2)_8$.
 
 <Callout tone="sky" label="Where you see this in hardware">
-Hexadecimal is the standard shorthand in assembly language, circuit schematics, and debuggers. A 32-bit register holds 8 hex digits, a 64-bit address holds 16 hex digits, and colour codes like `#FF8800` represent red, green, and blue intensities as three 8-bit bytes ($255, 136, 0$). You will also compute addresses by hand when you [calculate 8086 physical addresses](/courses/microprocessors/segments-and-addresses).
+Hexadecimal is standard shorthand in assembly language, circuit schematics, and debuggers. A 32-bit register holds 8 hex digits, a 64-bit address holds 16 hex digits, and color codes like `#FF8800` represent red, green, and blue intensities as three 8-bit bytes ($255, 136, 0$). You also compute addresses by hand when you [calculate 8086 physical addresses](/courses/microprocessors/segments-and-addresses).
 </Callout>
 
 ## Fractions
@@ -287,7 +287,7 @@ $$
 F \times r = a_{-1} + \left( a_{-2} r^{-1} + a_{-3} r^{-2} + \dots \right) = a_{-1} + F_1
 $$
 
-The extracted integer portion $a_{-1}$ is strictly the most significant fractional digit (weight $r^{-1}$). The remaining fractional part $F_1$ is multiplied by $r$ again to extract $a_{-2}$, and so on:
+The extracted integer portion $a_{-1}$ is the most significant fractional digit (weight $r^{-1}$). The remaining fractional part $F_1$ is multiplied by $r$ again to extract $a_{-2}$, and so on:
 
 - The **first integer** extracted is the **most significant fractional digit** ($a_{-1}$, immediately to the right of the radix point).
 - Successive integers form subsequent fractional positions moving to the right.
@@ -299,7 +299,7 @@ Try converting fractional values below:
 <FractionConverter />
 
 <Callout tone="orange" label="Mistake students make">
-**Reading fractional multiplication results from bottom to top.** Because students memorize that integer division reads bottom-to-top, they often mistakenly read fractional multiplication results bottom-to-top as well. Integer division produces the LSB first (requiring bottom-to-top reading), but fractional multiplication produces the MSB ($a_{-1}$) first! Fractional digits must be recorded top-to-bottom.
+**Reading fractional multiplication results from bottom to top.** Because integer division reads bottom to top, students often read fractional multiplication results bottom to top as well. Integer division produces the least significant bit first. Fractional multiplication produces the most significant fractional bit ($a_{-1}$) first. Record fractional digits from top to bottom.
 </Callout>
 
 ### Terminating vs repeating fractions
@@ -308,7 +308,7 @@ A rational fraction $\frac{p}{q}$ (expressed in lowest terms) terminates in base
 
 - In decimal (base 10), the prime factors of 10 are **2 and 5**. Fractions such as $\frac{1}{2} = 0.5$, $\frac{1}{4} = 0.25$, $\frac{1}{5} = 0.2$, and $\frac{1}{10} = 0.1$ terminate.
 - In binary (base 2), the only prime factor of 2 is **2**.
-- Therefore, any fraction whose reduced denominator has any prime factor other than 2 (such as 3, 5, 7, 10) **will never terminate in binary**.
+- Any fraction whose reduced denominator has a prime factor other than 2 (such as 3, 5, or 7) will never terminate in binary.
 
 Even familiar decimal fractions like $0.1_{10} = \frac{1}{10}$ and $0.7_{10} = \frac{7}{10}$ produce infinitely repeating bit streams in binary:
 
@@ -342,7 +342,7 @@ The cycle `0110` repeats forever: $0.7_{10} = 0.1\,0110\,0110\,0110\ldots_2 = 0.
 Similarly, decimal $0.1_{10} = 0.0001100110011\dots_2 = 0.0\overline{0011}_2$.
 
 <Callout tone="orange" label="Mistake students make">
-**Assuming finite decimal numbers can always be represented exactly in computer memory.** Many programmers assume that numbers like $0.1$ or $0.2$ are stored with exact precision. Because 10 has prime factor 5, $0.1_{10}$ cannot terminate in base 2. In IEEE 754 binary floating point, it must be rounded to a finite register width (23 or 52 fraction bits). This unavoidable truncation causes famous programming quirks like `0.1 + 0.2 == 0.3` evaluating to `false`.
+**Assuming finite decimal numbers can always be represented exactly in computer memory.** Many programmers assume numbers like $0.1$ or $0.2$ are stored with exact precision. Because 10 has prime factor 5, $0.1_{10}$ never terminates in base 2. In IEEE 754 binary floating point, it rounds to a finite register width (23 or 52 fraction bits). This truncation causes quirks like `0.1 + 0.2 == 0.3` evaluating to `false`.
 </Callout>
 
 ## Practice problems
@@ -390,7 +390,7 @@ Combine both parts:
    - Result: $49.5_{16}$.
 
 <Callout tone="orange" label="Common exam pitfall">
-When converting the fractional binary to octal, students frequently group $.0101_2$ as $\underbrace{010}_{2}\ \underbrace{1}_{1} = .21_8$. Incomplete fractional groups must be padded on the *right* with zeros: $.0101_2 \to .010\ 100_2 = .24_8$. Padding on the left or failing to pad yields an incorrect answer.
+When converting fractional binary to octal, students frequently group $.0101_2$ as $\underbrace{010}_{2}\ \underbrace{1}_{1} = .21_8$. Incomplete fractional groups must be padded on the *right* with zeros: $.0101_2 \to .010\ 100_2 = .24_8$. Padding on the left or failing to pad gives the wrong value.
 </Callout>
 </ModelAnswer>
 
@@ -456,7 +456,7 @@ $$
 $$
 
 <Callout tone="orange" label="Common exam pitfall">
-Converting via decimal ($653.42_8 \to \text{decimal} \to \text{hex}$) is slow, prone to arithmetic errors, and often introduces non-terminating fractional rounding discrepancies. Converting through binary triplets and quartets is exact and requires zero decimal arithmetic.
+Converting through decimal ($653.42_8 \to \text{decimal} \to \text{hex}$) is slow and introduces rounding errors in fractions. Converting through binary groups of three and four is exact and avoids decimal arithmetic.
 </Callout>
 </ModelAnswer>
 
@@ -501,6 +501,6 @@ $$
 $$
 
 <Callout tone="orange" label="Common exam pitfall">
-Students sometimes confuse truncation (simply chopping off bits after the 8th bit) with round-to-nearest. Rounding would examine the 9th bit ($a_{-9} = 0$), so round-to-nearest produces the same bit pattern here. However, when $a_{-(n+1)} = 1$, round-to-nearest adds 1 to the LSB, whereas truncation simply discards the remainder.
+Students sometimes confuse truncation (chopping off bits after the eighth bit) with rounding. Rounding examines the ninth bit ($a_{-9} = 0$), so round-to-nearest gives the same bit pattern here. When the next bit is 1, round-to-nearest adds 1 to the least significant bit, while truncation discards the rest.
 </Callout>
 </ModelAnswer>
