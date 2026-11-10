@@ -10,7 +10,7 @@ Every modern processor traces its heritage through four computing eras and a sin
 Computer hardware transitioned through four broad operating paradigms:
 
 1. **The Batch Era (1960–1968)**: Large mainframe installations dominated corporate data centers. Programs and data were submitted on decks of punched cards, and human operators queued them for sequential batch execution. Systems like the IBM System/360 established the standard 8-bit byte and demonstrated that an entire family of computers could share one software architecture.
-2. **The Time-Sharing Era (1961–1976)**: Advances in semiconductor fabrication introduced solid-state memory and medium-scale integrated circuits. Instead of submitting card decks and waiting hours for printouts, multiple programmers worked simultaneously through interactive video and teletype terminals. This demanded hardware-supported protection rings and early virtual memory to keep users isolated from each other.
+2. **The Time-Sharing Era (1961–1976)**: Pioneered in 1961 with early interactive experiments, time-sharing expanded rapidly as semiconductor memory and medium-scale integrated circuits matured. Multiple programmers worked simultaneously through interactive video and teletype terminals, sharing one central computer. This demanded hardware-supported protection rings and early virtual memory to keep concurrent users isolated from each other.
 3. **The Desktop Era (1977–1989)**: Single-chip microprocessors and affordable dynamic RAM placed an entire computer directly on an individual desk. Computers from Apple, Commodore, Tandy, and IBM transformed personal productivity and turned microprocessors into high-volume commodity components.
 4. **The Network Era (1990–Present)**: Local and wide-area networks advanced faster than single-processor clock rates. Compute workloads moved to distributed clusters, warehouse-scale datacenters, multi-core desktop chips, and graphics processing units running millions of parallel threads.
 
@@ -26,7 +26,7 @@ Von Neumann divided a computer into five primary functional units:
 2. **Input Unit**: Ingests instructions and external data into the system from keyboards, sensors, or storage media.
 3. **Output Unit**: Conveys computation results to humans or peripheral devices via screens, printers, or network interfaces.
 4. **Working Storage**: Fast primary memory, known today as random access memory ([RAM](/courses/computer-organization/ram-and-rom)), holding active program instructions and temporary data during execution.
-5. **Permanent Storage**: Non-volatile secondary media, such as magnetic hard disks and flash solid-state drives ([SSDs](/courses/computer-organization/ssds-and-optical)), retaining files when electrical power is switched off.
+5. **Permanent Storage**: Non-volatile secondary media, such as magnetic hard disks and flash solid-state drives ([SSDs](/courses/computer-organization/ssds-and-optical)), retaining files when electrical power is switched off. In modern structural models, permanent storage devices interface through the I/O subsystem.
 
 The defining breakthrough of the **von Neumann machine** is the **stored-program concept**: program instructions and numeric data share the same working storage and travel over the same physical data buses.
 

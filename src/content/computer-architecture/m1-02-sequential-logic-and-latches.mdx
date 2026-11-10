@@ -14,8 +14,20 @@ The clock signal distributes to every storage element in the system. Between clo
 
 The most basic binary storage element is a latch built from two cross-coupled NOR gates. The output of each gate feeds back into an input of the opposite gate:
 
-* Input **$S$ (Set)** forces the stored output $Q$ to 1.
-* Input **$R$ (Reset)** forces the stored output $Q$ to 0.
+```text
+R (Reset) ───\ NOR 1 \
+              )       >──── Q (Stored bit)
+         ┌───/       /      │
+         │                  │ (feedback to NOR 2)
+         │   ┌──────────────┘
+         └───┼──────────────┐ (feedback to NOR 1)
+             │   \ NOR 2 \  │
+S (Set)   ───┴────)       >─┴── Q' (Complement)
+                 /       /
+```
+
+* Input **$S$ (Set)** forces the stored output $Q$ to 1. Notice $S$ connects to NOR 2, driving $Q'$ down to 0, which feeds into NOR 1 to drive $Q$ up to 1.
+* Input **$R$ (Reset)** forces the stored output $Q$ to 0 by asserting NOR 1 directly.
 * Output **$Q$** represents the stored bit, while $Q'$ provides its logical complement.
 
 | $S$ | $R$ | $Q$ | $Q'$ | Operation |
@@ -31,6 +43,18 @@ Under normal operation, both inputs remain at 0 unless a state change is command
 
 An alternate latch uses two cross-coupled NAND gates. Because a NAND gate outputs 1 whenever any input is 0, this latch operates with inverted, active-low inputs, designated $S'$ and $R'$:
 
+```text
+S' (Set)   ───\ NAND 1 \
+               )        >──── Q
+          ┌───/        /      │
+          │                   │ (feedback to NAND 2)
+          │   ┌───────────────┘
+          └───┼───────────────┐ (feedback to NAND 1)
+              │   \ NAND 2 \  │
+R' (Reset) ───┴────)        >─┴── Q'
+                  /        /
+```
+
 | $S'$ | $R'$ | $Q$ | $Q'$ | Operation |
 |:---:|:---:|:---:|:---:|:---|
 | 1 | 1 | No change | No change | **Hold**: latches previous state |
@@ -42,10 +66,10 @@ Active-low control pins are standard in industrial memory chips, where ground (0
 
 ## The controlled SR latch and the D latch
 
-To prevent inputs from changing the latch during unintended intervals, two steering gates add a control input $C$:
+To prevent inputs from changing the latch during unintended intervals, two input AND gates (called **steering gates**) gate the inputs with a control signal $C$:
 
-* When $C = 0$, both internal inputs are held inactive, freezing the stored state.
-* When $C = 1$, the external $S$ and $R$ inputs pass through to update the latch.
+* When $C = 0$, both steering gate outputs are forced to 0, locking the internal latch in its Hold state.
+* When $C = 1$, the external $S$ and $R$ inputs pass through the steering gates to update the latch.
 
 The **D latch** resolves the forbidden $S=1, R=1$ problem permanently. By placing an inverter between the inputs such that $S = D$ and $R = D'$, the two inputs can never be 1 at the same time:
 
@@ -57,16 +81,23 @@ The **D latch** resolves the forbidden $S=1, R=1$ problem permanently. By placin
 
 As long as the clock line $C$ remains high, the D latch is level-sensitive: any change on input $D$ ripples directly through to output $Q$.
 
-## The JK flip-flop and Master-Slave isolation
+## The JK and T flip-flops
 
 In complex datapaths, level sensitivity can cause feedback instability when a flip-flop's output feeds back into its own input logic within the same clock period. Hardware requires **edge-triggered flip-flops**, which sample inputs only on the clock edge.
 
-The **JK flip-flop** eliminates the forbidden state by re-routing outputs back to the input steering gates:
+The **JK flip-flop** eliminates the forbidden state by feeding the outputs back to the input steering gates ($Q'$ feeds into the $J$ gate; $Q$ feeds into the $K$ gate):
 
-* When $J = 0$ and $K = 0$, the state does not change.
-* When $J = 0$ and $K = 1$, output $Q$ resets to 0.
-* When $J = 1$ and $K = 0$, output $Q$ sets to 1.
-* When $J = 1$ and $K = 1$, output $Q$ **toggles** to its opposite value ($Q^+ = Q'$).
+* **$J$ behaves as Set**: when $J = 1$ and $K = 0$, output $Q$ sets to 1 on the clock edge.
+* **$K$ behaves as Reset**: when $J = 0$ and $K = 1$, output $Q$ resets to 0 on the clock edge.
+* When $J = 0$ and $K = 0$, the state holds unchanged.
+* When $J = 1$ and $K = 1$, the inputs swap roles through the feedback wires, causing output $Q$ to **toggle** to its opposite value ($Q^+ = Q'$).
+
+Connecting inputs $J$ and $K$ together into a single input line forms the **T (Toggle) flip-flop**:
+
+* When $T = 0$ ($J=0, K=0$): the flip-flop holds its previous state ($Q^+ = Q$).
+* When $T = 1$ ($J=1, K=1$): the flip-flop toggles its state on every clock pulse ($Q^+ = Q'$).
+
+Because a T flip-flop inverts its output on every active clock edge when $T=1$, it divides input clock frequency by two, making it the fundamental building block for binary counters.
 
 <Callout tone="violet" label="Master-Slave flip-flop operation">
 A **master-slave flip-flop** connects two latches in series with an inverter on the clock line. When the clock is high, the master latch accepts input data while the slave latch is disabled. When the clock falls to zero, the master disables, and the slave copies the master's state to the primary output. Because the input and output are never enabled at the same instant, data updates cleanly without race conditions.

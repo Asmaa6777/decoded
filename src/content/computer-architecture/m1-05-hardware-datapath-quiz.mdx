@@ -35,15 +35,15 @@ Six questions covering circuit schematics, latches, shift registers, and counter
     },
     {
       id: "q3",
-      prompt: "A 4-bit Serial-In Serial-Out (SISO) shift register starts at 0000. Data bits 1, 0, 1, 1 are shifted in sequentially, one per clock tick. What is the register's 4-bit state immediately after the 4th clock tick?",
+      prompt: "A 4-bit Serial-In Serial-Out (SISO) shift register starts cleared at 0000. Data bits 1, 0, 1, 1 arrive sequentially, shifting right with bits entering at the most significant bit (Q3). What is the register's 4-bit state immediately after the 4th clock tick?",
       options: [
-        { id: "a", text: "1101 (or 1011 depending on shift direction)" },
+        { id: "a", text: "1101" },
         { id: "b", text: "0000" },
         { id: "c", text: "1111" },
         { id: "d", text: "0101" },
       ],
       correctOptionId: "a",
-      explanation: "Each clock shifts earlier bits forward. Shifting right with bits entering at MSB yields Q3=1, Q2=1, Q1=0, Q0=1.",
+      explanation: "Each clock shifts earlier bits to the right. On clock 1 bit 1 enters Q3 (1000). On clock 2 bit 0 enters Q3 (0100). On clock 3 bit 1 enters Q3 (1010). On clock 4 bit 1 enters Q3, leaving Q3=1, Q2=1, Q1=0, Q0=1 (1101).",
     },
     {
       id: "q4",

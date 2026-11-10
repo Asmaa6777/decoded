@@ -9,12 +9,14 @@ A counter is a register that steps through a specified sequence of binary states
 
 In an **asynchronous counter**, flip-flops do not share a common clock. Only the first stage receives the external clock pulse; each subsequent stage is clocked by the output of the preceding flip-flop.
 
-A 4-bit binary ripple counter uses four toggle (T or JK) flip-flops with inputs tied high ($T=1$). Because each flip-flop divides the frequency of its clock input by two:
+A 4-bit binary ripple counter uses four negative edge-triggered toggle (T or JK) flip-flops with inputs tied high ($T=1$). Because the clock input has an inversion bubble ($\circ\triangleright$), each stage triggers on the negative (falling) edge of its clock signal:
 
-* Stage 0 toggles on every external clock cycle.
-* Stage 1 toggles whenever stage 0 transitions from 1 to 0.
-* Stage 2 toggles whenever stage 1 transitions from 1 to 0.
-* Stage 3 toggles whenever stage 2 transitions from 1 to 0.
+* Stage 0 receives the external clock and toggles on every negative clock edge.
+* Stage 1 receives output $Q_0$ as its clock. It toggles only when $Q_0$ transitions from 1 to 0 (the falling edge of bit 0).
+* Stage 2 receives output $Q_1$ as its clock and toggles when $Q_1$ transitions from 1 to 0.
+* Stage 3 receives output $Q_2$ as its clock and toggles when $Q_2$ transitions from 1 to 0.
+
+Because each stage toggles only when the preceding bit completes a full high-to-low cycle, the counter naturally counts upward in standard binary: $0000 \to 0001 \to 0010 \to 0011 \dots$
 
 ### Propagation delay and glitches
 

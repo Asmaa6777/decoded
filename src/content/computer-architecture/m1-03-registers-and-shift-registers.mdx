@@ -7,14 +7,13 @@ A single flip-flop stores one bit. Grouping multiple flip-flops with a shared cl
 
 ## The parallel-load register
 
-In a digital computer, data words must be latched simultaneously. A simple 4-bit register uses four edge-triggered D flip-flops:
+In a digital computer, a register must maintain its value across clock cycles until software commands an update. Directly gating or switching off the CPU clock line can introduce timing skews and electrical glitches. Hardware designers therefore route the system clock continuously to all flip-flops and control loading using a **LOAD** control line with 2-to-1 multiplexers:
 
-* **Data Inputs ($I_3, I_2, I_1, I_0$)**: Four independent wires presenting parallel binary data.
-* **Outputs ($A_3, A_2, A_1, A_0$)**: The four stored bits, available continuously to subsequent logic stages.
-* **Common Clock Line**: A single clock wire routed to every flip-flop simultaneously, ensuring all four bits update on the exact same clock edge.
-* **Clear Line ($\overline{\text{CLR}}$)**: An asynchronous active-low reset wire that forces all four outputs to 0 regardless of the clock or data inputs.
+* **When $\text{LOAD} = 0$**: The multiplexer routes each flip-flop's own output $Q$ back into its data input $D$. On every clock tick, the flip-flop simply reloads its current state, maintaining its stored data indefinitely.
+* **When $\text{LOAD} = 1$**: The multiplexer selects the new external data input wire ($I_i$). On the rising clock edge, all flip-flops latch the new parallel binary word simultaneously.
+* **Asynchronous Clear ($\overline{\text{CLR}}$)**: An active-low reset line that overrides both clock and data inputs, instantly clearing all outputs to 0.
 
-When an assembly instruction executes `MOV AX, BX`, the processor places the contents of register BX onto the internal data bus and pulses the clock line of register AX, latching all sixteen bits in parallel.
+When an assembly instruction executes `MOV AX, BX`, the processor places the contents of register BX onto the internal data bus and pulses the $\text{LOAD}$ line of register AX, latching all sixteen bits in parallel on the next clock edge.
 
 ## Shift registers
 
@@ -24,6 +23,20 @@ Shift direction is defined relative to bit significance:
 
 * **Shift Right**: Bits move toward the least significant bit ($Q_{i-1} \leftarrow Q_i$). Serial data enters at the most significant bit ($Q_{n-1}$).
 * **Shift Left**: Bits move toward the most significant bit ($Q_{i} \leftarrow Q_{i-1}$). Serial data enters at the least significant bit ($Q_0$).
+
+### Cycle-by-cycle bit stream trace
+
+Suppose a 4-bit shift register ($Q_3, Q_2, Q_1, Q_0$) begins cleared to $0000_2$, shifting right with bits entering at $Q_3$. If a serial data stream presenting bits $1, 0, 1, 1$ arrives sequentially, the register contents advance on each clock tick:
+
+| Clock Cycle | Serial Input | $Q_3$ (MSB) | $Q_2$ | $Q_1$ | $Q_0$ (LSB) | Serial Output ($Q_0$ leaving) |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Initial | — | 0 | 0 | 0 | 0 | 0 |
+| Clock 1 | **1** | **1** | 0 | 0 | 0 | 0 |
+| Clock 2 | **0** | **0** | **1** | 0 | 0 | 0 |
+| Clock 3 | **1** | **1** | **0** | **1** | 0 | 0 |
+| Clock 4 | **1** | **1** | **1** | **0** | **1** | 0 |
+
+After four clock cycles, the 4-bit binary word $1101_2$ is fully assembled across the parallel outputs $Q_3..Q_0$. On clock 5, the first bit ($1$) will leave stage $Q_0$ as serial output.
 
 <ShiftRegisterTraceLab />
 
