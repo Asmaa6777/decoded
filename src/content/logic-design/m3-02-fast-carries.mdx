@@ -112,9 +112,24 @@ $$
 ### The critical structural insight
 
 Examine the equation for $C_4$:
-- $C_4$ does **not** depend on $C_1$, $C_2$, or $C_3$.
-- $C_4$ is expressed entirely in terms of the initial carry $C_0$ and the generate and propagate terms ($G_0, \dots, G_3$ and $P_0, \dots, P_3$).
-- Because all $P_i$ and $G_i$ terms are computed in parallel directly from the primary inputs $A$ and $B$, every carry signal is a standard **two-level AND-OR circuit**!
+- $C_4$ does **not** depend on intermediate carries $C_1$, $C_2$, or $C_3$.
+- $C_4$ is expressed entirely in terms of the initial carry $C_0$ and the bit generate and propagate terms ($G_0\dots G_3$ and $P_0\dots P_3$).
+- Because all $P_i$ and $G_i$ terms are computed simultaneously from primary inputs $A$ and $B$, every carry signal is a standard **two-level AND-OR circuit**!
+
+Each product term in $C_4$ corresponds to a distinct physical origin:
+- **$G_3$:** A carry generated directly in stage 3 ($A_3 = B_3 = 1$).
+- **$P_3 G_2$:** A carry generated in stage 2 that propagates through stage 3.
+- **$P_3 P_2 G_1$:** A carry generated in stage 1 that propagates through stages 2 and 3.
+- **$P_3 P_2 P_1 G_0$:** A carry generated in stage 0 that propagates through stages 1, 2, and 3.
+- **$P_3 P_2 P_1 P_0 C_0$:** An external carry-in $C_0$ that propagates through all four stages without stopping.
+
+Notice the gate fan-in progression:
+- $C_1$ requires a 2-input AND gate and a 2-input OR gate.
+- $C_2$ requires up to a 3-input AND gate and a 3-input OR gate.
+- $C_3$ requires up to a 4-input AND gate and a 4-input OR gate.
+- $C_4$ requires up to a 5-input AND gate and a 5-input OR gate.
+
+A 5th carry bit ($C_5$) would require a 6-input AND gate and 6-input OR gate. Because standard logic gates are limited to 4 or 5 inputs, 4 bits is the natural modular boundary for carry-lookahead blocks.
 
 ## Architecture of a Carry-Lookahead Adder
 
@@ -236,6 +251,17 @@ Modern high-frequency 64-bit processors (such as x86 and ARM Cortex-A) use paral
 <Callout tone="neon" label="The Cost of Speed">
 Faster adders always consume more silicon area and more dynamic power. Ripple-carry adders require $O(n)$ gates and minimum wiring; Carry-Lookahead adders require $O(n \log n)$ gates; Kogge-Stone adders require substantial interconnect area. In low-power IoT microcontrollers, ripple adders are often chosen specifically to save energy and chip area.
 </Callout>
+
+## Common exam pitfalls and student mistakes
+
+When analyzing and designing high-speed arithmetic hardware, students frequently encounter these six conceptual and calculation pitfalls:
+
+1. **Confusing Generate ($G_i$) and Propagate ($P_i$):** Mistaking $G_i = A_i B_i$ with $P_i = A_i \oplus B_i$. Generate is an unconditional AND: if $A_i = B_i = 1$, a carry is produced regardless of incoming carries. Propagate is an XOR (or OR): if $A_i \oplus B_i = 1$, an incoming carry will pass through to the next stage.
+2. **Dropping the Initial Carry ($C_0$) from the Carry-Lookahead Equations:** Forgetting the trailing product term ($P_3 P_2 P_1 P_0 C_0$) in $C_4$. Students often mistakenly assume $C_0 = 0$ is fixed, which causes the lookahead equations to fail completely when adders are cascaded or used in subtraction mode where $C_0 = 1$.
+3. **Underestimating Ripple-Carry Propagation Delay:** Calculating the delay of an $n$-bit ripple-carry adder as $n\tau$ instead of $2n\tau$. In each standard full adder, the carry-out passes through an AND gate and an OR gate (2 gate levels: $2\tau$ per stage). In addition, the final sum bit $S_{n-1}$ requires an extra XOR delay after carry $C_{n-1}$ arrives.
+4. **Assuming CLA Sum Bits Appear Simultaneously with Carry Bits:** While the lookahead generator produces carries $C_1, C_2, C_3, C_4$ in parallel in 2 gate delays ($t_{\text{CLAG}} = 2\tau$), the sum bits require an additional XOR operation ($S_i = P_i \oplus C_i$). The sum outputs stabilize one XOR delay ($2\tau$) *after* the carries are valid.
+5. **Group Generate ($G_G$) Notation and Indexing Errors:** Forgetting that the most significant stage's generate signal ($G_3$) in a 4-bit block has no propagate signal multiplying it. The block generate is $G_G = G_3 + P_3 G_2 + P_3 P_2 G_1 + P_3 P_2 P_1 G_0$. A frequent exam mistake is writing $P_3 G_3$ or omitting the standalone $G_3$.
+6. **The "Infinite Single-Level CLA" Fallacy:** Believing that carry-lookahead adders can be built to arbitrary word lengths (e.g. 64 bits) in two gate levels. In real silicon, gate fan-in is physically bounded to 4 or 5 inputs due to quadratic RC delay degradation ($\tau \propto N^2$). Wide adders must use hierarchical multilevel lookahead trees or tree adders, which scale as $O(\log n)$ rather than $O(1)$.
 
 ## Practice problems
 

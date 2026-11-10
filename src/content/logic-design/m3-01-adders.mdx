@@ -34,15 +34,34 @@ A half adder requires only two gates: one 2-input XOR gate and one 2-input AND g
 
 ### Universal gate implementation
 
-A half adder can also be constructed entirely from [universal gates](/courses/logic-design/universal-gates). Using NAND gates, the XOR function requires 4 gates when sharing the intermediate product term $(AB)'$:
+A half adder can also be constructed entirely from [universal gates](/courses/logic-design/universal-gates). Using NAND gates, the XOR function requires 4 gates by sharing the intermediate product term $(AB)'$:
 
-1. $N_1 = (AB)'$
-2. $N_2 = (A \cdot N_1)' = (A(AB)')'$
-3. $N_3 = (B \cdot N_1)' = (B(AB)')'$
-4. $\text{Sum} = (N_2 \cdot N_3)' = A \oplus B$
-5. $\text{Carry} = (N_1)' = ((AB)')' = AB$ (one additional NAND as an inverter)
+1. Gate 1 computes the shared NAND:
+   $$
+   N_1 = (AB)'
+   $$
+2. Gate 2 combines $A$ with $N_1$:
+   $$
+   N_2 = (A \cdot N_1)' = (A(AB)')' = A' + AB
+   $$
+3. Gate 3 combines $B$ with $N_1$:
+   $$
+   N_3 = (B \cdot N_1)' = (B(AB)')' = B' + AB
+   $$
+4. Gate 4 combines $N_2$ and $N_3$ to yield the Sum ($A \oplus B$):
+   $$
+   \begin{aligned}
+   \text{Sum} = (N_2 \cdot N_3)' &= N_2' + N_3' = A(AB)' + B(AB)' \\
+   &= (A + B)(AB)' = (A + B)(A' + B') \\
+   &= AA' + AB' + A'B + BB' = A'B + AB' = A \oplus B
+   \end{aligned}
+   $$
+5. Gate 5 inverts $N_1$ to yield the Carry ($AB$):
+   $$
+   \text{Carry} = (N_1)' = ((AB)')' = AB
+   $$
 
-Thus, a complete half adder with both Sum and Carry outputs can be synthesized from exactly 5 two-input NAND gates.
+Thus, a complete half adder with both Sum and Carry outputs can be synthesized from exactly 5 two-input NAND gates, requiring zero extraneous inverters.
 
 ## The Half Subtractor
 
@@ -311,6 +330,19 @@ If the carry into the sign bit differs from the carry out of the sign bit, an ov
    - Result: $0111_2 = +7_{10}$ (correct!).
    - Overflow check: $V = C_4 \oplus C_3 = 0 \oplus 0 = 0$ (no overflow).
 
+### Carry flag vs Overflow flag: The crucial distinction
+
+Digital system designers and programmers frequently confuse the **Carry Flag ($C$)** and the **Overflow Flag ($V$)**:
+
+| Attribute | Carry Flag ($C = C_n$) | Overflow Flag ($V = C_n \oplus C_{n-1}$) |
+|:---|:---|:---|
+| **Data Interpretation** | Unsigned integers ($0$ to $2^n - 1$) | Signed two's complement ($-2^{n-1}$ to $2^{n-1}-1$) |
+| **Meaning of Flag = 1** | Result exceeded $2^n - 1$ (end-around carry generated) | Result exceeded signed range (sign bit corrupted) |
+| **Example in 4 bits** | $1100_2 (12) + 0110_2 (6) = 10010_2 \to C=1, V=0$ | $0101_2 (+5) + 0100_2 (+4) = 1001_2 (-7) \to C=0, V=1$ |
+| **Example with Both Active** | $1000_2 (-8) + 1000_2 (-8) = 10000_2 \to C=1, V=1$ | Unsigned $8+8=16 > 15$; Signed $-8 + -8 = -16 < -8$ |
+
+The carry flag indicates whether an extra bit is required to represent an unsigned sum; the overflow flag indicates whether the arithmetic result has wrapped around into the wrong algebraic sign.
+
 ## Commercial MSI Binary Adders
 
 Standard commercial integrated circuits bundle 4-bit full adders with integrated high-speed lookahead carries onto a single silicon die:
@@ -318,6 +350,17 @@ Standard commercial integrated circuits bundle 4-bit full adders with integrated
 - **74283 / 74LS283:** modernized pinout version of the 7483, positioning $V_{CC}$ (pin 16) and GND (pin 8) at standard DIP corner positions for cleaner PCB routing.
 
 These ICs provide pins for $A_3\dots A_0$, $B_3\dots B_0$, $C_0$, sum outputs $S_3\dots S_0$, and carry-out $C_4$, allowing multiple 4-bit chips to be cascaded into 8-bit, 16-bit, or 32-bit arithmetic pipelines.
+
+## Common exam pitfalls and student mistakes
+
+When analyzing and designing arithmetic logic circuits, students frequently make these six errors on examinations:
+
+1. **Confusing Unsigned Carry ($C_n$) with Signed Overflow ($V$):** Assuming that a non-zero carry-out ($C_n = 1$) always indicates overflow in signed arithmetic. For example, adding $-1$ and $-1$ in 4 bits ($1111_2 + 1111_2 = 11110_2$) produces $C_4 = 1$, but $C_3 = 1$ as well. The overflow flag evaluates to $V = C_4 \oplus C_3 = 1 \oplus 1 = 0$, correctly showing that $-2$ is valid and no signed overflow occurred.
+2. **Forgetting $C_0 = M$ in the Controlled Adder-Subtractor:** Connecting mode control $M = 1$ to the XOR inverters on operand $B$ but failing to connect $M$ to initial carry-in $C_0$. If $C_0$ is left grounded, the circuit computes $A + B' = A - B - 1$ (one's complement subtraction) rather than true two's complement subtraction ($A + B' + 1$).
+3. **Attempting to Build Parallel Adders Exclusively from Half Adders:** Believing that an $n$-bit parallel adder can be formed by cascading $n$ half adders. A half adder has only two inputs ($A$ and $B$) and cannot accept an incoming carry bit from a lower-order stage. While stage 0 can use a half adder (if $C_0 = 0$ is guaranteed), all stages $1$ through $n-1$ require full adders.
+4. **Minuend and Subtrahend Polarity Inversion:** Confusing the roles of $A$ and $B$ in subtractor logic. The borrow-out for $A - B$ is $B_{out} = A'B$ (requiring a borrow when $A=0$ and $B=1$). Inverting the wrong input ($AB'$) computes $B - A$, completely corrupting the carry/borrow chain.
+5. **Assuming All Sum and Carry Bits Stabilize Simultaneously:** Overlooking propagation delays in ripple-carry adders. Stage 0 stabilizes first ($S_0$ in $t_{XOR}$, $C_1$ in $2t_{gate}$), while stage $n-1$ cannot stabilize its final sum $S_{n-1}$ until time $2(n-1)t_{gate} + t_{XOR}$. Testing outputs before this propagation window elapses samples transient glitch states.
+6. **Assuming XOR is Required to Merge Intermediate Full Adder Carries:** Insisting that $C_{out} = C_1 \oplus C_2$ is strictly necessary because $C_1$ and $C_2$ are distinct carry terms. Because $C_1 = AB$ and $C_2 = (A \oplus B)C_{in}$ are mutually exclusive ($C_1 \cdot C_2 = 0$), an OR gate produces the exact same result while using fewer transistors and operating faster.
 
 ## Practice problems
 
@@ -349,45 +392,40 @@ Design a full adder using two 2-input XOR gates, two 2-input AND gates, and one 
      - Worst-case delay to $C_{out} = 6\text{ ns}$.
 </ModelAnswer>
 
-### Problem 2: 4-bit adder-subtractor trace
+### Problem 2: 4-bit adder-subtractor execution trace
 
-Using the 4-bit controlled adder-subtractor circuit, calculate $6_{10} - 9_{10}$ in two's complement.
-1. State the input bit patterns for $A$ and $B$, and the mode input $M$.
-2. State the outputs of the four XOR controlled inverters.
-3. Trace the values of all internal carries ($C_0, C_1, C_2, C_3, C_4$).
-4. State the 4-bit result $S_3 S_2 S_1 S_0$ and compute the overflow flag $V$.
+Using the 4-bit controlled adder-subtractor circuit, trace two operations with signed operands:
+- **Case A (Valid Subtraction):** Compute $(+3_{10}) - (+6_{10})$.
+- **Case B (Overflow Subtraction):** Compute $(+5_{10}) - (-4_{10})$.
+
+For each case, state input vectors $A, B$, mode control $M$, internal carries $C_0\dots C_4$, the 4-bit sum $S_3\dots S_0$, and the overflow flag $V$.
 
 <ModelAnswer>
-1. **Inputs:**
-   - $A = +6_{10} = 0110_2$ ($A_3=0, A_2=1, A_1=1, A_0=0$).
-   - $B = +9_{10} = 1001_2$ ($B_3=1, B_2=0, B_1=0, B_0=1$).
-   - Subtraction mode requires $M = 1$.
+1. **Case A: $(+3_{10}) - (+6_{10})$:**
+   - Input vectors: $A = +3_{10} = 0011_2$, $B = +6_{10} = 0110_2$.
+   - Subtraction mode: $M = 1 \implies C_0 = 1$.
+   - Inverted operand $B$: $B_i \oplus 1 = B_i' \implies B' = 1001_2$.
+   - Carry and Sum propagation:
+     - Stage 0: $A_0=1, B_0'=1, C_0=1 \implies S_0 = 1 \oplus 1 \oplus 1 = 1$, $C_1 = 1\cdot 1 + (1\oplus 1)\cdot 1 = 1 + 0 = 1$.
+     - Stage 1: $A_1=1, B_1'=0, C_1=1 \implies S_1 = 1 \oplus 0 \oplus 1 = 0$, $C_2 = 1\cdot 0 + (1\oplus 0)\cdot 1 = 0 + 1 = 1$.
+     - Stage 2: $A_2=0, B_2'=0, C_2=1 \implies S_2 = 0 \oplus 0 \oplus 1 = 1$, $C_3 = 0\cdot 0 + (0\oplus 0)\cdot 1 = 0 + 0 = 0$.
+     - Stage 3: $A_3=0, B_3'=1, C_3=0 \implies S_3 = 0 \oplus 1 \oplus 0 = 1$, $C_4 = 0\cdot 1 + (0\oplus 1)\cdot 0 = 0 + 0 = 0$.
+   - Sum output: $S = 1101_2 = -8 + 4 + 1 = -3_{10}$.
+   - Overflow detection: $V = C_4 \oplus C_3 = 0 \oplus 0 = 0$.
+   - Conclusion: The arithmetic result $-3_{10}$ is completely valid and correctly represented without overflow.
 
-2. **XOR Inverter Outputs ($B_i \oplus M$):**
-   - $B_0 \oplus 1 = 1 \oplus 1 = 0$
-   - $B_1 \oplus 1 = 0 \oplus 1 = 1$
-   - $B_2 \oplus 1 = 0 \oplus 1 = 1$
-   - $B_3 \oplus 1 = 1 \oplus 1 = 0$
-   - The inverted vector is $B' = 0110_2$.
-
-3. **Carry Propagation ($C_0 = M = 1$):**
-   - Stage 0: $A_0=0, B_0'=0, C_0=1 \implies S_0 = 0 \oplus 0 \oplus 1 = 1$.
-     $$C_1 = (0\cdot 0) + (0\oplus 0)\cdot 1 = 0 + 0 = 0$$
-   - Stage 1: $A_1=1, B_1'=1, C_1=0 \implies S_1 = 1 \oplus 1 \oplus 0 = 0$.
-     $$C_2 = (1\cdot 1) + (1\oplus 1)\cdot 0 = 1 + 0 = 1$$
-   - Stage 2: $A_2=1, B_2'=1, C_2=1 \implies S_2 = 1 \oplus 1 \oplus 1 = 1$.
-     $$C_3 = (1\cdot 1) + (1\oplus 1)\cdot 1 = 1 + 0 = 1$$
-   - Stage 3: $A_3=0, B_3'=0, C_3=1 \implies S_3 = 0 \oplus 0 \oplus 1 = 1$.
-     $$C_4 = (0\cdot 0) + (0\oplus 0)\cdot 1 = 0 + 0 = 0$$
-
-4. **Result and Overflow:**
-   - Sum output: $S = 1101_2$.
-   - In 4-bit two's complement, $1101_2 = -8 + 4 + 1 = -3_{10}$, which is exactly $6 - 9 = -3$.
-   - Overflow flag: $V = C_4 \oplus C_3 = 0 \oplus 1 = 1$? Wait! Let's re-verify:
-     Can $6 - 9$ cause overflow? No: subtracting two positive numbers where minuend $\ge 0$ and subtrahend $\ge 0$ results in a difference between $-9$ and $+6$. In 4-bit, the range is $[-8, +7]$. Since $-3 \in [-8, +7]$, overflow did NOT occur mathematically!
-     Why did $C_3$ evaluate to 1?
-     Notice $B = 9_{10} = 1001_2$. In 4-bit signed representation, $1001_2$ is $-7$, not $+9$, because 4-bit signed range is only up to $+7$! $+9$ requires 5 bits ($01001_2$). When interpreted as signed 4-bit numbers, $A = +6$ and $B = -7$. The operation performed was $6 - (-7) = +13$. Since $+13 > +7$, signed overflow DID occur!
-     Thus $V = C_4 \oplus C_3 = 0 \oplus 1 = 1$ correctly detects that $+13$ cannot be represented in a 4-bit signed register.
+2. **Case B: $(+5_{10}) - (-4_{10})$:**
+   - Input vectors: $A = +5_{10} = 0101_2$, $B = -4_{10} = 1100_2$.
+   - Subtraction mode: $M = 1 \implies C_0 = 1$.
+   - Inverted operand $B$: $B_i \oplus 1 = B_i' \implies B' = 0011_2$.
+   - Carry and Sum propagation:
+     - Stage 0: $A_0=1, B_0'=1, C_0=1 \implies S_0 = 1 \oplus 1 \oplus 1 = 1$, $C_1 = 1\cdot 1 + (1\oplus 1)\cdot 1 = 1$.
+     - Stage 1: $A_1=0, B_1'=1, C_1=1 \implies S_1 = 0 \oplus 1 \oplus 1 = 0$, $C_2 = 0\cdot 1 + (0\oplus 1)\cdot 1 = 1$.
+     - Stage 2: $A_2=1, B_2'=0, C_2=1 \implies S_2 = 1 \oplus 0 \oplus 1 = 0$, $C_3 = 1\cdot 0 + (1\oplus 0)\cdot 1 = 1$.
+     - Stage 3: $A_3=0, B_3'=0, C_3=1 \implies S_3 = 0 \oplus 0 \oplus 1 = 1$, $C_4 = 0\cdot 0 + (0\oplus 0)\cdot 1 = 0$.
+   - Sum output: $S = 1001_2 = -7_{10}$ (incorrect!).
+   - Overflow detection: $V = C_4 \oplus C_3 = 0 \oplus 1 = 1$.
+   - Conclusion: Subtracting a negative number from a positive number is equivalent to adding two positive numbers ($5 - (-4) = +9$). Because $+9$ exceeds the maximum positive 4-bit two's complement value ($+7$), signed overflow occurs, correctly flagged by $V = 1$.
 </ModelAnswer>
 
 ### Problem 3: Derivation of the full subtractor borrow logic

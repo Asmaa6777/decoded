@@ -46,6 +46,12 @@ The Boolean equations are derived directly:
 
 Comparing two 4-bit numbers, $A = A_3 A_2 A_1 A_0$ and $B = B_3 B_2 B_1 B_0$, follows the same hierarchical procedure used in human arithmetic: start at the most significant bit (MSB) and proceed rightward toward the least significant bit (LSB).
 
+This priority ordering arises from positional binary weights: bit position $k$ carries numerical weight $2^k$. Because:
+$$
+2^k > \sum_{j=0}^{k-1} 2^j = 2^k - 1
+$$
+if bit $A_k > B_k$ ($A_k = 1, B_k = 0$), then number $A$ is guaranteed to be strictly greater than $B$, regardless of the states of all lower-order bits $k-1 \dots 0$. Lower bits can influence the comparison only if all higher-order bits are identical.
+
 First, define the bitwise equivalence function $x_i$ for each bit position $i \in \{0, 1, 2, 3\}$:
 $$
 x_i = (A_i \oplus B_i)' = A_i B_i + A_i' B_i'
@@ -188,7 +194,7 @@ Connecting the active-LOW outputs of a 74LS138 directly to a NAND gate synthesiz
 
 ### BCD-to-7-Segment decoder/driver
 
-A specialized decoder found in instruments, digital clocks, and calculators is the **BCD-to-7-segment decoder** (such as the **74LS47**).
+A specialized decoder found in instruments, digital clocks, and calculators is the **BCD-to-7-segment decoder** (such as the **74LS47** or **74LS48**).
 
 It takes a 4-bit Binary-Coded Decimal ([BCD](/courses/logic-design/codes-and-floating-point#bcd-decimal-digits-one-at-a-time)) digit ($0000_2$ to $1001_2$) and drives the seven individual LED segments ($a, b, c, d, e, f, g$) arranged in a figure-eight:
 
@@ -202,7 +208,13 @@ It takes a 4-bit Binary-Coded Decimal ([BCD](/courses/logic-design/codes-and-flo
         d
 ```
 
-For example, to display digit `0`, segments $a, b, c, d, e, f$ are illuminated, while segment $g$ remains off.
+For example, to display decimal digit `0`, segments $a, b, c, d, e, f$ are illuminated, while segment $g$ remains dark.
+
+7-segment displays exist in two physical wiring configurations:
+- **Common Anode:** All LED anodes are tied together to $+V_{CC}$. To illuminate an individual segment, its cathode pin must be pulled to ground (logic 0). Common-anode displays require an active-LOW driver, such as the open-collector **74LS47**.
+- **Common Cathode:** All LED cathodes are tied together to ground (GND). To illuminate a segment, its anode pin must be driven high (logic 1). Common-cathode displays require an active-HIGH driver, such as the **74LS48**.
+
+Input combinations outside the BCD range ($1010_2$ through $1111_2$) are illegal decimal digits and are treated as don't-cares during simplification, or mapped to blank/special indicator patterns.
 
 ## Encoders
 
@@ -278,6 +290,17 @@ It provides three status lines for cascading into 16-to-4 or 64-to-6 priority ne
 <Callout tone="neon" label="Interrupt Controllers">
 Priority encoders are the core of CPU [interrupt handling](/courses/microprocessors/interrupts). When multiple peripheral devices—such as a network card, keyboard, and hard drive—request CPU attention simultaneously, a priority encoder (such as the 8259A PIC) arbitrates immediately, presenting the vector of the highest-priority device directly to the processor's interrupt pins.
 </Callout>
+
+## Common exam pitfalls and student mistakes
+
+When working with MSI comparators, decoders, and encoders, students frequently make these six errors:
+
+1. **Combining Active-LOW Decoder Outputs with an OR Gate:** Connecting the active-LOW minterm outputs ($\overline{Y_i} = m_i'$) of a decoder into an OR gate when attempting to synthesize a Sum-of-Products function. Applying an OR gate computes $\sum \overline{Y_i} = \sum m_i' = (\prod m_i)'$, which evaluates to logic 1 almost everywhere. Synthesizing $\sum m_i$ from active-LOW outputs requires a **NAND gate**: $(\prod m_i')' = \sum m_i$.
+2. **Reversing Decoder Address Line Polarities or Weights:** Confusing the MSB and LSB of address inputs. On the standard 74LS138, input pin $C$ is the MSB ($2^2 = 4$) and input pin $A$ is the LSB ($2^0 = 1$). Reversing these pins swaps channels across the binary mirror (e.g., input code $001_2 = 1$ is decoded as $100_2 = 4$).
+3. **Improper Cascading Input Bias on the Least Significant Comparator:** Grounding or leaving floating the cascading equality input ($I_{A=B}$) on the lowest 74LS85 chip. If $I_{A=B} = 0$, then comparing two identical words causes the entire chain to report all zeros (failing to detect equality). The least significant chip must always have $I_{A=B} = 1$ ($V_{CC}$) and $I_{A>B} = I_{A<B} = 0$ (GND).
+4. **Confusing Priority Encoder Status Lines ($\overline{GS}$ vs $\overline{EO}$):** Mixing up Group Select and Enable Output on the 74LS148. $\overline{GS}$ asserts (goes LOW) when the chip is active and at least one input line is asserted (indicating "I have data"). In contrast, $\overline{EO}$ asserts (goes LOW) when the chip is active but *no* input lines are asserted (indicating "I have nothing, pass control to lower priority"). Wiring $\overline{GS}$ into the downstream $\overline{EI}$ inverts the priority chain.
+5. **Overlooking the Dual Flaws of Standard Encoders:** Failing to explain why standard binary encoders cannot be used for user input (such as keypads). Without priority arbitration, pressing two keys simultaneously generates an erroneous composite code, and when no keys are pressed, the outputs ($00\dots 0$) are indistinguishable from pressing key 0.
+6. **Mismatched 7-Segment Display and Decoder Polarity:** Connecting an active-LOW driver (such as the 74LS47) to a common-cathode display, or an active-HIGH driver (such as the 74LS48) to a common-anode display. A polarity mismatch causes all unselected segments to light up while the selected segments stay dark (inverting the numeral display).
 
 ## Practice problems
 

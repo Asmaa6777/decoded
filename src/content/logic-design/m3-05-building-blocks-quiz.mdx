@@ -19,7 +19,7 @@ Ten questions testing adders, carry-lookahead arithmetic, decoders, encoders, ma
         { id: "d", text: "A full adder requires an XOR gate to combine the carries from its two half adders because the carries can both be 1 simultaneously" },
       ],
       correctOptionId: "a",
-      explanation: "A half adder computes Sum = A ⊕ B and Carry = AB using one XOR gate and one AND gate. A full adder adds Cin by chaining two half adders: the first adds A and B, and the second adds that intermediate sum to Cin, producing Sum = A ⊕ B ⊕ Cin. The final carry Cout = AB + (A ⊕ B)Cin is formed by combining the two intermediate carries through an OR gate.",
+      explanation: "A half adder computes Sum = A ⊕ B and Carry = AB using one XOR gate and one AND gate. A full adder adds Cin by chaining two half adders: the first adds A and B, and the second adds that intermediate sum to Cin, producing Sum = A ⊕ B ⊕ Cin. The final carry Cout = AB + (A ⊕ B)Cin is formed by combining the two intermediate carries through an OR gate. Option b is false because full adders require only 2 XOR gates (not 6) and are routinely synthesized from two half adders; option c swaps the carry logic with OR; option d is false because the two intermediate carries C1 and C2 are mutually exclusive (C1 · C2 = 0) and cannot both be 1 simultaneously, making an OR gate completely sufficient.",
     },
     {
       id: "q2",
@@ -31,7 +31,7 @@ Ten questions testing adders, carry-lookahead arithmetic, decoders, encoders, ma
         { id: "d", text: "Because an OR gate has a lower logic threshold voltage than an XOR gate" },
       ],
       correctOptionId: "a",
-      explanation: "Evaluating C1 · C2 yields (AB) · ((A ⊕ B)Cin) = AB(A'B + AB')Cin = 0. Because C1 = 1 requires A = B = 1, which forces A ⊕ B = 0, C2 is strictly 0 whenever C1 is 1. Since C1 and C2 can never simultaneously equal 1, the condition C1 = C2 = 1 never occurs, meaning C1 + C2 and C1 ⊕ C2 produce the exact same truth table.",
+      explanation: "Evaluating C1 · C2 yields (AB) · ((A ⊕ B)Cin) = AB(A'B + AB')Cin = 0. Because C1 = 1 requires A = B = 1, which forces A ⊕ B = 0, C2 is strictly 0 whenever C1 is 1. Since C1 and C2 can never simultaneously equal 1, the condition C1 = C2 = 1 never occurs, meaning C1 + C2 and C1 ⊕ C2 produce the exact same truth table. Option b is false because CMOS logic gates can connect to any driving gate; option c is false because C1 and C2 are mutually exclusive; option d is false because gate selection is governed by Boolean function equivalence, not threshold voltage.",
     },
     {
       id: "q3",
@@ -43,7 +43,7 @@ Ten questions testing adders, carry-lookahead arithmetic, decoders, encoders, ma
         { id: "d", text: "The circuit disconnects the carry chain and routes the inputs into an internal array of half subtractors" },
       ],
       correctOptionId: "a",
-      explanation: "By mathematical identity, A - B = A + (-B) = A + B' + 1. An XOR gate acts as a controlled inverter: when M = 1, Bi ⊕ 1 = Bi', complementing every bit of B. Feeding M = 1 into the least-significant carry-in (C0 = 1) adds the required +1, executing exact two's complement subtraction with the same adder hardware.",
+      explanation: "By mathematical identity, A - B = A + (-B) = A + B' + 1. An XOR gate acts as a controlled inverter: when M = 1, Bi ⊕ 1 = Bi', complementing every bit of B. Feeding M = 1 into the least-significant carry-in (C0 = 1) adds the required +1, executing exact two's complement subtraction with the same adder hardware. Option b describes an incorrect inversion of sums rather than operands; option c inverts the wrong operand; option d is false because a single unified parallel adder performs both operations without auxiliary subtractors.",
     },
     {
       id: "q4",
@@ -55,7 +55,7 @@ Ten questions testing adders, carry-lookahead arithmetic, decoders, encoders, ma
         { id: "d", text: "C3 = 0, C4 = 1, and V = 1 because unsigned overflow occurred" },
       ],
       correctOptionId: "a",
-      explanation: "At bit 0: 1 + 0 = 1, C1 = 0. At bit 1: 0 + 0 = 0, C2 = 0. At bit 2: 1 + 1 = 0, generating carry C3 = 1. At bit 3 (sign stage): A3 = 0, B3 = 0, C3 = 1 produces sum bit S3 = 1 and carry out C4 = 0. The signed overflow flag is V = C4 ⊕ C3 = 0 ⊕ 1 = 1. The result 1001₂ is -7 in two's complement, demonstrating that +9 erroneously overflowed into a negative number.",
+      explanation: "At bit 0: 1 + 0 = 1, C1 = 0. At bit 1: 0 + 0 = 0, C2 = 0. At bit 2: 1 + 1 = 0, generating carry C3 = 1. At bit 3 (sign stage): A3 = 0, B3 = 0, C3 = 1 produces sum bit S3 = 1 and carry out C4 = 0. The signed overflow flag is V = C4 ⊕ C3 = 0 ⊕ 1 = 1. The result 1001₂ is -7 in two's complement, demonstrating that +9 erroneously overflowed into a negative number. Option b incorrectly assumes positive additions cannot overflow; option c miscalculates the carry propagation; option d confuses unsigned carry (C4 = 0) with signed overflow (V = 1).",
     },
     {
       id: "q5",
@@ -67,7 +67,7 @@ Ten questions testing adders, carry-lookahead arithmetic, decoders, encoders, ma
         { id: "d", text: "Ripple-Carry scales logarithmically as O(log n), whereas CLA scales as O(√n)" },
       ],
       correctOptionId: "a",
-      explanation: "In a ripple-carry adder, each stage must wait for the carry from the preceding stage, resulting in a critical path that grows linearly: t_delay = 2nτ = O(n). In a hierarchical CLA, carries are grouped into 4-bit blocks with second-level lookahead units, resulting in logarithmic delay growth: t_delay = O(log n).",
+      explanation: "In a ripple-carry adder, each stage must wait for the carry from the preceding stage, resulting in a critical path that grows linearly: t_delay = 2nτ = O(n). In a hierarchical CLA, carries are grouped into 4-bit blocks with second-level lookahead units, resulting in logarithmic delay growth: t_delay = O(log n). Option b falsely claims RCA and CLA have identical asymptotic scaling; option c ignores physical fan-in limits which make single-level O(1) wide CLAs unbuildable in CMOS; option d inverts the scaling properties of both architectures.",
     },
     {
       id: "q6",
@@ -79,7 +79,7 @@ Ten questions testing adders, carry-lookahead arithmetic, decoders, encoders, ma
         { id: "d", text: "Gi = (Ai ⊕ Bi)' and Pi = Ai Bi Ci" },
       ],
       correctOptionId: "a",
-      explanation: "Generate Gi = Ai Bi is 1 when both inputs are 1, forcing an outgoing carry regardless of Ci. Propagate Pi = Ai ⊕ Bi is 1 when exactly one input is 1, causing an incoming carry Ci = 1 to pass directly through the stage. Pi = Ai ⊕ Bi is preferred over Ai + Bi in hardware because the XOR output is reused to compute sum bit Si = Pi ⊕ Ci.",
+      explanation: "Generate Gi = Ai Bi is 1 when both inputs are 1, forcing an outgoing carry regardless of Ci. Propagate Pi = Ai ⊕ Bi is 1 when exactly one input is 1, causing an incoming carry Ci = 1 to pass directly through the stage. Pi = Ai ⊕ Bi is preferred over Ai + Bi in hardware because the XOR output is reused to compute sum bit Si = Pi ⊕ Ci. Option b swaps the definitions of generate and propagate; option c includes carry Ci in the generate term (which violates lookahead independence); option d gives an inverted XNOR generate and a triple product propagate.",
     },
     {
       id: "q7",
@@ -91,7 +91,7 @@ Ten questions testing adders, carry-lookahead arithmetic, decoders, encoders, ma
         { id: "d", text: "Outputs Y1' and Y4' are 0 because 101₂ is the sum of 4 and 1" },
       ],
       correctOptionId: "a",
-      explanation: "The enable condition is G1 · (G2A')' · (G2B')' = 1 · 1 · 1 = 1, so the chip is enabled. For input CBA = 101₂ = 5₁₀, the decoder selects channel 5. Because the outputs are active-LOW, the selected line Y5' drops to logic 0, while all unselected lines sit at logic 1.",
+      explanation: "The enable condition is G1 · (G2A')' · (G2B')' = 1 · 1 · 1 = 1, so the chip is enabled. For input CBA = 101₂ = 5₁₀, the decoder selects channel 5. Because the outputs are active-LOW, the selected line Y5' drops to logic 0, while all unselected lines sit at logic 1. Option b describes an active-HIGH decoder; option c misunderstands the active-LOW enables (G2A' and G2B' MUST be grounded to enable the 74LS138); option d incorrectly decomposes the address into separate bit channels.",
     },
     {
       id: "q8",
@@ -103,7 +103,7 @@ Ten questions testing adders, carry-lookahead arithmetic, decoders, encoders, ma
         { id: "d", text: "Invert all outputs with NOT gates, then connect Y1, Y3, and Y7 to a NOR gate" },
       ],
       correctOptionId: "a",
-      explanation: "An active-LOW decoder produces complemented minterms: Yi' = mi'. By De Morgan's laws, NANDing the selected active-LOW outputs gives (Y1' · Y3' · Y7')' = (m1' · m3' · m7')' = m1 + m3 + m7 = F. Zero external inverters or OR gates are required.",
+      explanation: "An active-LOW decoder produces complemented minterms: Yi' = mi'. By De Morgan's laws, NANDing the selected active-LOW outputs gives (Y1' · Y3' · Y7')' = (m1' · m3' · m7')' = m1 + m3 + m7 = F. Zero external inverters or OR gates are required. Option b (OR gate) is the classic student exam trap, which would compute Y1' + Y3' + Y7' = (Y1 · Y3 · Y7)' = 1 almost everywhere; option c selects the maxterms (complementary minterms) with an AND gate, synthesizing F'; option d adds unnecessary inverters and uses the wrong gate.",
     },
     {
       id: "q9",
@@ -115,7 +115,7 @@ Ten questions testing adders, carry-lookahead arithmetic, decoders, encoders, ma
         { id: "d", text: "A1 = 0, A0 = 0, and V = 0 because multiple active inputs trigger an error state" },
       ],
       correctOptionId: "a",
-      explanation: "In a priority encoder, lower-priority asserted inputs are treated as don't-cares when a higher-priority input is active. Since D2 is active and D3 is 0, D2 takes precedence over D1, producing output code A1 A0 = 10₂ = 2₁₀. The Valid bit V = 1 indicates that at least one valid input line is asserted.",
+      explanation: "In a priority encoder, lower-priority asserted inputs are treated as don't-cares when a higher-priority input is active. Since D2 is active and D3 is 0, D2 takes precedence over D1, producing output code A1 A0 = 10₂ = 2₁₀. The Valid bit V = 1 indicates that at least one valid input line is asserted. Option b mistakenly assigns highest priority to the lowest index; option c describes a flawed standard encoder where overlapping inputs produce corrupted OR composite codes; option d fails to recognize that priority encoders are specifically designed to resolve multiple active inputs without error.",
     },
     {
       id: "q10",
@@ -127,7 +127,7 @@ Ten questions testing adders, carry-lookahead arithmetic, decoders, encoders, ma
         { id: "d", text: "I0 = C', I1 = 0, I2 = C, and I3 = 1" },
       ],
       correctOptionId: "a",
-      explanation: "Group minterms by select code (AB): For AB = 00 (m0, m1): m0 = 1, m1 = 0 → F is 1 only when C = 0, so I0 = C'. For AB = 01 (m2, m3): m2 = 1, m3 = 0 → F is 1 only when C = 0, so I1 = C'. For AB = 10 (m4, m5): m4 = 0, m5 = 0 → F is 0 regardless of C, so I2 = 0. For AB = 11 (m6, m7): m6 = 1, m7 = 1 → F is 1 regardless of C, so I3 = 1.",
+      explanation: "Group minterms by select code (AB): For AB = 00 (m0, m1): m0 = 1, m1 = 0 → F is 1 only when C = 0, so I0 = C'. For AB = 01 (m2, m3): m2 = 1, m3 = 0 → F is 1 only when C = 0, so I1 = C'. For AB = 10 (m4, m5): m4 = 0, m5 = 0 → F is 0 regardless of C, so I2 = 0. For AB = 11 (m6, m7): m6 = 1, m7 = 1 → F is 1 regardless of C, so I3 = 1. Option b inverts the C and C' polarity (the most frequent student exam error in Shannon expansion tables); option c assigns static constants ignoring variable C; option d incorrectly assigns I2 = C and I1 = 0.",
     },
   ]}
 />
