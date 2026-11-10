@@ -18,14 +18,15 @@ Each step extracts the first element of the unsorted partition, known as the **k
 
 In the visualizer above, watch the purple **key** indicator. As elements larger than the key shift right, they leave open the target slot. When the comparison encounters an element less than or equal to the key, or reaches the beginning of the array, the key drops into place.
 
-The notes walk through 6, 2, 11, 7, 5. The first element counts as already sorted, so the work starts with the second:
+The notes walk through 6, 2, 11, 7, 5. A single element (`[6]`) is already sorted by definition as the base case, so the outer loop starts with the second element at index 1:
 
 | Key | Compared with | What moves | Array after |
 | --- | --- | --- | --- |
-| 2 | 6 | 2 < 6: shift 6 right, put 2 in front | **2 6** 11 7 5 |
-| 11 | 6 | 11 > 6: nothing shifts | **2 6 11** 7 5 |
-| 7 | 11, 6 | 7 < 11: shift 11; 7 > 6, stop | **2 6 7 11** 5 |
-| 5 | 11, 7, 6, 2 | 5 < 11, 7, 6: shift all three; 5 > 2, stop | **2 5 6 7 11** |
+| start | — | initial sorted prefix is `[6]` | **6** 2 11 7 5 |
+| 2 ($i = 1$) | 6 | 2 < 6: shift 6 right, put 2 in front | **2 6** 11 7 5 |
+| 11 ($i = 2$) | 6 | 11 > 6: nothing shifts | **2 6 11** 7 5 |
+| 7 ($i = 3$) | 11, 6 | 7 < 11: shift 11; 7 > 6, stop | **2 6 7 11** 5 |
+| 5 ($i = 4$) | 11, 7, 6, 2 | 5 < 11, 7, 6: shift all three; 5 > 2, stop | **2 5 6 7 11** |
 
 Comparisons proceed backwards from the end of the sorted prefix. Because 11 is greater than 6 (the largest value in the sorted prefix), it requires only a single comparison.
 
@@ -42,19 +43,22 @@ for i ← 1 to n − 1 do
     A[j + 1] ← key
 ```
 
-The assignment `A[j + 1] ← key` executes once per outer iteration, immediately after the inner `while` loop finishes.
+The assignment `A[j + 1] ← key` executes once per outer iteration, immediately after the inner `while` loop finishes. Why `j + 1` instead of `j`? Because the `while` loop decremented `j` with `j ← j − 1` after the last shift, or stopped when `A[j] ≤ key`. In both cases, the target opening for `key` is one position to the right of `j`, which is index `j + 1`.
 
 ### An exam answer in steps
 
-Exams frequently ask for step-by-step traces showing each shifted key. For the sequence 1, 12, 46, 6, 37, 5, 46, 3, 32, values that are already larger than the preceding prefix (12, the first 46, and the second 46) remain in place:
+Exams frequently ask for step-by-step traces showing each shifted key. For the sequence 1, 12, 46, 6, 37, 5, 46, 3, 32, values that are already larger than the preceding prefix (12, the first 46, and the second 46) remain in place. On written exams, always list these passes explicitly (noting "0 shifts, 1 comparison") so examiners see that every index $i$ was checked:
 
 | Key | Smaller than | Array after |
 | --- | --- | --- |
-| 6 | 46, 12 | 1 **6** 12 46 37 5 46 3 32 |
-| 37 | 46 | 1 6 12 **37** 46 5 46 3 32 |
-| 5 | 46, 37, 12, 6 | 1 **5** 6 12 37 46 46 3 32 |
-| 3 | 46, 46, 37, 12, 6, 5 | 1 **3** 5 6 12 37 46 46 32 |
-| 32 | 46, 46, 37 | 1 3 5 6 12 **32** 37 46 46 |
+| 12 ($i = 1$) | none (12 > 1) | **1 12** 46 6 37 5 46 3 32 |
+| 46 ($i = 2$) | none (46 > 12) | **1 12 46** 6 37 5 46 3 32 |
+| 6 ($i = 3$) | 46, 12 | **1 6 12 46** 37 5 46 3 32 |
+| 37 ($i = 4$) | 46 | **1 6 12 37 46** 5 46 3 32 |
+| 5 ($i = 5$) | 46, 37, 12, 6 | **1 5 6 12 37 46** 46 3 32 |
+| 46 ($i = 6$) | none (46 == 46, stop) | **1 5 6 12 37 46 46** 3 32 |
+| 3 ($i = 7$) | 46, 46, 37, 12, 6, 5 | **1 3 5 6 12 37 46 46** 32 |
+| 32 ($i = 8$) | 46, 46, 37 | **1 3 5 6 12 32 37 46 46** |
 
 The duplicate value 46 remains behind the first 46 because the condition shifts only values strictly greater than the key. This strict inequality preserves stability. Each step shifts an element leftward into position, which distinguishes an insertion sort trace from [selection sort](/courses/algorithm-design-and-analysis/selection-and-bubble-sort#selection-sort-find-the-smallest-put-it-first), where each pass swaps the minimum value forward.
 
@@ -71,12 +75,12 @@ The basic operation is the comparison `a[j] > key` in the `while` condition.
 - **Worst case** (reverse-sorted input): each incoming key is smaller than all preceding elements, shifting all the way to the front. The $i$-th element requires $i$ comparisons, producing an [arithmetic series](/courses/discrete-mathematics/induction#a-first-proof):
 
 $$
-1 + 2 + \dots + (n-1) = \frac{n(n-1)}{2} = O(n^2)
+1 + 2 + \dots + (n-1) = \frac{n(n-1)}{2} = \Theta(n^2)
 $$
 
-- **Best case** (already sorted input): every key is greater than the preceding element. The `while` condition fails immediately on its first check, leaving the key in place. This requires one comparison per element, yielding **$O(n)$** comparisons.
+- **Best case** (already sorted input): every key is greater than the preceding element. The `while` condition fails immediately on its first check, leaving the key in place. This requires one comparison per element, yielding **$O(n)$** comparisons (specifically $n - 1$ comparisons).
 
-- **Average case**: for randomly ordered input, each key travels roughly halfway through the sorted prefix. This requires approximately $n^2 / 4$ comparisons, which remains $O(n^2)$.
+- **Average case**: for randomly ordered input, each key travels roughly halfway through the sorted prefix. This requires approximately $n^2 / 4$ comparisons, which is $\Theta(n^2)$ (and $O(n^2)$).
 
 Insertion sort is inefficient for large random datasets due to its quadratic worst and average cases. However, it requires significantly fewer operations when the array is already partially sorted.
 
@@ -113,6 +117,8 @@ Insertion sort: $O(n^2)$ average and worst, $O(n)$ best, in place, stable. Highl
 
 ```java
 public static void insertionSort(int[] array) {
+    if (array == null || array.length < 2) return;
+
     for (int i = 1; i < array.length; i++) {
         int key = array[i];
         int j = i - 1;
@@ -232,6 +238,8 @@ When element $A[i]$ is picked as the $key$, the subarray $A[0 \dots i - 1]$ is a
 
 ```java
 public static void insertionSort(int[] array) {
+    if (array == null || array.length < 2) return;
+
     for (int i = 1; i < array.length; i++) {
         int key = array[i];
         int j = i - 1;

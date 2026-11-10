@@ -19,17 +19,17 @@ Exams often ask students to trace sorting pass by pass. The trace below shows ea
 
 | Pass | Smallest of the rest | Array after the swap |
 | --- | --- | --- |
-| start | | 3 7 8 5 2 1 9 5 4 |
-| 1 | 1 | **1** 7 8 5 2 3 9 5 4 |
-| 2 | 2 | **1 2** 8 5 7 3 9 5 4 |
-| 3 | 3 | **1 2 3** 5 7 8 9 5 4 |
-| 4 | 4 | **1 2 3 4** 7 8 9 5 5 |
-| 5 | 5 | **1 2 3 4 5** 8 9 7 5 |
-| 6 | 5 | **1 2 3 4 5 5** 9 7 8 |
-| 7 | 7 | **1 2 3 4 5 5 7** 9 8 |
-| 8 | 8 | **1 2 3 4 5 5 7 8 9** |
+| start | — (initial array) | 3 7 8 5ᵃ 2 1 9 5ᵇ 4 |
+| 1 | 1 (at index 5) | **1** 7 8 5ᵃ 2 3 9 5ᵇ 4 |
+| 2 | 2 (at index 4) | **1 2** 8 5ᵃ 7 3 9 5ᵇ 4 |
+| 3 | 3 (at index 5) | **1 2 3** 5ᵃ 7 8 9 5ᵇ 4 |
+| 4 | 4 (at index 8) | **1 2 3 4** 7 8 9 5ᵇ 5ᵃ |
+| 5 | 5ᵇ (at index 7) | **1 2 3 4 5ᵇ** 8 9 7 5ᵃ |
+| 6 | 5ᵃ (at index 8) | **1 2 3 4 5ᵇ 5ᵃ** 9 7 8 |
+| 7 | 7 (at index 7) | **1 2 3 4 5ᵇ 5ᵃ 7** 9 8 |
+| 8 | 8 (at index 8) | **1 2 3 4 5ᵇ 5ᵃ 7 8 9** |
 
-Sorting nine elements takes eight passes. After pass 8, the single remaining element is already in its correct final position.
+Notice that the input contains two 5s, tagged 5ᵃ and 5ᵇ. In pass 4, swapping the minimum element 4 with index 3 displaces 5ᵃ all the way to index 8, sending it past 5ᵇ. We will return to this when analyzing stability below. Sorting nine elements takes eight passes. After pass 8, the single remaining element is already in its correct final position.
 
 The notes use a smaller example: 6, 2, 11, 7, 5. Pass 1 finds 2 and swaps it with 6, producing 2, 6, 11, 7, 5. Pass 2 finds 5 and swaps it with 6, producing 2, 5, 11, 7, 6. Pass 3 swaps 6 with 11, producing 2, 5, 6, 7, 11. Pass 4 finds that 7 is already the smaller of 7 and 11, leaving the array unchanged.
 
@@ -44,11 +44,11 @@ for i ← 0 to n − 2 do
     swap A[i] and A[min]
 ```
 
-The outer loop stops at index $n - 2$, the second-to-last position. By that point, the final element is already in place.
+The outer loop stops at index $n - 2$, the second-to-last position. By that point, the final element is already in place. In Java, this corresponds to `i < array.length - 1`. Writing `i < array.length - 2` by mistake stops two elements early and leaves the final pair unsorted.
 
 ### Analysis
 
-The input size is $n$, the number of elements. The basic operation is the **key comparison** `A[j] < A[min]`. How often it runs depends only on $n$, not on the values. On pass 1 it runs $n - 1$ times, on pass 2 it runs $n - 2$ times, and so on down to 1 (summed as an [arithmetic series](/courses/discrete-mathematics/induction#a-first-proof)):
+The input size is $n$, the number of elements. The basic operation is the **key comparison** `A[j] < A[min]`. How often it runs depends only on $n$, not on the values. On pass 1 ($i = 0$) it runs $n - 1$ times, on pass 2 ($i = 1$) it runs $n - 2$ times, and so on down to 1 on pass $n - 1$ ($i = n - 2$):
 
 $$
 (n-1) + (n-2) + \dots + 1 = \frac{n(n-1)}{2}
@@ -60,7 +60,7 @@ The comparison count is $\Theta(n^2)$, and it remains identical regardless of in
 Students often swap every time they find a value smaller than `A[min]`, rather than recording its index in `min` and swapping once at the end of the pass. Swapping repeatedly still sorts the array, but it alters the algorithm: it performs multiple swaps per pass instead of one, and exam trace answers will not match the expected state. Each pass of selection sort must end with **exactly one** swap (which may swap an element with itself).
 </Callout>
 
-Selection sort minimizes write operations, performing at most $n - 1$ **swaps**, or at most one swap per pass. When write operations to physical storage are costly or cause hardware wear, this low write count is useful.
+Selection sort minimizes write operations, performing at most $n - 1$ **swaps**, or at most one swap per pass. If the minimum element is already at index `i`, basic selection sort performs a self-swap (swapping `A[i]` with itself). An optional check `if (min != i)` skips self-swaps, reducing the best-case swap count to 0. Even without that check, selection sort uses at most $n - 1$ writes to memory, which is useful when write operations to physical storage are costly or cause hardware wear.
 
 Selection sort is also **in place**, meaning it reorganizes elements within the original array rather than allocating auxiliary memory. It requires only a few index variables, so its [space complexity](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too) is $O(1)$.
 
@@ -76,13 +76,14 @@ Here is the notes' example, 6, 2, 11, 7, 5. On each pass `i`, the index `j` walk
 | | 1 | 6 < 11, no swap | 2 6 11 7 5 |
 | | 2 | 11 > 7, swap | 2 6 7 11 5 |
 | | 3 | 11 > 5, swap | 2 6 7 5 **11** |
-| i = 1 | 0, 1 | 2 < 6, 6 < 7 | 2 6 7 5 **11** |
+| i = 1 | 0 | 2 < 6, no swap | 2 6 7 5 **11** |
+| | 1 | 6 < 7, no swap | 2 6 7 5 **11** |
 | | 2 | 7 > 5, swap | 2 6 5 **7 11** |
-| i = 2 | 0 | 2 < 6 | 2 6 5 **7 11** |
+| i = 2 | 0 | 2 < 6, no swap | 2 6 5 **7 11** |
 | | 1 | 6 > 5, swap | 2 5 **6 7 11** |
 | i = 3 | 0 | 2 < 5, no swap | **2 5 6 7 11** |
 
-Each pass makes one fewer comparison because the suffix of the array is already sorted: 4 + 3 + 2 + 1 = 10 comparisons and 4 swaps. Pass `i = 3` makes zero swaps because 2 and 5 are already in order.
+Each pass makes one fewer comparison because the suffix of the array is already sorted: 4 + 3 + 2 + 1 = 10 comparisons and 5 swaps ($3 + 1 + 1 + 0 = 5$). Pass `i = 3` makes zero swaps because 2 and 5 are already in order.
 
 The notes' pseudocode:
 
@@ -92,6 +93,8 @@ for i ← 0 to n − 2 do
     for j ← 0 to n − 2 − i do
         if A[j + 1] < A[j]  swap A[j] and A[j + 1]
 ```
+
+The inner loop bound `j ← 0 to n − 2 − i` has two parts. It subtracts $i$ because the largest $i$ elements have already reached their final positions at the end of the array. It subtracts 1 (leaving $n - 2 - i$) because the condition compares `A[j]` with `A[j + 1]`, which looks one index ahead. Stopping at $n - 2 - i$ guarantees `j + 1` never steps past the unsorted boundary.
 
 <SortVisualizer algorithm="bubble" initial={[5, 1, 4, 2, 8, 3]} />
 
@@ -105,7 +108,7 @@ The comparison stepper below contrasts both versions. Select the **Sorted** pres
 
 - **Worst case** (reverse-sorted input): every adjacent pair is inverted, so every comparison triggers a swap. This requires $n(n-1)/2$ comparisons and $n(n-1)/2$ swaps, giving $O(n^2)$.
 - **Best case** (already sorted, using the `swapped` flag): one pass of $n - 1$ comparisons makes zero swaps, triggering an early exit in **$O(n)$** time.
-- **Average case:** the algorithm performs approximately $n/2$ passes of $O(n)$ comparisons each, yielding $O(n^2)$ total comparisons.
+- **Average case:** on random input, inverted elements are scattered throughout the array. Because out-of-order elements near the front prevent early termination until the final passes, bubble sort requires $\Theta(n^2)$ comparisons on average even with the early-exit flag.
 
 <Callout tone="orange" label="Common mistake: the inner loop's last index">
 Because the inner loop accesses both `A[j]` and `A[j + 1]`, `j` must stop before reaching the final index. In Java, the loop bound is `j < array.length - 1 - i`. Setting `j < array.length - i` causes `j + 1` to evaluate to `array.length` on the first pass, throwing an `ArrayIndexOutOfBoundsException`.
@@ -156,6 +159,11 @@ Stability is important during multi-criteria sorting. For example, sorting recor
 Add these to your `AlgoLab` class from the previous lesson, then sort a random array of 1,000 numbers and time it.
 
 ```java
+// Requires swap(array, i, j) from AlgoLab in the previous lesson:
+// public static void swap(int[] array, int i, int j) {
+//     int temp = array[i]; array[i] = array[j]; array[j] = temp;
+// }
+
 public static void selectionSort(int[] array) {
     for (int i = 0; i < array.length - 1; i++) {
         int currentMin = i;

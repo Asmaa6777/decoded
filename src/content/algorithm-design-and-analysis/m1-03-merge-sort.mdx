@@ -29,7 +29,7 @@ Here is the notes' example, `30, 20, 40, 5, 90, 80, 10`:
 
 <MergeSortTree input={[30, 20, 40, 5, 90, 80, 10]} />
 
-When an array contains an odd number of elements, one half receives the extra item. Whether the extra item sits on the left or the right does not affect correctness. In the [recursion tree](/courses/discrete-mathematics/trees#what-a-tree-is) above, descending levels represent the divide step, while ascending levels represent the combine step where sorted subarrays merge.
+When an array contains an odd number of elements, one half receives the extra item. In Java, integer division `mid = n / 2` for $n = 7$ produces `mid = 3`, giving a left subarray of size 3 (indices 0 to 2) and a right subarray of size 4 (indices 3 to 6). Whether the extra item sits on the left or the right does not affect correctness. In the [recursion tree](/courses/discrete-mathematics/trees#what-a-tree-is) above, descending levels represent the divide step, while ascending levels represent the combine step where sorted subarrays merge.
 
 ## The merge step
 
@@ -72,7 +72,7 @@ else
     copy B[i..p − 1] to A[k..p + q − 1]
 ```
 
-`B` has $p$ elements and `C` has $q$. When `i = p`, `B` is used up, so the rest of `C` goes to the end; otherwise the rest of `B` does.
+`B` has $p$ elements and `C` has $q$. When `i = p`, `B` is used up, so the rest of `C` goes to the end; otherwise the rest of `B` does. In Java, this cleanup is implemented with two sequential `while` loops instead of an `if...else`. Whichever subarray has elements left will execute its loop, while the other loop's condition is already false and immediately skips.
 
 The sky-coloured window below is the piece being worked on, and the orange buffer under the bars is `tmp`, which fills up as the two fronts are compared.
 
@@ -100,7 +100,7 @@ Merge sort is **not in place**. The merge operation requires a temporary array s
 </Callout>
 
 <Callout tone="orange" label="Common mistakes in the merge">
-Two implementation bugs occur frequently. **Omitting remaining elements:** the main merge loop terminates when either half runs out. Without the following cleanup loops, elements from the unfinished half are omitted. **Writing `<` instead of `<=`: ** when comparing elements from left and right halves, using strict `<` pulls from the right half first on equal values. The array still sorts, but the sort is no longer stable.
+Two implementation bugs occur frequently. **Omitting remaining elements:** the main merge loop terminates when either half runs out. Without the following cleanup loops, elements from the unfinished half are omitted. **Writing `<` instead of `<=`: **when comparing elements from left and right halves, using strict `<` pulls from the right half first on equal values. The array still sorts, but the sort is no longer stable.
 </Callout>
 
 Two additional properties:
@@ -156,6 +156,8 @@ private static void merge(int[] input, int[] left, int[] right) {
 ```
 
 The lab sheet called `printArray(array1)` before `generateRandomArray`, causing the initial terminal printout to display uninitialized zeros. Moving the print statement after array generation displays the actual numbers before sorting.
+
+Notice that this lab version allocates fresh `left` and `right` arrays on every recursive call, creating $O(n \log n)$ total allocations over the tree. Production implementations like Java's internal sorts avoid this overhead: they allocate a single temporary buffer array of size $n$ up front, passing subarray boundaries (`low`, `mid`, `high`) down the recursion, which keeps auxiliary space strictly $O(n)$.
 
 Benchmarking merge sort on 100,000 random integers demonstrates its practical speed: it finishes in fractions of a second, whereas quadratic insertion sort on the same input requires minutes.
 
@@ -227,10 +229,10 @@ $$
 The tree has $\lceil \log_2 7 \rceil + 1 = 4$ levels.
 </ModelAnswer>
 
-**3.** *(Two-way merge trace)* Trace the execution of the `merge(inputArray, leftHalf, rightHalf)` method on `leftHalf = [2, 6, 11]` and `rightHalf = [4, 5, 7]`. Provide a trace table tracking pointer indices $l, r, m$, the compared values, the value placed into `inputArray`, and the cleanup phase when one half runs out. State the total number of comparisons.
+**3.** *(Two-way merge trace)* Trace the execution of the `merge(inputArray, leftHalf, rightHalf)` method on `leftHalf = [2, 6, 11]` and `rightHalf = [4, 5, 7]`. Provide a trace table tracking pointer indices $l, r, m$ (where $l$ is the index in $leftHalf$, $r$ in $rightHalf$, and $m$ in $inputArray$, corresponding to $i, j, k$), the compared values, the value placed into `inputArray`, and the cleanup phase when one half runs out. State the total number of comparisons.
 
 <ModelAnswer>
-Input subarrays: $leftHalf = \langle 2, 6, 11 \rangle$ ($leftSize = 3$) and $rightHalf = \langle 4, 5, 7 \rangle$ ($rightSize = 3$).
+Input subarrays: $leftHalf = \langle 2, 6, 11 \rangle$ ($leftSize = 3$) and $rightHalf = \langle 4, 5, 7 \rangle$ ($rightSize = 3$). Here, pointers $l, r, m$ correspond to $i, j, k$ from the lesson text: index $l$ walks $leftHalf$, index $r$ walks $rightHalf$, and index $m$ walks output $inputArray$.
 
 | Step | $l$ | $r$ | $m$ | Comparison | Action | $inputArray$ so far |
 | --- | --- | --- | --- | --- | --- | --- |

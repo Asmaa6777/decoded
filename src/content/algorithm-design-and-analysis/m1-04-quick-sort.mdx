@@ -86,7 +86,7 @@ $$
 
 When using the first element as the pivot, this worst case occurs on inputs that are **already sorted in ascending or descending order**. Every chosen pivot is either the minimum or maximum remaining element, producing $n$ recursive levels. Test this in the visualizer with `1, 2, 3, 4, 5, 6, 7, 8` to observe each partition strip away only a single element.
 
-The notes represent the worst case as $f(n) = n \times (n-1)$, and the best case as $f(n) = n \times \log_2 n$. Both formulations correspond asymptotically to $O(n^2)$ and $O(n \log n)$.
+The notes represent the worst case as $f(n) = n \times (n-1)$, and the best case as $f(n) = n \times \log_2 n$. Lecture slides often use $n(n - 1)$ as an unnormalized upper bound on loop passes; the exact comparison count is $\frac{n(n - 1)}{2}$. Both formulations correspond asymptotically to $O(n^2)$ and $O(n \log n)$.
 
 <Callout tone="orange" label="Common mistake: thinking one partition sorts the sides">
 A partition step separates elements into lower and higher groups, but does not sort those groups internally. For instance, partitioning `25, 10, 30, 15, 20, 28` around 25 yields `15, 10, 20, 25, 30, 28`. The subarray `15, 10, 20` remains unsorted; only 25 has reached its final sorted index. Quick sort must recursively sort both partitions.
@@ -152,7 +152,13 @@ public static int partition(int[] array, int lowIndex, int highIndex, int pivot)
 }
 ```
 
-Invoke the method using `quickSort(array, 0, array.length - 1)`. To observe worst-case behavior, benchmark execution on 50,000 random integers and then on 50,000 pre-sorted integers. When run on sorted inputs, a first-element pivot triggers $n$ levels of nested recursion instead of $\log_2 n$, which may cause a `StackOverflowError`.
+Invoke the method using `quickSort(array, 0, array.length - 1)`.
+
+Notice two implementation details:
+1. When `leftPointer` meets `rightPointer`, line 148 executes `swap(array, leftPointer, rightPointer)`. Swapping an index with itself is a harmless no-op that leaves the array untouched, which avoids adding an extra conditional branch.
+2. `partition` receives `int pivot` explicitly. The lab handout structured the signature this way so students can experiment with alternate pivot strategies (such as passing the middle or a random element) without altering the partition loop.
+
+To observe worst-case behavior, benchmark execution on 50,000 random integers and then on 50,000 pre-sorted integers. When run on sorted inputs, a first-element pivot triggers $n$ levels of nested recursion instead of $\log_2 n$, which may cause a `StackOverflowError`.
 
 <LeetCodeProblems
   problems={[
@@ -189,7 +195,7 @@ Initial array: $A = \langle 25, 10, 30, 15, 20, 28 \rangle$ ($n = 6$, $lowIndex 
    - $A[4] = 30 \ge 25 \implies$ decrement $rightPointer$ to 3.
    - $A[3] = 15 < 25 \implies$ stop $rightPointer$ at index 3.
 5. **Move `leftPointer` rightward again**:
-   - $A[2] = 20 \le 25 \implies$ increment $leftPointer$ to 3.
+   - Re-evaluate $A[leftPointer]$ at index 2 (now containing 20 from the swap in step 3): $A[2] = 20 \le 25 \implies$ increment $leftPointer$ to 3.
    - $leftPointer$ meets $rightPointer$ at index 3 ($3 < 3$ fails), so the `while` loop terminates.
 6. **Final pivot swap:**
    - Swap the pivot at $lowIndex$ (index 0) with $rightPointer$ (index 3): swap $A[0]$ (25) and $A[3]$ (15).
