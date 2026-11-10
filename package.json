@@ -9,8 +9,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "NODE_OPTIONS=--localstorage-file=/tmp/node-localstorage vitest run",
+    "test:watch": "NODE_OPTIONS=--localstorage-file=/tmp/node-localstorage vitest"
   },
   "dependencies": {
     "@dagrejs/dagre": "^3.0.0",

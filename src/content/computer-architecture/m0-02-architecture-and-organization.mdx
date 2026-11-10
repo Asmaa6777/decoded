@@ -1,0 +1,57 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+
+# Architecture and Organization
+
+A clear distinction governs how computer systems are designed: the boundary between computer architecture and computer organization.
+
+## The architecture boundary
+
+Think about driving an automobile. The steering wheel, accelerator pedal, and brake pedal operate the same way across gasoline, diesel, and electric vehicles. A driver needs to know what these controls do, without having to inspect the mechanical linkages or battery chemistry under the hood.
+
+Computers divide along that exact interface:
+
+* **Computer Architecture** refers to system attributes visible to the low-level assembly programmer or compiler writer. It encompasses attributes that directly affect program execution, such as the instruction set architecture ([ISA](/courses/computer-architecture/instruction-formats)), the number of bits used for data representation, memory addressing techniques, and input/output mechanisms. Architecture defines **what** the computer does.
+* **Computer Organization** refers to the operational units and their physical interconnections that realize the architectural specification. It encompasses hardware details transparent to software, including internal control signals, memory technology, cache capacities, and clock distribution. Organization defines **how** the machine accomplishes its tasks.
+
+| Dimension | Computer Architecture | Computer Organization |
+|---|---|---|
+| Core Question | What does the machine promise software? | How is that promise implemented in physical silicon? |
+| Key Examples | Instruction formats, register file size, addressing modes | Cache mapping circuits, pipeline depth, bus clock rates |
+| Primary Audience | Assembly programmers, OS authors, compiler engineers | Logic designers, electrical engineers, chip architects |
+| Rate of Change | Stable over decades to preserve software investment | Changes with every semiconductor process generation |
+
+<Callout tone="violet" label="Backward compatibility">
+A single processor architecture can span decades and power hundreds of distinct commercial computer models. Every processor in the Intel x86 line shares the same baseline instruction set architecture. A binary executable compiled for an older chip still runs correctly on modern processors, even though the underlying organization has transformed from single-cycle discrete logic to out-of-order superscalar pipelines. This guarantee is called **backward compatibility**.
+</Callout>
+
+## Structure and function
+
+To analyze any complex computer system, engineers separate **structure** from **function**:
+
+* **Structure** is the physical and logical arrangement by which hardware components interconnect.
+* **Function** is the individual operation performed by each component as part of the structure.
+
+At the highest structural level, every digital computer consists of four primary components:
+
+1. **Central Processing Unit (CPU)**: Controls system operation and carries out all arithmetic and logical data processing.
+2. **Main Memory**: Stores active program instructions and immediate data operands.
+3. **Input/Output (I/O)**: Moves data between the computer and external devices, peripherals, or network interfaces.
+4. **System Interconnection**: A collection of physical wires called the system bus, providing communications paths between CPU, memory, and I/O.
+
+These four structural units cooperate to execute four fundamental functions:
+
+* **Data Processing**: Performing arithmetic computations and bitwise transformations inside the ALU.
+* **Data Storage**: Retaining information short-term in registers and RAM, or long-term on storage drives.
+* **Data Movement**: Transferring words between memory locations, internal registers, and external peripheral devices.
+* **Control**: Interpreting instructions and directing physical control lines to coordinate all hardware operations.
+
+## The internal structure of the CPU
+
+Opening the CPU reveals four internal building blocks connected by an **internal CPU bus**:
+
+* **Control Unit (CU)**: The coordinator of the processor. It decodes instructions and generates the timed electrical control signals that trigger registers, buses, and arithmetic circuits.
+* **Arithmetic and Logic Unit (ALU)**: The computational engine, containing combinational adder, subtractor, and bit-manipulation circuits.
+* **Registers**: High-speed internal storage cells, including the accumulator, instruction register, and status flags.
+* **Internal Bus**: The set of shared internal wires that route data words between registers and ALU inputs without cluttering the external system bus.
+
+Before studying instruction sets and memory hierarchies, engineers must understand the physical datapath building blocks: how gates combine into latches, flip-flops, registers, and counters.

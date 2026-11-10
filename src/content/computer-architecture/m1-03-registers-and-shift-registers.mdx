@@ -1,0 +1,55 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { ShiftRegisterTraceLab } from "@/components/mdx/DatapathVisualizers";
+
+# Registers and Shift Registers
+
+A single flip-flop stores one bit. Grouping multiple flip-flops with a shared clock line forms a **register**, a storage block capable of capturing and presenting an entire multi-bit binary word in a single clock cycle.
+
+## The parallel-load register
+
+In a digital computer, data words must be latched simultaneously. A simple 4-bit register uses four edge-triggered D flip-flops:
+
+* **Data Inputs ($I_3, I_2, I_1, I_0$)**: Four independent wires presenting parallel binary data.
+* **Outputs ($A_3, A_2, A_1, A_0$)**: The four stored bits, available continuously to subsequent logic stages.
+* **Common Clock Line**: A single clock wire routed to every flip-flop simultaneously, ensuring all four bits update on the exact same clock edge.
+* **Clear Line ($\overline{\text{CLR}}$)**: An asynchronous active-low reset wire that forces all four outputs to 0 regardless of the clock or data inputs.
+
+When an assembly instruction executes `MOV AX, BX`, the processor places the contents of register BX onto the internal data bus and pulses the clock line of register AX, latching all sixteen bits in parallel.
+
+## Shift registers
+
+A **shift register** is a cascade of flip-flops where the output of each stage connects directly to the data input of the next stage. On each clock edge, stored bits advance by one position along the chain.
+
+Shift direction is defined relative to bit significance:
+
+* **Shift Right**: Bits move toward the least significant bit ($Q_{i-1} \leftarrow Q_i$). Serial data enters at the most significant bit ($Q_{n-1}$).
+* **Shift Left**: Bits move toward the most significant bit ($Q_{i} \leftarrow Q_{i-1}$). Serial data enters at the least significant bit ($Q_0$).
+
+<ShiftRegisterTraceLab />
+
+## Shift register topologies
+
+Shift registers are classified by how data enters and exits the circuit:
+
+### 1. Serial-In, Serial-Out (SISO)
+
+Data enters one bit per clock cycle through a single serial input pin, and leaves one bit per clock cycle from the final stage's output. For an $n$-bit shift register, a bit entering the first stage requires exactly $n$ clock cycles to emerge at the serial output. SISO registers function as digital delay lines.
+
+### 2. Serial-In, Parallel-Out (SIPO)
+
+Data enters one bit per clock cycle. Once $n$ bits have been shifted in, the receiving logic reads all $n$ flip-flop outputs simultaneously. SIPO registers form the foundation of serial receivers, converting incoming sequential pulses into parallel memory words.
+
+### 3. Parallel-In, Serial-Out (PISO)
+
+All $n$ flip-flops load a full binary word in parallel on a single clock tick using multiplexed load gates. Subsequent clock pulses shift the word out one bit at a time over a single wire. PISO registers form the core of serial transmitters.
+
+### 4. Parallel-In, Parallel-Out (PIPO)
+
+Bits are loaded in parallel and read in parallel. This is the architecture used by general-purpose CPU registers, such as the accumulator and instruction register.
+
+## Real-world applications
+
+Shift registers power fundamental hardware operations across computer architecture:
+
+* **Serial Communication Protocols**: Peripherals communicate with computers over single-wire interfaces to minimize cable pins. Hardware transceivers, such as Universal Asynchronous Receiver-Transmitters (UART), Universal Serial Bus (USB), and Serial Peripheral Interface (SPI), use PISO registers to transmit bytes and SIPO registers to reconstruct them.
+* **Arithmetic Multiplication and Division**: Shifting an unsigned binary number left by one position doubles its numerical value ($x \times 2$), while shifting right by one position halves it ($x / 2$). Processor ALUs use barrel shifters and shift registers to accelerate arithmetic multiplication and address index calculations.

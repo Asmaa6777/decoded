@@ -1,0 +1,78 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { CounterCompareLab } from "@/components/mdx/DatapathVisualizers";
+
+# Counters and the Program Counter
+
+A counter is a register that steps through a specified sequence of binary states upon receiving clock pulses. Counters serve two primary roles in a CPU: generating timing sequences for the control unit, and stepping through memory addresses in the **program counter**.
+
+## Asynchronous (ripple) counters
+
+In an **asynchronous counter**, flip-flops do not share a common clock. Only the first stage receives the external clock pulse; each subsequent stage is clocked by the output of the preceding flip-flop.
+
+A 4-bit binary ripple counter uses four toggle (T or JK) flip-flops with inputs tied high ($T=1$). Because each flip-flop divides the frequency of its clock input by two:
+
+* Stage 0 toggles on every external clock cycle.
+* Stage 1 toggles whenever stage 0 transitions from 1 to 0.
+* Stage 2 toggles whenever stage 1 transitions from 1 to 0.
+* Stage 3 toggles whenever stage 2 transitions from 1 to 0.
+
+### Propagation delay and glitches
+
+While ripple counters require minimal wiring, they suffer from cumulative propagation delay, known as **settling time**.
+
+If each flip-flop introduces a propagation delay of $t_{pd} = 10\text{ ns}$, a 4-bit ripple transition takes up to $4 \times 10\text{ ns} = 40\text{ ns}$ to settle. During this ripple interval, outputs display transient, invalid binary numbers.
+
+For example, when transitioning from $7$ ($0111_2$) to $8$ ($1000_2$):
+
+1. At $10\text{ ns}$, stage 0 flips $1 \to 0$, producing temporary state $6$ ($0110_2$).
+2. At $20\text{ ns}$, stage 1 flips $1 \to 0$, producing temporary state $4$ ($0100_2$).
+3. At $30\text{ ns}$, stage 2 flips $1 \to 0$, producing temporary state $0$ ($0000_2$).
+4. At $40\text{ ns}$, stage 3 flips $0 \to 1$, finally reaching state $8$ ($1000_2$).
+
+If connected logic or memory decoders sample the counter during this 40 ns window, they read erroneous addresses, producing severe hardware glitches.
+
+<CounterCompareLab />
+
+## Synchronous binary counters
+
+To eliminate ripple delay and intermediate glitches, a **synchronous counter** connects the system clock directly to the clock input of every flip-flop. All bits change state at the exact same instant.
+
+To make each stage toggle only at the correct moment, combinational AND gates evaluate the outputs of lower-order bits to generate the toggle input ($T$) for each flip-flop.
+
+### Deriving a 3-bit synchronous counter
+
+The design process follows five systematic steps:
+
+1. **State Diagram**: The counter traverses eight states cyclically: $000 \to 001 \to 010 \to 011 \to 100 \to 101 \to 110 \to 111 \to 000$.
+2. **State Transition Table**: Tabulate current states ($A_2, A_1, A_0$) against next states ($A_2^+, A_1^+, A_0^+$).
+3. **T Flip-Flop Excitation Equation**: A T flip-flop toggles ($T=1$) when the next state differs from the present state, and holds ($T=0$) when they are identical:
+
+$$T = Q \oplus Q^+$$
+
+| Present State ($A_2 A_1 A_0$) | Next State ($A_2^+ A_1^+ A_0^+$) | $T_{A2}$ | $T_{A1}$ | $T_{A0}$ |
+|:---:|:---:|:---:|:---:|:---:|
+| 0 0 0 | 0 0 1 | 0 | 0 | 1 |
+| 0 0 1 | 0 1 0 | 0 | 1 | 1 |
+| 0 1 0 | 0 1 1 | 0 | 0 | 1 |
+| 0 1 1 | 1 0 0 | 1 | 1 | 1 |
+| 1 0 0 | 1 0 1 | 0 | 0 | 1 |
+| 1 0 1 | 1 1 0 | 0 | 1 | 1 |
+| 1 1 0 | 1 1 1 | 0 | 0 | 1 |
+| 1 1 1 | 0 0 0 | 1 | 1 | 1 |
+
+4. **Deriving Flip-Flop Inputs**:
+   * Bit $A_0$ toggles on every single clock pulse, so its toggle input is held permanently high:
+     $$T_{A0} = 1$$
+   * Bit $A_1$ toggles only when $A_0 = 1$:
+     $$T_{A1} = A_0$$
+   * Bit $A_2$ toggles only when both $A_1$ and $A_0$ are 1:
+     $$T_{A2} = A_1 A_0$$
+
+In general, for any stage $n$, $T_n = A_{n-1} A_{n-2} \dots A_0$. An AND gate chain forms this **carry chain**, enabling any size synchronous counter to settle in a single flip-flop propagation delay.
+
+## The Program Counter in processor architecture
+
+The CPU's **Program Counter (PC)** is a synchronous binary counter enhanced with **parallel load** capability:
+
+* **Sequential Execution**: On each instruction fetch, the counter increments by the word size ($PC \leftarrow PC + 1$ or $+4$), pointing to the next instruction in memory.
+* **Branches and Jumps**: When the processor executes a jump or subroutine call, the control unit asserts the counter's $\text{LOAD}$ control line. The target address from the instruction operand overrides the counting sequence, loading the new branch target into the flip-flops in a single clock cycle.

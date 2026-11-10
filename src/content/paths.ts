@@ -46,5 +46,5 @@ export const prerequisites: Record<string, string[]> = {
   "operating-systems": ["computer-organization", "data-structures"],
   "computer-graphics": ["computer-organization"],
   microprocessors: ["logic-design", "computer-organization"],
-  "computer-architecture": ["computer-organization", "microprocessors"],
+  "computer-architecture": ["logic-design", "computer-organization", "microprocessors"],
 };

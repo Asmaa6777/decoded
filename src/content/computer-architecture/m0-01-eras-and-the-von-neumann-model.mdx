@@ -1,0 +1,46 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { ErasVisualizer, VonNeumannVisualizer } from "@/components/mdx/DatapathVisualizers";
+
+# The Four Eras and the Von Neumann Machine
+
+Every modern processor traces its heritage through four computing eras and a single architectural blueprint proposed by John von Neumann in 1945. Understanding how these machines evolved clarifies why hardware separates into distinct units for processing, memory, and communication.
+
+## The four eras of computing
+
+Computer hardware transitioned through four broad operating paradigms:
+
+1. **The Batch Era (1960–1968)**: Large mainframe installations dominated corporate data centers. Programs and data were submitted on decks of punched cards, and human operators queued them for sequential batch execution. Systems like the IBM System/360 established the standard 8-bit byte and demonstrated that an entire family of computers could share one software architecture.
+2. **The Time-Sharing Era (1961–1976)**: Advances in semiconductor fabrication introduced solid-state memory and medium-scale integrated circuits. Instead of submitting card decks and waiting hours for printouts, multiple programmers worked simultaneously through interactive video and teletype terminals. This demanded hardware-supported protection rings and early virtual memory to keep users isolated from each other.
+3. **The Desktop Era (1977–1989)**: Single-chip microprocessors and affordable dynamic RAM placed an entire computer directly on an individual desk. Computers from Apple, Commodore, Tandy, and IBM transformed personal productivity and turned microprocessors into high-volume commodity components.
+4. **The Network Era (1990–Present)**: Local and wide-area networks advanced faster than single-processor clock rates. Compute workloads moved to distributed clusters, warehouse-scale datacenters, multi-core desktop chips, and graphics processing units running millions of parallel threads.
+
+<ErasVisualizer />
+
+## The von Neumann architecture
+
+In 1945, mathematician John von Neumann proposed the stored-program computer model. Before this design, calculating devices were hardwired for single tasks or reconfigured by physically rewiring switchboards.
+
+Von Neumann divided a computer into five primary functional units:
+
+1. **Central Processing Unit (CPU)**: Contains the arithmetic logic circuits, internal registers, and the control circuitry that directs machine operations.
+2. **Input Unit**: Ingests instructions and external data into the system from keyboards, sensors, or storage media.
+3. **Output Unit**: Conveys computation results to humans or peripheral devices via screens, printers, or network interfaces.
+4. **Working Storage**: Fast primary memory, known today as random access memory ([RAM](/courses/computer-organization/ram-and-rom)), holding active program instructions and temporary data during execution.
+5. **Permanent Storage**: Non-volatile secondary media, such as magnetic hard disks and flash solid-state drives ([SSDs](/courses/computer-organization/ssds-and-optical)), retaining files when electrical power is switched off.
+
+The defining breakthrough of the **von Neumann machine** is the **stored-program concept**: program instructions and numeric data share the same working storage and travel over the same physical data buses.
+
+<VonNeumannVisualizer />
+
+<Callout tone="violet" label="The von Neumann bottleneck">
+Because program code and runtime data share the same physical bus between the CPU and memory, the processor cannot read an instruction and read or write data at the exact same instant. This shared bus constraint is known as the **von Neumann bottleneck**. Modern processors mitigate this bottleneck with high-speed multi-level [caches](/courses/computer-architecture/cache-mapping) placed directly on the CPU die.
+</Callout>
+
+## The machine loop
+
+Every von Neumann processor executes instructions through a repeating hardware cycle:
+
+* The **instruction fetch**: The control unit retrieves the next instruction word from working storage using the address held in the [program counter](/courses/computer-organization/machine-cycle).
+* The **instruction decode**: Logic decoders translate the instruction's operation code into physical electrical signals.
+* The **operand read**: The CPU reads required operands from internal registers or memory addresses.
+* The **execute and write-back**: The arithmetic logic unit executes the command, and the hardware stores the outcome in a destination register or writes it back across the system bus to memory.

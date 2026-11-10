@@ -1,0 +1,47 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+import { SchematicReaderGuide } from "@/components/mdx/DatapathVisualizers";
+
+# How to Read Circuit Schematics
+
+Textbooks and hardware specifications present dense wiring schematics filled with crossed lines, circles, and angled triangles. When these conventions are unexplained, a circuit schematic resembles an arbitrary electrical drawing. A few standard drafting conventions govern every digital logic diagram.
+
+## Wires and junctions
+
+In a schematic, lines represent conductive copper traces carrying digital binary voltages (high or low).
+
+Two drafting rules distinguish connected wires from passing wires:
+
+1. **Junction Node (Connected)**: When two intersecting wires form a solid black dot at their crossing point, they are electrically bonded together. Both lines share identical voltage at all times.
+2. **Simple Crossing (Unconnected)**: When two lines cross perpendicular with no dot, they pass over each other without touching. Signals on one line do not leak onto the other.
+
+<SchematicReaderGuide />
+
+## The bus slash notation
+
+Drawing thirty-two individual parallel lines between a register and an adder clutters diagrams. Hardware designers condense parallel wires into a single thick line with a diagonal slash:
+
+$$\text{— } /n \text{ —}$$
+
+The integer $n$ indicates the bus width in bits. A line marked `/8` represents eight physical wires running in parallel, typically carrying one byte of data with lines designated $D_0$ through $D_7$. A line marked `/16` carries sixteen address bits, designated $A_0$ through $A_{15}$.
+
+## Inversion bubbles and active-low signals
+
+A small circular bubble drawn on an input or output pin denotes logical inversion. It indicates the pin operates with **active-low logic**:
+
+* An input pin without a bubble triggers when the line reaches logical 1 (high voltage, such as 3.3V or 5V).
+* An input pin with a bubble triggers when the line drops to logical 0 (ground potential, 0V).
+
+In schematics, active-low signals often appear with an overbar or a trailing prime, such as $\overline{\text{CLR}}$ or $\text{CLR}'$. For example, a register clear input with an inversion bubble holds stored data while kept at 1, and clears stored data to all zeros when forced to 0.
+
+## Clock input symbols: level vs edge triggering
+
+Storage elements respond to clock signals in two distinct ways, marked by the presence or absence of a dynamic input indicator:
+
+* **Level-Sensitive (Latches)**: An input marked simply with the letters $\text{CLK}$, $\text{C}$, or $\text{EN}$ without a triangle is level-sensitive. The device remains transparent, updating its output continuously, whenever the clock voltage is high.
+* **Edge-Triggered (Flip-Flops)**: An input marked with a small internal triangle ($\triangleright$) is edge-triggered. The device updates its state only during the transition from low to high (positive rising edge) or high to low (negative falling edge).
+
+<Callout tone="sky" label="Feedback loops create memory">
+In combinational logic, signals travel strictly forward from gate inputs to gate outputs. Whenever you see a wire route from a gate's output back into an earlier gate's input, the circuit has a **feedback loop**. Feedback gives the circuit a past, converting stateless combinational logic into stateful sequential memory.
+</Callout>
+
+Once you can read wire junctions, bus slashes, active-low bubbles, and clock triangles, circuit diagrams for latches, registers, and counters become straightforward state machines.

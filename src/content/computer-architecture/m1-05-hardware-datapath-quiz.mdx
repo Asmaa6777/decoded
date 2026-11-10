@@ -1,0 +1,85 @@
+import { Quiz } from "@/components/mdx/MdxComponents";
+
+# Quiz: Hardware Datapath and Logic
+
+Six questions covering circuit schematics, latches, shift registers, and counter synthesis. Get 5 right to pass.
+
+<Quiz
+  courseSlug="computer-architecture"
+  lessonSlug="hardware-datapath-quiz"
+  passThreshold={5/6}
+  questions={[
+    {
+      id: "q1",
+      prompt: "In a digital schematic, what does an inversion bubble (small circle) on an input pin signify?",
+      options: [
+        { id: "a", text: "The input is active-low: it triggers when voltage drops to logical 0" },
+        { id: "b", text: "The input requires higher voltage than other pins" },
+        { id: "c", text: "The input is an analog clock reference" },
+        { id: "d", text: "The input wire crosses over without touching" },
+      ],
+      correctOptionId: "a",
+      explanation: "A circle on an input pin denotes logical NOT, meaning low voltage (ground, 0V) asserts the function.",
+    },
+    {
+      id: "q2",
+      prompt: "Why is S = 1 and R = 1 considered a forbidden input condition in an SR latch built from NOR gates?",
+      options: [
+        { id: "a", text: "It causes both outputs Q and Q' to become 0, and subsequent release produces an unpredictable race condition" },
+        { id: "b", text: "It short-circuits the power supply directly to ground" },
+        { id: "c", text: "It permanently burns the silicon gates" },
+        { id: "d", text: "It converts the latch into a combinational multiplexer" },
+      ],
+      correctOptionId: "a",
+      explanation: "When both inputs are high, both outputs drop to 0, violating complementarity. When released simultaneously to 0, propagation delay differences cause random latching.",
+    },
+    {
+      id: "q3",
+      prompt: "A 4-bit Serial-In Serial-Out (SISO) shift register starts at 0000. Data bits 1, 0, 1, 1 are shifted in sequentially, one per clock tick. What is the register's 4-bit state immediately after the 4th clock tick?",
+      options: [
+        { id: "a", text: "1101 (or 1011 depending on shift direction)" },
+        { id: "b", text: "0000" },
+        { id: "c", text: "1111" },
+        { id: "d", text: "0101" },
+      ],
+      correctOptionId: "a",
+      explanation: "Each clock shifts earlier bits forward. Shifting right with bits entering at MSB yields Q3=1, Q2=1, Q1=0, Q0=1.",
+    },
+    {
+      id: "q4",
+      prompt: "A 4-bit binary ripple counter has a flip-flop propagation delay of 12 ns per stage. What is the maximum settling time when rolling from 7 (0111) to 8 (1000)?",
+      options: [
+        { id: "a", text: "48 ns" },
+        { id: "b", text: "12 ns" },
+        { id: "c", text: "24 ns" },
+        { id: "d", text: "96 ns" },
+      ],
+      correctOptionId: "a",
+      explanation: "Rolling from 0111 to 1000 requires all four flip-flops to toggle sequentially, accumulating 4 × 12 ns = 48 ns total delay.",
+    },
+    {
+      id: "q5",
+      prompt: "In designing a 3-bit synchronous binary counter using T flip-flops, what is the required input equation for the most significant toggle input T2?",
+      options: [
+        { id: "a", text: "T2 = A1 · A0" },
+        { id: "b", text: "T2 = 1" },
+        { id: "c", text: "T2 = A0" },
+        { id: "d", text: "T2 = A1 + A0" },
+      ],
+      correctOptionId: "a",
+      explanation: "Bit A2 toggles only when both lower bits A1 and A0 are 1, requiring an AND carry gate evaluating A1 · A0.",
+    },
+    {
+      id: "q6",
+      prompt: "How does the CPU's Program Counter (PC) handle non-sequential jumps and branches?",
+      options: [
+        { id: "a", text: "The control unit asserts the parallel LOAD control line, writing the jump address directly into the counter flip-flops" },
+        { id: "b", text: "The counter is cleared to zero and counted up one tick at a time" },
+        { id: "c", text: "The processor resets the machine power" },
+        { id: "d", text: "The counter shifts bits left until the branch is reached" },
+      ],
+      correctOptionId: "a",
+      explanation: "A synchronous counter with parallel load accepts a target address on its data input pins and latches it immediately when LOAD is pulsed.",
+    },
+  ]}
+/>

@@ -23,7 +23,7 @@ A [JK flip-flop](/courses/logic-design/flip-flops) with J = K = 1 toggles on eac
 
 In a **ripple counter**, the first flip-flop gets the real clock and each of the others is clocked by the output of the one before it. It's cheap and simple. But each stage adds a small delay, so while the change ripples along, the outputs briefly show wrong values. For example, going from `0111` to `1000`, it passes through `0110`, `0100` and `0000`. This is the same weakness as the [ripple-carry adder](/courses/logic-design/fast-carries).
 
-In a **synchronous counter**, all flip-flops share one clock. Each stage uses an AND gate to decide whether to toggle, according to whether all the lower bits are 1. Everything changes together with no wrong in-between values, which is why CPUs use this type.
+In a **synchronous counter**, all flip-flops share one clock. Each stage uses an AND gate to decide whether to toggle, according to whether all the lower bits are 1. Everything changes together with no wrong in-between values, which is why CPUs use this type. Computer Architecture covers [synchronous counter derivation and excitation tables](/courses/computer-architecture/ripple-and-synchronous-counters).
 
 ## Where you'll find counters
 

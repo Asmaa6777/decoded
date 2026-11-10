@@ -139,21 +139,27 @@ const MpStack = lesson(() => import("@/content/microprocessors/m2-04-stack-and-p
 const MpInterrupts = lesson(() => import("@/content/microprocessors/m3-01-interrupts.mdx"));
 const MpBusCycles = lesson(() => import("@/content/microprocessors/m3-02-bus-cycles.mdx"));
 const MpQuiz = lesson(() => import("@/content/microprocessors/m3-03-final-quiz.mdx"));
-const ArchIntro = lesson(() => import("@/content/computer-architecture/m0-01-architecture-and-organization.mdx"));
-const ArchFormats = lesson(() => import("@/content/computer-architecture/m1-01-instruction-formats.mdx"));
-const ArchRisc = lesson(() => import("@/content/computer-architecture/m1-02-risc-and-cisc.mdx"));
-const ArchPerf = lesson(() => import("@/content/computer-architecture/m1-03-measuring-performance.mdx"));
-const ArchControl = lesson(() => import("@/content/computer-architecture/m1-04-control-unit.mdx"));
-const ArchMemory = lesson(() => import("@/content/computer-architecture/m2-01-main-memory.mdx"));
-const ArchMapping = lesson(() => import("@/content/computer-architecture/m2-02-cache-mapping.mdx"));
-const ArchPolicies = lesson(() => import("@/content/computer-architecture/m2-03-cache-policies.mdx"));
-const ArchVm = lesson(() => import("@/content/computer-architecture/m2-04-virtual-memory.mdx"));
-const ArchIo = lesson(() => import("@/content/computer-architecture/m3-01-io-methods.mdx"));
-const ArchArbiter = lesson(() => import("@/content/computer-architecture/m3-02-buses-and-arbitration.mdx"));
-const ArchPipe = lesson(() => import("@/content/computer-architecture/m4-01-pipelining.mdx"));
-const ArchHazards = lesson(() => import("@/content/computer-architecture/m4-02-pipeline-hazards.mdx"));
-const ArchParallel = lesson(() => import("@/content/computer-architecture/m4-03-parallel-processing.mdx"));
-const ArchQuiz = lesson(() => import("@/content/computer-architecture/m4-04-final-quiz.mdx"));
+const ArchEras = lesson(() => import("@/content/computer-architecture/m0-01-eras-and-the-von-neumann-model.mdx"));
+const ArchIntro = lesson(() => import("@/content/computer-architecture/m0-02-architecture-and-organization.mdx"));
+const ArchSchematics = lesson(() => import("@/content/computer-architecture/m1-01-demystifying-circuit-schematics.mdx"));
+const ArchSequential = lesson(() => import("@/content/computer-architecture/m1-02-sequential-logic-and-latches.mdx"));
+const ArchRegisters = lesson(() => import("@/content/computer-architecture/m1-03-registers-and-shift-registers.mdx"));
+const ArchCounters = lesson(() => import("@/content/computer-architecture/m1-04-ripple-and-synchronous-counters.mdx"));
+const ArchDatapathQuiz = lesson(() => import("@/content/computer-architecture/m1-05-hardware-datapath-quiz.mdx"));
+const ArchFormats = lesson(() => import("@/content/computer-architecture/m2-01-instruction-formats.mdx"));
+const ArchRisc = lesson(() => import("@/content/computer-architecture/m2-02-risc-and-cisc.mdx"));
+const ArchPerf = lesson(() => import("@/content/computer-architecture/m2-03-measuring-performance.mdx"));
+const ArchControl = lesson(() => import("@/content/computer-architecture/m2-04-control-unit.mdx"));
+const ArchMemory = lesson(() => import("@/content/computer-architecture/m3-01-main-memory.mdx"));
+const ArchMapping = lesson(() => import("@/content/computer-architecture/m3-02-cache-mapping.mdx"));
+const ArchPolicies = lesson(() => import("@/content/computer-architecture/m3-03-cache-policies.mdx"));
+const ArchVm = lesson(() => import("@/content/computer-architecture/m3-04-virtual-memory.mdx"));
+const ArchIo = lesson(() => import("@/content/computer-architecture/m4-01-io-methods.mdx"));
+const ArchArbiter = lesson(() => import("@/content/computer-architecture/m4-02-buses-and-arbitration.mdx"));
+const ArchPipe = lesson(() => import("@/content/computer-architecture/m5-01-pipelining.mdx"));
+const ArchHazards = lesson(() => import("@/content/computer-architecture/m5-02-pipeline-hazards.mdx"));
+const ArchParallel = lesson(() => import("@/content/computer-architecture/m5-03-parallel-processing.mdx"));
+const ArchQuiz = lesson(() => import("@/content/computer-architecture/m5-04-final-quiz.mdx"));
 const ExamMindLesson01 = lesson(() => import("@/content/the-exam-mind/01-the-problem-with-how-you-study.mdx"));
 const ExamMindLesson02 = lesson(() => import("@/content/the-exam-mind/02-the-one-week-plan.mdx"));
 const ExamMindLesson03 = lesson(() => import("@/content/the-exam-mind/03-stress-and-anxiety.mdx"));
@@ -718,10 +724,22 @@ export const courses: Course[] = [
     authors: [ahmedAlghali],
     modules: [
       {
-        title: "Foundations",
-        blurb: "What architecture means, and what you should already know.",
+        title: "Foundations and Evolution",
+        blurb: "The four eras of computing, the von Neumann model, and what architecture means.",
         lessons: [
-          { slug: "architecture-and-organization", title: "Architecture and Organization", duration: "7 min", Component: ArchIntro },
+          { slug: "eras-and-the-von-neumann-model", title: "The Four Eras and the Von Neumann Machine", duration: "11 min", Component: ArchEras },
+          { slug: "architecture-and-organization", title: "Architecture and Organization", duration: "9 min", Component: ArchIntro },
+        ],
+      },
+      {
+        title: "Hardware Datapath and Sequential Logic",
+        blurb: "How gates and flip-flops combine into registers, shift registers, and synchronous counters.",
+        lessons: [
+          { slug: "demystifying-circuit-schematics", title: "How to Read Circuit Schematics", duration: "9 min", Component: ArchSchematics },
+          { slug: "sequential-logic-and-latches", title: "Sequential Logic and Latches", duration: "12 min", Component: ArchSequential },
+          { slug: "registers-and-shift-registers", title: "Registers and Shift Registers", duration: "11 min", Component: ArchRegisters },
+          { slug: "ripple-and-synchronous-counters", title: "Counters and the Program Counter", duration: "13 min", Component: ArchCounters },
+          { slug: "hardware-datapath-quiz", title: "Quiz: Hardware Datapath and Logic", duration: "8 min", kind: "quiz", Component: ArchDatapathQuiz },
         ],
       },
       {

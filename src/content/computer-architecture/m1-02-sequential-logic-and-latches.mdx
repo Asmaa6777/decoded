@@ -1,0 +1,75 @@
+import { Callout } from "@/components/mdx/MdxComponents";
+
+# Sequential Logic and Latches
+
+Combinational logic circuits compute outputs based strictly on current inputs. A sequential circuit uses memory elements to retain past values, allowing the machine to step through states over time.
+
+## Synchronous sequential logic
+
+A **synchronous sequential circuit** synchronizes state transitions to discrete instants of time. Synchronization is provided by a periodic square wave called a **clock generator**.
+
+The clock signal distributes to every storage element in the system. Between clock ticks, combinational logic evaluates inputs and stabilizes. On the arrival of each clock pulse, storage devices update to their next binary state simultaneously.
+
+## The SR latch with NOR gates
+
+The most basic binary storage element is a latch built from two cross-coupled NOR gates. The output of each gate feeds back into an input of the opposite gate:
+
+* Input **$S$ (Set)** forces the stored output $Q$ to 1.
+* Input **$R$ (Reset)** forces the stored output $Q$ to 0.
+* Output **$Q$** represents the stored bit, while $Q'$ provides its logical complement.
+
+| $S$ | $R$ | $Q$ | $Q'$ | Operation |
+|:---:|:---:|:---:|:---:|:---|
+| 0 | 0 | No change | No change | **Hold**: circuit maintains its stored state indefinitely |
+| 0 | 1 | 0 | 1 | **Reset**: output $Q$ clears to 0 |
+| 1 | 0 | 1 | 0 | **Set**: output $Q$ asserts to 1 |
+| 1 | 1 | 0 | 0 | **Forbidden**: undefined race condition upon release |
+
+Under normal operation, both inputs remain at 0 unless a state change is commanded. If both $S$ and $R$ are set to 1 simultaneously, both outputs drop to 0, violating the rule that $Q$ and $Q'$ remain complementary. If both inputs return to 0 at the same instant, slight differences in gate propagation delay determine which gate wins, causing an unpredictable final state. The interactive signal-flow demonstration is explored in the [SR latch lesson](/courses/logic-design/sr-latch).
+
+## The SR latch with NAND gates
+
+An alternate latch uses two cross-coupled NAND gates. Because a NAND gate outputs 1 whenever any input is 0, this latch operates with inverted, active-low inputs, designated $S'$ and $R'$:
+
+| $S'$ | $R'$ | $Q$ | $Q'$ | Operation |
+|:---:|:---:|:---:|:---:|:---|
+| 1 | 1 | No change | No change | **Hold**: latches previous state |
+| 1 | 0 | 0 | 1 | **Reset**: pulling $R'$ low clears $Q$ to 0 |
+| 0 | 1 | 1 | 0 | **Set**: pulling $S'$ low sets $Q$ to 1 |
+| 0 | 0 | 1 | 1 | **Forbidden**: illegal state, both outputs driven high |
+
+Active-low control pins are standard in industrial memory chips, where ground (0V) serves as the asserting signal.
+
+## The controlled SR latch and the D latch
+
+To prevent inputs from changing the latch during unintended intervals, two steering gates add a control input $C$:
+
+* When $C = 0$, both internal inputs are held inactive, freezing the stored state.
+* When $C = 1$, the external $S$ and $R$ inputs pass through to update the latch.
+
+The **D latch** resolves the forbidden $S=1, R=1$ problem permanently. By placing an inverter between the inputs such that $S = D$ and $R = D'$, the two inputs can never be 1 at the same time:
+
+| Clock ($C$) | Input ($D$) | Next $Q$ | Operation |
+|:---:|:---:|:---:|:---|
+| 0 | X | $Q$ | No change, latch disabled |
+| 1 | 0 | 0 | Reset to 0 |
+| 1 | 1 | 1 | Set to 1 |
+
+As long as the clock line $C$ remains high, the D latch is level-sensitive: any change on input $D$ ripples directly through to output $Q$.
+
+## The JK flip-flop and Master-Slave isolation
+
+In complex datapaths, level sensitivity can cause feedback instability when a flip-flop's output feeds back into its own input logic within the same clock period. Hardware requires **edge-triggered flip-flops**, which sample inputs only on the clock edge.
+
+The **JK flip-flop** eliminates the forbidden state by re-routing outputs back to the input steering gates:
+
+* When $J = 0$ and $K = 0$, the state does not change.
+* When $J = 0$ and $K = 1$, output $Q$ resets to 0.
+* When $J = 1$ and $K = 0$, output $Q$ sets to 1.
+* When $J = 1$ and $K = 1$, output $Q$ **toggles** to its opposite value ($Q^+ = Q'$).
+
+<Callout tone="violet" label="Master-Slave flip-flop operation">
+A **master-slave flip-flop** connects two latches in series with an inverter on the clock line. When the clock is high, the master latch accepts input data while the slave latch is disabled. When the clock falls to zero, the master disables, and the slave copies the master's state to the primary output. Because the input and output are never enabled at the same instant, data updates cleanly without race conditions.
+</Callout>
+
+These edge-triggered flip-flops form the building blocks for multi-bit registers and binary counters.

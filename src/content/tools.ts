@@ -227,4 +227,12 @@ export const tools: Tool[] = [
       { course: "computer-graphics", lesson: "aliasing", mentions: "MSAA" },
     ],
   },
+  {
+    name: "USB and serial ports",
+    what: "How single-wire hardware interfaces turn streams of bits into bytes of data.",
+    lessons: [
+      { course: "computer-architecture", lesson: "registers-and-shift-registers", mentions: "UART" },
+      { course: "logic-design", lesson: "signals", mentions: "serial" },
+    ],
+  },
 ];

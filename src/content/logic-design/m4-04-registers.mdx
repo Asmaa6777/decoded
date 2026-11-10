@@ -28,7 +28,7 @@ Three uses come up all the time:
 
 - **Serial to parallel**: bits arrive one at a time on a single wire, and after 8 clocks you can read a full byte from the 8 outputs. Run it the other way for sending. This is how [serial links](/courses/logic-design/signals) connect to parallel buses.
 - **Multiplying and dividing by 2**: shifting a binary number left one place doubles it, just as shifting a decimal number left multiplies by 10. Shifting right halves it. The 8086's [`SHL` and `SHR`](/courses/microprocessors/arithmetic-and-logic) do exactly this.
-- **Delay**: a bit takes $n$ clocks to reach the end of an $n$-stage chain.
+- **Delay**: a bit takes $n$ clocks to reach the end of an $n$-stage chain. Computer Architecture covers [shift register topologies and clock tracing](/courses/computer-architecture/registers-and-shift-registers).
 
 <Callout tone="neon" label="You've reached a CPU part">
 The [Program Counter, Instruction Register and Accumulator](/courses/computer-organization/inside-the-cpu) are all registers like this one. Next, one with a bit of extra logic becomes a counter, which is what steps a CPU through a program.
