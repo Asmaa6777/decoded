@@ -3,11 +3,11 @@ import { NandBuilds } from "@/components/mdx/CircuitVisualizers";
 
 # Universal Gates: Everything from NAND
 
-In early computing systems, building a machine required stocking dozens of distinct gate types—AND, OR, NOT, XOR—each with unique internal transistor configurations, power characteristics, and pinouts. 
+In early computing systems, building a machine required stocking dozens of distinct gate types (AND, OR, NOT, XOR), each with unique internal transistor configurations, power characteristics, and pinouts. 
 
 Could a complete, general-purpose computer be constructed from only a **single type of logic gate**?
 
-Yes, if that gate is **NAND**, or **NOR**. These two gates are known as **universal gates** because either gate alone can synthesize all three fundamental Boolean operations—NOT, AND, and OR. Because any combinational or sequential circuit can be expressed in terms of NOT, AND, and OR, a single universal gate type is sufficient to build arithmetic logic units, registers, control units, and complete microprocessors.
+Yes, if that gate is **NAND**, or **NOR**. These two gates are known as **universal gates** because either gate alone can synthesize all three fundamental Boolean operations: NOT, AND, and OR. Because any combinational or sequential circuit can be expressed in terms of NOT, AND, and OR, a single universal gate type is sufficient to build arithmetic logic units, registers, control units, and complete microprocessors.
 
 ## Functional completeness and Emil Post's criterion
 
@@ -23,13 +23,13 @@ In 1941, mathematician Emil Post proved that a set of Boolean functions is funct
 2. **1-preserving ($T_1$):** Functions where driving all inputs to 1 yields 1: $f(1, 1, \dots, 1) = 1$.
    - For NAND: $(1 \cdot 1)' = 0 \ne 1 \implies$ NAND is **not** 1-preserving.
 3. **Monotonicity ($M$):** Functions where changing any input from 0 to 1 never causes the output to fall from 1 to 0.
-   - For NAND: $f(0, 1) = (0 \cdot 1)' = 1$, but increasing the first input to 1 gives $f(1, 1) = (1 \cdot 1)' = 0$ (the output fell!) $\implies$ NAND is **non-monotonic**.
+   - For NAND: $f(0, 1) = (0 \cdot 1)' = 1$, but increasing the first input to 1 gives $f(1, 1) = (1 \cdot 1)' = 0$ (the output dropped) $\implies$ NAND is **non-monotonic**.
 4. **Self-duality ($S$):** Functions that equal their own dual: $f(x_1', x_2', \dots, x_n') = f'(x_1, x_2, \dots, x_n)$.
    - For NAND: $f(0', 1') = f(1, 0) = (1 \cdot 0)' = 1$, whereas $f'(0, 1) = [(0 \cdot 1)']' = 1' = 0$. Since $1 \ne 0$, NAND is **non-self-dual**.
 5. **Linearity ($L$):** Functions whose Reed-Muller algebraic normal form consists strictly of XOR additions of single variables with an optional affine constant ($a_0 \oplus a_1 x_1 \oplus \dots \oplus a_n x_n$), containing zero non-linear products.
    - For NAND: $(AB)' = 1 \oplus AB$. The presence of the product $AB$ means NAND is **non-linear**.
 
-Because the singleton set $\{\text{NAND}\}$ violates all five closure properties individually, it is functionally complete. The exact same violation proof applies to the singleton set $\{\text{NOR}\}$. Either gate alone is sufficient to synthesize any digital switching system.
+Because the set $\{\text{NAND}\}$ violates all five closure properties, it is functionally complete. The same proof applies to the set $\{\text{NOR}\}$. Either gate alone can build any digital circuit.
 
 ## Constructing the fundamental gates from NAND
 
@@ -175,7 +175,7 @@ $$
 \text{AND-OR} \equiv \text{NAND-NAND}
 $$
 
-Any sum-of-products expression can be implemented in all-NAND logic with **zero change to the gate structure**—simply replace every AND and OR gate with a NAND gate!
+Any sum-of-products expression can be implemented in all-NAND logic with **zero change to the gate structure**: replace every AND and OR gate with a NAND gate.
 
 Similarly, a Product of Sums (OR-AND) circuit converts directly into an all-NOR circuit:
 $$
@@ -194,26 +194,26 @@ When synthesizing circuits with more than two levels of logic:
    - If a line connects an unbubbled terminal to a bubbled terminal, insert a compensating inverter.
 
 <Callout tone="neon" label="Sequential circuits in the next module">
-The [SR latch](/courses/logic-design/sr-latch)—the fundamental circuit that gives computers memory—is built from two cross-coupled universal gates wired in a loop.
+The [SR latch](/courses/logic-design/sr-latch), the basic circuit that gives computers memory, is built from two cross-coupled universal gates wired in a loop.
 </Callout>
 
 ## Why NAND dominates in CMOS VLSI silicon
 
-In modern integrated circuit fabrication, NAND gates are universally preferred over NOR gates for combinational logic:
+In silicon chips, NAND gates are preferred over NOR gates for combinational logic:
 
-1. **Carrier mobility asymmetry:** In silicon semiconductor crystal lattices, electrons (the charge carriers in nMOS transistors) have a mobility of $\mu_n \approx 500\,\text{cm}^2/\text{V}\cdot\text{s}$, whereas holes (the charge carriers in pMOS transistors) have a mobility of only $\mu_p \approx 200\,\text{cm}^2/\text{V}\cdot\text{s}$. Electrons drift more than 2.5 times faster than holes under identical electric fields. Consequently, an nMOS transistor conducts more than twice as much current as a pMOS transistor of equal physical width ($W$).
+1. **Carrier mobility asymmetry:** In silicon crystal lattices, electrons (the charge carriers in nMOS transistors) have a mobility of $\mu_n \approx 500\,\text{cm}^2/\text{V}\cdot\text{s}$, whereas holes (the charge carriers in pMOS transistors) have a mobility of only $\mu_p \approx 200\,\text{cm}^2/\text{V}\cdot\text{s}$. Electrons drift more than 2.5 times faster than holes under identical electric fields. Consequently, an nMOS transistor conducts more than twice as much current as a pMOS transistor of equal physical width ($W$).
 2. **Internal transistor topologies:**
    - A 2-input **NAND** gate places its high-mobility nMOS transistors in **series** between output and ground (pull-down network), and its lower-mobility pMOS transistors in **parallel** between $V_{DD}$ and output (pull-up network).
    - A 2-input **NOR** gate places its lower-mobility pMOS transistors in **series** in the pull-up network, and its nMOS transistors in **parallel** in the pull-down network.
 3. **Silicon area and speed impact:**
-   - Placing two or three high-resistance pMOS transistors in series in a NOR gate severely constrains charging current. To achieve symmetric rise times matching the fall time, the series pMOS channel widths must be enlarged by a factor of:
+   - Placing two or three high-resistance pMOS transistors in series in a NOR gate severely limits charging current. To match rise and fall times, the series pMOS channel widths must be enlarged:
      $$
      \frac{W_p}{W_n} \approx n \times \frac{\mu_n}{\mu_p} \approx 2 \times 2.5 = 5
      $$
-   - This massive transistor enlargement increases total silicon surface area, increases gate capacitance ($C_{\text{gate}} \propto W \cdot L$), degrades switching speed, and increases dynamic power consumption ($P = C V^2 f$).
+   - This transistor enlargement increases total silicon area, increases gate capacitance ($C_{\text{gate}} \propto W \cdot L$), degrades switching speed, and increases dynamic power consumption ($P = C V^2 f$).
    - For an $n$-input NAND gate, the series transistors are fast nMOS, requiring minimal sizing adjustments ($W_n \approx 2 W_{\min}$, $W_p \approx 2 W_{\min}$).
 
-As a result, computer architects and automated logic synthesizers map high-speed combinational datapaths into NAND trees wherever possible, reserving NOR gates primarily for specialized structures such as wired-OR decoders and ROM arrays.
+As a result, computer architects and automated logic synthesizers map high-speed combinational paths into NAND trees wherever possible, reserving NOR gates primarily for specialized structures such as wired-OR decoders and ROM arrays.
 
 ## Common exam pitfalls and student mistakes
 
@@ -221,7 +221,7 @@ When synthesizing circuits with universal gates, students commonly make these fi
 
 1. **Uninverted Primary Inputs in Bubble Pushing:** When converting an OR gate at an even logic level into an Invert-OR (NAND) symbol, all of its input terminals receive bubbles. If an input comes from a primary circuit variable (such as $C$) rather than an internal gate, students often connect $C$ directly, forgetting that the bubble complements the signal. To preserve logical correctness, the input must be supplied as $C'$ (or inverted with an extra NAND gate).
 2. **The 4-NOR XOR Fallacy:** Students assume that because 4 NAND gates construct an XOR gate, 4 NOR gates must also construct an XOR gate. By the principle of duality, the 4-gate cross-coupled NOR structure actually produces **XNOR** ($AB + A'B'$). Constructing XOR from NOR requires **5 NOR gates** (an XNOR followed by a NOR inverter, or inverting both primary inputs).
-3. **Tying Unused NAND Inputs to Ground:** When connecting multi-input IC packages (e.g. using a 3-input NAND gate as an inverter or 2-input gate), students sometimes tie unused inputs to Ground (0V). Grounding any input of a NAND gate clamps the product to 0, forcing the output permanently to logic 1 ($Y = (A \cdot B \cdot 0)' = 0' = 1$) regardless of other inputs! Unused NAND inputs must be tied to $V_{DD}$ (logic 1) or tied together with active inputs.
+3. **Tying Unused NAND Inputs to Ground:** When connecting multi-input IC packages (e.g. using a 3-input NAND gate as an inverter or 2-input gate), students sometimes tie unused inputs to Ground (0V). Grounding any input of a NAND gate clamps the product to 0, forcing the output permanently to logic 1 ($Y = (A \cdot B \cdot 0)' = 0' = 1$) regardless of other inputs. Unused NAND inputs must be tied to $V_{DD}$ (logic 1) or tied together with active inputs.
 4. **Swapping CMOS Topologies:** Confusing series and parallel networks between NAND and NOR. Remember: **NAND = series pull-down (nMOS) + parallel pull-up (pMOS)**; **NOR = series pull-up (pMOS) + parallel pull-down (nMOS)**.
 5. **Overlooking Double-Inversion Cancellation:** Inserting unnecessary inverter gates along intermediate lines where two inversion bubbles already touch. When an output bubble feeds an input bubble directly, they cancel completely ($x'' = x$) without requiring physical inverter hardware.
 
@@ -248,13 +248,13 @@ into an all-NAND gate network using the bubble-pushing technique. Assume complem
    - **Level 1 (OR):** Draw as Invert-OR (NAND). It expects bubbles on both inputs.
    - **Level 2 (ANDs):** 
      - Draw both AND gates as standard NANDs (output bubbles). 
-     - The output bubbles of Level 2 connect directly to the input bubbles of Level 1, canceling out!
+     - The output bubbles of Level 2 connect directly to the input bubbles of Level 1 and cancel out.
    - **Level 3 (OR):** 
      - Level 2's AND gate 1 has an input from Level 3. Level 2's input has NO bubble.
      - To provide a standard NAND for Level 3 (output bubble), draw Level 3 as an Invert-OR. Its output bubble cancels with an added bubble on Level 2's input terminal.
      - Level 3 now has input bubbles on its terminals.
    - **Level 4 (AND):**
-     - Draw as standard NAND (output bubble). Its output bubble cancels directly with Level 3's input bubble for the $AB$ term!
+     - Draw as standard NAND (output bubble). Its output bubble cancels directly with Level 3's input bubble for the $AB$ term.
      - Input $C$ enters Level 3 with an input bubble. Since $C$ is a primary input, we supply $C'$.
 
 3. **Verify algebraically without skipping steps:**

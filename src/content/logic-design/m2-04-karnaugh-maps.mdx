@@ -3,7 +3,7 @@ import { KMapExplorer } from "@/components/mdx/LogicVisualizers";
 
 # Karnaugh Maps
 
-While Boolean algebra provides a sound foundation for logic minimization, manipulating algebraic expressions by hand becomes error-prone as circuit complexity increases. Spotting which identity to apply, which terms to duplicate, or where a consensus term applies requires ingenuity.
+While Boolean algebra provides a sound foundation for logic minimization, manipulating algebraic expressions by hand becomes error-prone as circuit complexity increases. Spotting which identity to apply, which terms to duplicate, or where a consensus term applies requires careful inspection.
 
 In 1953, telecommunications engineer Maurice Karnaugh published a visual, tabular method building upon Edward Veitch's diagrams. The **Karnaugh map** (or **K-map**) reorganizes the truth table into a multi-dimensional geometric grid where algebraic adjacency translates directly into spatial adjacency.
 
@@ -13,7 +13,7 @@ The fundamental theorem underlying all two-level logic minimization is the compl
 $$
 x y + x y' = x(y + y') = x(1) = x
 $$
-Whenever two product terms differ in exactly one variable—one term containing the variable uncomplemented ($y$) and the other complemented ($y'$)—the variable cancels out, leaving a simpler product term with one fewer literal.
+Whenever two product terms differ in exactly one variable, one term containing the variable uncomplemented ($y$) and the other complemented ($y'$), the variable cancels out, leaving a simpler product term with one fewer literal.
 
 In a standard truth table, adjacent rows do not always differ by a single bit. For example, moving from binary $01_2$ ($1$) to $10_2$ ($2$) flips two bits simultaneously.
 
@@ -26,7 +26,7 @@ $$
 00 \longrightarrow 01 \longrightarrow 11 \longrightarrow 10
 $$
 
-Every step in Gray code ordering—including the circular wrap-around from the last column ($10$) back to the first column ($00$)—changes exactly one bit ($d_H = 1$). As a result, physical spatial adjacency anywhere on a K-map corresponds directly to mathematical algebraic reducibility.
+Every step in Gray code ordering, including the circular wrap-around from the last column ($10$) back to the first column ($00$), changes exactly one bit ($d_H = 1$). As a result, physical spatial adjacency anywhere on a K-map corresponds directly to mathematical algebraic reducibility.
 
 ## Geometry and coordinate layouts
 
@@ -132,9 +132,9 @@ When simplifying functions with don't-care conditions ($d$ or $X$):
 
 In ideal switching theory, gates switch instantaneously. In physical hardware, signal transitions incur propagation delay. These unequal delays cause **timing hazards**:
 
-1. **Static-1 Hazard:** An output that is theoretically expected to remain steadily at logic 1 experiences an unwanted momentary glitch to logic 0 during an input transition. Static-1 hazards occur in Sum-of-Products (AND-OR) networks.
-2. **Static-0 Hazard:** An output that is theoretically expected to remain steadily at logic 0 experiences an unwanted momentary spike to logic 1 during an input transition. Static-0 hazards occur in Product-of-Sums (OR-AND) networks.
-3. **Dynamic Hazard:** An output that is supposed to undergo a clean, single monotonic transition ($0 \to 1$ or $1 \to 0$) oscillates multiple times ($0 \to 1 \to 0 \to 1$) before reaching steady-state. **Dynamic hazards can occur only in multi-level circuits** (circuits with 3 or more logic levels) where a changing signal travels along three or more parallel paths with differing delays. Two-level SOP and POS circuits are mathematically immune to dynamic hazards.
+1. **Static-1 Hazard:** An output that is expected to remain steadily at logic 1 experiences a momentary glitch to logic 0 during an input transition. Static-1 hazards occur in Sum-of-Products (AND-OR) networks.
+2. **Static-0 Hazard:** An output that is expected to remain steadily at logic 0 experiences a momentary spike to logic 1 during an input transition. Static-0 hazards occur in Product-of-Sums (OR-AND) networks.
+3. **Dynamic Hazard:** An output that is supposed to undergo a clean, single transition ($0 \to 1$ or $1 \to 0$) oscillates multiple times ($0 \to 1 \to 0 \to 1$) before reaching steady state. **Dynamic hazards can occur only in multi-level circuits** (circuits with 3 or more logic levels) where a changing signal travels along three or more parallel paths with differing delays. Two-level SOP and POS circuits do not experience dynamic hazards.
 
 ### The Static-1 Hazard analyzed
 
@@ -160,19 +160,19 @@ To make a circuit hazard-free, add a **redundant consensus group** that covers t
 $$
 F_{\text{hazard-free}} = A'C + AB + BC
 $$
-When $B=1$ and $C=1$, term $BC$ remains solidly at 1 throughout the transition of $A$, completely bridging the delay gap and eliminating the glitch. While $BC$ is algebraically redundant, it is physically essential for glitch-free hardware operation.
+When $B=1$ and $C=1$, term $BC$ remains solidly at 1 throughout the transition of $A$, bridging the delay gap and eliminating the glitch. While $BC$ is algebraically redundant, it is physically necessary for glitch-free hardware operation.
 
 ## Common exam pitfalls and student mistakes
 
 When minimizing logic on Karnaugh maps, students frequently make these seven errors:
 
-1. **Non-Power-of-Two Grouping:** Attempting to circle groups of 3, 5, or 6 cells. Group sizes must strictly be integer powers of two ($1, 2, 4, 8, 16$) because only powers of two correspond to the complement cancellation $xy + xy' = x$.
+1. **Non-Power-of-Two Grouping:** Attempting to circle groups of 3, 5, or 6 cells. Group sizes must be integer powers of two ($1, 2, 4, 8, 16$) because only powers of two correspond to the complement cancellation $xy + xy' = x$.
 2. **Diagonal Grouping:** Grouping cells that touch only at their corners. Adjacency on a K-map is strictly horizontal or vertical (including wraparound edges). Diagonal neighbors differ by two variables ($d_H = 2$) and cannot eliminate any literal.
-3. **Binary Axis Numbering:** Labeling coordinate columns as $00, 01, 10, 11$. This destroys spatial adjacency between columns 1 and 2 ($d_H = 2$). The axes must strictly follow Gray code: $00, 01, 11, 10$.
+3. **Binary Axis Numbering:** Labeling coordinate columns as $00, 01, 10, 11$. This destroys spatial adjacency between columns 1 and 2 ($d_H = 2$). The axes must follow Gray code: $00, 01, 11, 10$.
 4. **Circling Pure Don't-Care Groups:** Creating a group that contains only $X$s. Don't-cares are only circled if they help enlarge a group of real 1s (or 0s in POS). Circling a group of pure $X$s adds an entirely useless physical gate to the circuit.
 5. **Overlooking Four-Corner Adjacency:** Failing to recognize that the four corners of a 4-variable map ($m_0, m_2, m_8, m_{10}$) are geometrically adjacent on a torus, forming a valid 4-cell group that reduces to $B'D'$.
-6. **Omitting Essential Prime Implicants:** Greedily circling arbitrary large groups instead of systematically searching for **distinguished minterms** first. If a 1-cell can only be covered by one prime implicant, that prime implicant is essential and MUST be selected before any other implicants.
-7. **Assuming Minimal SOP is Glitch-Free:** Believing that an algebraically minimal circuit is automatically hazard-free. Eliminating hazards requires *adding* redundant prime implicants (consensus terms) to bridge across boundary cells.
+6. **Omitting Essential Prime Implicants:** Greedily circling arbitrary large groups instead of systematically searching for **distinguished minterms** first. If a 1-cell can only be covered by one prime implicant, that prime implicant is essential and must be selected before any other implicants.
+7. **Assuming Minimal SOP is Glitch-Free:** Believing that an algebraically minimal circuit is automatically hazard-free. Eliminating hazards requires adding redundant prime implicants (consensus terms) to bridge across boundary cells.
 
 ## Practice problems
 
@@ -329,7 +329,7 @@ A combinational logic network implements $F(A, B, C) = A'C + AB$.
 Minimize $F(A, B, C, D, E) = \sum m(0, 2, 4, 6, 9, 11, 13, 15, 16, 18, 20, 22, 25, 27, 29, 31)$ using two 4-variable maps.
 
 <ModelAnswer>
-A 5-variable function uses two 4-variable maps: Map 0 for $A=0$ (minterms $0-15$) and Map 1 for $A=1$ (minterms $16-31$). Minterms with the same $(B,C,D,E)$ coordinates in both maps are adjacent along the third dimension ($A$).
+A 5-variable function uses two 4-variable maps: Map 0 for $A=0$ (minterms 0 to 15) and Map 1 for $A=1$ (minterms 16 to 31). Minterms with the same $(B,C,D,E)$ coordinates in both maps are adjacent along the third dimension ($A$).
 
 1. **Analyze Map 0 ($A=0$):**
    - 1s are at: $m_0, m_2, m_4, m_6$ (row $BC=00, 01$ in columns $00, 10 \implies B'E'$).

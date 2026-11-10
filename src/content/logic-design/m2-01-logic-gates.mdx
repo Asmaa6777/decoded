@@ -3,15 +3,15 @@ import { GatePlayground } from "@/components/mdx/CircuitVisualizers";
 
 # Logic Gates
 
-A **logic gate** is the elementary physical building block of all digital circuits. It takes one or more binary inputs—represented by electric voltages—and produces a single binary output according to a Boolean **switching function** $f: \{0, 1\}^n \to \{0, 1\}$. Every digital system, from a simple microwave timer to a 64-bit multi-core microprocessor, is built by interconnecting millions or billions of these basic gates.
+A **logic gate** is the basic building block of digital circuits. It takes one or more binary inputs, represented by electric voltages, and produces a single binary output according to a Boolean **switching function** $f: \{0, 1\}^n \to \{0, 1\}$. Every digital system, from a microwave timer to a 64-bit multi-core processor, is built by connecting millions or billions of these gates.
 
-Underneath the logic abstraction, gates are constructed from semiconductor switches called **MOSFETs** (Metal-Oxide-Semiconductor Field-Effect Transistors). Each MOSFET has four physical terminals: the **gate** (control input), the **source**, the **drain**, and the **substrate** (body). The voltage applied across the gate terminal creates an electrostatic field that either creates or pinches off a conductive channel between the drain and source.
+At the circuit level, gates are built from semiconductor switches called **MOSFETs** (Metal-Oxide-Semiconductor Field-Effect Transistors). Each MOSFET has four physical terminals: the **gate** (control input), the **source**, the **drain**, and the **substrate** (body). The voltage applied across the gate terminal creates an electric field that opens or closes a conductive channel between the drain and source.
 
-In modern **CMOS** (Complementary Metal-Oxide-Semiconductor) technology, gates use matched pairs of n-channel (nMOS) and p-channel (pMOS) transistors organized into two complementary networks:
-- **nMOS transistors (Pull-Down Network, PDN):** Conduct electricity between drain and source when their gate terminal is driven with a high voltage (logic 1, near $V_{DD}$). When driven with a low voltage (logic 0), they act as open switches. The PDN connects the output node to ground ($V_{SS} = 0\,\text{V}$).
-- **pMOS transistors (Pull-Up Network, PUN):** Conduct electricity when their gate terminal is driven with a low voltage (logic 0, near $V_{SS}$). When driven with a high voltage (logic 1), they act as open switches. The PUN connects the positive power rail ($V_{DD}$) to the output node.
+In **CMOS** (Complementary Metal-Oxide-Semiconductor) technology, gates use matched pairs of n-channel (nMOS) and p-channel (pMOS) transistors organized into two complementary networks:
+- **nMOS transistors (Pull-Down Network, PDN):** Conduct electricity between drain and source when their gate terminal receives a high voltage (logic 1, near $V_{DD}$). When driven with a low voltage (logic 0), they turn off. The PDN connects the output node to ground ($V_{SS} = 0\,\text{V}$).
+- **pMOS transistors (Pull-Up Network, PUN):** Conduct electricity when their gate terminal receives a low voltage (logic 0, near $V_{SS}$). When driven with a high voltage (logic 1), they turn off. The PUN connects the positive power rail ($V_{DD}$) to the output node.
 
-Because the nMOS and pMOS networks are exact duals of each other, in steady-state operation exactly one network is ON while the other is OFF. This complementary switching ensures that the output is always solidly connected to either $V_{DD}$ or $V_{SS}$, but never both at once. If both networks were simultaneously active—such as during sluggish voltage transitions—a direct short-circuit path between power and ground would form, causing a destructive current spike known as **shoot-through current**. When idling, CMOS circuits draw virtually zero static DC power.
+Because the nMOS and pMOS networks are duals of each other, in steady state exactly one network is ON while the other is OFF. This complementary switching keeps the output connected to either $V_{DD}$ or $V_{SS}$, but never both at once. If both networks turned on at the same time, such as during slow voltage transitions, a direct path from power to ground would form. That causes a brief current spike called **shoot-through current**. When idle, CMOS circuits draw almost no static DC power.
 
 Click the input terminals below to toggle their logic levels, and cycle through each gate type to observe how the truth table and output signal respond.
 
@@ -19,7 +19,7 @@ Click the input terminals below to toggle their logic levels, and cycle through 
 
 ## The eight fundamental logic gates
 
-Digital switching systems rely on eight basic gate types, classified by how their outputs respond to input combinations:
+Digital systems rely on eight basic gate types, classified by how their outputs respond to input combinations:
 
 | Gate | Graphic Symbol | IEEE Rectangular Symbol | Boolean Expression | Output is 1 when |
 |---|---|---|---|---|
@@ -41,16 +41,16 @@ The **NOT gate** (or inverter) performs logical negation. It changes a 0 into a 
 | 0 | 1 |
 | 1 | 0 |
 
-The triangular body of the symbol represents a generic amplifier, while the small circle—the **inversion bubble**—denotes the logical inversion.
+The triangular body of the symbol represents a generic amplifier. The small circle, called the **inversion bubble**, marks logical inversion.
 
-A **buffer** does not alter the logical value ($Y = A$). Despite performing no logical transformation, buffers are essential in physical hardware design:
-1. **Signal restoration:** As signals travel across capacitive PCB traces or long on-chip interconnects, resistance and parasitic capacitance degrade transition edges. Buffers sharpen slewing edges back to sharp digital pulses.
+A **buffer** passes its input through unchanged ($Y = A$). Even without a logic transformation, buffers solve physical problems:
+1. **Signal restoration:** As signals travel across circuit board traces or long on-chip wires, resistance and capacitance round off transition edges. Buffers sharpen these slow edges back into square digital pulses.
 2. **Fan-out amplification:** A single gate output has finite current-driving capacity. A buffer acts as a current amplifier, enabling one output signal to drive dozens of downstream gate inputs.
-3. **Delay insertion:** In high-speed sequential circuits, buffers are inserted into clock and data lines to balance arrival times and eliminate hold-time violations.
+3. **Delay insertion:** In high-speed sequential circuits, buffers are inserted into clock and data lines to balance arrival times and prevent hold-time violations.
 
 ### AND and OR gates
 
-The **AND gate** outputs 1 if and only if every input is 1. If any input is 0, the output is forced to 0:
+The **AND gate** outputs 1 only when every input is 1. If any input is 0, the output is forced to 0:
 
 | $A$ | $B$ | $Y = AB$ |
 |:---:|:---:|:---:|
@@ -59,9 +59,9 @@ The **AND gate** outputs 1 if and only if every input is 1. If any input is 0, t
 | 1 | 0 | 0 |
 | 1 | 1 | 1 |
 
-The mechanical analogy is two switches in **series** on a wire powering a light bulb: current flows only when switch $A$ AND switch $B$ are both closed.
+This works like two switches in **series** on a wire powering a light bulb: current flows only when switch $A$ and switch $B$ are both closed.
 
-The **OR gate** outputs 1 if at least one input is 1. It outputs 0 only when all inputs are simultaneously 0:
+The **OR gate** outputs 1 if at least one input is 1. It outputs 0 only when all inputs are 0 at the same time:
 
 | $A$ | $B$ | $Y = A + B$ |
 |:---:|:---:|:---:|
@@ -70,7 +70,7 @@ The **OR gate** outputs 1 if at least one input is 1. It outputs 0 only when all
 | 1 | 0 | 1 |
 | 1 | 1 | 1 |
 
-The mechanical analogy is two switches in **parallel**: closing switch $A$ OR switch $B$ (or both) completes the circuit and illuminates the bulb.
+This works like two switches in **parallel**: closing switch $A$, switch $B$, or both completes the circuit and lights the bulb.
 
 ### NAND and NOR gates
 
@@ -92,7 +92,7 @@ The **NOR gate** produces the complement of the OR operation ($Y = (A + B)'$). I
 | 1 | 0 | 0 |
 | 1 | 1 | 0 |
 
-NAND and NOR gates are termed **universal gates**: any arbitrary digital switching function can be realized exclusively using NAND gates or exclusively using NOR gates, as explored in depth in [Universal Gates](/courses/logic-design/universal-gates).
+NAND and NOR gates are called **universal gates**: any digital switching function can be realized using only NAND gates or only NOR gates, as shown in [Universal Gates](/courses/logic-design/universal-gates).
 
 ### Exclusive-OR (XOR) and Exclusive-NOR (XNOR)
 
@@ -106,7 +106,7 @@ The **XOR gate** (Exclusive-OR) outputs 1 if its two inputs have different logic
 | 1 | 1 | 0 |
 
 Algebraically, $A \oplus B = A'B + AB'$. XOR acts as:
-1. **Modulo-2 adder:** Adding two single-bit binary numbers without carry: $0+0=0$, $0+1=1$, $1+0=1$, and $1+1=0$ (sum bit in binary [adders](/courses/logic-design/adders)).
+1. **Modulo-2 adder:** Adding two single-bit binary numbers without carry: $0+0=0$, $0+1=1$, $1+0=1$, and $1+1=0$ (the sum bit in binary [adders](/courses/logic-design/adders)).
 2. **Controllable inverter:**
    - $A \oplus 0 = A$ (buffer mode)
    - $A \oplus 1 = A'$ (invert mode)
@@ -118,7 +118,7 @@ The **XNOR gate** (Exclusive-NOR or equivalence gate) is the complement of XOR: 
 
 Every gate type has specialized roles in digital systems:
 
-**AND** works as an enable gate or digital door. Treat one input as data and the other as control. With the control at 1, the data passes through ($Y = A \cdot 1 = A$). With control at 0, the output is held low ($Y = A \cdot 0 = 0$). This gating technique controls data flow in [latches and registers](/courses/logic-design/d-latch-and-clock) and [multiplexers](/courses/logic-design/multiplexers).
+**AND** works as an enable gate or digital door. Treat one input as data and the other as control. With the control at 1, the data passes through ($Y = A \cdot 1 = A$). With control at 0, the output stays low ($Y = A \cdot 0 = 0$). This gating technique controls data flow in [latches and registers](/courses/logic-design/d-latch-and-clock) and [multiplexers](/courses/logic-design/multiplexers).
 
 **XOR** acts as a controllable inverter and modulo-2 adder: $A \oplus 0 = A$ and $A \oplus 1 = A'$. XORing bits adds two binary digits without carry, forming the sum bit of an [adder](/courses/logic-design/adders). In parity trees, cascading XOR gates generates and verifies error-detecting codes.
 
@@ -130,9 +130,9 @@ A row of inverters is also all it takes to form a [1's complement](/courses/logi
 
 ## Graphic symbols and standard notation
 
-Digital schematics adhere to two recognized graphic standards governed by IEEE/ANSI Std 91-1984:
-1. **Distinctive-shape symbols:** Curved shapes showing function by contour (standard in North America and widely used globally).
-2. **Rectangular-shape symbols:** Uniform rectangular boxes containing internal qualifying symbols:
+Digital schematics use two graphic standards from IEEE/ANSI Std 91-1984:
+1. **Distinctive-shape symbols:** Curved shapes that show the function by contour. These are standard in North America and common worldwide.
+2. **Rectangular-shape symbols:** Rectangular boxes with qualifying symbols inside:
    - `&` indicates AND functionality.
    - `≥1` indicates OR functionality (at least one active input).
    - `1` indicates a single-input buffer or inverter.
@@ -156,17 +156,17 @@ B ---|   |             B ---|   |             B ---|   |
 
 ### Active-high vs. active-low logic
 
-Signals in digital circuits are classified by their active assertion state:
+Signals in digital circuits are named by their active state:
 - **Active-high signals:** Asserted (true) when driven to high voltage (logic 1), and deasserted (false) when driven to low voltage (logic 0).
 - **Active-low signals:** Asserted (true) when driven to low voltage (logic 0), and deasserted (false) when driven to high voltage (logic 1).
 
 Active-low signals are designated on schematics by an inversion bubble at the gate terminal, and in text with an overbar ($\overline{\text{RESET}}$), a trailing slash (`RESET/`), an underscore suffix (`RESET_N`), or a hash (`RESET#`).
 
-Hardware designers routinely use active-low logic for control signals (e.g., chip enable, write enable, clear) because open-collector and open-drain bus structures sink current more effectively than they source it, offering superior noise immunity and safe wired-OR bus sharing.
+Hardware designers often use active-low logic for control signals (such as chip enable, write enable, or clear) because open-collector and open-drain bus structures sink current more effectively than they source it. This provides better noise immunity and safe wired-OR bus sharing.
 
 ## Electrical parameters and real hardware constraints
 
-Logic gates are physical analog circuits operating in saturation. Real-world constraints dictate their timing, loading, and noise tolerance.
+Logic gates are physical circuits built from transistors. Physical constraints set their timing, loading, and noise tolerance.
 
 ### Propagation delay and transition times
 
@@ -178,13 +178,13 @@ Gates do not switch instantaneously. The physical delay required for a signal ch
   t_{pd} = \frac{t_{pHL} + t_{pLH}}{2}
   $$
 
-Why are propagation delays measured at the **50% voltage threshold**? In digital logic families, the switching threshold of downstream transistors sits approximately midway between the power supply rails ($V_{DD}/2$). The 50% point marks the moment when downstream gates begin interpreting the changing voltage level as the opposite binary state.
+Why measure propagation delays at the **50% voltage threshold**? Downstream transistor switching thresholds sit approximately midway between the power supply rails ($V_{DD}/2$). The 50% point marks when downstream gates start reading the changing voltage as the opposite binary state.
 
-Output waveforms also require finite time to traverse voltage levels:
+Output waveforms also require finite time to cross voltage levels:
 - **Rise time ($t_r$):** Time required for the output voltage to rise from 10% to 90% of its final steady-state value.
 - **Fall time ($t_f$):** Time required for the output voltage to drop from 90% to 10% of its initial steady-state value.
 
-Why do industry standards measure rise and fall times between **10% and 90%** rather than 0% and 100%? In physical circuits, voltage transitions follow exponential RC charging curves governed by parasitic capacitance and channel resistance. Because exponential waveforms approach their final rail voltages asymptotically, the 0% and 100% boundary points are mathematically ill-defined and prone to high-frequency ambient noise. The 10%–90% interval provides a repeatable, low-noise measurement of the signal's maximum slewing rate.
+Why do industry standards measure rise and fall times between **10% and 90%** rather than 0% and 100%? Physical voltage transitions follow exponential RC charging curves governed by parasitic capacitance and channel resistance. Because exponential waveforms approach their final rail voltages slowly, the 0% and 100% boundary points are hard to pinpoint and sensitive to ambient noise. The 10% to 90% interval provides a repeatable, low-noise measurement of the signal's maximum slewing rate.
 
 ```text
 Input:   _______/‾‾‾‾‾‾‾\_______
@@ -224,7 +224,7 @@ The parameters are defined as:
 - $V_{IH(\min)}$: Minimum input voltage recognized reliably as logic 1.
 - $V_{IL(\max)}$: Maximum input voltage recognized reliably as logic 0.
 
-The voltage region between $V_{IL(\max)}$ and $V_{IH(\min)}$ is the **indeterminate (forbidden) zone**. Any input voltage lingering within this band may cause unpredictable gate outputs, high-frequency oscillations, or excessive shoot-through power consumption.
+The voltage region between $V_{IL(\max)}$ and $V_{IH(\min)}$ is the **indeterminate (forbidden) zone**. Any input voltage lingering within this band can cause unpredictable gate outputs, high-frequency oscillations, or excessive shoot-through power consumption.
 
 The **high-level noise margin ($NM_H$)** and **low-level noise margin ($NM_L$)** measure the safety buffer between output guarantees and input requirements:
 $$
@@ -234,11 +234,11 @@ $$
 NM_L = V_{IL(\max)} - V_{OL(\max)}
 $$
 
-For a circuit to operate reliably, both noise margins must be strictly positive:
+For a circuit to operate reliably, both noise margins must be positive:
 - For standard 5V Transistor-Transistor Logic (TTL):
   - $V_{OH(\min)} = 2.4\,\text{V}$, $V_{IH(\min)} = 2.0\,\text{V} \implies NM_H = 2.4 - 2.0 = 0.4\,\text{V}$.
   - $V_{IL(\max)} = 0.8\,\text{V}$, $V_{OL(\max)} = 0.4\,\text{V} \implies NM_L = 0.8 - 0.4 = 0.4\,\text{V}$.
-- In contrast, 5V CMOS devices exhibit symmetric switching thresholds ($V_{IH(\min)} \approx 3.5\,\text{V}$, $V_{IL(\max)} \approx 1.5\,\text{V}$, with rail-to-rail outputs $V_{OH} \approx 4.9\,\text{V}$, $V_{OL} \approx 0.1\,\text{V}$), producing noise margins exceeding $1.4\,\text{V}$.
+- By contrast, 5V CMOS devices exhibit symmetric switching thresholds ($V_{IH(\min)} \approx 3.5\,\text{V}$, $V_{IL(\max)} \approx 1.5\,\text{V}$, with rail-to-rail outputs $V_{OH} \approx 4.9\,\text{V}$, $V_{OL} \approx 0.1\,\text{V}$), producing noise margins exceeding $1.4\,\text{V}$.
 
 ### Fan-in and Fan-out
 
@@ -246,8 +246,8 @@ For a circuit to operate reliably, both noise margins must be strictly positive:
 - **Fan-out:** The maximum number of standard gate inputs of the same logic family that a gate output can drive without exceeding voltage threshold ratings.
 
 In manufacturer datasheets, current flowing **into** an IC terminal is positive ($+$), and current flowing **out of** a terminal is negative ($-$).
-- When driving a **HIGH** output, the gate output terminal pushes current outward to downstream inputs. The output *sources* current ($I_{OH} < 0$), while downstream inputs absorb it ($I_{IH} > 0$).
-- When driving a **LOW** output, downstream inputs push current into the driving gate terminal, which *sinks* that current to ground ($I_{OL} > 0$), while downstream inputs emit it ($I_{IL} < 0$).
+- When driving a **HIGH** output, the gate output terminal pushes current outward to downstream inputs. The output sources current ($I_{OH} < 0$), while downstream inputs absorb it ($I_{IH} > 0$).
+- When driving a **LOW** output, downstream inputs push current into the driving gate terminal, which sinks that current to ground ($I_{OL} > 0$), while downstream inputs emit it ($I_{IL} < 0$).
 
 Fan-out capacity must be evaluated for both logical states using current magnitudes:
 $$
@@ -260,14 +260,14 @@ $$
 
 ### Floating inputs: TTL vs. CMOS behavior
 
-Leaving an unused gate input terminal unconnected (**floating**) produces drastically different—and potentially dangerous—consequences depending on the semiconductor logic family:
+Leaving an unused gate input unconnected (**floating**) produces very different, and potentially dangerous, consequences depending on the logic family:
 
-1. **TTL (Bipolar):** Floating inputs naturally float to logic 1 because internal multi-emitter bipolar transistors have base resistors pulling toward $V_{CC}$. However, an open TTL pin acts like an antenna picking up electromagnetic interference, reducing noise margin. Unused TTL inputs should be tied to $V_{CC}$ through a $1\,\text{k}\Omega$ pull-up resistor.
-2. **CMOS (MOSFET):** A CMOS gate input connects directly to a microscopic layer of silicon dioxide ($\text{SiO}_2$) with virtually infinite DC resistance ($R_{\text{in}} > 10^{12}\,\Omega$). An open pin traps stray electrostatic charges that hold the gate terminal at an intermediate voltage ($V_{IL} < V < V_{IH}$). This voltage turns **both the pull-up pMOS and pull-down nMOS networks ON simultaneously**, causing massive shoot-through current, thermal runaway, and permanent destruction of the IC. **Unused CMOS inputs must never be left floating**; they must be wired directly to $V_{DD}$ (if active-low or unused AND input) or Ground (if unused OR input).
+1. **TTL (Bipolar):** Floating inputs drift toward logic 1 because internal multi-emitter bipolar transistors have base resistors pulling toward $V_{CC}$. However, an open TTL pin acts like an antenna picking up electromagnetic interference, reducing noise margin. Unused TTL inputs should be tied to $V_{CC}$ through a $1\,\text{k}\Omega$ pull-up resistor.
+2. **CMOS (MOSFET):** A CMOS gate input connects directly to an insulating layer of silicon dioxide ($\text{SiO}_2$) with extremely high DC resistance ($R_{\text{in}} > 10^{12}\,\Omega$). An open pin traps stray electrostatic charges that hold the gate terminal at an intermediate voltage ($V_{IL} < V < V_{IH}$). This voltage turns **both the pull-up pMOS and pull-down nMOS networks ON at once**, causing massive shoot-through current, overheating, and permanent damage to the chip. **Unused CMOS inputs must never be left floating**; they must be wired directly to $V_{DD}$ (if active-low or an unused AND input) or Ground (if an unused OR input).
 
 ### Logic families and the standard 7400 series
 
-Historically and in prototyping, discrete digital logic is packaged in 14-pin or 16-pin Dual In-line Packages (DIP). The industry-standard **7400 series** integrated circuits define standard pinout assignments:
+In lab prototypes and discrete boards, digital logic is packaged in 14-pin or 16-pin Dual In-line Packages (DIP). The industry-standard **7400 series** integrated circuits define standard pinout assignments:
 - **7400:** Quad 2-input NAND gates
 - **7402:** Quad 2-input NOR gates
 - **7404:** Hex Inverter (six independent inverters)
@@ -279,14 +279,14 @@ On standard 14-pin DIP packages, pins are numbered counter-clockwise starting fr
 
 ## Common exam pitfalls and student mistakes
 
-When working with basic logic gates in hardware and exams, students frequently stumble over these six traps:
+When working with basic logic gates in hardware and exams, students frequently encounter these six traps:
 
-1. **The Multi-Input XOR Parity Trap:** Students often assume that a 3-input XOR gate outputs 1 only when "strictly one input is 1." This is false! By definition, multi-input XOR evaluates modulo-2 addition: $A \oplus B \oplus C = (A \oplus B) \oplus C$. When $A=1, B=1, C=1$, $(1 \oplus 1) \oplus 1 = 0 \oplus 1 = 1$. Multi-input XOR is an **odd parity function**, outputting 1 whenever an odd number of inputs are high.
-2. **Propagation Delay Subscript Misinterpretation:** Students often assume $t_{pHL}$ means the *input* is falling from High to Low. The subscript **always describes the output terminal's transition**: $t_{pHL}$ is the delay for the *output* to transition from High to Low, regardless of what the input had to do to trigger it.
-3. **Active-Low Assertion vs. Voltage Confusion:** Students confuse electrical voltage with logical truth. An active-low signal (such as $\overline{\text{RESET}}$ or $\overline{\text{CS}}$) is considered **active (asserted / true)** when the wire carries 0V (logic 0), and **inactive (deasserted / false)** when it carries high voltage (logic 1).
-4. **The Floating CMOS Input Disaster:** Treating CMOS inputs like TTL inputs and leaving unused pins disconnected. In CMOS, floating inputs cause linear-mode conduction, destroying the chip via shoot-through current.
+1. **The Multi-Input XOR Parity Trap:** Students often assume that a 3-input XOR gate outputs 1 only when strictly one input is 1. This is incorrect. Multi-input XOR evaluates modulo-2 addition: $A \oplus B \oplus C = (A \oplus B) \oplus C$. When $A=1, B=1, C=1$, $(1 \oplus 1) \oplus 1 = 0 \oplus 1 = 1$. Multi-input XOR is an **odd parity function**, outputting 1 whenever an odd number of inputs are high.
+2. **Propagation Delay Subscript Misinterpretation:** Students often assume $t_{pHL}$ means the input is falling from High to Low. The subscript **describes the output terminal transition**: $t_{pHL}$ is the delay for the output to transition from High to Low, regardless of what the input had to do to trigger it.
+3. **Active-Low Assertion vs. Voltage Confusion:** Students confuse electrical voltage with logical truth. An active-low signal (such as $\overline{\text{RESET}}$ or $\overline{\text{CS}}$) is considered **active (asserted)** when the wire carries 0V (logic 0), and **inactive (deasserted)** when it carries high voltage (logic 1).
+4. **Floating CMOS inputs:** Leaving unused CMOS pins disconnected allows stray charges to shift the gate into its indeterminate band, turning on both networks and overheating the chip.
 5. **Noise Margin Formula Inversion:** Swapping input and output parameters ($V_{IH} - V_{OH}$ instead of $V_{OH} - V_{IH}$). Remember: noise margin is the safety margin between the output guaranteed by the driver and the input requirement demanded by the receiver.
-6. **Fan-Out Bottleneck Oversight:** Computing only the high-state fan-out or only the low-state fan-out. A gate with a high-state fan-out of 100 but a low-state fan-out of 10 has an overall fan-out of **10**. Driving 11 gates will pull the output voltage above $V_{OL(\max)}$, corrupting downstream logic 0 readings.
+6. **Fan-Out Bottleneck Oversight:** Computing only the high-state fan-out or only the low-state fan-out. A gate with a high-state fan-out of 100 but a low-state fan-out of 10 has an overall fan-out of **10**. Driving 11 gates pulls the output voltage above $V_{OL(\max)}$, corrupting downstream logic 0 readings.
 
 ## Practice problems
 
@@ -301,7 +301,7 @@ Trace the alternating output transitions along the signal path:
 
 | Stage | Gate | Input Edge | Second Input (Static) | Output Edge | Applicable Delay Parameter | Delay Value |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| 1 | Inverter | Rising ($0 \to 1$) | — | Falling ($1 \to 0$) | $t_{pHL(\text{INV})}$ | $3\,\text{ns}$ |
+| 1 | Inverter | Rising ($0 \to 1$) | None | Falling ($1 \to 0$) | $t_{pHL(\text{INV})}$ | $3\,\text{ns}$ |
 | 2 | AND | Falling ($1 \to 0$) | Fixed at 1 | Falling ($1 \cdot 1 \to 0 \cdot 1 = 1 \to 0$) | $t_{pHL(\text{AND})}$ | $6\,\text{ns}$ |
 | 3 | NOR | Falling ($1 \to 0$) | Fixed at 0 | Rising ($(1+0)' \to (0+0)' = 0 \to 1$) | $t_{pLH(\text{NOR})}$ | $7\,\text{ns}$ |
 
@@ -325,7 +325,7 @@ $$
 t_{\text{total}} = t_{pHL(\text{INV})} + t_{pHL(\text{AND})} + t_{pLH(\text{NOR})} = 3\,\text{ns} + 6\,\text{ns} + 7\,\text{ns} = 16\,\text{ns}
 $$
 
-*Exam pitfall note:* If a student simply added all $t_{pLH}$ values ($4 + 8 + 7 = 19\,\text{ns}$) or all $t_{pHL}$ values ($3 + 6 + 5 = 14\,\text{ns}$), the answer would be wrong. Each gate's transition direction must be evaluated individually based on the preceding gate's output!
+*Exam pitfall note:* If a student simply added all $t_{pLH}$ values ($4 + 8 + 7 = 19\,\text{ns}$) or all $t_{pHL}$ values ($3 + 6 + 5 = 14\,\text{ns}$), the answer would be wrong. Each gate's transition direction must be evaluated individually based on the preceding gate's output.
 </ModelAnswer>
 
 ### Problem 2: Parity generation and controllable inversion
@@ -393,7 +393,7 @@ A manufacturer data sheet for a high-speed logic gate specifies:
    $$
    NM_L = V_{IL(\max)} - V_{OL(\max)} = 1.1\,\text{V} - 0.35\,\text{V} = 0.75\,\text{V}
    $$
-   Both noise margins are positive ($NM_H = 1.2\,\text{V}$, $NM_L = 0.75\,\text{V}$), confirming robust operation against spurious noise pulses.
+   Both noise margins are positive ($NM_H = 1.2\,\text{V}$, $NM_L = 0.75\,\text{V}$), confirming reliable operation against electrical noise pulses.
 
 2. **DC fan-out:**
    High-state fan-out capacity (sourcing current into input loads):
@@ -417,7 +417,7 @@ A manufacturer data sheet for a high-speed logic gate specifies:
 A memory module requires an active-low chip select signal ($\overline{\text{CS}}$). The chip must be enabled only when three conditions hold simultaneously:
 1. Address line $A_{15}$ is high ($A_{15} = 1$).
 2. Address line $A_{14}$ is low ($A_{14} = 0$).
-3. The microprocessor's read/write request strobe $\overline{\text{REQ}}$ is asserted low ($\overline{\text{REQ}} = 0$).
+3. The microprocessor read/write request strobe $\overline{\text{REQ}}$ is asserted low ($\overline{\text{REQ}} = 0$).
 
 Write the Boolean equation for $\overline{\text{CS}}$ in terms of $A_{15}$, $A_{14}$, and $\overline{\text{REQ}}$, and show how to implement this function with a single standard logic gate.
 
@@ -449,5 +449,5 @@ Write the Boolean equation for $\overline{\text{CS}}$ in terms of $A_{15}$, $A_{
      $$
      \overline{\text{CS}} = A_{15}' + A_{14} + \overline{\text{REQ}}
      $$
-     Notice that $\overline{\text{CS}} = 0$ only when all three OR inputs are simultaneously 0 ($A_{15}'=0 \implies A_{15}=1$; $A_{14}=0$; $\overline{\text{REQ}}=0$), perfectly matching the required enabling conditions.
+     Notice that $\overline{\text{CS}} = 0$ only when all three OR inputs are simultaneously 0 ($A_{15}'=0 \implies A_{15}=1$; $A_{14}=0$; $\overline{\text{REQ}}=0$), matching the required enabling conditions.
 </ModelAnswer>
