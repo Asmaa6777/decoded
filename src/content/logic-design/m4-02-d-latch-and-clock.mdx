@@ -215,6 +215,17 @@ If data changes within the setup or hold time aperture ($t_{su} + t_h$), the lat
 Because transparent latches are smaller and faster than edge-triggered flip-flops, high-performance processors sometimes use two-phase non-overlapping clocking with latches. However, in standard ASIC and FPGA design, edge-triggered flip-flops are universally preferred because they make static timing analysis completely immune to transparency hazards.
 </Callout>
 
+## Common exam pitfalls and student mistakes
+
+When analyzing and designing with gated latches and clock signals, students frequently make these six conceptual and timing errors:
+
+1. **Confusing Level-Sensitivity (Transparency) with Edge-Triggering:** Assuming that a gated D latch only samples its data on the rising edge of enable $C$. In reality, whenever $C = 1$, the latch is completely transparent: any transient glitch, hazard, or data fluctuation on $D$ passes immediately through to $Q$.
+2. **Attempting State Feedback or Counters with Transparent Latches (Race-Around):** Connecting an inverted output $Q'$ back to $D$ on a transparent latch. Because the clock pulse high time $t_H$ is typically far longer than the internal loop delay ($t_H \gg t_{loop}$), the output oscillates continuously back and forth between 0 and 1 until $C$ falls, freezing a random value.
+3. **Misidentifying Setup and Hold Reference Edges in Latches:** Measuring setup time $t_{su}$ and hold time $t_h$ relative to the *rising* edge of $C$. For a transparent latch, data is actively passing during $C = 1$, so the critical capturing event is the **falling edge** of $C$ (when the transparent window shuts). Data must remain stable around this closing transition.
+4. **Believing D Latches Eliminate Metastability:** Assuming that because the D latch eliminates the forbidden input code ($S = R = 1$), it cannot experience metastability. If $D$ changes inside the setup/hold aperture ($t_{su} + t_h$) around the closing edge of $C$, the cross-coupled gates can hover in the analog switching region and produce severe metastable delays.
+5. **Treating Clock Gating with Latches as Glitch-Free without Verification:** Driving enable $C$ with an unsynchronized combinational signal. Glitches on $C$ can momentarily open the latch and latch corrupted data.
+6. **Inverting the Front-End Reset Inverter Polarity:** Placing the inverter on $S$ instead of $R$ ($S = D', R = D$). This creates an inverted latch where applying $D = 1$ resets the latch ($Q \to 0$) and $D = 0$ sets it ($Q \to 1$).
+
 ---
 
 ## Past-Exam Practice
@@ -285,8 +296,15 @@ Substitute these back into the equation for $Q(t+1)$:
 $$Q(t+1) = C \cdot D + (C' + D) \cdot Q(t) = C D + C' Q(t) + D Q(t)$$
 
 Using the [Boolean consensus theorem](/courses/logic-design/boolean-algebra#the-consensus-theorem):
-In $C D + C' Q(t) + D Q(t)$, the third term $D Q(t)$ is the redundant consensus term between $C D$ and $C' Q(t)$. Eliminating $D Q(t)$ yields:
-$$Q(t+1) = C' Q(t) + C D$$
+In $C D + C' Q(t) + D Q(t)$, the third term $D Q(t)$ is the redundant consensus term between $C D$ and $C' Q(t)$. We can formally verify this by expanding $D Q(t) = D Q(t)(C + C') = C D Q(t) + C' D Q(t)$:
+$$
+\begin{aligned}
+Q(t+1) &= C D + C D Q(t) + C' Q(t) + C' D Q(t) \\
+&= C D(1 + Q(t)) + C' Q(t)(1 + D) \\
+&= C D(1) + C' Q(t)(1) \\
+&= C' Q(t) + C D
+\end{aligned}
+$$
 This matches the standard characteristic equation.
 </ModelAnswer>
 

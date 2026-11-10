@@ -208,6 +208,17 @@ Shift registers are not merely storage; they are hardware arithmetic accelerator
 
 In assembly language, the processor's [`SHL`, `SHR`, and `SAR` instructions](/courses/microprocessors/arithmetic-and-logic) map directly onto hardware shift register operations.
 
+## Common exam pitfalls and student mistakes
+
+When analyzing and designing registers and shift registers, students frequently encounter these six pitfalls on examinations:
+
+1. **Clock Gating Using Simple AND Gates:** Attempting to control parallel loading by gating the clock line ($\text{CLK} \cdot \text{Load}$). This introduces clock skew and creates glitch runt pulses if Load transitions when CLK is high. Industrial designs place 2-to-1 multiplexers in the data path instead ($D_i = \text{Load} \cdot I_i + \text{Load}' \cdot Q_i$).
+2. **Cycle Count Off-by-One in Serial/Parallel Converters:** In an $n$-bit Parallel-In Serial-Out (PISO) register, forgetting that the first bit ($Q_{n-1}$) is already valid at the serial output pin immediately after the 1 parallel load cycle. Only $n - 1$ subsequent shift cycles are required to output the rest of the word (total $n$ cycles: 1 load + $n-1$ shifts). In an $n$-bit Serial-In Parallel-Out (SIPO) register, all $n$ bits must be shifted in across $n$ clock cycles before the parallel word is completely received.
+3. **Confusing Logical Shift Right (LSR) with Arithmetic Shift Right (ASR):** Applying LSR to a signed two's complement negative number. LSR always shifts in a 0 from the left, converting a negative number into a positive number. ASR preserves the numerical sign by replicating the MSB ($D_{n-1} = Q_{n-1}$).
+4. **Ignoring Unused Lock-Up States in Ring and Johnson Counters:** Assuming a 4-bit ring counter (which uses only 4 of its 16 possible states) or a 4-bit Johnson counter (8 of 16 states) will never enter an illegal state. Noise or power-on transients can land the counter in an unused state, trapping it in an endless false cycle unless self-correcting logic is included in the feedback network.
+5. **Reversing Shift-Right and Shift-Left Bit Indices:** Confusing shift directions. Shift Right moves bits toward the least-significant bit ($Q_i \to Q_{i-1}$, with SIR entering the MSB). Shift Left moves bits toward the most-significant bit ($Q_i \to Q_{i+1}$, with SIL entering the LSB).
+6. **Reversing Mode Control Bits in Universal Shift Registers:** Confusing $S_1$ and $S_0$ on the 74LS194. $S_1 S_0 = 01_2$ selects Shift Right, while $S_1 S_0 = 10_2$ selects Shift Left. Reversing these lines inverts the shift direction during execution.
+
 ---
 
 ## Past-Exam Practice

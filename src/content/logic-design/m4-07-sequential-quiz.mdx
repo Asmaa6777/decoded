@@ -19,7 +19,7 @@ Ten questions on latches, flip-flops, registers, counters, and computer memory. 
         { id: "d", text: "Q(t+1) = (S + R) · Q(t)" },
       ],
       correctOptionId: "b",
-      explanation: "Derived algebraically from the cross-coupled NOR equations Q(t+1) = (R + (S + Q)')' = R'(S + Q) = S·R' + R'·Q. With the legal constraint that S and R are never simultaneously asserted (S · R = 0), S · R' simplifies directly to S, yielding Q(t+1) = S + R'·Q(t).",
+      explanation: "Option (b) is correct: Derived from the cross-coupled NOR feedback equation Q(t+1) = (R + Q'(t))' = (R + (S + Q(t))')' = R'(S + Q(t)) = S·R' + R'·Q(t). Under the legal constraint that S and R are never simultaneously asserted (S · R = 0), S · R' simplifies directly to S, yielding Q(t+1) = S + R'·Q(t). Option (a) incorrectly omits the R' factor on Q(t), which would fail to reset when Q(t) = 1. Option (c) inverts the control inputs (S'·R), confusing active-HIGH and active-LOW polarity. Option (d) requires Q(t) to be 1 for the next state to be 1, making it impossible to set from an initial zero state.",
     },
     {
       id: "q2",
@@ -31,7 +31,7 @@ Ten questions on latches, flip-flops, registers, counters, and computer memory. 
         { id: "d", text: "The mechanical contact is held at ground continuously by the cross-coupled NAND gates" },
       ],
       correctOptionId: "b",
-      explanation: "In an active-LOW NAND latch with pull-up resistors, the first microscopic contact between the switch wiper and terminal pulls that input to 0, immediately setting or resetting the latch. When contacts bounce into the air, both inputs return to 1, which is the quiescent Hold state (/S=1, /R=1). Thus, bounces alternate between action and hold without ever asserting the opposite input, producing a single clean edge.",
+      explanation: "Option (b) is correct: In an active-LOW NAND latch with pull-up resistors, the very first microscopic contact pulls that terminal to 0, setting or resetting the latch in nanoseconds. When mechanical elasticity bounces the contact into open air, pull-up resistors pull both inputs back to 1, which is the quiescent Hold state (/S = 1, /R = 1). Subsequent bounces alternate harmlessly between active and hold without ever asserting the opposite terminal. Option (a) is incorrect because debouncing here is entirely digital, not an analog RC filter. Option (c) is incorrect because an SR latch is unclocked and asynchronous. Option (d) is incorrect because the gates do not clamp the switch terminals to ground; ground is provided only by the mechanical common contact.",
     },
     {
       id: "q3",
@@ -43,7 +43,7 @@ Ten questions on latches, flip-flops, registers, counters, and computer memory. 
         { id: "d", text: "The setup time constraint is violated because the clock frequency is too low" },
       ],
       correctOptionId: "b",
-      explanation: "Because a gated D latch is transparent throughout the entire high duration of C, any state change on Q' loops back to D and causes Q to toggle again after one loop delay. The signal races around and around the loop, oscillating uncontrollably until C drops to 0, leaving an unpredictable state. Edge-triggered flip-flops solve this by sampling only at an infinitesimal edge.",
+      explanation: "Option (b) is correct: A gated D latch is transparent throughout the entire high duration of C (t_H). Because gate loop delay t_loop is typically much shorter than t_H (t_H >> t_loop), a change on Q' feeds back to D and causes Q to toggle repeatedly, oscillating uncontrollably until C drops to 0, which latches an arbitrary random value. Option (a) is incorrect because latches have actively driven push-pull outputs, not high impedance. Option (c) is incorrect because CMOS gates safely handle switching oscillations without thermal destruction. Option (d) is incorrect because low clock frequency exacerbates the race-around window rather than causing a setup failure.",
     },
     {
       id: "q4",
@@ -55,7 +55,7 @@ Ten questions on latches, flip-flops, registers, counters, and computer memory. 
         { id: "d", text: "It forces data input D to zero whenever the clock is high" },
       ],
       correctOptionId: "a",
-      explanation: "A master-slave flip-flop cascades two latches with an inverter on the clock line. When the clock is low, the master tracks D while the slave holds Q shut. On the rising edge, the master closes (locking D) before the slave opens (transmitting to Q). Because the two latches are never open at the same time, input D and output Q are completely isolated.",
+      explanation: "Option (a) is correct: The master-slave architecture cascades two latches controlled by complementary clock phases. When CLK = 0, the master tracks D while the slave is sealed shut holding output Q. On the rising clock edge, the master disconnects its input before the slave opens to transfer the captured bit. Because both latches are never transparent at the same time, an open combinational path from D to Q never exists. Option (b) confuses semiconductor gate flip-flops with dynamic RAM (DRAM) capacitive storage. Option (c) is incorrect because both stages share the identical clock frequency (with 180° inversion). Option (d) is incorrect because D is not modified or grounded; its input transmission gate simply closes.",
     },
     {
       id: "q5",
@@ -67,7 +67,7 @@ Ten questions on latches, flip-flops, registers, counters, and computer memory. 
         { id: "d", text: "Characteristic: Q(t+1) = T' · Q(t); Excitation: T = Q'(t) ⊕ Q(t+1)" },
       ],
       correctOptionId: "b",
-      explanation: "When T = 0, the state holds (Q_next = Q); when T = 1, the state inverts (Q_next = Q'). This is the exact definition of XOR: Q(t+1) = T ⊕ Q(t). Solving for the required input to achieve transition Q(t) -> Q(t+1) yields T = Q(t) ⊕ Q(t+1).",
+      explanation: "Option (b) is correct: When T = 0, the state holds (Q_next = Q); when T = 1, the state inverts (Q_next = Q'). This matches the XOR function: Q(t+1) = T ⊕ Q(t) = T Q' + T' Q. Solving for the input needed to produce transition Q(t) -> Q(t+1) gives T = Q(t) ⊕ Q(t+1) (T = 1 if the state changes, T = 0 if it holds). Option (a) fails to hold when T = 0 and produces an erroneous excitation (for 1 -> 1, 1 + 1 = 1, but hold requires T = 0). Option (c) uses an OR function, which fails to toggle when Q = 1. Option (d) can only hold 0 or clear, never setting Q to 1.",
     },
     {
       id: "q6",
@@ -79,7 +79,7 @@ Ten questions on latches, flip-flops, registers, counters, and computer memory. 
         { id: "d", text: "200 MHz" },
       ],
       correctOptionId: "a",
-      explanation: "The minimum clock period is bounded by the setup time constraint: T_min = t_cq + t_comb + t_su = 3 ns + 5 ns + 2 ns = 10 ns. Therefore, f_max = 1 / T_min = 1 / (10 × 10⁻⁹ s) = 100 MHz.",
+      explanation: "Option (a) is correct: The minimum allowable clock period is governed by the setup time constraint: T_min = t_cq + t_comb + t_su = 3 ns + 5 ns + 2 ns = 10 ns. Therefore, f_max = 1 / T_min = 1 / (10 × 10⁻⁹ s) = 100 MHz. Option (b) (125 MHz, T = 8 ns) results from forgetting the setup time t_su (3 + 5 = 8 ns). Option (c) (150 MHz) incorrectly subtracts delays. Option (d) (200 MHz, T = 5 ns) considers only combinational logic delay while ignoring the flip-flop clock-to-Q and setup times.",
     },
     {
       id: "q7",
@@ -91,7 +91,7 @@ Ten questions on latches, flip-flops, registers, counters, and computer memory. 
         { id: "d", text: "Multiplexers automatically double the operating clock frequency" },
       ],
       correctOptionId: "b",
-      explanation: "Placing a logic gate on the clock line delays the clock edge (clock skew) relative to the rest of the synchronous system and creates hazardous runt pulses if Load transitions when CLK = 1. Recirculating multiplexers keep the continuous system clock directly wired to all flip-flops, routing D_i = Load · I_i + Load' · Q_i safely in the data path.",
+      explanation: "Option (b) is correct: Inserting an AND gate into the clock tree adds propagation delay (clock skew) relative to ungated registers across the chip, and any transition on Load while CLK = 1 generates runt clock glitches that cause false clocking. Recirculating multiplexers keep the pure clock line wired directly to all flip-flops, implementing control safely in the data path (D_i = Load · I_i + Load' · Q_i). Option (a) is incorrect because a multiplexer requires 4–6 transistors compared to a simple gate. Option (c) is incorrect because recirculating registers still require a continuous clock. Option (d) is incorrect because multiplexers do not modify clock frequency.",
     },
     {
       id: "q8",
@@ -103,7 +103,7 @@ Ten questions on latches, flip-flops, registers, counters, and computer memory. 
         { id: "d", text: "12 states; each state requires a 4-input AND gate to decode" },
       ],
       correctOptionId: "b",
-      explanation: "An n-bit Johnson counter yields 2n states (4 × 2 = 8 states for a 4-bit register). Because bits fill with 1s from left to right and then clear with 0s from left to right, exactly one bit transitions between consecutive states (a Gray code property). This guarantees glitch-free decoding using simple 2-input AND gates.",
+      explanation: "Option (b) is correct: An n-bit Johnson counter yields 2n states (4 × 2 = 8 states for n = 4). Because bits shift in as 1s and then shift in as 0s, exactly one bit transitions between any two adjacent states (a single-distance Gray code property). This guarantees glitch-free state decoding using simple 2-input AND gates. Option (a) describes an n-bit ring counter (4 states, one-hot encoded). Option (c) describes a binary counter (2⁴ = 16 states), which requires carry logic. Option (d) is incorrect because the count is 8, not 12, and decoding requires only 2-input gates.",
     },
     {
       id: "q9",
@@ -115,7 +115,7 @@ Ten questions on latches, flip-flops, registers, counters, and computer memory. 
         { id: "d", text: "It violates the two's complement arithmetic representation" },
       ],
       correctOptionId: "b",
-      explanation: "In a ripple counter, each stage clocks the next, accumulating delays t_total = n · t_pd. During transitions where multiple bits flip (such as 0111 -> 1000), the counter ripples through intermediate false states (0110 -> 0100 -> 0000 -> 1000). Decoders attached to these outputs will produce spurious voltage glitches that falsely trigger other circuits.",
+      explanation: "Option (b) is correct: In a ripple counter, each stage clocks the next, accumulating delays t_total = n · t_pd. During multi-bit transitions (such as 0111 -> 1000), the flip-flops switch sequentially, creating temporary false states (0110 -> 0100 -> 0000 -> 1000) for several nanoseconds. Any combinational decoder attached to these outputs will produce spurious voltage spikes (glitches). Option (a) is incorrect because ripple counters operate on standard digital supply rails. Option (c) is incorrect because ripple counters can count down by clocking from Q' (or using positive-edge flip-flops). Option (d) is incorrect because counters represent raw binary values independent of signed arithmetic representations.",
     },
     {
       id: "q10",
@@ -127,7 +127,7 @@ Ten questions on latches, flip-flops, registers, counters, and computer memory. 
         { id: "d", text: "Each 1K chip receives 3 address lines, and data is transmitted serially" },
       ],
       correctOptionId: "b",
-      explanation: "Each 1K chip requires 10 address lines (2¹⁰ = 1024 words), so A_9..A_0 are shared in parallel across all chips. The upper 2 address lines (A_11, A_10) feed a 2-to-4 decoder that selects exactly one chip via its /CS input. Because unselected chips place their outputs in high impedance (Hi-Z), all four chips share the single 8-bit data bus without bus contention.",
+      explanation: "Option (b) is correct: Each 1K chip requires 10 address lines (2¹⁰ = 1024 words), so A_9..A_0 connect in parallel to all four chips to select the word within a chip. The upper 2 address lines (A_11, A_10) feed a 2-to-4 decoder whose active-LOW outputs connect to each chip's /CS pin. Exactly one chip is enabled at any time, while the other three chips place their outputs in High-Impedance (Hi-Z), eliminating bus contention on the shared data bus. Option (a) would enable all chips simultaneously, resulting in catastrophic bus contention. Option (c) inverts the address and data bus connections. Option (d) has incorrect address mathematics (3 address lines = 8 words) and confuses parallel RAM with serial memory.",
     },
   ]}
 />

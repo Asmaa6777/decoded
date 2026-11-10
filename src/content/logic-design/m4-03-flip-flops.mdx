@@ -314,6 +314,28 @@ $$
 > Notice that the clock period $T_c$ does **not** appear anywhere in the hold time equation!
 > If a circuit violates hold time, **slowing down the clock will not fix it**. Hold violations represent fatal structural race conditions that can only be resolved by inserting physical delay buffers into the data path.
 
+### 3. The Impact of Clock Skew ($\delta$)
+
+In physical integrated circuits, the clock signal does not reach every flip-flop at the exact same instant due to differences in physical trace lengths and gate loads. The time difference in clock arrival between two flip-flops is called **clock skew**:
+
+$$
+\delta = t_{\text{CLK2}} - t_{\text{CLK1}}
+$$
+
+- **Positive Skew ($\delta > 0$):** The clock arrives at FF 2 *later* than FF 1. This gives data more time to propagate, relaxing the setup constraint ($T_{c(min)} \ge t_{c-q} + t_{comb(max)} + t_{su} - \delta$). However, it makes the hold condition harder to satisfy: $t_{c-q(min)} + t_{comb(min)} \ge t_h + \delta$, increasing susceptibility to race-through errors.
+- **Negative Skew ($\delta < 0$):** The clock arrives at FF 2 *earlier* than FF 1. This improves hold margins but directly steals time from the available clock period, reducing $f_{max}$.
+
+## Common exam pitfalls and student mistakes
+
+When analyzing and designing sequential circuits with flip-flops, students frequently make these six errors:
+
+1. **Attempting to Fix Hold Time Violations by Lowering Clock Frequency:** Assuming that if a sequential path has a hold time violation ($t_{c-q(min)} + t_{comb(min)} < t_h$), running the system at a lower clock frequency (e.g. 10 MHz instead of 100 MHz) will fix the problem. The clock period $T_c$ does not appear in the hold inequality; hold violations represent a localized race between back-to-back flip-flops on the exact same clock edge. Only physical delay buffers inserted into the data line can resolve hold violations.
+2. **Confusing Synchronous Clocked Inputs with Asynchronous Direct Inputs:** Believing that asserting active-LOW direct Clear (/CLR) or direct Preset (/PRE) waits for the next active clock edge. Asynchronous inputs bypass the internal master-slave steering gates and force state changes immediately (within nanoseconds). Conversely, synchronous inputs ($D, T, J, K$) have no effect until the active clock transition occurs.
+3. **Leaving Active-LOW Direct Asynchronous Pins Floating:** Omitting connections on unused /PRE or /CLR pins. In physical CMOS or TTL logic, floating inputs can pick up high-frequency electromagnetic noise or drift into switching regions, triggering sporadic unexpected resets. Unused active-LOW inputs must be explicitly tied to $V_{CC}$ (logic 1).
+4. **Reversing Master and Slave Roles or Inversion Phases:** Misunderstanding which latch is open during clock phases. In a positive-edge master-slave flip-flop, the master latch is transparent when $CLK = 0$ (sampling $D$); on the $0 \to 1$ transition, the master isolates and the slave becomes enabled to drive $Q$. Swapping the clock polarities creates a negative-edge-triggered device.
+5. **Misinterpreting the JK Flip-Flop $(1, 1)$ Condition:** Confusing $J = 1, K = 1$ with the forbidden state of an SR latch. In a JK flip-flop, the feedback cross-coupling repurposes $(1, 1)$ to execute a deterministic toggle ($Q(t+1) = Q'(t)$), resolving the SR ambiguity.
+6. **Neglecting Propagation Delay Minimums in Hold Checks:** Using maximum propagation delays ($t_{c-q(max)}$ and $t_{comb(max)}$) when calculating hold time slack. Hold time checks analyze the fastest signal path; using maximum delays artificially conceals hold time violations. You must always use $t_{c-q(min)} + t_{comb(min)}$ for hold verification.
+
 ---
 
 ## Past-Exam Practice

@@ -258,6 +258,17 @@ You have reached the summit of digital logic design. Every computer processor is
 The [Microprocessors course](/courses/microprocessors/inside-the-8086) explores how these units execute real assembly code.
 </Callout>
 
+## Common exam pitfalls and student mistakes
+
+When analyzing and designing computer memory systems, students frequently encounter these six pitfalls:
+
+1. **Confusing Address Lines ($k$) with Data Lines ($n$) in Capacity Calculations:** Mistaking the number of address lines for total storage capacity. An address bus of $k$ lines addresses $2^k$ distinct memory words, each containing $n$ bits (total capacity $= 2^k \times n$ bits $= \frac{1}{8} \cdot 2^k \times n$ bytes). Confusing bits and bytes is another frequent exam calculation error.
+2. **Bus Contention from Overlapping Active Tri-State Drivers:** Failing to guarantee that only one memory chip or peripheral asserts its tri-state drivers onto the shared system data bus at any given instant. If two devices attempt to drive the bus simultaneously with conflicting logic levels (one driving $V_{CC}$ and the other driving GND), a low-impedance short circuit forms, causing heavy shoot-through currents, noise spikes, and hardware damage.
+3. **Misinterpreting Active-LOW Control Signal Polarities (/CS, /WE, /OE):** Assuming control inputs are active-HIGH. In real semiconductor memory, /CS (Chip Select), /WE (Write Enable), and /OE (Output Enable) are active-LOW. Leaving /CS tied HIGH (logic 1) places the chip in disabled standby with all outputs clamped in High-Impedance ($\text{Hi-Z}$). Asserting /WE = 0 initiates a Write, whereas /WE = 1 performs a Read.
+4. **Incorrect Address Partitioning in Memory Expansion:** When combining multiple $1\text{K} \times 8$ chips to build a $4\text{K} \times 8$ memory, wiring high-order address bits to individual chips and low-order bits to the bank decoder. The lowest $k_{chip}$ address bits ($A_9 \dots A_0$) must connect in parallel to all chips to address internal words, while the highest remaining address bits ($A_{11}, A_{10}$) drive the bank decoder.
+5. **Overlooking DRAM Refresh and Destructive Read Characteristics:** Assuming Dynamic RAM (DRAM) retains its stored bits indefinitely like Static RAM (SRAM) as long as power is applied. In DRAM, each 1T-1C cell stores charge on a microscopic capacitor that discharges through semiconductor leakage within milliseconds. DRAM requires periodic refresh cycles, and reading a cell discharges the capacitor, requiring immediate automatic restoration (write-back).
+6. **Neglecting External Decoder Propagation Delay in System Access Time:** Assuming the total memory read access time seen by the CPU is simply the chip datasheet access time $t_{AA}$. In modular memory systems, high-order address bits must first propagate through the chip-select decoder ($t_{decoder}$) before the chip is even enabled: the effective system access time is $\max(t_{AA}, t_{decoder} + t_{CO})$.
+
 ---
 
 ## Past-Exam Practice

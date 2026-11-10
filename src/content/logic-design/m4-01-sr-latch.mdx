@@ -103,10 +103,18 @@ $$
 Applying [De Morgan's theorems](/courses/logic-design/boolean-algebra#de-morgans-theorems-and-function-complementation):
 
 $$
-Q(t+1) = R' \cdot (S + Q(t)) = S R' + R' Q(t)
+Q(t+1) = R' \cdot ((S + Q(t))')' = R' \cdot (S + Q(t)) = S R' + R' Q(t)
 $$
 
-Under normal legal operation, $S$ and $R$ are never asserted simultaneously, meaning the condition $S \cdot R = 0$ must hold. When $S = 1$, legal operation guarantees $R = 0$ (so $R' = 1$), meaning $S R' = S$. Thus, the standard characteristic equation is:
+Under normal legal operation, $S$ and $R$ are never asserted simultaneously, meaning the condition $S \cdot R = 0$ must hold. We can formally simplify the term $S R'$:
+$$
+S = S \cdot 1 = S \cdot (R + R') = S R + S R'
+$$
+Because legal operation guarantees $S R = 0$:
+$$
+S = 0 + S R' = S R'
+$$
+Substituting $S R' = S$ yields the standard characteristic equation:
 
 $$
 Q(t+1) = S + R' Q(t) \qquad (S \cdot R = 0)
@@ -220,6 +228,17 @@ The output $Q$ produces a pristine, bounce-free digital step that can safely dri
 <Callout tone="neon" label="Hardware Foundation">
 Cross-coupled storage is the foundation of high-speed processor registers and on-chip caches. The 6-transistor (6T) [SRAM](/courses/computer-organization/ram-and-rom) cell used in modern L1 and L2 caches is a microscopic CMOS implementation of this cross-coupled loop, holding billions of bits simultaneously.
 </Callout>
+
+## Common exam pitfalls and student mistakes
+
+When analyzing and synthesizing basic latches and bistable memory elements, students frequently encounter these six pitfalls:
+
+1. **Confusing Active-HIGH (NOR) and Active-LOW (NAND) Hold and Trigger Polarities:** Writing $S = 0, R = 0$ as the quiescent hold state for a cross-coupled NAND latch, or expecting a high pulse ($1$) to trigger it. A NOR latch rests at $(0, 0)$ and sets on $(1, 0)$; a NAND latch rests at $(1, 1)$ and sets on active-LOW signals $(\bar{S} = 0, \bar{R} = 1)$.
+2. **Assuming $Q$ and $Q'$ are Always Inverses in the Forbidden State:** Stating that if $Q = 0$, $Q'$ must equal $1$ even when the forbidden input is applied. In a NOR SR latch with $S = 1, R = 1$, *both* NOR outputs are simultaneously pulled low ($Q = 0$ and $Q' = 0$). In a NAND latch with $\bar{S} = 0, \bar{R} = 0$, *both* NAND outputs are driven high ($Q = 1$ and $Q' = 1$). In both cases, complementary behavior is destroyed.
+3. **Overlooking the Simultaneous Release Hazard:** Neglecting what happens when returning from the forbidden state back to the hold state. If inputs transition simultaneously from $(1, 1) \to (0, 0)$ in a NOR latch (or $(0, 0) \to (1, 1)$ in a NAND latch), both gates enter a race condition. Because both gates attempt to switch at the same time, the outputs oscillate or settle into an unpredictable state governed by microscopic transistor imbalances and thermal noise (metastability).
+4. **Violating Minimum Pulse Width ($t_{w(min)}$):** Applying an input pulse shorter than the loop propagation delay ($t_w < 2t_{pd}$). A narrow pulse terminates before feedback can reinforce the new state, leaving the latch in its original state or inducing analog metastability.
+5. **Confusing Transparent Latches with Edge-Triggered Flip-Flops:** Assuming that an SR latch only changes state on a clock transition. Latches are level-sensitive: they react continuously to their inputs as long as the inputs are asserted.
+6. **Misinterpreting Don't-Care ($\text{X}$) Entries in Excitation Tables:** Believing that an $\text{X}$ in an excitation table means the physical pin may float or be disconnected. In digital logic synthesis, $\text{X}$ signifies a degree of freedom for Karnaugh map optimization; in the physical circuit, the input must still be tied to a valid logic 0 or logic 1 voltage level.
 
 ---
 
