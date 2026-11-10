@@ -2,84 +2,132 @@ import { Quiz } from "@/components/mdx/MdxComponents";
 
 # Quiz: Combinational Building Blocks
 
-Six questions on adders and data routing. Get 5 right to pass.
+Ten questions testing adders, carry-lookahead arithmetic, decoders, encoders, magnitude comparators, and multiplexers. Score 8 or more to pass.
 
 <Quiz
   courseSlug="logic-design"
   lessonSlug="building-blocks-quiz"
-  passThreshold={5/6}
+  passThreshold={8/10}
   questions={[
     {
       id: "q1",
-      prompt: "A half adder's two outputs come from which two gates?",
+      prompt: "A half adder computes sum and carry for two 1-bit inputs (A and B), while a full adder includes an incoming carry (Cin). Which statement regarding their Boolean expressions and gate structures is correct?",
       options: [
-        { id: "a", text: "Sum from OR, carry from AND" },
-        { id: "b", text: "Sum from XOR, carry from AND" },
-        { id: "c", text: "Sum from AND, carry from XOR" },
-        { id: "d", text: "Sum from XNOR, carry from NAND" },
+        { id: "a", text: "A half adder produces Sum = A ⊕ B and Carry = AB; a full adder can be constructed from two half adders and one OR gate with Sum = A ⊕ B ⊕ Cin and Cout = AB + (A ⊕ B)Cin" },
+        { id: "b", text: "A half adder requires 3 gates, whereas a full adder requires 6 XOR gates and cannot be synthesized from half adders" },
+        { id: "c", text: "A half adder carry is A + B, whereas a full adder carry is A ⊕ B ⊕ Cin" },
+        { id: "d", text: "A full adder requires an XOR gate to combine the carries from its two half adders because the carries can both be 1 simultaneously" },
       ],
-      correctOptionId: "b",
-      explanation: "1 + 1 gives sum 0 and carry 1. Sum is 1 only when the inputs differ (XOR), and carry only when both are 1 (AND).",
+      correctOptionId: "a",
+      explanation: "A half adder computes Sum = A ⊕ B and Carry = AB using one XOR gate and one AND gate. A full adder adds Cin by chaining two half adders: the first adds A and B, and the second adds that intermediate sum to Cin, producing Sum = A ⊕ B ⊕ Cin. The final carry Cout = AB + (A ⊕ B)Cin is formed by combining the two intermediate carries through an OR gate.",
     },
     {
       id: "q2",
-      prompt: "A full adder gets A=1, B=0, Cin=1. What are Sum and Cout?",
+      prompt: "When building a full adder from two half adders (HA1 with sum S1 = A ⊕ B, carry C1 = AB; and HA2 with sum S = S1 ⊕ Cin, carry C2 = S1 · Cin), why can an OR gate be used to combine C1 and C2 instead of an XOR gate?",
       options: [
-        { id: "a", text: "Sum 0, Cout 1" },
-        { id: "b", text: "Sum 1, Cout 0" },
-        { id: "c", text: "Sum 1, Cout 1" },
-        { id: "d", text: "Sum 0, Cout 0" },
+        { id: "a", text: "Because C1 and C2 are mutually exclusive (C1 · C2 = 0), so C1 + C2 and C1 ⊕ C2 evaluate to identical values for all input combinations" },
+        { id: "b", text: "Because XOR gates cannot physically connect to the output of an AND gate in CMOS silicon" },
+        { id: "c", text: "Because C1 and C2 are always both 1 whenever A = 1 and B = 1" },
+        { id: "d", text: "Because an OR gate has a lower logic threshold voltage than an XOR gate" },
       ],
       correctOptionId: "a",
-      explanation: "1 + 0 + 1 = 2, which is 10 in binary: carry 1, sum 0.",
+      explanation: "Evaluating C1 · C2 yields (AB) · ((A ⊕ B)Cin) = AB(A'B + AB')Cin = 0. Because C1 = 1 requires A = B = 1, which forces A ⊕ B = 0, C2 is strictly 0 whenever C1 is 1. Since C1 and C2 can never simultaneously equal 1, the condition C1 = C2 = 1 never occurs, meaning C1 + C2 and C1 ⊕ C2 produce the exact same truth table.",
     },
     {
       id: "q3",
-      prompt: "Why is a ripple-carry adder slow?",
+      prompt: "In an n-bit parallel adder-subtractor circuit with mode control line M, how does setting M = 1 configure the circuit to perform two's complement subtraction A - B?",
       options: [
-        { id: "a", text: "It uses too many XOR gates" },
-        { id: "b", text: "Each stage must wait for the carry from the stage below" },
-        { id: "c", text: "It can only add one bit per clock cycle" },
-        { id: "d", text: "It has to convert to decimal first" },
+        { id: "a", text: "The XOR gates act as controlled inverters producing Bi ⊕ 1 = Bi' (one's complement), and setting carry-in C0 = M = 1 adds 1, completing two's complement negation (A + B' + 1)" },
+        { id: "b", text: "The XOR gates pass Bi unmodified, but the full adders invert their internal sum bits" },
+        { id: "c", text: "M = 1 inverts the A operand to compute -A + B, then negates the final result" },
+        { id: "d", text: "The circuit disconnects the carry chain and routes the inputs into an internal array of half subtractors" },
       ],
-      correctOptionId: "b",
-      explanation: "Delay adds up along the carry chain, and the clock must allow for the longest possible chain.",
+      correctOptionId: "a",
+      explanation: "By mathematical identity, A - B = A + (-B) = A + B' + 1. An XOR gate acts as a controlled inverter: when M = 1, Bi ⊕ 1 = Bi', complementing every bit of B. Feeding M = 1 into the least-significant carry-in (C0 = 1) adds the required +1, executing exact two's complement subtraction with the same adder hardware.",
     },
     {
       id: "q4",
-      prompt: "In look-ahead carry, a stage generates a carry when:",
+      prompt: "A 4-bit parallel adder computes the sum of A = 0101₂ (+5₁₀) and B = 0100₂ (+4₁₀) with C0 = 0. What are the values of the carry into the sign bit (C3), carry out of the sign bit (C4), and the signed overflow flag V?",
       options: [
-        { id: "a", text: "A and B are both 1" },
-        { id: "b", text: "A or B is 1" },
-        { id: "c", text: "A and B differ" },
-        { id: "d", text: "The carry-in is 1" },
+        { id: "a", text: "C3 = 1, C4 = 0, and V = 1 (signed overflow occurred because the sum +9 exceeds the 4-bit signed maximum +7)" },
+        { id: "b", text: "C3 = 0, C4 = 0, and V = 0 because both operands are positive numbers" },
+        { id: "c", text: "C3 = 1, C4 = 1, and V = 0 because the carry ripples completely out of the register" },
+        { id: "d", text: "C3 = 0, C4 = 1, and V = 1 because unsigned overflow occurred" },
       ],
       correctOptionId: "a",
-      explanation: "Generate is AB. If only one input is 1, the stage can only propagate a carry that arrives from below.",
+      explanation: "At bit 0: 1 + 0 = 1, C1 = 0. At bit 1: 0 + 0 = 0, C2 = 0. At bit 2: 1 + 1 = 0, generating carry C3 = 1. At bit 3 (sign stage): A3 = 0, B3 = 0, C3 = 1 produces sum bit S3 = 1 and carry out C4 = 0. The signed overflow flag is V = C4 ⊕ C3 = 0 ⊕ 1 = 1. The result 1001₂ is -7 in two's complement, demonstrating that +9 erroneously overflowed into a negative number.",
     },
     {
       id: "q5",
-      prompt: "A decoder has 5 inputs. How many output lines does it have?",
+      prompt: "How does the worst-case propagation delay of an n-bit Ripple-Carry Adder (RCA) compare with a multilevel Hierarchical Carry-Lookahead Adder (CLA) as word width n scales to 32 or 64 bits?",
       options: [
-        { id: "a", text: "5" },
-        { id: "b", text: "10" },
-        { id: "c", text: "25" },
-        { id: "d", text: "32" },
+        { id: "a", text: "Ripple-Carry delay scales linearly as O(n), whereas hierarchical Carry-Lookahead delay scales logarithmically as O(log n)" },
+        { id: "b", text: "Both adders scale linearly as O(n), but the CLA uses faster ECL silicon transistors" },
+        { id: "c", text: "Ripple-Carry scales as O(n²), whereas a single-level CLA scales as O(1) without any fan-in limits" },
+        { id: "d", text: "Ripple-Carry scales logarithmically as O(log n), whereas CLA scales as O(√n)" },
       ],
-      correctOptionId: "d",
-      explanation: "Each of the 2⁵ possible patterns gets its own output line.",
+      correctOptionId: "a",
+      explanation: "In a ripple-carry adder, each stage must wait for the carry from the preceding stage, resulting in a critical path that grows linearly: t_delay = 2nτ = O(n). In a hierarchical CLA, carries are grouped into 4-bit blocks with second-level lookahead units, resulting in logarithmic delay growth: t_delay = O(log n).",
     },
     {
       id: "q6",
-      prompt: "How many select lines does a multiplexer with 16 inputs need?",
+      prompt: "In a Carry-Lookahead Adder, how are the Carry Generate signal Gi and Carry Propagate signal Pi defined for stage i, and what do they physically represent?",
       options: [
-        { id: "a", text: "2" },
-        { id: "b", text: "4" },
-        { id: "c", text: "8" },
-        { id: "d", text: "16" },
+        { id: "a", text: "Gi = Ai Bi (stage i generates a carry regardless of incoming carry), and Pi = Ai ⊕ Bi (stage i propagates incoming carry Ci to Ci+1)" },
+        { id: "b", text: "Gi = Ai + Bi and Pi = Ai Bi" },
+        { id: "c", text: "Gi = Ai ⊕ Bi ⊕ Ci and Pi = Ai' Bi" },
+        { id: "d", text: "Gi = (Ai ⊕ Bi)' and Pi = Ai Bi Ci" },
       ],
-      correctOptionId: "b",
-      explanation: "2⁴ = 16, so 4 select bits can name any one of the inputs.",
+      correctOptionId: "a",
+      explanation: "Generate Gi = Ai Bi is 1 when both inputs are 1, forcing an outgoing carry regardless of Ci. Propagate Pi = Ai ⊕ Bi is 1 when exactly one input is 1, causing an incoming carry Ci = 1 to pass directly through the stage. Pi = Ai ⊕ Bi is preferred over Ai + Bi in hardware because the XOR output is reused to compute sum bit Si = Pi ⊕ Ci.",
+    },
+    {
+      id: "q7",
+      prompt: "The 74LS138 is a 3-to-8 line decoder with active-LOW outputs (Y0' ... Y7') and three enable pins: G1 (active-HIGH), G2A' (active-LOW), and G2B' (active-LOW). If G1 = 1, G2A' = 0, G2B' = 0, and address inputs CBA = 101₂ (5₁₀), what are the output states?",
+      options: [
+        { id: "a", text: "Output Y5' = 0, and all other seven outputs (Y0'–Y4', Y6', Y7') are 1" },
+        { id: "b", text: "Output Y5' = 1, and all other seven outputs are 0" },
+        { id: "c", text: "All outputs are forced to 1 because G2A' and G2B' are grounded" },
+        { id: "d", text: "Outputs Y1' and Y4' are 0 because 101₂ is the sum of 4 and 1" },
+      ],
+      correctOptionId: "a",
+      explanation: "The enable condition is G1 · (G2A')' · (G2B')' = 1 · 1 · 1 = 1, so the chip is enabled. For input CBA = 101₂ = 5₁₀, the decoder selects channel 5. Because the outputs are active-LOW, the selected line Y5' drops to logic 0, while all unselected lines sit at logic 1.",
+    },
+    {
+      id: "q8",
+      prompt: "A circuit uses an active-LOW 3-to-8 decoder (like the 74LS138) to synthesize the Boolean function F(A, B, C) = ∑ m(1, 3, 7). How should the decoder outputs be connected to realize F?",
+      options: [
+        { id: "a", text: "Connect decoder outputs Y1', Y3', and Y7' directly into a 3-input NAND gate" },
+        { id: "b", text: "Connect decoder outputs Y1', Y3', and Y7' into a 3-input OR gate" },
+        { id: "c", text: "Connect decoder outputs Y0', Y2', Y4', Y5', and Y6' into a 5-input AND gate" },
+        { id: "d", text: "Invert all outputs with NOT gates, then connect Y1, Y3, and Y7 to a NOR gate" },
+      ],
+      correctOptionId: "a",
+      explanation: "An active-LOW decoder produces complemented minterms: Yi' = mi'. By De Morgan's laws, NANDing the selected active-LOW outputs gives (Y1' · Y3' · Y7')' = (m1' · m3' · m7')' = m1 + m3 + m7 = F. Zero external inverters or OR gates are required.",
+    },
+    {
+      id: "q9",
+      prompt: "A 4-to-2 priority encoder has inputs D0 (lowest priority) through D3 (highest priority), outputs A1 A0, and a Valid output V. If inputs D3 D2 D1 D0 = 0110₂, what will the circuit output?",
+      options: [
+        { id: "a", text: "A1 = 1, A0 = 0, and V = 1 (input D2 takes priority over D1, outputting binary code 2 = 10₂)" },
+        { id: "b", text: "A1 = 0, A0 = 1, and V = 1 because D1 is physically closer to D0" },
+        { id: "c", text: "A1 = 1, A0 = 1, and V = 1 because the OR combination of inputs 1 and 2 produces code 3" },
+        { id: "d", text: "A1 = 0, A0 = 0, and V = 0 because multiple active inputs trigger an error state" },
+      ],
+      correctOptionId: "a",
+      explanation: "In a priority encoder, lower-priority asserted inputs are treated as don't-cares when a higher-priority input is active. Since D2 is active and D3 is 0, D2 takes precedence over D1, producing output code A1 A0 = 10₂ = 2₁₀. The Valid bit V = 1 indicates that at least one valid input line is asserted.",
+    },
+    {
+      id: "q10",
+      prompt: "Using Shannon's expansion theorem to implement the 3-variable function F(A, B, C) = ∑ m(0, 2, 6, 7) on a 4-to-1 multiplexer with select lines S1 = A and S0 = B, what signals must connect to data inputs I0, I1, I2, and I3?",
+      options: [
+        { id: "a", text: "I0 = C', I1 = C', I2 = 0, and I3 = 1" },
+        { id: "b", text: "I0 = C, I1 = C, I2 = 1, and I3 = 0" },
+        { id: "c", text: "I0 = 1, I1 = 0, I2 = 1, and I3 = 1" },
+        { id: "d", text: "I0 = C', I1 = 0, I2 = C, and I3 = 1" },
+      ],
+      correctOptionId: "a",
+      explanation: "Group minterms by select code (AB): For AB = 00 (m0, m1): m0 = 1, m1 = 0 → F is 1 only when C = 0, so I0 = C'. For AB = 01 (m2, m3): m2 = 1, m3 = 0 → F is 1 only when C = 0, so I1 = C'. For AB = 10 (m4, m5): m4 = 0, m5 = 0 → F is 0 regardless of C, so I2 = 0. For AB = 11 (m6, m7): m6 = 1, m7 = 1 → F is 1 regardless of C, so I3 = 1.",
     },
   ]}
 />

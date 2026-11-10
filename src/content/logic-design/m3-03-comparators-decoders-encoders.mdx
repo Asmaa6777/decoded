@@ -1,51 +1,389 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { EqualityCircuit, DecoderCircuit } from "@/components/mdx/CircuitVisualizers";
 import { PriorityEncoder } from "@/components/mdx/LogicVisualizers";
 
 # Comparators, Decoders and Encoders
 
-Three small building blocks turn up all over a computer. Each one solves a simple everyday problem.
+Individual logic gates make single-bit decisions. To construct practical microprocessors, digital systems combine these gates into Medium-Scale Integration (MSI) combinational building blocks. Three of the most ubiquitous building blocks are **comparators**, **decoders**, and **encoders**.
 
-## Comparators: are these the same?
+Each component performs a foundational data-routing or decision-making task: comparators determine relative numerical order, decoders activate a unique channel from an encoded binary address, and encoders compress multiple active status lines into a compact binary representation.
 
-XNOR outputs 1 when two bits match. To compare whole numbers, put one XNOR on each pair of bits and AND the results. All the bits must match.
+## Magnitude Comparators
+
+A **magnitude comparator** is a combinational circuit that compares two binary numbers, $A$ and $B$, to determine their relative algebraic magnitude. The circuit produces three mutually exclusive binary outputs:
+- $A > B$ (active when $A$ is strictly greater than $B$)
+- $A = B$ (active when $A$ equals $B$)
+- $A < B$ (active when $A$ is strictly less than $B$)
+
+### 1-bit comparator
+
+For two single-bit numbers $A$ and $B$, the comparison truth table is:
+
+| $A$ | $B$ | $A > B$ | $A = B$ | $A < B$ |
+|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | 1 | 0 |
+| 0 | 1 | 0 | 0 | 1 |
+| 1 | 0 | 1 | 0 | 0 |
+| 1 | 1 | 0 | 1 | 0 |
+
+The Boolean equations are derived directly:
+- $A = B$ is 1 when both bits are 0 or both bits are 1. This is the [Exclusive-NOR (XNOR) gate](/courses/logic-design/logic-gates#exclusive-or-xor-and-exclusive-nor-xnor):
+  $$
+  (A = B) = (A \oplus B)' = AB + A'B'
+  $$
+- $A > B$ is 1 only when $A = 1$ and $B = 0$:
+  $$
+  (A > B) = AB'
+  $$
+- $A < B$ is 1 only when $A = 0$ and $B = 1$:
+  $$
+  (A < B) = A'B
+  $$
 
 <EqualityCircuit />
 
-To find out which number is bigger, look at it the way you'd compare 742 and 751: start from the left. If the top bits differ, whichever has the 1 is greater, and you're done. If they match, move one bit to the right. A **comparator** chip gives three outputs: `A>B`, `A=B` and `A<B`. For $A = 0110$ and $B = 0011$, the second bit from the left decides it, so `A>B` goes high.
+### 4-bit magnitude comparator
+
+Comparing two 4-bit numbers, $A = A_3 A_2 A_1 A_0$ and $B = B_3 B_2 B_1 B_0$, follows the same hierarchical procedure used in human arithmetic: start at the most significant bit (MSB) and proceed rightward toward the least significant bit (LSB).
+
+First, define the bitwise equivalence function $x_i$ for each bit position $i \in \{0, 1, 2, 3\}$:
+$$
+x_i = (A_i \oplus B_i)' = A_i B_i + A_i' B_i'
+$$
+The signal $x_i = 1$ if and only if bit $A_i$ matches bit $B_i$.
+
+1. **Equality ($A = B$):**
+   $A$ equals $B$ if and only if every single pair of bits matches simultaneously:
+   $$
+   (A = B) = x_3 \cdot x_2 \cdot x_1 \cdot x_0
+   $$
+
+2. **Greater Than ($A > B$):**
+   $A$ is greater than $B$ if:
+   - $A_3 > B_3$ ($A_3 B_3' = 1$), OR
+   - $A_3 = B_3$ and $A_2 > B_2$ ($x_3 A_2 B_2' = 1$), OR
+   - $A_3 = B_3$ and $A_2 = B_2$ and $A_1 > B_1$ ($x_3 x_2 A_1 B_1' = 1$), OR
+   - $A_3 = B_3$ and $A_2 = B_2$ and $A_1 = B_1$ and $A_0 > B_0$ ($x_3 x_2 x_1 A_0 B_0' = 1$).
+
+   Summing these disjoint conditions:
+   $$
+   (A > B) = A_3 B_3' + x_3 A_2 B_2' + x_3 x_2 A_1 B_1' + x_3 x_2 x_1 A_0 B_0'
+   $$
+
+3. **Less Than ($A < B$):**
+   By exact symmetry:
+   $$
+   (A < B) = A_3' B_3 + x_3 A_2' B_2 + x_3 x_2 A_1' B_1 + x_3 x_2 x_1 A_0' B_0
+   $$
+
+### Cascading comparators (MSI IC 74LS85)
+
+The standard **74LS85** is a commercial 4-bit magnitude comparator. To compare 8-bit, 12-bit, or 16-bit words, multiple 74LS85 chips are cascaded in series.
+
+Each chip features three cascading expansion inputs: $I_{A>B}, I_{A=B}, I_{A<B}$. The higher-order comparator inspects its 4 MSBs:
+- If its 4 MSBs are unequal ($A > B$ or $A < B$), the higher chip drives the final outputs directly.
+- If its 4 MSBs are strictly equal ($x_3 x_2 x_1 x_0 = 1$), the higher chip looks at its cascading inputs, passing along the decision made by the lower-order comparator!
+- For the lowest-order chip in the chain, $I_{A=B}$ is tied to logic 1 ($V_{CC}$), and $I_{A>B}$ and $I_{A<B}$ are tied to logic 0 (GND).
 
 ## Decoders: pick exactly one
 
-Think of an apartment block's panel of doorbells. You enter a flat number in binary and exactly one bell rings. A **decoder** takes an $n$-bit number and activates one of $2^n$ output lines.
+A **decoder** is a combinational logic circuit that detects the presence of a specific binary code at its inputs and activates exactly one output line corresponding to that code.
+
+In general, an **$n$-to-$2^n$ line decoder** (or $n$-to-$m$ decoder where $m \le 2^n$) takes $n$ binary input lines and activates one of $2^n$ unique output lines. Each output represents one unique [minterm](/courses/logic-design/sop-and-pos#canonical-representations-minterms-and-maxterms) of the $n$ input variables.
+
+### 2-to-4 line decoder with enable
+
+A 2-to-4 decoder takes two select inputs ($A, B$) and an **Enable** input ($E$). When $E = 0$, all outputs are forced to 0 (disabled). When $E = 1$, exactly one output goes high:
+
+| $E$ | $A$ | $B$ | $D_0$ | $D_1$ | $D_2$ | $D_3$ | Selected Minterm |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 0 | X | X | 0 | 0 | 0 | 0 | None (Disabled) |
+| 1 | 0 | 0 | **1** | 0 | 0 | 0 | $m_0 = A'B'$ |
+| 1 | 0 | 1 | 0 | **1** | 0 | 0 | $m_1 = A'B$ |
+| 1 | 1 | 0 | 0 | 0 | **1** | 0 | $m_2 = AB'$ |
+| 1 | 1 | 1 | 0 | 0 | 0 | **1** | $m_3 = AB$ |
+
+The logic equations are simple AND gates gating the minterms:
+$$
+D_0 = E \cdot A' B', \quad D_1 = E \cdot A' B, \quad D_2 = E \cdot A B', \quad D_3 = E \cdot A B
+$$
 
 <DecoderCircuit />
 
-Each output is an AND gate wired to recognise a single pattern. To detect `1011`, invert the input that should be 0:
+### Active-LOW decoders (NAND-based)
 
+In practical TTL and CMOS integrated circuits, decoders are almost always fabricated with **active-LOW** outputs using NAND gates instead of AND gates:
+
+| $E$ | $A$ | $B$ | $\overline{Y_0}$ | $\overline{Y_1}$ | $\overline{Y_2}$ | $\overline{Y_3}$ |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 0 | X | X | 1 | 1 | 1 | 1 |
+| 1 | 0 | 0 | **0** | 1 | 1 | 1 |
+| 1 | 0 | 1 | 1 | **0** | 1 | 1 |
+| 1 | 1 | 0 | 1 | 1 | **0** | 1 |
+| 1 | 1 | 1 | 1 | 1 | 1 | **0** |
+
+The selected line drops to logic 0, while all unselected lines sit at logic 1:
 $$
-X = A_3 A_2' A_1 A_0
-$$
-
-Using a NAND instead gives an **active-low** output, which sits at 1 and drops to 0 when selected. Many real chips do this, because a low signal is less easily triggered by accident.
-
-<Callout tone="neon" label="This is how memory works">
-When a CPU asks for address 5, a decoder lights up word 5 and leaves all the others alone. You'll wire this up yourself in the [memory unit lesson](/courses/logic-design/memory-unit). A CPU's [control unit](/courses/computer-architecture/control-unit) also uses decoders to turn an instruction's bits into the right control signals.
-</Callout>
-
-A common special case is the **BCD-to-7-segment decoder**, which takes one decimal digit in BCD and lights the segments of a digital display. Those are the lit bars on a microwave clock.
-
-## Encoders: the reverse
-
-An encoder does the opposite. It has many input lines, one of which is active, and it outputs that line's number in binary. A calculator keypad is the classic example: press 7 and the wires carry `0111`.
-
-Each output bit is just an OR of the inputs whose code has a 1 in that position:
-
-$$
-A_3 = 8 + 9 \qquad A_2 = 4 + 5 + 6 + 7 \qquad A_1 = 2 + 3 + 6 + 7 \qquad A_0 = 1 + 3 + 5 + 7 + 9
+\overline{Y_i} = (E \cdot m_i)'
 $$
 
-What if somebody presses two keys at once? A plain encoder would output a mix of both codes, which is garbage. A **priority encoder** reports only the highest input and ignores the rest. Try holding a few keys.
+> [!NOTE]
+> **Why active-LOW is standard in hardware:**
+> Active-LOW signals ($\overline{\text{CS}}$, $\overline{\text{CE}}$, $\overline{\text{OE}}$) dominate digital systems for three reasons:
+> 1. NAND gates are physically faster and smaller than AND gates in CMOS and TTL silicon.
+> 2. Bipolar TTL and NMOS transistors sink far more current to ground ($I_{OL}$) than they can source from $V_{CC}$ ($I_{OH}$), making low-driven signals much more robust against noise.
+> 3. Active-LOW outputs allow multiple devices to connect in a "wired-OR" configuration with pull-up resistors for shared bus arbitration.
+
+### Commercial IC 74LS138 (3-to-8 line decoder)
+
+The **74LS138** is the industry-standard 3-to-8 line decoder. It takes three binary address inputs ($A, B, C$, where $C$ is MSB) and drives eight active-LOW outputs ($\overline{Y_0}$ through $\overline{Y_7}$).
+
+It features three dedicated enable inputs to make cascading effortless:
+- One active-HIGH enable: $G_1$
+- Two active-LOW enables: $\overline{G_{2A}}$ and $\overline{G_{2B}}$
+
+The chip is enabled if and only if all three conditions are satisfied simultaneously:
+$$
+\text{Enable} = G_1 \cdot \overline{G_{2A}}' \cdot \overline{G_{2B}}'
+$$
+
+```
+            ┌────────────────────────┐
+   A ───────┤ A                      │
+   B ───────┤ B                      ├─── Y0' = (A' B' C')'
+   C ───────┤ C                      ├─── Y1' = (A  B' C')'
+            │                        ├─── Y2' = (A' B  C')'
+  G1 ───────┤ G1       74LS138       ├─── Y3' = (A  B  C')'
+G2A' ───────┤ G2A'                   ├─── Y4' = (A' B' C )'
+G2B' ───────┤ G2B'                   ├─── Y5' = (A  B' C )'
+            │                        ├─── Y6' = (A' B  C )'
+            │                        ├─── Y7' = (A  B  C )'
+            └────────────────────────┘
+```
+
+### Decoder expansion: Building a 4-to-16 decoder
+
+To decode 4 input bits ($A_3 A_2 A_1 A_0$), we require sixteen outputs ($2^4 = 16$). We can build a complete 4-to-16 line decoder using two 74LS138 3-to-8 decoders **without a single external gate**:
+
+1. Connect the lower 3 address bits ($A_2, A_1, A_0$) in parallel to inputs $C, B, A$ of both decoders.
+2. Connect MSB address bit $A_3$ directly to active-HIGH enable $G_1$ of Decoder 1 (handling outputs $\overline{Y_8}\dots\overline{Y_{15}}$).
+3. Connect $A_3$ directly to active-LOW enable $\overline{G_{2A}}$ of Decoder 0 (handling outputs $\overline{Y_0}\dots\overline{Y_7}$).
+4. Tie the unused enables to their active states ($V_{CC}$ for $G_1$, GND for $\overline{G_{2A}}, \overline{G_{2B}}$).
+
+- When $A_3 = 0$: Decoder 0 is enabled, selecting one output from $\overline{Y_0}$ to $\overline{Y_7}$; Decoder 1 is disabled (all outputs 1).
+- When $A_3 = 1$: Decoder 1 is enabled, selecting one output from $\overline{Y_8}$ to $\overline{Y_{15}}$; Decoder 0 is disabled (all outputs 1).
+
+### Arbitrary Boolean logic synthesis with decoders
+
+Because an $n$-to-$2^n$ decoder produces all $2^n$ minterms of its input variables, **any arbitrary Boolean function can be implemented using a single decoder and an OR gate**:
+$$
+F(A, B, C) = \sum m(1, 4, 7) \implies \text{connect decoder outputs } D_1, D_4, D_7 \text{ to an OR gate}
+$$
+
+When using standard active-LOW decoders, we combine outputs with a **NAND gate** instead of an OR gate! By [De Morgan's laws](/courses/logic-design/boolean-algebra#de-morgans-theorems-and-function-complementation):
+$$
+F = \sum m_i = \Big(\prod m_i'\Big)' = \Big(\prod \overline{Y_i}\Big)' = \text{NAND}(\overline{Y_i})
+$$
+Connecting the active-LOW outputs of a 74LS138 directly to a NAND gate synthesizes the function with zero inverters.
+
+### BCD-to-7-Segment decoder/driver
+
+A specialized decoder found in instruments, digital clocks, and calculators is the **BCD-to-7-segment decoder** (such as the **74LS47**).
+
+It takes a 4-bit Binary-Coded Decimal ([BCD](/courses/logic-design/codes-and-floating-point#bcd-decimal-digits-one-at-a-time)) digit ($0000_2$ to $1001_2$) and drives the seven individual LED segments ($a, b, c, d, e, f, g$) arranged in a figure-eight:
+
+```
+        a
+      ┌───┐
+    f │   │ b
+      ├───┤ ◄── g
+    e │   │ c
+      └───┘
+        d
+```
+
+For example, to display digit `0`, segments $a, b, c, d, e, f$ are illuminated, while segment $g$ remains off.
+
+## Encoders
+
+An **encoder** performs the inverse operation of a decoder. It takes up to $2^n$ input lines, exactly one of which is asserted at any time, and produces an $n$-bit binary output code representing which line is active.
+
+### Standard binary encoder
+
+A 4-to-2 binary encoder takes four input lines ($D_0, D_1, D_2, D_3$) and outputs a 2-bit code $A_1 A_0$:
+
+| $D_3$ | $D_2$ | $D_1$ | $D_0$ | $A_1$ | $A_0$ |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | 1 | 0 | 0 |
+| 0 | 0 | 1 | 0 | 0 | 1 |
+| 0 | 1 | 0 | 0 | 1 | 0 |
+| 1 | 0 | 0 | 0 | 1 | 1 |
+
+The Boolean equations are simple OR gates:
+$$
+A_1 = D_2 + D_3, \qquad A_0 = D_1 + D_3
+$$
+
+### The two fatal flaws of standard encoders
+
+Standard encoders suffer from two severe operational ambiguities:
+1. **Multiple Active Inputs:** If two or more inputs go high simultaneously (for example, if a user presses keys 2 and 3 at once), the OR equations produce $A_1 = 1 + 1 = 1$ and $A_0 = 0 + 1 = 1$, outputting code $11_2 = 3$. If keys 1 and 2 are pressed, the output is $A_1 = 1, A_0 = 1$, falsely signaling key 3! Standard encoders produce corrupted data when inputs conflict.
+2. **All-Zeros Ambiguity:** If all inputs are 0 ($D_3 D_2 D_1 D_0 = 0000$), the output is $A_1 = 0, A_0 = 0$. This is identical to the valid code for input $D_0 = 1$. The circuit cannot distinguish between "input 0 active" and "no inputs active."
+
+### Priority Encoders
+
+A **priority encoder** resolves both flaws:
+1. It establishes a strict priority order among inputs. If multiple inputs are asserted at once, the input with the **highest priority** (typically the highest index) determines the output code. Lower-priority inputs are treated as don't-cares ($\text{X}$).
+2. It adds a **Valid Output bit ($V$)** that goes to logic 1 whenever at least one input is active, and drops to 0 when all inputs are inactive.
+
+### 4-to-2 Priority Encoder truth table and derivation
+
+Assigning $D_3$ the highest priority and $D_0$ the lowest priority:
+
+| $D_3$ | $D_2$ | $D_1$ | $D_0$ | $A_1$ | $A_0$ | Valid ($V$) |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | 0 | X | X | **0** |
+| 0 | 0 | 0 | 1 | 0 | 0 | **1** |
+| 0 | 0 | 1 | X | 0 | 1 | **1** |
+| 0 | 1 | X | X | 1 | 0 | **1** |
+| 1 | X | X | X | 1 | 1 | **1** |
+
+Deriving the minimal expressions using Karnaugh maps:
+- **Valid Bit ($V$):** Active if any input is 1:
+  $$
+  V = D_3 + D_2 + D_1 + D_0
+  $$
+- **Bit $A_1$:** Is 1 when $D_3 = 1$ OR ($D_2 = 1$ and $D_3 = 0$):
+  $$
+  A_1 = D_3 + D_2
+  $$
+- **Bit $A_0$:** Is 1 when $D_3 = 1$ OR ($D_1 = 1$ while $D_3 = 0$ and $D_2 = 0$):
+  $$
+  A_0 = D_3 + D_2' D_1
+  $$
 
 <PriorityEncoder />
 
-CPUs use the same idea to decide which device gets served first when several [interrupts](/courses/microprocessors/interrupts) arrive together.
+Test the interactive simulation above. Assert multiple inputs simultaneously: notice how the encoder strictly reports the highest active key while asserting the Valid signal.
+
+### Commercial IC 74LS148 (8-to-3 Priority Encoder)
+
+The standard **74LS148** encodes eight active-LOW data inputs ($\overline{0}\dots\overline{7}$) into a 3-bit active-LOW binary code ($\overline{A_2}, \overline{A_1}, \overline{A_0}$), with input 7 having the highest priority.
+
+It provides three status lines for cascading into 16-to-4 or 64-to-6 priority networks:
+- **Enable Input ($\overline{EI}$):** When HIGH, disables all outputs (forces all outputs HIGH).
+- **Group Select ($\overline{GS}$):** Goes LOW when the chip is enabled and at least one input is asserted (equivalent to an active-LOW Valid flag).
+- **Enable Output ($\overline{EO}$):** Goes LOW when the chip is enabled but *none* of its inputs are active. In a cascaded network, $\overline{EO}$ connects to the $\overline{EI}$ of the next lower-priority encoder, waking it up only when the higher-priority chip has nothing to report!
+
+<Callout tone="neon" label="Interrupt Controllers">
+Priority encoders are the core of CPU [interrupt handling](/courses/microprocessors/interrupts). When multiple peripheral devices—such as a network card, keyboard, and hard drive—request CPU attention simultaneously, a priority encoder (such as the 8259A PIC) arbitrates immediately, presenting the vector of the highest-priority device directly to the processor's interrupt pins.
+</Callout>
+
+## Practice problems
+
+### Problem 1: Full subtractor implementation with a 3-to-8 decoder
+
+Implement a full subtractor (Difference $D$ and Borrow-out $B_{out}$) using a single 3-to-8 line decoder with active-LOW outputs (like the 74LS138) and two external NAND gates.
+1. Write the minterm lists for $D(A, B, B_{in})$ and $B_{out}(A, B, B_{in})$.
+2. Specify the decoder input connections.
+3. Show the exact wiring to the NAND gates using De Morgan's theorem.
+
+<ModelAnswer>
+1. **Minterm Lists:**
+   From the full subtractor truth table:
+   $$D(A, B, B_{in}) = \sum m(1, 2, 4, 7)$$
+   $$B_{out}(A, B, B_{in}) = \sum m(1, 2, 3, 7)$$
+
+2. **Decoder Connections:**
+   Connect minuend $A$ to select input $C$ (MSB), subtrahend $B$ to select input $B$, and borrow-in $B_{in}$ to select input $A$ (LSB).
+   Tie enable $G_1$ to $V_{CC}$, and $\overline{G_{2A}}, \overline{G_{2B}}$ to GND.
+
+3. **NAND Gate Implementation:**
+   The active-LOW outputs of the decoder produce complemented minterms: $\overline{Y_i} = m_i'$.
+   By De Morgan's laws:
+   $$\big(\overline{Y_1} \cdot \overline{Y_2} \cdot \overline{Y_4} \cdot \overline{Y_7}\big)' = (m_1' \cdot m_2' \cdot m_4' \cdot m_7')' = m_1 + m_2 + m_4 + m_7 = D$$
+   $$\big(\overline{Y_1} \cdot \overline{Y_2} \cdot \overline{Y_3} \cdot \overline{Y_7}\big)' = (m_1' \cdot m_2' \cdot m_3' \cdot m_7')' = m_1 + m_2 + m_3 + m_7 = B_{out}$$
+
+   - Connect decoder outputs $\overline{Y_1}, \overline{Y_2}, \overline{Y_4}, \overline{Y_7}$ into a 4-input NAND gate to generate $D$.
+   - Connect decoder outputs $\overline{Y_1}, \overline{Y_2}, \overline{Y_3}, \overline{Y_7}$ into a 4-input NAND gate to generate $B_{out}$.
+   No additional inverters or OR gates are required.
+</ModelAnswer>
+
+### Problem 2: 4-to-16 line decoder from two 74LS138 decoders
+
+Construct a 4-to-16 line decoder using two 74LS138 3-to-8 decoders with inputs $A_3, A_2, A_1, A_0$ (where $A_3$ is MSB) without any external logic gates. Detail the pin connections for inputs and enables.
+
+<ModelAnswer>
+1. **Input Bus Wiring:**
+   - Connect $A_0$ to input $A$ of Decoder 0 and input $A$ of Decoder 1.
+   - Connect $A_1$ to input $B$ of Decoder 0 and input $B$ of Decoder 1.
+   - Connect $A_2$ to input $C$ of Decoder 0 and input $C$ of Decoder 1.
+
+2. **Enable Steering via $A_3$:**
+   - **Decoder 0 (handles lower minterms $0$ to $7$):**
+     - Connect $A_3$ to active-LOW enable $\overline{G_{2A}}$.
+     - Tie $G_1$ to $V_{CC}$ (HIGH).
+     - Tie $\overline{G_{2B}}$ to GND (LOW).
+     - When $A_3 = 0$, $\overline{G_{2A}} = 0$, enabling Decoder 0. When $A_3 = 1$, Decoder 0 is disabled.
+   - **Decoder 1 (handles upper minterms $8$ to $15$):**
+     - Connect $A_3$ to active-HIGH enable $G_1$.
+     - Tie $\overline{G_{2A}}$ to GND (LOW).
+     - Tie $\overline{G_{2B}}$ to GND (LOW).
+     - When $A_3 = 1$, $G_1 = 1$, enabling Decoder 1. When $A_3 = 0$, Decoder 1 is disabled.
+
+3. **Output Mapping:**
+   - Outputs $\overline{Y_0}\dots\overline{Y_7}$ of Decoder 0 represent decoded outputs $\overline{D_0}\dots\overline{D_7}$.
+   - Outputs $\overline{Y_0}\dots\overline{Y_7}$ of Decoder 1 represent decoded outputs $\overline{D_8}\dots\overline{D_{15}}$.
+   Zero external gates are needed because the complementary enables act as an internal inverter.
+</ModelAnswer>
+
+### Problem 3: Derivation of minimal 4-to-2 priority encoder equations
+
+Using 4-variable Karnaugh maps, derive the minimal Sum of Products expressions for outputs $A_1$ and $A_0$ of a 4-to-2 priority encoder where $D_3$ has the highest priority and $D_0$ has the lowest priority.
+
+<ModelAnswer>
+1. **K-Map for $A_1$ (variables $D_3 D_2 D_1 D_0$):**
+   - $A_1 = 1$ when $D_3 = 1$ (8 minterms: $m_8$ through $m_{15}$).
+   - $A_1 = 1$ when $D_3 = 0$ and $D_2 = 1$ (4 minterms: $m_4, m_5, m_6, m_7$).
+   - The cell $m_0$ ($0000$) is a don't-care ($\text{X}$) for $A_1$ because $V = 0$.
+   - Grouping the 8 cells with $D_3 = 1$ yields prime implicant $D_3$.
+   - Grouping the 4 cells with $D_3 = 0, D_2 = 1$ alongside the 4 adjacent cells with $D_3 = 1, D_2 = 1$ yields an 8-cell prime implicant: $D_2$.
+   - Minimal SOP:
+     $$A_1 = D_3 + D_2$$
+
+2. **K-Map for $A_0$:**
+   - $A_0 = 1$ when $D_3 = 1$ (8 minterms: $m_8$ through $m_{15}$).
+   - $A_0 = 1$ when $D_3 = 0, D_2 = 0, D_1 = 1$ (2 minterms: $m_2, m_3$).
+   - The cell $m_0$ is don't-care ($\text{X}$).
+   - Grouping the 8 cells with $D_3 = 1$ yields prime implicant $D_3$.
+   - Grouping minterms $m_2, m_3$ ($D_3' D_2' D_1$) with the adjacent cells in the don't-care region or with $D_3=1$: since $D_3=1$ is already covered, we combine $m_2, m_3$ with $m_6, m_7, m_{10}, m_{11}, m_{14}, m_{15}$? No, $D_2$ must be 0 for $m_2, m_3$. We combine $m_2, m_3$ ($0010, 0011$) with $m_{10}, m_{11}$ ($1010, 1011$), which gives a 4-cell group: $D_2' D_1$.
+   - Minimal SOP:
+     $$A_0 = D_3 + D_2' D_1$$
+
+3. **Valid Signal ($V$):**
+   $V$ is 1 for all minterms except $m_0$ ($0000$):
+   $$V = D_3 + D_2 + D_1 + D_0$$
+</ModelAnswer>
+
+### Problem 4: 8-bit magnitude comparator cascading
+
+Show how two 74LS85 4-bit magnitude comparators are cascaded to compare two 8-bit numbers $A = A_7\dots A_0$ and $B = B_7\dots B_0$. Explain why the cascading inputs on the least-significant chip must be set to specific logic levels.
+
+<ModelAnswer>
+1. **Chip Partitioning:**
+   - **Comparator 0 (Low Nibble):** compares $A_3 A_2 A_1 A_0$ with $B_3 B_2 B_1 B_0$.
+   - **Comparator 1 (High Nibble):** compares $A_7 A_6 A_5 A_4$ with $B_7 B_6 B_5 B_4$.
+
+2. **Interconnects:**
+   - The three outputs of Comparator 0 ($(A>B)_{\text{out}}, (A=B)_{\text{out}}, (A<B)_{\text{out}}$) connect directly to the corresponding cascading expansion inputs of Comparator 1 ($I_{A>B}, I_{A=B}, I_{A<B}$).
+   - The primary outputs of Comparator 1 serve as the overall 8-bit comparison results.
+
+3. **Least Significant Chip Configuration:**
+   For Comparator 0 (the lowest nibble):
+   - $I_{A=B}$ must be tied to logic 1 ($V_{CC}$).
+   - $I_{A>B}$ must be tied to logic 0 (GND).
+   - $I_{A<B}$ must be tied to logic 0 (GND).
+
+   **Explanation:**
+   The cascading inputs specify what the comparator should decide if all its local bit comparisons result in equality. If all 8 bits of $A$ and $B$ are identical, both nibbles evaluate to local equality. Comparator 1 falls back to its cascading inputs from Comparator 0; Comparator 0 in turn falls back to its cascading inputs. By setting $I_{A=B} = 1$ on Comparator 0, the entire cascade correctly resolves to $A = B$. If $I_{A=B}$ were erroneously tied to 0, an identical 8-bit match would report no active output.
+</ModelAnswer>

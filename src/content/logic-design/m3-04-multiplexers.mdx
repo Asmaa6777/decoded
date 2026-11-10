@@ -1,43 +1,311 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { MuxCircuit, DemuxCircuit } from "@/components/mdx/CircuitVisualizers";
 
 # Multiplexers and Demultiplexers
 
-Think of a railway junction. Several tracks merge onto one, and a lever decides which track connects. A **multiplexer** (mux) does this with signals: many inputs, one output, and **select** lines that say which input gets through.
+In complex digital systems like microprocessors and communication networks, many functional units share common resources—such as buses, arithmetic pipelines, and storage registers. To prevent bus contention and short circuits, systems require dedicated switching elements that can select a specific data source from multiple candidates, or route a single data stream to one of several destinations.
 
-Flip the data inputs, then flip S, and watch which one the output follows.
+The two fundamental data-steering components that perform this traffic control are the **multiplexer** (data selector) and the **demultiplexer** (data distributor).
+
+## The Multiplexer (Data Selector)
+
+A **multiplexer** (commonly abbreviated as **MUX** or data selector) is a combinational circuit that selects binary data from one of $2^n$ input data lines and directs it to a single output line.
+
+The selection of which input line is connected to the output is controlled by a set of $n$ **select lines** (also called address lines or control lines).
+
+### 2-to-1 multiplexer
+
+The fundamental atomic multiplexer has two data inputs ($I_0, I_1$), one select line ($S$), and one output ($Y$):
+
+| Select ($S$) | Output ($Y$) | Operational Meaning |
+|:---:|:---:|:---|
+| 0 | $I_0$ | Input $I_0$ is routed to output $Y$ |
+| 1 | $I_1$ | Input $I_1$ is routed to output $Y$ |
+
+The Boolean equation expresses this selection algebraically:
+$$
+Y = S' I_0 + S I_1
+$$
+
+When $S = 0$, the first AND gate is enabled ($S' = 1$), passing $I_0$, while the second AND gate is disabled ($S = 0$), forcing its output to 0. The OR gate passes $I_0 + 0 = I_0$. When $S = 1$, the reverse occurs.
 
 <MuxCircuit />
 
-The AND gate acts as a door again. S opens exactly one door, and the OR gate collects whatever came through. Since only one door is open, the OR just passes that value along.
+### CMOS transmission gate multiplexer
 
-## More inputs
+In standard-cell CMOS VLSI design, a 2-to-1 MUX is rarely constructed using discrete AND-OR logic. Instead, it is synthesized from two [CMOS transmission gates (TGs)](/courses/logic-design/logic-gates#electrical-parameters-and-real-hardware-constraints) and a single inverter:
+- Each transmission gate consists of an nMOS and pMOS transistor wired in parallel.
+- When $S = 0$, $TG_0$ is turned ON, creating a low-resistance bilateral switch passing $I_0$ directly to $Y$, while $TG_1$ is OFF.
+- When $S = 1$, $TG_1$ turns ON, passing $I_1$, while $TG_0$ turns OFF.
 
-With 2 select bits you can choose from 4 inputs. In general, $n$ select bits choose from $2^n$ inputs. A 4-input mux has one AND per input, each recognising its select pattern:
+This transmission gate design requires only **4 transistors**—compared to 14 transistors for an AND-OR-INVERT gate implementation—drastically reducing chip area, static power, and signal propagation delay.
 
+### 4-to-1 multiplexer
+
+A 4-to-1 multiplexer has four data lines ($I_0, I_1, I_2, I_3$), two select lines ($S_1, S_0$), and an active-LOW **Enable** line ($\overline{E}$):
+
+| $\overline{E}$ | $S_1$ | $S_0$ | Output ($Y$) | Selected Input |
+|:---:|:---:|:---:|:---:|:---:|
+| 1 | X | X | 0 | None (Disabled) |
+| 0 | 0 | 0 | $I_0$ | Channel 0 |
+| 0 | 0 | 1 | $I_1$ | Channel 1 |
+| 0 | 1 | 0 | $I_2$ | Channel 2 |
+| 0 | 1 | 1 | $I_3$ | Channel 3 |
+
+The Boolean logic equation is:
 $$
-Y = D_0 S_1' S_0' + D_1 S_1' S_0 + D_2 S_1 S_0' + D_3 S_1 S_0
+Y = \overline{E}' \cdot \big(S_1' S_0' I_0 + S_1' S_0 I_1 + S_1 S_0' I_2 + S_1 S_0 I_3\big)
 $$
 
-| $S_1$ | $S_0$ | Selected |
-|---|---|---|
-| 0 | 0 | $D_0$ |
-| 0 | 1 | $D_1$ |
-| 1 | 0 | $D_2$ |
-| 1 | 1 | $D_3$ |
+The circuit consists of four 3-input AND gates, one 4-input OR gate, and two inverters. Notice that the select logic acts identically to a [2-to-4 decoder](/courses/logic-design/comparators-decoders-encoders#decoders-pick-exactly-one): each AND gate decodes one unique minterm of $(S_1, S_0)$ to enable exactly one data line.
 
-That's four 3-input ANDs, one 4-input OR and two inverters. You might notice this looks like a [decoder](/courses/logic-design/comparators-decoders-encoders) whose outputs each gate one data line, and that's what it is.
+### Commercial MSI multiplexers
 
-To build a larger mux, use smaller ones with an **enable** line. To get 16 inputs from two 8-input chips, make the top select bit enable one chip or the other.
+Standard 7400-series TTL and CMOS families package multiplexers in diverse configurations:
+- **74LS151:** 8-to-1 multiplexer with active-LOW enable ($\overline{E}$) and complementary outputs ($Y$ and $W = Y'$).
+- **74LS153:** Dual 4-to-1 multiplexer sharing common select inputs ($S_1, S_0$) with independent enable inputs for each 4-bit section.
+- **74LS157:** Quad 2-to-1 multiplexer with common select line and common enable, used to steer whole 4-bit nibbles between registers and buses.
 
-## The demultiplexer
+## Implementing Arbitrary Boolean Functions with Multiplexers
 
-A **demultiplexer** (demux) is the junction in the other direction: one input, many outputs, and select lines that decide where the data goes.
+A multiplexer is fundamentally a **universal function generator**. Any combinational logic function can be synthesized directly using a multiplexer without needing external AND, OR, or XOR gates.
+
+### Method 1: Direct implementation with $n$ select lines ($2^n$-to-1 MUX)
+
+For an arbitrary Boolean function of $n$ variables:
+1. Connect the $n$ Boolean variables directly to the $n$ select lines $S_{n-1}, \dots, S_0$.
+2. The $2^n$ data inputs ($I_0, \dots, I_{2^n-1}$) correspond one-to-one with the $2^n$ [minterms](/courses/logic-design/sop-and-pos#canonical-representations-minterms-and-maxterms) of the truth table.
+3. If minterm $m_k$ produces a 1 in the function's truth table, tie data input $I_k$ to logic HIGH ($V_{CC}$).
+4. If minterm $m_k$ produces a 0, tie data input $I_k$ to logic LOW (GND).
+
+While simple, this method is hardware-inefficient because a 4-variable function requires a 16-to-1 multiplexer.
+
+### Method 2: Shannon's expansion technique ($n-1$ select lines)
+
+We can cut the multiplexer size in half by applying **Shannon's expansion theorem**: an $n$-variable Boolean function can be implemented using a multiplexer with only $n-1$ select lines (a $2^{n-1}$-to-1 MUX).
+
+Shannon's expansion theorem states that any function $F(X_1, X_2, \dots, X_n)$ can be decomposed around any chosen variable $X_n$:
+$$
+F(X_1, X_2, \dots, X_n) = X_n' \cdot F(X_1, \dots, 0) + X_n \cdot F(X_1, \dots, 1)
+$$
+
+#### Implementation procedure:
+1. From the $n$ input variables, choose $n-1$ variables to connect to the select lines (for example, connect $A$ and $B$ to $S_1, S_0$).
+2. The remaining variable (e.g. $C$) serves as the data input signal. For each data input $I_k$, the value can only take one of four possible states:
+   - $0$ (constant logic 0)
+   - $1$ (constant logic 1)
+   - $C$ (the variable in true form)
+   - $C'$ (the variable inverted)
+3. Construct an **implementation table** by listing the minterm pairs that share the same select code:
+
+| Data Input | Select Code ($S_1 S_0$) | Row $C = 0$ | Row $C = 1$ | Derived Input Value |
+|:---:|:---:|:---:|:---:|:---:|
+| $I_0$ | $00$ | $m_0$ | $m_1$ | Compare outputs for $m_0$ and $m_1$ |
+| $I_1$ | $01$ | $m_2$ | $m_3$ | Compare outputs for $m_2$ and $m_3$ |
+| $I_2$ | $10$ | $m_4$ | $m_5$ | Compare outputs for $m_4$ and $m_5$ |
+| $I_3$ | $11$ | $m_6$ | $m_7$ | Compare outputs for $m_6$ and $m_7$ |
+
+- If neither minterm is circled (both output 0) $\implies I_k = 0$.
+- If both minterms are circled (both output 1) $\implies I_k = 1$.
+- If only the bottom row ($C=1$) is circled $\implies I_k = C$.
+- If only the top row ($C=0$) is circled $\implies I_k = C'$.
+
+### Worked example: 3-variable function on a 4-to-1 MUX
+
+Implement $F(A, B, C) = \sum m(1, 3, 5, 6)$ using a 4-to-1 multiplexer:
+1. Connect $A \to S_1$ and $B \to S_0$.
+2. Analyze the input pairs with variable $C$:
+   - For $S_1 S_0 = 00$: contains minterms $m_0$ and $m_1$. $m_0 = 0$, $m_1 = 1$. Since $F = 1$ only when $C = 1$, set $I_0 = C$.
+   - For $S_1 S_0 = 01$: contains minterms $m_2$ and $m_3$. $m_2 = 0$, $m_3 = 1$. Set $I_1 = C$.
+   - For $S_1 S_0 = 10$: contains minterms $m_4$ and $m_5$. $m_4 = 0$, $m_5 = 1$. Set $I_2 = C$.
+   - For $S_1 S_0 = 11$: contains minterms $m_6$ and $m_7$. $m_6 = 1$, $m_7 = 0$. Since $F = 1$ only when $C = 0$, set $I_3 = C'$.
+
+A single 4-to-1 MUX and one inverter (to produce $C'$) implements the entire 3-variable logic function.
+
+## Multiplexer Expansion (Tree Networks)
+
+When an application requires selecting from more inputs than a single IC provides, smaller multiplexers can be cascaded into a hierarchical **multiplexer tree**.
+
+### Synthesizing a 16-to-1 MUX using 4-to-1 MUXes
+
+To choose from 16 inputs ($I_0\dots I_{15}$) with 4 select lines ($S_3, S_2, S_1, S_0$), five 4-to-1 multiplexers can be arranged in a two-tier tree with zero external gates:
+
+```
+Inputs I0 - I3   ───►┌─────────┐
+                     │ 4:1 MUX │───► D0
+S1, S0 ───────────┬─►└─────────┘
+                  │
+Inputs I4 - I7   ─┼─►┌─────────┐
+                  │  │ 4:1 MUX │───► D1
+                  ├─►└─────────┘     ┌─────────┐
+                  │                  │ 4:1 MUX │───► Final Output Y
+Inputs I8 - I11  ─┼─►┌─────────┐     │         │
+                  │  │ 4:1 MUX │───► D2│         │
+                  ├─►└─────────┘  ┌─►└─────────┘
+                  │               │   ▲
+Inputs I12 - I15 ─┼─►┌─────────┐  │   │
+                  │  │ 4:1 MUX │──┼─► D3
+                  └─►└─────────┘  │
+                                  │
+S3, S2 ───────────────────────────┴─────────────
+```
+
+- **First Tier (4 MUXes):** The four lower multiplexers receive data inputs $I_0\dots I_{15}$. Their select lines are wired in parallel to the two least significant address bits ($S_1, S_0$).
+- **Second Tier (1 MUX):** The fifth multiplexer receives the four intermediate outputs ($D_0, D_1, D_2, D_3$) as its data inputs. Its select lines are connected to the two most significant address bits ($S_3, S_2$).
+
+When $S_3 S_2 S_1 S_0 = 1011_2$:
+1. $S_1 S_0 = 11_2$ causes each first-tier MUX to output its fourth input ($I_3, I_7, I_{11}, I_{15}$).
+2. $S_3 S_2 = 10_2$ causes the second-tier MUX to route input $D_2$ (which carries $I_{11}$) to the final output $Y$.
+
+## Demultiplexers (Data Distributors)
+
+A **demultiplexer** (commonly abbreviated as **DEMUX**) performs the exact inverse operation of a multiplexer: it takes a single input data line ($D$) and routes it to one of $2^n$ output lines determined by $n$ select lines. All unselected output lines remain inactive (logic 0 for active-HIGH circuits, or logic 1 for active-LOW circuits).
 
 <DemuxCircuit />
 
-A decoder with an enable input is a demux. Feed the data into the enable line, and the selected output follows it.
+### Equivalence to decoders with enable
 
-<Callout tone="neon" label="Where you see this">
-A shared wire is one of the most common things in a computer. A mux at one end and a demux at the other let many sources take turns on the same [bus](/courses/computer-organization/buses). The CPU uses muxes to choose which register feeds the ALU, and that choice is what an [instruction's operand field](/courses/computer-architecture/instruction-formats) controls.
-</Callout>
+A demultiplexer is structurally and functionally identical to a [decoder with an enable input](/courses/logic-design/comparators-decoders-encoders#2-to-4-line-decoder-with-enable):
+- In a decoder, the enable input turns the outputs on or off while the address inputs select which output is asserted.
+- If we treat the decoder's **Enable pin as the Data input ($D$)**, and treat the decoder's address pins as the Select lines, the decoder becomes a demultiplexer!
+
+When $D = 0$, all outputs are forced to 0. When $D = 1$, the selected output line follows $D$ to logic 1. Therefore, commercial decoder ICs—such as the 74LS138—are officially labeled in manufacturer datasheets as **"3-to-8 Line Decoder / Demultiplexer"**.
+
+## Applications in Processor Datapaths and Buses
+
+Multiplexers and demultiplexers are the arterial routing network of modern microprocessors:
+
+1. **ALU Operand Routing:**
+   In an instruction like `ADD R1, R2, R3`, the processor's register file contains many general-purpose registers. Dual multiplexer trees select which two register outputs are delivered to inputs $A$ and $B$ of the ALU. The register fields within the [instruction format](/courses/computer-architecture/instruction-formats) drive the multiplexer select lines directly.
+
+2. **Bidirectional Bus Sharing:**
+   Computers connect dozens of memory modules and peripheral chips across a common system [bus](/courses/computer-organization/buses). Multiplexers gate which subsystem drives data onto the bus during any given clock cycle, preventing bus contention.
+
+3. **Time-Division Multiplexing (TDM):**
+   In telecommunications, multiple digitized voice or data channels take turns transmitting across a single high-speed physical wire or optical fiber. A multiplexer at the transmitter samples each channel in round-robin sequence, while a demultiplexer at the receiver reconstitutes the original individual streams.
+
+4. **Parallel-to-Serial Conversion:**
+   Systems converting parallel byte registers for [serial transmission](/courses/logic-design/signals#serial-transmission) (such as UART interfaces) use an 8-to-1 multiplexer whose data inputs are loaded with an 8-bit byte. A modulo-8 binary counter cycles through select inputs $S_2 S_1 S_0$, causing the byte to stream out serially bit by bit over a single pin.
+
+## Practice problems
+
+### Problem 1: Majority voting logic using a 4-to-1 MUX (Inputs $A, B$ on select)
+
+Implement the 3-input majority voter function $F(A, B, C) = \sum m(3, 5, 6, 7)$ using a single 4-to-1 multiplexer with variables $A$ and $B$ connected to select lines $S_1$ and $S_0$. Show the derivation table for inputs $I_0, I_1, I_2, I_3$.
+
+<ModelAnswer>
+1. **Truth Table Analysis by Select Codes ($S_1 = A, S_0 = B$):**
+
+| $A$ ($S_1$) | $B$ ($S_0$) | $C$ | Minterm | $F$ | Resulting Input ($I_k$) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | $m_0$ | 0 | $I_0 = 0$ |
+| 0 | 0 | 1 | $m_1$ | 0 | $I_0 = 0$ |
+| 0 | 1 | 0 | $m_2$ | 0 | $I_1 = C$ |
+| 0 | 1 | 1 | $m_3$ | 1 | $I_1 = C$ |
+| 1 | 0 | 0 | $m_4$ | 0 | $I_2 = C$ |
+| 1 | 0 | 1 | $m_5$ | 1 | $I_2 = C$ |
+| 1 | 1 | 0 | $m_6$ | 1 | $I_3 = 1$ |
+| 1 | 1 | 1 | $m_7$ | 1 | $I_3 = 1$ |
+
+2. **Determining Data Inputs:**
+   - For $S_1 S_0 = 00$: $F = 0$ regardless of $C \implies I_0 = 0$ (connect to GND).
+   - For $S_1 S_0 = 01$: $F = 0$ when $C=0$, $F = 1$ when $C=1 \implies I_1 = C$.
+   - For $S_1 S_0 = 10$: $F = 0$ when $C=0$, $F = 1$ when $C=1 \implies I_2 = C$.
+   - For $S_1 S_0 = 11$: $F = 1$ regardless of $C \implies I_3 = 1$ (connect to $V_{CC}$).
+
+3. **Circuit Implementation:**
+   - Connect $A \to S_1$ and $B \to S_0$.
+   - Connect $I_0 \to \text{GND}$.
+   - Connect $I_1 \to C$.
+   - Connect $I_2 \to C$.
+   - Connect $I_3 \to V_{CC}$.
+   No logic gates or inverters are required.
+</ModelAnswer>
+
+### Problem 2: Majority voting logic with alternative select assignments ($B, C$ on select)
+
+Implement the same majority function $F(A, B, C) = \sum m(3, 5, 6, 7)$ using a 4-to-1 multiplexer, but this time connect $B$ and $C$ to select lines $S_1$ and $S_0$.
+
+<ModelAnswer>
+1. **Truth Table Grouped by $S_1 = B, S_0 = C$:**
+   Here, variable $A$ acts as the data input signal.
+
+| $B$ ($S_1$) | $C$ ($S_0$) | $A = 0$ | $A = 1$ | Derived Value for $I_k$ |
+|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | $m_0 = 0$ | $m_4 = 0$ | $I_0 = 0$ |
+| 0 | 1 | $m_1 = 0$ | $m_5 = 1$ | $I_1 = A$ |
+| 1 | 0 | $m_2 = 0$ | $m_6 = 1$ | $I_2 = A$ |
+| 1 | 1 | $m_3 = 1$ | $m_7 = 1$ | $I_3 = 1$ |
+
+2. **Input Connections:**
+   - $I_0 = 0$ (GND).
+   - $I_1 = A$.
+   - $I_2 = A$.
+   - $I_3 = 1$ ($V_{CC}$).
+
+Notice the symmetry: due to the majority function being totally symmetric with respect to all three inputs, permuting the select variables yields an identical input structure with variable $A$ replacing $C$.
+</ModelAnswer>
+
+### Problem 3: Constructing a 16-to-1 MUX from five 4-to-1 MUXes
+
+Provide the exact signal routing to build a 16-to-1 multiplexer using five 4-to-1 multiplexers with data inputs $I_0\dots I_{15}$ and select lines $S_3, S_2, S_1, S_0$. Prove that when $S_3 S_2 S_1 S_0 = 1101_2$ ($13_{10}$), input $I_{13}$ is routed to the primary output.
+
+<ModelAnswer>
+1. **Signal Connections:**
+   - **First Tier (MUX 0 through MUX 3):**
+     - MUX 0 inputs: $I_0, I_1, I_2, I_3$.
+     - MUX 1 inputs: $I_4, I_5, I_6, I_7$.
+     - MUX 2 inputs: $I_8, I_9, I_{10}, I_{11}$.
+     - MUX 3 inputs: $I_{12}, I_{13}, I_{14}, I_{15}$.
+     - Select lines of all four tier-1 MUXes are tied in parallel: $S_1$ to upper select, $S_0$ to lower select.
+     - Enables ($\overline{E}$) of all tier-1 MUXes tied to GND (active).
+   - **Second Tier (MUX 4):**
+     - Inputs: $D_0$ (from MUX 0), $D_1$ (from MUX 1), $D_2$ (from MUX 2), $D_3$ (from MUX 3).
+     - Select lines: $S_3$ to upper select, $S_2$ to lower select.
+     - Enable ($\overline{E}$) tied to GND.
+     - Output: Primary output $Y$.
+
+2. **Verification for $S_3 S_2 S_1 S_0 = 1101_2$:**
+   - Address decomposition: $(S_3, S_2) = (1, 1)$, and $(S_1, S_0) = (0, 1)$.
+   - With $(S_1, S_0) = (0, 1) = 1_{10}$, each tier-1 MUX selects its channel 1 input:
+     - MUX 0 outputs $I_1$ on line $D_0$.
+     - MUX 1 outputs $I_5$ on line $D_1$.
+     - MUX 2 outputs $I_9$ on line $D_2$.
+     - MUX 3 outputs $I_{13}$ on line $D_3$.
+   - With $(S_3, S_2) = (1, 1) = 3_{10}$, tier-2 MUX 4 selects its channel 3 input, which is line $D_3$.
+   - Line $D_3$ carries $I_{13}$, so $Y = I_{13}$. The routing is correct.
+</ModelAnswer>
+
+### Problem 4: Full adder design using two 4-to-1 multiplexers
+
+Design a full adder (Sum $S$ and Carry-out $C_{out}$) using two 4-to-1 multiplexers and one inverter. Let $A$ and $B$ connect to select inputs $S_1$ and $S_0$, and derive the data input connections for both multiplexers in terms of $C_{in}$.
+
+<ModelAnswer>
+1. **Full Adder Truth Table:**
+
+| $A$ ($S_1$) | $B$ ($S_0$) | $C_{in}$ | Sum ($S$) | $C_{out}$ |
+|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | 0 | 0 |
+| 0 | 0 | 1 | 1 | 0 |
+| 0 | 1 | 0 | 1 | 0 |
+| 0 | 1 | 1 | 0 | 1 |
+| 1 | 0 | 0 | 1 | 0 |
+| 1 | 0 | 1 | 0 | 1 |
+| 1 | 1 | 0 | 0 | 1 |
+| 1 | 1 | 1 | 1 | 1 |
+
+2. **Data Inputs for MUX 1 (Generating Sum $S$):**
+   - For $AB = 00$: $S = 0$ when $C_{in}=0$, $S = 1$ when $C_{in}=1 \implies I_0 = C_{in}$.
+   - For $AB = 01$: $S = 1$ when $C_{in}=0$, $S = 0$ when $C_{in}=1 \implies I_1 = C_{in}'$.
+   - For $AB = 10$: $S = 1$ when $C_{in}=0$, $S = 0$ when $C_{in}=1 \implies I_2 = C_{in}'$.
+   - For $AB = 11$: $S = 0$ when $C_{in}=0$, $S = 1$ when $C_{in}=1 \implies I_3 = C_{in}$.
+
+3. **Data Inputs for MUX 2 (Generating $C_{out}$):**
+   - For $AB = 00$: $C_{out} = 0$ regardless of $C_{in} \implies I_0 = 0$ (GND).
+   - For $AB = 01$: $C_{out} = 0$ when $C_{in}=0$, $C_{out} = 1$ when $C_{in}=1 \implies I_1 = C_{in}$.
+   - For $AB = 10$: $C_{out} = 0$ when $C_{in}=0$, $C_{out} = 1$ when $C_{in}=1 \implies I_2 = C_{in}$.
+   - For $AB = 11$: $C_{out} = 1$ regardless of $C_{in} \implies I_3 = 1$ ($V_{CC}$).
+
+4. **Hardware Requirements:**
+   Two 4-to-1 multiplexers, with $A \to S_1$ and $B \to S_0$ on both chips, one inverter to create $C_{in}'$, and connections to $V_{CC}$, GND, and $C_{in}$.
+</ModelAnswer>
