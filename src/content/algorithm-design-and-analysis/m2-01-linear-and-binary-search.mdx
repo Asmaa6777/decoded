@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import {
   SearchVisualizer,
   BinarySearchUnsortedVisualizer,
@@ -173,5 +173,257 @@ Lab code sometimes defines linear search with the loop header `for (int i = 0; i
     { id: 374, title: "Guess Number Higher or Lower", slug: "guess-number-higher-or-lower", why: "Binary search when the 'array' is just the numbers 1 to n and an oracle tells you which way to go." },
     { id: 278, title: "First Bad Version", slug: "first-bad-version", why: "git bisect as a LeetCode problem. You need the first bad version, not just any bad one. Watch for overflow too." },
     { id: 69, title: "Sqrt(x)", slug: "sqrtx", why: "Binary search on the answer: the biggest m with m × m ≤ x. Use long to avoid overflow." },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm and written exam questions
+
+**1.** *(Lab trace: sorted even numbers and 0-based vs 1-based index)* In a university programming lab, a student generates a sorted array of 10 even numbers using `array[i] = i * 2`, producing `[0, 2, 4, 6, 8, 10, 12, 14, 16, 18]`.
+1. Trace `binarySearch(array, 8)` step by step. State the initial `low`, `high`, computed `mid = (low + high) / 2`, `array[mid]`, decision, and return value. Why does this lookup finish in a single comparison?
+2. The lab driver prints `"Found at location: " + (x + 1)`. Explain the difference between zero-based array indexing and one-based ordinal positions, and explain why exam questions test this distinction.
+3. Trace an unsuccessful search on the same array for target $K = 7$. Record `low`, `high`, `mid`, `array[mid]`, and the boundary update for every iteration until the loop terminates. How many total comparisons are made before returning `-1`?
+
+<ModelAnswer>
+The array has $n = 10$ elements with indices $0$ to $9$:
+$$
+\langle 0, 2, 4, 6, 8, 10, 12, 14, 16, 18 \rangle
+$$
+
+**(a) Successful search for $K = 8$:**
+- **Iteration 1:** `low = 0`, `high = 9`.
+  - Midpoint: $\text{mid} = \lfloor (0 + 9)/2 \rfloor = 4$.
+  - Compare $K = 8$ with $\text{array}[4] = 8$.
+  - Because $8 == 8$, the search matches immediately and returns index **4**.
+- **Efficiency:** The search terminates on the very first comparison because target 8 happened to sit precisely at the initial midpoint of the array, hitting the $O(1)$ best-case scenario.
+
+**(b) Zero-based index vs one-based position:**
+- **Array index (0-based):** In Java and C, indexing represents memory offsets from the base pointer. Index `4` denotes an offset of 4 integer units from `array[0]`.
+- **Ordinal position (1-based):** Natural human counting begins at 1. The element at index 4 is the **5th element** in the sequence ($0, 2, 4, 6, \mathbf{8}$).
+- The lab code prints `"Found at location: " + (x + 1) = "Found at location: 5"`. Exam problems frequently specify whether to give the array index or the 1-based location. Giving 4 when 5 is asked (or vice versa) is a common student trap.
+
+**(c) Unsuccessful search for $K = 7$:**
+- **Iteration 1:** `low = 0`, `high = 9`.
+  - $\text{mid} = \lfloor (0 + 9)/2 \rfloor = 4$. Element: $\text{array}[4] = 8$.
+  - Comparison: $7 < 8 \implies$ target lies in left half. Update `high = mid - 1 = 3`.
+- **Iteration 2:** `low = 0`, `high = 3`.
+  - $\text{mid} = \lfloor (0 + 3)/2 \rfloor = 1$. Element: $\text{array}[1] = 2$.
+  - Comparison: $7 > 2 \implies$ target lies in right half. Update `low = mid + 1 = 2`.
+- **Iteration 3:** `low = 2`, `high = 3`.
+  - $\text{mid} = \lfloor (2 + 3)/2 \rfloor = 2$. Element: $\text{array}[2] = 4$.
+  - Comparison: $7 > 4 \implies$ target lies in right half. Update `low = mid + 1 = 3`.
+- **Iteration 4:** `low = 3`, `high = 3`.
+  - $\text{mid} = \lfloor (3 + 3)/2 \rfloor = 3$. Element: $\text{array}[3] = 6$.
+  - Comparison: $7 > 6 \implies$ target lies in right half. Update `low = mid + 1 = 4`.
+- **Termination:**
+  - `low = 4`, `high = 3`.
+  - The condition `low <= high` evaluates to $4 \le 3$, which is **false**.
+  - The loop halts and returns **`-1`**.
+- **Summary:** The algorithm executes **4 key comparisons** before determining that 7 is absent.
+</ModelAnswer>
+
+**2.** *(Binary search on unsorted arrays and logarithmic comparison bounds)*
+1. A programmer passes the unsorted array `[4, 9, 1, 7, 3, 8]` to `binarySearch` looking for key $K = 9$. Trace the execution step by step. Explain what value is returned and why binary search fails to find 9 even though 9 is present.
+2. For a sorted array of $n = 1{,}024$ elements, calculate the exact maximum number of key comparisons for both successful and unsuccessful binary searches. Compare this with linear search.
+
+<ModelAnswer>
+**(a) Trace on unsorted array $\langle 4, 9, 1, 7, 3, 8 \rangle$ ($n = 6$):**
+- **Iteration 1:** `low = 0`, `high = 5`.
+  - $\text{mid} = \lfloor (0 + 5)/2 \rfloor = 2$. Element: $\text{array}[2] = 1$.
+  - The code compares target $K = 9$ with 1: $9 > 1$.
+  - Based on the assumption of sorted data, the algorithm concludes that all values at indices $\le 2$ are $\le 1$. It discards the left subarray ($0 \dots 2$) and updates `low = mid + 1 = 3`.
+  - **The fatal error:** Target 9 was located at index 1! By discarding the left subarray, the algorithm discarded the very element it was seeking.
+- **Iteration 2:** `low = 3`, `high = 5`.
+  - $\text{mid} = \lfloor (3 + 5)/2 \rfloor = 4$. Element: $\text{array}[4] = 3$.
+  - Comparison: $9 > 3 \implies$ update `low = mid + 1 = 5`.
+- **Iteration 3:** `low = 5`, `high = 5`.
+  - $\text{mid} = 5$. Element: $\text{array}[5] = 8$.
+  - Comparison: $9 > 8 \implies$ update `low = mid + 1 = 6`.
+- **Termination:**
+  - `low = 6 > high = 5`. Loop terminates and returns **`-1`** ("Not Found").
+- **Takeaway:** Binary search on unsorted data does not throw an error or crash; it silently produces incorrect answers. Data must be guaranteed sorted before binary search is invoked.
+
+**(b) Maximum key comparisons for $n = 1{,}024$:**
+- In binary search, each comparison halves the search window: $n \to n/2 \to n/4 \dots$
+- The maximum number of comparisons for an array of size $n$ in the worst case is:
+  $$
+  C_{\text{worst}}(n) = \lfloor \log_2 n \rfloor + 1
+  $$
+- For $n = 1{,}024 = 2^{10}$:
+  $$
+  \lfloor \log_2(1{,}024) \rfloor + 1 = 10 + 1 = \mathbf{11\text{ comparisons}}
+  $$
+- Both the deepest successful search (finding a leaf node in the binary decision tree) and an unsuccessful search (reaching an empty window) require at most **11 comparisons**.
+- **Comparison with linear search:** Linear search in the worst case inspects all $n = \mathbf{1{,}024\text{ elements}}$. Binary search reduces the worst-case comparison count by a factor of nearly $100\times$ on an array of this size ($11$ vs $1{,}024$).
+</ModelAnswer>
+
+**3.** *(The 32-bit integer overflow bug and loop termination invariants)*
+1. In Java, binary search implementations frequently compute the midpoint as `int mid = (low + high) / 2;`. Explain why this line contains a critical arithmetic overflow bug on large arrays. Given an array of length $2 \times 10^9$ with `low = 1_000_000_000` and `high = 1_500_000_000`, calculate the exact value computed and the resulting runtime behavior. State two ways to fix it.
+2. What happens if the loop header is written as `while (low < high)` instead of `while (low <= high)`? Construct a 2-element example demonstrating how `while (low < high)` fails.
+
+<ModelAnswer>
+**(a) 32-bit signed integer overflow in `(low + high) / 2`:**
+- In Java, primitive `int` is a 32-bit signed two's-complement integer with maximum value:
+  $$
+  \text{Integer.MAX\_VALUE} = 2^{31} - 1 = 2{,}147{,}483{,}647
+  $$
+- When searching a massive array with `low = 1_000_000_000` and `high = 1_500_000_000`:
+  $$
+  \text{low} + \text{high} = 2{,}500{,}000{,}000
+  $$
+- Because $2{,}500{,}000{,}000 > 2^{31} - 1$, 32-bit addition overflows and wraps around:
+  $$
+  2{,}500{,}000{,}000 - 2^{32} = 2{,}500{,}000{,}000 - 4{,}294{,}967{,}296 = -1{,}794{,}967{,}296
+  $$
+- Dividing by 2 yields:
+  $$
+  \text{mid} = \frac{-1{,}794{,}967{,}296}{2} = -897{,}483{,}648
+  $$
+- When the code executes `array[mid]`, the negative index immediately throws an `ArrayIndexOutOfBoundsException`.
+- **The two fixes:**
+  1. Subtraction-based midpoint: `int mid = low + (high - low) / 2;` (since `high - low` cannot overflow).
+  2. Unsigned right shift: `int mid = (low + high) >>> 1;` (the logical right shift treats the sign bit as a value bit, yielding the correct positive integer up to $2^{31} - 1$).
+
+**(b) Loop condition: `low <= high` vs `low < high`:**
+- Consider the 2-element sorted array `array = [10, 20]` searching for target $K = 20$.
+- **Initial state:** `low = 0`, `high = 1`.
+- **Iteration 1:**
+  - $0 < 1$ is true.
+  - $\text{mid} = \lfloor (0 + 1)/2 \rfloor = 0$. $\text{array}[0] = 10$.
+  - $20 > 10 \implies$ update `low = mid + 1 = 1`.
+- **Iteration 2 check:**
+  - The loop checks `low < high`: $1 < 1$ evaluates to **false**.
+  - The loop terminates prematurely without ever inspecting `array[1]`.
+  - The method returns **`-1`**, failing to find $20$ despite its presence in the array!
+- **Rule:** The loop condition must be `while (low <= high)` so that when the search space narrows to a single element (`low == high`), that final element is checked.
+</ModelAnswer>
+
+**4.** *(Lab loop boundary bug and sorting breakeven analysis)*
+1. In Lab 7, a linear search routine is written with the loop header `for (int i = 0; i < array.length - 1; i++)`. Identify the bug, construct an input where it fails, and provide the correct loop header.
+2. A server needs to process $k$ search queries against an unsorted array of $n = 1{,}024$ numbers.
+   - **Approach A:** Run $k$ sequential linear searches. Each query costs on average $n/2$ comparisons.
+   - **Approach B:** Sort the array once using Merge Sort ($n \log_2 n$ comparisons), and then answer each query using Binary Search ($\log_2 n$ comparisons each).
+   Calculate the minimum number of queries $k$ for which sorting upfront is strictly faster than repeated linear scans.
+
+<ModelAnswer>
+**(a) Lab 7 linear search bug:**
+- **The bug:** The condition `i < array.length - 1` stops iteration when `i` reaches `array.length - 2`. It never inspects index `array.length - 1` (the last slot in the array).
+- **Failing test case:**
+  - Let `array = [10, 25, 40, 55]` ($n = 4$) and search target $x = 55$.
+  - The loop inspects $i = 0$ (10), $i = 1$ (25), and $i = 2$ (40).
+  - For $i = 3$, $3 < 4 - 1$ ($3 < 3$) is false, so the loop exits and returns `-1`.
+  - The method reports `-1` ("Not Found") even though 55 is at index 3.
+- **The fix:** Write `for (int i = 0; i < array.length; i++)`.
+
+**(b) Breakeven calculation:**
+- **Total comparisons for Approach A:**
+  $$
+  C_A(k) = k \cdot \frac{n}{2}
+  $$
+- **Total comparisons for Approach B:**
+  $$
+  C_B(k) = n \log_2 n + k \cdot \log_2 n
+  $$
+- Setting $C_A(k) > C_B(k)$:
+  $$
+  k \cdot \frac{n}{2} > n \log_2 n + k \cdot \log_2 n
+  $$
+  $$
+  k \left(\frac{n}{2} - \log_2 n\right) > n \log_2 n \implies k > \frac{n \log_2 n}{\frac{n}{2} - \log_2 n}
+  $$
+- Substituting $n = 1{,}024$ ($\log_2 1{,}024 = 10$):
+  $$
+  n \log_2 n = 1{,}024 \times 10 = 10{,}240
+  $$
+  $$
+  \frac{n}{2} - \log_2 n = 512 - 10 = 502
+  $$
+  $$
+  k > \frac{10{,}240}{502} \approx 20.398
+  $$
+- Since $k$ must be an integer, **$k \ge 21$**.
+- If the server handles 20 or fewer searches, direct linear scanning is faster. Once the server handles **21 or more queries**, the one-time investment of sorting the array yields a net performance win.
+</ModelAnswer>
+
+### Part 2: Exam multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="linear-and-binary-search"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "What is the maximum number of key comparisons required by binary search in the worst case on a sorted array of n = 64 elements?",
+      options: [
+        { id: "a", text: "7 comparisons" },
+        { id: "b", text: "6 comparisons" },
+        { id: "c", text: "32 comparisons" },
+        { id: "d", text: "64 comparisons" },
+      ],
+      correctOptionId: "a",
+      explanation: "Each binary search comparison halves the remaining search window. For n = 64, successive candidate window sizes are 64 → 31 → 15 → 7 → 3 → 1 → 0, which requires at most ⌊log₂ 64⌋ + 1 = 6 + 1 = 7 comparisons. Option B (6) is log₂ 64, which counts the number of halving divisions but omits the final comparison on the 1-element window. Option C (32) is the average case for linear search (n/2). Option D (64) is the worst case for linear search.",
+    },
+    {
+      id: "q2",
+      prompt: "You execute binary search for target K = 15 on the sorted array [3, 10, 15, 20, 35, 40, 60]. What are the values of low, high, and mid during the second iteration?",
+      options: [
+        { id: "a", text: "low = 0, high = 2, mid = 1" },
+        { id: "b", text: "low = 4, high = 6, mid = 5" },
+        { id: "c", text: "low = 0, high = 3, mid = 1" },
+        { id: "d", text: "low = 2, high = 6, mid = 4" },
+      ],
+      correctOptionId: "a",
+      explanation: "In iteration 1, low = 0 and high = 6, so mid = (0 + 6)/2 = 3 where array[3] = 20. Because 15 < 20, the search eliminates the right half and updates high = mid − 1 = 2. In iteration 2, low = 0 and high = 2, computing mid = (0 + 2)/2 = 1. Option B searches the right half as if 15 > 20. Option C fails to subtract 1 from mid, incorrectly setting high = mid. Option D has mismatched pointer values.",
+    },
+    {
+      id: "q3",
+      prompt: "Which implementation mistake causes binary search to enter an infinite loop when the target is larger than array[mid] in a 2-element subarray?",
+      options: [
+        { id: "a", text: "Updating low = mid instead of low = mid + 1" },
+        { id: "b", text: "Updating high = mid instead of high = mid - 1" },
+        { id: "c", text: "Using while (low <= high) instead of while (low < high)" },
+        { id: "d", text: "Computing mid = low + (high - low) / 2" },
+      ],
+      correctOptionId: "a",
+      explanation: "In a 2-element window where low = 0 and high = 1, integer division rounds mid = (0 + 1)/2 down to 0. If target > array[0], updating low = mid leaves low = 0, high = 1, and mid = 0 unchanged, repeating the exact same calculation forever. Option B can loop in symmetric cases if high = mid is used without ceiling division, but here target is greater than mid. Option C is the standard loop condition. Option D is the overflow-safe formula and behaves identically on small indices.",
+    },
+    {
+      id: "q4",
+      prompt: "When searching for an element known to be present in an unsorted array of size n, where all positions are equally likely, what is the exact average number of comparisons in linear search?",
+      options: [
+        { id: "a", text: "(n + 1) / 2" },
+        { id: "b", text: "n / 2" },
+        { id: "c", text: "n" },
+        { id: "d", text: "log₂ n" },
+      ],
+      correctOptionId: "a",
+      explanation: "If the target is at index i (the kth position, where k = i + 1), it requires k comparisons. Summing over all n positions gives (1/n) ∑_{k=1}^n k = (1/n) · [n(n + 1)/2] = (n + 1)/2. Option B (n/2) is an asymptotic approximation that neglects the 1-based start of comparison counts. Option C (n) is the worst-case number of comparisons. Option D (log₂ n) is the complexity of binary search on sorted arrays.",
+    },
+    {
+      id: "q5",
+      prompt: "Why cannot binary search achieve O(log n) time complexity on a sorted singly linked list?",
+      options: [
+        { id: "a", text: "Finding the midpoint node requires sequentially traversing pointers in O(n) time" },
+        { id: "b", text: "Singly linked lists cannot store elements in sorted order" },
+        { id: "c", text: "Divide-and-conquer principles cannot be applied to recursive data structures" },
+        { id: "d", text: "Linked list nodes cannot be compared using standard relational operators" },
+      ],
+      correctOptionId: "a",
+      explanation: "Binary search relies on O(1) random-access indexing to inspect mid = (low + high)/2 immediately. In a singly linked list, jumping to the middle node requires traversing mid pointers from the head, which takes O(n) time at each step and degrades total search time to O(n). Option B is false because linked lists can be sorted. Option C is false because divide and conquer works on linked lists (e.g. merge sort). Option D is false because node values can be compared normally.",
+    },
+    {
+      id: "q6",
+      prompt: "In Java, what runtime exception occurs if int mid = (low + high) / 2; executes with low = 1_500_000_000 and high = 1_800_000_000, followed by array[mid]?",
+      options: [
+        { id: "a", text: "ArrayIndexOutOfBoundsException" },
+        { id: "b", text: "ArithmeticException" },
+        { id: "c", text: "NullPointerException" },
+        { id: "d", text: "StackOverflowError" },
+      ],
+      correctOptionId: "a",
+      explanation: "The mathematical sum 1.5 × 10⁹ + 1.8 × 10⁹ = 3.3 × 10⁹ exceeds 32-bit signed Integer.MAX_VALUE (2³¹ − 1 ≈ 2.147 × 10⁹). In Java, integer addition overflows silently and wraps to −994,967,296. Dividing by 2 yields negative index −497,483,648, triggering an ArrayIndexOutOfBoundsException when indexing into array[mid]. Option B is incorrect because division by a non-zero constant never throws ArithmeticException. Options C and D are unrelated runtime exceptions.",
+    },
   ]}
 />

@@ -19,7 +19,7 @@ The second half of the course in eight questions. Get 6 right to pass and finish
         { id: "d", text: "The target must be in the array" },
       ],
       correctOptionId: "b",
-      explanation: "Discarding half the array is only safe if everything on one side of the middle is smaller and everything on the other side is bigger, which is what sorted means.",
+      explanation: "Discarding half the array is only valid if everything on one side of the midpoint is smaller and everything on the other side is larger, which is the definition of a sorted array. Option A is incorrect because binary search works on arrays with duplicate keys (it returns one matching index). Option C is incorrect because integer midpoint division handles any array size. Option D is incorrect because binary search handles absent keys gracefully, terminating when low exceeds high and returning -1.",
     },
     {
       id: "q2",
@@ -31,7 +31,7 @@ The second half of the course in eight questions. Get 6 right to pass and finish
         { id: "d", text: "About 1,000,000" },
       ],
       correctOptionId: "a",
-      explanation: "log₂(1,000,000) ≈ 20. Each comparison halves what's left. Linear search's worst case would be the full 1,000,000.",
+      explanation: "Each comparison cuts the search window in half: log₂(1,000,000) ≈ 19.93, so binary search requires at most 20 comparisons. Option B (1,000) corresponds to square-root block jump search (O(√n)). Option C (500,000) is the average case for linear search (n/2). Option D (1,000,000) is the worst-case comparison count for linear search.",
     },
     {
       id: "q3",
@@ -43,7 +43,7 @@ The second half of the course in eight questions. Get 6 right to pass and finish
         { id: "d", text: "4" },
       ],
       correctOptionId: "b",
-      explanation: "60 mod 24 = 12, so gcd(60, 24) = gcd(24, 12). Then 24 mod 12 = 0, so gcd(24, 12) = gcd(12, 0) = 12.",
+      explanation: "Dividing 60 by 24 gives remainder 12 (60 = 2 × 24 + 12), reducing the problem to gcd(24, 12). Next, 24 mod 12 = 0 (24 = 2 × 12 + 0), halting with gcd(12, 0) = 12. Options A and D (6 and 4) are common divisors of 60 and 24, but neither is the greatest common divisor. Option C (24) is a divisor of 24, but fails to divide 60 evenly (60 mod 24 = 12).",
     },
     {
       id: "q4",

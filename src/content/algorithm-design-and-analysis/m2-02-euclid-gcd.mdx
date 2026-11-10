@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import {
   EuclidVisualizer,
   EuclidTilingVisualizer,
@@ -194,5 +194,232 @@ In Java, compute this as `(m / gcd(m, n)) * n`, dividing first so the intermedia
     { id: 1071, title: "Greatest Common Divisor of Strings", slug: "greatest-common-divisor-of-strings", why: "The answer's length is gcd(len1, len2), so it's Euclid in disguise." },
     { id: 914, title: "X of a Kind in a Deck of Cards", slug: "x-of-a-kind-in-a-deck-of-cards", why: "Count each card, then take the gcd of all the counts. A group size works only if it divides every count." },
     { id: 2413, title: "Smallest Even Multiple", slug: "smallest-even-multiple", why: "lcm(2, n) using the formula above." },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm and written exam questions
+
+**1.** *(Lab trace: GCD(45, 210) and automatic operand swapping)* In Lab 7, Euclid's algorithm is invoked as `GCD(45, 210)`.
+1. Trace the execution step by step. For each iteration of `while (n != 0)`, state the values of dividend $m$, divisor $n$, remainder $r = m \bmod n$, and the updated assignments $m = n$ and $n = r$.
+2. Detail what happens during the very first division step ($45 \bmod 210$). Why does Euclid's algorithm never require an initial check or swap to ensure $m \ge n$?
+3. How many total division/modulo operations are performed before the method outputs the answer?
+
+<ModelAnswer>
+The inputs are $m = 45$ and $n = 210$.
+
+**(a) Step-by-step trace:**
+
+| Iteration | Initial $m$ | Initial $n$ | Division $m = q \cdot n + r$ | Remainder $r$ | Updated $m \leftarrow n$ | Updated $n \leftarrow r$ |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 45 | 210 | $45 = 0 \times 210 + 45$ | 45 | 210 | 45 |
+| 2 | 210 | 45 | $210 = 4 \times 45 + 30$ | 30 | 45 | 30 |
+| 3 | 45 | 30 | $45 = 1 \times 30 + 15$ | 15 | 30 | 15 |
+| 4 | 30 | 15 | $30 = 2 \times 15 + 0$ | 0 | 15 | 0 |
+
+- **Termination:** In iteration 5, `n == 0` evaluates to true. The loop halts and the method outputs: `"The GCD is 15"`.
+
+**(b) Automatic operand swap on smaller first argument:**
+- When $m < n$, the integer quotient $q = \lfloor m / n \rfloor$ is 0, and the remainder is simply $r = m \bmod n = m$.
+- The assignments $m \leftarrow n$ and $n \leftarrow r$ place the larger number into $m$ and the smaller number into $n$.
+- Therefore, if $m < n$, the algorithm automatically swaps the two inputs on the very first step at the cost of exactly one modulo operation, without needing any `if (m < n) swap(...)` guard.
+
+**(c) Total division count:**
+- Exactly **4 division operations** are performed (1 swap division + 3 reduction divisions).
+</ModelAnswer>
+
+**2.** *(Lecture homework: gcd(31415, 14142) and coprime definition)*
+1. Compute $\gcd(31415, 14142)$ using Euclid's algorithm. Show the complete division table with quotient and remainder for every step.
+2. What is the greatest common divisor of 31,415 and 14,142? What mathematical term defines two integers with this property?
+3. How many division steps did Euclid's algorithm require, and how does this compare to the linear brute-force countdown `gcdBruteForce`?
+
+<ModelAnswer>
+**(a) Full Euclidean division table for $\gcd(31415, 14142)$:**
+
+| Step | Dividend $m$ | Divisor $n$ | Division equality $m = q \cdot n + r$ | Remainder $r$ | Next pair $(m', n')$ |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 31415 | 14142 | $31415 = 2 \times 14142 + 3131$ | 3131 | $(14142, 3131)$ |
+| 2 | 14142 | 3131 | $14142 = 4 \times 3131 + 1618$ | 1618 | $(3131, 1618)$ |
+| 3 | 3131 | 1618 | $3131 = 1 \times 1618 + 1513$ | 1513 | $(1618, 1513)$ |
+| 4 | 1618 | 1513 | $1618 = 1 \times 1513 + 105$ | 105 | $(1513, 105)$ |
+| 5 | 1513 | 105 | $1513 = 14 \times 105 + 43$ | 43 | $(105, 43)$ |
+| 6 | 105 | 43 | $105 = 2 \times 43 + 19$ | 19 | $(43, 19)$ |
+| 7 | 43 | 19 | $43 = 2 \times 19 + 5$ | 5 | $(19, 5)$ |
+| 8 | 19 | 5 | $19 = 3 \times 5 + 4$ | 4 | $(5, 4)$ |
+| 9 | 5 | 4 | $5 = 1 \times 4 + 1$ | 1 | $(4, 1)$ |
+| 10 | 4 | 1 | $4 = 4 \times 1 + 0$ | 0 | $(1, 0)$ |
+
+- When $n = 0$, the algorithm halts and returns $m = \mathbf{1}$.
+
+**(b) Mathematical classification:**
+- $\gcd(31415, 14142) = 1$.
+- Two integers whose greatest common divisor is 1 are called **coprime** (or **relatively prime**). They share no common factors other than 1.
+
+**(c) Efficiency comparison:**
+- Euclid's algorithm finds the solution in exactly **10 division steps**.
+- The linear brute-force algorithm (`gcdBruteForce`) starts at $\min(31415, 14142) = 14{,}142$ and tests integers downward one by one until finding a common divisor. Because the numbers are coprime, it tests every integer from 14,142 down to 1, performing **14,142 iterations** (over 28,000 modulo tests).
+- Euclid's algorithm is more than **1,400 times faster** on this single pair.
+</ModelAnswer>
+
+**3.** *(Worst-case input analysis: Lamé's Theorem and Fibonacci numbers)*
+1. Trace Euclid's algorithm on the consecutive Fibonacci numbers $m = 89$ and $n = 55$. State the quotient and remainder at each step.
+2. Explain why consecutive Fibonacci numbers represent the worst-case input for Euclid's algorithm.
+3. State Lamé's Theorem and verify that its bound holds for $n = 55$.
+
+<ModelAnswer>
+**(a) Trace on Fibonacci numbers $(89, 55)$:**
+- Step 1: $89 = 1 \times 55 + 34 \implies r = 34$
+- Step 2: $55 = 1 \times 34 + 21 \implies r = 21$
+- Step 3: $34 = 1 \times 21 + 13 \implies r = 13$
+- Step 4: $21 = 1 \times 13 + 8 \implies r = 8$
+- Step 5: $13 = 1 \times 8 + 5 \implies r = 5$
+- Step 6: $8 = 1 \times 5 + 3 \implies r = 3$
+- Step 7: $5 = 1 \times 3 + 2 \implies r = 2$
+- Step 8: $3 = 1 \times 2 + 1 \implies r = 1$
+- Step 9: $2 = 2 \times 1 + 0 \implies r = 0$
+- Step 10: $n = 0$, algorithm halts and returns $m = \mathbf{1}$.
+- Total division operations: **9 divisions**.
+
+**(b) Why Fibonacci numbers are the worst case:**
+- In the division $m = q \cdot n + r$, the remainder $r = m - q \cdot n$ shrinks fastest when $q$ is large.
+- The smallest possible quotient for positive integers with non-zero remainder is $q = 1$.
+- When $q = 1$ at every step, $r = m - n$. For consecutive Fibonacci numbers $F_{k+1}$ and $F_k$, the remainder is $F_{k+1} - F_k = F_{k-1}$, which is the immediately preceding Fibonacci number.
+- Because every quotient is 1 (except the final step where $F_2 = 2 \cdot F_1 + 0$), the values shrink at the slowest possible rate, maximizing the number of iterations required to reach 0.
+
+**(c) Lamé's Theorem:**
+- **Theorem:** The number of division steps in Euclid's algorithm never exceeds 5 times the number of decimal digits in the smaller input number $n$:
+  $$
+  \text{steps} \le 5 \cdot \text{digits}_{10}(n)
+  $$
+- For $n = 55$, the number of decimal digits is 2.
+- The theorem bounds the number of steps by $5 \times 2 = 10\text{ steps}$.
+- The actual number of steps observed is $9$, which strictly satisfies $9 \le 10$.
+</ModelAnswer>
+
+**4.** *(Variable overwrite bug and Least Common Multiple derivation)*
+1. A student implements the loop body of Euclid's algorithm in Java as:
+   ```java
+   r = m % n;
+   n = r;
+   m = n;
+   ```
+   Trace this faulty implementation on $m = 60$ and $n = 24$. Identify the bug and provide the corrected statements.
+2. Given $\gcd(60, 24) = 12$, compute $\operatorname{lcm}(60, 24)$ using the product formula. Explain why computing `(m / gcd) * n` in Java is safer than `(m * n) / gcd`.
+
+<ModelAnswer>
+**(a) Faulty assignment order trace on $(60, 24)$:**
+- **Iteration 1:**
+  - $r = 60 \bmod 24 = 12$.
+  - `n = r;` sets $n = 12$.
+  - `m = n;` copies the newly updated $n$ into $m$, setting $m = 12$.
+  - Both variables now equal 12! The original value of $n$ (24) was completely lost before $m$ could receive it.
+- **Iteration 2:**
+  - $r = 12 \bmod 12 = 0$.
+  - `n = r;` sets $n = 0$.
+  - `m = n;` sets $m = 0$.
+- **Termination:**
+  - The loop checks `while (n != 0)`: $0 \ne 0$ is false, so the loop terminates.
+  - The method returns $m = \mathbf{0}$, which is completely incorrect ($\gcd(60, 24) = 12$).
+- **The fix:** Update $m$ with $n$ *before* updating $n$ with $r$:
+  ```java
+  r = m % n;
+  m = n;
+  n = r;
+  ```
+
+**(b) Least Common Multiple calculation:**
+- The relationship between GCD and LCM for any positive integers $m$ and $n$ is:
+  $$
+  \operatorname{lcm}(m, n) = \frac{m \cdot n}{\gcd(m, n)}
+  $$
+- For $m = 60$ and $n = 24$:
+  $$
+  \operatorname{lcm}(60, 24) = \frac{60 \times 24}{12} = \frac{1{,}440}{12} = \mathbf{120}
+  $$
+- **Integer overflow prevention in code:**
+  - If we write `(m * n) / gcd(m, n)`, the intermediate product $m \cdot n$ can easily exceed `Integer.MAX_VALUE` ($2^{31} - 1 \approx 2.14 \times 10^9$) even when the final LCM fits comfortably within an `int`. For example, with $m = 100{,}000$ and $n = 100{,}000$ ($\gcd = 100{,}000$, $\operatorname{lcm} = 100{,}000$), $m \cdot n = 10^{10}$ overflows 32-bit signed int, producing an erroneous negative result.
+  - Evaluating `(m / gcd(m, n)) * n` divides first. Because $\gcd(m, n)$ divides $m$ evenly by definition, `m / gcd(m, n)` produces an exact integer that is strictly smaller than $m$, preventing unnecessary intermediate overflow.
+</ModelAnswer>
+
+### Part 2: Exam multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="euclid-gcd"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "What is the greatest common divisor of 97 and 20?",
+      options: [
+        { id: "a", text: "1" },
+        { id: "b", text: "2" },
+        { id: "c", text: "5" },
+        { id: "d", text: "20" },
+      ],
+      correctOptionId: "a",
+      explanation: "97 is a prime number whose only positive divisors are 1 and 97. Because 20 is not divisible by 97, their only common divisor is 1, making 97 and 20 coprime. Options B, C, and D (2, 5, and 20) are divisors of 20, but none of them divides 97 evenly (97 = 4 × 20 + 17).",
+    },
+    {
+      id: "q2",
+      prompt: "In Euclid's algorithm while (n != 0), what value does the algorithm return when the loop terminates?",
+      options: [
+        { id: "a", text: "m, which holds the last non-zero remainder" },
+        { id: "b", text: "n, which holds 0" },
+        { id: "c", text: "r, the remainder from the final iteration" },
+        { id: "d", text: "m / n, the integer quotient" },
+      ],
+      correctOptionId: "a",
+      explanation: "The loop terminates when n becomes 0. At that exact moment, m holds the divisor from the preceding step (the last non-zero remainder), which is the greatest common divisor. Option B returns 0 because n is 0 at termination. Option C returns 0 or an uninitialized variable. Option D would divide by zero since n == 0.",
+    },
+    {
+      id: "q3",
+      prompt: "How many division/modulo operations does Euclid's algorithm perform to compute gcd(24, 60)?",
+      options: [
+        { id: "a", text: "3 division operations" },
+        { id: "b", text: "2 division operations" },
+        { id: "c", text: "4 division operations" },
+        { id: "d", text: "12 division operations" },
+      ],
+      correctOptionId: "a",
+      explanation: "Because 24 < 60, step 1 computes 24 mod 60 = 24, swapping inputs to (60, 24). Step 2 computes 60 mod 24 = 12, yielding (24, 12). Step 3 computes 24 mod 12 = 0, yielding (12, 0) and terminating. Total = 3 division operations. Option B (2 divisions) overlooks the initial swap division caused by passing the smaller argument first. Option C (4 divisions) overcounts. Option D (12) is the GCD itself, not the division count.",
+    },
+    {
+      id: "q4",
+      prompt: "What is the worst-case time complexity of Euclid's algorithm for two integers m and n where n <= m?",
+      options: [
+        { id: "a", text: "O(log n)" },
+        { id: "b", text: "O(n)" },
+        { id: "c", text: "O(n log n)" },
+        { id: "d", text: "O(1)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Every two division steps reduce the remainder by at least half (r < n/2), guaranteeing termination in at most 2 log₂ n divisions and giving O(log n) time complexity. Option B (O(n)) is the linear time of brute-force countdown testing. Option C unnecessarily multiplies by n. Option D (O(1)) represents only the best case when n divides m on the first step.",
+    },
+    {
+      id: "q5",
+      prompt: "Given two positive integers a and b where gcd(a, b) = 12 and a · b = 4,320, what is their Least Common Multiple lcm(a, b)?",
+      options: [
+        { id: "a", text: "360" },
+        { id: "b", text: "4,320" },
+        { id: "c", text: "12" },
+        { id: "d", text: "51,840" },
+      ],
+      correctOptionId: "a",
+      explanation: "Using the fundamental relationship lcm(a, b) = (a · b) / gcd(a, b), we compute 4,320 / 12 = 360. Option B (4,320) is the product a · b without dividing by the GCD. Option C (12) is the GCD itself. Option D (51,840) multiplies the product by the GCD instead of dividing.",
+    },
+    {
+      id: "q6",
+      prompt: "Which pair of inputs forces Euclid's algorithm to perform the maximum number of division steps relative to their magnitude?",
+      options: [
+        { id: "a", text: "Consecutive Fibonacci numbers (such as 89 and 55)" },
+        { id: "b", text: "Consecutive powers of two (such as 64 and 32)" },
+        { id: "c", text: "A prime number and zero (such as 97 and 0)" },
+        { id: "d", text: "Two identical multiples of ten (such as 100 and 100)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Consecutive Fibonacci numbers F_{k+1} and F_k produce a quotient of 1 at every single division step because F_{k+1} = 1 · F_k + F_{k-1}. This yields the smallest possible remainder reduction at each step, representing the theoretical worst case formalized by Lamé's Theorem. Option B halts in 1 division because 64 mod 32 = 0. Option C terminates immediately in 0 divisions because n = 0. Option D terminates in 1 division because 100 mod 100 = 0.",
+    },
   ]}
 />

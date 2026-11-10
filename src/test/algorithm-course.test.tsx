@@ -647,5 +647,201 @@ describe("visualizers step all the way through", () => {
       const worstCaseComparisons = (n * (n - 1)) / 2;
       expect(worstCaseComparisons).toBe(28);
     });
+
+    describe("Module 2 practice calculations and exam questions", () => {
+      it("verifies Lab 8 Binary Search trace on even numbers array", () => {
+        const array = Array.from({ length: 10 }, (_, i) => i * 2); // [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+        expect(array).toEqual([0, 2, 4, 6, 8, 10, 12, 14, 16, 18]);
+
+        // (a) Successful search for K = 8
+        let low = 0;
+        let high = array.length - 1;
+        let comparisons8 = 0;
+        let foundIndex = -1;
+
+        while (low <= high) {
+          comparisons8++;
+          const mid = Math.floor((low + high) / 2);
+          if (array[mid] === 8) {
+            foundIndex = mid;
+            break;
+          } else if (array[mid] < 8) {
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
+        }
+        expect(comparisons8).toBe(1);
+        expect(foundIndex).toBe(4);
+        expect(foundIndex + 1).toBe(5); // 1-based location
+
+        // (c) Unsuccessful search for K = 7
+        low = 0;
+        high = array.length - 1;
+        let comparisons7 = 0;
+        const trace7: Array<{ low: number; high: number; mid: number; val: number }> = [];
+
+        while (low <= high) {
+          comparisons7++;
+          const mid = Math.floor((low + high) / 2);
+          trace7.push({ low, high, mid, val: array[mid] });
+          if (array[mid] === 7) {
+            break;
+          } else if (array[mid] < 7) {
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
+        }
+        expect(comparisons7).toBe(4);
+        expect(trace7).toEqual([
+          { low: 0, high: 9, mid: 4, val: 8 },
+          { low: 0, high: 3, mid: 1, val: 2 },
+          { low: 2, high: 3, mid: 2, val: 4 },
+          { low: 3, high: 3, mid: 3, val: 6 },
+        ]);
+        expect(low).toBe(4);
+        expect(high).toBe(3);
+        expect(low <= high).toBe(false);
+      });
+
+      it("verifies binary search failure on unsorted array and comparison bounds", () => {
+        const unsorted = [4, 9, 1, 7, 3, 8];
+        let low = 0;
+        let high = unsorted.length - 1;
+        let result = -1;
+        const steps: number[] = [];
+
+        while (low <= high) {
+          const mid = Math.floor((low + high) / 2);
+          steps.push(unsorted[mid]);
+          if (unsorted[mid] === 9) {
+            result = mid;
+            break;
+          } else if (unsorted[mid] < 9) {
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
+        }
+        expect(result).toBe(-1); // Fails to find 9!
+        expect(steps).toEqual([1, 3, 8]);
+
+        // Comparison bound for n = 1024
+        const n = 1024;
+        const maxComparisons = Math.floor(Math.log2(n)) + 1;
+        expect(maxComparisons).toBe(11);
+      });
+
+      it("verifies 32-bit signed overflow and 2-element boundary condition", () => {
+        const low = 1_000_000_000;
+        const high = 1_500_000_000;
+        // 32-bit signed addition wrap-around
+        const sum32 = (low + high) | 0;
+        expect(sum32).toBe(-1794967296);
+        const midBuggy = (sum32 / 2) | 0;
+        expect(midBuggy).toBe(-897483648);
+
+        // Safe subtraction midpoint
+        const midSafe = low + Math.floor((high - low) / 2);
+        expect(midSafe).toBe(1_250_000_000);
+
+        // Premature exit of low < high on 2-element array [10, 20] searching for 20
+        const arr = [10, 20];
+        let l = 0;
+        let h = 1;
+        let found = -1;
+        while (l < h) {
+          const m = Math.floor((l + h) / 2);
+          if (arr[m] === 20) {
+            found = m;
+            break;
+          } else if (arr[m] < 20) {
+            l = m + 1;
+          } else {
+            h = m - 1;
+          }
+        }
+        expect(found).toBe(-1); // Prematurely stopped at l = 1, h = 1 without checking index 1
+      });
+
+      it("verifies sorting breakeven calculation for n = 1024", () => {
+        const n = 1024;
+        const log2n = Math.log2(n); // 10
+        const sortCost = n * log2n; // 10240
+        const searchDiff = n / 2 - log2n; // 512 - 10 = 502
+        const kThreshold = sortCost / searchDiff; // ~20.398
+        expect(kThreshold).toBeCloseTo(20.398, 2);
+        expect(Math.ceil(kThreshold)).toBe(21);
+      });
+
+      it("verifies Euclid GCD trace on (45, 210), (31415, 14142), and worst-case Fibonacci (89, 55)", () => {
+        // Trace GCD(45, 210)
+        let m = 45;
+        let n = 210;
+        let divisions45_210 = 0;
+        const pairs: Array<[number, number]> = [];
+
+        while (n !== 0) {
+          divisions45_210++;
+          const r = m % n;
+          pairs.push([m, n]);
+          m = n;
+          n = r;
+        }
+        expect(m).toBe(15);
+        expect(divisions45_210).toBe(4);
+        expect(pairs).toEqual([
+          [45, 210],
+          [210, 45],
+          [45, 30],
+          [30, 15],
+        ]);
+
+        // Homework GCD(31415, 14142)
+        let mHw = 31415;
+        let nHw = 14142;
+        let divisionsHw = 0;
+        while (nHw !== 0) {
+          divisionsHw++;
+          const r = mHw % nHw;
+          mHw = nHw;
+          nHw = r;
+        }
+        expect(mHw).toBe(1); // Coprime
+        expect(divisionsHw).toBe(10);
+
+        // Worst-case Fibonacci (89, 55)
+        let mFib = 89;
+        let nFib = 55;
+        let divisionsFib = 0;
+        const quotients: number[] = [];
+        while (nFib !== 0) {
+          divisionsFib++;
+          quotients.push(Math.floor(mFib / nFib));
+          const r = mFib % nFib;
+          mFib = nFib;
+          nFib = r;
+        }
+        expect(mFib).toBe(1);
+        expect(divisionsFib).toBe(9);
+        expect(quotients).toEqual([1, 1, 1, 1, 1, 1, 1, 1, 2]); // All 1s until base case
+
+        // Buggy swap order in Euclid
+        let mBug = 60;
+        let nBug = 24;
+        while (nBug !== 0) {
+          const r = mBug % nBug;
+          nBug = r;
+          mBug = nBug; // Buggy: copies updated nBug (which is r) into mBug!
+        }
+        expect(mBug).toBe(0); // Erroneous 0
+
+        // LCM derivation
+        const gcd60_24 = 12;
+        const lcm = (60 / gcd60_24) * 24;
+        expect(lcm).toBe(120);
+      });
+    });
   });
 });
