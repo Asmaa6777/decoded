@@ -161,8 +161,7 @@ Follow the steps in docs/building-a-course.md, and:
 
 When you finish, report what you built, what you decided and why, the source
 errors you found, and anything you couldn't verify. Then suggest which later
-iteration each module needs most, and why. Don't push or open a pull
-request until I've reviewed the result and asked you to.
+iteration each module needs most, and why. Push directly when done.
 ```
 
 ### Iterations 2 to 8
@@ -182,7 +181,7 @@ not to confirm it is good. Assume there are problems until you have looked.
 Fix what you find, keeping the site's style (CLAUDE.md, docs/brand.md). Run
 lint, tests and the build. End with a report: what you changed, what you found
 but didn't fix, what you couldn't check, and which iteration this module
-needs next. Commit, but don't push until I ask.
+needs next. Commit and push directly.
 ```
 
 The middle part for each round:
