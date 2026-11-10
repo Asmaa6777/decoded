@@ -387,4 +387,265 @@ describe("visualizers step all the way through", () => {
       expect(quadraticTime(8, 4)).toBe(128);
     });
   });
+
+  describe("Module 1 practice calculations and exam questions", () => {
+    it("verifies Selection Sort hand trace, comparison counts, and instability on First Exam list", () => {
+      type Tagged = { val: number; tag: string };
+      const arr: Tagged[] = [
+        { val: 3, tag: "3" },
+        { val: 7, tag: "7" },
+        { val: 8, tag: "8" },
+        { val: 5, tag: "5a" },
+        { val: 2, tag: "2" },
+        { val: 1, tag: "1" },
+        { val: 9, tag: "9" },
+        { val: 5, tag: "5b" },
+        { val: 4, tag: "4" },
+      ];
+
+      let comparisons = 0;
+      let swaps = 0;
+      const passSnapshots: number[][] = [];
+
+      for (let i = 0; i < arr.length - 1; i++) {
+        let min = i;
+        for (let j = i + 1; j < arr.length; j++) {
+          comparisons++;
+          if (arr[j].val < arr[min].val) {
+            min = j;
+          }
+        }
+        const temp = arr[i];
+        arr[i] = arr[min];
+        arr[min] = temp;
+        swaps++;
+        passSnapshots.push(arr.map((x) => x.val));
+      }
+
+      expect(comparisons).toBe(36); // (9 * 8) / 2
+      expect(swaps).toBe(8);
+
+      // Pass 1: 1 swapped to index 0
+      expect(passSnapshots[0]).toEqual([1, 7, 8, 5, 2, 3, 9, 5, 4]);
+      // Pass 2: 2 swapped to index 1
+      expect(passSnapshots[1]).toEqual([1, 2, 8, 5, 7, 3, 9, 5, 4]);
+      // Pass 3: 3 swapped to index 2
+      expect(passSnapshots[2]).toEqual([1, 2, 3, 5, 7, 8, 9, 5, 4]);
+      // Pass 4: 4 swapped to index 3 with 5a, sending 5a to index 8
+      expect(passSnapshots[3]).toEqual([1, 2, 3, 4, 7, 8, 9, 5, 5]);
+
+      // Final sorted values
+      expect(arr.map((x) => x.val)).toEqual([1, 2, 3, 4, 5, 5, 7, 8, 9]);
+
+      // Verify instability: 5b now precedes 5a
+      const fiveTags = arr.filter((x) => x.val === 5).map((x) => x.tag);
+      expect(fiveTags).toEqual(["5b", "5a"]);
+    });
+
+    it("verifies Bubble Sort pass-by-pass operations and early exit flag behavior", () => {
+      // 1. Lecture example [6, 2, 11, 7, 5]
+      const a = [6, 2, 11, 7, 5];
+      let comps = 0;
+      let swaps = 0;
+      for (let i = 0; i < a.length - 1; i++) {
+        for (let j = 0; j < a.length - 1 - i; j++) {
+          comps++;
+          if (a[j + 1] < a[j]) {
+            const t = a[j];
+            a[j] = a[j + 1];
+            a[j + 1] = t;
+            swaps++;
+          }
+        }
+      }
+      expect(comps).toBe(10);
+      expect(swaps).toBe(5);
+      expect(a).toEqual([2, 5, 6, 7, 11]);
+
+      // 2. Early-exit flag on already sorted input [2, 5, 6, 7, 11]
+      const sortedA = [2, 5, 6, 7, 11];
+      let flagComps = 0;
+      let flagSwaps = 0;
+      let flagPasses = 0;
+      for (let i = 0; i < sortedA.length - 1; i++) {
+        flagPasses++;
+        let swapped = false;
+        for (let j = 0; j < sortedA.length - 1 - i; j++) {
+          flagComps++;
+          if (sortedA[j + 1] < sortedA[j]) {
+            const t = sortedA[j];
+            sortedA[j] = sortedA[j + 1];
+            sortedA[j + 1] = t;
+            flagSwaps++;
+            swapped = true;
+          }
+        }
+        if (!swapped) break;
+      }
+      expect(flagPasses).toBe(1);
+      expect(flagComps).toBe(4);
+      expect(flagSwaps).toBe(0);
+
+      // 3. Without flag on already sorted input [2, 5, 6, 7, 11]
+      let noFlagComps = 0;
+      let noFlagPasses = 0;
+      for (let i = 0; i < sortedA.length - 1; i++) {
+        noFlagPasses++;
+        for (let j = 0; j < sortedA.length - 1 - i; j++) {
+          noFlagComps++;
+        }
+      }
+      expect(noFlagPasses).toBe(4);
+      expect(noFlagComps).toBe(10);
+    });
+
+    it("verifies Insertion Sort trace, comparisons, shifts, and inversion count", () => {
+      // Trace [6, 2, 11, 7, 5]
+      const a = [6, 2, 11, 7, 5];
+      let comps = 0;
+      let shifts = 0;
+      for (let i = 1; i < a.length; i++) {
+        const key = a[i];
+        let j = i - 1;
+        while (j >= 0) {
+          comps++;
+          if (a[j] > key) {
+            a[j + 1] = a[j];
+            shifts++;
+            j--;
+          } else {
+            break;
+          }
+        }
+        a[j + 1] = key;
+      }
+      expect(comps).toBe(8);
+      expect(shifts).toBe(5);
+      expect(a).toEqual([2, 5, 6, 7, 11]);
+
+      // Inversions on reverse-sorted [5, 4, 3, 2, 1]
+      const rev = [5, 4, 3, 2, 1];
+      let revComps = 0;
+      let revShifts = 0;
+      for (let i = 1; i < rev.length; i++) {
+        const key = rev[i];
+        let j = i - 1;
+        while (j >= 0 && rev[j] > key) {
+          revComps++;
+          rev[j + 1] = rev[j];
+          revShifts++;
+          j--;
+        }
+        rev[j + 1] = key;
+      }
+      expect(revComps).toBe(10);
+      expect(revShifts).toBe(10);
+      expect((5 * 4) / 2).toBe(10);
+
+      // Stability verification on duplicates [1, 12, 46a, 6, 37, 5, 46b, 3, 32]
+      type Tagged = { val: number; tag: string };
+      const dupArr: Tagged[] = [
+        { val: 1, tag: "1" },
+        { val: 12, tag: "12" },
+        { val: 46, tag: "46a" },
+        { val: 6, tag: "6" },
+        { val: 37, tag: "37" },
+        { val: 5, tag: "5" },
+        { val: 46, tag: "46b" },
+        { val: 3, tag: "3" },
+        { val: 32, tag: "32" },
+      ];
+      for (let i = 1; i < dupArr.length; i++) {
+        const key = dupArr[i];
+        let j = i - 1;
+        while (j >= 0 && dupArr[j].val > key.val) {
+          dupArr[j + 1] = dupArr[j];
+          j--;
+        }
+        dupArr[j + 1] = key;
+      }
+      const tags = dupArr.filter((x) => x.val === 46).map((x) => x.tag);
+      expect(tags).toEqual(["46a", "46b"]); // Stable order preserved
+    });
+
+    it("verifies Merge Sort tree structure and two-way merge comparisons", () => {
+      const leftHalf = [2, 6, 11];
+      const rightHalf = [4, 5, 7];
+      const merged: number[] = [];
+
+      let l = 0;
+      let r = 0;
+      let mergeComps = 0;
+
+      while (l < leftHalf.length && r < rightHalf.length) {
+        mergeComps++;
+        if (leftHalf[l] <= rightHalf[r]) {
+          merged.push(leftHalf[l++]);
+        } else {
+          merged.push(rightHalf[r++]);
+        }
+      }
+      while (l < leftHalf.length) merged.push(leftHalf[l++]);
+      while (r < rightHalf.length) merged.push(rightHalf[r++]);
+
+      expect(mergeComps).toBe(5); // p + q - 1 = 3 + 3 - 1 = 5
+      expect(merged).toEqual([2, 4, 5, 6, 7, 11]);
+
+      // Odd-sized halving: 7 elements
+      const n = 7;
+      const mid = Math.floor(n / 2);
+      expect(mid).toBe(3);
+      expect(n - mid).toBe(4);
+    });
+
+    it("verifies Quick Sort two-pointer partitioning and worst-case comparison count", () => {
+      // 1. Partition [25, 10, 30, 15, 20, 28] with pivot 25
+      const a = [25, 10, 30, 15, 20, 28];
+      const pivot = a[0];
+      let left = 0;
+      let right = a.length - 1;
+
+      while (left < right) {
+        while (a[right] >= pivot && left < right) right--;
+        while (a[left] <= pivot && left < right) left++;
+        if (left < right) {
+          const t = a[left];
+          a[left] = a[right];
+          a[right] = t;
+        }
+      }
+      const temp = a[0];
+      a[0] = a[right];
+      a[right] = temp;
+
+      expect(right).toBe(3); // pivot placed at index 3
+      expect(a[3]).toBe(25);
+      expect(a).toEqual([15, 10, 20, 25, 30, 28]);
+
+      // 2. Demonstrating left-pointer-first failure on [25, 10, 30]
+      const buggyArr = [25, 10, 30];
+      const buggyPivot = buggyArr[0];
+      let bLeft = 0;
+      let bRight = buggyArr.length - 1;
+      while (bLeft < bRight) {
+        while (buggyArr[bLeft] <= buggyPivot && bLeft < bRight) bLeft++;
+        while (buggyArr[bRight] >= buggyPivot && bLeft < bRight) bRight--;
+        if (bLeft < bRight) {
+          const t = buggyArr[bLeft];
+          buggyArr[bLeft] = buggyArr[bRight];
+          buggyArr[bRight] = t;
+        }
+      }
+      const bTemp = buggyArr[0];
+      buggyArr[0] = buggyArr[bRight];
+      buggyArr[bRight] = bTemp;
+      // Corrupted: 30 swapped to index 0, left of pivot 25!
+      expect(buggyArr).toEqual([30, 10, 25]);
+
+      // 3. Worst-case comparison count on sorted array of size 8
+      const n = 8;
+      const worstCaseComparisons = (n * (n - 1)) / 2;
+      expect(worstCaseComparisons).toBe(28);
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SortVisualizer, LeetCodeProblems, PartitionVisualizer } from "@/components/mdx/AlgoVisualizers";
 
 # Quick Sort: Pick a Pivot
@@ -159,5 +159,206 @@ Invoke the method using `quickSort(array, 0, array.length - 1)`. To observe wors
     { id: 905, title: "Sort Array By Parity", slug: "sort-array-by-parity", why: "A partition with no pivot value: evens to the left, odds to the right, two pointers, in place." },
     { id: 922, title: "Sort Array By Parity II", slug: "sort-array-by-parity-ii", why: "Partition again, this time into alternating positions. Practise moving two pointers independently." },
     { id: 976, title: "Largest Perimeter Triangle", slug: "largest-perimeter-triangle", why: "Sort (try your own quick sort), then a single greedy scan from the largest sides." },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm and written exam questions
+
+**1.** *(Lab 6 two-pointer partitioning trace)* Trace the two-pointer partition algorithm from the lab on the array `[25, 10, 30, 15, 20, 28]` with the pivot chosen as the first element (`pivot = 25`). Detail each pointer movement, comparison, swap, and the final state of the array and pivot position.
+
+<ModelAnswer>
+Initial array: $A = \langle 25, 10, 30, 15, 20, 28 \rangle$ ($n = 6$, $lowIndex = 0$, $highIndex = 5$).
+- Pivot value: $pivot = A[0] = 25$.
+- Initial pointers: $leftPointer = 0$, $rightPointer = 5$.
+
+**Step-by-step partition walk:**
+
+1. **Move `rightPointer` leftward** while $A[rightPointer] \ge pivot$:
+   - $A[5] = 28 \ge 25 \implies$ decrement $rightPointer$ to 4.
+   - $A[4] = 20 < 25 \implies$ stop $rightPointer$ at index 4.
+2. **Move `leftPointer` rightward** while $A[leftPointer] \le pivot$:
+   - $A[0] = 25 \le 25 \implies$ increment $leftPointer$ to 1.
+   - $A[1] = 10 \le 25 \implies$ increment $leftPointer$ to 2.
+   - $A[2] = 30 > 25 \implies$ stop $leftPointer$ at index 2.
+3. Because $leftPointer < rightPointer$ ($2 < 4$), **swap $A[2]$ and $A[4]$**:
+   - Swap 30 and 20.
+   - Array becomes: $\langle 25, 10, \mathbf{20}, 15, \mathbf{30}, 28 \rangle$.
+4. **Move `rightPointer` leftward again**:
+   - $A[4] = 30 \ge 25 \implies$ decrement $rightPointer$ to 3.
+   - $A[3] = 15 < 25 \implies$ stop $rightPointer$ at index 3.
+5. **Move `leftPointer` rightward again**:
+   - $A[2] = 20 \le 25 \implies$ increment $leftPointer$ to 3.
+   - $leftPointer$ meets $rightPointer$ at index 3 ($3 < 3$ fails), so the `while` loop terminates.
+6. **Final pivot swap:**
+   - Swap the pivot at $lowIndex$ (index 0) with $rightPointer$ (index 3): swap $A[0]$ (25) and $A[3]$ (15).
+   - Array becomes: $\mathbf{\langle 15, 10, 20, 25, 30, 28 \rangle}$.
+   - Return $rightPointer = 3$.
+
+**Partition verification:**
+- Pivot 25 is locked in its permanent sorted position at index 3.
+- Left subarray ($A[0 \dots 2] = \langle 15, 10, 20 \rangle$): all elements are strictly less than 25.
+- Right subarray ($A[4 \dots 5] = \langle 30, 28 \rangle$): all elements are strictly greater than 25.
+- Quick Sort now recursively sorts the left subarray ($low=0, high=2$) and right subarray ($low=4, high=5$).
+</ModelAnswer>
+
+**2.** *(Pointer direction rule and counterexample)* When using the first element as the pivot in two-pointer partitioning, explain why the `rightPointer` must always move before the `leftPointer`. Demonstrate what goes wrong if the `leftPointer` moves first on the 3-element array `[25, 10, 30]`.
+
+<ModelAnswer>
+**Why `rightPointer` must move first:**
+At the end of partitioning, the pivot (stored at index 0) is swapped with the element at the meeting position of the two pointers. For this swap to maintain correctness, the element at the meeting position must be **less than or equal to the pivot**, because it will be placed at index 0 into the left partition.
+- When `rightPointer` moves first, it only halts on values $\le pivot$ (or meets `leftPointer` at a location already known to be $\le pivot$). Thus, the meeting position is always $\le pivot$, making the final swap safe.
+- If `leftPointer` moves first, it halts on values $> pivot$. If it then meets `rightPointer` because `rightPointer` has not yet decremented, the meeting index holds a value greater than the pivot. Swapping the pivot with that location places a larger value into index 0, corrupting the partition.
+
+**Counterexample on $\langle 25, 10, 30 \rangle$ ($pivot = 25$):**
+- Initial: $left = 0$, $right = 2$.
+- **Buggy execution (moving `leftPointer` first):**
+  - $leftPointer$ starts at 0: $A[0] = 25 \le 25 \implies left$ advances to 1.
+  - $A[1] = 10 \le 25 \implies left$ advances to 2.
+  - At index 2, $leftPointer$ meets $rightPointer$ ($left < right$ becomes false). Loop terminates.
+  - Final swap: swap $A[low]$ (25) with $A[right]$ (30).
+  - Result: $\langle \mathbf{30}, 10, \mathbf{25} \rangle$.
+  - **Fatal error:** 30 is placed at index 0, to the left of pivot 25, completely violating the partition invariant!
+- **Correct execution (moving `rightPointer` first):**
+  - $rightPointer$ starts at 2: $A[2] = 30 \ge 25 \implies right$ decrements to 1.
+  - $A[1] = 10 < 25 \implies right$ stops at index 1.
+  - $leftPointer$ moves: $A[0] = 25 \le 25 \implies left$ advances to 1, meeting $right$ at index 1.
+  - Final swap: swap $A[low]$ (25) with $A[right]$ (10).
+  - Result: $\langle \mathbf{10}, \mathbf{25}, 30 \rangle$.
+  - Correctly partitioned: 10 is to the left of 25, and 30 is to the right.
+</ModelAnswer>
+
+**3.** *(Worst-case degeneration and pivot strategies)* What causes Quick Sort with a first-element pivot to run in its worst-case time of $O(n^2)$? Formulate the recurrence relation, calculate the exact comparison count for an already sorted array of size $n = 8$, explain the impact on call-stack memory, and detail three pivot selection strategies that prevent this issue.
+
+<ModelAnswer>
+**Cause of $O(n^2)$ worst case:**
+When the pivot is picked as the first element and the input array is already sorted in ascending order (or reverse-sorted):
+- In every pass, the pivot is the extreme minimum (or maximum) element.
+- Partitioning an array of size $k$ produces one empty partition (size 0) and one partition containing $k - 1$ elements.
+- The subproblem size shrinks by only 1 element per level rather than halving.
+
+**Recurrence relation:**
+$$
+T(n) = T(n - 1) + T(0) + \Theta(n) = T(n - 1) + \Theta(n)
+$$
+Unfolding the recurrence:
+$$
+\sum_{k=1}^{n-1} k = (n - 1) + (n - 2) + \dots + 1 = \frac{n(n - 1)}{2} = \mathbf{\Theta(n^2)}
+$$
+
+**Hand calculation for $n = 8$ sorted array:**
+$$
+\text{Comparisons} = 7 + 6 + 5 + 4 + 3 + 2 + 1 = \frac{8 \times 7}{2} = \mathbf{28\text{ comparisons}}
+$$
+
+**Call-stack memory impact:**
+In a balanced tree, recursion depth is $\lceil \log_2 n \rceil$, consuming $O(\log n)$ stack frames. In the degenerate worst case, the tree forms a single linear chain of $n$ recursive levels. For large $n$ (such as 50,000 elements), allocating $n$ stack frames exhausts available thread stack memory, throwing a fatal `StackOverflowError`.
+
+**Three mitigation strategies:**
+1. **Middle element pivot:** Pick $pivot = A[(low + high) / 2]$. On already sorted arrays, this picks the exact median, producing perfectly balanced $\log_2 n$ splits.
+2. **Randomized pivot:** Pick a uniformly random index between $low$ and $high$ and swap it with $A[low]$ before partitioning. This prevents any fixed adversarial input from triggering worst-case performance, ensuring $O(n \log n)$ expected runtime on all inputs.
+3. **Median-of-three:** Sample the first, middle, and last elements, find their median, and use it as the pivot. This eliminates worst-case behavior on sorted and reverse-sorted inputs with minimal comparison overhead.
+</ModelAnswer>
+
+**4.** *(Comparative synthesis: Quick Sort vs Merge Sort)* Construct a structured comparison between Quick Sort and Merge Sort across time complexity, space complexity, in-place behavior, stability, division of work, and practical performance on modern CPU architectures.
+
+<ModelAnswer>
+| Dimension | Quick Sort | Merge Sort |
+| --- | --- | --- |
+| **Best-case time** | $\Theta(n \log n)$ | $\Theta(n \log n)$ |
+| **Average-case time** | $\Theta(n \log n)$ | $\Theta(n \log n)$ |
+| **Worst-case time** | $\Theta(n^2)$ (degenerate partitions) | $\Theta(n \log n)$ (guaranteed) |
+| **Auxiliary heap space** | $O(1)$ (no secondary array) | $O(n)$ (requires merge buffer) |
+| **Call-stack space** | $O(\log n)$ average, $O(n)$ worst | $O(\log n)$ |
+| **In-place status** | Yes | No |
+| **Stability** | No (long-range swaps across pivot) | Yes (with `left[i] <= right[j]`) |
+| **Where work occurs** | In **Divide** (partitioning); combine does 0 work | In **Combine** (merging); divide does simple index split |
+| **Hardware cache efficiency** | High cache locality (sequential in-place pointer scans) | Lower cache locality (copying back and forth between arrays) |
+
+**Practical choice in production:**
+- Modern languages use Quick Sort (such as Dual-Pivot QuickSort) for primitive types (integers, floats) where stability is unnecessary and raw speed and memory efficiency are paramount.
+- They use Merge Sort or its adaptive variant TimSort for reference objects (such as sorting lists of database records) where stability is essential and extra memory allocation is acceptable.
+</ModelAnswer>
+
+### Part 2: Exam multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="quick-sort"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "Under what input condition does Quick Sort with a first-element pivot degrade to its worst-case O(n²) time complexity?",
+      options: [
+        { id: "a", text: "When the input array is already sorted in ascending or descending order" },
+        { id: "b", text: "When the input array contains randomly distributed values" },
+        { id: "c", text: "When the input size n is an odd number" },
+        { id: "d", text: "When all elements in the array are powers of two" },
+      ],
+      correctOptionId: "a",
+      explanation: "When an array is already sorted, picking the first element as the pivot consistently chooses the extreme minimum value. Each partition step splits the array into sizes 0 and n − 1, producing n recursive levels and n(n − 1)/2 total comparisons. Randomly distributed inputs yield balanced O(n log n) partitions. Odd input sizes or powers of two have no bearing on worst-case degradation.",
+    },
+    {
+      id: "q2",
+      prompt: "In Quick Sort, during which stage of the divide and conquer paradigm is the actual sorting work performed?",
+      options: [
+        { id: "a", text: "During the divide step (partitioning), with no combine step required" },
+        { id: "b", text: "During the combine step (merging), after elements have been divided" },
+        { id: "c", text: "Equally divided between the divide and combine steps" },
+        { id: "d", text: "Only in the base case when n = 1" },
+      ],
+      correctOptionId: "a",
+      explanation: "Quick sort does all its comparison and reordering work during partitioning (the divide step). Once the left and right subarrays are recursively sorted, the entire array is already in order because everything left is smaller than the pivot and everything right is larger; combine requires zero work. In contrast, merge sort performs its sorting during the combine step.",
+    },
+    {
+      id: "q3",
+      prompt: "You run the lab's two-pointer partition on [25, 10, 30, 15, 20, 28] using 25 as the pivot. What is the final index where pivot 25 is placed?",
+      options: [
+        { id: "a", text: "Index 3" },
+        { id: "b", text: "Index 0" },
+        { id: "c", text: "Index 2" },
+        { id: "d", text: "Index 4" },
+      ],
+      correctOptionId: "a",
+      explanation: "Elements strictly smaller than 25 are 10, 15, and 20 (3 elements). Therefore, exactly 3 elements must reside in the left partition, placing the pivot 25 at index 3. The resulting array is [15, 10, 20, 25, 30, 28]. Option B would mean no elements are smaller than 25. Option C would leave only 2 smaller elements. Option D would require 4 smaller elements.",
+    },
+    {
+      id: "q4",
+      prompt: "What is the average-case auxiliary space complexity of Quick Sort on the recursion call stack?",
+      options: [
+        { id: "a", text: "O(log n)" },
+        { id: "b", text: "O(1)" },
+        { id: "c", text: "O(n)" },
+        { id: "d", text: "O(n log n)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Quick sort sorts in place without allocating a secondary array, but balanced recursive partitions create a call stack of depth log₂ n, requiring O(log n) auxiliary stack space. In the worst case it can reach O(n). Option B is incorrect because recursive call frames require memory. Option C represents the worst-case stack space, not the average case. Option D is incorrect.",
+    },
+    {
+      id: "q5",
+      prompt: "Why is Quick Sort classified as an unstable sorting algorithm?",
+      options: [
+        { id: "a", text: "Partitioning swaps elements across the pivot over long distances, which can jump an earlier duplicate past a later identical key" },
+        { id: "b", text: "It cannot sort arrays containing floating-point numbers" },
+        { id: "c", text: "Its worst-case time complexity is O(n²)" },
+        { id: "d", text: "It requires allocating unpredictable amounts of heap memory" },
+      ],
+      correctOptionId: "a",
+      explanation: "During partitioning, pointers swap out-of-order elements across long distances without verifying whether other identical elements reside between them. For example, in [3a, 2, 3b, 1], swapping with the pivot can place 3b ahead of 3a. Option B is false because quick sort works with any comparable type. Option C confuses runtime complexity with stability. Option D is false because quick sort is an in-place sort.",
+    },
+    {
+      id: "q6",
+      prompt: "Why is randomized pivot selection preferred over first-element pivot selection in practical implementations?",
+      options: [
+        { id: "a", text: "It prevents sorted or structured inputs from systematically causing unbalanced O(n²) partitions, guaranteeing O(n log n) expected time" },
+        { id: "b", text: "It reduces the worst-case time complexity to O(n)" },
+        { id: "c", text: "It eliminates the need for recursion entirely" },
+        { id: "d", text: "It makes quick sort a stable algorithm" },
+      ],
+      correctOptionId: "a",
+      explanation: "By picking a random pivot, no static input ordering (such as pre-sorted data) can reliably trigger the O(n²) worst case. The expected running time becomes O(n log n) for every possible input dataset. Option B is impossible because comparison-based sorting has an Ω(n log n) lower bound. Option C is false because quick sort remains recursive. Option D is false because randomized swapping remains unstable.",
+    },
   ]}
 />

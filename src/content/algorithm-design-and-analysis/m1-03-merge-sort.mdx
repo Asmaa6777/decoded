@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SortVisualizer, LeetCodeProblems, MergeSortTree, TwoWayMergeVisualizer } from "@/components/mdx/AlgoVisualizers";
 
 # Divide and Conquer: Merge Sort
@@ -164,5 +164,192 @@ Benchmarking merge sort on 100,000 random integers demonstrates its practical sp
     { id: 88, title: "Merge Sorted Array", slug: "merge-sorted-array", why: "The merge step on its own. Trick: fill from the back so you don't overwrite anything." },
     { id: 21, title: "Merge Two Sorted Lists", slug: "merge-two-sorted-lists", why: "The same merge, on linked lists instead of arrays." },
     { id: 977, title: "Squares of a Sorted Array", slug: "squares-of-a-sorted-array", why: "The squares form two sorted runs (from the negatives and the positives). Merge them in O(n) instead of sorting." },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm and written exam questions
+
+**1.** *(First exam & lecture)* Define the Divide and Conquer algorithm design paradigm. List its three formal stages and explain the role of the base case. Name the three classic computational problems solved using Divide and Conquer identified in the course notes.
+
+<ModelAnswer>
+**Definition:**
+Divide and Conquer is an algorithmic design strategy based on recursion that breaks a problem down into smaller subproblems of the same type until they become simple enough to solve directly.
+
+**The three stages:**
+1. **Divide:** Partition the problem instance into two or more smaller subproblems of the same kind.
+2. **Conquer:** Solve each subproblem recursively. When a subproblem is small enough that it cannot or need not be divided further, solve it directly; this condition is the **base case**.
+3. **Combine:** Merge the solutions of the subproblems to produce the final solution for the original problem instance.
+
+**Role of the base case:**
+The base case terminates the recursion. In Merge Sort, the base case is an array of size 0 or 1, which is sorted by definition and returned immediately without further division. Without a base case, recursive calls would continue indefinitely, resulting in a `StackOverflowError`.
+
+**Three classic applications from course notes:**
+1. **Maximum and minimum problem:** finding both the maximum and minimum elements in an array by dividing into halves and comparing subproblem extremes.
+2. **Binary search:** searching a sorted array by halving the candidate range at each step.
+3. **Sorting algorithms:** Merge Sort and Quick Sort.
+</ModelAnswer>
+
+**2.** *(Lecture recursion tree trace)* Trace Merge Sort on the 7-element array `[30, 20, 40, 5, 90, 80, 10]`. Illustrate how the array divides into subarrays, identify the base cases, and trace the bottom-up combine operations level by level until the array is fully sorted.
+
+<ModelAnswer>
+The input array has $n = 7$ elements: $\langle 30, 20, 40, 5, 90, 80, 10 \rangle$.
+With integer division $mid = 7 / 2 = 3$, the array splits into:
+- Left half ($A[0 \dots 2]$, size 3): $\langle 30, 20, 40 \rangle$
+- Right half ($A[3 \dots 6]$, size 4): $\langle 5, 90, 80, 10 \rangle$
+
+**Dividing the left half $\langle 30, 20, 40 \rangle$:**
+- Split at $mid = 3 / 2 = 1$: left $\langle 30 \rangle$ (base case), right $\langle 20, 40 \rangle$.
+- Right $\langle 20, 40 \rangle$ splits at $mid = 2 / 2 = 1$ into $\langle 20 \rangle$ and $\langle 40 \rangle$ (both base cases).
+- Combine $\langle 20 \rangle$ and $\langle 40 \rangle \implies \langle 20, 40 \rangle$.
+- Combine $\langle 30 \rangle$ and $\langle 20, 40 \rangle \implies \langle 20, 30, 40 \rangle$.
+
+**Dividing the right half $\langle 5, 90, 80, 10 \rangle$:**
+- Split at $mid = 4 / 2 = 2$: left $\langle 5, 90 \rangle$ and right $\langle 80, 10 \rangle$.
+- Left $\langle 5, 90 \rangle$ splits into base cases $\langle 5 \rangle$ and $\langle 90 \rangle \implies$ combines to $\langle 5, 90 \rangle$.
+- Right $\langle 80, 10 \rangle$ splits into base cases $\langle 80 \rangle$ and $\langle 10 \rangle \implies$ combines to $\langle 10, 80 \rangle$.
+- Combine $\langle 5, 90 \rangle$ and $\langle 10, 80 \rangle \implies \langle 5, 10, 80, 90 \rangle$.
+
+**Final combine step:**
+Merge the two sorted halves:
+$$
+\text{Merge}(\langle 20, 30, 40 \rangle, \langle 5, 10, 80, 90 \rangle)
+$$
+- Compare 20 vs 5 $\to$ pick 5
+- Compare 20 vs 10 $\to$ pick 10
+- Compare 20 vs 80 $\to$ pick 20
+- Compare 30 vs 80 $\to$ pick 30
+- Compare 40 vs 80 $\to$ pick 40
+- Left half exhausted; copy remaining right elements (80, 90).
+
+**Final sorted array:** $\langle 5, 10, 20, 30, 40, 80, 90 \rangle$.
+The tree has $\lceil \log_2 7 \rceil + 1 = 4$ levels.
+</ModelAnswer>
+
+**3.** *(Two-way merge trace)* Trace the execution of the `merge(inputArray, leftHalf, rightHalf)` method on `leftHalf = [2, 6, 11]` and `rightHalf = [4, 5, 7]`. Provide a trace table tracking pointer indices $l, r, m$, the compared values, the value placed into `inputArray`, and the cleanup phase when one half runs out. State the total number of comparisons.
+
+<ModelAnswer>
+Input subarrays: $leftHalf = \langle 2, 6, 11 \rangle$ ($leftSize = 3$) and $rightHalf = \langle 4, 5, 7 \rangle$ ($rightSize = 3$).
+
+| Step | $l$ | $r$ | $m$ | Comparison | Action | $inputArray$ so far |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 0 | 0 | 0 | $2 \le 4$ (true) | take $leftHalf[0]$ (2), $l{++}$ | $\langle 2 \rangle$ |
+| 2 | 1 | 0 | 1 | $6 \le 4$ (false) | take $rightHalf[0]$ (4), $r{++}$ | $\langle 2, 4 \rangle$ |
+| 3 | 1 | 1 | 2 | $6 \le 5$ (false) | take $rightHalf[1]$ (5), $r{++}$ | $\langle 2, 4, 5 \rangle$ |
+| 4 | 1 | 2 | 3 | $6 \le 7$ (true) | take $leftHalf[1]$ (6), $l{++}$ | $\langle 2, 4, 5, 6 \rangle$ |
+| 5 | 2 | 2 | 4 | $11 \le 7$ (false) | take $rightHalf[2]$ (7), $r{++}$ | $\langle 2, 4, 5, 6, 7 \rangle$ |
+| 6 | 2 | 3 | 5 | $r < rightSize$ fails ($3 < 3$ false) | Main loop ends; enter left cleanup loop | $\langle 2, 4, 5, 6, 7 \rangle$ |
+| 7 | 2 | 3 | 5 | $l < leftSize$ ($2 < 3$ true) | copy $leftHalf[2]$ (11) directly, $l{++}$ | $\langle 2, 4, 5, 6, 7, 11 \rangle$ |
+| 8 | 3 | 3 | 6 | All loops terminate | Merging complete | $\mathbf{\langle 2, 4, 5, 6, 7, 11 \rangle}$ |
+
+**Analysis:**
+- **Key comparisons performed:** Exactly **5 comparisons**.
+- The maximum number of comparisons needed to merge two sorted arrays of sizes $p$ and $q$ is $p + q - 1$. For $p = 3$ and $q = 3$, $3 + 3 - 1 = \mathbf{5\text{ comparisons}}$, which was reached here.
+- Step 7 demonstrates why the cleanup loop is essential: when $rightHalf$ was exhausted, element 11 remained in $leftHalf$ and had to be copied over directly without additional comparisons.
+</ModelAnswer>
+
+**4.** *(Recurrence and stability)* State the recurrence relation for Merge Sort and derive its time complexity. Explain why standard array Merge Sort is not in-place, and prove why using `leftHalf[l] <= rightHalf[r]` guarantees stability while strict `<` violates it.
+
+<ModelAnswer>
+**Recurrence relation:**
+Dividing an array of size $n$ takes constant time $O(1)$ to compute the midpoint. The algorithm then solves two subproblems of size $n / 2$. Merging the two sorted subarrays takes linear time $\Theta(n)$.
+$$
+T(n) = \begin{cases} 
+\Theta(1) & \text{if } n < 2 \\ 
+2T(n / 2) + \Theta(n) & \text{if } n \ge 2 
+\end{cases}
+$$
+
+By the Master Theorem (or by summing the work across all $\log_2 n$ levels of the recursion tree, where each level does $c \cdot n$ work), $T(n) = \mathbf{\Theta(n \log n)}$. Because the tree always divides down the middle regardless of the values, best, worst, and average cases are all $\Theta(n \log n)$.
+
+**Space complexity:**
+Merge Sort is **not in place**. Merging two halves back into the original array without overwriting unexamined data requires allocating auxiliary storage. At the top level, this requires an extra array of size $n$. Therefore, its auxiliary space complexity is **$O(n)$**.
+
+**Stability proof:**
+When the fronts of both subarrays hold equal values ($leftHalf[l] == rightHalf[r]$):
+- With `<=`, $leftHalf[l] \le rightHalf[r]$ evaluates to **true**. The algorithm takes the element from $leftHalf$, placing it into the merged array first. Because elements in $leftHalf$ originally preceded elements in $rightHalf$ in the parent array, their original relative order is preserved.
+- With strict `<`, $leftHalf[l] < rightHalf[r]$ evaluates to **false**. The `else` branch executes, placing the element from $rightHalf$ first. This puts the right duplicate ahead of the left duplicate, breaking stability.
+</ModelAnswer>
+
+### Part 2: Exam multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="merge-sort"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "Which pair of sorting algorithms both utilize the divide and conquer paradigm?",
+      options: [
+        { id: "a", text: "Merge sort and Quick sort" },
+        { id: "b", text: "Selection sort and Insertion sort" },
+        { id: "c", text: "Bubble sort and Merge sort" },
+        { id: "d", text: "Insertion sort and Quick sort" },
+      ],
+      correctOptionId: "a",
+      explanation: "Both merge sort and quick sort partition problems recursively into smaller subproblems. Merge sort divides evenly and does its work in the combine phase; quick sort partitions around a pivot and does its work in the divide phase. Selection, bubble, and insertion sorts are incremental quadratic algorithms.",
+    },
+    {
+      id: "q2",
+      prompt: "What is the maximum number of element comparisons needed to merge two sorted arrays of sizes p and q into a single sorted array?",
+      options: [
+        { id: "a", text: "p + q - 1" },
+        { id: "b", text: "p × q" },
+        { id: "c", text: "p + q" },
+        { id: "d", text: "max(p, q)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Each comparison places at least one element into its final sorted position. The last remaining element does not need to be compared against anything because the other array has run out. Thus, at most p + q − 1 comparisons occur. Option B describes nested loop Cartesian comparisons. Option C forgets that the last element is copied without comparison. Option D is an underestimate.",
+    },
+    {
+      id: "q3",
+      prompt: "What is the auxiliary space complexity of standard array-based Merge Sort?",
+      options: [
+        { id: "a", text: "O(n), because temporary arrays are allocated to merge the sorted subarrays" },
+        { id: "b", text: "O(1), because it sorts entirely in place" },
+        { id: "c", text: "O(log n), for the recursion call stack only" },
+        { id: "d", text: "O(n²), to store all combinations of elements" },
+      ],
+      correctOptionId: "a",
+      explanation: "Merging two contiguous subarrays requires allocating auxiliary memory to hold the elements while they are compared and written back, requiring O(n) temporary space. Option B describes in-place algorithms like selection, bubble, and insertion sort. Option C describes the stack space of in-place quick sort. Option D is incorrect.",
+    },
+    {
+      id: "q4",
+      prompt: "Why is Merge Sort's best-case time complexity O(n log n) rather than O(n)?",
+      options: [
+        { id: "a", text: "The algorithm recursively divides the array in half and merges all levels regardless of whether the array is already sorted" },
+        { id: "b", text: "Merging already sorted arrays takes O(n²) time" },
+        { id: "c", text: "Divide and conquer algorithms can never run in linear time" },
+        { id: "d", text: "Checking whether the array is sorted requires O(n log n) time" },
+      ],
+      correctOptionId: "a",
+      explanation: "Basic merge sort divides subarrays down to single elements and merges them across all log₂ n levels unconditionally. Even on a pre-sorted array, all division and merging steps execute. Option B is false because merging takes linear O(n) time. Option C is false because algorithms like quickselect run in linear time. Option D is false because checking sortedness takes linear O(n) time.",
+    },
+    {
+      id: "q5",
+      prompt: "In the merge procedure, what bug occurs if the cleanup loops (while (l < leftSize) and while (r < rightSize)) are omitted?",
+      options: [
+        { id: "a", text: "Unprocessed elements from whichever subarray did not run out first are omitted from the output array" },
+        { id: "b", text: "The algorithm crashes with a NullPointerException" },
+        { id: "c", text: "The array is reversed" },
+        { id: "d", text: "The time complexity degrades to O(n²)" },
+      ],
+      correctOptionId: "a",
+      explanation: "The primary merge while-loop terminates the instant one subarray runs out (when l reaches leftSize or r reaches rightSize). The other subarray still contains remaining sorted elements. Without the cleanup loops to copy them over, those elements are omitted from the output. It does not cause a null pointer or change asymptotic complexity.",
+    },
+    {
+      id: "q6",
+      prompt: "Why is Merge Sort stable when the merge comparison is written as leftHalf[l] <= rightHalf[r]?",
+      options: [
+        { id: "a", text: "When elements are equal, taking from the left half first preserves their original relative order" },
+        { id: "b", text: "Because merge sort uses no swaps" },
+        { id: "c", text: "Because the recursion tree is balanced" },
+        { id: "d", text: "Stability is determined solely by the base case, not by the merge step" },
+      ],
+      correctOptionId: "a",
+      explanation: "Elements in leftHalf originally appeared before elements in rightHalf in the parent array. Resolving ties with <= ensures the left duplicate is placed first, maintaining their original relative sequence. Option B is false because stability depends on relative order, not whether an operation is called a swap or an assignment. Option C is irrelevant to stability. Option D is false because the merge step is where ordering is decided.",
+    },
   ]}
 />

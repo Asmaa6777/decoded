@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SortVisualizer, StabilityCompare, LeetCodeProblems, BubbleEarlyExitVisualizer } from "@/components/mdx/AlgoVisualizers";
 
 # Selection Sort and Bubble Sort
@@ -192,5 +192,202 @@ The original lab handout calls `Selection_Sort(array_1)`, whereas the method def
     { id: 1051, title: "Height Checker", slug: "height-checker", why: "Sort a copy (with your own selection or bubble sort), then compare it to the original. Remember .clone()." },
     { id: 2089, title: "Find Target Indices After Sorting Array", slug: "find-target-indices-after-sorting-array", why: "Sort, then scan. Bonus: find the answer without sorting at all by counting." },
     { id: 1913, title: "Maximum Product Difference Between Two Pairs", slug: "maximum-product-difference-between-two-pairs", why: "Sorting solves it in O(n log n), but two passes of selection sort's 'find the min' idea solve it in O(n)." },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm and written exam questions
+
+**1.** *(First exam)* Sort the following list by using the Selection Sort algorithm in steps: `3, 7, 8, 5, 2, 1, 9, 5, 4`. Detail the minimum found, the indices swapped, and the complete array state after each pass. State the total passes, the total key comparisons, and analyze whether the duplicate 5s preserve their relative order.
+
+<ModelAnswer>
+The input array has $n = 9$ elements: $\langle 3, 7, 8, 5_a, 2, 1, 9, 5_b, 4 \rangle$, where $5_a$ is initially at index 3 and $5_b$ is at index 7.
+
+Selection sort runs for $n - 1 = 8$ passes. In each pass $i$ (from $0$ to $7$), it searches indices $i + 1$ to $n - 1$ for the smallest value and swaps it with index $i$:
+
+| Pass | Search range | Minimum element | Swapped indices | Array state after pass |
+| --- | --- | --- | --- | --- |
+| Initial | | | | $\langle 3, 7, 8, 5_a, 2, 1, 9, 5_b, 4 \rangle$ |
+| 1 ($i = 0$) | $1 \dots 8$ | 1 at index 5 | swap $A[0] \leftrightarrow A[5]$ | $\langle \mathbf{1}, 7, 8, 5_a, 2, 3, 9, 5_b, 4 \rangle$ |
+| 2 ($i = 1$) | $2 \dots 8$ | 2 at index 4 | swap $A[1] \leftrightarrow A[4]$ | $\langle \mathbf{1, 2}, 8, 5_a, 7, 3, 9, 5_b, 4 \rangle$ |
+| 3 ($i = 2$) | $3 \dots 8$ | 3 at index 5 | swap $A[2] \leftrightarrow A[5]$ | $\langle \mathbf{1, 2, 3}, 5_a, 7, 8, 9, 5_b, 4 \rangle$ |
+| 4 ($i = 3$) | $4 \dots 8$ | 4 at index 8 | swap $A[3] \leftrightarrow A[8]$ | $\langle \mathbf{1, 2, 3, 4}, 7, 8, 9, 5_b, 5_a \rangle$ |
+| 5 ($i = 4$) | $5 \dots 8$ | $5_b$ at index 7 | swap $A[4] \leftrightarrow A[7]$ | $\langle \mathbf{1, 2, 3, 4, 5_b}, 8, 9, 7, 5_a \rangle$ |
+| 6 ($i = 5$) | $6 \dots 8$ | $5_a$ at index 8 | swap $A[5] \leftrightarrow A[8]$ | $\langle \mathbf{1, 2, 3, 4, 5_b, 5_a}, 9, 7, 8 \rangle$ |
+| 7 ($i = 6$) | $7 \dots 8$ | 7 at index 7 | swap $A[6] \leftrightarrow A[7]$ | $\langle \mathbf{1, 2, 3, 4, 5_b, 5_a, 7}, 9, 8 \rangle$ |
+| 8 ($i = 7$) | 8 | 8 at index 8 | swap $A[7] \leftrightarrow A[8]$ | $\langle \mathbf{1, 2, 3, 4, 5_b, 5_a, 7, 8, 9} \rangle$ |
+
+**Summary metrics:**
+- **Total passes:** $n - 1 = 8$ passes.
+- **Total key comparisons:** $8 + 7 + 6 + 5 + 4 + 3 + 2 + 1 = \frac{9 \times 8}{2} = \mathbf{36\text{ comparisons}}$.
+- **Total swaps:** 8 swaps.
+- **Stability:** In pass 4, finding 4 at index 8 causes a swap with $A[3]$ ($5_a$). This moves $5_a$ to index 8, past $5_b$ at index 7. The final sorted array has $5_b$ before $5_a$, proving selection sort is **not stable**.
+</ModelAnswer>
+
+**2.** *(Lecture & exam trace)* Trace Bubble Sort step by step on `[6, 2, 11, 7, 5]`. List each comparison and swap during every pass. Then contrast how Bubble Sort behaves on the already sorted array `[2, 5, 6, 7, 11]` with and without the boolean `swapped` early-exit flag.
+
+<ModelAnswer>
+Input array: $\langle 6, 2, 11, 7, 5 \rangle$ ($n = 5$).
+
+**Pass 0 ($i = 0$):**
+- Compare $A[0]$ (6) and $A[1]$ (2): $6 > 2 \implies$ swap $\to \langle 2, 6, 11, 7, 5 \rangle$.
+- Compare $A[1]$ (6) and $A[2]$ (11): $6 < 11 \implies$ no swap.
+- Compare $A[2]$ (11) and $A[3]$ (7): $11 > 7 \implies$ swap $\to \langle 2, 6, 7, 11, 5 \rangle$.
+- Compare $A[3]$ (11) and $A[4]$ (5): $11 > 5 \implies$ swap $\to \langle 2, 6, 7, 5, \mathbf{11} \rangle$.
+*(Pass 0: 4 comparisons, 3 swaps. 11 reaches its final position).*
+
+**Pass 1 ($i = 1$):**
+- Compare $A[0]$ (2) and $A[1]$ (6): $2 < 6 \implies$ no swap.
+- Compare $A[1]$ (6) and $A[2]$ (7): $6 < 7 \implies$ no swap.
+- Compare $A[2]$ (7) and $A[3]$ (5): $7 > 5 \implies$ swap $\to \langle 2, 6, 5, \mathbf{7, 11} \rangle$.
+*(Pass 1: 3 comparisons, 1 swap. 7 reaches its final position).*
+
+**Pass 2 ($i = 2$):**
+- Compare $A[0]$ (2) and $A[1]$ (6): $2 < 6 \implies$ no swap.
+- Compare $A[1]$ (6) and $A[2]$ (5): $6 > 5 \implies$ swap $\to \langle 2, 5, \mathbf{6, 7, 11} \rangle$.
+*(Pass 2: 2 comparisons, 1 swap. 6 reaches its final position).*
+
+**Pass 3 ($i = 3$):**
+- Compare $A[0]$ (2) and $A[1]$ (5): $2 < 5 \implies$ no swap.
+*(Pass 3: 1 comparison, 0 swaps).*
+
+**Totals for `[6, 2, 11, 7, 5]`:**
+- Comparisons: $4 + 3 + 2 + 1 = 10$.
+- Swaps: $3 + 1 + 1 + 0 = 5$.
+
+**Behavior on sorted array `[2, 5, 6, 7, 11]`:**
+- **With `swapped` flag:** Pass 0 performs 4 comparisons ($2 < 5$, $5 < 6$, $6 < 7$, $7 < 11$) and 0 swaps. The flag remains false, terminating execution immediately after **1 pass (4 comparisons, 0 swaps)**, giving **$O(n)$** best-case time.
+- **Without flag:** The outer loop executes all 4 passes, making $4 + 3 + 2 + 1 = 10$ comparisons despite performing zero swaps, wasting time in $O(n^2)$.
+</ModelAnswer>
+
+**3.** *(Complexity derivation)* For an arbitrary array of size $n$, derive the exact number of key comparisons performed by Selection Sort in the best, average, and worst cases. Compare the maximum number of write operations (swaps) in Selection Sort versus Bubble Sort on a reverse-sorted array of size $n = 6$.
+
+<ModelAnswer>
+**Selection sort comparisons:**
+The outer loop runs for $i = 0$ to $n - 2$. For each $i$, the inner loop executes for $j = i + 1$ to $n - 1$, executing the comparison `A[j] < A[min]` exactly $n - 1 - i$ times.
+
+Summing over all iterations:
+$$
+\sum_{i=0}^{n-2} (n - 1 - i) = (n - 1) + (n - 2) + \dots + 2 + 1 = \frac{n(n - 1)}{2}
+$$
+
+Because the loop conditions do not depend on array values, Selection Sort performs **exactly $\frac{n(n - 1)}{2}$ comparisons** in the best case, worst case, and average case. Its comparison count is strictly $\Theta(n^2)$.
+
+**Swap counts on reverse-sorted input ($n = 6$, $\langle 6, 5, 4, 3, 2, 1 \rangle$):**
+- **Selection sort:** Executes at most one swap per outer pass. For $n = 6$, it executes at most $n - 1 = 5$ swaps. Specifically, pass 0 swaps 6 with 1, pass 1 swaps 5 with 2, pass 2 swaps 4 with 3, and subsequent passes find elements already in place, totaling **3 swaps**.
+- **Bubble sort:** Swaps adjacent out-of-order elements. In a reverse-sorted array, every pair is inverted. It performs the maximum possible swaps:
+$$
+\frac{n(n - 1)}{2} = \frac{6 \times 5}{2} = \mathbf{15\text{ swaps}}
+$$
+
+Selection sort is preferable when writes to memory or storage are expensive, because it performs at most $O(n)$ swaps compared to Bubble Sort's $O(n^2)$ swaps.
+</ModelAnswer>
+
+**4.** *(Stability analysis)* Formally define stability in sorting. Prove why Bubble Sort is stable, and provide a minimal counterexample demonstrating why Selection Sort is unstable.
+
+<ModelAnswer>
+**Definition:**
+A sorting algorithm is **stable** if elements with identical keys appear in the sorted output in the exact same relative order as in the input array.
+
+**Proof that Bubble Sort is stable:**
+Bubble Sort uses the comparison `if (array[j + 1] < array[j]) swap(...)`.
+- When two adjacent elements have distinct values ($A[j] > A[j + 1]$), they are swapped.
+- When two adjacent elements have identical values ($A[j] == A[j + 1]$), the strict inequality evaluates to false and no swap occurs.
+- Because swaps only happen between adjacent elements and equal keys never swap past one another, equal keys maintain their initial order throughout all passes.
+
+**Counterexample showing Selection Sort is unstable:**
+Consider the 3-element array:
+$$
+\langle 2_a, 2_b, 1 \rangle
+$$
+where $2_a$ sits at index 0 and $2_b$ sits at index 1.
+- In pass 1 ($i = 0$), the algorithm scans indices 1 and 2, finding the minimum value 1 at index 2.
+- It swaps $A[0]$ with $A[2]$, placing 1 at index 0 and moving $2_a$ to index 2.
+- The resulting array is $\langle 1, 2_b, 2_a \rangle$.
+- In the output, $2_b$ appears before $2_a$, reversing their original order.
+
+Because Selection Sort performs long-distance swaps across unexamined elements, it cannot guarantee stability.
+</ModelAnswer>
+
+### Part 2: Exam multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="selection-and-bubble-sort"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "What is the best-case and worst-case time complexity of Bubble Sort when implemented with an early-exit 'swapped' flag?",
+      options: [
+        { id: "a", text: "Best case O(n), worst case O(n²)" },
+        { id: "b", text: "Best case O(1), worst case O(n²)" },
+        { id: "c", text: "Best case O(n²), worst case O(n²)" },
+        { id: "d", text: "Best case O(n log n), worst case O(n²)" },
+      ],
+      correctOptionId: "a",
+      explanation: "With an early exit flag, an already sorted array requires one pass of n − 1 comparisons with zero swaps, exiting in O(n) time. The worst case (reverse sorted) requires n(n − 1)/2 comparisons and swaps, taking O(n²). Option B is wrong because confirming order requires inspecting all n − 1 adjacent pairs, which takes Ω(n) time. Option C applies only to the basic version without the flag. Option D incorrectly applies divide-and-conquer complexity to a comparison scan.",
+    },
+    {
+      id: "q2",
+      prompt: "You run Selection Sort on [4, 1, 3, 2]. What is the state of the array after the first pass completes?",
+      options: [
+        { id: "a", text: "[1, 4, 3, 2]" },
+        { id: "b", text: "[1, 3, 2, 4]" },
+        { id: "c", text: "[1, 2, 3, 4]" },
+        { id: "d", text: "[4, 1, 2, 3]" },
+      ],
+      correctOptionId: "a",
+      explanation: "Pass 1 of selection sort finds the minimum value (1 at index 1) and swaps it with the first position (index 0), producing [1, 4, 3, 2]. Option B is the state after pass 1 of bubble sort, which bubbles 4 to the end. Option C is the completely sorted array. Option D represents shifting without swapping.",
+    },
+    {
+      id: "q3",
+      prompt: "How many key comparisons does Selection Sort perform when given an already sorted array of n = 5 elements?",
+      options: [
+        { id: "a", text: "10 comparisons" },
+        { id: "b", text: "4 comparisons" },
+        { id: "c", text: "0 comparisons" },
+        { id: "d", text: "20 comparisons" },
+      ],
+      correctOptionId: "a",
+      explanation: "Selection sort does not check whether the array is sorted early; its nested loops always run n(n − 1)/2 times. For n = 5, this is 4 + 3 + 2 + 1 = 10 comparisons. Option B (4 comparisons) is what bubble sort with an early exit flag would do. Option C is impossible because an algorithm must inspect elements to confirm order. Option D confuses n(n − 1)/2 with n(n − 1).",
+    },
+    {
+      id: "q4",
+      prompt: "On an inverted, reverse-sorted array of size n, how do the swap counts of Selection Sort and Bubble Sort compare?",
+      options: [
+        { id: "a", text: "Selection sort makes at most n − 1 swaps, while bubble sort makes n(n − 1)/2 swaps" },
+        { id: "b", text: "Both algorithms make n(n − 1)/2 swaps" },
+        { id: "c", text: "Selection sort makes n(n − 1)/2 swaps, while bubble sort makes n − 1 swaps" },
+        { id: "d", text: "Both algorithms make at most n − 1 swaps" },
+      ],
+      correctOptionId: "a",
+      explanation: "Selection sort performs at most one swap per pass of its outer loop, yielding at most n − 1 swaps in all cases. Bubble sort swaps adjacent inverted pairs; in a reverse-sorted array, every comparison triggers a swap, totaling n(n − 1)/2 swaps. Options B, C, and D confuse the swap mechanics of the two algorithms.",
+    },
+    {
+      id: "q5",
+      prompt: "Why is Selection Sort classified as an unstable sorting algorithm?",
+      options: [
+        { id: "a", text: "Its long-range swaps can displace an earlier duplicate element past a later identical element" },
+        { id: "b", text: "It fails to terminate when given arrays containing negative numbers" },
+        { id: "c", text: "Its running time varies unpredictably between O(n) and O(n²)" },
+        { id: "d", text: "It requires allocating additional auxiliary arrays that reorder pointers" },
+      ],
+      correctOptionId: "a",
+      explanation: "Selection sort swaps the minimum element into position i across intermediate elements. For example, in [2a, 2b, 1], swapping 1 with 2a yields [1, 2b, 2a], reversing the original order of the duplicates. Option B is false because selection sort handles negative numbers without issue. Option C is false because its runtime is consistently Θ(n²). Option D is false because selection sort operates strictly in place with O(1) extra space.",
+    },
+    {
+      id: "q6",
+      prompt: "In Java, what happens if Bubble Sort's inner loop condition is written as j < array.length - i instead of j < array.length - 1 - i?",
+      options: [
+        { id: "a", text: "It throws an ArrayIndexOutOfBoundsException on pass i = 0 when evaluating array[j + 1]" },
+        { id: "b", text: "It skips comparing the last element on each pass" },
+        { id: "c", text: "It executes without error but runs twice as fast" },
+        { id: "d", text: "It converts the bubble sort into an insertion sort" },
+      ],
+      correctOptionId: "a",
+      explanation: "When i = 0, j < array.length allows j to reach array.length − 1. Evaluating array[j + 1] then accesses array[array.length], which exceeds the array bounds and throws ArrayIndexOutOfBoundsException. Option B describes stopping too early (j < array.length − 2 − i). Option C is impossible because invalid array indexing is a fatal runtime exception in Java. Option D is absurd.",
+    },
   ]}
 />

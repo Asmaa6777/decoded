@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SortVisualizer, LeetCodeProblems, InsertionShiftVisualizer } from "@/components/mdx/AlgoVisualizers";
 
 # Insertion Sort: Sorting Like a Card Player
@@ -136,5 +136,207 @@ Compare its performance against [selection sort](/courses/algorithm-design-and-a
     { id: 35, title: "Search Insert Position", slug: "search-insert-position", why: "\"Where would this key go in a sorted array?\" is exactly insertion sort's inner question. (You'll solve it even faster after the binary search lesson.)" },
     { id: 1502, title: "Can Make Arithmetic Progression From Sequence", slug: "can-make-arithmetic-progression-from-sequence", why: "Sort with your own insertion sort, then check that every gap is the same." },
     { id: 242, title: "Valid Anagram", slug: "valid-anagram", why: "Sort both strings' characters and compare. Then find the O(n) counting solution and compare the two." },
+  ]}
+/>
+
+## Practice from past exams
+
+### Part 1: Midterm and written exam questions
+
+**1.** *(Lecture trace)* Trace Insertion Sort step by step on `[6, 2, 11, 7, 5]`. For each pass of the outer loop ($i = 1$ to $4$), list the extracted `key`, the comparisons made in the `while` loop, the values shifted right, the insertion position, and the array state after the pass.
+
+<ModelAnswer>
+The input array is $\langle 6, 2, 11, 7, 5 \rangle$ ($n = 5$). The first element $A[0] = 6$ forms the initial sorted prefix. The outer loop runs for $i = 1$ to $4$:
+
+- **Iteration $i = 1$ ($key = 2$):**
+  - Compare with $A[0]$ (6): $6 > 2$ is true. Shift 6 right to index 1 ($A[1] = 6$).
+  - Decrement $j$ to $-1$. Loop terminates ($j \ge 0$ is false).
+  - Insert $key$ at $A[j + 1] = A[0] = 2$.
+  - Comparisons: 1, Shifts: 1.
+  - Array: $\langle \mathbf{2, 6}, 11, 7, 5 \rangle$.
+
+- **Iteration $i = 2$ ($key = 11$):**
+  - Compare with $A[1]$ (6): $6 > 11$ is false. Loop terminates immediately.
+  - No shifts occur. Insert $key$ at $A[2] = 11$.
+  - Comparisons: 1, Shifts: 0.
+  - Array: $\langle \mathbf{2, 6, 11}, 7, 5 \rangle$.
+
+- **Iteration $i = 3$ ($key = 7$):**
+  - Compare with $A[2]$ (11): $11 > 7$ is true. Shift 11 right to index 3 ($A[3] = 11$).
+  - Compare with $A[1]$ (6): $6 > 7$ is false. Loop terminates.
+  - Insert $key$ at $A[2] = 7$.
+  - Comparisons: 2, Shifts: 1.
+  - Array: $\langle \mathbf{2, 6, 7, 11}, 5 \rangle$.
+
+- **Iteration $i = 4$ ($key = 5$):**
+  - Compare with $A[3]$ (11): $11 > 5$ is true. Shift 11 right to index 4.
+  - Compare with $A[2]$ (7): $7 > 5$ is true. Shift 7 right to index 3.
+  - Compare with $A[1]$ (6): $6 > 5$ is true. Shift 6 right to index 2.
+  - Compare with $A[0]$ (2): $2 > 5$ is false. Loop terminates.
+  - Insert $key$ at $A[1] = 5$.
+  - Comparisons: 4, Shifts: 3.
+  - Array: $\langle \mathbf{2, 5, 6, 7, 11} \rangle$.
+
+**Totals:**
+- Total comparisons: $1 + 1 + 2 + 4 = \mathbf{8\text{ comparisons}}$.
+- Total shifts: $1 + 0 + 1 + 3 = \mathbf{5\text{ shifts}}$.
+</ModelAnswer>
+
+**2.** *(Exam trace with duplicates)* Trace Insertion Sort on the sequence `[1, 12, 46_a, 6, 37, 5, 46_b, 3, 32]`. Explain how the duplicate keys $46_a$ and $46_b$ are processed, why $46_b$ stays after $46_a$, and what happens to stability if the comparison is written as `array[j] >= key`.
+
+<ModelAnswer>
+The array contains two equal elements: $46_a$ initially at index 2, and $46_b$ initially at index 6.
+
+1. When $i = 2$, $key = 46_a$. It is compared with $A[1] = 12$. Since $12 > 46_a$ is false, $46_a$ stays at index 2.
+2. In subsequent steps, elements 6, 37, and 5 shift into the sorted prefix before $46_a$.
+3. When $i = 6$, $key = 46_b$. The sorted prefix so far is $\langle 1, 5, 6, 12, 37, 46_a \rangle$.
+   - The inner loop compares $key$ ($46_b$) with $A[5]$ ($46_a$).
+   - The loop condition is `array[j] > key`, which evaluates to $46_a > 46_b$. Because $46_a == 46_b$, this condition evaluates to **false**.
+   - The loop terminates immediately without shifting $46_a$.
+   - The algorithm places $46_b$ at index $j + 1 = 6$, directly to the right of $46_a$.
+4. The remaining keys (3 and 32) shift left past both 46s, shifting both $46_a$ and $46_b$ rightward by the same number of positions.
+
+**Stability analysis:**
+Because the strict inequality `array[j] > key` stops the shift when an equal value is met, $46_b$ never crosses over $46_a$. Insertion Sort is **stable**.
+
+If the programmer writes `while (j >= 0 && array[j] >= key)`, then $46_a \ge 46_b$ evaluates to **true**. That would cause $46_a$ to shift right, placing $46_b$ ahead of $46_a$. The array would still be sorted, but stability would be broken.
+</ModelAnswer>
+
+**3.** *(Inversions and complexity)* Define an **inversion** in an array. Prove that the number of element shifts in Insertion Sort equals the number of inversions. Then calculate the exact comparisons and shifts for:
+1. Best case on $n = 5$ sorted input: $\langle 1, 2, 3, 4, 5 \rangle$.
+2. Worst case on $n = 5$ reverse-sorted input: $\langle 5, 4, 3, 2, 1 \rangle$.
+3. An almost-sorted array having $k$ inversions.
+
+<ModelAnswer>
+**Definition:**
+An **inversion** is a pair of indices $(p, q)$ such that $p < q$ but $A[p] > A[q]$. It represents a pair of elements that are out of order.
+
+**Proof that shifts equal inversions:**
+When element $A[i]$ is picked as the $key$, the subarray $A[0 \dots i - 1]$ is already sorted. The number of elements in $A[0 \dots i - 1]$ that are strictly greater than $key$ is exactly the number of inversions with $q = i$. Each of these greater elements shifts right by one position, and no other elements shift. Summing over all elements from $i = 1$ to $n - 1$, the total number of shifts equals the total number of inversions in the original array.
+
+**Hand calculations for $n = 5$:**
+1. **Best case (already sorted $\langle 1, 2, 3, 4, 5 \rangle$):**
+   - Inversions: 0 inversions.
+   - Shifts: **0 shifts**.
+   - Comparisons: each of the $n - 1 = 4$ outer iterations performs 1 comparison that immediately fails the `while` test. Total: **4 comparisons**, taking **$O(n)$** time.
+2. **Worst case (reverse-sorted $\langle 5, 4, 3, 2, 1 \rangle$):**
+   - Inversions: every pair is inverted, so $\frac{n(n - 1)}{2} = \frac{5 \times 4}{2} = \mathbf{10\text{ inversions}}$.
+   - Shifts: each key $A[i]$ shifts all $i$ preceding elements: $1 + 2 + 3 + 4 = \mathbf{10\text{ shifts}}$.
+   - Comparisons: $1 + 2 + 3 + 4 = \mathbf{10\text{ comparisons}}$, taking **$O(n^2)$** time.
+3. **Nearly sorted array with $k$ inversions:**
+   - Insertion sort performs exactly $k$ shifts and $n - 1 + k'$ comparisons (where $k' \le k$).
+   - Total operations scale as **$O(n + k)$**. When each element is at most $c$ positions away from its sorted destination, $k \le c \cdot n$, allowing Insertion Sort to complete in linear $O(n)$ time.
+</ModelAnswer>
+
+**4.** *(Implementation traps)* In the standard Java implementation of Insertion Sort:
+
+```java
+public static void insertionSort(int[] array) {
+    for (int i = 1; i < array.length; i++) {
+        int key = array[i];
+        int j = i - 1;
+        while (j >= 0 && array[j] > key) {
+            array[j + 1] = array[j];
+            j--;
+        }
+        array[j + 1] = key;
+    }
+}
+```
+
+Explain why:
+1. `int key = array[i]` must be copied into a temporary variable before entering the `while` loop.
+2. The condition `j >= 0` must be placed before `array[j] > key` in the `while` statement.
+
+<ModelAnswer>
+1. **Why `key = array[i]` is required:**
+   The first shift statement executed inside the while loop is `array[j + 1] = array[j]`. Because $j = i - 1$, this translates to `array[i] = array[i - 1]`, which directly overwrites the element stored at index $i$. If the value of `array[i]` was not saved into `key` beforehand, the original value is lost forever.
+
+2. **Why `j >= 0` must come first:**
+   Java uses short-circuit evaluation for the logical AND operator (`&&`). If the left operand evaluates to `false`, Java does not evaluate the right operand.
+   - When placing an element that is smaller than all preceding elements (such as placing 1 at index 0), $j$ decrements to $-1$.
+   - With `j >= 0 && array[j] > key`, the condition `-1 >= 0` evaluates to `false`, and evaluation stops immediately.
+   - If written in reverse as `array[j] > key && j >= 0`, Java evaluates `array[-1]` first, throwing an `ArrayIndexOutOfBoundsException` and crashing the program.
+</ModelAnswer>
+
+### Part 2: Exam multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="insertion-sort"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "What is the best-case time complexity of Insertion Sort, and what input ordering produces it?",
+      options: [
+        { id: "a", text: "O(n), when the array is already sorted in non-decreasing order" },
+        { id: "b", text: "O(1), when the array has only positive numbers" },
+        { id: "c", text: "O(n²), when the array is in random order" },
+        { id: "d", text: "O(n log n), when the array contains powers of two" },
+      ],
+      correctOptionId: "a",
+      explanation: "When an array is already sorted, each key is compared once against its immediate left neighbour. Since array[j] > key evaluates to false on the first check, zero shifts occur, and the algorithm terminates in O(n) time after n − 1 comparisons. Option B is incorrect because verifying order across n elements requires at least n − 1 inspections. Option C describes the average/worst-case runtime, not the best case. Option D belongs to divide-and-conquer algorithms.",
+    },
+    {
+      id: "q2",
+      prompt: "Why is Insertion Sort faster in practice than Bubble Sort on average, even though both share an O(n²) worst-case complexity?",
+      options: [
+        { id: "a", text: "Insertion sort shifts elements using 1 assignment per step, whereas bubble sort swaps elements using 3 assignments per step" },
+        { id: "b", text: "Insertion sort uses divide-and-conquer recursion to halve the array" },
+        { id: "c", text: "Insertion sort never compares elements that are more than one index apart" },
+        { id: "d", text: "Bubble sort requires allocating an auxiliary array of size O(n)" },
+      ],
+      correctOptionId: "a",
+      explanation: "A swap requires 3 assignments using a temporary variable (temp = a[x]; a[x] = a[y]; a[y] = temp). Insertion sort saves the key once, slides larger elements right with a single assignment (a[j + 1] = a[j]), and drops the key into place once. This requires approximately one-third the memory write operations. Option B is false because insertion sort is an incremental, iterative algorithm. Option C is false because a key can shift past many elements. Option D is false because bubble sort is in-place.",
+    },
+    {
+      id: "q3",
+      prompt: "In Insertion Sort, what happens if the loop condition while (j >= 0 && array[j] > key) is changed to array[j] >= key?",
+      options: [
+        { id: "a", text: "The algorithm still sorts correctly, but it becomes unstable by shifting equal keys past one another" },
+        { id: "b", text: "The algorithm goes into an infinite loop whenever duplicate elements are present" },
+        { id: "c", text: "The algorithm throws an ArrayIndexOutOfBoundsException on duplicates" },
+        { id: "d", text: "The time complexity drops to O(n log n)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Using array[j] >= key forces an element with an identical value to shift right, allowing the new duplicate to be placed ahead of it. This inverts the original relative order of equal keys, breaking stability. It does not cause an infinite loop or array crash because j still decrements normally. It has no effect on asymptotic complexity.",
+    },
+    {
+      id: "q4",
+      prompt: "You are inserting key = 5 into the sorted prefix [2, 6, 7, 11]. How many comparisons and how many shifts are performed?",
+      options: [
+        { id: "a", text: "4 comparisons and 3 shifts" },
+        { id: "b", text: "3 comparisons and 3 shifts" },
+        { id: "c", text: "4 comparisons and 4 shifts" },
+        { id: "d", text: "1 comparison and 0 shifts" },
+      ],
+      correctOptionId: "a",
+      explanation: "Key 5 is compared against 11 (11 > 5: shift 11), then 7 (7 > 5: shift 7), then 6 (6 > 5: shift 6), and finally 2 (2 > 5: false, stop). That yields 4 comparisons and 3 shifts. Option B forgets that stopping the loop requires one final comparison against 2 that evaluates to false. Option C assumes 2 shifts, which is incorrect. Option D corresponds to inserting a value larger than 11.",
+    },
+    {
+      id: "q5",
+      prompt: "What is the auxiliary space complexity of Insertion Sort?",
+      options: [
+        { id: "a", text: "O(1), because it sorts in place using a constant number of scalar variables" },
+        { id: "b", text: "O(n), because it allocates an auxiliary copy of the sorted prefix" },
+        { id: "c", text: "O(log n), due to the recursion call stack" },
+        { id: "d", text: "O(n²), to store the shifted elements" },
+      ],
+      correctOptionId: "a",
+      explanation: "Insertion sort operates directly within the input array, needing only scalar variables (key, i, j). It requires O(1) auxiliary space. Option B is incorrect because elements shift within the existing array rather than in a new buffer. Option C applies to quick sort's recursive stack. Option D is incorrect.",
+    },
+    {
+      id: "q6",
+      prompt: "In Java, what occurs if the inner while condition is written as while (array[j] > key && j >= 0) when inserting the smallest element in the array?",
+      options: [
+        { id: "a", text: "It throws an ArrayIndexOutOfBoundsException when j reaches -1 because array[-1] is evaluated first" },
+        { id: "b", text: "It successfully inserts the element at index 0 without issue" },
+        { id: "c", text: "It terminates the loop one element early, leaving the array unsorted" },
+        { id: "d", text: "The Java compiler rejects the code with a syntax error" },
+      ],
+      correctOptionId: "a",
+      explanation: "Because Java evaluates expressions from left to right, placing array[j] > key before j >= 0 causes Java to evaluate array[-1] when j decrements to -1, throwing an immediate ArrayIndexOutOfBoundsException. Putting j >= 0 first relies on short-circuit evaluation to safely abort before array[-1] is read. Option B is wrong because negative indexing is illegal in Java. Option C is wrong because the failure is an unhandled exception crash. Option D is wrong because the syntax is valid Java code.",
+    },
   ]}
 />
