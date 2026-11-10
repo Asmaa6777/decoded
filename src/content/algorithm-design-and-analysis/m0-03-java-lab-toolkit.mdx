@@ -33,7 +33,7 @@ A few facts that matter for algorithms:
 
 - An array has a **fixed size** determined at creation. The property `c.length` returns its capacity without parentheses because length is a field rather than a method.
 - Valid indices range from `0` to `length - 1`. Attempting to read index `c[10]` on a 10-element array throws an `ArrayIndexOutOfBoundsException`.
-- Reading or writing `a[i]` runs in **$O(1)$** constant time, regardless of array size. Constant-time index access makes arrays the standard structure for in-place sorting algorithms.
+- Reading or writing `a[i]` runs in **$O(1)$** [constant time](/courses/data-structures/arrays-and-memory#memory-is-one-long-array), regardless of array size. Constant-time index access makes arrays the standard structure for in-place sorting algorithms.
 
 Two-dimensional arrays work the same way, as an array of arrays:
 
@@ -95,7 +95,7 @@ public class AlgoLab {
 }
 ```
 
-`Math.random()` returns a `double` in the half-open interval $[0, 1)$, meaning values at least 0 and strictly less than 1. Multiplying by `dataRange` scales the interval, and prefixing `(int)` performs a type **cast** that truncates the fractional portion. For example, with `dataRange = 100`, a generated value of $0.734$ scales to $73.4$ and truncates to $73$. Because the maximum random return is strictly below $1.0$, multiplying by 100 never reaches 100, yielding integers from `0` through `dataRange - 1`.
+`Math.random()` returns a `double` in the [half-open interval](/courses/discrete-mathematics/sets#what-a-set-is) $[0, 1)$, meaning values at least 0 and strictly less than 1. Multiplying by `dataRange` scales the interval, and prefixing `(int)` performs a type **cast** that truncates the fractional portion. For example, with `dataRange = 100`, a generated value of $0.734$ scales to $73.4$ and truncates to $73$. Because the maximum random return is strictly below $1.0$, multiplying by 100 never reaches 100, yielding integers from `0` through `dataRange - 1`.
 
 Operator precedence requires parentheses: writing `(int) Math.random() * dataRange` evaluates the cast before the multiplication. Because `Math.random()` is always less than 1, truncating it immediately yields 0, producing an array filled entirely with zeros.
 

@@ -43,7 +43,7 @@ Placing `else return -1` inside the loop body is a frequent mistake. That causes
 - **Worst case:** The target is at the last index or missing entirely, requiring all $n$ comparisons: $O(n)$.
 - **Average case:** Assuming each position is equally likely, the search checks approximately $n/2$ elements: $O(n)$. (The [counting steps lesson](/courses/algorithm-design-and-analysis/counting-steps) derives this average rigorously.)
 
-Algorithms texts often compare linear search with binary search and hash tables. A hash table maps each key directly to a storage bucket so lookups run in expected $O(1)$ time without scanning elements (covered in the [Data Structures course](/courses/data-structures/arrays-and-memory)). Linear search requires no extra memory and is simple to implement, but scales linearly with the size of the input.
+Algorithms texts often compare linear search with binary search and hash tables. A [hash table](/courses/data-structures/hash-maps#keys-into-indexes) maps each key directly to a storage bucket so lookups run in expected $O(1)$ time without scanning elements. Linear search requires no extra memory and is simple to implement, but scales linearly with the size of the input.
 
 ## Binary search: throw away half
 
@@ -63,7 +63,7 @@ Textbooks use several pairs of names for the search boundaries: `l` and `r` (lef
 | 2 | 7 | 12 | 9 | 81 | 70 < 81, so r ← 8 |
 | 3 | 7 | 8 | 7 | 70 | found, return 7 |
 
-The midpoint index is $m = \lfloor (l + r)/2 \rfloor$, rounded down: $(7 + 8)/2 = 7.5$ becomes 7.
+The midpoint index is $m = \lfloor (l + r)/2 \rfloor$, [rounded down](/courses/discrete-mathematics/functions#two-functions-youll-see-everywhere): $(7 + 8)/2 = 7.5$ becomes 7.
 
 A second example searches for 15 in $[3, 10, 15, 20, 35, 40, 60]$ using `beg` and `end`:
 
@@ -140,7 +140,7 @@ Binary search is straightforward to describe, but implementations easily harbor 
 
 1. **Use `low <= high`.** If you write `low < high`, the loop terminates when a single candidate element remains, missing targets located at the boundaries.
 2. **`low = mid + 1` and `high = mid - 1`.** Because `a[mid]` did not match the target, you must exclude it from the next window. Writing `low = mid` can trap the loop in an infinite cycle when two elements remain.
-3. **Use `low + (high - low) / 2` instead of `(low + high) / 2`.** When searching a large array, `low + high` can exceed the maximum positive 32-bit integer ($2^{31} - 1$) and overflow into a negative value. This arithmetic overflow bug remained in Java's `Arrays.binarySearch` for nine years before its discovery in 2006.
+3. **Use `low + (high - low) / 2` instead of `(low + high) / 2`.** When searching a large array, `low + high` can exceed the maximum positive 32-bit integer ($2^{31} - 1$) and [overflow](/courses/logic-design/binary-arithmetic#subtraction-is-addition) into a negative value. This arithmetic overflow bug remained in Java's `Arrays.binarySearch` for nine years before its discovery in 2006.
 
 <BinarySearchBoundaryVisualizer />
 

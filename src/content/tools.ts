@@ -54,7 +54,17 @@ export const tools: Tool[] = [
     what: "How zip-style formats make common data take fewer bits.",
     lessons: [
       { course: "advanced-algorithms", lesson: "huffman-and-activity-selection", mentions: "Huffman" },
+      { course: "algorithm-design-and-analysis", lesson: "greedy-and-mst", mentions: "Huffman" },
       { course: "discrete-mathematics", lesson: "pigeonhole-principle", mentions: "gzip" },
+    ],
+  },
+  {
+    name: "Standard library sorting",
+    what: "Why Python, Java, V8 and C++ choose quicksort, mergesort or Timsort to power .sort().",
+    lessons: [
+      { course: "algorithm-design-and-analysis", lesson: "quick-sort", mentions: "Arrays.sort" },
+      { course: "algorithm-design-and-analysis", lesson: "merge-sort", mentions: "Timsort" },
+      { course: "algorithm-design-and-analysis", lesson: "insertion-sort", mentions: "sort" },
     ],
   },
   {
@@ -105,7 +115,10 @@ export const tools: Tool[] = [
   {
     name: "diff and Git",
     what: "How a tool spots exactly which lines changed between two versions of a file.",
-    lessons: [{ course: "advanced-algorithms", lesson: "dynamic-programming", mentions: "git diff" }],
+    lessons: [
+      { course: "advanced-algorithms", lesson: "dynamic-programming", mentions: "git diff" },
+      { course: "algorithm-design-and-analysis", lesson: "dynamic-programming", mentions: "diff" },
+    ],
   },
   {
     name: "Passwords and hashes",
@@ -126,6 +139,7 @@ export const tools: Tool[] = [
       { course: "computational-mathematics", lesson: "discrete-logarithms", mentions: "Diffie" },
       { course: "computer-networks", lesson: "http-and-https", mentions: "TLS" },
       { course: "advanced-algorithms", lesson: "divide-and-conquer", mentions: "RSA" },
+      { course: "algorithm-design-and-analysis", lesson: "euclid-gcd", mentions: "RSA" },
     ],
   },
   {

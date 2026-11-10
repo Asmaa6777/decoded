@@ -85,7 +85,7 @@ When a function calls another, the computer needs to remember where to come back
 
 Two consequences you'll meet:
 
-- **Recursion** works because each call gets its own frame. A recursive function can always be rewritten with an explicit stack, and depth-first search usually is.
+- **Recursion** works because each call gets its own frame. A recursive function can always be rewritten with an explicit stack, and [depth-first search](/courses/algorithm-design-and-analysis/bfs-and-dfs#depth-first-search-the-maze-explorer) usually is.
 - **Stack overflow** happens when recursion goes too deep and the frames exhaust the stack's fixed memory, typically a few megabytes. Python stops you earlier, at a default depth of 1,000.
 
 <Callout tone="orange" label="The stack and the heap are different things">

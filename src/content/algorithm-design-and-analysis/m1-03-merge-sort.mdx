@@ -15,7 +15,7 @@ Breaking past the $n^2$ barrier requires a different algorithmic strategy: divid
 2. **Conquer** each subproblem by solving it recursively. When a subproblem is small enough, solve it directly. That stopping condition is the **base case**.
 3. **Combine** the subproblem solutions into a solution for the original problem.
 
-This strategy relies on **recursion**, where a method solves a task by calling itself on smaller instances of the same problem. Every recursive method requires a **base case** to terminate execution without recursing further. Divide and conquer partitions problems specifically so that the combine step remains computationally efficient.
+This strategy relies on **[recursion](/courses/discrete-mathematics/induction#recursion-is-induction)**, where a method solves a task by calling itself on smaller instances of the same problem. Every recursive method requires a **base case** to terminate execution without recursing further. Divide and conquer partitions problems specifically so that the combine step remains computationally efficient.
 
 Course notes describe the pattern in two ways: either as three explicit phases (divide, conquer, combine), or as two phases (divide and conquer, where conquering includes combining). If an exam question asks for the steps of divide and conquer, list the standard three: divide, conquer, combine.
 
@@ -29,7 +29,7 @@ Here is the notes' example, `30, 20, 40, 5, 90, 80, 10`:
 
 <MergeSortTree input={[30, 20, 40, 5, 90, 80, 10]} />
 
-When an array contains an odd number of elements, one half receives the extra item. Whether the extra item sits on the left or the right does not affect correctness. In the recursion tree above, descending levels represent the divide step, while ascending levels represent the combine step where sorted subarrays merge.
+When an array contains an odd number of elements, one half receives the extra item. Whether the extra item sits on the left or the right does not affect correctness. In the [recursion tree](/courses/discrete-mathematics/trees#what-a-tree-is) above, descending levels represent the divide step, while ascending levels represent the combine step where sorted subarrays merge.
 
 ## The merge step
 
@@ -96,7 +96,7 @@ Because merge sort always splits arrays evenly down the middle regardless of ele
 Comparing $n^2$ with $n \log n$ in the [growth table](/courses/algorithm-design-and-analysis/counting-steps) illustrates the difference at scale: at one million elements, quadratic algorithms take hours, while $n \log n$ takes fractions of a second.
 
 <Callout tone="orange" label="The price">
-Merge sort is **not in place**. The merge operation requires a temporary array sized to the elements being merged, consuming $O(n)$ auxiliary memory. When memory is limited, this extra space requirement is significant. [Quick sort](/courses/algorithm-design-and-analysis/quick-sort#the-idea), covered in the next lesson, sorts in place.
+Merge sort is **not in place**. The merge operation requires a temporary array sized to the elements being merged, consuming $O(n)$ auxiliary memory ([space complexity](/courses/algorithm-design-and-analysis/counting-steps#space-is-a-cost-too)). When memory is limited, this extra space requirement is significant. [Quick sort](/courses/algorithm-design-and-analysis/quick-sort#the-idea), covered in the next lesson, sorts in place.
 </Callout>
 
 <Callout tone="orange" label="Common mistakes in the merge">

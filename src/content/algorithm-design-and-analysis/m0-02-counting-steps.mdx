@@ -9,7 +9,7 @@ The goal of analysis is to **compare algorithms**, primarily by running time, bu
 
 ## Why not just time it?
 
-You could time both programs with a stopwatch, as you will in the next lesson. However, a wall-clock timer reflects hardware specifications, JVM warm-up, background operating system processes, and the specific test input. On a faster computer the measured times decrease even though the underlying *algorithm* has not changed.
+You could time both programs with a stopwatch, as you will in the next lesson. However, a wall-clock timer reflects hardware specifications, JVM warm-up, background [operating system processes](/courses/operating-systems/processes#the-process-concept), and the specific test input. On a faster computer the measured times decrease even though the underlying *algorithm* has not changed.
 
 So instead of seconds, we count **steps**:
 
@@ -29,7 +29,7 @@ That function is the algorithm's **time complexity**. This course writes it as $
 **Space complexity** is how much memory the algorithm needs, also as a function of $n$. It has two parts:
 
 - A **fixed part** independent of input size: program instructions and simple variables like `i`, `max`, and `temp`.
-- A **variable part** that scales with input size: memory dynamically allocated for additional data structures, along with the **recursion stack**. Every recursive call awaiting completion occupies stack memory.
+- A **variable part** that scales with input size: memory dynamically allocated for additional data structures, along with the [recursion stack](/courses/data-structures/stacks#the-call-stack). Every recursive call awaiting completion occupies stack memory.
 
 Written as a formula, the space needed by an algorithm $X$ is
 
@@ -70,7 +70,7 @@ The worst case provides an **upper bound** on running time, while the best case 
 
 Assume every case is equally likely: `x` is at position 1, or position 2, …, or position $n$, or not in the array at all. That's $n + 1$ cases. Count the comparisons in each, add them up, and divide by $n + 1$:
 
-- Finding `x` at index $i$ requires $i$ comparisons. Searching all positions 1 through $n$ totals $1 + 2 + \cdots + n = \frac{n(n+1)}{2}$ comparisons. To verify the formula, pair the first term with the last ($1 + n$), the second with the second-to-last ($2 + n - 1$), and so on. Each of the $n/2$ pairs sums to $n + 1$.
+- Finding `x` at index $i$ requires $i$ comparisons. Searching all positions 1 through $n$ totals $1 + 2 + \cdots + n = \frac{n(n+1)}{2}$ comparisons (the [arithmetic series](/courses/discrete-mathematics/induction#a-first-proof) formula). To verify the formula, pair the first term with the last ($1 + n$), the second with the second-to-last ($2 + n - 1$), and so on. Each of the $n/2$ pairs sums to $n + 1$.
 - `x` missing takes $n$ comparisons.
 
 Add them and divide by the $n + 1$ cases. Split the fraction into its two parts, and the first part's $(n + 1)$ cancels:
@@ -166,7 +166,7 @@ Two complexity rates deserve specific explanation:
 
 **Logarithmic.** $\log_2 n$ counts how many times you can halve $n$ before reaching 1. For example, $\log_2 8 = 3$ because $8 \to 4 \to 2 \to 1$ takes three halvings. Similarly, $\log_2 1024 = 10$, and $\log_2(1{,}000{,}000) \approx 20$. Logarithmic functions grow very slowly, explaining why divide-and-conquer algorithms like binary search run quickly. In asymptotic notation the base is omitted because changing logarithmic bases only multiplies by a constant factor, written simply as $\log n$.
 
-**Exponential and factorial.** An exponential term $2^n$ doubles with each unit increase in $n$, representing counts such as the number of possible subsets for $n$ items. A factorial $n! = n \times (n-1) \times \cdots \times 1$ represents the number of orderings for $n$ items. Both grow extremely rapidly: $2^{30}$ exceeds one billion, while $20!$ exceeds $2 \times 10^{18}$.
+**Exponential and factorial.** An exponential term $2^n$ doubles with each unit increase in $n$, representing counts such as the number of possible [subsets](/courses/discrete-mathematics/sets#subsets) for $n$ items. A factorial $n! = n \times (n-1) \times \cdots \times 1$ represents the number of orderings for $n$ items. Both grow extremely rapidly: $2^{30}$ exceeds one billion, while $20!$ exceeds $2 \times 10^{18}$.
 
 The common classes, from fastest to slowest:
 
@@ -177,7 +177,7 @@ The common classes, from fastest to slowest:
 | $O(n)$ | linear | linear search, find the max |
 | $O(n \log n)$ | linearithmic | merge sort, quick sort (average) |
 | $O(n^2)$ | quadratic | selection sort, bubble sort |
-| $O(n^3)$ | cubic | three nested loops, such as multiplying two $n \times n$ matrices the schoolbook way |
+| $O(n^3)$ | cubic | three nested loops, such as [multiplying two $n \times n$ matrices](/courses/computational-mathematics/multiplying-matrices#the-rule) the schoolbook way |
 | $O(2^n)$ | exponential | trying every subset (brute-force knapsack) |
 | $O(n!)$ | factorial | trying every order (brute-force Traveling Salesman) |
 

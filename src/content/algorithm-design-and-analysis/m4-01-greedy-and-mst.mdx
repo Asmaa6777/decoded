@@ -38,7 +38,7 @@ For certain fundamental problems, greedy choices are provably guaranteed to find
 
 Imagine laying cable to connect six buildings. Specific pairs of buildings can be linked, each at a known installation cost. Every building must connect to the network, directly or indirectly, and your goal is to minimize total cable cost.
 
-In graph theory, this network forms a connected, weighted, undirected graph. A **spanning tree** is a subset of edges that connects **every** vertex with **no cycles** (a cycle would mean paying for redundant cable). For a graph with $n$ vertices, every spanning tree contains exactly $n - 1$ edges.
+In graph theory, this network forms a connected, weighted, undirected graph. A [spanning tree](/courses/discrete-mathematics/trees#spanning-trees) is a subset of edges that connects **every** vertex with **no cycles** (a cycle would mean paying for redundant cable). For a graph with $n$ vertices, every spanning tree contains exactly $n - 1$ edges.
 
 To see why, construct the tree one edge at a time. Begin with $n$ isolated vertices, representing $n$ separate components. Each edge that does not form a cycle connects two separate components into one, reducing the component count by exactly 1. Reducing $n$ components to 1 single connected component takes exactly $n - 1$ edges. Adding any further edge would connect two vertices that are already linked, creating a cycle.
 
@@ -92,9 +92,9 @@ The main loop runs $|V| - 1$ times, adding one tree edge in each iteration.
 
 ## Kruskal's algorithm: join the forest
 
-Kruskal's algorithm takes a different approach. Rather than growing a single tree from a starting vertex, it treats every vertex as its own one-node tree (a forest) and joins them together:
+Kruskal's algorithm takes a different approach. Rather than growing a single tree from a starting vertex, it treats every vertex as its own one-node tree (a [forest](/courses/discrete-mathematics/trees#what-a-tree-is)) and joins them together:
 
-1. **Sort** all edges in non-decreasing order of weight.
+1. **[Sort](/courses/algorithm-design-and-analysis/quick-sort#the-idea)** all edges in non-decreasing order of weight.
 2. Pick the cheapest remaining edge. If its endpoints belong to two **different** trees, add it to the forest to connect them. If both endpoints are **already in the same tree**, adding it would form a cycle, so **reject** it.
 3. Repeat until you have collected $n - 1$ edges.
 
@@ -161,7 +161,7 @@ Prim's algorithm applies this rule by defining the cut between vertices in the g
 ## Analysis
 
 - **Prim's algorithm:** with an adjacency matrix and a simple linear scan for the cheapest crossing edge, the running time is $O(V^2)$. When implemented with an adjacency list and a binary [priority queue](/courses/data-structures/heaps#the-interface), the running time drops to $O(E \log V)$.
-- **Kruskal's algorithm:** sorting edges takes $O(E \log E)$, which equals $O(E \log V)$ because $E \le V^2$. Checking whether two vertices share the same component uses a **union-find** disjoint-set data structure: each vertex points to a parent representative, `find` traverses pointers to identify the root, and two vertices share a component when their roots match. Adding an edge links one root to the other, merging their trees. Using path compression and union by rank keeps operations nearly $O(1)$ amortized time.
+- **Kruskal's algorithm:** sorting edges takes $O(E \log E)$, which equals $O(E \log V)$ because $E \le V^2$. Checking whether two vertices share the same component uses a [union-find](/courses/data-structures/union-find#the-interface) disjoint-set data structure: each vertex points to a parent representative, `find` traverses pointers to identify the root, and two vertices share a component when their roots match. Adding an edge links one root to the other, merging their trees. Using path compression and union by rank keeps operations nearly $O(1)$ amortized time.
 
 As a general guideline, choose Prim's algorithm for **dense** graphs, where the edge count approaches the maximum $V(V-1)/2$. Choose Kruskal's algorithm for **sparse** graphs, where the edge count is closer to $V$, because having fewer edges minimizes sorting time.
 

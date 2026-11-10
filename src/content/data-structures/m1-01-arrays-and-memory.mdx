@@ -90,7 +90,7 @@ A Python `list` doesn't store the numbers themselves next to each other. It stor
 
 ## Why contiguous is fast in practice
 
-Big-O says an array and a linked list both take O(n) to sum. On real hardware the array is often 10 times faster or more. The reason is the [cache](/courses/computer-organization/memory-hierarchy#cache-the-desk-next-to-the-cpu): when the CPU reads one address, it pulls in the whole surrounding block, typically 64 bytes. Walking an array uses every byte of every block it fetches. Walking a linked list jumps to a new, unpredictable address at each step, and often waits on main memory each time.
+[Big-O](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations) says an array and a linked list both take O(n) to sum. On real hardware the array is often 10 times faster or more. The reason is the [cache](/courses/computer-organization/memory-hierarchy#cache-the-desk-next-to-the-cpu): when the CPU reads one address, it pulls in the whole surrounding block, typically 64 bytes. Walking an array uses every byte of every block it fetches. Walking a linked list jumps to a new, unpredictable address at each step, and often waits on main memory each time.
 
 This is called **locality of reference**, and it's why the fastest code in the world, from game engines to databases to NumPy, keeps its data in arrays.
 

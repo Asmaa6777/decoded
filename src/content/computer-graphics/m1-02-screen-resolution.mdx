@@ -29,7 +29,7 @@ Some common resolutions:
 
 ## Aspect ratio
 
-The **aspect ratio** is the shape of the screen: width compared with height. Divide both numbers by their [greatest common divisor](/courses/computational-mathematics/divisibility-and-euclid), the biggest number that divides both exactly, to reduce it. For 1920 and 1080 that's 120, which Euclid's algorithm finds by taking remainders: $1920 \bmod 1080 = 840$, $1080 \bmod 840 = 240$, $840 \bmod 240 = 120$, $240 \bmod 120 = 0$, so the answer is the last non-zero remainder, 120.
+The **aspect ratio** is the shape of the screen: width compared with height. Divide both numbers by their [greatest common divisor](/courses/computational-mathematics/divisibility-and-euclid), the biggest number that divides both exactly, to reduce it. For 1920 and 1080 that's 120, which [Euclid's algorithm](/courses/algorithm-design-and-analysis/euclid-gcd#euclids-idea) finds by taking remainders: $1920 \bmod 1080 = 840$, $1080 \bmod 840 = 240$, $840 \bmod 240 = 120$, $240 \bmod 120 = 0$, so the answer is the last non-zero remainder, 120.
 
 $$
 1920 : 1080 \;\xrightarrow{\;\div 120\;}\; 16 : 9

@@ -78,7 +78,7 @@ Partitioning a subarray of size $n$ requires $O(n)$ time because the two pointer
 
 - **Balanced partitions (average case):** when the pivot divides subarrays roughly in half, the recursion tree reaches a depth of approximately $\log_2 n$ levels. Each level performs $O(n)$ partitioning work, yielding **$O(n \log n)$** total time. Even uneven splits, such as a 25/75 ratio, still reduce subproblem sizes exponentially, preserving $O(n \log n)$ asymptotic growth. On randomly ordered inputs, quick sort achieves $O(n \log n)$ on average. Advanced Algorithms provides a rigorous mathematical proof in [randomized quicksort](/courses/advanced-algorithms/quicksort#randomized-quicksort).
 
-- **Unbalanced partitions (worst case):** if the pivot is consistently the smallest or largest element, one partition remains empty while the other contains $n - 1$ elements. Partitioning shrinks the problem by only one element at a cost of $O(n)$ operations:
+- **Unbalanced partitions (worst case):** if the pivot is consistently the smallest or largest element, one partition remains empty while the other contains $n - 1$ elements. Partitioning shrinks the problem by only one element at a cost of $O(n)$ operations, forming an [arithmetic series](/courses/discrete-mathematics/induction#a-first-proof):
 
 $$
 n + (n-1) + (n-2) + \dots + 1 = O(n^2)

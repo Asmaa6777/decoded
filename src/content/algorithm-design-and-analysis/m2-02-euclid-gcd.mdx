@@ -12,7 +12,7 @@ Around 300 BC, the Greek mathematician Euclid documented an efficient method for
 
 ## The problem
 
-The **greatest common divisor** of two non-negative integers $m$ and $n$ (not both zero), written $\gcd(m, n)$, is the largest integer that divides both numbers without a remainder.
+The **greatest common divisor** of two non-negative integers $m$ and $n$ (not both zero), written $\gcd(m, n)$, is the largest integer that [divides](/courses/computational-mathematics/divisibility-and-euclid#divisibility) both numbers without a remainder.
 
 Finding small GCD values by inspection means identifying common factors directly without executing an algorithm:
 
@@ -45,7 +45,7 @@ $$
 \gcd(m, n) = \gcd(n,\ m \bmod n)
 $$
 
-where $m \bmod n$ denotes the remainder when dividing $m$ by $n$ (`m % n` in Java).
+where $m \bmod n$ denotes the remainder when dividing $m$ by $n$ (`m % n` in Java, from [modular arithmetic](/courses/computational-mathematics/modular-arithmetic#the-mod-operation)).
 
 **Why is that true?** Express the integer division as $m = q \cdot n + r$, where $q$ is the integer quotient and $r$ is the remainder ($0 \le r < n$). Any divisor that divides both $m$ and $n$ must also divide their difference, $r = m - q \cdot n$. Likewise, any divisor that divides both $n$ and $r$ must also divide their sum, $m = q \cdot n + r$. Because $(m, n)$ and $(n, r)$ share identical sets of common divisors, they share the identical greatest common divisor.
 
@@ -67,7 +67,7 @@ Geometrically, Euclid's division tiles an $m \times n$ floor with squares of siz
 
 <EuclidVisualizer m={210} n={45} />
 
-The table layout reflects standard exam presentation: each row performs one division, shifting $n$ and $r$ into the next row's inputs. You can test custom inputs in the visualizer above. Consecutive Fibonacci numbers, such as 89 and 55, represent the worst-case input for Euclid's algorithm. Because dividing one Fibonacci number by the preceding Fibonacci number yields a quotient of 1, the remainder is always the next smaller Fibonacci number: $(89, 55) \to (55, 34) \to (34, 21) \to \dots$, causing the values to shrink at the slowest possible rate.
+The table layout reflects standard exam presentation: each row performs one division, shifting $n$ and $r$ into the next row's inputs. You can test custom inputs in the visualizer above. Consecutive [Fibonacci numbers](/courses/algorithm-design-and-analysis/dynamic-programming#the-problem-with-plain-recursion), such as 89 and 55, represent the worst-case input for Euclid's algorithm. Because dividing one Fibonacci number by the preceding Fibonacci number yields a quotient of 1, the remainder is always the next smaller Fibonacci number: $(89, 55) \to (55, 34) \to (34, 21) \to \dots$, causing the values to shrink at the slowest possible rate.
 
 The algorithm proceeds in three steps:
 
@@ -165,13 +165,13 @@ Reversing the division steps computes integer coefficients $x$ and $y$ satisfyin
 
 <ApplicationsGrid>
   <PracticalApplication title="RSA encryption" tool="CRYPTOGRAPHY">
-    RSA key generation requires picking coprime integers, and computing the private decryption key relies on the extended Euclidean algorithm. Euclid's algorithm operates on keys with hundreds of decimal digits, which is computationally feasible only because the algorithm runs in logarithmic time.
+    [RSA encryption](/courses/computational-mathematics/what-is-cryptography#two-kinds-of-system) key generation requires picking coprime integers, and computing the private decryption key relies on the extended Euclidean algorithm. Euclid's algorithm operates on keys with hundreds of decimal digits, which is computationally feasible only because the algorithm runs in logarithmic time.
   </PracticalApplication>
   <PracticalApplication title="Simplifying fractions" tool="MATH LIBRARIES">
     Rational number arithmetic reduces fractions like $\frac{210}{45}$ to $\frac{14}{3}$ by dividing both numerator and denominator by $\gcd(210, 45) = 15$. Exact arithmetic libraries apply this reduction after each operation.
   </PracticalApplication>
   <PracticalApplication title="Screen aspect ratios" tool="UI">
-    Display dimensions such as $1920 \times 1080$ reduce to an aspect ratio of $16:9$ by dividing width and height by $\gcd(1920, 1080) = 120$.
+    Display dimensions such as $1920 \times 1080$ reduce to an [aspect ratio](/courses/computer-graphics/screen-resolution#aspect-ratio) of $16:9$ by dividing width and height by $\gcd(1920, 1080) = 120$.
   </PracticalApplication>
   <PracticalApplication title="Java standard library" tool="JDK">
     `BigInteger.gcd()` handles arbitrarily large integers, providing an efficient implementation of the Euclidean algorithm for cryptographic workloads.

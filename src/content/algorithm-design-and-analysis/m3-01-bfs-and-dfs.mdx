@@ -29,12 +29,12 @@ Standard graph terminology:
 - Two vertices are **adjacent** (or neighbors) if an edge connects them directly. Two edges are **adjacent edges** if they share a common vertex.
 - The **degree** of a vertex is the count of edges connected to it, also described as edges **incident** with that vertex. In an undirected line graph A-B-C, vertex B has degree 2, while A and C each have degree 1.
 - A **path** is an ordered sequence of vertices where each consecutive pair is adjacent. The **length** of a path is the number of edges it traverses. For example, the path A, B, C, D contains three edges and has length 3. A path that visits no vertex more than once is a **simple path**.
-- A **cycle** is a path of length at least 1 that starts and finishes at the same vertex without repeating any other vertices. A graph containing no cycles is **acyclic**.
+- A **cycle** is a path of length at least 1 that starts and finishes at the same vertex without repeating any other vertices. A graph containing no cycles is **[acyclic](/courses/discrete-mathematics/paths-and-dags#directed-acyclic-graphs)**.
 
 Course materials often categorize graphs into five structural forms: **undirected** (containing only undirected edges), **directed** (containing only directed edges), **cyclic graph** (containing at least one cycle), **acyclic** (containing no cycles), and **weighted**. Two details deserve attention:
 
 - The lecture notes refer to any graph containing a cycle as a "cycle graph." Standard textbook terminology refers to such a structure as a **cyclic graph**, reserving the term *cycle graph* ($C_n$) specifically for a single circular polygon of $n$ vertices, such as A-B-C-A.
-- The lecture notes assume edge weights are always non-negative distances. In broader computer science, edge weights can represent arbitrary values, including negative numbers such as financial transactions or net energy changes. Certain algorithms, such as Dijkstra's shortest-path algorithm, require non-negative weights to guarantee correctness, while others, such as Bellman-Ford, accommodate negative values.
+- The lecture notes assume edge weights are always non-negative distances. In broader computer science, edge weights can represent arbitrary values, including negative numbers such as financial transactions or net energy changes. Certain algorithms, such as [Dijkstra's shortest-path algorithm](/courses/advanced-algorithms/shortest-paths#dijkstras-algorithm), require non-negative weights to guarantee correctness, while other algorithms, such as Bellman–Ford, accommodate negative values.
 
 ## Storing a graph in Java
 
@@ -54,7 +54,7 @@ static void addEdge(List<List<Integer>> adj, int u, int v) {
 
 The type `List<List<Integer>>` nests lists: an inner `List<Integer>` stores the neighbors of one vertex, while the outer list indexes each vertex by its integer identifier. Calling `adj.get(3)` yields the list of neighbors for vertex 3. For a triangle with edges 0-1, 1-2, and 2-0, `adj` contains `[[1, 2], [0, 2], [1, 0]]`. Each undirected edge appears twice, once in the neighbor list of each endpoint.
 
-An alternative representation is an **adjacency matrix**, a two-dimensional `n × n` boolean array where `matrix[u][v]` indicates whether an edge connects vertex $u$ to vertex $v$. Checking whether an edge exists between two specific vertices takes $O(1)$ time in an adjacency matrix. However, the matrix allocates $\Theta(n^2)$ memory regardless of edge density.
+An alternative representation is an **adjacency matrix**, a two-dimensional `n × n` boolean array (stored as a [matrix](/courses/computational-mathematics/matrices-and-matlab#writing-a-matrix-down)) where `matrix[u][v]` indicates whether an edge connects vertex $u$ to vertex $v$. Checking whether an edge exists between two specific vertices takes $O(1)$ time in an adjacency matrix. However, the matrix allocates $\Theta(n^2)$ memory regardless of edge density.
 
 An adjacency list requires $O(n + m)$ space, allocating one list header per vertex and one element per edge endpoint ($2m$ entries total for undirected graphs). In sparse graphs where $m \ll n^2$, the difference in memory is substantial. A road network with 10,000 towns and an average of 4 roads per town requires 100,000,000 entries in an adjacency matrix, but only 40,000 entries in an adjacency list.
 
@@ -108,7 +108,7 @@ On unweighted graphs, BFS identifies a **shortest path** (a path with the minimu
 
 **Depth-first search** (**DFS**) explores a graph along a single path as deeply as possible before retreating. When the search reaches a vertex with no remaining unvisited neighbors, it **backtracks** to the most recently visited vertex that still has unexplored outgoing edges, continuing forward exploration from that point.
 
-DFS manages pending vertices using a **stack**, which operates on a last-in, first-out (LIFO) basis. The most recently discovered vertex is explored first. When implemented recursively, DFS uses the program's runtime **call stack**, pushing a frame for each deeper recursive call and popping the frame upon backtracking.
+DFS manages pending vertices using a **[stack](/courses/data-structures/stacks#the-interface)**, which operates on a last-in, first-out (LIFO) basis. The most recently discovered vertex is explored first. When implemented recursively, DFS uses the program's runtime **call stack**, pushing a frame for each deeper recursive call and popping the frame upon backtracking.
 
 <GraphTraversal algorithm="dfs" />
 
@@ -138,7 +138,7 @@ The lecture example analyzes a 7-vertex graph with vertices A through G and edge
 | 8 | F | G is unvisited: visit G, push onto stack | A, B, C, E, F, G |
 | 9 to 14 | Various | No unvisited neighbors remain: pop G, F, E, C, B, A | Empty |
 
-The resulting traversal order is **A B C E D F G**. The tree edges traversed to discover new vertices (A-B, B-C, C-E, E-D, E-F, and F-G) form a **DFS spanning tree**, connecting all 7 vertices using 6 edges with no cycles. The remaining five edges connect vertices to ancestors already present in the search tree, categorized in graph theory as **back edges**.
+The resulting traversal order is **A B C E D F G**. The tree edges traversed to discover new vertices (A-B, B-C, C-E, E-D, E-F, and F-G) form a **DFS spanning tree**, connecting all 7 vertices using 6 edges with no cycles (a [tree](/courses/discrete-mathematics/trees#what-a-tree-is) on $V$ vertices). The remaining five edges connect vertices to ancestors already present in the search tree, categorized in graph theory as **back edges**.
 
 A recursive implementation mirrors this behavior directly: each recursive invocation pushes a stack frame, and each method return pops that frame upon reaching a dead end.
 

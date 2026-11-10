@@ -3,7 +3,7 @@ import { SortVisualizer, StabilityCompare, LeetCodeProblems, BubbleEarlyExitVisu
 
 # Selection Sort and Bubble Sort
 
-A **sorting algorithm** arranges elements in a specific order: numerical order for numbers, alphabetical order for strings, either ascending or descending. Sorting makes fast searching possible, forms the initial step in many data processing pipelines, and serves as the standard introduction to algorithm analysis.
+A **sorting algorithm** arranges elements in a specific [order](/courses/discrete-mathematics/relations#partial-orders): numerical order for numbers, alphabetical order for strings, either ascending or descending. Sorting makes fast searching possible, forms the initial step in many data processing pipelines, and serves as the standard introduction to algorithm analysis.
 
 We begin with two simple algorithms: selection sort and bubble sort. Both require quadratic time, but their operations are easy to trace and count step by step.
 
@@ -48,7 +48,7 @@ The outer loop stops at index $n - 2$, the second-to-last position. By that poin
 
 ### Analysis
 
-The input size is $n$, the number of elements. The basic operation is the **key comparison** `A[j] < A[min]`. How often it runs depends only on $n$, not on the values. On pass 1 it runs $n - 1$ times, on pass 2 it runs $n - 2$ times, and so on down to 1:
+The input size is $n$, the number of elements. The basic operation is the **key comparison** `A[j] < A[min]`. How often it runs depends only on $n$, not on the values. On pass 1 it runs $n - 1$ times, on pass 2 it runs $n - 2$ times, and so on down to 1 (summed as an [arithmetic series](/courses/discrete-mathematics/induction#a-first-proof)):
 
 $$
 (n-1) + (n-2) + \dots + 1 = \frac{n(n-1)}{2}

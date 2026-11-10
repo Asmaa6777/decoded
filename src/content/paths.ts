@@ -37,6 +37,7 @@ export const learningPaths: LearningPath[] = [
 
 /** Courses that make a course easier. Nothing is locked; these are only suggestions. */
 export const prerequisites: Record<string, string[]> = {
+  "algorithm-design-and-analysis": ["discrete-mathematics"],
   "advanced-algorithms": ["algorithm-design-and-analysis", "discrete-mathematics", "data-structures"],
   "computational-mathematics": ["discrete-mathematics"],
   "theory-of-computation": ["discrete-mathematics"],

@@ -143,7 +143,7 @@ Designing an algorithm is an iterative cycle where writing code comes last. Here
 
 1. **Understand the problem.** What exactly is the input? What counts as a correct answer? What are the unusual edge cases? Work a few small instances by hand.
 2. **Decide on the approach.** The full name of this box is "Decide on: computational means, exact vs. approximate solving, algorithm design technique", three things to settle before designing anything:
-   - **The computational means:** what kind of machine runs it. Almost everything in this course assumes an ordinary computer that does one step at a time; a machine that runs many steps in parallel needs different algorithms. How much speed and memory you have counts here too.
+   - **The computational means:** what kind of machine runs it. Almost everything in this course assumes an ordinary computer that does one step at a time; a machine that runs many steps in [parallel](/courses/computer-architecture/parallel-processing#simd-one-instruction-many-values) needs different algorithms. How much speed and memory you have counts here too.
    - **Exact or approximate solving:** do you need the exact best answer, or is a good-enough one acceptable? For the hard problems below, exact answers can take too long, so people settle for close ones.
    - **The algorithm design technique:** brute force, [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer), greedy, or [dynamic programming](/courses/algorithm-design-and-analysis/dynamic-programming). You'll learn all four here. This is also when you pick your data structures.
 3. **Design an algorithm:** write the steps.
@@ -192,7 +192,7 @@ Algorithms work on data, and the way the data is stored changes how fast the alg
 
 > A **data structure** is a way to store and organize data so that it can be accessed and changed easily.
 
-An array is the simplest one: items side by side, each reachable by its index in one step. Others (linked lists, stacks, queues, trees, hash tables) make different operations fast. Finding an item in an unsorted array takes a pass over every item, while a hash table can usually find it in one step. Choosing the data structure is part of step 2 of the design process above. The [Data Structures course](/courses/data-structures/arrays-and-memory) covers them one by one, starting with arrays.
+An array is the simplest one: items side by side, each reachable by its index in one step. Others (linked lists, [stacks](/courses/data-structures/stacks#the-interface), [queues](/courses/data-structures/queues-and-deques#the-interface), trees, [hash tables](/courses/data-structures/hash-maps#keys-into-indexes)) make different operations fast. Finding an item in an unsorted array takes a pass over every item, while a hash table can usually find it in one step. Choosing the data structure is part of step 2 of the design process above. The [Data Structures course](/courses/data-structures/arrays-and-memory) covers them one by one, starting with arrays.
 
 ## Where this shows up today
 

@@ -7,7 +7,7 @@ Greedy algorithms make a single choice at each step and never reconsider. Someti
 
 ## The problem with plain recursion
 
-Consider the Fibonacci sequence: $F(0) = 0$, $F(1) = 1$, and each subsequent number is the sum of the two preceding values: $F(n) = F(n-1) + F(n-2)$. The mathematical definition translates directly into Java:
+Consider the [Fibonacci sequence](/courses/discrete-mathematics/induction#recursion-is-induction): $F(0) = 0$, $F(1) = 1$, and each subsequent number is the sum of the two preceding values: $F(n) = F(n-1) + F(n-2)$. The mathematical definition translates directly into Java:
 
 ```java
 static long fib(int n) {
@@ -16,7 +16,7 @@ static long fib(int n) {
 }
 ```
 
-This implementation is correct, but extraordinarily slow. Computing `fib(5)` calculates `fib(3)` twice, `fib(2)` three times, and `fib(1)` five times. The same subproblems are recalculated repeatedly. The total number of recursive calls grows exponentially, scaling by roughly 1.6 with each increase in $n$, making **$O(2^n)$** an upper bound. A call to `fib(50)` triggers billions of operations.
+This implementation is correct, but extraordinarily slow. Computing `fib(5)` calculates `fib(3)` twice, `fib(2)` three times, and `fib(1)` five times. The same subproblems are recalculated repeatedly. The total number of recursive calls [grows exponentially](/courses/algorithm-design-and-analysis/counting-steps#getting-the-big-o-without-the-algebra), scaling by roughly 1.6 with each increase in $n$, making **$O(2^n)$** an upper bound. A call to `fib(50)` triggers billions of operations.
 
 When a recursive algorithm encounters identical subproblems again and again, those pieces are called **overlapping subproblems**. Dynamic programming is designed specifically for problems with this structure:
 
@@ -38,7 +38,7 @@ The mathematical recurrence remains unchanged, but recording intermediate values
 
 ## The 0/1 knapsack problem
 
-Imagine you have a knapsack that can hold at most a total weight of $W$. You are given $n$ items, each having a weight $w_i$ and a value $v_i$. The objective is to select the **most valuable subset of items that fits** within the capacity limit. In textbooks, value is often called the **benefit** or **profit**, with arrays labeled `wt` and `val`. Each item is indivisible: you either take it (1) or leave it (0), giving the **0/1 knapsack problem** its name.
+Imagine you have a knapsack that can hold at most a total weight of $W$. You are given $n$ items, each having a weight $w_i$ and a value $v_i$. The objective is to select the most valuable [subset](/courses/discrete-mathematics/sets#subsets) of items that fits within the capacity limit. In textbooks, value is often called the **benefit** or **profit**, with arrays labeled `wt` and `val`. Each item is indivisible: you either take it (1) or leave it (0), giving the **0/1 knapsack problem** its name.
 
 This is a computationally challenging problem. Evaluating every possible subset requires testing $2^n$ combinations. That is simple for 4 items (16 subsets), but impossible for 60 items (over $10^{18}$ subsets).
 
@@ -139,7 +139,7 @@ The table contains $(n + 1) \times (W + 1)$ cells, and each cell requires $O(1)$
 Compare this with exhaustive brute-force search at $O(2^n)$. For 100 items and a capacity of 1,000, dynamic programming evaluates 100,000 cell updates instead of $2^{100} \approx 10^{30}$ subset combinations.
 
 <Callout tone="violet" label="The fine print">
-While $O(nW)$ appears polynomial at first glance, $W$ is a numeric value rather than a count of distinct input items. Adding one digit to the representation of $W$ multiplies its numeric value by ten and widens the table tenfold. Because the size of the input is measured in the number of bits required to encode $W$, the running time is exponential with respect to input length, an efficiency known as **pseudo-polynomial** time. This is why 0/1 knapsack remains NP-complete: dynamic programming solves it efficiently when capacity $W$ is small, but does not provide a general polynomial-time solution for arbitrarily large numbers.
+While $O(nW)$ appears polynomial at first glance, $W$ is a numeric value rather than a count of distinct input items. Adding one digit to the representation of $W$ multiplies its numeric value by ten and widens the table tenfold. Because the size of the input is measured in the number of bits required to encode $W$, the running time is exponential with respect to input length, an efficiency known as **[pseudo-polynomial](/courses/advanced-algorithms/p-and-np#np-complete)** time. This is why 0/1 knapsack remains NP-complete: dynamic programming solves it efficiently when capacity $W$ is small, but does not provide a general polynomial-time solution for arbitrarily large numbers.
 </Callout>
 
 ## DP vs. greedy vs. divide and conquer
