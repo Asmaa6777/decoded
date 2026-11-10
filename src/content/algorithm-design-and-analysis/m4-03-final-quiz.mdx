@@ -79,7 +79,7 @@ The second half of the course in eight questions. Get 6 right to pass and finish
         { id: "d", text: "Recursive" },
       ],
       correctOptionId: "c",
-      explanation: "Once a greedy choice is made it's never undone. That keeps greedy fast, but it can miss the optimal answer when an early choice turns out to be wrong.",
+      explanation: "Once a greedy choice is made, it is irrevocable: it is never reconsidered or undone. This keeps greedy algorithms fast and simple, though it can cause them to miss the global optimum if an early decision was suboptimal. Option A (Reversible) is incorrect because greedy algorithms do not backtrack. Option B (Random) is incorrect because greedy choices follow deterministic local criteria. Option D (Recursive) is incorrect because greedy algorithms are typically implemented as iterative loops.",
     },
     {
       id: "q7",
@@ -91,7 +91,7 @@ The second half of the course in eight questions. Get 6 right to pass and finish
         { id: "d", text: "The algorithm starts again from that edge" },
       ],
       correctOptionId: "a",
-      explanation: "A spanning tree has no cycles. If the two ends are already connected, the edge adds nothing but a loop, so Kruskal skips it and moves on to the next edge in sorted order.",
+      explanation: "A spanning tree is strictly acyclic. If an edge's endpoints already belong to the same component of the forest, a path already links them, so adding the edge would form a cycle; Kruskal's algorithm immediately discards it and continues. Option B describes dynamic tree cycle maintenance, not Kruskal's edge scan. Option C violates the tree property by creating a cycle. Option D is incorrect because Kruskal advances strictly forward through the sorted edge list without restarting.",
     },
     {
       id: "q8",
@@ -103,7 +103,7 @@ The second half of the course in eight questions. Get 6 right to pass and finish
         { id: "d", text: "vᵢ / wᵢ" },
       ],
       correctOptionId: "b",
-      explanation: "Either skip the item (best of the first i−1 items with capacity w), or take it (vᵢ plus the best of the first i−1 items with the capacity that's left). Pick whichever is larger.",
+      explanation: "When item i fits within capacity w, we take the maximum between skipping it (V[i−1, w]) and taking it (vᵢ plus V[i−1, w − wᵢ], which uses remaining capacity w − wᵢ on the earlier i−1 items). Option A ignores capacity constraints by adding vᵢ without deducting wᵢ. Option C compares adjacent cells without accounting for item value or weight. Option D is the greedy value density heuristic used in fractional knapsack problems, not the dynamic programming recurrence.",
     },
   ]}
 />

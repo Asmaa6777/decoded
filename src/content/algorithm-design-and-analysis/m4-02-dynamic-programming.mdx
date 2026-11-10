@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { KnapsackTable, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Dynamic Programming: The 0/1 Knapsack
@@ -206,6 +206,299 @@ public class Knapsack {
 ```
 
 Note the array indexing: table row `i` corresponds to item `i`, but zero-indexed arrays store item `i` at `wt[i - 1]` and `val[i - 1]`.
+
+## Practice from past exams
+
+### Part 1: Midterm and written exam questions
+
+**1.** *(0/1 Knapsack full table hand calculation)* Lecture 8 (Slides 4–25) presents the classic 0/1 knapsack example with four items and capacity $W = 5$:
+- Item 1: weight $w_1 = 3$, value $v_1 = 100$
+- Item 2: weight $w_2 = 2$, value $v_2 = 20$
+- Item 3: weight $w_3 = 4$, value $v_3 = 60$
+- Item 4: weight $w_4 = 1$, value $v_4 = 40$
+
+1. State the base cases and the recurrence relation for table cell $V[i, w]$, explaining the condition under which an item cannot be considered.
+2. Hand-calculate each entry in the $(4 + 1) \times (5 + 1)$ table from $i = 0$ to $4$ and $w = 0$ to $5$. Show the explicit numerical evaluation for cells $V[1, 3]$, $V[2, 5]$, $V[3, 4]$, and $V[4, 5]$.
+3. Explain why Row 3 is completely identical to Row 2 across all columns, and explain what this reveals about Item 3.
+
+<ModelAnswer>
+**(a) Recurrence relation and base cases:**
+- **Base cases:**
+  - $V[0, w] = 0$ for all $0 \le w \le W$: with 0 items available, the achievable value is zero.
+  - $V[i, 0] = 0$ for all $0 \le i \le n$: with zero capacity, no items can be carried.
+- **Recurrence for cell $V[i, w]$:**
+  - If $w_i > w$ (item $i$ is heavier than current capacity $w$):
+    $$
+    V[i, w] = V[i - 1, w]
+    $$
+  - If $w_i \le w$ (item $i$ fits):
+    $$
+    V[i, w] = \max\big(V[i - 1, w],\ \ v_i + V[i - 1, w - w_i]\big)
+    $$
+  The first term $V[i - 1, w]$ represents **skipping** item $i$. The second term $v_i + V[i - 1, w - w_i]$ represents **taking** item $i$, earning value $v_i$ and using the remaining capacity $w - w_i$ to take the best selection from the previous $i - 1$ items.
+
+**(b) Complete table evaluation:**
+
+- **Row 0 ($i = 0$, 0 items):**
+  $V[0, w] = [0, 0, 0, 0, 0, 0]$ for $w = 0, 1, 2, 3, 4, 5$.
+
+- **Row 1 ($i = 1$, $w_1 = 3, v_1 = 100$):**
+  - For $w = 0, 1, 2$: $w < 3 \implies V[1, w] = V[0, w] = 0$.
+  - For $w = 3$: $\max(V[0, 3], 100 + V[0, 0]) = \max(0, 100 + 0) = \mathbf{100}$.
+  - For $w = 4$: $\max(V[0, 4], 100 + V[0, 1]) = \max(0, 100 + 0) = \mathbf{100}$.
+  - For $w = 5$: $\max(V[0, 5], 100 + V[0, 2]) = \max(0, 100 + 0) = \mathbf{100}$.
+  - Row 1: `[0, 0, 0, 100, 100, 100]`.
+
+- **Row 2 ($i = 2$, $w_2 = 2, v_2 = 20$):**
+  - For $w = 0, 1$: $w < 2 \implies V[2, w] = V[1, w] = 0$.
+  - For $w = 2$: $\max(V[1, 2], 20 + V[1, 0]) = \max(0, 20 + 0) = \mathbf{20}$.
+  - For $w = 3$: $\max(V[1, 3], 20 + V[1, 1]) = \max(100, 20 + 0) = \mathbf{100}$.
+  - For $w = 4$: $\max(V[1, 4], 20 + V[1, 2]) = \max(100, 20 + 0) = \mathbf{100}$.
+  - For $w = 5$: $\max(V[1, 5], 20 + V[1, 3]) = \max(100, 20 + 100) = \mathbf{120}$.
+  - Row 2: `[0, 0, 20, 100, 100, 120]`.
+
+- **Row 3 ($i = 3$, $w_3 = 4, v_3 = 60$):**
+  - For $w = 0, 1, 2, 3$: $w < 4 \implies V[3, w] = V[2, w] \implies 0, 0, 20, 100$.
+  - For $w = 4$: $\max(V[2, 4], 60 + V[2, 0]) = \max(100, 60 + 0) = \mathbf{100}$.
+  - For $w = 5$: $\max(V[2, 5], 60 + V[2, 1]) = \max(120, 60 + 0) = \mathbf{120}$.
+  - Row 3: `[0, 0, 20, 100, 100, 120]`.
+
+- **Row 4 ($i = 4$, $w_4 = 1, v_4 = 40$):**
+  - For $w = 0$: $V[4, 0] = 0$.
+  - For $w = 1$: $\max(V[3, 1], 40 + V[3, 0]) = \max(0, 40 + 0) = \mathbf{40}$.
+  - For $w = 2$: $\max(V[3, 2], 40 + V[3, 1]) = \max(20, 40 + 0) = \mathbf{40}$.
+  - For $w = 3$: $\max(V[3, 3], 40 + V[3, 2]) = \max(100, 40 + 20) = \mathbf{100}$.
+  - For $w = 4$: $\max(V[3, 4], 40 + V[3, 3]) = \max(100, 40 + 100) = \mathbf{140}$.
+  - For $w = 5$: $\max(V[3, 5], 40 + V[3, 4]) = \max(120, 40 + 100) = \mathbf{140}$.
+  - Row 4: `[0, 40, 40, 100, 140, 140]`.
+
+| $V[i, w]$ | w = 0 | w = 1 | w = 2 | w = 3 | w = 4 | w = 5 |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **i = 0** | 0 | 0 | 0 | 0 | 0 | 0 |
+| **i = 1** | 0 | 0 | 0 | 100 | 100 | 100 |
+| **i = 2** | 0 | 0 | 20 | 100 | 100 | 120 |
+| **i = 3** | 0 | 0 | 20 | 100 | 100 | 120 |
+| **i = 4** | 0 | 40 | 40 | 100 | 140 | **140** |
+
+**(c) Why Row 3 equals Row 2:**
+- Item 3 weighs $w_3 = 4$ with value $v_3 = 60$.
+- For capacities $w < 4$, item 3 cannot fit, so $V[3, w] = V[2, w]$ directly.
+- For capacity $w = 4$, taking item 3 yields $60 + V[2, 0] = 60$, which is inferior to skipping it and retaining $V[2, 4] = 100$ (from Item 1).
+- For capacity $w = 5$, taking item 3 yields $60 + V[2, 1] = 60$, which is inferior to retaining $V[2, 5] = 120$ (from Item 1 + Item 2).
+- Thus, Item 3 is dominated: in every column where it fits, the previous items provide greater value. Item 3 is never selected for any capacity up to 5.
+</ModelAnswer>
+
+**2.** *(Optimal subset reconstruction via table backtracking)* The bottom-right cell $V[4, 5] = 140$ reveals the maximum value achievable, but does not identify which items to pack.
+
+1. State the exact rule used during backtracking to decide whether item $i$ was included in the optimal knapsack.
+2. Trace the backtracking procedure step by step starting from cell $V[4, 5]$ down to $i = 0$. In each step, record:
+   - Current cell $(i, w)$ and its value $V[i, w]$.
+   - Value of the cell directly above: $V[i - 1, w]$.
+   - Comparison result and decision: **Take Item $i$** vs **Skip Item $i$**.
+   - Updated capacity $w$ and next cell inspected.
+3. List the items chosen, and verify that their combined weight does not exceed $W = 5$ and their combined value equals $140$.
+
+<ModelAnswer>
+**(a) Backtracking decision rule:**
+- Compare $V[i, w]$ with $V[i - 1, w]$:
+  - If $V[i, w] == V[i - 1, w]$: The maximum value achievable with $i$ items is no better than without item $i$. Therefore, item $i$ was **skipped**. Move directly up to cell $(i - 1, w)$ with capacity $w$ unchanged.
+  - If $V[i, w] \ne V[i - 1, w]$: Item $i$ contributed to the maximum value and was **taken**. Add item $i$ to the solution set, subtract its weight from capacity ($w \leftarrow w - w_i$), and move to cell $(i - 1, w - w_i)$.
+- Stop as soon as $i = 0$ or $w = 0$.
+
+**(b) Step-by-step backtrack trace:**
+
+1. **Start at $(i = 4, w = 5)$:**
+   - $V[4, 5] = 140$.
+   - Directly above: $V[3, 5] = 120$.
+   - Since $140 \ne 120$, **Item 4 was TAKEN**.
+   - Subtract weight $w_4 = 1$: new capacity $w = 5 - 1 = 4$.
+   - Next cell: $(i = 3, w = 4)$.
+
+2. **At $(i = 3, w = 4)$:**
+   - $V[3, 4] = 100$.
+   - Directly above: $V[2, 4] = 100$.
+   - Since $100 == 100$, **Item 3 was SKIPPED**.
+   - Capacity remains $w = 4$.
+   - Next cell: $(i = 2, w = 4)$.
+
+3. **At $(i = 2, w = 4)$:**
+   - $V[2, 4] = 100$.
+   - Directly above: $V[1, 4] = 100$.
+   - Since $100 == 100$, **Item 2 was SKIPPED**.
+   - Capacity remains $w = 4$.
+   - Next cell: $(i = 1, w = 4)$.
+
+4. **At $(i = 1, w = 4)$:**
+   - $V[1, 4] = 100$.
+   - Directly above: $V[0, 4] = 0$.
+   - Since $100 \ne 0$, **Item 1 was TAKEN**.
+   - Subtract weight $w_1 = 3$: new capacity $w = 4 - 3 = 1$.
+   - Next cell: $(i = 0, w = 1)$.
+
+5. **At $(i = 0, w = 1)$:**
+   - $i = 0$: halting condition reached. Backtracking terminates.
+
+**(c) Selected subset verification:**
+- Items taken: **Item 1** and **Item 4**.
+- Total weight:
+  $$
+  w_1 + w_4 = 3 + 1 = 4 \le 5\text{ (valid capacity)}
+  $$
+- Total value:
+  $$
+  v_1 + v_4 = 100 + 40 = 140\text{ (matches } V[4, 5]\text{ exactly)}
+  $$
+- Notice that 1 unit of capacity remains empty ($5 - 4 = 1$) because no remaining item has weight 1. Dynamic programming correctly finds the optimal value even when capacity cannot be filled completely.
+</ModelAnswer>
+
+**3.** *(The unbounded knapsack coding error and 1D array space optimization)*
+
+1. A programmer implements the 0/1 knapsack table but makes an indexing error in the recurrence:
+   $$
+   V_{\text{buggy}}[i, w] = \max\big(V[i - 1, w],\ \ v_i + V[i, w - w_i]\big)
+   $$
+   Notice that the second term accesses row $i$ rather than row $i - 1$. Trace the values computed in Row 4 ($w_4 = 1, v_4 = 40$) for $w = 1, 2, 3, 4, 5$ using this formula, and compare the resulting corner value with the correct 0/1 value.
+2. What physical problem does this buggy recurrence actually solve?
+3. To reduce memory from $O(n \cdot W)$ to $O(W)$, the 2D table can be replaced by a single 1D array `int[] dp = new int[W + 1]`. Explain why the capacity loop must run backwards from $W$ down to $w_i$:
+   ```java
+   for (int i = 0; i < n; i++) {
+       for (int w = W; w >= wt[i]; w--) {
+           dp[w] = Math.max(dp[w], val[i] + dp[w - wt[i]]);
+       }
+   }
+   ```
+   What happens if an engineer writes `for (int w = wt[i]; w <= W; w++)` instead?
+
+<ModelAnswer>
+**(a) Buggy recurrence trace on Row 4 ($w_4 = 1, v_4 = 40$):**
+- When computing row 4, row 3 is already complete: `V[3] = [0, 0, 20, 100, 100, 120]`.
+- $w = 1$: $\max(V[3, 1], 40 + V_{\text{buggy}}[4, 0]) = \max(0, 40 + 0) = \mathbf{40}$.
+- $w = 2$: $\max(V[3, 2], 40 + V_{\text{buggy}}[4, 1]) = \max(20, 40 + 40) = \mathbf{80}$.
+- $w = 3$: $\max(V[3, 3], 40 + V_{\text{buggy}}[4, 2]) = \max(100, 40 + 80) = \mathbf{120}$.
+- $w = 4$: $\max(V[3, 4], 40 + V_{\text{buggy}}[4, 3]) = \max(100, 40 + 120) = \mathbf{160}$.
+- $w = 5$: $\max(V[3, 5], 40 + V_{\text{buggy}}[4, 4]) = \max(120, 40 + 160) = \mathbf{200}$.
+- Instead of the correct 0/1 value **140**, the buggy code computes **200**!
+
+**(b) What problem the bug solves:**
+- Reading from $V[i, w - w_i]$ on the **same row** solves the **Unbounded Knapsack problem** (or Complete Knapsack problem), where an unlimited supply of each item is available.
+- At $w = 5$, item 4 (weight 1, value 40) was taken **5 times** ($5 \times 1 = 5 \le 5$), yielding $5 \times 40 = 200$. In 0/1 knapsack, each item is unique and can be taken at most once.
+
+**(c) Why 1D array space optimization requires backwards iteration:**
+- In the 1D array `dp[w]`, we want `dp[w - wt[i]]` to represent the value from the **previous item iteration** (equivalent to $V[i - 1, w - w_i]$).
+- When iterating **backwards** ($w = W \to wt[i]$), when updating `dp[w]`, the value at `dp[w - wt[i]]` has not been modified yet in the current outer loop iteration; it still holds the value from item $i - 1$. This strictly enforces the 0/1 constraint.
+- If the loop iterates **forwards** ($w = wt[i] \to W$), updating `dp[1] = 40` immediately overwrites the old value. When computing `dp[2]`, it reads the newly overwritten `dp[1] = 40`, yielding `dp[2] = 40 + 40 = 80`. Forward iteration accidentally transforms the 0/1 knapsack code into an unbounded knapsack solver!
+</ModelAnswer>
+
+**4.** *(Pseudo-polynomial time complexity and algorithmic paradigms)*
+
+1. The dynamic programming algorithm for 0/1 knapsack has time complexity $\Theta(n \cdot W)$ and space complexity $\Theta(n \cdot W)$ (or $O(W)$ space with 1D optimization). Explain why this is called **pseudo-polynomial** rather than truly polynomial time.
+2. Suppose a knapsack problem has $n = 40$ items and capacity $W = 2^{30} \approx 10^9$. Contrast the viability of the DP approach versus exhaustive brute-force search ($O(2^n)$).
+3. Compare Divide and Conquer, Greedy, and Dynamic Programming across three dimensions: subproblem overlap, decision commitment (reversibility), and optimality guarantee.
+
+<ModelAnswer>
+**(a) Why $\Theta(n \cdot W)$ is pseudo-polynomial:**
+- In computational complexity theory, the input size of an integer $W$ is measured by the number of bits required to encode it:
+  $$
+  k = \lceil \log_2(W + 1) \rceil\text{ bits}
+  $$
+- Therefore, $W = 2^k$. The running time $\Theta(n \cdot W) = \Theta(n \cdot 2^k)$ is actually **exponential** in the length of the input $k$.
+- An algorithm is called **pseudo-polynomial** if its running time is polynomial in the *numeric value* of the input numbers, but exponential in their *bit length*.
+- Because 0/1 knapsack is NP-complete, no truly polynomial algorithm ($O(n^c \cdot k^d)$) is known unless $P = NP$. When $W$ is a modest integer (e.g. $W \le 10{,}000$), DP is extremely fast; when $W$ is large, the table size explodes.
+
+**(b) Viability comparison for $n = 40$ and $W = 10^9$:**
+- **Dynamic programming:** Requires creating a table or array of size $W = 10^9$. Storing $10^9$ 32-bit integers requires **4 gigabytes** of memory for a single row, and $\Theta(n \cdot W) = 40 \times 10^9 = 4 \times 10^{10}$ operations. If $W$ were $10^{12}$, DP would fail completely with `OutOfMemoryError`.
+- **Brute force ($2^n$):** For $n = 40$, $2^{40} \approx 1.1 \times 10^{12}$ subsets. While very slow, a meet-in-the-middle bidirectional search splits the items into two sets of 20 ($2^{20} \approx 10^6$ subsets each) and runs in $O(n \cdot 2^{n/2}) \approx 40 \times 10^6$ operations, which solves the problem in a fraction of a second, completely outperforming dynamic programming when $W \gg 2^{n/2}$.
+
+**(c) Comparison of algorithmic paradigms:**
+
+| Paradigm | Subproblem structure | Decision commitment | Optimality guarantee |
+| :--- | :--- | :--- | :--- |
+| **Divide and Conquer** | Independent subproblems (disjoint sub-arrays) | Combines answers after recursion; no local commitment | Guaranteed optimal if recurrence is correct (e.g., Merge Sort) |
+| **Greedy** | One local choice made at each step | **Irrevocable:** choices are never undone; no backtracking | Only optimal if problem exhibits greedy-choice property (e.g., Prim, Kruskal); otherwise can fail (e.g., coin change) |
+| **Dynamic Programming** | **Overlapping** subproblems with optimal substructure | Evaluates all viable options by table lookup without duplicate work | **Guaranteed optimal:** exhaustively considers all valid combinations in polynomial/pseudo-polynomial time |
+</ModelAnswer>
+
+### Part 2: Exam multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="dynamic-programming"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "What two structural properties must an optimization problem possess to be solvable using Dynamic Programming?",
+      options: [
+        { id: "a", text: "Overlapping subproblems and optimal substructure" },
+        { id: "b", text: "Independent subproblems and greedy-choice property" },
+        { id: "c", text: "Unbounded search space and deterministic hashing" },
+        { id: "d", text: "Linear separability and convexity" },
+      ],
+      correctOptionId: "a",
+      explanation: "Dynamic programming applies when a problem has overlapping subproblems (the same smaller subproblems are solved repeatedly by plain recursion, making table memoization useful) and optimal substructure (an optimal solution to the overall problem contains within it optimal solutions to its subproblems). Option B describes divide-and-conquer and greedy algorithms. Option C describes hash-based search. Option D describes mathematical convex programming.",
+    },
+    {
+      id: "q2",
+      prompt: "In the 0/1 knapsack table V[i, w], why are Row 0 (i = 0) and Column 0 (w = 0) initialized completely with zeros?",
+      options: [
+        { id: "a", text: "With 0 items available the achievable value is zero, and with 0 knapsack capacity no items can be carried" },
+        { id: "b", text: "To avoid Java NullPointerException crashes during array allocation" },
+        { id: "c", text: "Because the greedy cashier begins each transaction with zero pennies" },
+        { id: "d", text: "Zeros represent negative infinity in integer dynamic programming tables" },
+      ],
+      correctOptionId: "a",
+      explanation: "The base cases represent physical boundary constraints: V[0, w] represents packing from a set of 0 items, which yields a value of 0 for any capacity w. Similarly, V[i, 0] represents a knapsack with 0 weight capacity, which can hold no items and thus earns value 0. Option B confuses language runtime defaults with mathematical base cases. Option C references the coin change analogy. Option D is incorrect because 0 represents zero value, not negative infinity.",
+    },
+    {
+      id: "q3",
+      prompt: "In the 0/1 knapsack dynamic programming recurrence, what is the formula for cell V[i, w] when item i (weight wᵢ, value vᵢ) fits within capacity w (wᵢ ≤ w)?",
+      options: [
+        { id: "a", text: "max(V[i - 1, w], vᵢ + V[i - 1, w - wᵢ])" },
+        { id: "b", text: "V[i - 1, w] + vᵢ" },
+        { id: "c", text: "max(V[i, w - 1], vᵢ + V[i - 1, w])" },
+        { id: "d", text: "vᵢ + V[i, w - wᵢ]" },
+      ],
+      correctOptionId: "a",
+      explanation: "When item i fits, we choose the maximum between skipping item i (which yields V[i - 1, w], the best value achievable using the first i - 1 items with capacity w) and taking item i (which yields vᵢ plus V[i - 1, w - wᵢ], the best value achievable using the first i - 1 items with the remaining capacity w - wᵢ). Option B takes the item without subtracting its weight. Option C compares adjacent cells incorrectly. Option D forces taking item i multiple times as in unbounded knapsack.",
+    },
+    {
+      id: "q4",
+      prompt: "During backtracking to identify which items were packed into the optimal knapsack, how do you determine whether item i was taken?",
+      options: [
+        { id: "a", text: "Compare V[i, w] with V[i - 1, w]: if V[i, w] ≠ V[i - 1, w], item i was taken and capacity is reduced by wᵢ" },
+        { id: "b", text: "Check whether item i has the highest value density vᵢ / wᵢ among all items" },
+        { id: "c", text: "Check if cell V[i, w] contains an odd number" },
+        { id: "d", text: "If V[i, w] == V[i - 1, w], item i was taken and capacity remains unchanged" },
+      ],
+      correctOptionId: "a",
+      explanation: "If V[i, w] differs from V[i - 1, w], item i must have provided a value increase that exceeded the best combination of the first i - 1 items; therefore, item i was taken, its weight wᵢ is subtracted from remaining capacity w, and backtracking moves to cell (i - 1, w - wᵢ). If V[i, w] == V[i - 1, w], item i was skipped. Option B describes greedy heuristics. Option C is arbitrary nonsense. Option D inverts the decision rule.",
+    },
+    {
+      id: "q5",
+      prompt: "Why is the Θ(n · W) running time of the 0/1 knapsack dynamic programming algorithm classified as pseudo-polynomial rather than polynomial?",
+      options: [
+        { id: "a", text: "Because W is a numerical value whose input size is measured in bits (k = log₂ W); the running time Θ(n · 2ᵏ) is exponential in the length of the input" },
+        { id: "b", text: "Because dynamic programming uses an approximation ratio of 2 instead of exact arithmetic" },
+        { id: "c", text: "Because the table only works on prime number capacities" },
+        { id: "d", text: "Because Java arrays cannot allocate more than 2³¹ elements" },
+      ],
+      correctOptionId: "a",
+      explanation: "An algorithm is pseudo-polynomial if its running time is a polynomial in the numeric value of the inputs, but exponential in the number of bits needed to represent those inputs. The number of bits required to write integer W is k = ⌈log₂ W⌉. Therefore, Θ(n · W) = Θ(n · 2ᵏ), which grows exponentially with input length k. Option B is false because 0/1 knapsack DP is exact, not an approximation. Option C is false because any integer capacity is valid. Option D describes a JVM implementation constraint, not complexity theory.",
+    },
+    {
+      id: "q6",
+      prompt: "When compressing the 0/1 knapsack table into a 1D array dp[w], why MUST the capacity loop iterate backwards from W down to wᵢ?",
+      options: [
+        { id: "a", text: "Iterating backwards ensures that when computing dp[w], the value dp[w - wᵢ] still holds the result from the previous item (i - 1), preventing an item from being used multiple times" },
+        { id: "b", text: "Java arrays only support backwards index lookups in cache memory" },
+        { id: "c", text: "Iterating backwards sorts the items by value density automatically" },
+        { id: "d", text: "Because the knapsack capacity starts full and must be emptied to zero" },
+      ],
+      correctOptionId: "a",
+      explanation: "In a 1D array, iterating backwards guarantees that dp[w - wᵢ] has not been updated yet for the current item i; it still holds the value from the previous item i - 1, preserving the 0/1 constraint. If the loop iterated forwards, dp[w - wᵢ] would be updated with item i first, and later dp[w] would read that updated value, allowing item i to be included multiple times (accidentally solving the unbounded knapsack problem). Option B is false because CPU caching works in both directions. Option C is false because sorting is unaffected. Option D is an intuitive metaphor, not the technical reason.",
+    },
+  ]}
+/>
 
 <LeetCodeProblems
   problems={[

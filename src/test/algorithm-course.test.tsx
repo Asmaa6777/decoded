@@ -1110,5 +1110,257 @@ describe("visualizers step all the way through", () => {
         expect(fullVisitedCount).toBe(8);
       });
     });
+
+    describe("Module 4 practice calculations and exam questions", () => {
+      it("verifies Prim's algorithm trace starting from vertex C and total weight 15", () => {
+        // Vertices: 0=a, 1=b, 2=c, 3=d, 4=e, 5=f
+        // Edges: ab=3, bc=1, bf=4, cf=4, af=5, df=5, ae=6, cd=6, ef=2, de=8
+        const n = 6;
+        const adj: { to: number; weight: number; name: string }[][] = Array.from({ length: n }, () => []);
+        const addEdge = (u: number, v: number, w: number, name: string) => {
+          adj[u].push({ to: v, weight: w, name });
+          adj[v].push({ to: u, weight: w, name });
+        };
+        addEdge(0, 1, 3, "ab");
+        addEdge(1, 2, 1, "bc");
+        addEdge(1, 5, 4, "bf");
+        addEdge(2, 5, 4, "cf");
+        addEdge(0, 5, 5, "af");
+        addEdge(5, 3, 5, "df");
+        addEdge(0, 4, 6, "ae");
+        addEdge(2, 3, 6, "cd");
+        addEdge(5, 4, 2, "ef");
+        addEdge(4, 3, 8, "de");
+
+        // Trace from vertex c (index 2)
+        const inTree = new Array(n).fill(false);
+        inTree[2] = true;
+        const treeEdges: { from: number; to: number; weight: number; name: string }[] = [];
+        let totalWeight = 0;
+
+        for (let step = 1; step < n; step++) {
+          let minWeight = Infinity;
+          let bestEdge: { from: number; to: number; weight: number; name: string } | null = null;
+
+          for (let u = 0; u < n; u++) {
+            if (inTree[u]) {
+              for (const e of adj[u]) {
+                if (!inTree[e.to]) {
+                  // Tie-breaker: lowest weight, then alphabetical by edge name
+                  if (
+                    e.weight < minWeight ||
+                    (e.weight === minWeight && bestEdge && e.name < bestEdge.name)
+                  ) {
+                    minWeight = e.weight;
+                    bestEdge = { from: u, to: e.to, weight: e.weight, name: e.name };
+                  }
+                }
+              }
+            }
+          }
+
+          expect(bestEdge).not.toBeNull();
+          inTree[bestEdge!.to] = true;
+          treeEdges.push(bestEdge!);
+          totalWeight += bestEdge!.weight;
+        }
+
+        expect(treeEdges.map((e) => e.name)).toEqual(["bc", "ab", "bf", "ef", "df"]);
+        expect(treeEdges.map((e) => e.weight)).toEqual([1, 3, 4, 2, 5]);
+        expect(totalWeight).toBe(15);
+        expect(inTree.every((v) => v)).toBe(true);
+      });
+
+      it("verifies Kruskal's algorithm trace, cycle rejections (cf, af), and total weight 15", () => {
+        // 0=a, 1=b, 2=c, 3=d, 4=e, 5=f
+        const edges = [
+          { u: 1, v: 2, weight: 1, name: "bc" },
+          { u: 4, v: 5, weight: 2, name: "ef" },
+          { u: 0, v: 1, weight: 3, name: "ab" },
+          { u: 1, v: 5, weight: 4, name: "bf" },
+          { u: 2, v: 5, weight: 4, name: "cf" },
+          { u: 0, v: 5, weight: 5, name: "af" },
+          { u: 3, v: 5, weight: 5, name: "df" },
+          { u: 0, v: 4, weight: 6, name: "ae" },
+          { u: 2, v: 3, weight: 6, name: "cd" },
+          { u: 3, v: 4, weight: 8, name: "de" },
+        ];
+
+        // Sort edges non-decreasing
+        edges.sort((a, b) => a.weight - b.weight);
+
+        const parent = [0, 1, 2, 3, 4, 5];
+        const find = (x: number): number => {
+          while (parent[x] !== x) x = parent[x];
+          return x;
+        };
+
+        const accepted: string[] = [];
+        const rejected: string[] = [];
+        let totalWeight = 0;
+
+        for (const e of edges) {
+          const rootU = find(e.u);
+          const rootV = find(e.v);
+          if (rootU !== rootV) {
+            parent[rootU] = rootV;
+            accepted.push(e.name);
+            totalWeight += e.weight;
+            if (accepted.length === 5) break;
+          } else {
+            rejected.push(e.name);
+          }
+        }
+
+        expect(accepted).toEqual(["bc", "ef", "ab", "bf", "df"]);
+        expect(rejected).toEqual(["cf", "af"]);
+        expect(totalWeight).toBe(15);
+      });
+
+      it("verifies greedy coin change counterexample failure on {1, 3, 4}", () => {
+        const coins = [4, 3, 1]; // sorted descending for greedy
+
+        const greedyCoins = (amount: number): number[] => {
+          const result: number[] = [];
+          let rem = amount;
+          for (const c of coins) {
+            while (rem >= c) {
+              result.push(c);
+              rem -= c;
+            }
+          }
+          return result;
+        };
+
+        const minCoinsDP = (amount: number): number => {
+          const dp = new Array(amount + 1).fill(Infinity);
+          dp[0] = 0;
+          for (let i = 1; i <= amount; i++) {
+            for (const c of coins) {
+              if (i >= c) dp[i] = Math.min(dp[i], 1 + dp[i - c]);
+            }
+          }
+          return dp[amount];
+        };
+
+        // Amount 6: greedy gives 4 + 1 + 1 (3 coins), optimal is 3 + 3 (2 coins)
+        expect(greedyCoins(6)).toEqual([4, 1, 1]);
+        expect(greedyCoins(6).length).toBe(3);
+        expect(minCoinsDP(6)).toBe(2);
+
+        // Amount 10: greedy gives 4 + 4 + 1 + 1 (4 coins), optimal is 4 + 3 + 3 (3 coins)
+        expect(greedyCoins(10)).toEqual([4, 4, 1, 1]);
+        expect(greedyCoins(10).length).toBe(4);
+        expect(minCoinsDP(10)).toBe(3);
+
+        // Amount 14: greedy gives 4 + 4 + 4 + 1 + 1 (5 coins), optimal is 4 + 4 + 3 + 3 (4 coins)
+        expect(greedyCoins(14)).toEqual([4, 4, 4, 1, 1]);
+        expect(greedyCoins(14).length).toBe(5);
+        expect(minCoinsDP(14)).toBe(4);
+      });
+
+      it("verifies 0/1 knapsack DP table hand trace, corner value 140, and unbounded bug 200", () => {
+        const wt = [3, 2, 4, 1];
+        const val = [100, 20, 60, 40];
+        const W = 5;
+        const n = wt.length;
+
+        // 1. Correct 0/1 Knapsack Table
+        const V: number[][] = Array.from({ length: n + 1 }, () => new Array(W + 1).fill(0));
+        for (let i = 1; i <= n; i++) {
+          for (let w = 1; w <= W; w++) {
+            if (wt[i - 1] > w) {
+              V[i][w] = V[i - 1][w];
+            } else {
+              V[i][w] = Math.max(V[i - 1][w], val[i - 1] + V[i - 1][w - wt[i - 1]]);
+            }
+          }
+        }
+
+        // Verify each row
+        expect(V[0]).toEqual([0, 0, 0, 0, 0, 0]);
+        expect(V[1]).toEqual([0, 0, 0, 100, 100, 100]);
+        expect(V[2]).toEqual([0, 0, 20, 100, 100, 120]);
+        expect(V[3]).toEqual([0, 0, 20, 100, 100, 120]); // Row 3 identical to Row 2
+        expect(V[4]).toEqual([0, 40, 40, 100, 140, 140]);
+        expect(V[4][5]).toBe(140);
+
+        // 2. Buggy Unbounded Knapsack Table (reading from current row i)
+        const Vbug: number[][] = Array.from({ length: n + 1 }, () => new Array(W + 1).fill(0));
+        for (let i = 1; i <= n; i++) {
+          for (let w = 1; w <= W; w++) {
+            if (wt[i - 1] > w) {
+              Vbug[i][w] = Vbug[i - 1][w];
+            } else {
+              Vbug[i][w] = Math.max(Vbug[i - 1][w], val[i - 1] + Vbug[i][w - wt[i - 1]]);
+            }
+          }
+        }
+        expect(Vbug[4]).toEqual([0, 40, 80, 120, 160, 200]);
+        expect(Vbug[4][5]).toBe(200); // 5 * 40 by taking item 4 five times
+      });
+
+      it("verifies knapsack backtracking subset reconstruction selecting items {1, 4}", () => {
+        const wt = [3, 2, 4, 1];
+        const val = [100, 20, 60, 40];
+        const W = 5;
+        const n = wt.length;
+
+        const V: number[][] = Array.from({ length: n + 1 }, () => new Array(W + 1).fill(0));
+        for (let i = 1; i <= n; i++) {
+          for (let w = 1; w <= W; w++) {
+            if (wt[i - 1] > w) {
+              V[i][w] = V[i - 1][w];
+            } else {
+              V[i][w] = Math.max(V[i - 1][w], val[i - 1] + V[i - 1][w - wt[i - 1]]);
+            }
+          }
+        }
+
+        // Backtrack
+        const itemsTaken: number[] = [];
+        let currW = W;
+        for (let i = n; i >= 1; i--) {
+          if (V[i][currW] !== V[i - 1][currW]) {
+            itemsTaken.push(i); // 1-indexed item number
+            currW -= wt[i - 1];
+          }
+        }
+
+        expect(itemsTaken).toEqual([4, 1]); // Items 4 and 1 taken
+        const totalWeight = itemsTaken.reduce((sum, idx) => sum + wt[idx - 1], 0);
+        const totalVal = itemsTaken.reduce((sum, idx) => sum + val[idx - 1], 0);
+        expect(totalWeight).toBe(4);
+        expect(totalWeight).toBeLessThanOrEqual(W);
+        expect(totalVal).toBe(140);
+        expect(currW).toBe(1); // 1 unit capacity remains empty
+      });
+
+      it("verifies 1D array space-optimized knapsack requires backwards iteration", () => {
+        const wt = [3, 2, 4, 1];
+        const val = [100, 20, 60, 40];
+        const W = 5;
+
+        // Backwards iteration: correct 0/1 knapsack
+        const dpBackwards = new Array(W + 1).fill(0);
+        for (let i = 0; i < wt.length; i++) {
+          for (let w = W; w >= wt[i]; w--) {
+            dpBackwards[w] = Math.max(dpBackwards[w], val[i] + dpBackwards[w - wt[i]]);
+          }
+        }
+        expect(dpBackwards[5]).toBe(140);
+        expect(dpBackwards).toEqual([0, 40, 40, 100, 140, 140]);
+
+        // Forward iteration: buggy unbounded knapsack
+        const dpForwards = new Array(W + 1).fill(0);
+        for (let i = 0; i < wt.length; i++) {
+          for (let w = wt[i]; w <= W; w++) {
+            dpForwards[w] = Math.max(dpForwards[w], val[i] + dpForwards[w - wt[i]]);
+          }
+        }
+        expect(dpForwards[5]).toBe(200);
+        expect(dpForwards).toEqual([0, 40, 80, 120, 160, 200]);
+      });
+    });
   });
 });

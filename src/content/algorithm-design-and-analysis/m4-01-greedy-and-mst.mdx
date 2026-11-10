@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { MstVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 import { CoinChangeGreedy } from "@/components/mdx/AdvancedVisualizers";
 
@@ -230,6 +230,325 @@ public class Kruskal {
     }
 }
 ```
+
+## Practice from past exams
+
+### Part 1: Midterm and written exam questions
+
+**1.** *(Prim's algorithm hand trace starting at vertex C)* The lecture example traced Prim's algorithm on the six-vertex graph starting at vertex $a$. In the homework assignment (Lecture 9, Slide 8), students are asked to trace Prim's algorithm starting instead from **vertex $c$**. The graph has six vertices ($a, b, c, d, e, f$) and ten undirected weighted edges:
+$ab = 3$, $bc = 1$, $bf = 4$, $cf = 4$, $af = 5$, $df = 5$, $ae = 6$, $cd = 6$, $ef = 2$, and $de = 8$.
+
+1. Trace Prim's algorithm step by step starting from vertex $c$. For each iteration, list:
+   - The vertices currently in the tree $V_T$.
+   - All candidate edges crossing the cut between $V_T$ and the remaining vertices $V \setminus V_T$.
+   - The minimum-weight crossing edge selected (breaking ties alphabetically by edge name).
+   - The newly added vertex and the running weight of the tree.
+2. List the 5 edges in the final minimum spanning tree and compute the total weight.
+3. Compare this tree with the tree obtained starting at vertex $a$. Explain why the starting vertex cannot change the total weight of the resulting minimum spanning tree.
+
+<ModelAnswer>
+**(a) Step-by-step trace starting from vertex $c$:**
+
+- **Step 0 (Initialization):**
+  - Start at vertex $c$: $V_T = \{c\}$, $E_T = \emptyset$.
+  - Candidate crossing edges incident to $c$: $cb(1)$, $cf(4)$, $cd(6)$.
+  - Running weight: $0$.
+
+- **Step 1:**
+  - Candidate crossing edges: $cb(1)$, $cf(4)$, $cd(6)$.
+  - Minimum crossing edge: **$cb$ (weight 1)**.
+  - Add edge $cb$ and vertex $b$ to the tree: $V_T = \{b, c\}$.
+  - Running weight: $0 + 1 = 1$.
+
+- **Step 2:**
+  - Candidate crossing edges from $\{b, c\}$ to $\{a, d, e, f\}$:
+    - From $c$: $cf(4)$, $cd(6)$
+    - From $b$: $ba(3)$, $bf(4)$
+    - Combined candidates: $ba(3)$, $bf(4)$, $cf(4)$, $cd(6)$.
+  - Minimum crossing edge: **$ba$ (weight 3)**.
+  - Add edge $ba$ and vertex $a$ to the tree: $V_T = \{a, b, c\}$.
+  - Running weight: $1 + 3 = 4$.
+
+- **Step 3:**
+  - Candidate crossing edges from $\{a, b, c\}$ to $\{d, e, f\}$:
+    - From $a$: $af(5)$, $ae(6)$
+    - From $b$: $bf(4)$
+    - From $c$: $cf(4)$, $cd(6)$
+    - Combined candidates: $bf(4)$, $cf(4)$, $af(5)$, $ae(6)$, $cd(6)$.
+  - Minimum crossing edge: tie between $bf(4)$ and $cf(4)$. Breaking ties alphabetically selects **$bf$ (weight 4)**.
+  - Add edge $bf$ and vertex $f$ to the tree: $V_T = \{a, b, c, f\}$.
+  - Note: Edge $cf(4)$ and edge $af(5)$ now connect pairs of vertices already inside $V_T$, so they become internal edges and are no longer crossing candidates.
+  - Running weight: $4 + 4 = 8$.
+
+- **Step 4:**
+  - Candidate crossing edges from $\{a, b, c, f\}$ to $\{d, e\}$:
+    - From $f$: $fe(2)$, $fd(5)$
+    - From $a$: $ae(6)$
+    - From $c$: $cd(6)$
+    - Combined candidates: $fe(2)$, $fd(5)$, $ae(6)$, $cd(6)$.
+  - Minimum crossing edge: **$fe$ (weight 2)**.
+  - Add edge $fe$ and vertex $e$ to the tree: $V_T = \{a, b, c, e, f\}$.
+  - Running weight: $8 + 2 = 10$.
+
+- **Step 5:**
+  - Candidate crossing edges from $\{a, b, c, e, f\}$ to $\{d\}$:
+    - From $f$: $fd(5)$
+    - From $c$: $cd(6)$
+    - From $e$: $ed(8)$
+    - Combined candidates: $fd(5)$, $cd(6)$, $ed(8)$.
+  - Minimum crossing edge: **$fd$ (weight 5)**.
+  - Add edge $fd$ and vertex $d$ to the tree: $V_T = \{a, b, c, d, e, f\}$.
+  - All $|V| = 6$ vertices are now connected by $|V| - 1 = 5$ edges. Halting condition reached.
+  - Running weight: $10 + 5 = 15$.
+
+**(b) Final MST edges and total weight:**
+- The five tree edges added are: $bc(1), ab(3), bf(4), ef(2), df(5)$.
+- Total minimum spanning tree weight:
+  $$
+  1 + 3 + 4 + 2 + 5 = 15
+  $$
+- *(Note on tie-breaking):* If the tie at Step 3 had selected $cf(4)$ instead of $bf(4)$, the resulting tree edges would be $bc(1), ab(3), cf(4), ef(2), df(5)$, which also has total weight $1 + 3 + 4 + 2 + 5 = 15$.
+
+**(c) Comparison with trace starting at vertex $a$:**
+- In the lesson text, starting at vertex $a$ added edges in the order: $ab(3), bc(1), bf(4), ef(2), df(5)$.
+- Starting at vertex $c$ added edges in the order: $bc(1), ab(3), bf(4), ef(2), df(5)$.
+- Both traces produce the exact same set of edges and identical total weight **15**.
+- **Invariance theorem:** By the cut property, every cut $(V_T, V \setminus V_T)$ guarantees that the minimum-weight crossing edge belongs to at least one optimal spanning tree. Because the graph is connected and all vertices must ultimately be joined, the choice of initial vertex merely dictates which crossing cut is examined first; it never excludes the optimal tree structure.
+</ModelAnswer>
+
+**2.** *(Kruskal's algorithm complete edge-by-edge trace and cycle detection)* Consider the same 6-vertex, 10-edge graph from Lecture 9:
+$ab = 3$, $bc = 1$, $bf = 4$, $cf = 4$, $af = 5$, $df = 5$, $ae = 6$, $cd = 6$, $ef = 2$, and $de = 8$.
+
+1. List all 10 edges in sorted non-decreasing order of weight.
+2. Step through Kruskal's algorithm for every edge in the sorted sequence until the tree is complete:
+   - State the endpoints of the edge.
+   - Determine whether the endpoints belong to the same component or different components of the growing forest.
+   - State whether the edge is **accepted** into the tree or **rejected** as a cycle-creating edge.
+   - Write out the connected components of the forest after each step.
+3. State the stopping condition for Kruskal's algorithm and explain how the Union-Find data structure detects cycles in near-constant time.
+
+<ModelAnswer>
+**(a) Sorted edge list:**
+1. $bc = 1$
+2. $ef = 2$
+3. $ab = 3$
+4. $bf = 4$
+5. $cf = 4$
+6. $af = 5$
+7. $df = 5$
+8. $ae = 6$
+9. $cd = 6$
+10. $de = 8$
+
+**(b) Step-by-step edge examination:**
+
+- **Initial state:** 6 singleton trees: $\{a\}, \{b\}, \{c\}, \{d\}, \{e\}, \{f\}$. Edges accepted: 0. Running weight: 0.
+
+- **Edge 1: $bc$ (weight 1)**
+  - Endpoints $b \in \{b\}$ and $c \in \{c\}$ are in separate components.
+  - **Action: ACCEPT.** Merge $\{b\}$ and $\{c\}$.
+  - Forest: $\{b, c\}, \{a\}, \{d\}, \{e\}, \{f\}$.
+  - Running weight: 1. Edges accepted: 1.
+
+- **Edge 2: $ef$ (weight 2)**
+  - Endpoints $e \in \{e\}$ and $f \in \{f\}$ are in separate components.
+  - **Action: ACCEPT.** Merge $\{e\}$ and $\{f\}$.
+  - Forest: $\{b, c\}, \{e, f\}, \{a\}, \{d\}$.
+  - Running weight: $1 + 2 = 3$. Edges accepted: 2.
+
+- **Edge 3: $ab$ (weight 3)**
+  - Endpoints $a \in \{a\}$ and $b \in \{b, c\}$ are in separate components.
+  - **Action: ACCEPT.** Merge $\{a\}$ and $\{b, c\}$.
+  - Forest: $\{a, b, c\}, \{e, f\}, \{d\}$.
+  - Running weight: $3 + 3 = 6$. Edges accepted: 3.
+
+- **Edge 4: $bf$ (weight 4)**
+  - Endpoints $b \in \{a, b, c\}$ and $f \in \{e, f\}$ are in separate components.
+  - **Action: ACCEPT.** Merge $\{a, b, c\}$ and $\{e, f\}$.
+  - Forest: $\{a, b, c, e, f\}, \{d\}$.
+  - Running weight: $6 + 4 = 10$. Edges accepted: 4.
+
+- **Edge 5: $cf$ (weight 4)**
+  - Endpoints $c \in \{a, b, c, e, f\}$ and $f \in \{a, b, c, e, f\}$.
+  - Both endpoints already belong to the same connected component! A path already exists between $c$ and $f$ ($c - b - f$). Adding edge $cf$ would form the cycle $c - b - f - c$.
+  - **Action: REJECT.**
+  - Forest unchanged: $\{a, b, c, e, f\}, \{d\}$.
+  - Running weight: 10. Edges accepted: 4.
+
+- **Edge 6: $af$ (weight 5)**
+  - Endpoints $a \in \{a, b, c, e, f\}$ and $f \in \{a, b, c, e, f\}$.
+  - Both endpoints already belong to the same connected component. Adding edge $af$ would form the cycle $a - b - f - a$.
+  - **Action: REJECT.**
+  - Forest unchanged: $\{a, b, c, e, f\}, \{d\}$.
+  - Running weight: 10. Edges accepted: 4.
+
+- **Edge 7: $df$ (weight 5)**
+  - Endpoints $d \in \{d\}$ and $f \in \{a, b, c, e, f\}$ are in separate components.
+  - **Action: ACCEPT.** Merge $\{d\}$ and $\{a, b, c, e, f\}$.
+  - Forest: $\{a, b, c, d, e, f\}$ (1 single connected component spanning all 6 vertices).
+  - Running weight: $10 + 5 = 15$. Edges accepted: 5.
+
+- **Halting:** Exactly $|V| - 1 = 6 - 1 = 5$ edges have been accepted. The algorithm halts immediately. The remaining edges $ae(6)$, $cd(6)$, and $de(8)$ are never inspected.
+
+**(c) Stopping condition and cycle detection with Union-Find:**
+- A spanning tree on $V$ vertices strictly requires $V - 1$ edges. Tracking `usedEdges` and halting when `usedEdges == V - 1` prevents examining the remaining edges in the sorted list.
+- **Cycle detection via Union-Find:**
+  - Each vertex maintains a parent pointer `parent[v]`.
+  - To test edge $(u, v)$, call `find(u)` and `find(v)` to locate the root representatives of their respective trees.
+  - If `find(u) == find(v)`, both vertices share the same root, meaning a path already connects them; adding $(u, v)$ would complete a cycle, so the edge is rejected in $O(1)$ amortized time.
+  - If `find(u) != find(v)`, the edge connects two disjoint trees; `parent[rootU] = rootV` unions the two sets. With union by rank and path compression, each check takes $O(\alpha(V))$ time, where $\alpha$ is the nearly constant inverse Ackermann function.
+</ModelAnswer>
+
+**3.** *(Counterexamples to greedy heuristics: coin change and MST edge weights)* Greedy algorithms rely on the heuristic that picking the best immediate option leads to an optimal overall outcome.
+
+1. Prove why the greedy coin change heuristic fails on the coin denomination set $C = \{1, 3, 4\}$:
+   - Trace the greedy choice versus the optimal choice for target amounts $6$, $10$, and $14$.
+   - Identify the exact reason why the irrevocable property causes the greedy approach to fail here.
+2. Contrast this with the Minimum Spanning Tree problem: explain why the greedy choice in Prim's and Kruskal's algorithms is provably guaranteed never to make an irrevocable mistake.
+3. Suppose a connected undirected graph has negative edge weights (for example, edges with weights $-5, -2, 3$). Can Prim's and Kruskal's algorithms still be used to find a minimum spanning tree, or will they fail like Dijkstra's shortest path algorithm? Justify your answer.
+
+<ModelAnswer>
+**(a) Coin change counterexamples for $C = \{1, 3, 4\}$:**
+- **Target amount 6:**
+  - *Greedy approach:* Selects the largest coin $\le 6$, which is $4$ (remaining: $2$). Next selects $1$ (remaining: $1$), and finally $1$. Result: **3 coins** ($4 + 1 + 1$).
+  - *Optimal approach:* Two coins of 3: **2 coins** ($3 + 3$).
+- **Target amount 10:**
+  - *Greedy approach:* Takes $4$ (remaining 6), takes $4$ (remaining 2), takes $1$ (remaining 1), takes $1$. Result: **4 coins** ($4 + 4 + 1 + 1$).
+  - *Optimal approach:* **3 coins** ($4 + 3 + 3$).
+- **Target amount 14:**
+  - *Greedy approach:* Takes $4, 4, 4$ (remaining 2), takes $1$, takes $1$. Result: **5 coins** ($4 + 4 + 4 + 1 + 1$).
+  - *Optimal approach:* **4 coins** ($4 + 4 + 3 + 3$).
+- **Why greedy fails:** Greedy choices are **irrevocable**. Grabbing the largest coin (4) consumes too much capacity, leaving a remainder (2) that cannot be formed by the medium coin (3). Because greedy algorithms cannot backtrack or look ahead to evaluate combinations of smaller coins, the irrevocable local choice permanently eliminates the globally optimal solution.
+
+**(b) Why greedy works for MST (The Cut Property):**
+- In MST construction, the **Cut Property** guarantees safety: for *any* partition (cut) of vertices into two sets $S$ and $V \setminus S$, the lightest edge crossing the cut *must* belong to an optimal minimum spanning tree.
+- Prim's algorithm maintains a cut between the tree vertices $V_T$ and the non-tree vertices $V \setminus V_T$. Because it strictly chooses the lightest crossing edge, that edge is mathematically proven to be part of an optimal MST.
+- Kruskal's algorithm maintains a cut between a candidate edge's component and the rest of the graph.
+- Unlike coin change, where choosing a 4 can permanently block the optimal pair $(3, 3)$, choosing the minimum crossing edge in a graph can never prevent connecting the remaining vertices at minimal cost.
+
+**(c) Negative edge weights in MST:**
+- **Both Prim's and Kruskal's algorithms work completely correctly on graphs with negative edge weights.**
+- *Proof by constant shifting:* Let $w_{min} < 0$ be the minimum edge weight in graph $G$. Add a positive constant $C = |w_{min}| + 1$ to every edge weight in the graph, creating graph $G'$. Because *every* spanning tree on $V$ vertices contains exactly $V - 1$ edges, the weight of every spanning tree in $G'$ increases by exactly $(V - 1) \times C$:
+  $$
+  W_{G'}(T) = W_G(T) + (V - 1)C
+  $$
+  Because every spanning tree is shifted by the exact same constant, the tree that minimizes $W_{G'}(T)$ is identical to the tree that minimizes $W_G(T)$.
+- *Contrast with Dijkstra's algorithm:* Dijkstra fails with negative weights because path lengths vary in edge counts: a path with 2 edges is shifted by $2C$ while a path with 5 edges is shifted by $5C$, destroying relative path optimality. In MSTs, all spanning trees have identical edge counts ($V - 1$), so negative weights cause no distortion.
+</ModelAnswer>
+
+**4.** *(MST uniqueness theorem and edge density trade-offs)*
+1. State the condition under which a connected weighted graph is guaranteed to have a **unique** minimum spanning tree.
+2. Suppose all edge weights in a connected graph with $V = 6$ and $E = 10$ are identical (for example, every edge has weight $2$). How many different minimum spanning trees exist, and what is the total weight of each?
+3. In a university exam, a student is asked whether to choose Prim's or Kruskal's algorithm to compute the MST of a dense road network with $V = 5{,}000$ intersections and $E = 10{,}000{,}000$ road segments ($E \approx \frac{1}{2} V^2$). Analyze the asymptotic time complexity of both algorithms on this graph and provide a recommendation.
+
+<ModelAnswer>
+**(a) MST uniqueness condition:**
+- **Theorem:** If all edge weights in a connected graph are **distinct** (no two edges share the same weight), then the graph has **exactly one unique minimum spanning tree**.
+- *Proof sketch:* Suppose two distinct MSTs $T_1$ and $T_2$ exist. Let $e$ be the minimum-weight edge that belongs to one tree but not the other (say $e \in T_1 \setminus T_2$). Adding $e$ to $T_2$ creates a cycle. At least one edge $e'$ in this cycle crosses the cut defined by $e$. Since all weights are distinct and $e$ was the minimum difference edge, $w(e') > w(e)$. Replacing $e'$ with $e$ in $T_2$ yields a spanning tree with strictly lower total weight than $T_2$, contradicting the assumption that $T_2$ was a minimum spanning tree.
+
+**(b) Graph with identical edge weights:**
+- If every edge has weight $2$, then *any* spanning tree has total weight:
+  $$
+  (V - 1) \times 2 = (6 - 1) \times 2 = 10
+  $$
+- Every possible spanning tree is a minimum spanning tree.
+- By Cayley's formula, for a complete graph $K_n$, there are $n^{n-2}$ spanning trees. For $n = 6$, $6^{6-2} = 6^4 = 1{,}296$ different spanning trees. For an arbitrary graph with 10 edges, the count equals the number of cycle-free subgraphs of size 5 connecting all 6 vertices (determinable via Kirchhoff's Matrix Tree Theorem). All of them have total weight 10.
+
+**(c) Algorithm selection for dense graphs ($V = 5{,}000$, $E = 10{,}000{,}000$):**
+- **Prim with adjacency matrix:** Time complexity is $\Theta(V^2)$.
+  $$
+  V^2 = (5{,}000)^2 = 25{,}000{,}000\text{ operations}
+  $$
+  Finding the minimum crossing edge scans an array of size $V$ in each of the $V$ steps, completely independent of edge count $E$.
+- **Kruskal with Union-Find:** Requires sorting all $E$ edges:
+  $$
+  E \log_2 E = 10^7 \times \log_2(10^7) \approx 10^7 \times 23.25 \approx 232{,}500{,}000\text{ operations}
+  $$
+  Sorting alone requires roughly 10 times more operations than Prim's entire execution.
+- **Recommendation:** **Prim's algorithm (using an adjacency matrix or simple distance array)** is substantially faster on dense graphs ($E = \Theta(V^2)$) because it avoids sorting the massive edge list. Kruskal's algorithm is preferred only for **sparse graphs** ($E \ll V^2$, such as $E = O(V)$), where sorting takes only $O(V \log V)$ time.
+</ModelAnswer>
+
+### Part 2: Exam multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="greedy-and-mst"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "What are the three essential properties that every choice made by a greedy algorithm must satisfy?",
+      options: [
+        { id: "a", text: "Feasible, locally optimal, and irrevocable" },
+        { id: "b", text: "Recursive, invertible, and globally optimal" },
+        { id: "c", text: "Randomized, exhaustive, and memoized" },
+        { id: "d", text: "Continuous, differentiable, and bounded" },
+      ],
+      correctOptionId: "a",
+      explanation: "A greedy choice must be feasible (satisfies all problem constraints), locally optimal (the best available immediate choice at that step), and irrevocable (never undone or reconsidered in subsequent steps). Option B is incorrect because greedy algorithms are typically iterative loops rather than recursive calls and make local rather than globally guaranteed choices. Option C describes randomized algorithms and dynamic programming. Option D describes mathematical calculus optimization, not discrete algorithm design.",
+    },
+    {
+      id: "q2",
+      prompt: "In Kruskal's algorithm on the six-vertex graph (a to f), edge bf (weight 4) has just been added, connecting component {a, b, c} to component {e, f}. Why is the next edge cf (weight 4) immediately rejected?",
+      options: [
+        { id: "a", text: "Both vertex c and vertex f already belong to the same component {a, b, c, e, f}, so adding cf would create the cycle c-b-f-c" },
+        { id: "b", text: "Edge cf has an identical weight to edge bf, and Kruskal forbids duplicate edge weights" },
+        { id: "c", text: "Vertex f already has its maximum degree of 3 incident edges in the tree" },
+        { id: "d", text: "Edge cf crosses a cut that was already visited by Prim's algorithm" },
+      ],
+      correctOptionId: "a",
+      explanation: "Kruskal's algorithm rejects any edge whose endpoints are already in the same connected component of the forest. Because b and c are connected (via bc) and b and f are connected (via bf), a path c-b-f already links c and f. Adding edge cf would close the cycle c-b-f-c without connecting any new vertices. Option B is incorrect because Kruskal handles equal edge weights naturally. Option C is incorrect because trees have no fixed degree limit per vertex (a star tree vertex can have degree V - 1). Option D confuses Kruskal with Prim.",
+    },
+    {
+      id: "q3",
+      prompt: "A connected undirected communications graph has V = 10 stations and E = 25 optical links. How many edges will be included in the Minimum Spanning Tree, and how many edges will be discarded?",
+      options: [
+        { id: "a", text: "9 edges included and 16 edges discarded" },
+        { id: "b", text: "10 edges included and 15 edges discarded" },
+        { id: "c", text: "25 edges included and 0 edges discarded" },
+        { id: "d", text: "5 edges included and 20 edges discarded" },
+      ],
+      correctOptionId: "a",
+      explanation: "By the fundamental theorem of trees, every spanning tree on V vertices contains exactly V - 1 edges. For V = 10, the MST must contain exactly 10 - 1 = 9 edges. The remaining E - (V - 1) = 25 - 9 = 16 edges in the network would introduce cycles if added, so Kruskal and Prim reject or ignore them. Option B incorrectly uses V edges, which always contains at least one cycle. Option C includes all edges, forming a cyclic graph rather than a tree. Option D uses arbitrary counts.",
+    },
+    {
+      id: "q4",
+      prompt: "You need to compute the Minimum Spanning Tree of a very dense graph where E ≈ V²/2. Which algorithm implementation offers the best asymptotic running time?",
+      options: [
+        { id: "a", text: "Prim's algorithm using an adjacency matrix and simple array scan in Θ(V²) time" },
+        { id: "b", text: "Kruskal's algorithm with Union-Find in O(E log E) time" },
+        { id: "c", text: "Brute-force evaluation of all V^(V-2) spanning trees in O(V!) time" },
+        { id: "d", text: "Breadth-First Search in O(V + E) time" },
+      ],
+      correctOptionId: "a",
+      explanation: "On a dense graph where E ≈ V²/2, Kruskal's algorithm requires sorting E edges, taking O(E log E) = O(V² log V) time. In contrast, Prim's algorithm implemented with an adjacency matrix and simple distance array scans V entries per vertex, taking Θ(V²) time without any sorting or heap overhead. Option B is slower by a factor of log V on dense graphs. Option C is combinatorial brute force and computationally impossible for V > 10. Option D (BFS) finds an unweighted spanning tree with V - 1 edges, but completely ignores edge weights and cannot find a minimum spanning tree.",
+    },
+    {
+      id: "q5",
+      prompt: "What happens if you run Prim's algorithm twice on the same connected graph with distinct edge weights, first starting from vertex 'a' and then starting from vertex 'c'?",
+      options: [
+        { id: "a", text: "Both runs produce the exact same set of tree edges and identical total minimum weight, though edges may be added in a different order" },
+        { id: "b", text: "The run starting at 'c' produces a tree with lower weight because vertex 'c' has lighter incident edges" },
+        { id: "c", text: "The algorithm fails to terminate on the second run because vertices were already marked in the first run" },
+        { id: "d", text: "Prim's algorithm is only valid when started from the vertex with the lowest alphabetical label" },
+      ],
+      correctOptionId: "a",
+      explanation: "When all edge weights are distinct, a connected graph has exactly one unique minimum spanning tree. Prim's algorithm is mathematically proven to find this optimal tree regardless of which vertex starts the process. The starting vertex only alters the sequence in which the V - 1 edges enter the tree, not the final set of edges or the total weight. Option B is false because local incident weights do not alter global tree optimality. Option C is false because each execution initializes fresh visited sets. Option D is false because starting vertex choice is arbitrary.",
+    },
+    {
+      id: "q6",
+      prompt: "An undirected network graph contains several edges with negative weights (e.g. -5, -2). How do Prim's and Kruskal's algorithms behave on this graph compared to Dijkstra's algorithm?",
+      options: [
+        { id: "a", text: "Prim and Kruskal find the correct Minimum Spanning Tree without any modifications, whereas Dijkstra's shortest path algorithm can fail" },
+        { id: "b", text: "Both Prim and Kruskal enter an infinite loop when encountering negative edge weights" },
+        { id: "c", text: "Prim and Kruskal only work if all negative weights are changed to positive absolute values" },
+        { id: "d", text: "Kruskal fails because negative edges cannot be sorted in non-decreasing order" },
+      ],
+      correctOptionId: "a",
+      explanation: "Because every spanning tree on V vertices contains exactly V - 1 edges, adding a large constant C to all edge weights increases the weight of every possible spanning tree by the exact same amount (V - 1)C. Therefore, relative tree weights are preserved, and Prim and Kruskal correctly find the minimum spanning tree even with negative weights. In contrast, Dijkstra's shortest path algorithm fails with negative weights because paths have different numbers of edges and greedy distance settlement becomes invalid. Option B is incorrect because MST algorithms visit each vertex or edge a bounded number of times without looping. Option C is incorrect because changing negative weights to absolute values alters relative edge weights. Option D is incorrect because numbers with negative signs sort perfectly in standard numerical order.",
+    },
+  ]}
+/>
 
 <LeetCodeProblems
   problems={[
