@@ -319,4 +319,72 @@ describe("visualizers step all the way through", () => {
     stepToEnd(container);
     expect(screen.getByText(/1 → 2 → 4 → 3 → 5 → 7 → 8 → 9 → 10 → 6/)).toBeDefined();
   });
+
+  describe("Module 0 practice calculations and exam questions", () => {
+    it("verifies factorial algorithm hand calculations", () => {
+      // Step-by-step trace for N = 4
+      let f = 1;
+      let n = 4;
+      while (n > 0) {
+        f = f * n;
+        n--;
+      }
+      expect(f).toBe(24);
+
+      // Edge case N = 0
+      let f0 = 1;
+      let n0 = 0;
+      if (n0 > 0) {
+        while (n0 > 0) {
+          f0 = f0 * n0;
+          n0--;
+        }
+      }
+      expect(f0).toBe(1);
+    });
+
+    it("verifies triangular nested loop iteration count and operations", () => {
+      const n = 5;
+      let iterations = 0;
+      let assignments = 0;
+      for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= i; j++) {
+          iterations++;
+          assignments += 2; // x = i + j, y = x + 3
+        }
+      }
+      expect(iterations).toBe(15);
+      expect((n * (n + 1)) / 2).toBe(15);
+      expect(assignments + n + 1).toBe(36); // inner + sum=1 + initial x=1
+    });
+
+    it("verifies linear search average-case formula and calculations", () => {
+      const averageComparisons = (n: number) => n / 2 + n / (n + 1);
+      expect(averageComparisons(7)).toBe(4.375);
+      expect(averageComparisons(9)).toBe(5.4);
+    });
+
+    it("verifies 32-bit signed integer overflow arithmetic", () => {
+      const mathSum = 1_000_000 * 5_000;
+      expect(mathSum).toBe(5_000_000_000);
+      const mod32 = BigInt(mathSum) % BigInt(2 ** 32);
+      // In 32-bit signed two's complement:
+      const signed32 = Number(BigInt.asIntN(32, BigInt(mathSum)));
+      expect(signed32).toBe(705_032_704);
+      expect(mathSum - 2 ** 32).toBe(705_032_704);
+    });
+
+    it("verifies doubling experiment runtime predictions", () => {
+      const quadraticTime = (t0: number, k: number) => t0 * k * k;
+      const linearTime = (t0: number, k: number) => t0 * k;
+
+      // From 2,000 to 4,000 (2x) and 8,000 (4x)
+      expect(quadraticTime(15.0, 2)).toBe(60.0);
+      expect(quadraticTime(15.0, 4)).toBe(240.0);
+      expect(linearTime(15.0, 2)).toBe(30.0);
+
+      // From 500 to 2,000 (4x)
+      expect(quadraticTime(8, 4)).toBe(128);
+    });
+  });
 });

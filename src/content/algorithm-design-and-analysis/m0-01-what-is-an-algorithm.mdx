@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid, Diagram } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Diagram, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { FindMaxVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Recipes, Programs, and Proof
@@ -261,6 +261,147 @@ The loop ends after $i = 5 = n - 1$ and returns 9. The loop starts at 1, not 0, 
 A common mistake is to initialize with `max ← 0` instead of `max ← a[0]`. That initialization works on positive numbers, but fails on ⟨−5, −2, −9⟩, where it returns 0, a value not present in the input array.
 
 Now check it against the definition. Input: an array. Output: one number. Definite: every step is exact. Finite: the loop runs exactly $n - 1$ times. Correct? Almost. If the array is **empty**, `a[0]` throws an exception. Either the problem promises at least one element, or the algorithm has to handle the empty case. Testing edge cases like empty inputs is a central part of verifying correctness.
+
+## Practice from past exams
+
+### Part 1: Midterm and written exam questions
+
+**1.** *(First exam)* Draw or list the stages in the algorithm design and analysis process. Detail the three key decisions settled in stage 2, and identify the feedback loops in the process.
+
+<ModelAnswer>
+The process follows six stages in order:
+
+1. **Understand the problem:** identify input/output constraints, edge cases, and solve small instances by hand.
+2. **Decide on the approach:**
+   - *Computational means:* sequential CPU vs parallel architecture, available memory and speed limits.
+   - *Exact vs approximate solving:* decide whether an exact optimum is required or a heuristic approximation suffices for hard problems.
+   - *Algorithm design technique:* choose brute force, divide and conquer, greedy, or dynamic programming, alongside appropriate data structures.
+3. **Design an algorithm:** formulate clear pseudocode or procedural steps.
+4. **Prove correctness:** prove the procedure halts with the right answer for every valid input instance (using mathematical induction or loop invariants).
+5. **Analyze efficiency:** determine time and space complexity as functions of input size $n$.
+6. **Code the algorithm:** translate the verified logic into a programming language like Java.
+
+**Feedback loops:**
+- If proving correctness in step 4 fails, loop back to step 3 to redesign, or back to step 2 if the chosen technique is fundamentally inadequate.
+- If complexity analysis in step 5 reveals the algorithm is too slow or consumes too much memory, loop back to step 3 to redesign, or back to step 2 to choose a different technique or settle for an approximation.
+
+Writing code is placed last because implementing unverified logic leads to trial-and-error debugging.
+</ModelAnswer>
+
+**2.** *(Lecture & exam problem)* Formally state the sorting problem for an arbitrary sequence of numbers. Provide a concrete instance of size 6, its expected output, and explain why $\langle 8, 1, 4, 9, 3, 7 \rangle$ is an instance while "sort a list of numbers" is a problem.
+
+<ModelAnswer>
+**Formal definition:**
+- **Input:** a sequence of $n$ numbers $\langle a_1, a_2, \ldots, a_n \rangle$.
+- **Output:** a permutation $\langle a'_1, a'_2, \ldots, a'_n \rangle$ such that $a'_1 \le a'_2 \le \cdots \le a'_n$.
+
+**Concrete instance:**
+- Input: $\langle 8, 1, 4, 9, 3, 7 \rangle$
+- Expected output: $\langle 1, 3, 4, 7, 8, 9 \rangle$
+
+**Distinction:**
+A **problem** specifies an abstract input/output relationship over infinitely many potential inputs. An **instance** consists of one specific input with concrete values satisfying the problem's constraints. An algorithm must successfully solve every instance of a problem, not merely a single sample instance.
+</ModelAnswer>
+
+**3.** *(Midterm concepts)* Distinguish between the **finiteness** and **effectiveness** properties of an algorithm. Give one concrete example violating each property.
+
+<ModelAnswer>
+- **Finiteness:** the entire algorithm must terminate after a finite count of executed operations on every valid input. An infinite loop like `while (true) x++;` violates finiteness even though each individual increment is trivial to compute.
+- **Effectiveness:** every individual step must be sufficiently elementary that it can be carried out exactly on paper or on a computer in finite time. A step instructing "compute and write down all infinite digits of $\pi$" or "solve the halting problem for arbitrary code" violates effectiveness because that single operation can never finish.
+
+Finiteness is a global property of the whole execution path; effectiveness is a local property of each individual step.
+</ModelAnswer>
+
+**4.** *(Lecture & exam trap)* Explain why single-pair shortest path on a weighted graph is considered an ordinary polynomial-time problem, whereas the Traveling Salesman Problem (TSP) is NP-complete.
+
+<ModelAnswer>
+- **Single-pair shortest path** seeks the minimum-weight path between two specific vertices. Greedy and dynamic programming approaches such as Dijkstra's algorithm solve it in polynomial time: $O(V^2)$ or $O(E + V \log V)$ with a binary heap. The number of examined paths is kept small because subpaths of shortest paths are themselves shortest paths.
+- **Traveling Salesman Problem (TSP)** requires finding a tour that visits *every* vertex in the graph exactly once and returns to the starting vertex with minimum total weight. Adding the constraint to visit every vertex transforms the problem into finding a Hamiltonian cycle, which is NP-complete. No known algorithm can guarantee finding the exact optimal tour in polynomial time in the general case.
+
+The common confusion arises because both problems optimize total path distance, but TSP imposes the global constraint of visiting all vertices without repeats.
+</ModelAnswer>
+
+### Part 2: Exam multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="what-is-an-algorithm"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "Which of the following is the standard textbook definition of an algorithm?",
+      options: [
+        { id: "a", text: "A sequence of computational steps that transform the input into the output" },
+        { id: "b", text: "A compiled binary program written in Java that executes directly on a CPU" },
+        { id: "c", text: "A collection of data organized in memory for efficient element retrieval" },
+        { id: "d", text: "An infinite loop that listens for network packets and processes incoming requests" },
+      ],
+      correctOptionId: "a",
+      explanation: "An algorithm is a well-defined sequence of computational steps transforming inputs into outputs. Option B describes a concrete compiled program rather than an algorithm. Option C defines a data structure. Option D violates the finiteness property because an algorithm must terminate.",
+    },
+    {
+      id: "q2",
+      prompt: "What is a data structure?",
+      options: [
+        { id: "a", text: "A way to store and organize data in order to facilitate access and modifications" },
+        { id: "b", text: "An asymptotic bound describing an algorithm's worst-case execution time" },
+        { id: "c", text: "A programming compiler that translates source code into machine bytecode" },
+        { id: "d", text: "A mathematical proof verifying that a program terminates on all valid inputs" },
+      ],
+      correctOptionId: "a",
+      explanation: "A data structure organizes data in memory so operations like lookups, insertions, and updates can be carried out efficiently. Option B describes Big-O notation. Option C describes a language compiler. Option D describes a correctness proof.",
+    },
+    {
+      id: "q3",
+      prompt: "When is an algorithm formally considered correct?",
+      options: [
+        { id: "a", text: "When it passes all test cases in the software test suite" },
+        { id: "b", text: "When it halts with the correct output for every valid input instance" },
+        { id: "c", text: "When its worst-case running time does not exceed O(n log n)" },
+        { id: "d", text: "When it runs without throwing runtime exceptions on at least one sample input" },
+      ],
+      correctOptionId: "b",
+      explanation: "Correctness requires halting and yielding the correct output for every valid input instance. Option A is empirical testing: passing test cases demonstrates that bugs were not triggered, but does not prove absence of errors. Option C refers to efficiency rather than correctness. Option D tests only a single instance.",
+    },
+    {
+      id: "q4",
+      prompt: "Finding the greatest common divisor (GCD) using Euclid's algorithm belongs to which problem type?",
+      options: [
+        { id: "a", text: "Numerical problems" },
+        { id: "b", text: "Graph problems" },
+        { id: "c", text: "String processing problems" },
+        { id: "d", text: "Data compression problems" },
+      ],
+      correctOptionId: "a",
+      explanation: "Computing GCD operates on continuous or discrete numbers and equation solving, categorizing it as a numerical problem. Graph problems involve vertices and edges (like cycle detection). String processing involves pattern matching in text. Data compression encodes sequences to reduce size (like Huffman coding).",
+    },
+    {
+      id: "q5",
+      prompt: "Which of the following problems belongs to the NP-complete class?",
+      options: [
+        { id: "a", text: "The Traveling Salesman Problem (TSP)" },
+        { id: "b", text: "Finding the shortest path between two vertices with Dijkstra's algorithm" },
+        { id: "c", text: "Sorting an array of numbers using merge sort" },
+        { id: "d", text: "Locating a key in a sorted array using binary search" },
+      ],
+      correctOptionId: "a",
+      explanation: "The Traveling Salesman Problem is NP-complete; all known exact algorithms require exponential time in the worst case. In contrast, Dijkstra's shortest path runs in O(E + V log V), merge sort runs in O(n log n), and binary search runs in O(log n), all of which are polynomial-time algorithms in P.",
+    },
+    {
+      id: "q6",
+      prompt: "A procedure receives an array, enters a loop that never terminates, and produces no return value. Which two algorithm properties are violated?",
+      options: [
+        { id: "a", text: "Finiteness and Output" },
+        { id: "b", text: "Definiteness and Input" },
+        { id: "c", text: "Effectiveness and Generality" },
+        { id: "d", text: "Simplicity and Optimality" },
+      ],
+      correctOptionId: "a",
+      explanation: "An algorithm must terminate after a finite number of steps (finiteness) and must produce at least one output result (output). Never terminating violates finiteness, and producing no result violates output. Definiteness (clear steps) and effectiveness (doable steps) may still hold individually even if the loop condition fails to terminate.",
+    },
+  ]}
+/>
 
 <LeetCodeProblems
   problems={[

@@ -1,4 +1,4 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { GrowthTable, SearchVisualizer, NestedLoopGrid, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Counting Steps: Big-O, Omega and Theta
@@ -258,6 +258,211 @@ Switch between the dependent triangle, the independent square, and a fixed inner
 <Callout tone="orange" label="A classic mistake">
 Nested loops are not automatically $O(n^2)$. If the inner loop runs a fixed number of times (such as exactly 3 iterations), the total cost is $3n = O(n)$. Conversely, an inner loop running up to $i$ remains $O(n^2)$, as shown above. Always count how many times the inner operations execute instead of assuming each nesting level adds a factor of $n$.
 </Callout>
+
+## Practice from past exams
+
+### Part 1: Midterm and written exam questions
+
+**1.** *(First exam)* Trace the following algorithm for $N = 4$. What value does it print? State its time complexity in Big-O notation and name the complexity class. What does it output if $N = 0$?
+
+```text
+Step 1: Declare N and F as integer variable.
+Step 2: Initialize F = 1.
+Step 3: Enter the value of N.
+Step 4: Check whether N > 0, if not then F = 1.
+Step 5: If yes then, F = F * N
+Step 6: Decrease the value of N by 1.
+Step 7: Repeat step 5 and 6 until N = 0.
+Step 8: Now print the value of F.
+```
+
+<ModelAnswer>
+**Hand trace for $N = 4$:**
+
+| Step | Operation | $N$ | $F$ |
+| --- | --- | --- | --- |
+| Initial | Initialize $F = 1$, read $N$ | 4 | 1 |
+| Pass 1 | $F = 1 \times 4$ | 3 | 4 |
+| Pass 2 | $F = 4 \times 3$ | 2 | 12 |
+| Pass 3 | $F = 12 \times 2$ | 1 | 24 |
+| Pass 4 | $F = 24 \times 1$ | 0 | 24 |
+| Exit | $N = 0$, print $F$ | 0 | **24** |
+
+The algorithm computes $4! = 4 \times 3 \times 2 \times 1 = 24$ (**factorial**).
+
+- **Time complexity:** $O(n)$
+- **Complexity class:** **Linear time complexity** (the loop performs $N$ multiplications, proportional to input value $N$).
+
+**If $N = 0$:**
+At step 4, the condition $N > 0$ evaluates to false, so the algorithm sets $F = 1$, bypasses the loop, and prints **1**. This matches the mathematical definition $0! = 1$.
+</ModelAnswer>
+
+**2.** *(Lecture homework)* For the code below, calculate the exact number of times the inner statement `x = i + j` executes when $n = 5$. Derive the general formula for any $n$ and state its Big-O complexity class.
+
+```java
+int x = 1;
+for (int i = 1; i <= n; i++) {
+    sum = 1;
+    for (int j = 1; j <= i; j++) {
+        x = i + j;
+        y = x + 3;
+    }
+}
+```
+
+<ModelAnswer>
+**Hand calculation for $n = 5$:**
+
+The inner loop bound depends on the outer loop variable $i$:
+- For $i = 1$: $j$ runs from 1 to 1 (1 iteration)
+- For $i = 2$: $j$ runs from 1 to 2 (2 iterations)
+- For $i = 3$: $j$ runs from 1 to 3 (3 iterations)
+- For $i = 4$: $j$ runs from 1 to 4 (4 iterations)
+- For $i = 5$: $j$ runs from 1 to 5 (5 iterations)
+
+Total inner loop executions:
+$$
+1 + 2 + 3 + 4 + 5 = \mathbf{15\text{ times}}
+$$
+
+**General formula for any $n$:**
+$$
+\sum_{i=1}^n i = \frac{n(n + 1)}{2} = \frac{n^2}{2} + \frac{n}{2}
+$$
+
+**Total operation count:**
+Each inner iteration executes two assignments (`x = i + j` and `y = x + 3`), giving $2 \times \frac{n(n+1)}{2} = n(n+1)$ inner operations. Adding the $n$ executions of `sum = 1` and the single initialization `int x = 1` yields $T(n) = n^2 + 2n + 1$ operations.
+
+**Big-O complexity class:**
+Dropping lower-order terms and coefficients leaves **$O(n^2)$** (**quadratic time complexity**).
+</ModelAnswer>
+
+**3.** *(First exam & lecture)* State the space complexity formula $S(X) = C + S(I)$. Define both terms, and contrast the space complexity of an iterative loop with a recursive method of depth $n$.
+
+<ModelAnswer>
+**Formula:**
+$$
+S(X) = C + S(I)
+$$
+
+- **$C$ is the fixed part:** the memory required that is independent of input size. This includes the compiled bytecode instructions, constants, and simple scalar variables like loop counters (`int i`), accumulator variables (`sum`), and temporary registers (`temp`).
+- **$S(I)$ is the variable part:** the memory whose size depends on instance characteristic $I$ (such as array size $n$ or recursion depth). This includes dynamically allocated arrays, object collections, and the call stack memory used during recursion.
+
+**Iterative vs recursive comparison:**
+- In an iterative algorithm (such as iterative linear search or iterative factorial), only a constant number of scalar variables are maintained on the stack frame. Because $S(I) = 0$, total space complexity is $S(X) = C + 0 = O(1)$ (**constant space**).
+- In a recursive algorithm that recurses $n$ times before unwinding (such as recursive factorial `return n * factorial(n - 1)`), each active call allocates a stack frame holding return addresses and local parameters. With $n$ simultaneous stack frames, $S(I) = c \cdot n$, yielding $S(X) = C + c \cdot n = O(n)$ (**linear space**).
+</ModelAnswer>
+
+**4.** *(Lecture derivation)* In linear search over an array of size $n$, assume the search key is equally likely to be at any index $1, 2, \ldots, n$, or absent entirely ($n + 1$ equally likely outcomes). Prove that the expected comparison count is $\frac{n}{2} + \frac{n}{n + 1}$, and compute the exact value for $n = 7$.
+
+<ModelAnswer>
+**Proof:**
+Across the $n + 1$ equally likely outcomes:
+- If the key is at position $i$ (where $1 \le i \le n$), locating it requires $i$ comparisons. Summing across all $n$ locations:
+  $$
+  1 + 2 + \cdots + n = \frac{n(n + 1)}{2}
+  $$
+- If the key is absent, the search scans all $n$ elements before returning $-1$, requiring $n$ comparisons.
+
+Total comparisons summed across all $n + 1$ outcomes:
+$$
+\text{Total} = \frac{n(n + 1)}{2} + n
+$$
+
+Dividing by the $n + 1$ outcomes:
+$$
+\text{Average} = \frac{\frac{n(n + 1)}{2} + n}{n + 1} = \frac{\frac{n(n + 1)}{2}}{n + 1} + \frac{n}{n + 1} = \frac{n}{2} + \frac{n}{n + 1}
+$$
+
+**Hand calculation for $n = 7$:**
+$$
+\text{Average} = \frac{7}{2} + \frac{7}{7 + 1} = 3.5 + \frac{7}{8} = 3.5 + 0.875 = \mathbf{4.375\text{ comparisons}}
+$$
+
+*Note on common mistake:* dividing by $n$ rather than $n + 1$ neglects the absent outcome and produces $\frac{n + 1}{2} = 4.0$, which underestimates search cost in real workloads where keys may be missing.
+</ModelAnswer>
+
+### Part 2: Exam multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="counting-steps"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "Which mathematical inequality formally defines Big-O notation (T(n) = O(g(n)))?",
+      options: [
+        { id: "a", text: "T(n) ≤ c · g(n) for all n ≥ n₀ (with positive constants c and n₀)" },
+        { id: "b", text: "T(n) ≥ c · g(n) for all n ≥ n₀ (with positive constants c and n₀)" },
+        { id: "c", text: "c₁ · g(n) ≤ T(n) ≤ c₂ · g(n) for all n ≥ n₀ (with positive constants c₁, c₂, n₀)" },
+        { id: "d", text: "T(n) = g(n) for all n ≥ 1" },
+      ],
+      correctOptionId: "a",
+      explanation: "Big-O provides an asymptotic upper bound: T(n) is bounded above by a constant multiple of g(n) for all inputs beyond threshold n₀. Option B defines Omega (Ω) notation (asymptotic lower bound). Option C defines Theta (Θ) notation (asymptotic tight bound). Option D describes exact algebraic equality rather than an asymptotic class.",
+    },
+    {
+      id: "q2",
+      prompt: "For an algorithm with linear time complexity O(n), what happens to running time when the input size n is quadrupled (multiplied by 4)?",
+      options: [
+        { id: "a", text: "Running time increases by roughly a factor of 4" },
+        { id: "b", text: "Running time increases by a factor of 16" },
+        { id: "c", text: "Running time increases by exactly 2 comparisons (log₂ 4)" },
+        { id: "d", text: "Running time remains unchanged" },
+      ],
+      correctOptionId: "a",
+      explanation: "Linear time O(n) means execution duration scales in direct proportion to input size: T(4n) ≈ 4 T(n). Option B describes quadratic scaling O(n²), where (4n)² = 16n². Option C describes logarithmic scaling O(log n). Option D describes constant time O(1).",
+    },
+    {
+      id: "q3",
+      prompt: "Which asymptotic notation represents a tight bound, enclosing an algorithm's growth rate from both above and below?",
+      options: [
+        { id: "a", text: "Theta notation (Θ)" },
+        { id: "b", text: "Big-O notation (O)" },
+        { id: "c", text: "Omega notation (Ω)" },
+        { id: "d", text: "Little-o notation (o)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Theta notation specifies that T(n) is bounded both above and below by constant multiples of g(n) for large n, meaning T(n) grows at the exact same rate as g(n). Big-O provides an upper bound only, Omega provides a lower bound only, and Little-o represents strict asymptotic dominance (T(n) grows strictly slower than g(n)).",
+    },
+    {
+      id: "q4",
+      prompt: "An algorithm executes f(n) = 4n² + 30n + 500 basic operations. What is its simplified Big-O complexity?",
+      options: [
+        { id: "a", text: "O(n²)" },
+        { id: "b", text: "O(4n²)" },
+        { id: "c", text: "O(n)" },
+        { id: "d", text: "O(500)" },
+      ],
+      correctOptionId: "a",
+      explanation: "To find Big-O, retain only the fastest-growing term as n → ∞ (here 4n²) and drop constant coefficients (4), leaving O(n²). Option B is unsimplified because constant multipliers are omitted in Big-O notation. Option C omits the dominant quadratic term. Option D keeps only the lowest-order constant term.",
+    },
+    {
+      id: "q5",
+      prompt: "What is the Big-O time complexity of two nested loops where the outer runs n times and the inner runs exactly 5 times?",
+      options: [
+        { id: "a", text: "O(n)" },
+        { id: "b", text: "O(n²)" },
+        { id: "c", text: "O(5n)" },
+        { id: "d", text: "O(1)" },
+      ],
+      correctOptionId: "a",
+      explanation: "The inner loop executes a fixed 5 times per outer iteration, giving a total of 5n operations. In asymptotic notation, constant factors are dropped, simplifying to O(n) (linear time). Assuming every nested loop is automatically quadratic is a common pitfall. Option C leaves the constant factor in place.",
+    },
+    {
+      id: "q6",
+      prompt: "Which sequence correctly orders complexity classes from fastest growing (slowest algorithm) to slowest growing (fastest algorithm) as n → ∞?",
+      options: [
+        { id: "a", text: "O(n!) > O(2ⁿ) > O(n²) > O(n log n) > O(n) > O(log n) > O(1)" },
+        { id: "b", text: "O(1) > O(log n) > O(n) > O(n log n) > O(n²) > O(2ⁿ) > O(n!)" },
+        { id: "c", text: "O(2ⁿ) > O(n!) > O(n²) > O(n) > O(n log n) > O(1)" },
+        { id: "d", text: "O(n log n) > O(n²) > O(n) > O(log n) > O(1)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Factorial O(n!) grows fastest, followed by exponential O(2ⁿ), quadratic O(n²), linearithmic O(n log n), linear O(n), logarithmic O(log n), and constant O(1). Option B reverses the growth rates, ordering from most efficient to least efficient. Option C improperly places 2ⁿ above n!, though factorial grows far faster (for example, 20! ≈ 2.4 × 10¹⁸ while 2²⁰ ≈ 1.05 × 10⁶). Option D places n log n above n².",
+    },
+  ]}
+/>
 
 <LeetCodeProblems
   problems={[

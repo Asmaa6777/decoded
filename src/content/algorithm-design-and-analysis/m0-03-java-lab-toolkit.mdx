@@ -1,4 +1,4 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { ArraySwapVisualizer, ArrayReferenceVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisualizers";
 
 # Practical: Arrays, Swaps and a Stopwatch
@@ -216,6 +216,228 @@ For an $O(n^2)$ algorithm, doubling the input size quadruples execution time bec
 <Callout tone="sky" label="Benchmarking best practices">
 Use `.clone()` so every test run sorts identical data. Run multiple trials at each input size and take the median time. Repeating trials mitigates JVM warm-up distortion, where just-in-time (JIT) compilation initially interprets bytecode before compiling frequently executed paths into optimized native machine code.
 </Callout>
+
+## Practice from past exams
+
+### Part 1: Lab and written exam questions
+
+**1.** *(Lab 1 & 2)* A student writes the following method to compute the total sum of an integer array:
+
+```java
+static int sum(int[] a) {
+    int total = 0;
+    for (int i = 0; i < a.length; i++) {
+        total += a[i];
+    }
+    return total;
+}
+```
+
+If the array contains $1{,}000{,}000$ elements, each holding the value $5{,}000$, what happens when this method runs? Calculate the expected mathematical sum and the exact value Java returns, explaining why.
+
+<ModelAnswer>
+**Mathematical sum:**
+$$
+1{,}000{,}000 \times 5{,}000 = \mathbf{5{,}000{,}000{,}000} \quad (5 \times 10^9)
+$$
+
+**What happens in Java:**
+In Java, a signed 32-bit `int` stores values from $-2^{31}$ to $2^{31} - 1$, where:
+$$
+2^{31} - 1 = 2{,}147{,}483{,}647
+$$
+
+Because $5{,}000{,}000{,}000 > 2{,}147{,}483{,}647$, the sum overflows the 32-bit integer range. In Java, integer arithmetic wraps around modulo $2^{32}$ without throwing an exception or warning.
+
+In two's complement arithmetic, adding values past $2^{31} - 1$ flips into negative values and wraps around by subtracting $2^{32} = 4{,}294{,}967{,}296$:
+$$
+5{,}000{,}000{,}000 - 4{,}294{,}967{,}296 = \mathbf{705{,}032{,}704}
+$$
+
+The method completes silently and returns **$705{,}032{,}704$**, an incorrect positive number.
+
+**Correction:**
+Declare the accumulator as a 64-bit `long`:
+```java
+static long sum(int[] a) {
+    long total = 0;
+    for (int i = 0; i < a.length; i++) total += a[i];
+    return total;
+}
+```
+A signed 64-bit `long` accommodates values up to $2^{63} - 1 \approx 9.22 \times 10^{18}$, comfortably holding the 5 billion total.
+</ModelAnswer>
+
+**2.** *(Lab 2 exam problem)* Consider the two swap methods below:
+
+```java
+// Method A
+public static void swap(int x, int y) {
+    int temp = x;
+    x = y;
+    y = temp;
+}
+
+// Method B
+public static void swap(int[] a, int i, int j) {
+    int temp = a[i];
+    a[i] = a[j];
+    a[j] = temp;
+}
+```
+
+What does the following test code output to the console? Explain the difference in behavior.
+
+```java
+int[] arr = {10, 20};
+swap(arr[0], arr[1]);
+System.out.println(arr[0] + ", " + arr[1]);
+swap(arr, 0, 1);
+System.out.println(arr[0] + ", " + arr[1]);
+```
+
+<ModelAnswer>
+**Console output:**
+```text
+10, 20
+20, 10
+```
+
+**Explanation:**
+- **First call `swap(arr[0], arr[1])`:** Method A takes two primitive `int` arguments. Java passes primitive arguments strictly **by value**. The values 10 and 20 are copied into local parameter variables `x` and `y`. Exchanging `x` and `y` modifies only Method A's local stack frame. When Method A returns, that stack frame is discarded, leaving the original array `arr` completely unchanged (`10, 20`).
+- **Second call `swap(arr, 0, 1)`:** Method B receives the object reference to `arr` in heap memory. Accessing `a[i]` and `a[j]` modifies the elements stored at those heap locations directly. The values at indices 0 and 1 are exchanged, updating `arr` to `[20, 10]`.
+</ModelAnswer>
+
+**3.** *(Lab 1 & 2)* Predict the exact output of this code snippet, and explain the memory difference between reference assignment and `.clone()`:
+
+```java
+int[] a = {1, 2, 3};
+int[] b = a;
+int[] c = a.clone();
+b[0] = 99;
+c[1] = 88;
+System.out.println(a[0] + " " + a[1] + " " + b[0] + " " + c[0] + " " + c[1]);
+```
+
+<ModelAnswer>
+**Output:**
+```text
+99 2 99 1 88
+```
+
+**Memory explanation:**
+- `int[] b = a` performs a **reference copy**. No new array is created. Variables `a` and `b` point to the identical array object in heap memory. When `b[0] = 99` is executed, it modifies the memory slot shared by both variables, so `a[0]` and `b[0]` both evaluate to 99.
+- `int[] c = a.clone()` allocates a **new, independent array** in heap memory and copies the values `{1, 2, 3}` into it. Variable `c` references this distinct memory object. When `c[1] = 88` executes, only `c[1]` changes; `a[1]` remains 2. When printed, `c[0]` retains its initial copied value of 1.
+</ModelAnswer>
+
+**4.** *(Benchmarking analysis)* During an empirical lab experiment, selection sort ($O(n^2)$) took $15.0\text{ ms}$ to sort a random array of $n = 2{,}000$ integers. Assuming execution time strictly follows $T(n) = c \cdot n^2$:
+
+1. Predict the running time for $n = 4{,}000$.
+2. Predict the running time for $n = 8{,}000$.
+3. What would the predicted running time for $n = 4{,}000$ be if the algorithm instead had linear time complexity $O(n)$?
+
+<ModelAnswer>
+1. **For $n = 4{,}000$:**
+   Doubling the input size from $2{,}000$ to $4{,}000$ represents a factor of $k = 2$. For an $O(n^2)$ algorithm, doubling $n$ quadruples the duration ($k^2 = 2^2 = 4$):
+   $$
+   T(4{,}000) = 15.0\text{ ms} \times 4 = \mathbf{60.0\text{ ms}}
+   $$
+
+2. **For $n = 8{,}000$:**
+   Doubling $n$ again from $4{,}000$ to $8{,}000$ quadruples the time once more:
+   $$
+   T(8{,}000) = 60.0\text{ ms} \times 4 = \mathbf{240.0\text{ ms}}
+   $$
+   (Equivalently, increasing $n$ by $4\times$ from $2{,}000$ scales runtime by $4^2 = 16$: $15.0\text{ ms} \times 16 = 240.0\text{ ms}$.)
+
+3. **If the algorithm were linear $O(n)$:**
+   For a linear algorithm, doubling the input size doubles the running time:
+   $$
+   T(4{,}000) = 15.0\text{ ms} \times 2 = \mathbf{30.0\text{ ms}}
+   $$
+</ModelAnswer>
+
+### Part 2: Lab multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="java-lab-toolkit"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "Which of the following causes a compiler error when working with arrays in Java?",
+      options: [
+        { id: "a", text: "int[] a; a = {1, 2, 3};" },
+        { id: "b", text: "int[] a = {1, 2, 3};" },
+        { id: "c", text: "int a[] = new int[3];" },
+        { id: "d", text: "int[] a; a = new int[] {1, 2, 3};" },
+      ],
+      correctOptionId: "a",
+      explanation: "In Java, the brace initializer shortcut {1, 2, 3} is syntactically valid only directly on the declaration line (Option B). When assigning to an already declared array variable, the instantiation keyword new int[] must be written explicitly (Option D). Option C is valid C-style array declaration.",
+    },
+    {
+      id: "q2",
+      prompt: "Given int[][] grid = {{1, 2, 3}, {4, 5}};, what are the values of grid.length, grid[0].length, and grid[1].length?",
+      options: [
+        { id: "a", text: "grid.length = 2, grid[0].length = 3, grid[1].length = 2" },
+        { id: "b", text: "grid.length = 3, grid[0].length = 2, grid[1].length = 2" },
+        { id: "c", text: "grid.length = 5, grid[0].length = 3, grid[1].length = 2" },
+        { id: "d", text: "grid.length = 2, grid[0].length = 3, grid[1].length = 3" },
+      ],
+      correctOptionId: "a",
+      explanation: "In Java, a multidimensional array is an array of row references. grid.length counts the rows (2). The first row has 3 elements ({1, 2, 3}), so grid[0].length is 3. The second row has 2 elements ({4, 5}), so grid[1].length is 2. Assuming all rows share the same length is a common error in ragged arrays.",
+    },
+    {
+      id: "q3",
+      prompt: "A student writes int r = (int) Math.random() * 100; to produce a random integer between 0 and 99. What does r always equal?",
+      options: [
+        { id: "a", text: "0" },
+        { id: "b", text: "A random integer from 0 to 99" },
+        { id: "c", text: "A random integer from 1 to 100" },
+        { id: "d", text: "100" },
+      ],
+      correctOptionId: "a",
+      explanation: "Type cast (int) has higher operator precedence than multiplication *. Because Math.random() returns a double in [0.0, 1.0), casting it first truncates the fractional value to 0. Multiplying 0 by 100 yields 0 every time. The correct expression requires parentheses: (int) (Math.random() * 100).",
+    },
+    {
+      id: "q4",
+      prompt: "If a swap method is mistakenly implemented as a[x] = a[y]; a[y] = a[x];, what is the resulting array when called on [4, 7] with x = 0 and y = 1?",
+      options: [
+        { id: "a", text: "[7, 7]" },
+        { id: "b", text: "[7, 4]" },
+        { id: "c", text: "[4, 4]" },
+        { id: "d", text: "[4, 7]" },
+      ],
+      correctOptionId: "a",
+      explanation: "Without a temporary variable, the first assignment a[0] = a[1] copies 7 into a[0], overwriting the original 4. The next assignment a[1] = a[0] copies the current value of a[0] (now 7) back into a[1]. Both elements end up holding 7.",
+    },
+    {
+      id: "q5",
+      prompt: "Why is System.nanoTime() preferred over System.currentTimeMillis() when timing algorithm microbenchmarks?",
+      options: [
+        { id: "a", text: "System.nanoTime() provides high-resolution nanosecond measurement and measures elapsed time monotonically" },
+        { id: "b", text: "System.nanoTime() automatically forces JVM JIT compilation before running" },
+        { id: "c", text: "System.currentTimeMillis() can only time operations exceeding one second" },
+        { id: "d", text: "System.nanoTime() halts background operating system threads during benchmarking" },
+      ],
+      correctOptionId: "a",
+      explanation: "System.currentTimeMillis() depends on the operating system wall clock, which has coarse resolution (often 1–15 ms) and can jump if time synchronizes with an NTP server. System.nanoTime() measures elapsed nanoseconds using a high-precision CPU counter. It does not alter JVM compilation or stop OS threads.",
+    },
+    {
+      id: "q6",
+      prompt: "An O(n²) sorting algorithm takes 8 ms to process an array of n = 500 elements. What is the expected duration to sort an array of n = 2,000 elements?",
+      options: [
+        { id: "a", text: "128 ms" },
+        { id: "b", text: "32 ms" },
+        { id: "c", text: "64 ms" },
+        { id: "d", text: "16 ms" },
+      ],
+      correctOptionId: "a",
+      explanation: "Increasing input size from n = 500 to n = 2,000 is an increase by a factor of k = 4. For an O(n²) algorithm, running time scales by k² = 4² = 16. The expected time is 8 ms × 16 = 128 ms. Option B assumes linear scaling (8 × 4 = 32 ms). Option C assumes cubic or doubled scaling. Option D assumes only doubling.",
+    },
+  ]}
+/>
 
 <LeetCodeProblems
   problems={[
