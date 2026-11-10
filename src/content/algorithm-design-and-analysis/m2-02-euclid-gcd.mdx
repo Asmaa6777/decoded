@@ -12,7 +12,7 @@ Around 300 BC, the Greek mathematician Euclid documented an efficient method for
 
 ## The problem
 
-The **greatest common divisor** of two non-negative integers $m$ and $n$ (not both zero), written $\gcd(m, n)$, is the largest integer that [divides](/courses/computational-mathematics/divisibility-and-euclid#divisibility) both numbers without a remainder.
+The **greatest common divisor** of two non-negative integers $m$ and $n$ (not both zero), written $\gcd(m, n)$, is the largest integer that [divides](/courses/computational-mathematics/divisibility-and-euclid#divisibility) both numbers without a remainder. (The condition "not both zero" is necessary because every non-zero integer divides 0: $0 = 0 \cdot k$ for any integer $k \ge 1$, so 0 and 0 share infinitely many common divisors with no maximum. When one number is zero and the other positive, $\gcd(m, 0) = m$.)
 
 Finding small GCD values by inspection means identifying common factors directly without executing an algorithm:
 
@@ -33,6 +33,8 @@ static int gcdBruteForce(int m, int n) {
 }
 ```
 
+If one argument is zero (for example, `gcdBruteForce(10, 0)`), $\min(10, 0) = 0$, so the loop condition `d >= 1` is immediately false and the method directly returns `Math.max(10, 0) = 10`. If both inputs are non-zero, the loop tests candidate divisors downward from $\min(m, n)$.
+
 This method is correct, but in the worst case (coprime inputs) it checks every integer down to 1. That requires $O(\min(m, n))$ iterations. For two 10-digit numbers, that involves billions of division operations.
 
 <GcdComparisonVisualizer m={210} n={45} />
@@ -47,7 +49,16 @@ $$
 
 where $m \bmod n$ denotes the remainder when dividing $m$ by $n$ (`m % n` in Java, from [modular arithmetic](/courses/computational-mathematics/modular-arithmetic#the-mod-operation)).
 
-**Why is that true?** Express the integer division as $m = q \cdot n + r$, where $q$ is the integer quotient and $r$ is the remainder ($0 \le r < n$). Any divisor that divides both $m$ and $n$ must also divide their difference, $r = m - q \cdot n$. Likewise, any divisor that divides both $n$ and $r$ must also divide their sum, $m = q \cdot n + r$. Because $(m, n)$ and $(n, r)$ share identical sets of common divisors, they share the identical greatest common divisor.
+**Why is that true?** Express the integer division as $m = q \cdot n + r$, where $q = \lfloor m / n \rfloor$ is the integer quotient and $r$ is the remainder ($0 \le r < n$).
+Suppose an integer $d$ divides both $m$ and $n$, so $m = k_1 d$ and $n = k_2 d$ for some integers $k_1, k_2$. Rearranging the division equation gives:
+$$
+r = m - q \cdot n = k_1 d - q(k_2 d) = d(k_1 - q \cdot k_2)
+$$
+Because $k_1 - q \cdot k_2$ is an integer, $d$ must also divide $r$ evenly. In the other direction, if $d$ divides both $n$ and $r$ ($n = k_2 d$ and $r = k_3 d$), then $d$ must divide their sum:
+$$
+m = q \cdot n + r = q(k_2 d) + k_3 d = d(q \cdot k_2 + k_3)
+$$
+Because the pairs $(m, n)$ and $(n, r)$ share the exact same set of common divisors, they share the identical greatest common divisor: $\gcd(m, n) = \gcd(n, r)$.
 
 Because $r < n$, the subproblem $(n, r)$ is strictly smaller. Repeatedly applying this reduction shrinks the numbers until the second argument reaches 0. Every non-zero integer divides 0 (since $0 = 0 \cdot m$). Thus, the common divisors of $m$ and 0 are simply the divisors of $m$, the largest of which is $m$ itself. When the second value reaches 0, the algorithm terminates with $\gcd(m, 0) = m$.
 
@@ -59,7 +70,11 @@ $$
 
 First, $60 \bmod 24 = 12$ because $60 = 2 \cdot 24 + 12$. Next, $24 \bmod 12 = 0$. Because the second value is now 0, the process halts and returns 12.
 
-Geometrically, Euclid's division tiles an $m \times n$ floor with squares of size $n \times n$, then recursively tiles the remaining strip with squares of size $r \times r$. The side length of the final square that perfectly tiles the floor is $\gcd(m, n)$:
+Geometrically, Euclid's division tiles an $m \times n$ floor with squares:
+- For a $60 \times 24$ floor, two $24 \times 24$ squares fit along the length ($2 \times 24 = 48$), leaving a $12 \times 24$ rectangular strip.
+- Next, two $12 \times 12$ squares tile that remaining $12 \times 24$ strip perfectly ($2 \times 12 = 24$), leaving zero remainder.
+
+The side length of the final square that perfectly tiles the entire floor is $\gcd(60, 24) = 12$:
 
 <EuclidTilingVisualizer m={60} n={24} />
 
@@ -67,13 +82,15 @@ Geometrically, Euclid's division tiles an $m \times n$ floor with squares of siz
 
 <EuclidVisualizer m={210} n={45} />
 
-The table layout reflects standard exam presentation: each row performs one division, shifting $n$ and $r$ into the next row's inputs. You can test custom inputs in the visualizer above. Consecutive [Fibonacci numbers](/courses/algorithm-design-and-analysis/dynamic-programming#the-problem-with-plain-recursion), such as 89 and 55, represent the worst-case input for Euclid's algorithm. Because dividing one Fibonacci number by the preceding Fibonacci number yields a quotient of 1, the remainder is always the next smaller Fibonacci number: $(89, 55) \to (55, 34) \to (34, 21) \to \dots$, causing the values to shrink at the slowest possible rate.
+The table layout reflects standard exam presentation: each row performs one division, shifting $n$ and $r$ into the next row's inputs. You can test custom inputs in the visualizer above. Consecutive [Fibonacci numbers](/courses/algorithm-design-and-analysis/dynamic-programming#the-problem-with-plain-recursion), such as 89 and 55, represent the worst-case input for Euclid's algorithm. Because dividing one Fibonacci number by the preceding Fibonacci number yields a quotient of 1, the remainder is always the next smaller Fibonacci number: $(89, 55) \to (55, 34) \to (34, 21) \to \dots$, causing the values to shrink at the slowest possible rate. This worst-case scenario is formalized by **Lamé's Theorem**, which states that the number of division steps never exceeds 5 times the number of decimal digits in the smaller input $n$ ($5 \times \text{digits}_{10}(n)$).
 
 The algorithm proceeds in three steps:
 
 1. If $n = 0$, return $m$ and terminate.
-2. Divide $m$ by $n$ and let the remainder be $r$.
+2. Divide $m$ by $n$ and let the remainder be $r = m \bmod n$.
 3. Set $m \leftarrow n$ and $n \leftarrow r$, then return to step 1.
+
+Notice that if the smaller argument is passed first (such as $m = 45$ and $n = 210$), Step 2 divides $45$ by $210$, yielding quotient $q = 0$ and remainder $r = 45$. Step 3 then sets $m \leftarrow 210$ and $n \leftarrow 45$. The algorithm automatically swaps the values on the very first division, so no initial `if (m < n)` swap check is needed.
 
 In pseudocode, where `!=` means not equal:
 
@@ -121,10 +138,10 @@ public static void GCD(int m, int n) {
 }
 ```
 
-Calling `GCD(45, 210)` outputs 15. However, returning the integer value is more versatile, allowing the caller to use the result in further calculations such as [fraction simplification](#where-this-shows-up-today):
+Calling `GCD(45, 210)` outputs `The GCD is 15`. In production code, returning the computed integer value is more versatile, allowing the caller to use the result in further calculations such as [fraction simplification](#where-this-shows-up-today):
 
 ```java
-static int gcd(int m, int n) {
+public static int gcd(int m, int n) {
     while (n != 0) {
         int r = m % n;
         m = n;
@@ -138,20 +155,23 @@ static int gcd(int m, int n) {
 The assignments `m = n;` and `n = r;` must execute in this exact sequence. If you update `n = r;` first, the original value of `n` is overwritten before `m` can receive it, causing `m` to receive `r` instead. Tracing $\gcd(60, 24)$ with that bug produces $m = 12, n = 12$, followed by $m = 0, n = 0$, returning an incorrect result of 0. When tracing by hand, derive each row strictly from the preceding row rather than partially updated variables.
 </Callout>
 
-Euclid's algorithm can also be written recursively in a single line, mirroring the mathematical recurrence:
+Euclid's algorithm can also be written recursively, directly mirroring the mathematical recurrence $\gcd(m, n) = \gcd(n, m \bmod n)$:
 
 ```java
-static int gcd(int m, int n) {
-    return n == 0 ? m : gcd(n, m % n);
+public static int gcdRecursive(int m, int n) {
+    if (n == 0) return m;
+    return gcdRecursive(n, m % n);
 }
 ```
+
+Or compactly using a ternary conditional: `return n == 0 ? m : gcdRecursive(n, m % n);`. Just like the iterative loop, if $m < n$, the first recursive invocation executes `gcdRecursive(n, m % n) = gcdRecursive(n, m)`, automatically reordering the arguments.
 
 ## Analysis
 
 Every two steps, the remainder decreases by at least half:
 
-- If $n \le m/2$, then $m \bmod n \lt n \le m/2$.
-- If $n \gt m/2$, then $m \bmod n = m - n \lt m/2$.
+- If $n \le m/2$, then the remainder satisfies $m \bmod n \lt n \le m/2$.
+- If $n \gt m/2$, then $n$ fits into $m$ only once ($q = 1$). The remainder is $r = m - n$, which is strictly less than $m/2$ because subtracting more than half of $m$ leaves less than half ($m - n < m - m/2 = m/2$).
 
 Because the remainder is at least halved every two iterations, the maximum number of division steps is roughly $2 \log_2 n$. Euclid's algorithm runs in **$O(\log n)$** time, exhibiting the same logarithmic complexity as [binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half). For two 10-digit numbers, Euclid terminates in a few dozen divisions instead of billions.
 
@@ -159,7 +179,25 @@ Because the remainder is at least halved every two iterations, the maximum numbe
 If the smaller argument is passed first, as in $\gcd(45, 210)$, the first division computes $45 \bmod 210 = 45$. The next state becomes $(210, 45)$. The algorithm automatically swaps the values on the first step at the cost of one modulo operation.
 </Callout>
 
-Reversing the division steps computes integer coefficients $x$ and $y$ satisfying Bézout's identity, $mx + ny = \gcd(m, n)$. This is the [extended Euclidean algorithm](/courses/computational-mathematics/modular-inverses#the-extended-euclidean-algorithm), widely used in asymmetric cryptography to compute modular multiplicative inverses.
+<Callout tone="sky" label="Handling negative inputs">
+By mathematical definition, the greatest common divisor is always a positive integer: $\gcd(m, n) = \gcd(|m|, |n|)$. However, in Java and C, the remainder operator `%` preserves the sign of the dividend (for example, `-24 % 60 = -24`). If an application might receive negative arguments, sanitize the inputs using `Math.abs()`:
+
+```java
+public static int gcdSafe(int m, int n) {
+    return gcd(Math.abs(m), Math.abs(n));
+}
+```
+</Callout>
+
+Reversing the division steps computes integer coefficients $x$ and $y$ satisfying **Bézout's identity**:
+$$
+m \cdot x + n \cdot y = \gcd(m, n)
+$$
+This identity states that the greatest common divisor can always be expressed as an integer linear combination of the two original inputs. For example, with $m = 60$ and $n = 24$:
+$$
+60(1) + 24(-2) = 60 - 48 = 12 = \gcd(60, 24)
+$$
+Computing these coefficients $x$ and $y$ is the work of the [extended Euclidean algorithm](/courses/computational-mathematics/modular-inverses#the-extended-euclidean-algorithm), widely used in asymmetric cryptography to compute modular multiplicative inverses.
 
 ## Where this shows up today
 
@@ -184,6 +222,8 @@ The least common multiple connects directly to the greatest common divisor throu
 $$
 \operatorname{lcm}(m, n) = \frac{m \cdot n}{\gcd(m, n)}
 $$
+
+Why does this relationship hold? In terms of prime factorizations, for any prime factor $p$ with exponents $a$ and $b$ in $m$ and $n$, the GCD takes the smaller exponent $\min(a, b)$ while the LCM takes the larger exponent $\max(a, b)$. Because $\min(a, b) + \max(a, b) = a + b$, the product $\gcd(m, n) \cdot \operatorname{lcm}(m, n)$ contains every prime factor with its full combined multiplicity $a + b$, which equals $m \cdot n$.
 
 In Java, compute this as `(m / gcd(m, n)) * n`, dividing first so the intermediate multiplication does not overflow integer bounds.
 </Callout>
