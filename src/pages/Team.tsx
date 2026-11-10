@@ -27,6 +27,7 @@ export default function Team() {
               role="Maintainer"
               bio="I hear and I forget. I see and I remember. I do and I understand."
               image={ahmedAlghali.image}
+              href={ahmedAlghali.href}
             />
             <CreatorCard
               name={asmaaFarouq.name}

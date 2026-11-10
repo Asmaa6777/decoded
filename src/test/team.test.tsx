@@ -12,5 +12,7 @@ describe("contributors page", () => {
     );
     expect(screen.getByRole("link", { name: "Build a course →" }).getAttribute("href")).toContain("/docs/building-a-course.md");
     expect(screen.getByRole("link", { name: "See open issues →" }).getAttribute("href")).toContain("/decoded/issues");
+    expect(screen.getByRole("link", { name: /Ahmed Alghali/ }).getAttribute("href")).toBe("https://github.com/a7med7x7");
+    expect(screen.getByRole("link", { name: /Asmaa Farouq/ }).getAttribute("href")).toBe("https://github.com/Asmaa6777");
   });
 });
