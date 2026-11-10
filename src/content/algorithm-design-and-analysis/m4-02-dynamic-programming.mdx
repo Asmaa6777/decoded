@@ -16,7 +16,9 @@ static long fib(int n) {
 }
 ```
 
-This implementation is correct, but extraordinarily slow. Computing `fib(5)` calculates `fib(3)` twice, `fib(2)` three times, and `fib(1)` five times. The same subproblems are recalculated repeatedly. The total number of recursive calls [grows exponentially](/courses/algorithm-design-and-analysis/counting-steps#getting-the-big-o-without-the-algebra), scaling by roughly 1.6 with each increase in $n$, making **$O(2^n)$** an upper bound. A call to `fib(50)` triggers billions of operations.
+This implementation is correct, but extraordinarily slow. Computing `fib(5)` calculates `fib(3)` twice, `fib(2)` three times, and `fib(1)` five times. The same subproblems are recalculated repeatedly. In fact, the number of recursive calls made to `fib(k)` is itself a Fibonacci number! The total number of recursive calls [grows exponentially](/courses/algorithm-design-and-analysis/counting-steps#getting-the-big-o-without-the-algebra), scaling by roughly 1.6 with each increase in $n$, making **$O(2^n)$** an upper bound. A call to `fib(50)` triggers billions of operations.
+
+*(Recursion call-stack space):* While naive recursive Fibonacci takes $O(2^n)$ time, its maximum recursion call-stack depth is only $n$ active frames. Therefore, its auxiliary call-stack memory is $O(n)$, not $O(2^n)$.
 
 When a recursive algorithm encounters identical subproblems again and again, those pieces are called **overlapping subproblems**. Dynamic programming is designed specifically for problems with this structure:
 
@@ -24,9 +26,17 @@ When a recursive algorithm encounters identical subproblems again and again, tho
 
 These subproblems usually arise from a **recurrence relation**, an equation that defines the solution to a problem in terms of solutions to smaller instances of itself. The relation $F(n) = F(n-1) + F(n-2)$ is a classic recurrence.
 
+Dynamic programming organizes this work in one of two ways:
+
+1. **Top-Down with Memoization:** Keep the natural recursive function, but pass along a cache array. Before computing, check if `memo[n]` is already recorded; if so, return it immediately without recursing.
+2. **Bottom-Up with Tabulation:** Fill an iterative table starting from base cases ($F[0] = 0, F[1] = 1$) and loop sequentially up to $n$.
+
+Here is bottom-up tabulation:
+
 ```java
 static long fib(int n) {
-    long[] F = new long[n + 2];
+    if (n < 2) return n;
+    long[] F = new long[n + 1];
     F[0] = 0; F[1] = 1;
     for (int i = 2; i <= n; i++)
         F[i] = F[i - 1] + F[i - 2];     // each entry computed once
@@ -34,11 +44,30 @@ static long fib(int n) {
 }
 ```
 
-The mathematical recurrence remains unchanged, but recording intermediate values in an array reduces the running time from exponential to $O(n)$. Applying dynamic programming to other problems comes down to defining the subproblems and deciding what information to store in the table.
+The mathematical recurrence remains unchanged, but recording intermediate values in an array reduces the running time from exponential to $O(n)$.
+
+**State compression ($O(1)$ space):** Notice that calculating $F[i]$ only requires the previous two numbers ($F[i - 1]$ and $F[i - 2]$). You do not need to preserve the entire array of size $n$; keeping just two variables reduces auxiliary memory from $O(n)$ to $O(1)$:
+
+```java
+static long fibOptimized(int n) {
+    if (n < 2) return n;
+    long prev2 = 0, prev1 = 1;
+    for (int i = 2; i <= n; i++) {
+        long curr = prev1 + prev2;
+        prev2 = prev1;
+        prev1 = curr;
+    }
+    return prev1;
+}
+```
+
+This same concept of state compression will later allow us to compress the 2D knapsack table into a single 1D array.
 
 ## The 0/1 knapsack problem
 
 Imagine you have a knapsack that can hold at most a total weight of $W$. You are given $n$ items, each having a weight $w_i$ and a value $v_i$. The objective is to select the most valuable [subset](/courses/discrete-mathematics/sets#subsets) of items that fits within the capacity limit. In textbooks, value is often called the **benefit** or **profit**, with arrays labeled `wt` and `val`. Each item is indivisible: you either take it (1) or leave it (0), giving the **0/1 knapsack problem** its name.
+
+*(Discrete capacity requirement):* Dynamic programming requires the item weights $w_i$ and the knapsack capacity $W$ to be non-negative integers so they can serve as discrete array indices $0, 1, 2, \ldots, W$. If weights are continuous real numbers (such as $w_1 = 3.75\text{ kg}$), table column indexing cannot be used; such continuous problems are solved using branch-and-bound or fractional approximations.
 
 This is a computationally challenging problem. Evaluating every possible subset requires testing $2^n$ combinations. That is simple for 4 items (16 subsets), but impossible for 60 items (over $10^{18}$ subsets).
 
@@ -90,6 +119,14 @@ $$
 V[1, 5] = \max\big(V[0, 5],\ \ 100 + V[0, 5 - 3]\big) = \max(0,\ 100 + 0) = 100
 $$
 
+For cell $V[2, 5]$, item 2 weighs 2 with value 20:
+
+$$
+V[2, 5] = \max\big(V[1, 5],\ \ 20 + V[1, 5 - 2]\big) = \max(100,\ 20 + V[1, 3]) = \max(100,\ 20 + 100) = 120
+$$
+
+Notice how cell $V[2, 5]$ captures the combination of item 2 and item 1: by looking back at $V[1, 3]$, it instantly recalls the best value achievable using the remaining capacity $5 - 2 = 3$ on earlier items.
+
 For the bottom-right corner, cell $V[4, 5]$, item 4 weighs 1 with value 40:
 
 $$
@@ -99,12 +136,12 @@ $$
 The completed table:
 
 | $V[i, w]$ | w = 0 | 1 | 2 | 3 | 4 | 5 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| i = 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 1 | 0 | 0 | 0 | 100 | 100 | 100 |
-| 2 | 0 | 0 | 20 | 100 | 100 | 120 |
-| 3 | 0 | 0 | 20 | 100 | 100 | 120 |
-| 4 | 0 | 40 | 40 | 100 | 140 | **140** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **i = 0** | 0 | 0 | 0 | 0 | 0 | 0 |
+| **1** | 0 | 0 | 0 | 100 | 100 | 100 |
+| **2** | 0 | 0 | 20 | 100 | 100 | 120 |
+| **3** | 0 | 0 | 20 | 100 | 100 | 120 |
+| **4** | 0 | 40 | 40 | 100 | 140 | **140** |
 
 Row 3 is identical to row 2 across all columns. Item 3 weighs 4, and for every capacity where it fits, taking it yields a lower total value than keeping the selection from row 2.
 
@@ -172,40 +209,72 @@ Advanced Algorithms provides further worked problems, including the coin-row pro
 
 ## The Java
 
+Here is a complete Java implementation including the 2D table with subset backtracking, alongside the space-optimized 1D array version:
+
 ```java
+import java.util.ArrayList;
+import java.util.List;
+
 public class Knapsack {
 
+    // --- 1. Standard 2D Table with Backtracking (O(nW) time, O(nW) space) ---
     static int knapsack(int[] wt, int[] val, int W) {
+        if (wt == null || val == null || W <= 0 || wt.length == 0) return 0;
         int n = wt.length;
-        int[][] V = new int[n + 1][W + 1];          // Java fills it with 0s
+        int[][] V = new int[n + 1][W + 1];          // Java initializes with 0s
 
-        for (int i = 1; i <= n; i++)
-            for (int w = 1; w <= W; w++)
-                if (wt[i - 1] > w)
+        for (int i = 1; i <= n; i++) {
+            for (int w = 1; w <= W; w++) {
+                if (wt[i - 1] > w) {
                     V[i][w] = V[i - 1][w];
-                else
+                } else {
                     V[i][w] = Math.max(V[i - 1][w],
                                        val[i - 1] + V[i - 1][w - wt[i - 1]]);
+                }
+            }
+        }
 
-        // backtrack to find the items
+        // Backtrack to identify which items were packed
+        List<Integer> chosenItems = new ArrayList<>();
         int w = W;
-        for (int i = n; i >= 1; i--)
+        for (int i = n; i >= 1; i--) {
             if (V[i][w] != V[i - 1][w]) {
-                System.out.println("take item " + i);
+                chosenItems.add(i);                 // item i (1-based index)
                 w -= wt[i - 1];
             }
+        }
+        System.out.println("Items chosen (backwards): " + chosenItems);
         return V[n][W];
+    }
+
+    // --- 2. 1D Array Space Optimization (O(nW) time, O(W) space) ---
+    static int knapsack1D(int[] wt, int[] val, int W) {
+        if (wt == null || val == null || W <= 0 || wt.length == 0) return 0;
+        int[] dp = new int[W + 1];
+
+        for (int i = 0; i < wt.length; i++) {
+            // Must iterate BACKWARDS to prevent using item i more than once
+            for (int w = W; w >= wt[i]; w--) {
+                dp[w] = Math.max(dp[w], val[i] + dp[w - wt[i]]);
+            }
+        }
+        return dp[W];
     }
 
     public static void main(String[] args) {
         int[] wt = {3, 2, 4, 1};
         int[] val = {100, 20, 60, 40};
-        System.out.println("best value = " + knapsack(wt, val, 5));   // 140
+        int capacity = 5;
+
+        System.out.println("2D DP best value: " + knapsack(wt, val, capacity));    // 140
+        System.out.println("1D DP best value: " + knapsack1D(wt, val, capacity));  // 140
     }
 }
 ```
 
-Note the array indexing: table row `i` corresponds to item `i`, but zero-indexed arrays store item `i` at `wt[i - 1]` and `val[i - 1]`.
+Two indexing details to keep in mind:
+- **Array vs Table Offset:** Table row `i` corresponds to item `i`, but 0-indexed Java arrays store item `i` at `wt[i - 1]` and `val[i - 1]`.
+- **Backtracking Order:** Backtracking starts at row $n$ and walks up to row 0, discovering items in reverse index order (`[4, 1]`). The resulting subset $\{1, 4\}$ is an unordered collection.
 
 ## Practice from past exams
 

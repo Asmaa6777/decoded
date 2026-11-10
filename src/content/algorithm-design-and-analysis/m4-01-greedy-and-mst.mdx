@@ -40,6 +40,8 @@ Imagine laying cable to connect six buildings. Specific pairs of buildings can b
 
 In graph theory, this network forms a connected, weighted, undirected graph. A [spanning tree](/courses/discrete-mathematics/trees#spanning-trees) is a subset of edges that connects **every** vertex with **no cycles** (a cycle would mean paying for redundant cable). For a graph with $n$ vertices, every spanning tree contains exactly $n - 1$ edges.
 
+*(Notation note):* In textbooks and exam papers, $n$, $|V|$, and $V$ interchangeably denote the number of vertices in a graph, while $m$, $|E|$, and $E$ denote the number of edges. A spanning tree across $V$ vertices always contains exactly $V - 1$ edges.
+
 To see why, construct the tree one edge at a time. Begin with $n$ isolated vertices, representing $n$ separate components. Each edge that does not form a cycle connects two separate components into one, reducing the component count by exactly 1. Reducing $n$ components to 1 single connected component takes exactly $n - 1$ edges. Adding any further edge would connect two vertices that are already linked, creating a cycle.
 
 The **minimum spanning tree (MST)** is the spanning tree that has the smallest total edge weight.
@@ -61,7 +63,9 @@ Prim's algorithm builds a single tree outward from an initial vertex:
 
 In the visualizer, dotted neon edges indicate candidate crossing edges at each step. Prim always selects the lowest-weight crossing edge, expanding the tree by one vertex each turn.
 
-You can trace the algorithm step by step using a priority table. Each vertex outside the tree keeps a label showing its closest neighbor in the tree and the weight of that connecting edge. The label $(-, \infty)$ indicates that no edge connects that vertex to the current tree yet. Each row adds the external vertex with the smallest edge weight:
+You can trace the algorithm step by step using a priority table. Each vertex outside the tree keeps a label $(p, w)$ recording its closest parent $p$ currently in the tree and the weight $w$ of that connecting edge. If no edge connects that vertex to the current tree yet, its label is $(-, \infty)$.
+
+**The relaxation rule:** Whenever a newly selected vertex $u$ enters the tree, inspect every neighbor $v$ of $u$ still outside the tree. If edge $(u, v)$ has weight $w(u, v) < \text{label}[v].w$, update $v$'s label to $(u, w(u, v))$. Then, pick the external vertex with the smallest weight label to join the tree next:
 
 | Tree vertex added | Remaining vertices |
 | --- | --- |
@@ -72,7 +76,14 @@ You can trace the algorithm step by step using a priority table. Each vertex out
 | e(f, 2) | **d(f, 5)** |
 | d(f, 5) | |
 
-When vertex b joins the tree, vertex f's label improves from (a, 5) to (b, 4) because b is closer. When f joins, e improves from (a, 6) to (f, 2) and d improves from (c, 6) to (f, 5). The resulting tree consists of edges ab, bc, bf, fe, and fd, with total weight $3 + 1 + 4 + 2 + 5 = 15$.
+Tracing the label updates:
+- When vertex **a** starts the tree, its incident edges set labels for $b(a, 3)$, $e(a, 6)$, and $f(a, 5)$, while $c$ and $d$ remain $(-, \infty)$. The minimum is $b(a, 3)$.
+- When vertex **b** joins, edge $bc(1)$ updates $c$ from $(-, \infty)$ to $c(b, 1)$, and edge $bf(4)$ improves $f$'s label from $(a, 5)$ to $(b, 4)$ because $4 < 5$. The minimum is $c(b, 1)$.
+- When vertex **c** joins, edge $cd(6)$ updates $d$ from $(-, \infty)$ to $d(c, 6)$. Edge $cf(4)$ matches $f$'s current weight 4, so $f$ remains $(b, 4)$. The minimum among remaining vertices is $f(b, 4)$.
+- When vertex **f** joins, edge $fe(2)$ improves $e$ from $(a, 6)$ to $(f, 2)$, and edge $fd(5)$ improves $d$ from $(c, 6)$ to $(f, 5)$. The minimum is $e(f, 2)$.
+- When vertex **e** joins, edge $ed(8)$ is examined, but $8 > 5$, so $d$'s label stays $(f, 5)$. The final vertex added is $d(f, 5)$.
+
+The resulting tree consists of edges ab, bc, bf, fe, and fd, with total weight $3 + 1 + 4 + 2 + 5 = 15$.
 
 Here is the pseudocode for Prim's algorithm, where $V_T$ is the set of tree vertices and $E_T$ is the set of tree edges:
 
@@ -130,7 +141,7 @@ while ecounter < |V| − 1 do
 return E_T
 ```
 
-The condition `is acyclic` checks whether the candidate edge connects two previously disjoint components.
+The condition `is acyclic` checks whether the candidate edge connects two previously disjoint components. In practical implementations, we never run an expensive full graph search (such as BFS or DFS, which would cost $O(V)$ per edge) to test for cycles. Instead, we use the **Disjoint Set Union (Union-Find)** data structure: calling `find(u) != find(v)` verifies that $u$ and $v$ belong to different trees in near $O(1)$ amortized time.
 
 ## Worked examples with ties
 
@@ -144,6 +155,8 @@ The condition `is acyclic` checks whether the candidate edge connects two previo
 | C, B, E, D | DF = 3 (tied with EF = 3) | F |
 | C, B, E, D, F | AB = 4 (tied with AC = 4) | A |
 
+Notice what happens after vertex F joins at step 4: edge EF has weight 3, which is lower than AB (4). However, because both endpoints E and F already belong to the tree ($E, F \in V_T$), edge EF has become an **internal edge**. It no longer crosses the cut to any vertex outside the tree, so it cannot be selected. The cheapest remaining crossing edge connecting the tree to vertex A is AB = 4 (tied with AC = 4).
+
 Total weight is $2 + 2 + 3 + 3 + 4 = 14$. Different tie-breaking decisions may yield different valid trees, but every valid minimum spanning tree has a total weight of 14. In coursework or exam settings, state your tie-breaking rule clearly (here, alphabetical order).
 
 **Kruskal on a separate graph.** Given edges AB = 1, DE = 2, BC = 3, CD = 4, AE = 5, AC = 7, AD = 10:
@@ -152,18 +165,21 @@ Sorting the edges gives AB (1), DE (2), BC (3), CD (4), AE (5), AC (7), and AD (
 
 ## Why does greedy work here?
 
-The correctness of both algorithms rests on the **cut property**. In graph theory, a **cut** partitions the vertices of a graph into two disjoint sets. The cheapest edge crossing between these two sets is always safe to include in a minimum spanning tree.
+The correctness of both algorithms rests on two dual geometric principles:
 
-To understand why, suppose an optimal spanning tree connects the two sets using a more expensive crossing edge instead. Swapping that expensive edge for the cheapest crossing edge maintains full connectivity across the cut without increasing total weight. Therefore, at least one optimal spanning tree must contain the cheapest crossing edge.
+1. **The Cut Property:** In graph theory, a **cut** partitions the vertices of a graph into two disjoint sets. The cheapest edge crossing between these two sets is always safe to include in a minimum spanning tree. Suppose an optimal spanning tree connects the two sets using a more expensive crossing edge instead. Swapping that expensive edge for the cheapest crossing edge maintains full connectivity across the cut without increasing total weight. Therefore, at least one optimal spanning tree must contain the cheapest crossing edge.
+2. **The Cycle Property:** In any cycle of a connected graph, the edge with the strictly largest weight cannot belong to any minimum spanning tree. Kruskal's algorithm leverages this property directly: whenever an edge forms a cycle with previously accepted edges, it is guaranteed to have the highest weight in that cycle (since edges are processed cheapest-first), so discarding it is provably safe.
 
-Prim's algorithm applies this rule by defining the cut between vertices in the growing tree and vertices outside it. Kruskal's algorithm applies it by defining the cut between a candidate edge's component and the rest of the graph. Because every choice selects an edge that belongs to at least one valid optimal tree, neither algorithm makes an irreversible mistake.
+Prim's algorithm applies the cut property by defining the cut between vertices in the growing tree and vertices outside it. Kruskal's algorithm applies it by defining the cut between a candidate edge's component and the rest of the graph. Because every choice selects an edge that belongs to at least one valid optimal tree, neither algorithm makes an irreversible mistake.
 
 ## Analysis
 
-- **Prim's algorithm:** with an adjacency matrix and a simple linear scan for the cheapest crossing edge, the running time is $O(V^2)$. When implemented with an adjacency list and a binary [priority queue](/courses/data-structures/heaps#the-interface), the running time drops to $O(E \log V)$.
-- **Kruskal's algorithm:** sorting edges takes $O(E \log E)$, which equals $O(E \log V)$ because $E \le V^2$. Checking whether two vertices share the same component uses a [union-find](/courses/data-structures/union-find#the-interface) disjoint-set data structure: each vertex points to a parent representative, `find` traverses pointers to identify the root, and two vertices share a component when their roots match. Adding an edge links one root to the other, merging their trees. Using path compression and union by rank keeps operations nearly $O(1)$ amortized time.
+- **Prim's algorithm:** with an adjacency matrix and a simple linear scan for the cheapest crossing edge, the running time is $\Theta(V^2)$. When implemented with an adjacency list and a binary [priority queue](/courses/data-structures/heaps#the-interface), the running time drops to $O(E \log V)$.
+- **Kruskal's algorithm:** sorting $|E|$ edges takes $O(E \log E)$. Because a simple graph without multi-edges has at most $E \le V^2$ edges, $\log E \le \log(V^2) = 2 \log V$, meaning $O(E \log E) = O(E \log V)$. Checking whether two vertices share the same component uses a [union-find](/courses/data-structures/union-find#the-interface) disjoint-set data structure: each vertex points to a parent representative, `find` traverses pointers to identify the root, and two vertices share a component when their roots match. Adding an edge links one root to the other, merging their trees. Using path compression and union by rank keeps each operation nearly $O(1)$ amortized time ($O(\alpha(V))$, where the inverse Ackermann function $\alpha(V) \le 4$ for all physical graph sizes). The entire edge-inspection loop runs in $O(E \alpha(V))$ time, which is strictly dominated by the $O(E \log V)$ sorting step.
 
 As a general guideline, choose Prim's algorithm for **dense** graphs, where the edge count approaches the maximum $V(V-1)/2$. Choose Kruskal's algorithm for **sparse** graphs, where the edge count is closer to $V$, because having fewer edges minimizes sorting time.
+
+**Disconnected graphs and spanning forests:** If a graph is disconnected with $k > 1$ components, Prim's algorithm only spans the component containing its initial vertex. Kruskal's algorithm, however, processes all edges globally and naturally constructs a **Minimum Spanning Forest (MSF)** consisting of $V - k$ edges spanning each component independently.
 
 <Callout tone="orange" label="Common mistakes with Prim and Kruskal">
 **Confusing candidate edges in Prim:** In Prim's algorithm, every candidate edge must directly attach to the tree constructed so far. Selecting the cheapest edge anywhere in the entire graph is Kruskal's strategy, not Prim's. In the six-vertex example, after selecting edge ab (weight 3), Prim chooses bc (weight 1), and only considers ef (weight 2) once vertex f has joined the tree.
@@ -192,41 +208,87 @@ Advanced Algorithms provides full proofs for these properties, in [greedy algori
 
 ## The Java
 
-The visualizer illustrates Prim's algorithm. Here is a complete Java implementation of Kruskal's algorithm using a lightweight union-find structure:
+Here are complete, runnable Java implementations of both Prim's algorithm (using an adjacency matrix in $\Theta(V^2)$ time) and Kruskal's algorithm (using Disjoint Sets with path compression in $O(E \log V)$ time):
 
 ```java
 import java.util.Arrays;
 
-public class Kruskal {
+public class SpanningTreeAlgorithms {
 
+    // --- 1. Prim's Algorithm (Adjacency Matrix, Theta(V^2)) ---
+    static int prim(int n, int[][] adj) {
+        boolean[] inTree = new boolean[n];
+        int[] key = new int[n];       // smallest edge weight connecting to tree
+        int[] parent = new int[n];    // parent vertex in tree
+        Arrays.fill(key, Integer.MAX_VALUE);
+        Arrays.fill(parent, -1);
+
+        key[0] = 0;                   // start tree at vertex 0 (vertex 'a')
+        int totalWeight = 0;
+
+        for (int step = 0; step < n; step++) {
+            // Find unvisited vertex with smallest key
+            int u = -1;
+            for (int i = 0; i < n; i++) {
+                if (!inTree[i] && (u == -1 || key[i] < key[u])) {
+                    u = i;
+                }
+            }
+
+            inTree[u] = true;
+            totalWeight += key[u];
+
+            // Relax edges leaving u to unvisited neighbors
+            for (int v = 0; v < n; v++) {
+                if (adj[u][v] > 0 && !inTree[v] && adj[u][v] < key[v]) {
+                    key[v] = adj[u][v];
+                    parent[v] = u;
+                }
+            }
+        }
+        return totalWeight;
+    }
+
+    // --- 2. Kruskal's Algorithm (Union-Find with Path Compression) ---
     static int find(int[] parent, int x) {
-        while (parent[x] != x) x = parent[x];
-        return x;
+        if (parent[x] != x) parent[x] = find(parent, parent[x]); // path compression
+        return parent[x];
     }
 
     static int kruskal(int n, int[][] edges) {        // each edge: {u, v, weight}
-        Arrays.sort(edges, (a, b) -> a[2] - b[2]);    // greedy order: cheapest first
+        // Use Integer.compare to prevent arithmetic overflow on negative weights
+        Arrays.sort(edges, (a, b) -> Integer.compare(a[2], b[2]));
         int[] parent = new int[n];
         for (int i = 0; i < n; i++) parent[i] = i;
 
-        int total = 0, used = 0;
+        int totalWeight = 0, used = 0;
         for (int[] e : edges) {
             int ru = find(parent, e[0]), rv = find(parent, e[1]);
-            if (ru == rv) continue;                   // same tree: would make a cycle
-            parent[ru] = rv;                          // join the two trees
-            total += e[2];
+            if (ru == rv) continue;                   // same tree: would form a cycle
+            parent[ru] = rv;                          // union the two trees
+            totalWeight += e[2];
             if (++used == n - 1) break;               // tree complete
         }
-        return total;
+        return totalWeight;
     }
 
     public static void main(String[] args) {
-        // the notes' graph, with a = 0, b = 1, c = 2, d = 3, e = 4, f = 5
+        // Six vertices: a = 0, b = 1, c = 2, d = 3, e = 4, f = 5
         int[][] edges = {
-            {0,1,3}, {1,2,1}, {1,5,4}, {2,5,4}, {0,5,5},
-            {5,3,5}, {0,4,6}, {2,3,6}, {5,4,2}, {4,3,8}
+            {0, 1, 3}, {1, 2, 1}, {1, 5, 4}, {2, 5, 4}, {0, 5, 5},
+            {5, 3, 5}, {0, 4, 6}, {2, 3, 6}, {5, 4, 2}, {4, 3, 8}
         };
-        System.out.println(kruskal(6, edges));        // 15
+
+        // Build adjacency matrix for Prim
+        int n = 6;
+        int[][] adj = new int[n][n];
+        for (int[] e : edges) {
+            adj[e[0]][e[1]] = e[2];
+            adj[e[1]][e[0]] = e[2];
+        }
+
+        System.out.println("Prim MST weight:    " + prim(n, adj));     // 15
+        System.out.println("Kruskal MST weight: " + kruskal(n, edges)); // 15
     }
 }
 ```

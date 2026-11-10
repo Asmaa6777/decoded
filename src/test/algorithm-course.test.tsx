@@ -1361,6 +1361,163 @@ describe("visualizers step all the way through", () => {
         expect(dpForwards[5]).toBe(200);
         expect(dpForwards).toEqual([0, 40, 80, 120, 160, 200]);
       });
+
+      it("verifies Prim's algorithm adjacency matrix implementation returns total weight 15", () => {
+        // Six vertices: a=0, b=1, c=2, d=3, e=4, f=5
+        const n = 6;
+        const edges = [
+          [0, 1, 3], [1, 2, 1], [1, 5, 4], [2, 5, 4], [0, 5, 5],
+          [5, 3, 5], [0, 4, 6], [2, 3, 6], [5, 4, 2], [4, 3, 8],
+        ];
+        const adj = Array.from({ length: n }, () => new Array(n).fill(0));
+        for (const [u, v, w] of edges) {
+          adj[u][v] = w;
+          adj[v][u] = w;
+        }
+
+        const prim = (numVertices: number, matrix: number[][]): number => {
+          const inTree = new Array(numVertices).fill(false);
+          const key = new Array(numVertices).fill(Infinity);
+          key[0] = 0;
+          let total = 0;
+
+          for (let step = 0; step < numVertices; step++) {
+            let u = -1;
+            for (let i = 0; i < numVertices; i++) {
+              if (!inTree[i] && (u === -1 || key[i] < key[u])) {
+                u = i;
+              }
+            }
+            inTree[u] = true;
+            total += key[u];
+
+            for (let v = 0; v < numVertices; v++) {
+              if (matrix[u][v] > 0 && !inTree[v] && matrix[u][v] < key[v]) {
+                key[v] = matrix[u][v];
+              }
+            }
+          }
+          return total;
+        };
+
+        expect(prim(n, adj)).toBe(15);
+      });
+
+      it("verifies Kruskal's algorithm with path compression union-find returns total weight 15", () => {
+        const n = 6;
+        const edges = [
+          [0, 1, 3], [1, 2, 1], [1, 5, 4], [2, 5, 4], [0, 5, 5],
+          [5, 3, 5], [0, 4, 6], [2, 3, 6], [5, 4, 2], [4, 3, 8],
+        ];
+
+        const kruskal = (numVertices: number, edgeList: number[][]): number => {
+          const sorted = [...edgeList].sort((a, b) => a[2] - b[2]);
+          const parent = Array.from({ length: numVertices }, (_, i) => i);
+
+          const find = (x: number): number => {
+            if (parent[x] !== x) parent[x] = find(parent[x]);
+            return parent[x];
+          };
+
+          let total = 0;
+          let used = 0;
+          for (const [u, v, w] of sorted) {
+            const ru = find(u);
+            const rv = find(v);
+            if (ru === rv) continue;
+            parent[ru] = rv;
+            total += w;
+            if (++used === numVertices - 1) break;
+          }
+          return total;
+        };
+
+        expect(kruskal(n, edges)).toBe(15);
+      });
+
+      it("verifies Fibonacci top-down memoization, bottom-up tabulation, and O(1) space equivalence", () => {
+        const fibMemo = (n: number, memo: number[] = []): number => {
+          if (n < 2) return n;
+          if (memo[n] !== undefined) return memo[n];
+          return (memo[n] = fibMemo(n - 1, memo) + fibMemo(n - 2, memo));
+        };
+
+        const fibTab = (n: number): number => {
+          if (n < 2) return n;
+          const F = new Array(n + 1).fill(0);
+          F[1] = 1;
+          for (let i = 2; i <= n; i++) F[i] = F[i - 1] + F[i - 2];
+          return F[n];
+        };
+
+        const fibOptimized = (n: number): number => {
+          if (n < 2) return n;
+          let prev2 = 0;
+          let prev1 = 1;
+          for (let i = 2; i <= n; i++) {
+            const curr = prev1 + prev2;
+            prev2 = prev1;
+            prev1 = curr;
+          }
+          return prev1;
+        };
+
+        for (let i = 0; i <= 20; i++) {
+          const m = fibMemo(i);
+          const t = fibTab(i);
+          const o = fibOptimized(i);
+          expect(m).toBe(t);
+          expect(o).toBe(t);
+        }
+        expect(fibTab(10)).toBe(55);
+      });
+
+      it("verifies 1D vs 2D knapsack agreement on edge cases (W=0, empty items, items too heavy)", () => {
+        const knapsack2D = (wt: number[], val: number[], W: number): number => {
+          if (!wt || !val || W <= 0 || wt.length === 0) return 0;
+          const n = wt.length;
+          const V: number[][] = Array.from({ length: n + 1 }, () => new Array(W + 1).fill(0));
+          for (let i = 1; i <= n; i++) {
+            for (let w = 1; w <= W; w++) {
+              if (wt[i - 1] > w) {
+                V[i][w] = V[i - 1][w];
+              } else {
+                V[i][w] = Math.max(V[i - 1][w], val[i - 1] + V[i - 1][w - wt[i - 1]]);
+              }
+            }
+          }
+          return V[n][W];
+        };
+
+        const knapsack1D = (wt: number[], val: number[], W: number): number => {
+          if (!wt || !val || W <= 0 || wt.length === 0) return 0;
+          const dp = new Array(W + 1).fill(0);
+          for (let i = 0; i < wt.length; i++) {
+            for (let w = W; w >= wt[i]; w--) {
+              dp[w] = Math.max(dp[w], val[i] + dp[w - wt[i]]);
+            }
+          }
+          return dp[W];
+        };
+
+        // Edge case: W = 0
+        expect(knapsack2D([3, 2], [10, 20], 0)).toBe(0);
+        expect(knapsack1D([3, 2], [10, 20], 0)).toBe(0);
+
+        // Edge case: empty items
+        expect(knapsack2D([], [], 10)).toBe(0);
+        expect(knapsack1D([], [], 10)).toBe(0);
+
+        // Edge case: all items too heavy
+        expect(knapsack2D([10, 20], [100, 200], 5)).toBe(0);
+        expect(knapsack1D([10, 20], [100, 200], 5)).toBe(0);
+
+        // Standard dataset
+        const wt = [3, 2, 4, 1];
+        const val = [100, 20, 60, 40];
+        expect(knapsack2D(wt, val, 5)).toBe(140);
+        expect(knapsack1D(wt, val, 5)).toBe(140);
+      });
     });
   });
 });
