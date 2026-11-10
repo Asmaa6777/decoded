@@ -3,6 +3,10 @@ import { VoltageBands, ClockExplorer, SerialParallel } from "@/components/mdx/Lo
 
 # Signals: Why Computers Use Only Two Values
 
+In electronic hardware, an electric **signal** is a physical quantity—specifically an electric voltage or current—that varies over time to carry data or instructions through a [circuit](/courses/logic-design/signals). 
+
+**Voltage** (measured in volts, $\text{V}$) represents the electrical potential difference between two physical conductors, acting like electrical pressure pushing electrons through a wire. In digital systems, every voltage is measured relative to a common zero-volt reference line called **ground** ($\text{GND}$, $0\text{ V}$).
+
 Picture a dimmer switch and a standard wall light switch. The dimmer can sit anywhere along a smooth dial, from completely off, through countless intermediate brightness levels, to fully bright. The standard wall switch has only two definite positions: ON and OFF, with nothing stable in between.
 
 An **analog** signal behaves like the dimmer switch: it varies continuously over time and can take on any value within a continuous range. When sound waves strike a microphone diaphragm, the microphone generates a continuous, varying voltage that mirrors every subtle vibration of air pressure.
@@ -26,23 +30,62 @@ HIGH -|---|       |       |   |
  LOW -+---+       +-------+   +----> Time
 ```
 
-Most electronic systems interface between both realms. When music is played from a phone or disc, a **DAC** (digital-to-analog converter) transforms stored digital bit sequences into the smooth voltage that drives headphones or a loudspeaker. When sound is recorded, an **ADC** (analog-to-digital converter) samples that continuous wave at regular time intervals, converting each voltage reading into a discrete binary number. You can explore how audio signals are converted in [sampling](/courses/computational-mathematics/sound-and-sampling#sampling-what-44100-per-second-means).
+Most electronic systems interface between both realms:
+
+- A **DAC** (digital-to-analog converter) transforms stored digital bit sequences into the smooth continuous voltage that drives headphones or a loudspeaker.
+- An **ADC** (analog-to-digital converter) converts continuous analog voltages into digital form using two operations:
+  1. **Sampling:** Measuring the analog voltage at uniform, periodic time intervals. You can explore how audio signals are converted in [sampling](/courses/computational-mathematics/sound-and-sampling#sampling-what-44100-per-second-means).
+  2. **Quantization:** Rounding each measured analog voltage to the nearest allowable discrete binary number.
+
+<Callout tone="orange" label="Mistake students make">
+**Assuming digital signals are physically ideal square waves with zero noise.** In the real physical world, electrons always obey continuous electromagnetic physics. The voltage in a copper trace is an analog waveform with smooth edges and continuous electrical noise. Digital circuits do not physically eliminate noise; they eliminate noise at the *interpretation* stage by grouping continuous voltage ranges into two discrete logical states.
+</Callout>
 
 ## Why two values?
 
-Why did computer engineers build complex machines out of only two values instead of ten, or twenty?
+Why did computer engineers build complex computing machines out of only two values instead of ten, or twenty?
 
-Electricity in real circuits is noisy. Wires pick up electromagnetic interference from nearby power lines, radio signals, thermal fluctuations, and neighboring traces on a printed circuit board (PCB). As a result, the voltage arriving at the receiving end of a wire is almost never identical to the voltage injected at the transmitting end.
+Electricity in real circuits is noisy. In electronics, **noise** refers to unwanted electrical fluctuations added to a useful signal. Real-world circuits suffer from several physical noise sources:
+- **Thermal noise (Johnson–Nyquist noise):** Random thermal agitation of electrons inside copper conductors and silicon resistors.
+- **Electromagnetic interference (EMI):** Wires act as antennas, picking up electromagnetic radiation from $50\text{ Hz}$ or $60\text{ Hz}$ AC power lines, radio broadcasts, electric motors, and switching power regulators.
+- **Capacitive and inductive coupling:** Rapidly changing signals on neighboring copper traces on a **printed circuit board (PCB)**—an insulating fiberglass board with etched copper pathways connecting electronic components—couple energy into adjacent lines.
 
-If an electronic system attempted to represent the ten decimal digits $0$ through $9$ using ten distinct voltage steps between $0\text{ V}$ and $5\text{ V}$ (each step spaced only $0.5\text{ V}$ apart), a minor voltage spike of just $0.3\text{ V}$ would flip a $3$ into a $4$. The system would corrupt calculations constantly.
+As a result, the voltage arriving at the receiving end of a wire is almost never identical to the voltage injected at the transmitting end.
+
+### The fragility of decimal hardware
+
+If an electronic system attempted to represent the ten decimal digits $0$ through $9$ using ten distinct voltage steps between $0.0\text{ V}$ and $5.0\text{ V}$, each step would be spaced only $0.5\text{ V}$ apart:
+- Digit 0: $0.0\text{ V}$
+- Digit 1: $0.5\text{ V}$
+- Digit 2: $1.0\text{ V}$
+- Digit 3: $1.5\text{ V}$
+- Digit 4: $2.0\text{ V}$
+- ...
+- Digit 9: $4.5\text{ V}$
+
+The decision threshold between digit 3 and digit 4 would sit halfway between their nominal voltages:
+
+$$V_{threshold} = \frac{1.5\text{ V} + 2.0\text{ V}}{2} = 1.75\text{ V}$$
+
+If the transmitter outputs a valid digit 3 at $1.50\text{ V}$, the maximum upward noise spike the signal can tolerate before flipping is:
+
+$$\Delta V_{tolerance} = V_{threshold} - V_{nominal} = 1.75\text{ V} - 1.50\text{ V} = 0.25\text{ V}$$
+
+A minor voltage spike of just $+0.26\text{ V}$ lifts the wire voltage to $1.76\text{ V} > 1.75\text{ V}$. The receiving gate incorrectly registers a digit 4 instead of a digit 3! In a system executing billions of operations every second, arithmetic calculations would suffer continuous data corruption.
 
 ```
 10 Decimal Voltage Levels (Fragile):
    5.0 V -- [ 9 ]
    4.5 V -- [ 8 ]
-   4.0 V -- [ 7 ]   <-- A small 0.3 V noise spike causes an error!
+   4.0 V -- [ 7 ]   <-- A small 0.26 V noise spike flips a 3 into a 4!
    3.5 V -- [ 6 ]
-   ...
+   3.0 V -- [ 5 ]
+   2.5 V -- [ 4 ]
+   2.0 V -- [ 4 ]
+   1.75V ---------------- Threshold between 3 and 4
+   1.5 V -- [ 3 ]
+   1.0 V -- [ 2 ]
+   0.5 V -- [ 1 ]
    0.0 V -- [ 0 ]
 
 2 Binary Voltage Bands (Robust):
@@ -57,16 +100,22 @@ If an electronic system attempted to represent the ten decimal digits $0$ throug
 
 By restricting the system to only two values, engineers establish wide buffer zones called **logic levels**. A circuit does not have to measure an exact voltage; it only needs to detect whether a voltage falls into the upper band or the lower band.
 
+<Callout tone="orange" label="Mistake students make">
+**Assuming binary was chosen because base-2 math is inherently superior.** Mathematically, ternary (base-3) computers are slightly more radix-efficient, and working decimal computers have been built. Binary triumphed because of silicon semiconductor physics: building a transistor that operates as an ON/OFF switch (driven fully into conduction or fully cut off) is far simpler, cheaper, and more tolerant of manufacturing variations and temperature swings than building devices with three or ten distinct stable states.
+</Callout>
+
 ## Logic levels and threshold voltages
 
-Every digital integrated circuit (IC) manufacturer defines strict voltage boundaries for inputs and outputs. Four standard parameters govern these boundaries:
+Every digital **integrated circuit (IC)**—a microscopic electronic network of transistors, diodes, and resistors fabricated onto a single silicon semiconductor chip—defines strict voltage boundaries for inputs and outputs. 
 
-1. **$V_{OH(min)}$ (Output High Minimum):** The lowest voltage guaranteed at the output of a driving gate when sending a logic 1.
-2. **$V_{OL(max)}$ (Output Low Maximum):** The highest voltage guaranteed at the output of a driving gate when sending a logic 0.
-3. **$V_{IH(min)}$ (Input High Minimum):** The lowest input voltage guaranteed to be recognized as a valid logic 1 by a receiving gate.
-4. **$V_{IL(max)}$ (Input Low Maximum):** The highest input voltage guaranteed to be recognized as a valid logic 0 by a receiving gate.
+Four standard parameters govern these boundaries:
 
-The gap between $V_{IL(max)}$ and $V_{IH(min)}$ is called the **transition region**, **indeterminate region**, or **forbidden region**. If a signal hovers in this zone, a logic gate might interpret it as a 0, as a 1, or toggle uncontrollably. In CMOS gates, an input lingering in this middle region causes both the pull-up PMOS and pull-down NMOS transistors to conduct simultaneously, drawing a burst of shoot-through current that overheats the chip. Digital circuits are engineered to swing rapidly across this forbidden zone.
+1. **$V_{OH(min)}$ (Voltage Output High Minimum):** The lowest voltage guaranteed at the output of a driving gate when sending a logic 1.
+2. **$V_{OL(max)}$ (Voltage Output Low Maximum):** The highest voltage guaranteed at the output of a driving gate when sending a logic 0.
+3. **$V_{IH(min)}$ (Voltage Input High Minimum):** The lowest input voltage guaranteed to be recognized as a valid logic 1 by a receiving gate.
+4. **$V_{IL(max)}$ (Voltage Input Low Maximum):** The highest input voltage guaranteed to be recognized as a valid logic 0 by a receiving gate.
+
+The positive power supply connected to the chip is labeled $V_{CC}$ (in bipolar/TTL circuits) or $V_{DD}$ (in CMOS circuits), and the zero-volt reference is labeled $\text{GND}$ ($0\text{ V}$).
 
 ```
 Logic Level Boundaries:
@@ -85,41 +134,94 @@ V_OL --+------------------+                   |   Valid LOW      |
    GND +------------------+               GND +------------------+
 ```
 
+### The forbidden region and shoot-through current
+
+The gap between $V_{IL(max)}$ and $V_{IH(min)}$ is called the **transition region**, **indeterminate region**, or **forbidden region**. If an input voltage hovers in this zone, the gate's behavior is electrically undefined.
+
+In **CMOS** (Complementary Metal-Oxide-Semiconductor) chips, logic gates are constructed from complementary pairs of transistors acting as electrically controlled switches:
+- A **PMOS** pull-up transistor connects the output to the positive supply rail ($V_{DD}$) when the input is LOW.
+- An **NMOS** pull-down transistor connects the output to ground ($\text{GND}$) when the input is HIGH.
+
+Under normal operation, exactly one transistor is ON while the other is completely OFF, drawing virtually zero DC current from the power supply.
+
+However, if an input signal hovers in the forbidden middle region around $V_{DD}/2$, **both the PMOS and NMOS transistors turn partially ON at the same time**. This creates a direct, low-resistance conductive path straight from $V_{DD}$ to $\text{GND}$. The resulting heavy surge of current is known as **shoot-through current** (or crowbar current). It causes severe power drain, sags the system power rails, and produces rapid thermal overheating that can permanently damage the silicon die.
+
+<Callout tone="sky" label="Why unused CMOS pins must never float">
+Because CMOS transistor gates have extremely high input impedance ($> 10^{12}\ \Omega$), an unconnected (floating) input pin acts like a tiny antenna. Ambient electrostatic fields charge the pin's parasitic capacitance to an intermediate voltage right in the forbidden region. This turns both transistors partially ON, causing shoot-through current and high-frequency thermal oscillations. Every unused CMOS input must always be tied directly to $V_{DD}$ or $\text{GND}$.
+</Callout>
+
+<Callout tone="orange" label="Mistake students make">
+**Expecting a gate to output an error state or half-voltage when its input is in the forbidden region.** Digital logic gates have no third "error" output pin. When an input lands in the indeterminate band, internal gate gain and thermal micro-fluctuations force the output to arbitrarily snap to 0, snap to 1, or oscillate violently between them.
+</Callout>
+
 ## Noise margins
 
 The difference between what a driver is guaranteed to produce and what a receiver requires to register a valid state is the **noise margin**. It represents the maximum extraneous noise voltage that can corrupt a signal wire without producing an erroneous logic reading.
 
 Digital circuits have two distinct noise margins:
 
-1. **High-level noise margin ($V_{NH}$):**
+1. **High-level noise margin ($V_{NH}$):** The safety buffer on a logic 1 line against negative noise spikes:
    $$V_{NH} = V_{OH(min)} - V_{IH(min)}$$
-2. **Low-level noise margin ($V_{NL}$):**
+   *Reasoning:* The transmitter promises to produce at least $V_{OH(min)}$. The receiver requires at least $V_{IH(min)}$ to recognize a 1. The downward voltage drop the wire can endure before falling below $V_{IH(min)}$ is the difference between these two bounds.
+
+2. **Low-level noise margin ($V_{NL}$):** The safety buffer on a logic 0 line against positive noise spikes:
    $$V_{NL} = V_{IL(max)} - V_{OL(max)}$$
+   *Reasoning:* The transmitter promises not to exceed $V_{OL(max)}$. The receiver tolerates voltages up to $V_{IL(max)}$ as a valid 0. The upward voltage spike the wire can endure before exceeding $V_{IL(max)}$ is the difference between these two bounds.
 
 The overall quantitative noise margin $V_N$ of a logic family is the smaller of the two:
 
 $$V_N = \min(V_{NH}, V_{NL})$$
 
+*Reasoning:* A digital line must carry both 0s and 1s reliably. If $V_{NL} = 0.4\text{ V}$ and $V_{NH} = 0.9\text{ V}$, a noise spike of $+0.5\text{ V}$ on a LOW line will cause a bit error. The circuit is only as reliable as its weaker threshold.
+
 ### Comparing standard logic families
 
-Different logic technologies operate on different supply rails and have distinct noise tolerances:
+Different semiconductor technologies operate on different supply rails and exhibit distinct noise tolerances:
 
-| Logic Family | Supply Voltage ($V_{CC}$) | $V_{OH(min)}$ | $V_{OL(max)}$ | $V_{IH(min)}$ | $V_{IL(max)}$ | $V_{NH}$ | $V_{NL}$ | Overall Margin ($V_N$) |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **5V Standard TTL** | $5.0\text{ V}$ | $2.4\text{ V}$ | $0.4\text{ V}$ | $2.0\text{ V}$ | $0.8\text{ V}$ | $0.4\text{ V}$ | $0.4\text{ V}$ | **$0.4\text{ V}$** |
-| **5V CMOS (74HC)** | $5.0\text{ V}$ | $4.4\text{ V}$ | $0.1\text{ V}$ | $3.5\text{ V}$ | $1.5\text{ V}$ | $0.9\text{ V}$ | $1.4\text{ V}$ | **$0.9\text{ V}$** |
-| **3.3V LVCMOS** | $3.3\text{ V}$ | $2.4\text{ V}$ | $0.4\text{ V}$ | $2.0\text{ V}$ | $0.8\text{ V}$ | $0.4\text{ V}$ | $0.4\text{ V}$ | **$0.4\text{ V}$** |
+| Logic Family | Technology Type | Supply Voltage ($V_{CC}$) | $V_{OH(min)}$ | $V_{OL(max)}$ | $V_{IH(min)}$ | $V_{IL(max)}$ | $V_{NH}$ | $V_{NL}$ | Overall Margin ($V_N$) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **5V Standard TTL** | Bipolar (BJT) | $5.0\text{ V}$ | $2.4\text{ V}$ | $0.4\text{ V}$ | $2.0\text{ V}$ | $0.8\text{ V}$ | $0.4\text{ V}$ | $0.4\text{ V}$ | **$0.4\text{ V}$** |
+| **5V CMOS (74HC)** | CMOS (MOSFET) | $5.0\text{ V}$ | $4.4\text{ V}$ | $0.1\text{ V}$ | $3.5\text{ V}$ | $1.5\text{ V}$ | $0.9\text{ V}$ | $1.4\text{ V}$ | **$0.9\text{ V}$** |
+| **3.3V LVCMOS** | Low-Voltage CMOS | $3.3\text{ V}$ | $2.4\text{ V}$ | $0.4\text{ V}$ | $2.0\text{ V}$ | $0.8\text{ V}$ | $0.4\text{ V}$ | $0.4\text{ V}$ | **$0.4\text{ V}$** |
 
-Notice that 5V CMOS offers more than double the noise immunity of 5V TTL ($0.9\text{ V}$ vs $0.4\text{ V}$).
+Notice that 5V CMOS offers more than double the noise immunity of 5V TTL ($0.9\text{ V}$ vs $0.4\text{ V}$). This is because CMOS outputs pull almost all the way to the supply rails ($4.4\text{ V}$ and $0.1\text{ V}$), whereas bipolar TTL outputs experience internal transistor diode voltage drops that limit $V_{OH}$ to approximately $2.4\text{ V}$–$2.7\text{ V}$.
+
+<Callout tone="mint" label="Interfacing mismatched families: 74HCT">
+What happens if you connect a 5V TTL output directly to a 5V 74HC CMOS input?
+- The TTL output guarantees $V_{OH(min)} = 2.4\text{ V}$.
+- The 74HC CMOS input requires $V_{IH(min)} = 3.5\text{ V}$ ($0.7 \times V_{CC}$).
+
+Because $2.4\text{ V} < 3.5\text{ V}$, a valid TTL HIGH lands directly inside the CMOS forbidden region! The CMOS receiver will not reliably recognize logic 1. 
+
+To solve this, chip manufacturers created the **74HCT** family: high-speed CMOS chips fabricated with modified input transistor geometries that match standard TTL thresholds ($V_{IH(min)} = 2.0\text{ V}$, $V_{IL(max)} = 0.8\text{ V}$).
+</Callout>
 
 ### Worked example: surviving interference
 
-A 5V TTL gate outputs a valid HIGH at $V_{OH} = 2.7\text{ V}$. As the trace passes near a spinning electric fan motor, inductive coupling induces a negative noise spike of $\Delta V = -0.5\text{ V}$.
+Consider a standard 5V TTL driver connected to a receiving gate over a PCB trace ($V_{OH(min)} = 2.4\text{ V}$, $V_{OL(max)} = 0.4\text{ V}$, $V_{IH(min)} = 2.0\text{ V}$, $V_{IL(max)} = 0.8\text{ V}$).
 
-1. What voltage arrives at the receiver?
+**Case 1: Negative noise spike on a HIGH line**
+1. The driver outputs a nominal HIGH of $V_{OH} = 2.7\text{ V}$.
+2. Electromagnetic coupling induces a negative noise spike of $\Delta V = -0.5\text{ V}$.
+3. Voltage arriving at the receiver:
    $$V_{in} = V_{OH} + \Delta V = 2.7\text{ V} - 0.5\text{ V} = 2.2\text{ V}$$
-2. Does the receiver register the correct bit?
-   For TTL, the minimum voltage required to register HIGH is $V_{IH(min)} = 2.0\text{ V}$. Because $2.2\text{ V} \ge 2.0\text{ V}$, the receiver still reads a clean logic 1. The signal line was visibly distorted by noise, yet the binary information remained $100\%$ intact.
+4. Decision: Because $2.2\text{ V} \ge V_{IH(min)} = 2.0\text{ V}$, the receiver registers a clean logic 1. The data is preserved.
+
+**Case 2: Positive noise spike on a LOW line**
+1. The driver outputs a nominal LOW of $V_{OL} = 0.3\text{ V}$.
+2. Inductive coupling induces a positive noise spike of $\Delta V = +0.35\text{ V}$.
+3. Voltage arriving at the receiver:
+   $$V_{in} = V_{OL} + \Delta V = 0.3\text{ V} + 0.35\text{ V} = 0.65\text{ V}$$
+4. Decision: Because $0.65\text{ V} \le V_{IL(max)} = 0.8\text{ V}$, the receiver registers a clean logic 0.
+
+**Case 3: Excessive noise causing failure**
+1. If the positive noise spike on the LOW line increases to $\Delta V = +0.65\text{ V}$:
+   $$V_{in} = 0.3\text{ V} + 0.65\text{ V} = 0.95\text{ V}$$
+2. Decision: Because $0.95\text{ V} > V_{IL(max)} = 0.8\text{ V}$, the signal enters the forbidden region ($0.8\text{ V} < 0.95\text{ V} < 2.0\text{ V}$). The receiver output is indeterminate and calculations may corrupt.
+
+<Callout tone="orange" label="Mistake students make">
+**Inverting the low-level noise margin formula.** Students frequently write $V_{NL} = V_{OL(max)} - V_{IL(max)}$, which yields a negative number (e.g. $0.4\text{ V} - 0.8\text{ V} = -0.4\text{ V}$). Noise margins are always positive tolerances: subtract the driver limit from the receiver threshold ($V_{NL} = V_{IL(max)} - V_{OL(max)} > 0$). Another frequent error is calculating $V_{OH} - V_{OL}$; that measures total output voltage swing, not noise margin.
+</Callout>
 
 Drag the noise slider in the interactive diagram below to observe how noise affects the signal line before a reading flips into the forbidden band:
 
@@ -130,16 +232,45 @@ Drag the noise slider in the interactive diagram below to observe how noise affe
 In digital electronics, the relationship between electrical voltages and abstract binary numbers is a deliberate convention chosen by the system designer:
 
 - **Positive logic (active-HIGH):**
-  - $\text{HIGH voltage} \to \text{Logic } 1$ ($\text{TRUE}$)
-  - $\text{LOW voltage} \to \text{Logic } 0$ ($\text{FALSE}$)
+  - $\text{HIGH voltage} \to \text{Logic } 1$ ($\text{TRUE}$, asserted)
+  - $\text{LOW voltage} \to \text{Logic } 0$ ($\text{FALSE}$, unasserted)
 - **Negative logic (active-LOW):**
-  - $\text{LOW voltage} \to \text{Logic } 1$ ($\text{TRUE}$)
-  - $\text{HIGH voltage} \to \text{Logic } 0$ ($\text{FALSE}$)
+  - $\text{LOW voltage} \to \text{Logic } 1$ ($\text{TRUE}$, asserted)
+  - $\text{HIGH voltage} \to \text{Logic } 0$ ($\text{FALSE}$, unasserted)
 
-Unless stated otherwise, digital design defaults to positive logic. However, active-LOW signals are common on physical chips for control signals such as system resets ($\overline{\text{RESET}}$), chip selects ($\overline{\text{CS}}$ or $\text{CS\#}$), and write enables ($\overline{\text{WE}}$). 
+Unless stated otherwise, digital design defaults to positive logic. However, active-LOW signals are common on physical chips for control signals such as system resets ($\overline{\text{RESET}}$ or `RESET_N`), chip selects ($\overline{\text{CS}}$ or `CS#`), and write enables ($\overline{\text{WE}}$). On circuit schematic diagrams, an active-LOW pin is denoted by an **inversion bubble** (a small circle) on the gate input or IC package pin.
 
-<Callout tone="mint" label="Why active-LOW control lines exist">
-Active-LOW inputs allow multiple chips to connect to a single shared wire using pull-up resistors (open-collector or open-drain outputs). The resistor holds the wire HIGH (inactive) by default. Any chip on the bus can safely pull the wire LOW to signal an action without colliding with another driver, creating a natural wired-OR connection.
+### Push-pull vs open-drain outputs and pull-up resistors
+
+To understand why active-LOW signals are so popular, we must look at how output stages are wired:
+
+```
+Push-Pull Output (Totem Pole):         Open-Drain Output with Pull-Up Resistor:
+         V_CC                                    V_CC
+          |                                       |
+       [PMOS] (Pulls UP)                     [Pull-up Resistor R]
+          |                                       |
+Output ---+                            Output ----+--------- Bus Wire
+          |                                       |
+       [NMOS] (Pulls DOWN)                     [NMOS] (Only pulls DOWN)
+          |                                       |
+         GND                                     GND
+```
+
+1. **Standard push-pull outputs (totem-pole):** Contain both an active pull-up transistor and an active pull-down transistor. Connecting two push-pull outputs directly together is forbidden: if Gate A outputs HIGH ($5\text{ V}$) while Gate B outputs LOW ($0\text{ V}$), a dead short-circuit flows between $V_{CC}$ and $\text{GND}$ through the chips (known as **bus contention**), burning out the transistors.
+2. **Open-drain (or open-collector) outputs:** Omit the upper pull-up transistor entirely. The chip can only pull the wire to $\text{GND}$ (LOW) or turn OFF completely (entering a high-impedance state, Hi-Z).
+3. **Pull-up resistor:** A single external resistor (typically $2.2\text{ k}\Omega$ to $10\text{ k}\Omega$) connects the shared wire to $V_{CC}$.
+   - When all chips on the bus are idle (switches open), the resistor gently pulls the wire up to $V_{CC}$ (inactive state).
+   - If ANY chip on the bus asserts an action, it turns its NMOS transistor ON, pulling the wire down to $0\text{ V}$ (active-LOW).
+
+This hardware configuration creates a **wired-AND** (or wired-OR) connection. Multiple chips (such as a CPU, a manual push-button, and a power monitor) can all drive the same $\overline{\text{RESET}}$ line simultaneously without damaging each other.
+
+<Callout tone="mint" label="Fail-safe power-on property">
+Active-LOW reset lines provide a natural physical fail-safe. When a computer is powered on, power supply voltages take milliseconds to ramp up, and unpowered chips sit near $0\text{ V}$. An active-LOW reset line naturally holds the CPU in reset until $V_{CC}$ stabilizes and the pull-up resistor lifts the line to HIGH, preventing spurious instruction execution during brownouts.
+</Callout>
+
+<Callout tone="orange" label="Mistake students make">
+**Confusing active-LOW signals with negative voltages.** Active-LOW signals do not use negative supply rails like $-5\text{ V}$. All voltages remain strictly positive (between $0\text{ V}$ and $+5\text{ V}$ or $+3.3\text{ V}$). "LOW" simply means electrical ground ($0\text{ V}$). Another common lab error is omitting the pull-up resistor on an open-drain bus (such as I2C); without the resistor, the line can be pulled LOW but floats indeterminately when released, never returning to HIGH.
 </Callout>
 
 ## Bits, nibbles, bytes, and words
@@ -147,11 +278,28 @@ Active-LOW inputs allow multiple chips to connect to a single shared wire using 
 A single binary digit is called a **bit** (short for *binary digit*), coined by mathematician John Tukey in 1946. Bits are grouped to represent quantities, characters, and instructions:
 
 - **Bit:** 1 binary digit ($0$ or $1$). Can represent $2^1 = 2$ states.
-- **Nibble:** A cluster of 4 bits. Can represent $2^4 = 16$ states, which corresponds to exactly one hexadecimal digit ($0\text{--}\text{F}$).
-- **Byte (or octet):** A cluster of 8 bits. Can represent $2^8 = 256$ states. The byte is the standard addressable unit of memory in modern computer architectures.
-- **Word:** The natural data unit processed by a computer CPU datapath in a single instruction cycle. On an older 16-bit processor, a word is 16 bits (2 bytes); on modern 64-bit architectures, a quadword is 64 bits (8 bytes).
+- **Nibble:** A cluster of 4 bits. Can represent $2^4 = 16$ states ($0$ through $15$), which corresponds to exactly one hexadecimal digit ($0\text{--}\text{F}$).
+- **Byte (or octet):** A cluster of 8 bits. Can represent $2^8 = 256$ states ($0$ through $255$). The byte is the standard addressable unit of memory in modern computer architectures.
+- **Word:** The natural data unit processed by a computer CPU **datapath** (the internal network of registers, ALU, and buses) in a single instruction cycle. On an older 16-bit processor, a word is 16 bits (2 bytes); on modern 64-bit architectures, a quadword is 64 bits (8 bytes).
 
-The full rules for translating patterns of bits into integers, negative numbers, and text are explored in the [number systems lesson](/courses/logic-design/number-systems).
+### Positional notation: MSB and LSB
+
+Within any binary string, individual bit positions carry different positional weights:
+- **MSB (Most Significant Bit):** The leftmost bit in the binary sequence, which carries the highest power of 2 ($2^{n-1}$).
+- **LSB (Least Significant Bit):** The rightmost bit in the binary sequence, which carries the lowest power of 2 ($2^0 = 1$).
+
+For example, in the 8-bit unsigned byte `10000001`:
+- $\text{MSB} = 1$, representing $1 \times 2^7 = 128$
+- $\text{LSB} = 1$, representing $1 \times 2^0 = 1$
+- Total value $= 128 + 1 = 129$
+
+An $n$-bit register can represent $2^n$ unique states. When representing unsigned non-negative integers, the values range from $0$ to $2^n - 1$.
+
+The full rules for translating patterns of bits into integers, negative numbers, and text are explored in the [number systems lesson](/courses/logic-design/number-systems#positional-number-representation-and-the-radix).
+
+<Callout tone="orange" label="Mistake students make">
+**Confusing total state count ($2^n$) with maximum value ($2^n - 1$).** An 8-bit byte can represent $2^8 = 256$ distinct combinations, but because the first value is 0, the maximum representable value is $255$. Confusing $256$ with $255$ causes off-by-one errors and integer overflow bugs in device drivers and hardware counters.
+</Callout>
 
 ## The clock
 
@@ -168,27 +316,42 @@ HIGH -|---|           |               |           |
           <---------- Period (T) ------>
 ```
 
-A periodic pulse train is characterized by three fundamental measurements:
+A periodic pulse train is characterized by four fundamental measurements:
 
-1. **Period ($T$):** The time required to complete one full cycle of the waveform, measured in seconds (or milliseconds $\text{ms}$, microseconds $\mu\text{s}$, nanoseconds $\text{ns}$, picoseconds $\text{ps}$).
+1. **Period ($T$):** The time required to complete one full cycle of the waveform, measured in seconds ($\text{s}$).
 2. **Frequency ($f$):** The number of complete cycles executed per second, measured in hertz ($\text{Hz}$):
    $$f = \frac{1}{T}, \quad T = \frac{1}{f}$$
-   Common digital frequencies:
-   - $1\text{ kHz} = 10^3\text{ Hz} \iff T = 1\text{ ms}$
-   - $1\text{ MHz} = 10^6\text{ Hz} \iff T = 1\ \mu\text{s}$
-   - $100\text{ MHz} = 10^8\text{ Hz} \iff T = 10\text{ ns}$
-   - $1\text{ GHz} = 10^9\text{ Hz} \iff T = 1\text{ ns}$
-3. **Pulse width ($t_w$):** The duration during which the pulse remains at its active HIGH voltage level, measured at the $50\%$ amplitude points.
+3. **Pulse width ($t_w$):** The duration during which the pulse remains at its active HIGH voltage level, measured at the $50\%$ amplitude points of the rising and falling edges.
 4. **Duty cycle:** The fraction of the total period spent at the active HIGH level, expressed as a percentage:
    $$\text{Duty Cycle} = \frac{t_w}{T} \times 100\%$$
 
-A square wave has a symmetric duty cycle of $50\%$ ($t_w = T/2$). If a pulse is HIGH for $2\text{ ns}$ during a $10\text{ ns}$ period, its duty cycle is $(2 / 10) \times 100\% = 20\%$.
+A square wave has a symmetric duty cycle of $50\%$ ($t_w = T/2$). If a clock has a period of $T = 10\text{ ns}$ and is HIGH for $t_w = 2\text{ ns}$, its duty cycle is:
+
+$$\text{Duty Cycle} = \frac{2\text{ ns}}{10\text{ ns}} \times 100\% = 20\%$$
+
+### Standard digital frequency and period conversions
+
+Working with digital hardware requires fast, fluent conversion between clock frequencies and clock periods:
+
+| Frequency ($f$) | Period ($T$) | Common Application |
+| :--- | :--- | :--- |
+| **$1\text{ kHz}$** ($10^3\text{ Hz}$) | **$1\text{ ms}$** ($10^{-3}\text{ s}$) | Keyboard matrix scanning, switch debounce timers |
+| **$1\text{ MHz}$** ($10^6\text{ Hz}$) | **$1\ \mu\text{s}$** ($10^{-6}\text{ s}$) | Microcontroller peripherals, I2C fast mode |
+| **$10\text{ MHz}$** ($10^7\text{ Hz}$) | **$100\text{ ns}$** ($10^{-7}\text{ s}$) | Ethernet (10BASE-T), SPI buses |
+| **$100\text{ MHz}$** ($10^8\text{ Hz}$) | **$10\text{ ns}$** ($10^{-8}\text{ s}$) | FPGA system clocks, SDRAM |
+| **$1\text{ GHz}$** ($10^9\text{ Hz}$) | **$1\text{ ns}$** ($10^{-9}\text{ s}$) | Modern CPU clock cycles, DDR memory |
+| **$2.5\text{ GHz}$** ($2.5 \times 10^9\text{ Hz}$) | **$0.4\text{ ns}$** ($400\text{ ps}$) | Modern multi-core CPU cores, PCIe gen 1 |
+
+*Worked conversion:* If a CPU core operates at $2.5\text{ GHz}$, what is its clock period in picoseconds?
+$$T = \frac{1}{2.5 \times 10^9\text{ Hz}} = 0.4 \times 10^{-9}\text{ s} = 0.4\text{ ns} = 400\text{ ps}$$
 
 <ClockExplorer />
 
 ### Real edges: rise time and fall time
 
-In theoretical diagrams, pulse transitions appear as instantaneous vertical lines. In physical hardware, an electrical voltage cannot change instantaneously because every wire, connector pin, and transistor gate possesses capacitance and inductance that resist instantaneous changes in voltage and current.
+In theoretical circuit diagrams, clock transitions appear as instantaneous vertical lines. In physical hardware, an electrical voltage cannot change instantaneously because every wire, connector pin, and transistor gate possesses parasitic capacitance and parasitic inductance that resist instantaneous changes in voltage and current:
+- **Parasitic capacitance ($C$):** Charges and discharges through the resistance of the wire, creating an exponential voltage ramp governed by the time constant $\tau = RC$.
+- **Parasitic inductance ($L$):** Generates an opposing voltage whenever current changes rapidly ($\Delta V = L \frac{di}{dt}$).
 
 ```
 Real-World Pulse Transitions:
@@ -211,16 +374,22 @@ Two timing parameters quantify how quickly a real signal switches:
 - **Rise time ($t_r$):** The time required for the pulse to transition from $10\%$ to $90\%$ of its steady-state amplitude.
 - **Fall time ($t_f$):** The time required for the pulse to transition from $90\%$ to $10\%$ of its steady-state amplitude.
 
+*Why $10\%$ to $90\%$?* The outer $10\%$ tails near ground and $V_{CC}$ curve asymptotically and are susceptible to noise. Measuring between $10\%$ and $90\%$ isolates the steep, linear switching region.
+
 Transitions are categorized by direction:
 - **Rising edge (or leading edge):** The low-to-high transition ($0 \to 1$).
 - **Falling edge (or trailing edge):** The high-to-low transition ($1 \to 0$).
 
-These fast transitions govern edge-triggered circuits. In sequential logic, [flip-flops](/courses/logic-design/flip-flops) sample their inputs exclusively during one of these edges.
+These fast transitions govern edge-triggered circuits. In sequential logic, [flip-flops](/courses/logic-design/flip-flops#clock-edge-terminology-and-circuit-symbols) sample their inputs exclusively during one of these edges.
 
 High-speed signals that transition in fractions of a nanosecond frequently suffer from physical signal integrity problems:
 - **Overshoot:** The signal surges beyond the steady-state HIGH voltage before settling.
 - **Undershoot:** The signal dips below ground ($0\text{ V}$) upon falling.
-- **Ringing:** Damped oscillatory voltage fluctuations following a transition, caused by impedance mismatches between the PCB trace and the receiving pin.
+- **Ringing:** Damped oscillatory voltage fluctuations following a transition, caused by transmission line impedance mismatches (traveling voltage waves reflecting back and forth between driver and receiver).
+
+<Callout tone="orange" label="Mistake students make">
+**Prefix errors in frequency and period calculations.** Students frequently invert frequency incorrectly, writing $T = 1 / (50\text{ MHz}) = 20\ \mu\text{s}$ instead of $20\text{ ns}$ ($1 / (50 \times 10^6) = 2 \times 10^{-8}\text{ s} = 20\text{ ns}$). Another common error is calculating duty cycle as $t_{low} / T$, or forgetting that period $T$ is the sum of HIGH time and LOW time ($T = t_{high} + t_{low}$).
+</Callout>
 
 ## Moving bits: serial and parallel transmission
 
@@ -236,59 +405,76 @@ Parallel Transmission (8 bits in 1 clock cycle):
    Wire 2: Bit 2 ------------------------->
    Wire 1: Bit 1 ------------------------->
    Wire 0: Bit 0 ------------------------->
+   GND:    Common Ground Return ----------->
 
 Serial Transmission (8 bits in 8 clock cycles):
    Single Wire: Bit 0, Bit 1, Bit 2, Bit 3, Bit 4, Bit 5, Bit 6, Bit 7 --->
+   GND:         Common Ground Return -------------------------------------->
 ```
+
+*Note on Ground:* In both serial and parallel transmission, a common ground reference conductor is strictly required. Voltage is an electric potential difference between two conductors; without a shared ground return line, the receiver cannot measure the incoming voltage and current cannot loop back to complete the circuit.
 
 ### Serial transmission
 Bits are sent sequentially, one after another, over a single conductor (plus a shared ground reference line).
-- **Advantages:** Requires only one or two signal wires, reducing cable thickness, connector size, pin count, and circuit board complexity.
-- **Disadvantages:** Transmitting an 8-bit byte requires eight separate clock cycles.
+- **Advantages:** Requires only one signal wire (or one differential pair), drastically reducing cable thickness, connector size, pin count, and PCB routing congestion.
+- **Disadvantages:** At equal clock rates, transmitting an 8-bit byte requires eight sequential clock cycles.
 
 ### Parallel transmission
 All bits of a byte or word are sent simultaneously across multiple distinct physical conductors, with one bit assigned to each wire.
-- **Advantages:** A full word is transferred in a single clock cycle, maximizing throughput at lower clock rates.
-- **Disadvantages:** Requires many physical wires, larger connectors, and introduces two physical bottlenecks at high frequencies:
-  1. **Clock skew:** Minor manufacturing variations in copper trace lengths cause bits sent at the same instant to arrive at the receiver at slightly different times, corrupting synchronization.
+- **Advantages:** A full byte or word is transferred in a single clock cycle, providing high throughput at low clock rates.
+- **Disadvantages:** Requires many physical wires, large connectors, and runs into two insurmountable physical bottlenecks at high frequencies:
+  1. **Clock skew:** Light and electrical signals in PCB copper travel at approximately $15\text{ cm/ns}$ (about $6.7\text{ ps/mm}$). Microscopic manufacturing variations in trace lengths cause bits launched at the same instant to arrive at the receiving registers at slightly different times.
   2. **Crosstalk:** Rapid current pulses on one parallel trace induce capacitive and inductive voltage spikes on adjacent wires.
 
 <SerialParallel />
 
 <Callout tone="sky" label="Why modern high-speed technology went serial">
-For decades, parallel buses dominated computers: 40-pin and 80-conductor ribbon cables connected hard drives (PATA/IDE), and 32-bit/64-bit PCI slots connected graphics cards. 
+For decades, wide parallel buses dominated computing: 40-pin and 80-conductor ribbon cables connected hard drives (PATA/IDE), and 32-bit/64-bit PCI slots connected expansion cards. 
 
-As clock frequencies entered the gigahertz range, clock skew and crosstalk made parallel transmission impractical over more than a few centimeters. The industry replaced wide parallel buses with ultra-fast differential serial lanes:
+As clock frequencies surpassed $100\text{ MHz}$, clock skew and crosstalk made wide parallel transmission impossible across more than a few centimeters. The industry replaced wide parallel ribbons with ultra-fast point-to-point serial links:
 - IDE was replaced by **SATA** (Serial ATA).
 - PCI was replaced by **PCI Express (PCIe)**.
 - Parallel printer ports were replaced by **USB** (Universal Serial Bus).
 
-Because serial lines carry only one bit at a time, there is zero inter-line clock skew. This allows serial links to clock at tens of gigahertz (e.g. PCIe 5.0 at 32 GT/s), delivering vastly higher total bandwidth than wide parallel ribbons ever achieved.
+Modern serial interfaces use two engineering techniques:
+1. **Differential signaling:** Bits are sent over a twisted pair of complementary wires ($D+$ and $D-$). The receiver measures the voltage difference $(V_{D+} - V_{D-})$. Any external noise affects both wires equally (common-mode noise) and cancels out completely upon subtraction.
+2. **Clock recovery:** The clock is embedded directly into the data stream using phase-locked loops (PLLs) and transition-rich line encodings (such as 8b/10b or 128b/130b), eliminating inter-line skew entirely.
+
+Because serial links carry data over a single lane with zero inter-line clock skew, they can be clocked at tens of gigahertz (e.g. PCIe 5.0 at 32 GT/s), delivering vastly higher total bandwidth than wide parallel ribbons ever achieved.
 </Callout>
 
 ### Worked example: comparing transfer durations
 
-Suppose we need to transfer a $4\text{ KB}$ ($4,096\text{ bytes} = 32,768\text{ bits}$) block of data between two subsystems.
+Suppose we need to transfer a $4\text{ KB}$ block of data ($4,096\text{ bytes} = 4,096 \times 8 = 32,768\text{ bits}$) between two subsystems.
 
 1. **Over an 8-bit parallel bus running at $25\text{ MHz}$:**
-   - Clock period $T = 1 / (25 \times 10^6) = 40\text{ ns}$.
-   - The bus transfers $1\text{ byte}$ per clock cycle.
+   - Clock period:
+     $$T = \frac{1}{25 \times 10^6\text{ Hz}} = 40 \times 10^{-9}\text{ s} = 40\text{ ns}$$
+   - The bus transfers $1\text{ byte}$ (8 bits) per clock cycle.
    - Clock cycles needed: $4,096\text{ cycles}$.
    - Total transmission time:
-     $$t_{parallel} = 4,096 \times 40\text{ ns} = 163.84\ \mu\text{s}$$
+     $$t_{parallel} = 4,096\text{ cycles} \times 40\text{ ns/cycle} = 163,840\text{ ns} = 163.84\ \mu\text{s}$$
 
 2. **Over a 1-bit serial line running at the same $25\text{ MHz}$:**
    - Transfers $1\text{ bit}$ per clock cycle.
    - Clock cycles needed: $32,768\text{ cycles}$.
    - Total transmission time:
-     $$t_{serial} = 32,768 \times 40\text{ ns} = 1,310.72\ \mu\text{s} \approx 1.31\text{ ms}$$
+     $$t_{serial} = 32,768\text{ cycles} \times 40\text{ ns/cycle} = 1,310,720\text{ ns} = 1,310.72\ \mu\text{s} \approx 1.31\text{ ms}$$
+   - As expected, at identical clock rates, the serial line is exactly 8 times slower than the 8-bit parallel bus:
+     $$\frac{t_{serial}}{t_{parallel}} = \frac{1,310.72\ \mu\text{s}}{163.84\ \mu\text{s}} = 8.0$$
 
 3. **Over a modern high-speed serial link running at $5\text{ Gbps}$ (USB 3.0):**
-   - Transmits $5 \times 10^9\text{ bits per second}$ (ignoring encoding overhead):
-     $$t_{usb} = \frac{32,768\text{ bits}}{5 \times 10^9\text{ bits/s}} \approx 6.55\ \mu\text{s}$$
-   Because the serial link eliminates clock skew, it can be clocked 200 times faster, beating the parallel bus by a factor of 25!
+   - Transmits $5 \times 10^9\text{ bits per second}$:
+     $$t_{usb} = \frac{32,768\text{ bits}}{5 \times 10^9\text{ bits/s}} = 6.5536 \times 10^{-6}\text{ s} = 6.5536\ \mu\text{s}$$
+   - Speedup comparison:
+     $$\frac{t_{parallel}}{t_{usb}} = \frac{163.84\ \mu\text{s}}{6.5536\ \mu\text{s}} \approx 25.0\times$$
+   Because the serial link eliminates clock skew, it can be clocked $200$ times faster than the parallel bus ($5\text{ GHz}$ vs $25\text{ MHz}$), completing the transfer 25 times faster despite using only one data lane!
 
-Data moves inside the CPU along internal [buses](/courses/computer-organization/buses) connecting the registers, the ALU, and the cache.
+Data moves inside the CPU along internal [buses](/courses/computer-organization/buses#width-is-everything) connecting registers, the ALU, and the cache.
+
+<Callout tone="orange" label="Mistake students make">
+**Assuming more parallel wires always means more bandwidth.** Students often think that a 32-bit or 64-bit parallel bus will always transmit data 32 or 64 times faster than a single serial line. In practice, parallel buses hit a frequency wall at roughly $100\text{ MHz}$ to $133\text{ MHz}$ due to clock skew and crosstalk. A differential serial line clocked at $10\text{ GHz}$ or $32\text{ GHz}$ transfers dramatically more gigabytes per second than a wide parallel bus ever could.
+</Callout>
 
 ---
 
@@ -304,22 +490,34 @@ An engineer is evaluating an experimental $3.3\text{ V}$ low-voltage CMOS logic 
 - $V_{IH(min)} = 2.0\text{ V}$
 - $V_{IL(max)} = 0.8\text{ V}$
 
-Calculate the high-level noise margin $V_{NH}$, the low-level noise margin $V_{NL}$, and determine the overall quantitative noise margin $V_N$ of this logic family.
+1. Calculate the high-level noise margin $V_{NH}$, the low-level noise margin $V_{NL}$, and determine the overall quantitative noise margin $V_N$ of this logic family.
+2. A driver gate outputs a nominal LOW voltage of $V_{OL} = 0.25\text{ V}$. An inductive transient from a nearby relay induces a positive noise spike of $\Delta V = +0.65\text{ V}$ onto the trace. What voltage arrives at the receiver, and does this cause a logic error?
+3. What is the maximum peak noise spike that could be tolerated on this LOW line before the input enters the indeterminate region?
 
 <ModelAnswer>
-To calculate the noise margins:
+1. **Noise margin calculations:**
+   - High-level noise margin ($V_{NH}$):
+     $$V_{NH} = V_{OH(min)} - V_{IH(min)} = 2.8\text{ V} - 2.0\text{ V} = 0.8\text{ V}$$
+   - Low-level noise margin ($V_{NL}$):
+     $$V_{NL} = V_{IL(max)} - V_{OL(max)} = 0.8\text{ V} - 0.3\text{ V} = 0.5\text{ V}$$
+   - Overall noise margin ($V_N$):
+     $$V_N = \min(V_{NH}, V_{NL}) = \min(0.8\text{ V}, 0.5\text{ V}) = 0.5\text{ V}$$
 
-1. **High-level noise margin ($V_{NH}$):**
-   $$V_{NH} = V_{OH(min)} - V_{IH(min)} = 2.8\text{ V} - 2.0\text{ V} = 0.8\text{ V}$$
+2. **Noise evaluation on the LOW line:**
+   - Received input voltage:
+     $$V_{in} = V_{OL} + \Delta V = 0.25\text{ V} + 0.65\text{ V} = 0.90\text{ V}$$
+   - Comparison with threshold: The maximum allowed LOW voltage is $V_{IL(max)} = 0.80\text{ V}$.
+   - Because $V_{in} = 0.90\text{ V} > 0.80\text{ V}$, the signal enters the forbidden/indeterminate region ($0.80\text{ V} < V_{in} < 2.00\text{ V}$). The receiver can no longer guarantee recognition of a valid logic 0, resulting in a logic error or unpredictable switching.
 
-2. **Low-level noise margin ($V_{NL}$):**
-   $$V_{NL} = V_{IL(max)} - V_{OL(max)} = 0.8\text{ V} - 0.3\text{ V} = 0.5\text{ V}$$
-
-3. **Overall noise margin ($V_N$):**
-   $$V_N = \min(V_{NH}, V_{NL}) = \min(0.8\text{ V}, 0.5\text{ V}) = 0.5\text{ V}$$
-
-The logic family can tolerate up to $0.5\text{ V}$ of unwanted noise on a LOW line and up to $0.8\text{ V}$ of noise on a HIGH line. The overall rating is governed by the weaker margin ($0.5\text{ V}$).
+3. **Maximum tolerable noise spike:**
+   The maximum tolerable noise on this specific line is:
+   $$\Delta V_{max} = V_{IL(max)} - V_{OL} = 0.80\text{ V} - 0.25\text{ V} = 0.55\text{ V}$$
+   Any noise spike exceeding $+0.55\text{ V}$ pushes the input past $V_{IL(max)}$.
 </ModelAnswer>
+
+<Callout tone="orange" label="Common exam pitfall">
+Remember that the general low-level noise margin formula uses the guaranteed worst-case output $V_{OL(max)}$ ($V_{NL} = V_{IL(max)} - V_{OL(max)} = 0.5\text{ V}$). However, when analyzing a specific circuit instance with a measured output voltage ($0.25\text{ V}$), the margin on that specific physical wire is measured from that operating point ($0.80\text{ V} - 0.25\text{ V} = 0.55\text{ V}$). Never subtract $V_{OL} - V_{IL}$ to get a negative value.
+</Callout>
 
 ### Problem 2: Oscilloscope waveform analysis
 
@@ -327,45 +525,89 @@ An oscilloscope probe connected to a digital system's clock line displays a peri
 
 1. What is the clock frequency in megahertz ($\text{MHz}$)?
 2. What is the duty cycle percentage of this clock signal?
+3. If the clock frequency is increased to $200\text{ MHz}$ while maintaining the same $30\%$ duty cycle, what is the new clock period $T_{new}$ and the new pulse width $t_{w,new}$ in nanoseconds?
 
 <ModelAnswer>
-1. **Clock frequency:**
-   The period is $T = 12.5\text{ ns} = 12.5 \times 10^{-9}\text{ s}$.
-   $$f = \frac{1}{T} = \frac{1}{12.5 \times 10^{-9}\text{ s}} = 80 \times 10^6\text{ Hz} = 80\text{ MHz}$$
+1. **Clock frequency calculation:**
+   - Period $T = 12.5\text{ ns} = 12.5 \times 10^{-9}\text{ s}$.
+   - Frequency formula:
+     $$f = \frac{1}{T} = \frac{1}{12.5 \times 10^{-9}\text{ s}} = 0.08 \times 10^9\text{ Hz} = 80 \times 10^6\text{ Hz} = 80\text{ MHz}$$
 
-2. **Duty cycle:**
-   The pulse width is $t_w = 3.75\text{ ns}$.
-   $$\text{Duty Cycle} = \frac{t_w}{T} \times 100\% = \frac{3.75\text{ ns}}{12.5\text{ ns}} \times 100\% = 0.30 \times 100\% = 30\%$$
+2. **Duty cycle calculation:**
+   - Pulse width $t_w = 3.75\text{ ns}$.
+   - Duty cycle formula:
+     $$\text{Duty Cycle} = \frac{t_w}{T} \times 100\% = \frac{3.75\text{ ns}}{12.5\text{ ns}} \times 100\% = 0.30 \times 100\% = 30\%$$
 
-The clock operates at $80\text{ MHz}$ with a $30\%$ duty cycle.
+3. **Calculations at $200\text{ MHz}$:**
+   - New period:
+     $$T_{new} = \frac{1}{f_{new}} = \frac{1}{200 \times 10^6\text{ Hz}} = 5 \times 10^{-9}\text{ s} = 5.0\text{ ns}$$
+   - New pulse width with $30\%$ duty cycle:
+     $$t_{w,new} = T_{new} \times \text{Duty Cycle} = 5.0\text{ ns} \times 0.30 = 1.5\text{ ns}$$
 </ModelAnswer>
+
+<Callout tone="orange" label="Common exam pitfall">
+Pay careful attention to metric units and powers of 10. A common mistake is writing $1 / (12.5\text{ ns}) = 0.08\text{ MHz}$ instead of $80\text{ MHz}$. Remember that nanoseconds ($10^{-9}\text{ s}$) invert directly to gigahertz ($10^9\text{ Hz}$): $\frac{1}{12.5\text{ ns}} = \frac{1,000}{12.5}\text{ MHz} = 80\text{ MHz}$.
+</Callout>
 
 ### Problem 3: Parallel vs serial transmission bottlenecks
 
-Explain why historical 32-bit parallel expansion buses (such as standard PCI) could not scale beyond $66\text{ MHz}$ reliably across a computer motherboard, whereas 1-bit point-to-point serial links (such as PCIe lanes) routinely operate above $10\text{ GHz}$.
+Two integrated circuits on an FR-4 printed circuit board are connected by an 8-bit parallel bus. Electrical signals travel through the board's copper traces at a propagation speed of $v = 15\text{ cm/ns}$ (which corresponds to a propagation delay of $t_{pd} = \frac{1}{v} \approx 6.67\text{ ps/mm}$). Due to routing around other components on the board, trace 7 is $30\text{ mm}$ longer than trace 0.
+
+1. Calculate the clock skew (propagation delay difference $\Delta t$) between trace 0 and trace 7.
+2. If the bus operates at a legacy clock frequency of $33\text{ MHz}$ ($T \approx 30.3\text{ ns}$), what fraction of the clock period is consumed by this skew? Can the parallel bus operate reliably?
+3. If an engineer attempts to clock the parallel bus at $2.5\text{ GHz}$ ($T = 400\text{ ps}$), what fraction of the clock period is consumed by this skew? Explain why the bus fails completely.
 
 <ModelAnswer>
-Three primary physical constraints limit wide parallel buses at high frequencies:
+1. **Clock skew calculation:**
+   - Length difference $\Delta L = 30\text{ mm}$.
+   - Propagation velocity $v = 15\text{ cm/ns} = 150\text{ mm/ns} = 0.15\text{ mm/ps}$.
+   - Skew formula:
+     $$\Delta t = \frac{\Delta L}{v} = \frac{30\text{ mm}}{0.15\text{ mm/ps}} = 200\text{ ps} = 0.20\text{ ns}$$
 
-1. **Clock Skew:** On a 32-bit parallel bus, all 32 data lines must arrive at the destination register within a tight timing window before the clock edge (setup time). Because of microscopic length discrepancies in motherboard copper traces and variations in dielectric material, signals travel at slightly different speeds. At $33\text{ MHz}$ or $66\text{ MHz}$, the clock period ($30\text{ ns}$ or $15\text{ ns}$) is wide enough to accommodate these tiny picosecond skews. At gigahertz speeds (period under $1\text{ ns}$), skew causes bits from different lines to arrive in different clock cycles, garbling the data.
-2. **Crosstalk:** Running 32 parallel copper lines side by side causes high-frequency electromagnetic capacitive and inductive coupling. Rapid signal transitions on active lines induce voltage spikes on adjacent lines, triggering false logic transitions.
-3. **Trace Impedance and Termination:** Terminating and routing 32 high-speed traces without reflections is difficult.
+2. **Skew impact at $33\text{ MHz}$:**
+   - Clock period $T = \frac{1}{33 \times 10^6\text{ Hz}} \approx 30.3\text{ ns} = 30,300\text{ ps}$.
+   - Fraction of period consumed by skew:
+     $$\text{Fraction} = \frac{\Delta t}{T} = \frac{0.20\text{ ns}}{30.3\text{ ns}} \times 100\% \approx 0.66\%$$
+   - Conclusion: The $200\text{ ps}$ skew consumes less than $1\%$ of the clock period. The receiving flip-flops have ample time to satisfy their setup and hold timing constraints. The bus operates reliably.
 
-Serial architectures eliminate inter-line clock skew by routing all bits down a single differential conductor pair. The receiver recovers the clock directly from the data stream using phase-locked loops (PLLs) and transition encoding, allowing frequencies into the tens of gigahertz.
+3. **Skew impact at $2.5\text{ GHz}$:**
+   - Clock period $T = \frac{1}{2.5 \times 10^9\text{ Hz}} = 0.40\text{ ns} = 400\text{ ps}$.
+   - Fraction of period consumed by skew:
+     $$\text{Fraction} = \frac{\Delta t}{T} = \frac{200\text{ ps}}{400\text{ ps}} \times 100\% = 50\%$$
+   - Conclusion: Skew consumes half of the entire clock cycle! When you add the flip-flop's required setup time (typically $50\text{--}100\text{ ps}$), bits launched during clock cycle $N$ on trace 7 arrive during clock cycle $N+1$ relative to trace 0. The receiver captures bits from two different bytes simultaneously, corrupting all data.
 </ModelAnswer>
+
+<Callout tone="orange" label="Common exam pitfall">
+Do not confuse clock skew (arrival time discrepancy across different parallel wires) with propagation delay (the time required for a signal to travel from sender to receiver). Propagation delay merely delays when data arrives; clock skew corrupts the alignment *between* bits of the same word.
+</Callout>
 
 ### Problem 4: Active-LOW vs active-HIGH signals
 
-A microcontroller pin labeled $\overline{\text{RESET}}$ (or $\text{nRESET}$) is held at $3.3\text{ V}$ during normal system operation. To reboot the system, a push-button pulls this pin down to ground ($0\text{ V}$).
+A microcontroller pin labeled $\overline{\text{RESET}}$ (or `nRESET`) is connected to a $+3.3\text{ V}$ power supply through a $10\text{ k}\Omega$ pull-up resistor. An external manual push-button connects between the pin and ground ($\text{GND}$, $0\text{ V}$).
 
-1. Does this reset circuit employ positive logic or negative logic?
-2. Why is this active-LOW convention standard for reset and chip-enable signals rather than active-HIGH?
+1. Does this reset circuit employ positive logic or negative logic? Identify the active voltage and the inactive voltage.
+2. Explain two engineering advantages of using an active-LOW open-drain connection for reset signals instead of an active-HIGH push-pull connection.
+3. Sizing trade-off: Why can the pull-up resistor not be chosen arbitrarily small (e.g. $20\ \Omega$) or arbitrarily large (e.g. $1\text{ M}\Omega$) given that the bus trace has a parasitic capacitance of $C_{bus} = 50\text{ pF}$?
 
 <ModelAnswer>
 1. **Logic Convention:**
-   The circuit employs **negative logic (active-LOW)**. The active asserted event ("RESET the processor") is triggered by a LOW voltage level ($0\text{ V}$), while the inactive unasserted state ("RUN normally") is held at HIGH voltage ($3.3\text{ V}$).
+   - The circuit employs **negative logic (active-LOW)**.
+   - **Active (asserted) voltage:** $0\text{ V}$ ($\text{GND}$), which triggers the system reset.
+   - **Inactive (unasserted) voltage:** $+3.3\text{ V}$ ($V_{DD}$), which allows the microcontroller to execute instructions normally.
 
-2. **Why Active-LOW is Standard:**
-   - **Wired-OR capability:** Active-LOW pins use a pull-up resistor to maintain a default HIGH voltage. Multiple devices (the power-on reset circuitry, an external push button, a watchdog timer, and a debug probe) can connect to the same reset pin in an open-drain/open-collector configuration. Any device can safely pull the line to ground to assert a reset without short-circuiting other devices.
-   - **Fail-safe during power up:** During system power-up, unpowered or uninitialized chips sit near $0\text{ V}$. An active-LOW reset line naturally holds the system in reset until the power supply stabilizes and the pull-up resistor brings the line HIGH, preventing errant instruction execution during brownouts.
+2. **Engineering Advantages:**
+   - **Wired-OR multi-driver capability:** Multiple reset sources (a manual push-button, a power-supply voltage supervisor, a watchdog timer, and an in-circuit debugger) can all connect to the same physical wire in an open-drain configuration. Any single device can safely pull the line to ground to trigger a reset without causing bus contention or short-circuit currents.
+   - **Fail-safe power-on behavior:** During power-up, chips take time to initialize and power supply rails ramp gradually from $0\text{ V}$. Because unpowered or uninitialized devices naturally sit near $0\text{ V}$, the active-LOW line holds the processor safely in reset until power stabilizes and the pull-up resistor brings the line HIGH, preventing errant code execution.
+
+3. **Pull-Up Resistor Sizing Trade-Off:**
+   - **If $R$ is too small (e.g. $20\ \Omega$):** When the button is pressed or an open-drain transistor pulls the line to ground, current flows through the resistor:
+     $$I = \frac{V_{DD}}{R} = \frac{3.3\text{ V}}{20\ \Omega} = 165\text{ mA}$$
+     Power dissipated: $P = V \times I = 3.3\text{ V} \times 0.165\text{ A} \approx 0.54\text{ W}$. This heavy current wastes power and can overheat the resistor or exceed the maximum current sinking rating of the open-drain transistor.
+   - **If $R$ is too large (e.g. $1\text{ M}\Omega$):** When the button is released, the line must charge the bus parasitic capacitance $C_{bus} = 50\text{ pF}$ through $R$. The $RC$ time constant is:
+     $$\tau = R \times C_{bus} = 10^6\ \Omega \times 50 \times 10^{-12}\text{ F} = 50\ \mu\text{s}$$
+     The rise time ($10\%$ to $90\%$) takes $t_r \approx 2.2 \tau = 110\ \mu\text{s}$. During this long interval, the voltage lingers inside the forbidden indeterminate region, causing shoot-through current and false re-triggering. A moderate value like $4.7\text{ k}\Omega$ to $10\text{ k}\Omega$ provides the ideal balance between low power dissipation and fast rise time.
 </ModelAnswer>
+
+<Callout tone="orange" label="Common exam pitfall">
+Students often forget that while an open-drain transistor pulls a line LOW very quickly (low transistor ON-resistance $R_{on} \approx 10\ \Omega$), the rising edge depends entirely on the passive pull-up resistor charging the bus capacitance ($t_r \approx 2.2 \times R_{pullup} \times C_{bus}$). Choosing too large a resistor produces dangerously slow rising edges.
+</Callout>
