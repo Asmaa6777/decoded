@@ -20,7 +20,9 @@ A Boolean expression is **canonical** when every product or sum term contains al
 
 ### Minterms ($m_i$) and the Sum of Minterms
 
-A **minterm** (or standard product) of $n$ variables is a product term that contains each of the $n$ variables in either true or complemented form. For $n$ variables, there are exactly $2^n$ distinct minterms, denoted $m_0, m_1, \dots, m_{2^n - 1}$.
+A **minterm** (or standard product) of $n$ variables is a product term that contains each of the $n$ variables in either true or complemented form. Why is it termed a *minterm*? Because it evaluates to logic 1 for the **minimum possible non-empty domain**—exactly *one* input row out of all $2^n$ combinations in the truth table. For all other $2^n - 1$ rows, it evaluates to 0.
+
+For $n$ variables, there are exactly $2^n$ distinct minterms, denoted $m_0, m_1, \dots, m_{2^n - 1}$.
 
 **Binary index rule for minterms:**
 - Assign bit **1** to uncomplemented variables ($A = 1$).
@@ -32,8 +34,6 @@ For three variables $(A, B, C)$:
 - Row $5$ ($101_2$): $m_5 = AB'C$
 - Row $7$ ($111_2$): $m_7 = ABC$
 
-Each minterm $m_i$ evaluates to logic **1** for exactly *one* input row (row $i$) and evaluates to **0** for all other $2^n - 1$ rows.
-
 Any Boolean function $F$ can be written as the OR combination of all minterms where the output is 1. This is the **Canonical Sum of Minterms** (or Disjunctive Normal Form), expressed in compact summation notation:
 $$
 F(A, B, C) = \sum m(1, 3, 5, 7) = m_1 + m_3 + m_5 + m_7
@@ -41,7 +41,9 @@ $$
 
 ### Maxterms ($M_i$) and the Product of Maxterms
 
-A **maxterm** (or standard sum) of $n$ variables is a sum term that contains each of the $n$ variables in either true or complemented form. There are $2^n$ distinct maxterms, denoted $M_0, M_1, \dots, M_{2^n - 1}$.
+A **maxterm** (or standard sum) of $n$ variables is a sum term that contains each of the $n$ variables in either true or complemented form. Why is it termed a *maxterm*? Because it evaluates to logic 1 for the **maximum possible proper domain**—$2^n - 1$ rows out of all $2^n$ combinations. It evaluates to logic 0 on strictly *one* input combination.
+
+There are $2^n$ distinct maxterms, denoted $M_0, M_1, \dots, M_{2^n - 1}$.
 
 **Binary index rule for maxterms:**
 - Assign bit **0** to uncomplemented variables ($A = 0$).
@@ -51,8 +53,8 @@ A **maxterm** (or standard sum) of $n$ variables is a sum term that contains eac
 Students frequently invert the maxterm rule. In minterms, 1 is uncomplemented ($A$). In maxterms, **0 is uncomplemented ($A$) and 1 is complemented ($A'$)**. 
 
 Row $5$ ($101_2$) yields:
-- Minterm: $m_5 = A B' C$
-- Maxterm: $M_5 = A' + B + C'$
+- Minterm: $m_5 = A B' C$ (evaluates to 1 when $A=1, B=0, C=1$)
+- Maxterm: $M_5 = A' + B + C'$ (evaluates to 0 when $A=1, B=0, C=1$)
 </Callout>
 
 Each maxterm $M_i$ evaluates to logic **0** for exactly *one* input row (row $i$) and evaluates to **1** for all other rows.
@@ -158,10 +160,30 @@ Because the circuit will never encounter these inputs during normal operation, t
 
 When choosing between SOP and POS implementations, engineers evaluate three hardware metrics:
 1. **Literal count:** The total number of literal appearances across the expression. In CMOS design, each literal input corresponds to two transistors in the first logic level.
-2. **Gate input count:** The total number of inputs across all gates. Measures required routing interconnect area.
+2. **Gate input count:** The total number of inputs across all gates (first level plus second level). Measures required routing interconnect area.
 3. **Propagation delay:** Both SOP (AND-OR) and POS (OR-AND) are two-level networks with an inherent latency of two gate delays ($2 \cdot t_{pd}$), excluding any input inverters.
 
+Why is two-level logic the theoretical speed baseline of digital design? Because regardless of whether the function has 3, 5, or 10 variables, every signal path traverses at most two cascaded gate stages (first-level ANDs into an OR, or first-level ORs into an AND). While multi-level circuits (3 or more levels) can sometimes reduce the total number of gates, they do so by inserting intermediate nodes that linearly increase the total propagation delay to $3 \cdot t_{pd}, 4 \cdot t_{pd}$, or more.
+
 If a truth table contains mostly 1s, the 0-rows are fewer, making the Product of Sums (POS) significantly smaller and cheaper. If the table contains mostly 0s, the Sum of Products (SOP) is smaller.
+
+## Common exam pitfalls and student mistakes
+
+When converting truth tables to algebraic circuits, students commonly make these five mistakes:
+
+1. **Minterm vs. Maxterm Index Reversal:** This is the single most frequent error on digital logic exams.
+   - For **minterms** ($m_i$): $1 = \text{uncomplemented variable } (A)$, and $0 = \text{complemented variable } (A')$. E.g., row $101_2 \implies m_5 = AB'C$.
+   - For **maxterms** ($M_i$): $0 = \text{uncomplemented variable } (A)$, and $1 = \text{complemented variable } (A')$. E.g., row $101_2 \implies M_5 = A' + B + C'$.
+2. **Confusing the Maxterm Product of $F$ with $F'$:** A function $F$ is expressed in maxterms using its **0-rows**: $F = \prod M(\text{0-rows})$. Students often incorrectly write $F' = \prod M(\text{0-rows})$. Writing $F'$ with the 0-rows means that $F'$ would evaluate to 0 on the 0-rows, which is completely backwards! The correct complement relationships are:
+   $$
+   F = \sum m(\text{1-rows}) = \prod M(\text{0-rows})
+   $$
+   $$
+   F' = \sum m(\text{0-rows}) = \prod M(\text{1-rows})
+   $$
+3. **Illegal Algebraic Operations in POS Expansion:** To expand an incomplete SOP term such as $AB$, you multiply by $(C + C') = 1$, which is straightforward. But to expand an incomplete POS term such as $(A + B')$, you cannot multiply by anything! You must add $0 = CC'$, and then use the second distributive law $X + YZ = (X+Y)(X+Z)$ to obtain $(A + B' + C)(A + B' + C')$. Students routinely struggle with this step.
+4. **Treating Don't-Cares as Mandatory 1s:** A don't-care ($X$) does not have to be covered. It should only be included in a group if doing so doubles the group size (eliminating a variable literal) or merges two separate groups into one. Forcing every don't-care into a group creates unnecessary gates.
+5. **Omitting the Output Gate in Gate Input Counts:** When counting gate inputs for hardware area estimation, students often sum only the inputs to the first-level gates ($3 \times 2 = 6$) and forget to add the inputs to the second-level gate ($+3$), resulting in an undercount.
 
 ## Practice problems
 
@@ -268,52 +290,49 @@ A function is defined as $F(A, B, C) = \sum m(1, 2, 3, 7)$.
 
 <ModelAnswer>
 1. **Minimal SOP:**
-   $F = m_1 + m_2 + m_3 + m_7 = A'B'C + A'BC' + A'BC + ABC$.
-   Combine:
-   - $A'BC' + A'BC = A'B(C' + C) = A'B$
-   - $A'B'C + A'BC = A'C(B' + B) = A'C$
-   - $A'BC + ABC = BC(A' + A) = BC$
-   Thus:
-   $$
-   F = A'B + A'C + BC \implies F = A'B + A'C + BC
-   $$
-   Notice that $A'B + BC$ has consensus $A'C$. Thus $A'C$ is redundant:
-   Wait, if $A=0, B=0, C=1$, $A'B = 0, BC = 0$, but $A'C = 1$. So $A'C$ is needed!
-   Wait: minterms are $m_1 (001), m_2 (010), m_3 (011), m_7 (111)$.
-   - Pair $(m_1, m_3) \implies A'C$
-   - Pair $(m_2, m_3) \implies A'B$
-   - Pair $(m_3, m_7) \implies BC$
-   Can $A'B + BC$ cover $m_1$? $m_1$ is 001: $A'B = 0$, $BC = 0$. $m_1$ is not covered!
-   Can $A'C + BC$ cover $m_2$? $m_2$ is 010: $A'C = 0, BC = 0$. $m_2$ is not covered!
-   Can $A'B + A'C$ cover $m_7$? $m_7$ is 111: $A'B = 0, A'C = 0$. $m_7$ is not covered!
-   So all three pairs are essential!
+   The function's minterms are $m_1 (001_2), m_2 (010_2), m_3 (011_2), m_7 (111_2)$.
+   Combine adjacent minterm pairs using $xy + xy' = x$:
+   - Pair $(m_1, m_3)$: $A'B'C + A'BC = A'C(B' + B) = A'C$
+   - Pair $(m_2, m_3)$: $A'BC' + A'BC = A'B(C' + C) = A'B$
+   - Pair $(m_3, m_7)$: $A'BC + ABC = BC(A' + A) = BC$
+
+   Verify whether any term can be omitted:
+   - Minterm $m_1 (001)$ is covered only by prime implicant $A'C$.
+   - Minterm $m_2 (010)$ is covered only by prime implicant $A'B$.
+   - Minterm $m_7 (111)$ is covered only by prime implicant $BC$.
+
+   Because each prime implicant covers a distinguished minterm, all three are Essential Prime Implicants. The minimal SOP expression is:
    $$
    F_{\text{SOP}} = A'B + A'C + BC
    $$
 
 2. **Minimal POS:**
-   The 0-rows are $M_0 (000), M_4 (100), M_5 (101), M_6 (110)$.
-   - Combine $M_0$ and $M_4$: $(A+B+C)(A'+B+C) = B + C$
-   - $M_5$ ($101$) is $A' + B + C'$: combine with $M_4$ ($A'+B+C$) $\to A' + B$
-   - $M_6$ ($110$) is $A' + B' + C$: combine with $M_4$ ($A'+B+C$) $\to A' + C$
-   Minimal POS is:
-   $$
-   F_{\text{POS}} = (B + C)(A' + B)(A' + C)
-   $$
-   Wait, by consensus theorem in dual form: between $(B + C)$ and $(A' + B)$, consensus with $(A' + C)$:
-   $(A' + B)(B + C)(A' + C) = (A' + B)(B + C)$?
-   Check $M_6 = 110$: in $(A'+B)(B+C)$, if $A=1, B=1, C=0$, then $(A'+B) = 0+1=1$, and $(B+C) = 1+0=1$, so product is 1 (wrong, should be 0!).
-   Therefore all three terms are required:
+   The function's 0-rows correspond to maxterms $M_0 (000_2), M_4 (100_2), M_5 (101_2), M_6 (110_2)$.
+   Combine adjacent maxterm pairs using $(X + Y)(X + Y') = X$:
+   - Pair $(M_0, M_4)$: $(A + B + C)(A' + B + C) = B + C$
+   - Pair $(M_4, M_5)$: $(A' + B + C)(A' + B + C') = A' + B$
+   - Pair $(M_4, M_6)$: $(A' + B + C)(A' + B' + C) = A' + C$
+
+   Verify whether any factor can be omitted:
+   - Maxterm $M_0 (000)$ is covered only by sum term $(B + C)$.
+   - Maxterm $M_5 (101)$ is covered only by sum term $(A' + B)$.
+   - Maxterm $M_6 (110)$ is covered only by sum term $(A' + C)$.
+
+   Each sum term is an essential prime implicant of the complement. The minimal POS expression is:
    $$
    F_{\text{POS}} = (B + C)(A' + B)(A' + C)
    $$
 
-3. **Comparison:**
-   - **SOP:** Three 2-input AND gates + one 3-input OR gate = 4 logic gates.
-     - Literals: 6 literals ($A', B, A', C, B, C$).
-     - Gate inputs: $(2 \times 3) + 3 = 9$ gate inputs (excluding inverters).
-   - **POS:** Three 2-input OR gates + one 3-input AND gate = 4 logic gates.
-     - Literals: 6 literals.
-     - Gate inputs: 9 gate inputs.
-   Both implementations exhibit symmetric hardware cost for this function.
+3. **Hardware Comparison:**
+
+| Metric | SOP Implementation ($A'B + A'C + BC$) | POS Implementation ($(B+C)(A'+B)(A'+C)$) |
+|---|---|---|
+| **First-Level Gates** | Three 2-input AND gates | Three 2-input OR gates |
+| **Second-Level Gate** | One 3-input OR gate | One 3-input AND gate |
+| **Total Gate Count** | 4 gates (plus 1 inverter for $A'$) | 4 gates (plus 1 inverter for $A'$) |
+| **Literal Count** | 6 literals ($A', B, A', C, B, C$) | 6 literals ($B, C, A', B, A', C$) |
+| **Total Gate Inputs** | $(3 \times 2) + 3 = 9$ inputs | $(3 \times 2) + 3 = 9$ inputs |
+| **Propagation Delay** | $2 \cdot t_{pd}$ (excluding inverter) | $2 \cdot t_{pd}$ (excluding inverter) |
+
+Both two-level architectures are completely symmetric in silicon cost and timing performance for this function.
 </ModelAnswer>

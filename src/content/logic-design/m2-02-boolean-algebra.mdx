@@ -5,6 +5,10 @@ import { LawChecker } from "@/components/mdx/LogicVisualizers";
 
 **Boolean algebra** is the mathematical framework governing digital switching systems. Formulated by George Boole in 1854 as an algebra of propositional logic and adapted to digital circuits by Claude Shannon in 1938, it operates on binary variables restricted to two discrete states: $0$ and $1$.
 
+Before working with Boolean equations, two foundational terms must be clearly understood:
+- A **literal** is an appearance of a variable in either its uncomplemented (true) form $x$ or complemented form $x'$. A circuit with $n$ variables has $2n$ distinct possible literals.
+- A **postulate** (or axiom) is an initial mathematical proposition accepted without proof. A **theorem** is a logical rule that is rigorously derived from the postulates through a sequence of deductive steps.
+
 Why does an engineer need Boolean algebra? In physical silicon, every variable literal, every AND operation, and every OR operation corresponds directly to transistors, interconnect wires, and gate inputs:
 - Simplifying an expression reduces the **gate count** and silicon surface area.
 - Reducing nested levels of logic decreases **propagation delay**, speeding up circuit clock rates.
@@ -42,6 +46,11 @@ A mathematical Boolean algebra is defined as a set of elements $B$ with two bina
    $$
    <Callout tone="neon" label="A key difference from real arithmetic">
    In ordinary elementary algebra, multiplication distributes over addition ($x(y+z) = xy + xz$), but addition does NOT distribute over multiplication ($x + yz \ne (x+y)(x+z)$). In Boolean algebra, both operations distribute over each other.
+   
+   To see why $x + yz = (x + y)(x + z)$ holds, expand the right side using the first distributive law:
+   $$
+   (x + y)(x + z) = x(x + z) + y(x + z) = xx + xz + yx + yz = x + xz + xy + yz = x(1 + z + y) + yz = x(1) + yz = x + yz
+   $$
    </Callout>
 
 5. **Complements:**
@@ -63,7 +72,7 @@ A core structural property of Boolean algebra is the **Principle of Duality**:
 > 3. Every identity constant $0$ is swapped with $1$, and $1$ with $0$.
 > 4. Variable literals remain unchanged.
 
-Because Huntington's postulates are themselves symmetric pairs of dual statements, any theorem proven by a sequence of axiomatic steps automatically proves its dual theorem using the dual axioms. Duality cuts the work of proving theorems in half.
+Why does duality hold? Because Huntington's postulates are themselves defined in dual symmetric pairs. Any deductive proof for a theorem can be converted into a valid proof of its dual statement simply by substituting each axiomatic step with its corresponding dual postulate. Duality cuts the work of proving theorems in half.
 
 ## Fundamental theorems and identities
 
@@ -81,6 +90,17 @@ From Huntington's postulates, we derive the standard theorems used in digital ci
 | **Theorem 8** | $xy + x'z + yz = xy + x'z$ | $(x+y)(x'+z)(y+z) = (x+y)(x'+z)$ | Consensus theorem |
 
 Because binary variables can take on only two values ($0$ or $1$), any identity can be definitively verified by testing all possible combinations of inputs—a method known as **proof by perfect induction**.
+
+For example, prove the absorption law $x + xy = x$ by perfect induction across all input combinations:
+
+| $x$ | $y$ | $xy$ | $x + xy$ | Result matches $x$? |
+|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | $0 + 0 = 0$ | Yes ($0 = 0$) |
+| 0 | 1 | 0 | $0 + 0 = 0$ | Yes ($0 = 0$) |
+| 1 | 0 | 0 | $1 + 0 = 1$ | Yes ($1 = 1$) |
+| 1 | 1 | 1 | $1 + 1 = 1$ | Yes ($1 = 1$) |
+
+Because the column for $x + xy$ is identical to $x$ for all valuations, the identity is unconditionally proven.
 
 Use the interactive law checker below to evaluate these fundamental theorems across all input combinations:
 
@@ -157,6 +177,21 @@ $$
 
 The cofactor $f(x_1, \dots, 1, \dots, x_n)$ represents the function when $x_i = 1$, and $f(x_1, \dots, 0, \dots, x_n)$ represents the function when $x_i = 0$.
 
+**Worked Example of Shannon Expansion:**
+Factor $F(A, B, C) = AB + A'C$ around variable $A$:
+- Evaluate the cofactor for $A = 1$:
+  $$
+  F(1, B, C) = (1 \cdot B) + (1' \cdot C) = B + (0 \cdot C) = B
+  $$
+- Evaluate the cofactor for $A = 0$:
+  $$
+  F(0, B, C) = (0 \cdot B) + (0' \cdot C) = 0 + (1 \cdot C) = C
+  $$
+- Reconstruct the function:
+  $$
+  F(A, B, C) = A \cdot F(1, B, C) + A' \cdot F(0, B, C) = A \cdot B + A' \cdot C
+  $$
+
 Shannon's expansion forms the theoretical foundation for implementing arbitrary logic with [multiplexers](/courses/logic-design/multiplexers), where $x_i$ serves as the select input steering one of the two cofactor circuits to the output.
 
 ## Systematic worked algebraic simplification
@@ -175,6 +210,20 @@ F &= AB + AB + AC + BB + BC && \text{Distribute } A \text{ and } B \\
 $$
 
 The initial expression required six logic gates across three levels of logic; the simplified expression $F = B + AC$ requires just one 2-input AND gate and one 2-input OR gate.
+
+## Common exam pitfalls and student mistakes
+
+When simplifying and proving Boolean expressions, students routinely fall into these five traps:
+
+1. **The Boolean Cancellation Fallacy:** In ordinary elementary algebra, $x + y = x + z \implies y = z$, and if $x \ne 0$, $xy = xz \implies y = z$. **In Boolean algebra, cancellation does NOT hold!**
+   - Counterexample for addition: Let $x = 1, y = 0, z = 1$. Then $1 + 0 = 1 + 1 = 1$, but $y \ne z$ ($0 \ne 1$).
+   - Counterexample for multiplication: Let $x = 0, y = 0, z = 1$. Then $0 \cdot 0 = 0 \cdot 1 = 0$, but $y \ne z$ ($0 \ne 1$).
+2. **Confusing Dual ($F^D$) with Complement ($F'$):** This is one of the most common exam errors.
+   - To form the **dual** $F^D$: swap $+$ and $\cdot$, swap $0$ and $1$, but **leave all literals completely unchanged**.
+   - To form the **complement** $F'$: swap $+$ and $\cdot$, swap $0$ and $1$, and **invert every single literal**.
+3. **De Morgan Operator Inversion Omission:** When complementing compound expressions, students frequently invert the variables but forget to swap the operator, writing $(A + B)' = A' + B'$ (wrong!) instead of $(A + B)' = A'B'$.
+4. **Neglecting the Second Distributive Law:** Students often overlook $A + BC = (A + B)(A + C)$ because addition does not distribute over multiplication in high school algebra. Recognizing this identity allows rapid factorization of sum-of-products into product-of-sums.
+5. **Consensus Term Misidentification:** When applying $xy + x'z + yz = xy + x'z$, students often drop one of the primary terms containing the complemented pair ($xy$ or $x'z$) rather than the redundant consensus term $yz$ formed by the remaining non-complemented literals.
 
 ## Practice problems
 
@@ -204,40 +253,40 @@ F(A, B, C, D) = AB + A'C + BC + A'BD
 $$
 
 <ModelAnswer>
-1. **Identify consensus between the first three terms:**
-   - Term 1 is $AB$ (contains literal $A$).
-   - Term 2 is $A'C$ (contains literal $A'$).
-   - Term 3 is $BC$, which is the product of the remaining literals.
-   - By the Consensus Theorem ($xy + x'z + yz = xy + x'z$), $BC$ is redundant:
+1. **Identify and eliminate the consensus term between $AB$ and $A'C$:**
+   - Term $AB$ contains literal $A$.
+   - Term $A'C$ contains the complemented literal $A'$.
+   - The product of their remaining literals is $B \cdot C = BC$.
+   - By the Consensus Theorem ($xy + x'z + yz = xy + x'z$), term $BC$ is redundant and eliminated:
      $$
      F = AB + A'C + A'BD
      $$
 
-2. **Simplify the remaining term with absorption/elimination:**
-   Factor $A'$ from the second and third terms:
+2. **Simplify the remaining terms using the elimination law ($x + x'y = x + y$):**
+   Group the first and third terms sharing literal $B$:
    $$
-   F = AB + A'(C + BD)
+   AB + A'BD = B(A + A'D)
    $$
-   Alternatively, examine terms $A'C$ and $A'BD$: notice that $A'BD$ cannot be absorbed directly by $A'C$, but check if $A'BD$ forms a consensus with $AB$:
-   - Between $AB$ (literal $B$) and $A'BD$, $A$ and $A'$ are complements. The consensus between $AB$ and $A'D$ would be $BD$.
-   - Using the elimination law $x + x'y = x + y$:
-     $$
-     AB + A'BD = (A + A'D)B \dots \text{no, note that } A'BD = B(A'D)
-     $$
-   Examine:
+   By the elimination law (Theorem 6: $x + x'y = x + y$ with $x = A$ and $y = D$):
    $$
-   AB + A'BD = B(A + A'D) = B(A + D) = AB + BD
+   A + A'D = A + D
    $$
-   Substituting this back:
+   Distributing $B$ back into the parentheses:
+   $$
+   B(A + D) = AB + BD
+   $$
+
+3. **Reassemble the simplified expression:**
    $$
    F = AB + BD + A'C
    $$
-   Now check consensus between $BD$ and $A'C$: no complement. But check consensus between $AB$ and $A'C$: the consensus is $BC$.
-   The minimal sum of products is:
-   $$
-   F = AB + A'C + A'BD
-   $$
-   Since $A'BD$ cannot be simplified further without adding literals, $F = AB + A'C + A'BD$ contains 7 literals.
+
+4. **Verify irreducibility:**
+   - Between $AB$ and $A'C$: consensus is $BC$, which is absent.
+   - Between $BD$ and $A'C$: literals are distinct, no complementary pair exists.
+   - Between $AB$ and $BD$: variable $B$ is common, no complementary pair exists.
+
+The minimal sum of products is $F = AB + BD + A'C$, containing 3 product terms and 6 literals (reduced from 4 terms and 11 literals in the original equation).
 </ModelAnswer>
 
 ### Problem 3: Dual vs. Complement derivation
@@ -254,7 +303,7 @@ $$
 1. **Find the Dual ($F^D$):**
    First expand the internal NOT using De Morgan's theorem to eliminate inverted sub-expressions before finding the dual:
    $$
-   (C'D + E)' = (C'D)' \cdot E' = (C + D')E' = CE' + D'E'
+   (C'D + E)' = (C'D)' \cdot E' = (C'' + D')E' = (C + D')E' = CE' + D'E'
    $$
    So:
    $$
@@ -286,68 +335,36 @@ G = A'BC' + AB'C' + ABC' + ABC
 $$
 
 <ModelAnswer>
-Group adjacent terms sharing common literals:
-$$
-G = A'BC' + AB'C' + (ABC' + ABC)
-$$
+1. **Identify minterms in standard binary index order:**
+   - $A'BC' = m_2$ ($010_2$)
+   - $AB'C' = m_4$ ($100_2$)
+   - $ABC' = m_6$ ($110_2$)
+   - $ABC = m_7$ ($111_2$)
 
-1. Combine the last two terms using the distributive and complement laws:
+2. **Apply the idempotence law ($w = w + w$) to duplicate minterm $m_6$:**
+   Notice that $ABC'$ ($m_6$) differs by exactly one literal from $m_2$ ($A$ vs $A'$), $m_4$ ($B$ vs $B'$), and $m_7$ ($C'$ vs $C$).
+   Duplicate $ABC'$ so each adjacent term can combine with it:
    $$
-   ABC' + ABC = AB(C' + C) = AB(1) = AB
-   $$
-
-2. Rewrite $G$:
-   $$
-   G = A'BC' + AB'C' + AB
+   G = (A'BC' + ABC') + (AB'C' + ABC') + (ABC' + ABC)
    $$
 
-3. Use the idempotency rule ($x = x + x$) to duplicate $ABC'$ from the original expression, or combine $A'BC'$ and $ABC'$:
-   $$
-   A'BC' + ABC' = (A' + A)BC' = 1 \cdot BC' = BC'
-   $$
-   Likewise:
-   $$
-   AB'C' + ABC' = A(B' + B)C' = A(1)C' = AC'
-   $$
+3. **Simplify each adjacent pair using the complement law ($x + x' = 1$):**
+   - Pair 1: $A'BC' + ABC' = (A' + A)BC' = 1 \cdot BC' = BC'$
+   - Pair 2: $AB'C' + ABC' = A(B' + B)C' = A \cdot 1 \cdot C' = AC'$
+   - Pair 3: $ABC' + ABC = AB(C' + C) = AB \cdot 1 = AB$
 
-4. Grouping these reductions:
+4. **Combine the resulting prime implicants:**
    $$
    G = BC' + AC' + AB
    $$
 
-5. Check for consensus in $BC' + AC' + AB$:
-   - Between $BC'$ and $AB$: the consensus is $AC'$ (since $B$ and $B'$ cancel).
-   - Thus, $AC'$ is the consensus of $BC'$ and $AB$, and can be eliminated:
-   $$
-   G = BC' + AB
-   $$
-   Check: when $A=1, B=1$, $AB=1$. When $A=1, C=0$, either $B=1$ ($AB=1$) or $B=0$ (in which case $AB'C'=1$ in original).
-   Wait, if $A=1, B=0, C=0$:
-   - In original $G$: $AB'C' = 1 \cdot 1 \cdot 1 = 1$.
-   - In $BC' + AB$: if $A=1, B=0, C=0$, $BC' = 0$ and $AB = 0$!
-   So $AC'$ was NOT redundant; rather, check $AB$ vs $BC'$:
-   - In $BC'$ and $AC'$, there is no complementary literal.
-   - In $BC'$ (literal $C'$) and $AB$ (literal $B$), between $B$ and $B'$:
-     In $AC'$ and $AB$: variable $A$ is in both. There is no complementary variable!
-   - Wait: between $BC'$ and $AC'$, neither is complemented.
-   Therefore, all three terms are prime implicants:
-   $$
-   G = AC' + BC' + AB
-   $$
-   Wait, can $AB + AC'$ cover $AB'C'$?
-   $A(B + C') = AB + AC'$.
-   For $A=1, B=0, C=0$: $AC' = 1$.
-   For $A=0, B=1, C=0$: $BC' = 1$.
-   For $A=1, B=1, C=0$: $AC'=1, BC'=1, AB=1$.
-   For $A=1, B=1, C=1$: $AB=1$.
-   The minimal sum of products requires two terms? No, notice that minterms are $m_2, m_4, m_6, m_7$.
-   - Pair $(m_4, m_6) \implies AC'$
-   - Pair $(m_2, m_6) \implies BC'$
-   - Pair $(m_6, m_7) \implies AB$
-   Notice $m_6$ is shared by all three pairs! But $m_2$ is only covered by $BC'$, $m_4$ is only covered by $AC'$, and $m_7$ is only covered by $AB$.
-   All three prime implicants are essential!
-   Therefore, the minimal sum of products is:
-   $$
-   G = AB + AC' + BC'
-   $$
+5. **Verify that each prime implicant is essential:**
+   - Minterm $m_2$ ($010$) is covered exclusively by $BC'$. Therefore, **$BC'$ is an Essential Prime Implicant**.
+   - Minterm $m_4$ ($100$) is covered exclusively by $AC'$. Therefore, **$AC'$ is an Essential Prime Implicant**.
+   - Minterm $m_7$ ($111$) is covered exclusively by $AB$. Therefore, **$AB$ is an Essential Prime Implicant**.
+
+Because every prime implicant covers a distinguished minterm, none can be eliminated. The minimal sum-of-products expression is:
+$$
+G = AB + AC' + BC'
+$$
 </ModelAnswer>
