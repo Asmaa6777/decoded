@@ -1,45 +1,469 @@
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { CodeTable, GrayEncoder, FloatExplorer } from "@/components/mdx/LogicVisualizers";
 
 # Codes and Floating Point
 
-Bits have no meaning by themselves. `01000111` could be the number 71, the letter G or part of an instruction. A **code** is an agreement about what a pattern stands for, and different jobs call for different codes.
+A collection of bits on a data bus has no intrinsic meaning. The byte `01000111` could represent the integer 71, the ASCII letter `G`, a single-precision floating-point component, an operation code for a processor, or a pixel color channel. 
+
+A **code** is an agreed-upon mapping between discrete symbols (letters, decimal numbers, machine commands) and binary bit patterns. Different engineering constraints—human display readability, sensor reliability, arithmetic simplicity, and numerical dynamic range—demand completely different binary codes.
 
 <CodeTable />
 
+## Classification of binary codes
+
+Digital systems employ several distinct classes of binary codes:
+
+1. **Weighted codes:** Each bit position in the code word has a fixed numerical weight. The decimal value is the arithmetic sum of the weights of all 1-bits (e.g. standard binary, 8421 BCD, 2421 code).
+2. **Non-weighted codes:** Bit positions do not have fixed numerical weights. Encodings are chosen to satisfy physical or algebraic properties (e.g. Excess-3, Gray code).
+3. **Self-complementing (reflective) codes:** The 9's complement of any decimal digit is obtained directly by inverting every bit of its code word (1's complement). This property dramatically simplifies decimal subtraction hardware.
+4. **Error-detecting codes:** Additional bits (such as parity) are appended to a code word so hardware can automatically identify whether data was corrupted during transmission or storage.
+
 ## BCD: decimal digits, one at a time
 
-Binary-coded decimal gives each decimal digit its own 4 bits. The number 83 becomes `1000 0011`, not the binary `1010011`. Each group uses the weights 8, 4, 2, 1, which is why it's also called the **8421 code**. It wastes a few patterns, but converting to a display is easy, so calculators and digital clocks like it.
+In many digital instruments—such as digital multimeters, alarm clocks, point-of-sale registers, and calculator displays—numbers must interface directly with seven-segment decimal displays. Converting large binary numbers into decimal requires complex division circuits.
 
-**Excess-3** is BCD with 3 added to every digit, so 5 is `1000`. Its use is that a digit's 9's complement is just its bits flipped, which makes decimal subtraction easy.
+**Binary Coded Decimal (BCD)**, specifically the **8421 code**, encodes each decimal digit ($0$ through $9$) separately into a 4-bit nibble using standard binary weights ($8, 4, 2, 1$):
+
+| Decimal Digit | 8421 BCD |
+|---|---|
+| 0 | `0000` |
+| 1 | `0001` |
+| 2 | `0010` |
+| 3 | `0011` |
+| 4 | `0100` |
+| 5 | `0101` |
+| 6 | `0110` |
+| 7 | `0111` |
+| 8 | `1000` |
+| 9 | `1001` |
+
+Because 4 bits can represent $2^4 = 16$ distinct combinations, but decimal only has 10 digits, **six code words are illegal/forbidden**:
+
+$$
+\text{Invalid BCD patterns: } 1010_2\ (10), \ 1011_2\ (11), \ 1100_2\ (12), \ 1101_2\ (13), \ 1110_2\ (14), \ 1111_2\ (15)
+$$
+
+For example, decimal $83$ is encoded in BCD by converting each digit into 4 bits:
+
+$$
+83_{10} = \underbrace{1000}_{8}\ \underbrace{0011}_{3} \quad (\text{BCD})
+$$
+
+Notice that this is completely different from the pure binary value of $83$, which is $01010011_2$. BCD requires more storage bits (8 bits for 0–99 vs 7 bits in binary), but it simplifies decimal input/output interfacing.
+
+### BCD addition and the $+6$ correction rule
+
+When two BCD digits are added using a standard binary adder, two types of errors can occur:
+1. The 4-bit sum falls into the forbidden range ($10_{10}$ to $15_{10}$, i.e., $1010_2$ to $1111_2$).
+2. The sum exceeds 15, generating a binary carry-out ($K = 1$), but wrapping around by 16 instead of 10.
+
+In both cases, the 4-bit binary adder has skipped over decimal decades by working modulo 16 rather than modulo 10. To correct the error, hardware must **add $6$ ($0110_2$)** to the invalid 4-bit sum:
+
+$$
+16 - 10 = 6 \quad (0110_2)
+$$
+
+Adding $6$ skips the 6 invalid states and forces a decimal carry into the next higher decade.
+
+```
+BCD Correction Rule:
+  If (Sum > 9) OR (Binary Carry-out = 1):
+      Add 0110_2 to the nibble sum
+      Propagate carry = 1 to the next decimal decade
+```
+
+### Worked example: BCD addition ($67 + 58 = 125$)
+
+Express both numbers in BCD and add column by column:
+- $67 = 0110\ 0111$
+- $58 = 0101\ 1000$
+
+**Step 1: Add low-order digits ($7 + 8$):**
+```
+     0111   (7)
+  +  1000   (8)
+  -------
+     1111   (15_10 -> Invalid BCD!)
+  +  0110   (Add correction factor +6)
+  -------
+   1 0101   (Result = 5, Carry to next decade = 1)
+```
+
+**Step 2: Add high-order digits with carry ($6 + 5 + 1$):**
+```
+     0110   (6)
+     0101   (5)
+  +  0001   (Carry-in)
+  -------
+     1100   (12_10 -> Invalid BCD!)
+  +  0110   (Add correction factor +6)
+  -------
+   1 0010   (Result = 2, Carry to hundreds decade = 1)
+```
+
+**Step 3: Combine all decades:**
+- Hundreds digit: `0001` ($1$)
+- Tens digit: `0010` ($2$)
+- Units digit: `0101` ($5$)
+- Final BCD sum: `0001 0010 0101` ($125_{\text{BCD}}$).
+
+In hardware, the condition that triggers the $+6$ correction on sum bits $Z_3 Z_2 Z_1 Z_0$ and binary carry $K$ is generated by a simple combinational logic function:
+
+$$
+C = K + Z_3 Z_2 + Z_3 Z_1
+$$
+
+When $C = 1$, the correction factor $0110_2$ is fed into the second stage of the adder.
+
+## Other decimal codes
+
+Engineers developed several other 4-bit decimal codes to solve specific hardware problems:
+
+### Excess-3 (XS-3)
+
+The **Excess-3 code** is a non-weighted code created by adding $3$ ($0011_2$) to the BCD code of each decimal digit:
+
+$$
+\text{XS-3} = \text{BCD} + 0011_2
+$$
+
+| Decimal | BCD | Excess-3 |
+|---|---|---|
+| 0 | `0000` | `0011` |
+| 1 | `0001` | `0100` |
+| 2 | `0010` | `0101` |
+| 3 | `0011` | `0110` |
+| 4 | `0100` | `0111` |
+| 5 | `0101` | `1000` |
+| 6 | `0110` | `1001` |
+| 7 | `0111` | `1010` |
+| 8 | `1000` | `1011` |
+| 9 | `1001` | `1100` |
+
+Excess-3 is **self-complementing**: inverting every bit of the Excess-3 code for digit $d$ immediately yields the Excess-3 code for $9 - d$ (its 9's complement). For example:
+- Decimal 2 in Excess-3 is `0101`.
+- Inverting all bits gives `1010`, which is the Excess-3 code for decimal 7 ($9 - 2 = 7$).
+
+This property enabled early decimal computers to perform subtraction using simple bit inverters without separate complementation logic.
+
+### 2421 code (Aiken code)
+
+The **2421 code** is a weighted code with weights $2, 4, 2, 1$. Because the sum of its weights equals $2 + 4 + 2 + 1 = 9$, the 2421 code is also self-complementing. Decimal digits 0 through 4 use normal binary encoding, while digits 5 through 9 use bit patterns that start with a leading 1 (using the high-order weight 2).
+
+### Biquinary code (5043210)
+
+The **biquinary code** is a 7-bit error-detecting code historically used in early decimal computers (such as the IBM 650). Every digit has exactly two 1s: one in the first two bits (weights 5, 0) and one in the last five bits (weights 4, 3, 2, 1, 0). If a hardware line faults and delivers more or fewer than two 1s, an error is detected instantly.
 
 ## Gray code: one bit at a time
 
-Going from 3 to 4 in binary means `011` becomes `100`, so all three bits change. Real hardware never changes them at exactly the same moment, and a sensor reading mid-change could report any pattern at all.
+Consider an optical shaft encoder measuring the angular position of a motor. If the sensor outputs standard binary, rotating from position 3 (`011`) to position 4 (`100`) requires all three bits to flip simultaneously.
 
-**Gray code** reorders the numbers so that neighbours differ by exactly one bit. Turn the shaft below in each mode and count the flips.
+In physical reality, no three sensor switches can ever change at the exact same picosecond. If bit 2 switches slightly before bits 1 and 0, the sensor will momentarily output `111` (position 7). If bit 0 switches first, it might output `010` (position 2). These spurious transient states create false readings and race conditions.
+
+**Gray code** (or **reflected binary code**) is a **unit-distance code** in which any two consecutive code words differ by **exactly one bit**:
+
+$$
+\text{Hamming distance between adjacent words: } d_H = 1
+$$
+
+Rotate the shaft below in both binary and Gray modes and observe the transitions:
 
 <GrayEncoder />
 
-To convert binary to Gray, keep the first bit, then [XOR](/courses/logic-design/logic-gates#what-each-one-is-good-for) each neighbouring pair. So `10110` becomes `11101`. You will see this code again in [Karnaugh maps](/courses/logic-design/karnaugh-maps), where it does a very different job.
+Because only a single bit changes at each step, a mechanical or optical sensor reading mid-transition can only read either the previous position or the new position—never a wild third value.
+
+### Binary-to-Gray conversion
+
+Let $B_{n-1} B_{n-2} \dots B_0$ be an $n$-bit binary number, and let $G_{n-1} G_{n-2} \dots G_0$ be the corresponding Gray code:
+
+1. The most significant bit is identical:
+   $$G_{n-1} = B_{n-1}$$
+2. Every subsequent Gray bit is obtained by [XORing](/courses/logic-design/logic-gates#what-each-one-is-good-for) adjacent binary bits:
+   $$G_i = B_{i+1} \oplus B_i \quad (\text{for } i = n-2 \text{ down to } 0)$$
+
+In bitwise programming notation, this is computed in a single machine instruction:
+
+$$
+G = B \oplus (B \gg 1)
+$$
+
+**Worked example:** Convert binary $11010_2$ to Gray code:
+- $G_4 = B_4 = 1$
+- $G_3 = B_4 \oplus B_3 = 1 \oplus 1 = 0$
+- $G_2 = B_3 \oplus B_2 = 1 \oplus 0 = 1$
+- $G_1 = B_2 \oplus B_1 = 0 \oplus 1 = 1$
+- $G_0 = B_1 \oplus B_0 = 1 \oplus 0 = 1$
+- Result: $G = 10111_{\text{Gray}}$.
+
+### Gray-to-Binary conversion
+
+To recover the original binary number from a Gray code:
+
+1. The MSB is identical:
+   $$B_{n-1} = G_{n-1}$$
+2. Each subsequent binary bit is obtained by XORing the previously determined binary bit with the current Gray bit:
+   $$B_i = B_{i+1} \oplus G_i \quad (\text{for } i = n-2 \text{ down to } 0)$$
+
+**Worked example:** Convert Gray code $10111_{\text{Gray}}$ back to binary:
+- $B_4 = G_4 = 1$
+- $B_3 = B_4 \oplus G_3 = 1 \oplus 0 = 1$
+- $B_2 = B_3 \oplus G_2 = 1 \oplus 1 = 0$
+- $B_1 = B_2 \oplus G_1 = 0 \oplus 1 = 1$
+- $B_0 = B_1 \oplus G_0 = 1 \oplus 1 = 0$
+- Recovered binary: $11010_2$.
+
+You will encounter Gray code again when arranging rows and columns in [Karnaugh maps](/courses/logic-design/karnaugh-maps#grouping-rules), where the unit-distance property allows adjacent terms to simplify algebraically.
 
 ## ASCII: text
 
-ASCII gives each character a number. G is 71, which is `01000111`. The original code uses 7 bits for 128 characters, of which the first 32 are control codes. Unicode extends the idea to cover the world's writing systems.
+The **ASCII** (American Standard Code for Information Interchange) standard gives each character a number, assigning 7-bit binary codes ($0$ to $127$) to letters, numerals, punctuation marks, and hardware control signals:
+- **Control characters (0 to 31):** Non-printing signals like `CR` (carriage return, `0x0D`), `LF` (line feed, `0x0A`), `NUL` (`0x00`), and `ESC` (`0x1B`).
+- **Digits '0' to '9' (48 to 57 / `0x30` to `0x39`):** Stripping the high-order 4 bits yields the exact BCD value of the digit!
+- **Uppercase 'A'–'Z' (`0x41` to `0x5A`):** 'A' is `01000001`.
+- **Lowercase 'a'–'z' (`0x61` to `0x7A`):** 'a' is `01100001`.
+- Notice that uppercase and lowercase letters differ by **exactly bit 5** (weight 32). Flipping bit 5 converts between uppercase and lowercase.
+
+### Parity bits for error detection
+
+When transmitting bytes across noisy cables or memory buses, electrical noise can flip a bit. A **parity bit** is appended to the data word to detect single-bit errors:
+
+- **Even parity:** The parity bit is set to 0 or 1 so that the **total number of 1s** in the code word (data + parity) is **even**:
+  $$P_{\text{even}} = b_0 \oplus b_1 \oplus \dots \oplus b_{n-1}$$
+- **Odd parity:** The parity bit is chosen so that the total number of 1s is **odd**:
+  $$P_{\text{odd}} = \overline{b_0 \oplus b_1 \oplus \dots \oplus b_{n-1}}$$
+
+For example, to transmit ASCII character `'C'` (`1000011_2`, three 1s) under even parity:
+- The data has three 1s (odd).
+- To make the total count even, append parity bit $P = 1$.
+- Transmitted 8-bit byte: `11000011`.
+
+If any single bit flips during transmission (e.g. to `11000111`), the receiver counts five 1s, detects a parity violation, and requests retransmission.
 
 ## Floating point: very large and very small numbers
 
-Scientific notation writes the speed of light as $2.998 \times 10^8$: a few significant digits, plus how far to slide the point. Floating point does the same thing in binary. A 32-bit single-precision number has three fields:
+Fixed-point integers cannot represent numbers that span huge dynamic ranges, such as the mass of an electron ($9.1 \times 10^{-31}\text{ kg}$) or the speed of light ($3.0 \times 10^8\text{ m/s}$).
 
-| Field | Bits | Meaning |
-|---|---|---|
-| Sign | 1 | 0 is positive, 1 is negative |
-| Exponent | 8 | How far to slide the point, stored with 127 added so it's never negative |
-| Fraction | 23 | The digits after the point. The leading `1.` isn't stored, because it's always there |
+The **floating point** format uses scientific notation in binary, separating significant digits from an exponent scaling factor:
 
-Type a number and see its bits.
+$$
+\text{Decimal: } \pm M \times 10^E \qquad \text{Binary: } \pm M \times 2^E
+$$
+
+The **IEEE 754 standard** defines how binary floating-point numbers are encoded into 32-bit (single precision) and 64-bit (double precision) words.
+
+### Single-precision 32-bit format
+
+A 32-bit float partitions its bits into three distinct fields:
+
+```
+  31      30          23 22                                   0
++---+-------------------+---------------------------------------+
+| S |    Exponent (E)   |             Fraction (F)              |
++---+-------------------+---------------------------------------+
+1 bit       8 bits                         23 bits
+```
+
+1. **Sign bit ($S$, 1 bit):**
+   - $S = 0 \implies \text{positive}$
+   - $S = 1 \implies \text{negative}$
+2. **Biased Exponent ($E$, 8 bits):**
+   - Stored with an added **bias of 127**:
+     $$E = \text{actual power of two} + 127$$
+   - The bias ensures that the stored exponent field is always an unsigned positive number ($1 \le E \le 254$), allowing hardware magnitude comparators to compare float sizes without sign logic.
+3. **Fraction / Mantissa ($F$, 23 bits):**
+   - Stores the significant fractional bits.
+   - **The Hidden / Implicit Bit:** In normalized binary scientific notation, the leading digit before the binary point is always 1 ($1.b_{-1}b_{-2}\ldots$). Because it is always 1, IEEE 754 **omits it from memory**. This implicit bit gives 24 bits of effective precision while storing only 23 bits!
+
+The value of a normalized IEEE 754 single-precision float is:
+
+$$
+\text{Value} = (-1)^S \times (1.F)_2 \times 2^{E - 127}
+$$
+
+Explore floating-point bit layouts below:
 
 <FloatExplorer />
 
-The speed of light, 299,800,000, is $1.0001\ldots \times 2^{28}$ in binary. So the sign is 0 and the exponent is $28 + 127 = 155$, or `10011011`. The fraction holds the bits after the dropped leading 1.
+### Special values and exceptions
 
-Try 0.1 and notice the warning. There are only 23 bits for the digits, so most decimal fractions get rounded. For money, that's why programs count in whole cents.
+IEEE 754 reserves special exponent codes ($E = 0$ and $E = 255$) to represent edge cases:
+
+| Exponent ($E$) | Fraction ($F$) | Interpretation |
+|---|---|---|
+| `00000000` (0) | All 0s | **Zero** ($+0.0$ and $-0.0$, distinguished by sign bit $S$) |
+| `00000000` (0) | Non-zero | **Subnormal / Denormalized numbers**: Value $= (-1)^S \times (0.F)_2 \times 2^{-126}$ (allows gradual underflow) |
+| `1` to `254` | Any | **Normalized numbers**: Value $= (-1)^S \times (1.F)_2 \times 2^{E - 127}$ |
+| `11111111` (255) | All 0s | **Infinity** ($+\infty$ or $-\infty$, resulting from division by zero or overflow) |
+| `11111111` (255) | Non-zero | **NaN (Not a Number)**: Result of undefined operations (e.g. $0/0$, $\sqrt{-1}$, $\infty - \infty$) |
+
+### Worked example: Decimal to IEEE 754 single precision
+
+Convert the decimal number $-43.625_{10}$ into IEEE 754 32-bit single-precision hexadecimal representation:
+
+**Step 1: Determine sign bit:**
+The number is negative, so $S = 1$.
+
+**Step 2: Convert absolute value to binary:**
+- Integer: $43_{10} = 32 + 8 + 2 + 1 = 101011_2$.
+- Fractional: $0.625_{10} = 0.5 + 0.125 = 0.101_2$.
+- Combined binary: $101011.101_2$.
+
+**Step 3: Normalize to standard scientific notation:**
+Shift the binary point 5 places to the left:
+$$
+101011.101_2 = 1.01011101_2 \times 2^5
+$$
+The actual exponent is $+5$.
+
+**Step 4: Compute biased exponent:**
+$$
+E = 5 + \text{bias} = 5 + 127 = 132_{10} = 10000100_2
+$$
+
+**Step 5: Extract 23-bit fraction (drop leading 1.):**
+- Significant bits after the point: `01011101`
+- Pad with trailing zeros to 23 bits:
+  $$F = 01011101000000000000000_2$$
+
+**Step 6: Assemble the 32-bit word and convert to hex:**
+```
+S | Exponent | Fraction
+1 | 10000100 | 0101 1101 0000 0000 0000 000
+```
+Group into 4-bit nibbles:
+$$
+\underbrace{1100}_{\text{C}}\ \underbrace{0010}_{2}\ \underbrace{0010}_{2}\ \underbrace{1110}_{\text{E}}\ \underbrace{1000}_{8}\ \underbrace{0000}_{0}\ \underbrace{0000}_{0}\ \underbrace{0000}_{0} \implies \text{C22E8000}_{16}
+$$
+
+The IEEE 754 representation of $-43.625_{10}$ is `0xC22E8000`.
+
+## Practice problems
+
+### Problem 1: Multi-digit BCD addition with correction
+
+Perform the BCD addition of decimal $86_{10}$ and $79_{10}$. Show each 4-bit nibble addition, test for BCD correction, and display the final BCD sum.
+
+<ModelAnswer>
+Convert operands to BCD:
+- $86_{10} = 1000\ 0110_{\text{BCD}}$
+- $79_{10} = 0111\ 1001_{\text{BCD}}$
+
+**1. Units decade addition ($6 + 9$):**
+```
+     0110   (6)
+  +  1001   (9)
+  -------
+     1111   (15 > 9 -> Requires +6 correction)
+  +  0110   (Correction 0110_2)
+  -------
+   1 0101   (Units sum = 5, Carry-out to tens = 1)
+```
+
+**2. Tens decade addition ($8 + 7 + 1$ carry):**
+```
+     1000   (8)
+     0111   (7)
+  +  0001   (Carry-in)
+  -------
+   1 0000   (Binary carry K = 1, sum = 0; requires +6 correction)
+  +  0110   (Correction 0110_2)
+  -------
+   1 0110   (Tens sum = 6, Carry-out to hundreds = 1)
+```
+
+**3. Hundreds decade:**
+Carried-in bit: `0001` ($1$).
+
+**Final BCD representation:**
+$$
+\underbrace{0001}_{1}\ \underbrace{0110}_{6}\ \underbrace{0101}_{5} = 165_{\text{BCD}}
+$$
+Verification: $86 + 79 = 165$. The calculation is correct.
+</ModelAnswer>
+
+### Problem 2: Gray code shaft encoder analysis
+
+A digital control system uses a 4-bit shaft encoder.
+1. Determine the Gray code corresponding to angle sector 11 ($11_{10}$).
+2. Suppose the shaft rotates from position 7 to position 8. Compare the bit transitions that occur under standard binary encoding versus Gray code, explaining why Gray code prevents transient positioning errors.
+
+<ModelAnswer>
+1. **Gray code for $11_{10}$:**
+   - Binary representation of 11: $B = 1011_2$.
+   - Apply Gray conversion formulas:
+     - $G_3 = B_3 = 1$
+     - $G_2 = B_3 \oplus B_2 = 1 \oplus 0 = 1$
+     - $G_1 = B_2 \oplus B_1 = 0 \oplus 1 = 1$
+     - $G_0 = B_1 \oplus B_0 = 1 \oplus 1 = 0$
+   - Gray code for 11 is $1110_{\text{Gray}}$.
+
+2. **Transition from 7 to 8:**
+   - **Standard binary:** Position 7 is `0111` and position 8 is `1000`. All four bits must toggle simultaneously ($0\to 1$ and $1\to 0$). Because of physical switch tolerances, if bit 3 switches faster than bits 2, 1, and 0 switch off, the sensor will momentarily output `1111` ($15_{10}$). The controller could misinterpret this spike as a sudden jump across the entire motor range.
+   - **Gray code:** Position 7 is `0100` and position 8 is `1100`. Only a single bit (bit 3) toggles ($0 \to 1$). No intermediate bit combinations can ever be generated regardless of contact timing.
+</ModelAnswer>
+
+### Problem 3: Self-complementing codes
+
+Prove whether the 2421 code and Excess-3 code are self-complementing, and explain why standard 8421 BCD is not.
+
+<ModelAnswer>
+A decimal code is **self-complementing** if inverting every bit (1's complement) of the code word for decimal digit $d$ produces the code word for its 9's complement ($9 - d$).
+
+1. **Excess-3 code:**
+   - Excess-3 is formed as $\text{XS-3}(d) = d + 3$.
+   - Bitwise inversion corresponds to subtracting from $15_{10}$:
+     $$15 - \text{XS-3}(d) = 15 - (d + 3) = 12 - d = (9 - d) + 3 = \text{XS-3}(9 - d)$$
+   - Therefore, Excess-3 is mathematically guaranteed to be self-complementing for all digits $0 \le d \le 9$.
+
+2. **2421 code:**
+   - The weights sum to $2 + 4 + 2 + 1 = 9$.
+   - Bitwise inverting a 2421 word flips each 1-bit with weight $w_i$ to 0, and each 0-bit to a 1. The new numerical value is:
+     $$\sum w_i - \text{value}(d) = 9 - d$$
+   - Thus, the 2421 code is self-complementing.
+
+3. **8421 BCD:**
+   - The weights sum to $8 + 4 + 2 + 1 = 15 \ne 9$.
+   - Inverting the BCD code for 0 (`0000`) produces `1111` ($15_{10}$), which is an illegal code word rather than the code for 9 (`1001`). Thus, 8421 BCD cannot be self-complementing.
+</ModelAnswer>
+
+### Problem 4: IEEE 754 single-precision decoding
+
+Decode the 32-bit hexadecimal value `0x42A60000` into its exact decimal value, showing the extraction of sign, exponent, and fraction.
+
+<ModelAnswer>
+Convert the hex string `42A60000` to 32 binary bits:
+$$
+\text{4} = 0100, \quad \text{2} = 0010, \quad \text{A} = 1010, \quad \text{6} = 0110, \quad \text{0000} = 0000\,0000\,0000\,0000
+$$
+Full bit pattern:
+$$
+0100\ 0010\ 1010\ 0110\ 0000\ 0000\ 0000\ 0000
+$$
+
+Partition into IEEE 754 fields:
+- **Sign bit ($S$):** bit 31 = $0 \implies$ positive (+).
+- **Exponent field ($E$):** bits 30–23 = $10000101_2 = 128 + 4 + 1 = 133_{10}$.
+- **Fraction field ($F$):** bits 22–0 = `010 0110 0000 0000 0000 0000`.
+
+**1. Calculate the true exponent:**
+$$
+\text{True exponent} = E - \text{bias} = 133 - 127 = 6
+$$
+
+**2. Restore implicit leading 1 to the significand:**
+$$
+1.F = 1.010011_2
+$$
+
+**3. Shift binary point by exponent $+6$:**
+$$
+(1.010011)_2 \times 2^6 = 1010011_2
+$$
+
+**4. Convert to decimal:**
+$$
+1010011_2 = 64 + 16 + 2 + 1 = 83_{10}
+$$
+
+The IEEE 754 word `0x42A60000` represents the decimal number $+83.0$.
+</ModelAnswer>

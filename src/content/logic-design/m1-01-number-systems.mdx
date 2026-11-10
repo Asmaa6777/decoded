@@ -1,57 +1,385 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { PlaceValueBits, BaseConverter, FractionConverter } from "@/components/mdx/LogicVisualizers";
 
 # Number Systems
 
-You already know how place value works. In 345, the 3 means 300 because of where it sits: $3 \times 10^2 + 4 \times 10^1 + 5 \times 10^0$. Other number systems use the same idea with a different **base**. The base is how many digits you have before you run out and start a new column.
+Every electronic computer is built from physical switches that can only settle into two stable electrical states: HIGH voltage or LOW voltage. In [signals](/courses/logic-design/signals#logic-levels-and-threshold-voltages), we label these two states **1** and **0**. Because hardware relies on two states, the natural language of digital circuits is the binary number system.
 
-| System | Base | Digits | Column weights |
-|---|---|---|---|
-| Decimal | 10 | 0 to 9 | 1000, 100, 10, 1 |
-| Binary | 2 | 0, 1 | 8, 4, 2, 1 |
-| Octal | 8 | 0 to 7 | 512, 64, 8, 1 |
-| Hexadecimal | 16 | 0 to 9, A to F | 4096, 256, 16, 1 |
+Humans, however, think in decimal (base 10), and hardware engineers communicate byte patterns and memory addresses in octal (base 8) and hexadecimal (base 16). Understanding digital hardware requires moving effortlessly between these number systems.
+
+## Positional number representation and the radix
+
+In any **positional number system**, the value of a digit depends on both the symbol itself and its position relative to the **radix point** (called the decimal point in base 10, or binary point in base 2). The base, or **radix** ($r$), specifies how many unique digit symbols exist in that system:
+
+$$
+\text{Digit set } \in \{0, 1, 2, \dots, r-1\}
+$$
+
+A number $N$ with $n$ integer digits and $m$ fractional digits is expressed as a sequence of digit coefficients:
+
+$$
+N = (a_{n-1} a_{n-2} \dots a_1 a_0 . a_{-1} a_{-2} \dots a_{-m})_r
+$$
+
+The mathematical value of this sequence is given by the general **polynomial expansion**:
+
+$$
+N = \sum_{i=-m}^{n-1} a_i r^i = a_{n-1} r^{n-1} + \dots + a_1 r^1 + a_0 r^0 + a_{-1} r^{-1} + \dots + a_{-m} r^{-m}
+$$
+
+In this expansion, each position $i$ carries a **column weight** equal to $r^i$. The digit immediately to the left of the radix point ($a_0$) has weight $r^0 = 1$. Moving left, weights multiply by $r$ at each step ($r^1, r^2, r^3$). Moving right across the radix point into the fractional part, weights divide by $r$ at each step ($r^{-1}, r^{-2}, r^{-3}$).
+
+| System | Radix ($r$) | Allowed Digits | Integer Column Weights ($r^3, r^2, r^1, r^0$) | Fractional Weights ($r^{-1}, r^{-2}, r^{-3}$) |
+|---|---|---|---|---|
+| **Binary** | 2 | 0, 1 | 8, 4, 2, 1 | 0.5, 0.25, 0.125 |
+| **Octal** | 8 | 0 to 7 | 512, 64, 8, 1 | 0.125, 0.015625, 0.001953 |
+| **Decimal** | 10 | 0 to 9 | 1000, 100, 10, 1 | 0.1, 0.01, 0.001 |
+| **Hexadecimal** | 16 | 0 to 9, A to F | 4096, 256, 16, 1 | 0.0625, 0.003906, 0.000244 |
+
+In hexadecimal, we need 16 distinct symbols. After the digit $9$, we use the letters $\text{A}$ through $\text{F}$ to represent the values $10$ through $15$:
+
+$$
+\text{A}=10, \quad \text{B}=11, \quad \text{C}=12, \quad \text{D}=13, \quad \text{E}=14, \quad \text{F}=15
+$$
 
 ## Binary to decimal
 
-Think of a row of switches, where each switch is worth double the one to its right. To read a binary number, add up the values of the switches that are on. Flip these and watch the total change.
+To convert **binary to decimal**, or to convert from any base $r$ to decimal, expand each digit by its positional column weight $r^i$ and calculate the arithmetic sum. A **binary** number sums powers of 2.
+
+Flip the bit switches below to see how each power of two contributes to the decimal total:
 
 <PlaceValueBits />
 
-So $1101101_2 = 64 + 32 + 8 + 4 + 1 = 109$. The same recipe works in any base. Multiply each digit by its column weight and add:
+### Worked conversions to decimal
+
+**Example 1: Binary to decimal**
+
+Convert $(1101101.101)_2$ to decimal:
 
 $$
-2374_8 = 2(512) + 3(64) + 7(8) + 4(1) = 1276
+\begin{aligned}
+(1101101.101)_2 &= 1(2^6) + 1(2^5) + 0(2^4) + 1(2^3) + 1(2^2) + 0(2^1) + 1(2^0) + 1(2^{-1}) + 0(2^{-2}) + 1(2^{-3}) \\
+&= 64 + 32 + 0 + 8 + 4 + 0 + 1 + 0.5 + 0 + 0.125 \\
+&= 109.625_{10}
+\end{aligned}
 $$
 
+**Example 2: Octal to decimal**
+
+Convert $(2374.25)_8$ to decimal:
+
 $$
-\text{E5}_{16} = 14(16) + 5(1) = 229
+\begin{aligned}
+(2374.25)_8 &= 2(8^3) + 3(8^2) + 7(8^1) + 4(8^0) + 2(8^{-1}) + 5(8^{-2}) \\
+&= 2(512) + 3(64) + 7(8) + 4(1) + 2(0.125) + 5(0.015625) \\
+&= 1024 + 192 + 56 + 4 + 0.25 + 0.078125 \\
+&= 1276.328125_{10}
+\end{aligned}
+$$
+
+**Example 3: Hexadecimal to decimal**
+
+Convert $(\text{E5A.4})_{16}$ to decimal:
+
+$$
+\begin{aligned}
+(\text{E5A.4})_{16} &= 14(16^2) + 5(16^1) + 10(16^0) + 4(16^{-1}) \\
+&= 14(256) + 5(16) + 10(1) + 4(0.0625) \\
+&= 3584 + 80 + 10 + 0.25 \\
+&= 3674.25_{10}
+\end{aligned}
+$$
+
+**Example 4: Arbitrary base to decimal**
+
+Convert $(432.1)_5$ to decimal:
+
+$$
+(432.1)_5 = 4(5^2) + 3(5^1) + 2(5^0) + 1(5^{-1}) = 4(25) + 3(5) + 2(1) + 0.2 = 100 + 15 + 2 + 0.2 = 117.2_{10}
 $$
 
 ## Decimal to another base
 
-To go the other way, keep dividing by the base. Each remainder is one digit, starting from the right. Step through it, then try your own number or switch to hex.
+To convert a decimal integer to **binary** or to any other base $r$, keep dividing by the radix $r$ using **successive division**. Each division yields a quotient and a remainder:
+
+- The **first remainder** generated is the **least significant digit** (LSD or LSB, rightmost position, weight $r^0$).
+- The **last remainder** generated is the **most significant digit** (MSD or MSB, leftmost position).
+- Write the final converted number by reading the remainders from **bottom to top** (last generated to first generated).
+
+Step through the division algorithm below:
 
 <BaseConverter />
 
+### Step-by-step conversion of decimal 157
+
+**To Binary ($r = 2$):**
+
+$$
+\begin{aligned}
+157 \div 2 &= 78 \quad \text{remainder } 1 \quad (\text{LSB, } a_0) \\
+78 \div 2 &= 39 \quad \text{remainder } 0 \quad (a_1) \\
+39 \div 2 &= 19 \quad \text{remainder } 1 \quad (a_2) \\
+19 \div 2 &= 9 \quad \text{remainder } 1 \quad (a_3) \\
+9 \div 2 &= 4 \quad \text{remainder } 1 \quad (a_4) \\
+4 \div 2 &= 2 \quad \text{remainder } 0 \quad (a_5) \\
+2 \div 2 &= 1 \quad \text{remainder } 0 \quad (a_6) \\
+1 \div 2 &= 0 \quad \text{remainder } 1 \quad (\text{MSB, } a_7)
+\end{aligned}
+$$
+
+Reading remainders from bottom to top yields: $157_{10} = 10011101_2$.
+
+**To Octal ($r = 8$):**
+
+$$
+\begin{aligned}
+157 \div 8 &= 19 \quad \text{remainder } 5 \quad (\text{LSD}) \\
+19 \div 8 &= 2 \quad \text{remainder } 3 \\
+2 \div 8 &= 0 \quad \text{remainder } 2 \quad (\text{MSD})
+\end{aligned}
+$$
+
+Reading from bottom to top yields: $157_{10} = 235_8$.
+
+**To Hexadecimal ($r = 16$):**
+
+$$
+\begin{aligned}
+157 \div 16 &= 9 \quad \text{remainder } 13 = \text{D} \quad (\text{LSD}) \\
+9 \div 16 &= 0 \quad \text{remainder } 9 \quad (\text{MSD})
+\end{aligned}
+$$
+
+Reading from bottom to top yields: $157_{10} = 9\text{D}_{16}$.
+
 ## Why programmers love hex
 
-A long binary number is hard to read. Because $16 = 2^4$, one hex digit covers exactly 4 bits, so you can convert by grouping, with no arithmetic. Octal works the same way with groups of 3, because $8 = 2^3$.
+Programmers use **hexadecimal** because $16 = 2^4$: each hex digit corresponds to exactly 4 bits (one nibble), allowing long binary strings to be written compactly without arithmetic. Octal works the same way with groups of 3 bits, because $8 = 2^3$.
+
+```
+Octal Digits (3 bits):
+  0: 000    1: 001    2: 010    3: 011
+  4: 100    5: 101    6: 110    7: 111
+
+Hexadecimal Digits (4 bits):
+  0: 0000   1: 0001   2: 0010   3: 0011
+  4: 0100   5: 0101   6: 0110   7: 0111
+  8: 1000   9: 1001   A: 1010   B: 1011
+  C: 1100   D: 1101   E: 1110   F: 1111
+```
+
+### The grouping rules
+
+To convert a binary number to octal or hex:
+
+1. **For the integer part:** Group bits starting from the **radix point moving left**. If the leftmost group has fewer than 3 or 4 bits, pad it on the left with leading zeros.
+2. **For the fractional part:** Group bits starting from the **radix point moving right**. If the rightmost group has fewer than 3 or 4 bits, pad it on the right with trailing zeros.
+
+> [!WARNING]
+> Never pad the fractional part on the left or group across the radix point. Padding $0.1_2$ on the left into $0.0001_2$ changes the value from $0.5$ to $0.0625$. The correct 4-bit hex grouping is $0.1000_2 = 0.8_{16}$.
+
+### Worked grouping examples
+
+Convert the binary number $(10110110101.101011)_2$ to hexadecimal and octal:
+
+**To Hexadecimal (groups of 4):**
+
+- Integer part: $\underbrace{0101}_{5}\ \underbrace{1011}_{\text{B}}\ \underbrace{0101}_{5}$ (padded with one leading 0 on the left).
+- Fractional part: $\underbrace{1010}_{\text{A}}\ \underbrace{1100}_{\text{C}}$ (padded with two trailing 0s on the right).
+- Result: $(10110110101.101011)_2 = (5\text{B}5.\text{AC})_{16}$.
+
+**To Octal (groups of 3):**
+
+- Integer part: $\underbrace{010}_{2}\ \underbrace{110}_{6}\ \underbrace{110}_{6}\ \underbrace{101}_{5}$ (padded with one leading 0 on the left).
+- Fractional part: $\underbrace{101}_{5}\ \underbrace{011}_{3}$.
+- Result: $(10110110101.101011)_2 = (2665.53)_8$.
+
+### Converting between octal and hexadecimal
+
+To convert directly between octal and hex, use binary as the intermediate stepping stone:
 
 $$
-\underbrace{1100}_{\text{C}}\ \underbrace{1010}_{\text{A}}\ \underbrace{0101}_{5}\ \underbrace{0111}_{7} = \text{CA57}_{16}
+\text{Octal} \longleftrightarrow \text{Binary (3-bit groups)} \longleftrightarrow \text{Binary (4-bit groups)} \longleftrightarrow \text{Hexadecimal}
 $$
 
-Start grouping at the right-hand end and pad the left with zeros if a group comes up short. For example, $110101_2$ groups into 110 and 101, which is $65_8$.
+For example, convert $(\text{7B.4})_{16}$ to octal:
 
-<Callout tone="sky" label="Where you see this">
-Colour codes like `#FF8800` are three bytes in hex. Memory addresses in a debugger are in hex too, and you'll work them by hand when you [calculate 8086 physical addresses](/courses/microprocessors/segments-and-addresses).
+1. Expand each hex digit into 4 bits: $\text{7} = 0111$, $\text{B} = 1011$, $.4 = .0100 \implies 01111011.0100_2$.
+2. Regroup into 3 bits from the radix point:
+   - Integer: $\underbrace{001}_{1}\ \underbrace{111}_{7}\ \underbrace{011}_{3}$
+   - Fractional: $\underbrace{010}_{2}\ \underbrace{000}_{0}$
+3. Read in octal: $(173.2)_8$.
+
+<Callout tone="sky" label="Where you see this in hardware">
+Hexadecimal is the standard shorthand in assembly language, circuit schematics, and debuggers. A 32-bit register holds 8 hex digits, a 64-bit address holds 16 hex digits, and colour codes like `#FF8800` represent red, green, and blue intensities as three 8-bit bytes ($255, 136, 0$). You will also compute addresses by hand when you [calculate 8086 physical addresses](/courses/microprocessors/segments-and-addresses).
 </Callout>
 
 ## Fractions
 
-After the point, the column weights keep halving: 0.5, 0.25, 0.125, and so on. To convert a decimal fraction, keep multiplying by 2. Whatever pops out in front of the point is the next bit.
+A decimal fraction cannot be converted by division because dividing a fraction by $r$ would make it smaller. Instead, we convert fractional parts using **successive multiplication** by the target base $r$.
+
+Multiplying a fraction $F$ by $r$ scales the first fractional digit into the integer position:
+
+$$
+F \times r = a_{-1} + F_1
+$$
+
+The integer portion $a_{-1}$ is extracted as the first fractional digit. The remaining fractional part $F_1$ is multiplied by $r$ again to extract $a_{-2}$, and so on:
+
+- The **first integer** extracted is the **most significant fractional digit** ($a_{-1}$, immediately to the right of the radix point).
+- Successive integers form subsequent fractional positions moving to the right.
+- Read the digits from **top to bottom** (in the order they were generated).
+- Stop when the fractional part becomes exactly zero (terminating fraction) or when you reach the required number of bits or detect a repeating cycle.
+
+Try converting fractional values below:
 
 <FractionConverter />
 
-Try 0.1. It never terminates in binary, for the same reason 1/3 never terminates in decimal. This is why `0.1 + 0.2` isn't exactly `0.3` in most programming languages.
+### Terminating vs repeating fractions
+
+A fraction in base 10 terminates in base $r$ if and only if all prime factors of its reduced denominator divide $r$.
+
+Because the prime factors of 10 are 2 and 5, any decimal fraction whose denominator has factors other than 2 will **never terminate in binary**. Even simple decimal fractions like $0.1 = \frac{1}{10}$ and $0.7 = \frac{7}{10}$ produce infinitely repeating bit streams in binary:
+
+**Example 1: Terminating binary fraction ($0.6875_{10}$)**
+
+$$
+\begin{aligned}
+0.6875 \times 2 &= \mathbf{1}.375 \quad \to \text{integer } 1 \quad (a_{-1}) \\
+0.375 \times 2 &= \mathbf{0}.75 \quad \to \text{integer } 0 \quad (a_{-2}) \\
+0.75 \times 2 &= \mathbf{1}.50 \quad \to \text{integer } 1 \quad (a_{-3}) \\
+0.50 \times 2 &= \mathbf{1}.00 \quad \to \text{integer } 1 \quad (a_{-4}, \text{fraction is } 0)
+\end{aligned}
+$$
+
+Reading top to bottom gives: $0.6875_{10} = 0.1011_2$.
+
+**Example 2: Infinitely repeating binary fraction ($0.7_{10}$)**
+
+$$
+\begin{aligned}
+0.7 \times 2 &= \mathbf{1}.4 \quad \to \text{integer } 1 \\
+0.4 \times 2 &= \mathbf{0}.8 \quad \to \text{integer } 0 \\
+0.8 \times 2 &= \mathbf{1}.6 \quad \to \text{integer } 1 \\
+0.6 \times 2 &= \mathbf{1}.2 \quad \to \text{integer } 1 \\
+0.2 \times 2 &= \mathbf{0}.4 \quad \to \text{integer } 0 \quad (\text{repeats from line 2!})
+\end{aligned}
+$$
+
+The cycle `0110` repeats forever: $0.7_{10} = 0.1\,0110\,0110\,0110\ldots_2 = 0.1\overline{0110}_2$.
+
+This mathematical fact explains why binary floating-point arithmetic in programming languages cannot represent numbers like `0.1` or `0.2` with absolute decimal precision, causing expressions like `0.1 + 0.2 == 0.3` to evaluate to `false`.
+
+## Practice problems
+
+### Problem 1: Mixed base conversions
+
+Convert the decimal number $73.3125_{10}$ into:
+1. Binary
+2. Octal
+3. Hexadecimal
+
+<ModelAnswer>
+First separate the integer part ($73$) and fractional part ($0.3125$):
+
+**1. Integer part ($73_{10}$):**
+- $73 \div 2 = 36$ rem 1
+- $36 \div 2 = 18$ rem 0
+- $18 \div 2 = 9$ rem 0
+- $9 \div 2 = 4$ rem 1
+- $4 \div 2 = 2$ rem 0
+- $2 \div 2 = 1$ rem 0
+- $1 \div 2 = 0$ rem 1
+- Integer in binary: $1001001_2$.
+
+**2. Fractional part ($0.3125_{10}$):**
+- $0.3125 \times 2 = \mathbf{0}.625$ (0)
+- $0.625 \times 2 = \mathbf{1}.25$ (1)
+- $0.25 \times 2 = \mathbf{0}.5$ (0)
+- $0.5 \times 2 = \mathbf{1}.0$ (1)
+- Fractional in binary: $0.0101_2$.
+
+Combine both parts:
+1. **Binary:** $1001001.0101_2$
+2. **Octal:** Group by 3 bits: $\underbrace{001}_{1}\ \underbrace{001}_{1}\ \underbrace{001}_{1}\ .\ \underbrace{010}_{2}\ \underbrace{100}_{4} = 111.24_8$.
+3. **Hexadecimal:** Group by 4 bits: $\underbrace{0100}_{4}\ \underbrace{1001}_{9}\ .\ \underbrace{0101}_{5} = 49.5_{16}$.
+</ModelAnswer>
+
+### Problem 2: Arbitrary base evaluation
+
+Determine the decimal equivalent of the number $(342.13)_5$, and state the minimum radix required for the number $(7\text{B}2)_r$ to be valid.
+
+<ModelAnswer>
+1. **Decimal equivalent of $(342.13)_5$:**
+   Apply the polynomial expansion with radix $r = 5$:
+   $$
+   \begin{aligned}
+   (342.13)_5 &= 3(5^2) + 4(5^1) + 2(5^0) + 1(5^{-1}) + 3(5^{-2}) \\
+   &= 3(25) + 4(5) + 2(1) + 1(0.2) + 3(0.04) \\
+   &= 75 + 20 + 2 + 0.2 + 0.12 \\
+   &= 97.32_{10}
+   \end{aligned}
+   $$
+
+2. **Minimum radix for $(7\text{B}2)_r$:**
+   In any base $r$, all digit symbols must be strictly less than $r$. The digit symbol $\text{B}$ represents decimal value $11$. Therefore, the radix must satisfy $r > 11$, which means the minimum integer radix is $r = 12$ (duodecimal).
+</ModelAnswer>
+
+### Problem 3: Octal to hexadecimal direct conversion
+
+Convert $(653.42)_8$ directly to hexadecimal without converting to decimal first.
+
+<ModelAnswer>
+Step 1: Convert each octal digit to a 3-bit binary group:
+- $6 = 110$
+- $5 = 101$
+- $3 = 011$
+- $.4 = .100$
+- $2 = 010$
+- Full binary representation: $110101011.100010_2$.
+
+Step 2: Regroup into 4-bit nibbles from the radix point:
+- Integer part: $\underbrace{0001}_{1}\ \underbrace{1010}_{\text{A}}\ \underbrace{1011}_{\text{B}}$ (padded with three leading 0s).
+- Fractional part: $\underbrace{1000}_{8}\ \underbrace{1000}_{8}$ (padded with two trailing 0s).
+
+Step 3: Map each 4-bit group to its hex digit:
+- Integer: $1\text{AB}_{16}$
+- Fractional: $.88_{16}$
+- Final result: $(653.42)_8 = (1\text{AB}.88)_{16}$.
+</ModelAnswer>
+
+### Problem 4: Truncation error analysis
+
+Convert decimal $0.2_{10}$ to an 8-bit fractional binary number, and calculate the absolute truncation error between the true decimal value and its 8-bit binary representation.
+
+<ModelAnswer>
+Multiply by 2 successively to extract 8 binary digits:
+1. $0.2 \times 2 = \mathbf{0}.4$ (0)
+2. $0.4 \times 2 = \mathbf{0}.8$ (0)
+3. $0.8 \times 2 = \mathbf{1}.6$ (1)
+4. $0.6 \times 2 = \mathbf{1}.2$ (1)
+5. $0.2 \times 2 = \mathbf{0}.4$ (0)
+6. $0.4 \times 2 = \mathbf{0}.8$ (0)
+7. $0.8 \times 2 = \mathbf{1}.6$ (1)
+8. $0.6 \times 2 = \mathbf{1}.2$ (1)
+
+The 8-bit truncated binary representation is:
+$$
+0.00110011_2
+$$
+
+Evaluating this 8-bit binary fraction in decimal:
+$$
+\begin{aligned}
+2^{-3} + 2^{-4} + 2^{-7} + 2^{-8} &= \frac{1}{8} + \frac{1}{16} + \frac{1}{128} + \frac{1}{256} \\
+&= 0.125 + 0.0625 + 0.0078125 + 0.00390625 \\
+&= 0.19921875_{10}
+\end{aligned}
+$$
+
+**Absolute truncation error:**
+$$
+|0.2 - 0.19921875| = 0.00078125_{10} = \frac{1}{1280}
+$$
+This demonstrates how finite-width registers introduce precision loss when storing non-terminating binary fractions.
+</ModelAnswer>
