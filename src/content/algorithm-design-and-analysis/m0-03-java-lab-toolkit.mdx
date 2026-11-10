@@ -21,13 +21,13 @@ The third line demonstrates **instantiation**: `new` allocates array storage in 
 
 ```java
 int[] a2 = {12, 24, 16};          // length 3, decided by the list
-a = new int[] {10, 20, 30, 40};   // give an existing variable a new array
+int[] a = new int[] {10, 20, 30, 40};   // allocate and initialize in one line
 System.out.println(a[0]);         // 10
 System.out.println(a2[2]);        // 16, the third element
 System.out.println(a.length);     // 4
 ```
 
-The compact syntax `{12, 24, 16}` is valid only at declaration time. For subsequent assignments, you must write `new int[] {...}`.
+The compact syntax `{12, 24, 16}` is valid only at declaration time. To reassign an already declared variable later, write `a = new int[] {...}`.
 
 A few facts that matter for algorithms:
 
@@ -39,11 +39,13 @@ Two-dimensional arrays work the same way, as an array of arrays:
 
 ```java
 int[][] grid = new int[3][4];   // 3 rows, 4 columns
-grid[1][2] = 7;
+grid[1][2] = 7;                 // grid[row][col]: row 1 (2nd row), column 2 (3rd column)
 int rows = grid.length, cols = grid[0].length;
 
 int[][] small = {{1, 2}, {4, 5}};   // initializer list: two rows of two
 ```
+
+Notice that 2D array indexing `grid[row][col]` places the vertical row index first (0 to 2) and the horizontal column index second (0 to 3). This is the reverse of mathematical $(x, y)$ Cartesian coordinates where horizontal $x$ comes first.
 
 To print a 2D array, loop over the rows, and inside that over the columns of each row:
 
@@ -95,11 +97,15 @@ public class AlgoLab {
 }
 ```
 
+The Java standard library also provides `java.util.Arrays.toString(array)`, which produces clean bracketed output like `[12, 24, 16]` without a trailing comma.
+
 `Math.random()` returns a `double` in the [half-open interval](/courses/discrete-mathematics/sets#what-a-set-is) $[0, 1)$, meaning values at least 0 and strictly less than 1. Multiplying by `dataRange` scales the interval, and prefixing `(int)` performs a type **cast** that truncates the fractional portion. For example, with `dataRange = 100`, a generated value of $0.734$ scales to $73.4$ and truncates to $73$. Because the maximum random return is strictly below $1.0$, multiplying by 100 never reaches 100, yielding integers from `0` through `dataRange - 1`.
+
+To generate random integers across an arbitrary range $[min, max]$ (such as $[-50, 50]$ or $[10, 99]$), scale by the span and add the minimum offset: `min + (int) (Math.random() * (max - min + 1))`.
 
 Operator precedence requires parentheses: writing `(int) Math.random() * dataRange` evaluates the cast before the multiplication. Because `Math.random()` is always less than 1, truncating it immediately yields 0, producing an array filled entirely with zeros.
 
-The `swap` method requires a temporary variable `temp` to avoid overwriting data. Tracing `swap(array, 0, 1)` on `[5, 9]` shows the sequence: `temp` stores 5, `array[0]` receives 9, and `array[1]` retrieves `temp` (5), resulting in `[9, 5]`. Omitting `temp` by writing `array[x] = array[y]; array[y] = array[x];` overwrites the original value at index `x` before it can be copied, leaving both slots holding 9.
+The `swap` method requires a temporary variable `temp` to avoid overwriting data. Tracing `swap(array, 0, 1)` on `[5, 9]` shows the sequence: `temp` stores 5, `array[0]` receives 9, and `array[1]` retrieves `temp` (5), resulting in `[9, 5]`. Omitting `temp` by writing `array[x] = array[y]; array[y] = array[x];` overwrites the original value at index `x` before it can be copied, leaving both slots holding 9. If $x$ and $y$ are the same index ($x = y$), the method performs three harmless assignments and leaves the element unchanged, which frequently happens when sorting passes encounter an element already in position.
 
 <ArraySwapVisualizer />
 
@@ -117,9 +123,9 @@ This bug ruins more sorting experiments than anything else:
 int[] original = new int[10];
 generateRandomArray(original, 100);
 
-int[] copy = original;        // NOT a copy!
-selectionSort(copy);
-printArray(original);         // ...it's sorted too.
+int[] copy = original;        // NOT a copy! Both variables point to the same array
+selectionSort(copy);          // imaginary sort call (Module 1's method)
+printArray(original);         // ...original is sorted too!
 ```
 
 The assignment `copy = original` copies the object reference rather than the underlying array data. Both variables reference the identical array in memory. To create a separate, independent duplicate, clone the array:
@@ -129,6 +135,15 @@ int[] copy = original.clone();          // or: Arrays.copyOf(original, original.
 ```
 
 You need this whenever you want a fair race between two algorithms on *the same* random input.
+
+Note that `.clone()` creates a **shallow copy**. For a one-dimensional array of integers, cloning duplicates every value. For a two-dimensional array `int[][] grid`, cloning duplicates only the outer array of row pointers: both copies continue pointing to the same underlying row arrays. To make an independent duplicate of a 2D array, clone each row individually:
+
+```java
+int[][] gridCopy = new int[grid.length][];
+for (int i = 0; i < grid.length; i++) {
+    gridCopy[i] = grid[i].clone();
+}
+```
 
 <ArrayReferenceVisualizer />
 
@@ -160,10 +175,11 @@ public static void main(String[] args) {
     printArray(array);
 
     long start = System.nanoTime();
-    // ... the algorithm of the week goes here ...
+    // Exercise or algorithm under test:
+    swap(array, 0, array.length - 1); // for example: swap first and last elements
     long end = System.nanoTime();
 
-    System.out.println("After:");
+    System.out.println("After swapping first and last elements:");
     printArray(array);
     System.out.println("Time: " + (end - start) / 1_000_000.0 + " ms");
 }
@@ -175,12 +191,22 @@ public static void main(String[] args) {
 
 These are the usual first-lab exercises. Write them yourself before peeking.
 
-**1. Print the largest number in a random array.** (You saw the idea in [the first lesson](/courses/algorithm-design-and-analysis/what-is-an-algorithm#a-first-algorithm-three-ways).)
+**1. Print the largest number in a random array.** (Adapted from [the first lesson](/courses/algorithm-design-and-analysis/what-is-an-algorithm#a-first-algorithm-three-ways).)
+
+```java
+public static int findMax(int[] a) {
+    int max = a[0];
+    for (int i = 1; i < a.length; i++) {
+        if (a[i] > max) max = a[i];
+    }
+    return max;
+}
+```
 
 **2. Print the sum of all the items in a random array.**
 
 ```java
-static long sum(int[] a) {
+public static long sum(int[] a) {
     long total = 0;                 // long, so big arrays don't overflow
     for (int i = 0; i < a.length; i++)
         total += a[i];
@@ -191,7 +217,7 @@ static long sum(int[] a) {
 **3. Print every position where a value `x` appears.** Unlike a normal search, don't stop at the first match: the array is random, so `x` may appear several times, or not at all.
 
 ```java
-static void printPositions(int[] a, int x) {
+public static void printPositions(int[] a, int x) {
     boolean found = false;
     for (int i = 0; i < a.length; i++) {
         if (a[i] == x) {
@@ -203,7 +229,7 @@ static void printPositions(int[] a, int x) {
 }
 ```
 
-Using `long` prevents integer overflow. In Java, a 32-bit signed `int` has a maximum value of $2^{31} - 1 \approx 2.14 \times 10^9$. Summing one million integers of up to 10,000 can reach 10 billion, exceeding this bound. When an arithmetic operation exceeds the range of an `int`, Java wraps around to negative values without throwing an exception, leading to silent calculation errors.
+Using `long` prevents integer overflow. In Java, a 32-bit signed `int` has a maximum value of $2^{31} - 1 \approx 2.14 \times 10^9$. Summing one million integers of up to 10,000 can reach 10 billion, exceeding this bound. When an arithmetic operation exceeds the range of an `int`, Java wraps around modulo $2^{32}$ without throwing an exception. Crossing $2^{31} - 1$ flips the sign bit to produce negative numbers, and accumulating past $-2^{31}$ wraps back around to produce incorrectly small positive numbers (as demonstrated in Practice Question 1).
 
 All three exercises run in $O(n)$ linear time with one pass and constant work per element. The third exercise always checks every slot, so its best case requires $n$ comparisons as well, unlike [linear search](/courses/algorithm-design-and-analysis/counting-steps#best-worst-and-average-case) which halts upon encountering the first matching element.
 
@@ -214,7 +240,20 @@ Benchmark measurements allow you to verify theoretical complexity. After impleme
 For an $O(n^2)$ algorithm, doubling the input size quadruples execution time because $(2n)^2 = 4n^2$. For an $O(n)$ algorithm, doubling $n$ roughly doubles the duration. Comparing empirical timing against theoretical growth confirms [Big-O](/courses/algorithm-design-and-analysis/counting-steps#the-three-notations) as a predictive tool.
 
 <Callout tone="sky" label="Benchmarking best practices">
-Use `.clone()` so every test run sorts identical data. Run multiple trials at each input size and take the median time. Repeating trials mitigates JVM warm-up distortion, where just-in-time (JIT) compilation initially interprets bytecode before compiling frequently executed paths into optimized native machine code.
+Use `.clone()` so every test run sorts identical data. Run multiple trials at each input size and record the minimum or median duration. Repeating trials mitigates JVM warm-up distortion, where just-in-time (JIT) compilation initially interprets bytecode before compiling frequently executed paths into optimized native machine code:
+
+```java
+int trials = 5;
+long minDuration = Long.MAX_VALUE;
+for (int t = 0; t < trials; t++) {
+    int[] testData = original.clone();
+    long start = System.nanoTime();
+    selectionSort(testData);
+    long duration = System.nanoTime() - start;
+    if (duration < minDuration) minDuration = duration;
+}
+System.out.println("Best duration: " + (minDuration / 1_000_000.0) + " ms");
+```
 </Callout>
 
 ## Practice from past exams

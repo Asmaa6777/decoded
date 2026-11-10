@@ -5,7 +5,7 @@ import { FindMaxVisualizer, LeetCodeProblems } from "@/components/mdx/AlgoVisual
 
 The standard definition of an algorithm sounds simple:
 
-> An **algorithm** is a well-defined procedure that takes some input and turns it into some output in a finite number of steps.
+> An **algorithm** is a well-defined procedure that takes zero or more inputs and turns them into one or more outputs in a finite number of steps.
 
 Another common phrasing calls an algorithm a **sequence of computational steps that transform the input into the output**.
 
@@ -20,8 +20,10 @@ An algorithm is a tool for solving a **computational problem**. The problem and 
 
 Here is the sorting problem, written the way textbooks state it:
 
-- **Input:** a sequence of $n$ numbers $\langle a_1, a_2, \ldots, a_n \rangle$.
-- **Output:** a permutation (a reordering) $\langle a'_1, a'_2, \ldots, a'_n \rangle$ of those same numbers, such that $a'_1 \le a'_2 \le \cdots \le a'_n$.
+- **Input:** a sequence of $n$ numbers $\langle a_1, a_2, \ldots, a_n \rangle$. The angle brackets $\langle \dots \rangle$ denote an ordered sequence or list.
+- **Output:** a permutation (a reordering) $\langle a'_1, a'_2, \ldots, a'_n \rangle$ of those same numbers, such that $a'_1 \le a'_2 \le \cdots \le a'_n$. The prime mark on $a'_i$ (read "a-prime-$i$" or "$a_i$ prime") denotes the new value at position $i$ after sorting, distinguishing it from the original unsorted $a_i$.
+
+Textbook mathematics conventionally writes 1-based indices from $a_1$ to $a_n$. In Java and most programming languages, array indices start at zero, spanning `a[0]` through `a[n - 1]`. Keep that difference in mind when translating textbook equations to code.
 
 One particular input is called an **instance** of the problem. $\langle 8, 1, 4, 9, 3, 7 \rangle$ is an instance of sorting, and the right output for it is $\langle 1, 3, 4, 7, 8, 9 \rangle$. A problem has infinitely many instances. An algorithm has to handle all of them.
 
@@ -57,7 +59,7 @@ Many course notes list these **properties of an algorithm** in plain sentences i
 
 "Flexible" means the procedure works on every valid input rather than just one sample input. The next section calls this property *generality*.
 
-Finiteness and effectiveness are easy to confuse because both involve limits on steps. **Finiteness** applies to the whole algorithm: the total number of steps must end. **Effectiveness** applies to each single step: each operation must be possible to complete. For example, "add 1 to x, forever" fails finiteness, even though each addition is easy. "Write down every digit of π" fails effectiveness because that single operation can never finish.
+Finiteness and effectiveness are easy to confuse because both involve limits on steps. **Finiteness** applies to the execution path of the whole algorithm: the total number of operations must end rather than running in an infinite loop. **Effectiveness** applies to each single operation: each individual step must be elementary enough to carry out in finite time by a human with pencil and paper or an actual CPU. For example, "add 1 to x, forever" fails finiteness even though each addition is easy. "Write down every digit of π" or "divide by zero" fails effectiveness because that single operation can never finish.
 
 ## What design and analysis aim for
 
@@ -71,7 +73,7 @@ A good algorithm is judged on five things:
 - **Efficiency:** time and space. Most of this course is about measuring this.
 - **Simplicity:** a simpler algorithm is easier to understand, prove and code, and has fewer places for bugs to hide.
 - **Generality:** it handles the full range of inputs, including the special cases: an empty array, one element, all values equal.
-- **Optimality:** no other algorithm for the same problem can run faster or use less space. For example, no sort that compares elements can beat about $n \log n$ comparisons in the worst case (here $n$ is the number of items, and $\log n$, which the [next lesson](/courses/algorithm-design-and-analysis/counting-steps#growth-is-what-matters) explains, counts how many times you can halve $n$), so merge sort is optimal in that sense. Advanced Algorithms [proves this lower bound](/courses/advanced-algorithms/sorting-lower-bounds#the-lower-bound).
+- **Optimality:** no other algorithm for the same problem can run faster or use less space. For example, no sort that compares elements with $\le$ or $>$ (a **comparison sort**) can beat about $n \log n$ comparisons in the worst case (here $n$ is the number of items, and $\log n$, which the [next lesson](/courses/algorithm-design-and-analysis/counting-steps#getting-the-big-o-without-the-algebra) explains, counts how many times you can halve $n$), so merge sort is optimal in that sense. Advanced Algorithms [proves this lower bound](/courses/advanced-algorithms/sorting-lower-bounds#the-lower-bound). (Non-comparison sorts like counting sort can run faster when value ranges are bounded, as noted below.)
 - **Implementation:** how the algorithm's data and operations map to code. An algorithm that frequently requests the smallest remaining item needs a suitable data structure to supply it quickly.
 
 Textbooks often group these goals as the **basic issues** of algorithm study: designing algorithms, expressing them in code, proving them correct, analyzing efficiency, and evaluating optimality.
@@ -108,7 +110,7 @@ People often use the two words interchangeably, although they refer to different
 | Describes *how* to solve the problem | *Implements* that description so a machine can run it |
 | Cannot execute directly on hardware | Runs on a computer |
 
-**Pseudocode** sits between plain prose and working code: exact steps written with loops and conditionals, without language-specific syntax like types, semicolons, or imports. There is no single official syntax; the steps only need to be clear and unambiguous. The [example at the end of this lesson](#a-first-algorithm-three-ways) shows one.
+**Pseudocode** sits between plain prose and working code: exact steps written with loops and conditionals, without language-specific syntax like types, semicolons, or imports. There is no single official syntax; the steps only need to be clear and unambiguous. In pseudocode, loop ranges like `for i ← 1 to n - 1` are inclusive (both bounds execute), unlike Java's exclusive `<` upper bound. The [example at the end of this lesson](#a-first-algorithm-three-ways) shows one.
 
 One algorithm can become a thousand programs. [Binary search](/courses/algorithm-design-and-analysis/linear-and-binary-search#binary-search-throw-away-half) is one idea, and there's a version of it in the Java standard library (`Arrays.binarySearch`), in every database index, and in the `git bisect` command.
 
@@ -143,7 +145,7 @@ Designing an algorithm is an iterative cycle where writing code comes last. Here
 
 1. **Understand the problem.** What exactly is the input? What counts as a correct answer? What are the unusual edge cases? Work a few small instances by hand.
 2. **Decide on the approach.** The full name of this box is "Decide on: computational means, exact vs. approximate solving, algorithm design technique", three things to settle before designing anything:
-   - **The computational means:** what kind of machine runs it. Almost everything in this course assumes an ordinary computer that does one step at a time; a machine that runs many steps in [parallel](/courses/computer-architecture/parallel-processing#simd-one-instruction-many-values) needs different algorithms. How much speed and memory you have counts here too.
+   - **The computational means:** what kind of machine runs it. Almost everything in this course assumes the standard **Random Access Machine (RAM) model**: an ordinary sequential computer that executes one instruction at a time, where basic arithmetic and reading any memory address take constant time. A machine that runs many steps in [parallel](/courses/computer-architecture/parallel-processing#simd-one-instruction-many-values) needs different algorithms. Available memory and CPU speed count here too.
    - **Exact or approximate solving:** do you need the exact best answer, or is a good-enough one acceptable? For the hard problems below, exact answers can take too long, so people settle for close ones.
    - **The algorithm design technique:** brute force, [divide and conquer](/courses/algorithm-design-and-analysis/merge-sort#divide-and-conquer), greedy, or [dynamic programming](/courses/algorithm-design-and-analysis/dynamic-programming). You'll learn all four here. This is also when you pick your data structures.
 3. **Design an algorithm:** write the steps.
@@ -179,12 +181,12 @@ Most problems fall into a few families. Exams often ask you to list them with an
 
 Sorting, searching, string processing, graph and numerical problems are often called the **important problem types**, because so many other algorithms use them as building blocks.
 
-Then there are the **hard problems**: the Traveling Salesman Problem (the shortest route that visits every city once and returns home), the Knapsack Problem (the most value that fits in a bag with a weight limit), and Graph Coloring (color a map's regions so no two neighbors share a color, using as few colors as possible). No known algorithm solves these efficiently in the general case. Existing exact algorithms check nearly every possibility, and the number of combinations grows rapidly: 20 cities can be visited in more than $10^{16}$ distinct routes. These problems belong to the *NP-complete* class, which [Advanced Algorithms defines](/courses/advanced-algorithms/p-and-np#np-complete).
+Then there are the **hard problems**: the Traveling Salesman Problem (the shortest route that visits every city once and returns home), the Knapsack Problem (the most value that fits in a bag with a weight limit), and Graph Coloring (color a map's regions so no two neighbors share a color, using as few colors as possible). No known algorithm solves these efficiently in the general case. Existing exact algorithms check nearly every possibility, and the number of combinations grows rapidly: visiting 20 cities starting and ending at a home city involves $(20 - 1)! / 2 = 19! / 2 \approx 6.08 \times 10^{16}$ distinct symmetric tours. These problems belong to the *NP-complete* class, which [Advanced Algorithms defines](/courses/advanced-algorithms/p-and-np#np-complete).
 
 Two things in that list look like contradictions, and exams like to test them:
 
 - **Finding a shortest path is not an intractable problem.** Some notes list the shortest path alongside the Traveling Salesman Problem. Finding the shortest path between two nodes is efficient: [Dijkstra's algorithm](/courses/advanced-algorithms/shortest-paths#dijkstras-algorithm) runs in **polynomial time** (its step count grows as a power of the input size, such as $n^2$, rather than exponentially like $2^n$). That is why the table above categorizes it as a standard graph problem. The computationally hard problem is finding the shortest *tour* visiting every city.
-- **The knapsack problem appears in two places.** It is NP-complete in general, yet dynamic programming solves it efficiently when the weight capacity is small, as the [knapsack analysis](/courses/algorithm-design-and-analysis/dynamic-programming#analysis) explains.
+- **The knapsack problem appears in two places.** It is NP-complete in general, yet dynamic programming solves it in $O(n W)$ time, where $W$ is the maximum weight capacity. When $W$ is small, this table approach runs quickly. But because the input size of an integer is its bit length $\log W$, the numerical value $W = 2^{\log W}$ is exponential in the number of bits. Computer scientists call this **pseudo-polynomial time**: fast for small integer limits, but slow when capacity numbers grow large, as the [knapsack analysis](/courses/algorithm-design-and-analysis/dynamic-programming#analysis) explains.
 
 ## Data structures
 
@@ -245,7 +247,7 @@ Trace it on the instance ⟨8, 1, 4, 9, 3, 7⟩, one row per loop pass:
 
 | i | a[i] | a[i] > max? | max after |
 | --- | --- | --- | --- |
-| start | | | 8 |
+| start (before loop) | — | — | 8 |
 | 1 | 1 | 1 > 8? no | 8 |
 | 2 | 4 | 4 > 8? no | 8 |
 | 3 | 9 | 9 > 8? yes | 9 |
@@ -256,11 +258,19 @@ Step through each comparison, watching the pointer $i$ advance and `max` update 
 
 <FindMaxVisualizer />
 
-The loop ends after $i = 5 = n - 1$ and returns 9. The loop starts at 1, not 0, because `a[0]` is already in `max`; comparing it with itself would waste a step.
+The loop ends after $i = 5 = n - 1$ and returns 9. The loop starts at 1, not 0, because `a[0]` is already in `max`; comparing it with itself would waste a step. If the array has only one element ($n = 1$), the loop condition `1 < 1` is immediately false, so the loop executes 0 times and correctly returns `a[0]`.
 
 A common mistake is to initialize with `max ← 0` instead of `max ← a[0]`. That initialization works on positive numbers, but fails on ⟨−5, −2, −9⟩, where it returns 0, a value not present in the input array.
 
-Now check it against the definition. Input: an array. Output: one number. Definite: every step is exact. Finite: the loop runs exactly $n - 1$ times. Correct? Almost. If the array is **empty**, `a[0]` throws an exception. Either the problem promises at least one element, or the algorithm has to handle the empty case. Testing edge cases like empty inputs is a central part of verifying correctness.
+Now check it against the definition. Input: an array. Output: one number. Definite: every step is exact. Finite: the loop runs exactly $n - 1$ times. Correct? Almost. If the array is **empty** ($n = 0$), accessing `a[0]` throws an `ArrayIndexOutOfBoundsException`. Either the problem specification promises at least one element ($n \ge 1$), or the code must guard against empty inputs:
+
+```java
+if (a == null || a.length == 0) {
+    throw new IllegalArgumentException("Array must not be empty");
+}
+```
+
+Testing edge cases like empty or single-element inputs is a central part of verifying correctness.
 
 ## Practice from past exams
 

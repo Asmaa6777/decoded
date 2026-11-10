@@ -16,7 +16,7 @@ So instead of seconds, we count **steps**:
 - **Input size, $n$.** How big is the problem? It depends on the problem:
   - for an array, the number of elements;
   - for a polynomial, its degree;
-  - for a matrix, the number of elements in it;
+  - for a matrix, the row or column dimension $n$ (so an $n \times n$ matrix contains $n^2$ total entries), or sometimes the total element count;
   - for a graph, the number of vertices and edges;
   - for a single number, such as when testing whether it is prime, the number of bits in its binary representation. The cost depends on the number of bits needed to store the value, not the value alone: 1,000,000 takes 20 bits in binary, while a 40-bit number is over a trillion.
 - **The basic operation** (also called the **key operation**). The operation that contributes most to the running time: the step that does the real work and runs most often. In a sorting algorithm it's usually a comparison (`a[j] < a[min]`); otherwise it's often an assignment inside the innermost loop.
@@ -37,7 +37,7 @@ $$
 S(X) = C + S(I)
 $$
 
-where $C$ is the fixed part and $S(I)$ is the variable part, which depends on $I$, the *instance characteristics* (the size and attributes of this particular input). For `findMax` from the previous lesson, $S(I)$ is zero: it only uses `max` and `i`, regardless of array length. A recursive version making one recursive call per element maintains $n$ stack frames simultaneously, so its $S(I)$ grows proportionally to $n$.
+Here $S(X)$ is the total space required by algorithm $X$. The letter $C$ denotes constant, fixed space required regardless of input (program bytecode instructions and simple local variables). $S(I)$ denotes the variable space determined by instance characteristics $I$ (such as array size $n$ or recursion tree depth). Algorithm analysis often focuses specifically on **auxiliary space**: extra temporary memory the algorithm allocates beyond the input itself. For `findMax` from the previous lesson, auxiliary space $S(I)$ is zero: it only allocates scalar variables `max` and `i`, regardless of array length, requiring $O(1)$ auxiliary space. In contrast, a recursive version making one recursive call per element maintains $n$ stack frames simultaneously, so its $S(I)$ grows proportionally to $n$ ($O(n)$ space).
 
 Although this course focuses primarily on execution time, memory usage remains an important constraint. For example, [merge sort](/courses/algorithm-design-and-analysis/merge-sort#merge-sort-in-one-paragraph) achieves fast running time by allocating auxiliary memory.
 
@@ -70,7 +70,7 @@ The worst case provides an **upper bound** on running time, while the best case 
 
 Assume every case is equally likely: `x` is at position 1, or position 2, …, or position $n$, or not in the array at all. That's $n + 1$ cases. Count the comparisons in each, add them up, and divide by $n + 1$:
 
-- Finding `x` at index $i$ requires $i$ comparisons. Searching all positions 1 through $n$ totals $1 + 2 + \cdots + n = \frac{n(n+1)}{2}$ comparisons (the [arithmetic series](/courses/discrete-mathematics/induction#a-first-proof) formula). To verify the formula, pair the first term with the last ($1 + n$), the second with the second-to-last ($2 + n - 1$), and so on. Each of the $n/2$ pairs sums to $n + 1$.
+- Finding `x` at position $k$ (the 1st, 2nd, …, $n$-th item, corresponding to array index $k - 1$) requires $k$ comparisons. Searching all positions 1 through $n$ totals $1 + 2 + \cdots + n = \frac{n(n+1)}{2}$ comparisons (the [arithmetic series](/courses/discrete-mathematics/induction#a-first-proof) formula). To verify the formula, pair the first term with the last ($1 + n$), the second with the second-to-last ($2 + n - 1$), and so on. Each of the $n/2$ pairs sums to $n + 1$.
 - `x` missing takes $n$ comparisons.
 
 Add them and divide by the $n + 1$ cases. Split the fraction into its two parts, and the first part's $(n + 1)$ cancels:
@@ -81,7 +81,7 @@ $$
 
 The second term remains less than 1 for all $n \ge 1$, so the average stays slightly below $\frac{n}{2} + 1$. For the 9-element array shown above, the calculation gives $\frac{45 + 9}{10} = 5.4$ comparisons. Because this value grows proportionally with $n$, the average case has linear complexity.
 
-A common mistake is dividing by $n$ and forgetting the case where the target value is not in the array. The average must account for all possible outcomes, including the "not found" case as the $(n+1)$-th possibility.
+A common mistake is dividing by $n$ and forgetting the case where the target value is not in the array. The average must account for all possible outcomes, including the "not found" case as the $(n+1)$-th possibility. If an exam problem specifically guarantees that the target key is always present in the array, there are only $n$ outcomes. In that case, dividing $\frac{n(n+1)}{2}$ by $n$ gives an average of $\frac{n + 1}{2}$ comparisons (for $n = 9$, exactly 5 comparisons). Always check whether the problem states that the search key is guaranteed to exist.
 
 Engineers usually report the **worst case** because it guarantees that the algorithm will never take longer than this upper bound. The best case is helpful context but rare in practice. The average case is often realistic, but it requires assumptions about the input distribution, such as assuming every position is equally likely.
 
@@ -101,7 +101,7 @@ At a scale of one million items, the gap between an $O(n^2)$ algorithm and an $O
 
 "Asymptotic" means "as $n$ gets very large". These notations ignore what happens for small inputs and describe the trend. Exams ask for all three.
 
-**Big-O is an upper bound.** $T(n) = O(g(n))$ means that, for large enough $n$, $T(n)$ is at most some constant times $g(n)$:
+**Big-O is an upper bound.** $T(n) = O(g(n))$ means that, for large enough $n$, $T(n)$ is at most some constant times $g(n)$, with positive constants $c > 0$ and $n_0 \ge 1$:
 
 $$
 T(n) \le c \cdot g(n) \quad \text{for all } n \ge n_0
@@ -110,6 +110,8 @@ $$
 Read it as *"it grows no faster than $g$."* People use Big-O for the **worst case**.
 
 The definition uses two constants. The multiplier $c$ absorbs constant factors, while $n_0$ establishes the threshold where asymptotic behavior begins. To prove $3n + 10 = O(n)$, choose constants $c$ and $n_0$ satisfying the inequality. Setting $c = 4$ gives $3n + 10 \le 4n$. Subtracting $3n$ from both sides yields $10 \le n$. The condition holds for all $n \ge 10$, so $c = 4$ and $n_0 = 10$ confirm that $3n + 10 = O(n)$. At $n = 5$ the inequality fails ($25 \gt 20$), which is allowed because the definition only requires the bound to hold for $n \ge n_0$.
+
+Constants $c$ and $n_0$ are not unique. You only need to demonstrate one valid pair. For example, choosing $c = 5$ gives $3n + 10 \le 5n$, which simplifies to $10 \le 2n$ or $n \ge 5$, confirming that $c = 5, n_0 = 5$ is an equally valid proof. Choosing $c = 13$ works for all $n \ge 1$.
 
 The same approach fails for $n^2 = O(n)$: the condition requires $n^2 \le c \cdot n$, which simplifies to $n \le c$. That inequality fails for any input larger than the chosen constant $c$. Because no fixed constant $c$ bounds $n$ for all values, $n^2$ is **not** $O(n)$.
 
@@ -123,7 +125,7 @@ $$
 c_1 \cdot g(n) \le T(n) \le c_2 \cdot g(n) \quad \text{for all } n \ge n_0
 $$
 
-*"It grows at the same rate as $g$."* For example, $3n + 10 = \Theta(n)$: the value is at least $3n$ for all $n \ge 1$ (setting $c_1 = 3$) and at most $4n$ for all $n \ge 10$ (setting $c_2 = 4$ and $n_0 = 10$).
+*"It grows at the same rate as $g$."* For example, $3n + 10 = \Theta(n)$: the value is at least $3n$ for all $n \ge 1$ (setting $c_1 = 3$) and at most $4n$ for all $n \ge 10$ (setting $c_2 = 4$). Because the lower bound holds for $n \ge 1$ and the upper bound holds for $n \ge 10$, choosing $n_0 = \max(1, 10) = 10$ ensures both inequalities hold simultaneously.
 
 <Callout tone="violet" label="The everyday version">
 In practice, people say "Big-O" for everything and mean "how it grows in the worst case." That's fine in conversation. On an exam, be precise: O is ≤, Ω is ≥, Θ is both.
@@ -143,7 +145,7 @@ You rarely need the formal definition to find the answer. Three rules cover almo
 2. **Keep only the biggest term.** $n^2 + 100n + 7$ is $O(n^2)$.
 3. **Loops multiply, sequences add.** A loop of $n$ inside a loop of $n$ is $n \times n = O(n^2)$. One loop of $n$ followed by another loop of $n$ is $n + n = O(n)$.
 
-To see the rules at work, write the cost of each line next to it. Statements that run once cost a constant, written $c_0, c_1, \ldots$; a constant is $O(1)$, so $O(c) = O(1)$. A loop header runs about $n$ times.
+To see the rules at work, write the cost of each line next to it. Statements that run once cost a constant, written $c_0, c_1, \ldots$; a constant is $O(1)$, so $O(c) = O(1)$. A loop header runs about $n$ times (specifically, the condition $i < n$ is evaluated $n + 1$ times: $n$ times true and once false on exit).
 
 ```java
 int sum = 0;                  // c0     runs once
@@ -203,7 +205,7 @@ Trace it with $N = 4$: F becomes $1 \cdot 4 = 4$, then $4 \cdot 3 = 12$, then $1
 
 If $N$ is 0 (or negative), the loop never runs and it prints **1**, which matches $0! = 1$.
 
-The loop body runs once for each value of N from N down to 1. That's $N$ multiplications, so it's **$O(n)$**, and its type is **linear time complexity**.
+The loop body runs once for each value of N from N down to 1. That's $N$ multiplications, so treating the input value $N$ as the parameter $n$, it is **$O(n)$**, and its type is **linear time complexity**. (In advanced bit-level analysis where input size is the number of bits $b \approx \log_2 N$, this operation count is termed *pseudo-polynomial*, because $N = 2^b$ is exponential in the number of bits).
 
 In Java:
 
@@ -223,7 +225,7 @@ static long factorial(int n) {
 A common exam problem asks for the Big-O of dependent nested loops:
 
 ```java
-int x = 1;
+int x = 1, sum = 0, y = 0;
 for (int i = 1; i <= n; i++) {
     sum = 1;
     for (int j = 1; j <= i; j++) {
@@ -300,7 +302,7 @@ At step 4, the condition $N > 0$ evaluates to false, so the algorithm sets $F = 
 **2.** *(Lecture homework)* For the code below, calculate the exact number of times the inner statement `x = i + j` executes when $n = 5$. Derive the general formula for any $n$ and state its Big-O complexity class.
 
 ```java
-int x = 1;
+int x = 1, sum = 0, y = 0;
 for (int i = 1; i <= n; i++) {
     sum = 1;
     for (int j = 1; j <= i; j++) {
