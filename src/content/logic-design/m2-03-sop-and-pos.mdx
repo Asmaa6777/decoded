@@ -1,48 +1,319 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { TruthTableBuilder } from "@/components/mdx/LogicVisualizers";
 
 # Truth Tables to Circuits: SOP and POS
 
-Say you want a circuit for a rule such as "sound the alarm when the door is open and the system is armed, or when the panic button is pressed". You write out what should happen in every case, and that's a truth table. Is there a mechanical way to turn the table into gates? There are two.
+When designing a digital circuit, the engineer begins with a functional specification—such as "trigger the fire alarm if temperature exceeds threshold and smoke is detected, or if the manual pull station is activated." This specification is captured systematically in a **truth table**, listing every input combination and its required binary output.
 
-## Sum of products
+To transform a truth table into physical gates, switching theory provides two complementary standard representations:
+1. **Sum of Products (SOP):** A two-level circuit of AND gates feeding an OR gate.
+2. **Product of Sums (POS):** A two-level circuit of OR gates feeding an AND gate.
 
-Find every row where the output is 1. Each of those rows is one exact situation, and you can describe it with one AND term. The output is 1 if the first situation is happening, or the second, and so on. So you OR the terms together.
+Before synthesizing circuits, we must define the terminology:
+- A **literal** is a variable in uncomplemented form ($A$) or complemented form ($A'$). An $n$-variable circuit has $2n$ possible literals.
+- A **product term** is a series of literals combined exclusively with logical AND (e.g., $A B' C$).
+- A **sum term** is a series of literals combined exclusively with logical OR (e.g., $A + B' + C$).
 
-In a term, a variable that's 1 in that row appears plain and a variable that's 0 appears inverted. Row `A=0, B=1, C=1` becomes $A'BC$, which is true only for that row.
+## Canonical representations: Minterms and Maxterms
 
-Click the output column to design your own function.
+A Boolean expression is **canonical** when every product or sum term contains all $n$ input variables of the system, each appearing exactly once.
+
+### Minterms ($m_i$) and the Sum of Minterms
+
+A **minterm** (or standard product) of $n$ variables is a product term that contains each of the $n$ variables in either true or complemented form. For $n$ variables, there are exactly $2^n$ distinct minterms, denoted $m_0, m_1, \dots, m_{2^n - 1}$.
+
+**Binary index rule for minterms:**
+- Assign bit **1** to uncomplemented variables ($A = 1$).
+- Assign bit **0** to complemented variables ($A' = 0$).
+
+For three variables $(A, B, C)$:
+- Row $0$ ($000_2$): $m_0 = A'B'C'$
+- Row $1$ ($001_2$): $m_1 = A'B'C$
+- Row $5$ ($101_2$): $m_5 = AB'C$
+- Row $7$ ($111_2$): $m_7 = ABC$
+
+Each minterm $m_i$ evaluates to logic **1** for exactly *one* input row (row $i$) and evaluates to **0** for all other $2^n - 1$ rows.
+
+Any Boolean function $F$ can be written as the OR combination of all minterms where the output is 1. This is the **Canonical Sum of Minterms** (or Disjunctive Normal Form), expressed in compact summation notation:
+$$
+F(A, B, C) = \sum m(1, 3, 5, 7) = m_1 + m_3 + m_5 + m_7
+$$
+
+### Maxterms ($M_i$) and the Product of Maxterms
+
+A **maxterm** (or standard sum) of $n$ variables is a sum term that contains each of the $n$ variables in either true or complemented form. There are $2^n$ distinct maxterms, denoted $M_0, M_1, \dots, M_{2^n - 1}$.
+
+**Binary index rule for maxterms:**
+- Assign bit **0** to uncomplemented variables ($A = 0$).
+- Assign bit **1** to complemented variables ($A' = 1$).
+
+<Callout tone="neon" label="Watch the index inversion">
+Students frequently invert the maxterm rule. In minterms, 1 is uncomplemented ($A$). In maxterms, **0 is uncomplemented ($A$) and 1 is complemented ($A'$)**. 
+
+Row $5$ ($101_2$) yields:
+- Minterm: $m_5 = A B' C$
+- Maxterm: $M_5 = A' + B + C'$
+</Callout>
+
+Each maxterm $M_i$ evaluates to logic **0** for exactly *one* input row (row $i$) and evaluates to **1** for all other rows.
+
+Any Boolean function $F$ can be written as the AND combination of all maxterms where the output is 0. This is the **Canonical Product of Maxterms** (or Conjunctive Normal Form), expressed in compact product notation:
+$$
+F(A, B, C) = \prod M(0, 2, 4, 6) = M_0 \cdot M_2 \cdot M_4 \cdot M_6
+$$
+
+### Relationship between Minterms and Maxterms
+
+By De Morgan's theorem, each maxterm is the algebraic complement of its corresponding minterm:
+$$
+m_i' = M_i \qquad\text{and}\qquad M_i' = m_i
+$$
+
+For example, on row 5:
+$$
+m_5' = (AB'C)' = A' + B'' + C' = A' + B + C' = M_5
+$$
+
+Because every truth table row produces either 0 or 1, the minterms of a function and its maxterms form disjoint partitions of the index set $\{0, 1, \dots, 2^n - 1\}$:
+$$
+F = \sum m(\text{list of 1-rows}) = \prod M(\text{list of 0-rows})
+$$
+
+The complement of the function ($F'$) is obtained by interchanging the 1-rows and 0-rows:
+$$
+F' = \sum m(\text{list of 0-rows}) = \prod M(\text{list of 1-rows})
+$$
+
+Click rows in the truth table below to toggle their output values and watch the resulting canonical sum of minterms and product of maxterms update:
 
 <TruthTableBuilder />
 
-This form is the **sum of products** (SOP). "Sum" means OR and "product" means AND, so it builds straight into a layer of AND gates feeding one OR gate.
+## Standard SOP and POS vs. Canonical Forms
 
-## Product of sums
+While canonical expressions are unique and easy to derive from a truth table, they are wasteful because every term includes every variable. 
 
-The **product of sums** (POS) comes at it from the opposite side. Find every row where the output is 0, and write one OR term that's false only for that row. AND them all, so that the output is 0 if any bad row occurs.
+In **standard SOP** and **standard POS** forms, terms can have fewer literals:
+- **Standard SOP:** $F = AB + C'D + AC$ (Two-level AND-OR structure)
+- **Standard POS:** $F = (A + B)(C' + D)(A + C)$ (Two-level OR-AND structure)
 
-Row `A=1, B=0, C=1` gives $(A' + B + C')$. Check it: plugging in $A=1$, $B=0$, $C=1$ makes all three parts 0.
+Standard forms reduce the number of gate inputs and transistors required on silicon while preserving two-level propagation delay ($2 \cdot t_{pd}$).
 
-Use whichever is shorter. A function with few 1s is short in SOP, and one with few 0s is short in POS.
+## Converting non-canonical expressions to canonical forms
 
-## Standard form
+To expand a non-canonical equation into canonical sum-of-minterms or product-of-maxterms:
 
-When every variable appears in every term, the expression is in **standard form**, and the tables above produce exactly that. To expand a term that's missing a variable, multiply by a harmless 1:
+### Expansion to Canonical SOP
+Multiply any incomplete product term by $(x + x') = 1$ for each missing variable $x$, distribute, and eliminate duplicates using $w + w = w$.
 
+**Worked Example:** Express $F(A, B, C) = AB + C'$ in canonical $\sum m$ form.
+1. Term $AB$ lacks variable $C$:
+   $$
+   AB = AB(C + C') = ABC + ABC' = m_7 + m_6
+   $$
+2. Term $C'$ lacks variables $A$ and $B$:
+   $$
+   \begin{aligned}
+   C' &= (A + A')C' = AC' + A'C' \\
+   &= AC'(B + B') + A'C'(B + B') \\
+   &= AB C' + AB'C' + A'BC' + A'B'C' \\
+   &= m_6 + m_4 + m_2 + m_0
+   \end{aligned}
+   $$
+3. Combine and remove the duplicate $m_6$:
+   $$
+   F = m_0 + m_2 + m_4 + m_6 + m_7 = \sum m(0, 2, 4, 6, 7)
+   $$
+
+### Expansion to Canonical POS
+Add $xx' = 0$ for each missing variable $x$, apply the distributive rule $X + YZ = (X + Y)(X + Z)$, and eliminate duplicates.
+
+**Worked Example:** Express $G(A, B, C) = (A + B')(B + C)$ in canonical $\prod M$ form.
+1. Term $(A + B')$ lacks variable $C$:
+   $$
+   A + B' = A + B' + CC' = (A + B' + C)(A + B' + C') = M_2 \cdot M_3
+   $$
+2. Term $(B + C)$ lacks variable $A$:
+   $$
+   B + C = AA' + B + C = (A + B + C)(A' + B + C) = M_0 \cdot M_4
+   $$
+3. Combine:
+   $$
+   G = M_0 \cdot M_2 \cdot M_3 \cdot M_4 = \prod M(0, 2, 3, 4)
+   $$
+
+## Incompletely specified functions: Don't-Care conditions
+
+In practical systems, certain input combinations:
+1. **Can never physically occur:** For example, a [BCD decoder](/courses/logic-design/codes-and-floating-point#bcd-decimal-digits-one-at-a-time) receives 4-bit inputs representing decimal digits $0$ to $9$. Binary patterns $1010_2$ through $1111_2$ ($10_{10}$ to $15_{10}$) are forbidden.
+2. **Produce irrelevant outputs:** The output state has no impact on system operation.
+
+These conditions are designated **don't-cares**, written as $d$ or $X$:
 $$
-A'B' + ABC = A'B'(C + C') + ABC = A'B'C + A'B'C' + ABC
+F(A, B, C, D) = \sum m(1, 3, 7, 11, 15) + \sum d(0, 2, 5)
 $$
 
-For POS, add a harmless 0 and use the rule $A + BC = (A + B)(A + C)$:
+Because the circuit will never encounter these inputs during normal operation, the designer has the freedom to assign each don't-care condition as either 1 or 0—whichever produces the simplest, lowest-cost gate network.
 
+## Hardware implementation metrics: Two-level logic trade-offs
+
+When choosing between SOP and POS implementations, engineers evaluate three hardware metrics:
+1. **Literal count:** The total number of literal appearances across the expression. In CMOS design, each literal input corresponds to two transistors in the first logic level.
+2. **Gate input count:** The total number of inputs across all gates. Measures required routing interconnect area.
+3. **Propagation delay:** Both SOP (AND-OR) and POS (OR-AND) are two-level networks with an inherent latency of two gate delays ($2 \cdot t_{pd}$), excluding any input inverters.
+
+If a truth table contains mostly 1s, the 0-rows are fewer, making the Product of Sums (POS) significantly smaller and cheaper. If the table contains mostly 0s, the Sum of Products (SOP) is smaller.
+
+## Practice problems
+
+### Problem 1: Majority voter canonical representations
+
+A digital voting circuit has three inputs: $A$, $B$, and $C$. The output $F$ must be 1 if and only if a majority (at least two) of the voters vote YES (1).
+
+1. Construct the truth table.
+2. Write $F$ in canonical Sum of Minterms ($\sum m$) notation.
+3. Write $F$ in canonical Product of Maxterms ($\prod M$) notation.
+
+<ModelAnswer>
+1. **Truth Table:**
+
+| Row | $A$ | $B$ | $C$ | $F$ | Minterm / Maxterm |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 0 | 0 | 0 | $M_0 = A + B + C$ |
+| 1 | 0 | 0 | 1 | 0 | $M_1 = A + B + C'$ |
+| 2 | 0 | 1 | 0 | 0 | $M_2 = A + B' + C$ |
+| 3 | 0 | 1 | 1 | 1 | $m_3 = A'BC$ |
+| 4 | 1 | 0 | 0 | 0 | $M_4 = A' + B + C$ |
+| 5 | 1 | 0 | 1 | 1 | $m_5 = AB'C$ |
+| 6 | 1 | 1 | 0 | 1 | $m_6 = ABC'$ |
+| 7 | 1 | 1 | 1 | 1 | $m_7 = ABC$ |
+
+2. **Canonical Sum of Minterms:**
+   Rows with output 1 are 3, 5, 6, 7:
+   $$
+   F(A, B, C) = \sum m(3, 5, 6, 7) = A'BC + AB'C + ABC' + ABC
+   $$
+
+3. **Canonical Product of Maxterms:**
+   Rows with output 0 are 0, 1, 2, 4:
+   $$
+   F(A, B, C) = \prod M(0, 1, 2, 4) = (A + B + C)(A + B + C')(A + B' + C)(A' + B + C)
+   $$
+</ModelAnswer>
+
+### Problem 2: Algebraic expansion to canonical POS
+
+Convert $F(A, B, C) = (A' + B)(B' + C)$ into canonical Product of Maxterms form showing each step.
+
+<ModelAnswer>
+1. **Expand first term $(A' + B)$ missing variable $C$:**
+   Add $CC' = 0$:
+   $$
+   A' + B = A' + B + CC' = (A' + B + C)(A' + B + C')
+   $$
+   Evaluate maxterm indices:
+   - For $A' + B + C$: $A=1, B=0, C=0 \implies 100_2 = 4 \implies M_4$
+   - For $A' + B + C'$: $A=1, B=0, C=1 \implies 101_2 = 5 \implies M_5$
+
+2. **Expand second term $(B' + C)$ missing variable $A$:**
+   Add $AA' = 0$:
+   $$
+   B' + C = AA' + B' + C = (A + B' + C)(A' + B' + C)
+   $$
+   Evaluate maxterm indices:
+   - For $A + B' + C$: $A=0, B=1, C=0 \implies 010_2 = 2 \implies M_2$
+   - For $A' + B' + C$: $A=1, B=1, C=0 \implies 110_2 = 6 \implies M_6$
+
+3. **Form the canonical product:**
+   $$
+   F(A, B, C) = M_2 \cdot M_4 \cdot M_5 \cdot M_6 = \prod M(2, 4, 5, 6)
+   $$
+</ModelAnswer>
+
+### Problem 3: Function complementation in canonical forms
+
+Given the 4-variable function:
 $$
-(A' + B') = (A' + B' + CC') = (A' + B' + C)(A' + B' + C')
+F(A, B, C, D) = \sum m(0, 2, 5, 7, 8, 10, 12, 13, 15)
 $$
 
-Standard form is usually long. Its use is that it is a fixed recipe, and a [Karnaugh map](/courses/logic-design/karnaugh-maps) needs it as a starting point.
+1. Express the complement $F'$ in canonical sum of minterms notation.
+2. Express the complement $F'$ in canonical product of maxterms notation.
 
-<Callout tone="neon" label="From expression to gates">
-Each term becomes a gate. $X = AB + CDE$ takes a 2-input AND, a 3-input AND and a 2-input OR. Factored forms like $X = AB(CD' + EF)$ can use fewer gates, but they're deeper, and every extra layer adds delay.
-</Callout>
+<ModelAnswer>
+1. **$F'$ in Canonical Sum of Minterms:**
+   The minterms where $F' = 1$ are precisely the minterms where $F = 0$. The complete index set for 4 variables is $\{0, 1, 2, \dots, 15\}$.
+   Subtracting the minterm list of $F$:
+   $$
+   \{0, \dots, 15\} \setminus \{0, 2, 5, 7, 8, 10, 12, 13, 15\} = \{1, 3, 4, 6, 9, 11, 14\}
+   $$
+   Therefore:
+   $$
+   F' = \sum m(1, 3, 4, 6, 9, 11, 14)
+   $$
 
-The standard form always works, and it's nearly always wasteful. The next lesson shows you how to shrink it.
+2. **$F'$ in Canonical Product of Maxterms:**
+   A function's maxterm list contains the indices where that function is 0. Since $F' = 0$ on the exact rows where $F = 1$:
+   $$
+   F' = \prod M(0, 2, 5, 7, 8, 10, 12, 13, 15)
+   $$
+</ModelAnswer>
+
+### Problem 4: Hardware implementation comparison
+
+A function is defined as $F(A, B, C) = \sum m(1, 2, 3, 7)$.
+
+1. Find the minimal SOP expression.
+2. Find the minimal POS expression.
+3. Compare both implementations by counting total gates, literal appearances, and total gate inputs.
+
+<ModelAnswer>
+1. **Minimal SOP:**
+   $F = m_1 + m_2 + m_3 + m_7 = A'B'C + A'BC' + A'BC + ABC$.
+   Combine:
+   - $A'BC' + A'BC = A'B(C' + C) = A'B$
+   - $A'B'C + A'BC = A'C(B' + B) = A'C$
+   - $A'BC + ABC = BC(A' + A) = BC$
+   Thus:
+   $$
+   F = A'B + A'C + BC \implies F = A'B + A'C + BC
+   $$
+   Notice that $A'B + BC$ has consensus $A'C$. Thus $A'C$ is redundant:
+   Wait, if $A=0, B=0, C=1$, $A'B = 0, BC = 0$, but $A'C = 1$. So $A'C$ is needed!
+   Wait: minterms are $m_1 (001), m_2 (010), m_3 (011), m_7 (111)$.
+   - Pair $(m_1, m_3) \implies A'C$
+   - Pair $(m_2, m_3) \implies A'B$
+   - Pair $(m_3, m_7) \implies BC$
+   Can $A'B + BC$ cover $m_1$? $m_1$ is 001: $A'B = 0$, $BC = 0$. $m_1$ is not covered!
+   Can $A'C + BC$ cover $m_2$? $m_2$ is 010: $A'C = 0, BC = 0$. $m_2$ is not covered!
+   Can $A'B + A'C$ cover $m_7$? $m_7$ is 111: $A'B = 0, A'C = 0$. $m_7$ is not covered!
+   So all three pairs are essential!
+   $$
+   F_{\text{SOP}} = A'B + A'C + BC
+   $$
+
+2. **Minimal POS:**
+   The 0-rows are $M_0 (000), M_4 (100), M_5 (101), M_6 (110)$.
+   - Combine $M_0$ and $M_4$: $(A+B+C)(A'+B+C) = B + C$
+   - $M_5$ ($101$) is $A' + B + C'$: combine with $M_4$ ($A'+B+C$) $\to A' + B$
+   - $M_6$ ($110$) is $A' + B' + C$: combine with $M_4$ ($A'+B+C$) $\to A' + C$
+   Minimal POS is:
+   $$
+   F_{\text{POS}} = (B + C)(A' + B)(A' + C)
+   $$
+   Wait, by consensus theorem in dual form: between $(B + C)$ and $(A' + B)$, consensus with $(A' + C)$:
+   $(A' + B)(B + C)(A' + C) = (A' + B)(B + C)$?
+   Check $M_6 = 110$: in $(A'+B)(B+C)$, if $A=1, B=1, C=0$, then $(A'+B) = 0+1=1$, and $(B+C) = 1+0=1$, so product is 1 (wrong, should be 0!).
+   Therefore all three terms are required:
+   $$
+   F_{\text{POS}} = (B + C)(A' + B)(A' + C)
+   $$
+
+3. **Comparison:**
+   - **SOP:** Three 2-input AND gates + one 3-input OR gate = 4 logic gates.
+     - Literals: 6 literals ($A', B, A', C, B, C$).
+     - Gate inputs: $(2 \times 3) + 3 = 9$ gate inputs (excluding inverters).
+   - **POS:** Three 2-input OR gates + one 3-input AND gate = 4 logic gates.
+     - Literals: 6 literals.
+     - Gate inputs: 9 gate inputs.
+   Both implementations exhibit symmetric hardware cost for this function.
+</ModelAnswer>

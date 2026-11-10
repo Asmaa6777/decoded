@@ -1,46 +1,328 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { NandBuilds } from "@/components/mdx/CircuitVisualizers";
 
 # Universal Gates: Everything from NAND
 
-Imagine you've been told you may only ever use one type of gate. Could you still build a computer? Yes, if that gate is NAND, or NOR. These are called **universal gates**, because each can make NOT, AND and OR, and those three can make anything.
+In early computing systems, building a machine required stocking dozens of distinct gate types—AND, OR, NOT, XOR—each with unique internal transistor configurations, power characteristics, and pinouts. 
 
-Pick a build and test it.
+Could a complete, general-purpose computer be constructed from only a **single type of logic gate**?
+
+Yes, if that gate is **NAND**, or **NOR**. These two gates are known as **universal gates** because either gate alone can synthesize all three fundamental Boolean operations—NOT, AND, and OR. Because any combinational or sequential circuit can be expressed in terms of NOT, AND, and OR, a single universal gate type is sufficient to build arithmetic logic units, registers, control units, and complete microprocessors.
+
+## Functional completeness and Emil Post's criterion
+
+A set of logic gates is **functionally complete** if every possible Boolean switching function can be realized using only gates from that set.
+
+The standard reference set is $\{\text{AND}, \text{OR}, \text{NOT}\}$, which directly maps to Huntington's postulates. However, this set contains redundancy:
+- By De Morgan's law, $A + B = (A'B')'$. Thus, the set $\{\text{AND}, \text{NOT}\}$ is functionally complete without OR.
+- Similarly, $AB = (A' + B')'$. Thus, the set $\{\text{OR}, \text{NOT}\}$ is functionally complete without AND.
+
+In 1941, mathematician Emil Post proved that a set of Boolean functions is complete if and only if it fails to satisfy all five of the following closure properties:
+1. **0-preserving:** Functions where $f(0, 0, \dots, 0) = 0$.
+2. **1-preserving:** Functions where $f(1, 1, \dots, 1) = 1$.
+3. **Monotonicity:** Changing an input from 0 to 1 never causes the output to change from 1 to 0.
+4. **Self-duality:** $f(x_1', x_2', \dots, x_n') = f'(x_1, x_2, \dots, x_n)$.
+5. **Linearity:** The algebraic normal form contains only XOR additions without products.
+
+NAND evaluates to 1 when all inputs are 0 (not 0-preserving), evaluates to 0 when all inputs are 1 (not 1-preserving), is non-monotone, is non-self-dual, and is non-linear. Because NAND violates all five conditions individually, the singleton set $\{\text{NAND}\}$ is functionally complete. The same holds true for $\{\text{NOR}\}$.
+
+## Constructing the fundamental gates from NAND
+
+By appropriately wiring NAND gate inputs, we can construct every basic digital component:
+
+### 1. Inverter (NOT) from NAND
+Tie both inputs together, or connect one input to logic HIGH ($V_{DD}$):
+$$
+(A \cdot A)' = A' \qquad\text{or}\qquad (A \cdot 1)' = A'
+$$
+*Cost: 1 NAND gate.*
+
+### 2. AND from NAND
+Follow a 2-input NAND with a NAND-configured inverter:
+$$
+\big((AB)' \cdot (AB)'\big)' = ((AB)')' = AB
+$$
+*Cost: 2 NAND gates.*
+
+### 3. OR from NAND
+By De Morgan's theorem, $A + B = (A' \cdot B')'$. Invert both inputs using NAND inverters, then feed the complemented signals into a third NAND:
+$$
+(A' \cdot B')' = A'' + B'' = A + B
+$$
+*Cost: 3 NAND gates.*
+
+### 4. NOR from NAND
+Follow the 3-NAND OR circuit with a fourth NAND inverter:
+$$
+(A + B)' = \big(((A' \cdot B')')'\big)' = (A + B)'
+$$
+*Cost: 4 NAND gates.*
+
+### 5. XOR from NAND (Minimal 4-gate realization)
+A naive conversion of $A \oplus B = A'B + AB'$ requires 5 NAND gates. However, switching theory provides a celebrated **4-gate minimal NAND XOR**:
+
+```text
+A ----+------------------\
+      |                   NAND2 ---+
+      +---\               /        |
+           NAND1 (N1) ---+         |
+      +---/               \        +---\
+      |                   NAND3 ------- NAND4 ---> A ⊕ B
+B ----+------------------/             /
+                                      /
+```
+
+**Algebraic Proof of the 4-NAND XOR:**
+1. Gate 1 computes:
+   $$
+   N_1 = (AB)' = A' + B'
+   $$
+2. Gate 2 receives $A$ and $N_1$:
+   $$
+   N_2 = (A \cdot N_1)' = \big(A \cdot (A' + B')\big)' = (AA' + AB')' = (0 + AB')' = (AB')' = A' + B
+   $$
+3. Gate 3 receives $B$ and $N_1$:
+   $$
+   N_3 = (B \cdot N_1)' = \big(B \cdot (A' + B')\big)' = (A'B + BB')' = (A'B + 0)' = (A'B)' = A + B'
+   $$
+4. Gate 4 combines $N_2$ and $N_3$:
+   $$
+   \begin{aligned}
+   X &= (N_2 \cdot N_3)' = \Big((A' + B)(A + B')\Big)' \\
+   &= (A'A + A'B' + AB + BB')' \\
+   &= (0 + A'B' + AB + 0)' \\
+   &= (A'B' + AB)'
+   \end{aligned}
+   $$
+   Since $A'B' + AB = (A \oplus B)'$ (the XNOR function), its complement is:
+   $$
+   X = \big((A \oplus B)'\big)' = A \oplus B
+   $$
+*Cost: exactly 4 NAND gates.*
+
+Test each NAND-based circuit interactively below:
 
 <NandBuilds />
 
-NOR works the same way with the roles swapped. Tying its inputs gives NOT, NOR followed by NOT gives OR, and inverting both inputs gives AND. Manufacturers like this because NAND is cheap to make from transistors, and a chip made of one repeated cell is simple to produce.
+## Constructing the fundamental gates from NOR
 
-## Two ways to read the same gate
+By duality, NOR gates construct all basic gates with inverted roles:
 
-[De Morgan's](/courses/logic-design/boolean-algebra#de-morgans-theorems) theorem says that the same gate has two faces:
+| Gate | NOR Implementation Formula | Number of NOR Gates |
+|---|---|:---:|
+| **NOT** | $Y = (A + A)' = A'$ | 1 |
+| **OR** | $Y = \big((A + B)' + (A + B)'\big)' = A + B$ | 2 |
+| **AND** | $Y = (A' + B')' = A'' \cdot B'' = AB$ | 3 |
+| **NAND** | $Y = \big((A' + B')'\big)' = (AB)'$ | 4 |
+| **XNOR** | Dual of 4-NAND XOR | 4 |
+| **XOR** | XNOR followed by inverter | 5 |
+
+## Graphic symbols and the bubble-pushing technique
+
+By De Morgan's laws, every universal gate has two equivalent graphic symbols:
+
+1. **NAND Gate:**
+   $$
+   (AB)' = A' + B'
+   $$
+   - **Standard symbol:** AND shape with an output bubble.
+   - **Dual symbol (Invert-OR):** OR shape with bubbles on all inputs.
+
+2. **NOR Gate:**
+   $$
+   (A + B)' = A'B'
+   $$
+   - **Standard symbol:** OR shape with an output bubble.
+   - **Dual symbol (Invert-AND):** AND shape with bubbles on all inputs.
+
+```text
+NAND Equivalence:
+    ---[ & ]o---   ≡   ---o\
+                            )---
+                       ---o/
+    Standard NAND        Invert-OR (De Morgan)
+
+NOR Equivalence:
+    ---\   \
+        )   )o--   ≡   ---o[ & ]---
+    ---/___/           ---o
+    Standard NOR         Invert-AND (De Morgan)
+```
+
+### The Bubble-Pushing conversion rules
+
+To convert an arbitrary gate network into an all-NAND or all-NOR circuit:
+1. **Rule 1 (Inversion cancellation):** Two inversion bubbles on the same signal line cancel each other ($A'' = A$).
+2. **Rule 2 (Dual substitution):** Replace gates so that output bubbles connect directly to input bubbles.
+3. **Rule 3 (Primary inputs):** If an unmatched bubble remains on an external input, invert the incoming literal or insert an inverter.
+
+### Converting AND-OR (SOP) to NAND-NAND
+
+A two-level Sum of Products circuit consists of first-level AND gates driving a second-level OR gate.
+
+**Step-by-step conversion:**
+1. Place an output bubble on every first-level AND gate (converting them to standard NAND gates).
+2. To compensate for the added bubbles, place input bubbles on the second-level OR gate.
+3. By De Morgan's theorem, an **OR gate with inverted inputs is physically identical to a NAND gate**.
+4. Both levels are now NAND gates!
 
 $$
-(AB)' = A' + B' \qquad\text{(a NAND is an OR with inverted inputs)}
+\text{AND-OR} \equiv \text{NAND-NAND}
 $$
 
-$$
-(A + B)' = A'B' \qquad\text{(a NOR is an AND with inverted inputs)}
-$$
+Any sum-of-products expression can be implemented in all-NAND logic with **zero change to the gate structure**—simply replace every AND and OR gate with a NAND gate!
 
-That gives you a neat trick for reading NAND circuits. Take two NANDs feeding a third:
-
+Similarly, a Product of Sums (OR-AND) circuit converts directly into an all-NOR circuit:
 $$
-X = \big((AB)'(CD)'\big)' = (AB)'' + (CD)'' = AB + CD
+\text{OR-AND} \equiv \text{NOR-NOR}
 $$
 
-The first layer acts as ANDs and the output gate acts as an OR. In other words, **a NAND-NAND circuit is just an AND-OR circuit in disguise**, so any [sum of products](/courses/logic-design/sop-and-pos#sum-of-products) translates directly: swap every gate for a NAND.
+## Multi-level NAND and NOR synthesis
 
-In the same way, a NOR-NOR circuit is an OR-AND circuit, which suits [product of sums](/courses/logic-design/sop-and-pos#product-of-sums):
+When synthesizing circuits with more than two levels of logic:
+1. Number the logic levels backward starting from the final output gate (Level 1 is the output level).
+2. For an **all-NAND** circuit:
+   - Use standard NAND symbols (AND shape with output bubble) at all **odd levels** (1, 3, 5, ...).
+   - Use dual Invert-OR symbols (OR shape with input bubbles) at all **even levels** (2, 4, ...).
+3. Check all intermediate signal lines:
+   - If an output bubble feeds an input bubble, they cancel cleanly.
+   - If a line connects an unbubbled terminal to a bubbled terminal, insert a compensating inverter.
 
-$$
-X = \big((A + B)'+(C + D)'\big)' = (A + B)(C + D)
-$$
-
-<Callout tone="neon" label="Coming up">
-The [SR latch](/courses/logic-design/sr-latch), the first circuit that can remember anything, is nothing more than two of these universal gates wired in a loop.
+<Callout tone="neon" label="Sequential circuits in the next module">
+The [SR latch](/courses/logic-design/sr-latch)—the fundamental circuit that gives computers memory—is built from two cross-coupled universal gates wired in a loop.
 </Callout>
 
-## Checking your work with waveforms
+## Why NAND dominates in CMOS VLSI silicon
 
-To predict a circuit's output over time, work one gate at a time, writing the signal after each gate. For example, $X = A'B' + AB$ has two intermediate AND outputs. Sketch $A'B'$ and $AB$ across time, then OR them. You'll see $X$ go high whenever $A$ and $B$ match, which makes the circuit an XNOR.
+In modern integrated circuit fabrication, NAND gates are universally preferred over NOR gates for combinational logic:
+
+1. **Carrier mobility asymmetry:** In silicon, electrons (conduction carriers in nMOS) have a mobility of $\mu_n \approx 500\,\text{cm}^2/\text{V}\cdot\text{s}$, whereas holes (conduction carriers in pMOS) have a mobility of only $\mu_p \approx 200\,\text{cm}^2/\text{V}\cdot\text{s}$. nMOS transistors conduct more than twice as effectively as pMOS transistors of equal geometry.
+2. **Internal transistor topologies:**
+   - A 2-input **NAND** gate places its two nMOS transistors in **series** between output and ground, and its two pMOS transistors in **parallel** to $V_{DD}$.
+   - A 2-input **NOR** gate places its two pMOS transistors in **series** between output and $V_{DD}$, and its two nMOS transistors in **parallel** to ground.
+3. **Silicon area and speed impact:**
+   - Because pMOS has lower mobility, putting pMOS transistors in series in a NOR gate severely limits drive current. To achieve symmetric rise times, the pMOS transistors must be widened by a factor of 3 to 4.
+   - This makes NOR gates larger in silicon area, increases input gate capacitance, and results in higher propagation delay than equivalent NAND gates.
+
+As a result, computer architects and ASIC synthesizers map high-speed combinational paths into NAND trees wherever possible.
+
+## Practice problems
+
+### Problem 1: Multi-level circuit conversion to all-NAND gates
+
+Convert the multi-level Boolean function:
+$$
+F = (AB + C)D + E'F
+$$
+into an all-NAND gate network using the bubble-pushing technique. Assume complemented inputs are available.
+
+<ModelAnswer>
+1. **Analyze the gate levels from output to inputs:**
+   - **Level 1 (Output):** 2-input OR gate combining $[(AB + C)D]$ and $[E'F]$.
+   - **Level 2:** Two AND gates:
+     - AND gate 1 combines $(AB + C)$ and $D$.
+     - AND gate 2 combines $E'$ and $F$.
+   - **Level 3:** OR gate combining $AB$ and $C$.
+   - **Level 4:** AND gate combining $A$ and $B$.
+
+2. **Apply bubble placement:**
+   - **Level 1 (OR):** Draw as Invert-OR (NAND). It expects bubbles on both inputs.
+   - **Level 2 (ANDs):** 
+     - Draw both AND gates as standard NANDs (output bubbles). 
+     - The output bubbles of Level 2 connect directly to the input bubbles of Level 1, canceling out!
+   - **Level 3 (OR):** 
+     - Level 2's AND gate 1 has an input from Level 3. Level 2's input has NO bubble.
+     - To provide a standard NAND for Level 3 (output bubble), the bubble on Level 3's output must be compensated by an inverter, OR drawn as an Invert-OR.
+     - Draw Level 3 as Invert-OR. Its output bubble cancels with an added bubble on Level 2's input.
+     - Level 3 now has input bubbles on its terminals.
+   - **Level 4 (AND):**
+     - Draw as standard NAND (output bubble). Its output bubble cancels directly with Level 3's input bubble for the $AB$ term!
+     - Input $C$ enters Level 3 with an input bubble. Since $C$ is a primary input, we supply $C'$.
+
+3. **Verify algebraically:**
+   $$
+   \begin{aligned}
+   F &= \Big(\big[(AB)' \cdot C'\big]' \cdot D\Big)' \cdot (E'F)' \\
+   &= \dots
+   \end{aligned}
+   $$
+   The resulting network contains five NAND gates:
+   1. $\text{NAND}_1(A, B) = (AB)'$
+   2. $\text{NAND}_2\big((AB)', C'\big) = \big((AB)' \cdot C'\big)' = AB + C$
+   3. $\text{NAND}_3\big(\text{NAND}_2, D\big) = \big((AB + C)D\big)'$
+   4. $\text{NAND}_4(E', F) = (E'F)'$
+   5. $\text{NAND}_5(\text{NAND}_3, \text{NAND}_4) = \big([(AB + C)D]' \cdot (E'F)'\big)' = (AB + C)D + E'F$.
+</ModelAnswer>
+
+### Problem 2: Minimal 4-NAND XOR verification
+
+Verify by truth table that the 4-NAND circuit:
+$$
+N_1 = (AB)', \quad N_2 = (A \cdot N_1)', \quad N_3 = (B \cdot N_1)', \quad X = (N_2 \cdot N_3)'
+$$
+implements the XOR operation for all four input combinations.
+
+<ModelAnswer>
+Evaluate step-by-step for all four valuations of $(A, B)$:
+
+| $A$ | $B$ | $N_1 = (AB)'$ | $N_2 = (A \cdot N_1)'$ | $N_3 = (B \cdot N_1)'$ | $N_2 \cdot N_3$ | $X = (N_2 \cdot N_3)'$ | $A \oplus B$ |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | 1 | $(0 \cdot 1)' = 1$ | $(0 \cdot 1)' = 1$ | 1 | **0** | 0 |
+| 0 | 1 | 1 | $(0 \cdot 1)' = 1$ | $(1 \cdot 1)' = 0$ | 0 | **1** | 1 |
+| 1 | 0 | 1 | $(1 \cdot 1)' = 0$ | $(0 \cdot 1)' = 1$ | 0 | **1** | 1 |
+| 1 | 1 | 0 | $(1 \cdot 0)' = 1$ | $(1 \cdot 0)' = 1$ | 1 | **0** | 0 |
+
+In every row, the output $X$ exactly matches $A \oplus B$. The 4-NAND implementation is verified.
+</ModelAnswer>
+
+### Problem 3: Two-level POS to all-NOR gate conversion
+
+Given the Product of Sums expression:
+$$
+F(A, B, C, D) = (A + B')(C + D')(B' + D)
+$$
+
+1. Synthesize this function directly into a two-level NOR-NOR circuit.
+2. Calculate the total number of CMOS transistors required, assuming each 2-input NOR requires 4 transistors and each 3-input NOR requires 6 transistors.
+
+<ModelAnswer>
+1. **Two-level NOR-NOR Synthesis:**
+   - Level 1 consists of three 2-input OR gates feeding a Level 2 3-input AND gate.
+   - Replace the three Level 1 OR gates with 2-input NOR gates (placing bubbles on their outputs).
+   - Replace the Level 2 AND gate with an Invert-AND NOR gate (bubbles on all inputs).
+   - The output bubbles of Level 1 directly cancel the input bubbles of Level 2.
+   - Gates required:
+     - $\text{NOR}_1(A, B')$
+     - $\text{NOR}_2(C, D')$
+     - $\text{NOR}_3(B', D)$
+     - $\text{NOR}_4(\text{NOR}_1, \text{NOR}_2, \text{NOR}_3)$
+
+2. **Transistor Count:**
+   - In static CMOS, an $n$-input gate requires $2n$ transistors ($n$ pMOS in series, $n$ nMOS in parallel).
+   - Three 2-input NOR gates: $3 \times (2 \times 2) = 12$ transistors.
+   - One 3-input NOR gate: $1 \times (2 \times 3) = 6$ transistors.
+   - Inverters for $B'$ and $D'$: $2 \times 2 = 4$ transistors.
+   - Total transistor count: $12 + 6 + 4 = 22$ transistors.
+</ModelAnswer>
+
+### Problem 4: CMOS transistor layout analysis: NAND vs NOR
+
+Explain why a 3-input CMOS NAND gate is physically smaller and faster than a 3-input CMOS NOR gate of equivalent drive capability.
+
+<ModelAnswer>
+1. **Transistor Networks:**
+   - A 3-input NAND gate uses 3 nMOS transistors in **series** in the pull-down network (PDN), and 3 pMOS transistors in **parallel** in the pull-up network (PUN).
+   - A 3-input NOR gate uses 3 pMOS transistors in **series** in the pull-up network (PUN), and 3 nMOS transistors in **parallel** in the pull-down network (PDN).
+
+2. **Mobility and Channel Sizing:**
+   - Hole mobility in pMOS is approximately half that of electron mobility in nMOS ($\mu_p \approx 0.4 \mu_n$).
+   - In the NOR gate, three high-resistance pMOS transistors sit in series. To achieve the same pull-up switching current as a single pMOS, each series pMOS must be sized with 3 times the width:
+     $$
+     W_{p,\text{NOR}} \approx 3 \times (2 \text{ to } 3) \times W_{n} \approx 6 W_n \text{ to } 9 W_n
+     $$
+   - In the NAND gate, the series transistors are nMOS, which have high mobility. The parallel pMOS transistors need only normal minimum sizing ($W_p \approx 2 W_n$).
+
+3. **Consequences:**
+   - The NOR gate requires vastly larger silicon surface area due to the oversized series pMOS transistors.
+   - The larger transistor widths create significantly higher parasitic input capacitance ($C_{\text{in}} \propto W$), which increases switching delay and dynamic power consumption throughout the driving stage.
+</ModelAnswer>

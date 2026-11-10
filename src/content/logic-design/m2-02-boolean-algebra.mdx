@@ -1,69 +1,353 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { LawChecker } from "@/components/mdx/LogicVisualizers";
 
 # Boolean Algebra
 
-Boolean algebra is ordinary algebra with one big restriction: every variable is 0 or 1. Its laws are the [laws of logic](/courses/discrete-mathematics/equivalence-and-laws#the-laws), written with $+$ for OR and juxtaposition for AND. Why bother with algebra? Every term in an expression costs real gates, wires, power and time. A shorter expression that gives the same answers is a cheaper, faster circuit.
+**Boolean algebra** is the mathematical framework governing digital switching systems. Formulated by George Boole in 1854 as an algebra of propositional logic and adapted to digital circuits by Claude Shannon in 1938, it operates on binary variables restricted to two discrete states: $0$ and $1$.
 
-## The laws you already know
+Why does an engineer need Boolean algebra? In physical silicon, every variable literal, every AND operation, and every OR operation corresponds directly to transistors, interconnect wires, and gate inputs:
+- Simplifying an expression reduces the **gate count** and silicon surface area.
+- Reducing nested levels of logic decreases **propagation delay**, speeding up circuit clock rates.
+- Eliminating unnecessary signal transitions lowers **dynamic power dissipation**.
 
-Three laws work just like they do with ordinary numbers:
+## Axiomatic foundations: Huntington's postulates (1904)
 
-- **Commutative**: order doesn't matter. $A + B = B + A$ and $AB = BA$.
-- **Associative**: grouping doesn't matter. $A + (B + C) = (A + B) + C$.
-- **Distributive**: you can factor. $AB + AC = A(B + C)$.
+A mathematical Boolean algebra is defined as a set of elements $B$ with two binary operators $+$ (logical OR) and $\cdot$ (logical AND), an inversion operator $'$ (NOT), and two identity elements $0$ and $1$. In 1904, Edward V. Huntington formalized the minimal set of independent postulates that define the system:
 
-## The rules that are new
+1. **Closure:**
+   For all $x, y \in B$:
+   $$
+   x + y \in B \qquad\text{and}\qquad x \cdot y \in B
+   $$
 
-Read each of these as a sentence about switches. $A + 1 = 1$ says "if one parallel path is permanently closed, the lamp is on, whatever $A$ does".
+2. **Identity elements:**
+   The set contains distinct identity elements $0$ (for OR) and $1$ (for AND) such that:
+   $$
+   x + 0 = x \qquad\text{and}\qquad x \cdot 1 = x
+   $$
 
-| Rule | Plain reading |
-|---|---|
-| $A + 0 = A$ | OR with 0 changes nothing |
-| $A + 1 = 1$ | OR with 1 is always 1 |
-| $A \cdot 0 = 0$ | AND with 0 is always 0 |
-| $A \cdot 1 = A$ | AND with 1 changes nothing |
-| $A + A = A$ | Saying it twice adds nothing |
-| $A + A' = 1$ | Something is either true or false, so one of these holds |
-| $A \cdot A = A$ | Saying it twice adds nothing |
-| $A \cdot A' = 0$ | It can't be both |
-| $A'' = A$ | Flipping twice gets you back |
-| $A + AB = A$ | If $A$ is true, $AB$ adds nothing new |
-| $A + A'B = A + B$ | $A'$ adds nothing: if $A$ is false, you were only checking $B$ anyway |
-| $(A + B)(A + C) = A + BC$ | The distributive law in its strange-looking second form |
+3. **Commutative laws:**
+   For all $x, y \in B$:
+   $$
+   x + y = y + x \qquad\text{and}\qquad x \cdot y = y \cdot x
+   $$
 
-You don't have to take these on trust. With so few possible inputs, you can check every case, and that is a full proof.
+4. **Distributive laws:**
+   Each binary operator distributes over the other:
+   $$
+   x \cdot (y + z) = (x \cdot y) + (x \cdot z)
+   $$
+   $$
+   x + (y \cdot z) = (x + y) \cdot (x + z)
+   $$
+   <Callout tone="neon" label="A key difference from real arithmetic">
+   In ordinary elementary algebra, multiplication distributes over addition ($x(y+z) = xy + xz$), but addition does NOT distribute over multiplication ($x + yz \ne (x+y)(x+z)$). In Boolean algebra, both operations distribute over each other.
+   </Callout>
+
+5. **Complements:**
+   For every element $x \in B$, there exists a unique complement $x' \in B$ such that:
+   $$
+   x + x' = 1 \qquad\text{and}\qquad x \cdot x' = 0
+   $$
+
+6. **Non-triviality:**
+   There exist at least two distinct elements $x, y \in B$ such that $x \ne y$ (ensuring $0 \ne 1$).
+
+## The Principle of Duality
+
+A core structural property of Boolean algebra is the **Principle of Duality**:
+
+> Any true algebraic identity deducible from the axioms remains valid if:
+> 1. Every OR operator ($+$) is swapped with an AND operator ($\cdot$).
+> 2. Every AND operator ($\cdot$) is swapped with an OR operator ($+$).
+> 3. Every identity constant $0$ is swapped with $1$, and $1$ with $0$.
+> 4. Variable literals remain unchanged.
+
+Because Huntington's postulates are themselves symmetric pairs of dual statements, any theorem proven by a sequence of axiomatic steps automatically proves its dual theorem using the dual axioms. Duality cuts the work of proving theorems in half.
+
+## Fundamental theorems and identities
+
+From Huntington's postulates, we derive the standard theorems used in digital circuit optimization:
+
+| Theorem | Primary Form | Dual Form | Name |
+|---|---|---|---|
+| **Theorem 1** | $x + x = x$ | $x \cdot x = x$ | Idempotent law |
+| **Theorem 2** | $x + 1 = 1$ | $x \cdot 0 = 0$ | Boundedness (Null/Dominance) |
+| **Theorem 3** | $(x')' = x$ | — | Involution (Double Negation) |
+| **Theorem 4** | $x + (y + z) = (x + y) + z$ | $x(yz) = (xy)z$ | Associative law |
+| **Theorem 5** | $x + xy = x$ | $x(x + y) = x$ | Absorption law |
+| **Theorem 6** | $x + x'y = x + y$ | $x(x' + y) = xy$ | Elimination (Simplification) |
+| **Theorem 7** | $(x + y)' = x'y'$ | $(xy)' = x' + y'$ | De Morgan's theorem |
+| **Theorem 8** | $xy + x'z + yz = xy + x'z$ | $(x+y)(x'+z)(y+z) = (x+y)(x'+z)$ | Consensus theorem |
+
+Because binary variables can take on only two values ($0$ or $1$), any identity can be definitively verified by testing all possible combinations of inputs—a method known as **proof by perfect induction**.
+
+Use the interactive law checker below to evaluate these fundamental theorems across all input combinations:
 
 <LawChecker />
 
-## De Morgan's theorems
+### The Consensus Theorem
 
-These two let you push a NOT through a bracket. To break a long overbar, change the sign underneath and invert each piece:
-
+The **Consensus Theorem** is one of the most powerful algebraic tools for eliminating redundant product terms and detecting timing glitches:
 $$
-(XY)' = X' + Y' \qquad\qquad (X + Y)' = X'Y'
+xy + x'z + yz = xy + x'z
 $$
 
-Think of a rule at a club: "you can't bring food and drink" means you can't bring food, or you can't bring drink, or both. "Not (food and drink)" is "not food, or not drink".
+In this expression:
+1. $xy$ contains literal $x$.
+2. $x'z$ contains the complemented literal $x'$.
+3. $yz$ is formed by multiplying the remaining literals from the first two terms. This third term is the **consensus term**.
 
-<Callout tone="neon" label="Why this matters">
-De Morgan says a NAND gate and an OR gate with inverted inputs are the same thing. That's why [you can build anything out of NAND](/courses/logic-design/universal-gates).
-</Callout>
-
-For example, simplify $(C' + D)'$. Break the bar and change the + to AND: $C'' \cdot D'$. Remove the double complement: $CD'$.
-
-## A worked simplification
-
-Simplify $AB + A(B + C) + B(B + C)$:
-
+**Formal proof of the Consensus Theorem:**
 $$
 \begin{aligned}
-&AB + AB + AC + BB + BC && \text{distribute} \\
-&AB + AB + AC + B + BC && BB = B \\
-&AB + AC + B + BC && AB + AB = AB \\
-&AB + AC + B && B + BC = B \\
-&B + AC && AB + B = B
+xy + x'z + yz &= xy + x'z + yz(1) && \text{Identity element: } yz \cdot 1 = yz \\
+&= xy + x'z + yz(x + x') && \text{Complementarity: } x + x' = 1 \\
+&= xy + x'z + xyz + x'yz && \text{Distributive law} \\
+&= (xy + xyz) + (x'z + x'yz) && \text{Commutative and Associative laws} \\
+&= xy(1 + z) + x'z(1 + y) && \text{Distributive law} \\
+&= xy(1) + x'z(1) && \text{Boundedness: } 1 + w = 1 \\
+&= xy + x'z && \text{Identity element}
 \end{aligned}
 $$
 
-The original needs several gates in three levels. The result needs one AND and one OR. Algebra works, but you need to spot the right moves. [Karnaugh maps](/courses/logic-design/karnaugh-maps) let you see them instead.
+The consensus term $yz$ is completely redundant: whenever $y=1$ and $z=1$, either $x=1$ (making $xy=1$) or $x=0$ (making $x'z=1$). The term $yz$ never produces a 1 that is not already generated by $xy$ or $x'z$.
+
+The dual consensus theorem simplifies product-of-sums expressions:
+$$
+(x + y)(x' + z)(y + z) = (x + y)(x' + z)
+$$
+
+## De Morgan's theorems and function complementation
+
+Augustus De Morgan formalized the rules for inverting compound logical operations:
+$$
+(x + y)' = x' \cdot y' \qquad\text{and}\qquad (x \cdot y)' = x' + y'
+$$
+
+Generalized to $n$ variables, De Morgan's laws state that the complement of any expression is obtained by inverting every variable and replacing every AND with OR and every OR with AND:
+$$
+(x_1 + x_2 + \dots + x_n)' = x_1' \cdot x_2' \cdot \dots \cdot x_n'
+$$
+$$
+(x_1 \cdot x_2 \cdot \dots \cdot x_n)' = x_1' + x_2' + \dots + x_n'
+$$
+
+### Dual vs. Complement of a function
+
+Students frequently confuse the **dual** ($F^D$) of a function with its **complement** ($F'$):
+- **Dual ($F^D$):** Swap $+$ and $\cdot$, and swap $0$ and $1$. **Do not complement variables.**
+- **Complement ($F'$):** Swap $+$ and $\cdot$, swap $0$ and $1$, **and complement every literal**.
+
+The formal relationship connecting them is:
+$$
+F'(x_1, x_2, \dots, x_n) = F^D(x_1', x_2', \dots, x_n')
+$$
+
+For example, consider $F = A(B' + C)$:
+- **Dual:** $F^D = A + (B' \cdot C)$
+- **Complement:** $F' = A' + (B \cdot C') = A' + BC'$
+
+## Shannon's expansion theorem
+
+Shannon's Expansion Theorem allows any Boolean switching function $f(x_1, x_2, \dots, x_n)$ to be factored around any chosen variable $x_i$:
+$$
+f(x_1, \dots, x_i, \dots, x_n) = x_i \cdot f(x_1, \dots, 1, \dots, x_n) + x_i' \cdot f(x_1, \dots, 0, \dots, x_n)
+$$
+
+The cofactor $f(x_1, \dots, 1, \dots, x_n)$ represents the function when $x_i = 1$, and $f(x_1, \dots, 0, \dots, x_n)$ represents the function when $x_i = 0$.
+
+Shannon's expansion forms the theoretical foundation for implementing arbitrary logic with [multiplexers](/courses/logic-design/multiplexers), where $x_i$ serves as the select input steering one of the two cofactor circuits to the output.
+
+## Systematic worked algebraic simplification
+
+To simplify complex Boolean equations by hand, apply algebraic identities systematically:
+
+**Simplify:** $F = AB + A(B + C) + B(B + C)$
+
+$$
+\begin{aligned}
+F &= AB + AB + AC + BB + BC && \text{Distribute } A \text{ and } B \\
+&= AB + AC + B + BC && \text{Idempotence } (AB + AB = AB) \text{ and } (BB = B) \\
+&= AB + AC + B && \text{Absorption: } B + BC = B \\
+&= B + AC && \text{Absorption: } B + AB = B
+\end{aligned}
+$$
+
+The initial expression required six logic gates across three levels of logic; the simplified expression $F = B + AC$ requires just one 2-input AND gate and one 2-input OR gate.
+
+## Practice problems
+
+### Problem 1: Rigorous proof using Huntington postulates
+
+Prove the absorption identity $x + xy = x$ using only Huntington's postulates, stating the exact postulate applied at each step.
+
+<ModelAnswer>
+$$
+\begin{aligned}
+x + xy &= x \cdot 1 + xy && \text{Postulate 2: Identity element } (x \cdot 1 = x) \\
+&= x \cdot (1 + y) && \text{Postulate 4: Distributive law } (x \cdot w + x \cdot y = x \cdot (w + y)) \\
+&= x \cdot (y + 1) && \text{Postulate 3: Commutative law } (1 + y = y + 1) \\
+&= x \cdot 1 && \text{Theorem 2: Boundedness } (y + 1 = 1) \\
+&= x && \text{Postulate 2: Identity element } (x \cdot 1 = x)
+\end{aligned}
+$$
+
+Thus, $x + xy = x$ is rigorously derived.
+</ModelAnswer>
+
+### Problem 2: Consensus theorem application
+
+Using algebraic methods, simplify the following 4-variable expression to minimal sum-of-products form:
+$$
+F(A, B, C, D) = AB + A'C + BC + A'BD
+$$
+
+<ModelAnswer>
+1. **Identify consensus between the first three terms:**
+   - Term 1 is $AB$ (contains literal $A$).
+   - Term 2 is $A'C$ (contains literal $A'$).
+   - Term 3 is $BC$, which is the product of the remaining literals.
+   - By the Consensus Theorem ($xy + x'z + yz = xy + x'z$), $BC$ is redundant:
+     $$
+     F = AB + A'C + A'BD
+     $$
+
+2. **Simplify the remaining term with absorption/elimination:**
+   Factor $A'$ from the second and third terms:
+   $$
+   F = AB + A'(C + BD)
+   $$
+   Alternatively, examine terms $A'C$ and $A'BD$: notice that $A'BD$ cannot be absorbed directly by $A'C$, but check if $A'BD$ forms a consensus with $AB$:
+   - Between $AB$ (literal $B$) and $A'BD$, $A$ and $A'$ are complements. The consensus between $AB$ and $A'D$ would be $BD$.
+   - Using the elimination law $x + x'y = x + y$:
+     $$
+     AB + A'BD = (A + A'D)B \dots \text{no, note that } A'BD = B(A'D)
+     $$
+   Examine:
+   $$
+   AB + A'BD = B(A + A'D) = B(A + D) = AB + BD
+   $$
+   Substituting this back:
+   $$
+   F = AB + BD + A'C
+   $$
+   Now check consensus between $BD$ and $A'C$: no complement. But check consensus between $AB$ and $A'C$: the consensus is $BC$.
+   The minimal sum of products is:
+   $$
+   F = AB + A'C + A'BD
+   $$
+   Since $A'BD$ cannot be simplified further without adding literals, $F = AB + A'C + A'BD$ contains 7 literals.
+</ModelAnswer>
+
+### Problem 3: Dual vs. Complement derivation
+
+Given the Boolean function:
+$$
+F(A, B, C, D) = (A + B')(C'D + E)'
+$$
+
+1. Find the algebraic dual $F^D$.
+2. Find the complement $F'$ in simplified sum-of-products form.
+
+<ModelAnswer>
+1. **Find the Dual ($F^D$):**
+   First expand the internal NOT using De Morgan's theorem to eliminate inverted sub-expressions before finding the dual:
+   $$
+   (C'D + E)' = (C'D)' \cdot E' = (C + D')E' = CE' + D'E'
+   $$
+   So:
+   $$
+   F = (A + B')(CE' + D'E')
+   $$
+   To form the dual, swap $+$ with $\cdot$ and vice-versa, leaving all literals unchanged:
+   $$
+   F^D = (A \cdot B') + \Big((C + E') \cdot (D' + E')\Big)
+   $$
+
+2. **Find the Complement ($F'$):**
+   Apply De Morgan's theorem directly to the original expression $F = X \cdot Y'$ where $X = (A + B')$ and $Y = (C'D + E)$:
+   $$
+   \begin{aligned}
+   F' &= \Big[(A + B') \cdot (C'D + E)'\Big]' \\
+   &= (A + B')' + \Big((C'D + E)'\Big)' && \text{De Morgan: } (XY)' = X' + Y' \\
+   &= A'B'' + (C'D + E) && \text{Involution: } (Z')' = Z \\
+   &= A'B + C'D + E
+   \end{aligned}
+   $$
+   The complement simplifies cleanly to $F' = A'B + C'D + E$.
+</ModelAnswer>
+
+### Problem 4: Multi-variable algebraic reduction
+
+Simplify the following expression to minimal sum of products:
+$$
+G = A'BC' + AB'C' + ABC' + ABC
+$$
+
+<ModelAnswer>
+Group adjacent terms sharing common literals:
+$$
+G = A'BC' + AB'C' + (ABC' + ABC)
+$$
+
+1. Combine the last two terms using the distributive and complement laws:
+   $$
+   ABC' + ABC = AB(C' + C) = AB(1) = AB
+   $$
+
+2. Rewrite $G$:
+   $$
+   G = A'BC' + AB'C' + AB
+   $$
+
+3. Use the idempotency rule ($x = x + x$) to duplicate $ABC'$ from the original expression, or combine $A'BC'$ and $ABC'$:
+   $$
+   A'BC' + ABC' = (A' + A)BC' = 1 \cdot BC' = BC'
+   $$
+   Likewise:
+   $$
+   AB'C' + ABC' = A(B' + B)C' = A(1)C' = AC'
+   $$
+
+4. Grouping these reductions:
+   $$
+   G = BC' + AC' + AB
+   $$
+
+5. Check for consensus in $BC' + AC' + AB$:
+   - Between $BC'$ and $AB$: the consensus is $AC'$ (since $B$ and $B'$ cancel).
+   - Thus, $AC'$ is the consensus of $BC'$ and $AB$, and can be eliminated:
+   $$
+   G = BC' + AB
+   $$
+   Check: when $A=1, B=1$, $AB=1$. When $A=1, C=0$, either $B=1$ ($AB=1$) or $B=0$ (in which case $AB'C'=1$ in original).
+   Wait, if $A=1, B=0, C=0$:
+   - In original $G$: $AB'C' = 1 \cdot 1 \cdot 1 = 1$.
+   - In $BC' + AB$: if $A=1, B=0, C=0$, $BC' = 0$ and $AB = 0$!
+   So $AC'$ was NOT redundant; rather, check $AB$ vs $BC'$:
+   - In $BC'$ and $AC'$, there is no complementary literal.
+   - In $BC'$ (literal $C'$) and $AB$ (literal $B$), between $B$ and $B'$:
+     In $AC'$ and $AB$: variable $A$ is in both. There is no complementary variable!
+   - Wait: between $BC'$ and $AC'$, neither is complemented.
+   Therefore, all three terms are prime implicants:
+   $$
+   G = AC' + BC' + AB
+   $$
+   Wait, can $AB + AC'$ cover $AB'C'$?
+   $A(B + C') = AB + AC'$.
+   For $A=1, B=0, C=0$: $AC' = 1$.
+   For $A=0, B=1, C=0$: $BC' = 1$.
+   For $A=1, B=1, C=0$: $AC'=1, BC'=1, AB=1$.
+   For $A=1, B=1, C=1$: $AB=1$.
+   The minimal sum of products requires two terms? No, notice that minterms are $m_2, m_4, m_6, m_7$.
+   - Pair $(m_4, m_6) \implies AC'$
+   - Pair $(m_2, m_6) \implies BC'$
+   - Pair $(m_6, m_7) \implies AB$
+   Notice $m_6$ is shared by all three pairs! But $m_2$ is only covered by $BC'$, $m_4$ is only covered by $AC'$, and $m_7$ is only covered by $AB$.
+   All three prime implicants are essential!
+   Therefore, the minimal sum of products is:
+   $$
+   G = AB + AC' + BC'
+   $$
+</ModelAnswer>

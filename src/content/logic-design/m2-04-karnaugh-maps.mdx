@@ -1,46 +1,334 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { KMapExplorer } from "@/components/mdx/LogicVisualizers";
 
 # Karnaugh Maps
 
-Here is the key fact behind this whole lesson. Take the two terms $AB'C$ and $AB'C'$. They differ only in $C$, so factor it out: $AB'(C + C') = AB'$. Whatever $C$ is, the answer is the same, so $C$ doesn't matter and we can delete it.
+While Boolean algebra provides a sound foundation for logic minimization, manipulating algebraic expressions by hand becomes error-prone as circuit complexity increases. Spotting which identity to apply, which terms to duplicate, or where a consensus term applies requires ingenuity.
 
-To simplify, then, you want pairs of terms that differ in exactly one variable. In a truth table those pairs are scattered about. A **Karnaugh map** (K-map) rearranges the table into a grid so that those pairs sit next to each other, and then your eyes can do the algebra.
+In 1953, telecommunications engineer Maurice Karnaugh published a visual, tabular method building upon Edward Veitch's diagrams. The **Karnaugh map** (or **K-map**) reorganizes the truth table into a multi-dimensional geometric grid where algebraic adjacency translates directly into spatial adjacency.
 
-## Reading the map
+## The Adjacency Principle and Gray Code
 
-Each cell is one row of the truth table. The row and column labels run 00, 01, **11**, 10. That's [Gray code](/courses/logic-design/codes-and-floating-point), not counting order, and it's what makes the map work: any two neighbouring cells differ by exactly one bit.
+The fundamental theorem underlying all two-level logic minimization is the complement elimination law:
+$$
+x y + x y' = x(y + y') = x(1) = x
+$$
+Whenever two product terms differ in exactly one variable—one term containing the variable uncomplemented ($y$) and the other complemented ($y'$)—the variable cancels out, leaving a simpler product term with one fewer literal.
 
-The map also wraps around. The left edge touches the right edge, and on a 4-variable map the top touches the bottom, as if it were drawn on a doughnut.
+In a standard truth table, adjacent rows do not always differ by a single bit. For example, moving from binary $01_2$ ($1$) to $10_2$ ($2$) flips two bits simultaneously.
 
-Click cells to turn them on and off. The map finds the groups for you and shows the shrunken expression.
+To restore unit distance, the rows and columns of a K-map are indexed using [Gray code](/courses/logic-design/codes-and-floating-point#gray-code-one-bit-at-a-time):
+$$
+00 \longrightarrow 01 \longrightarrow 11 \longrightarrow 10
+$$
+
+Because any two neighboring cells in Gray code ordering have a **Hamming distance of 1** ($d_H = 1$), any two physically adjacent cells on a K-map can be combined to eliminate the differing variable.
+
+## Geometry and coordinate layouts
+
+The physical geometry of a K-map depends on the number of variables:
+
+### 2-variable map ($2 \times 2$, 4 cells)
+Variables $A$ (rows) and $B$ (columns):
+```text
+      B=0   B=1
+A=0 [ m0  | m1  ]
+A=1 [ m2  | m3  ]
+```
+
+### 3-variable map ($2 \times 4$, 8 cells)
+Variable $A$ index rows ($0, 1$); variables $BC$ index columns ($00, 01, 11, 10$):
+```text
+       BC=00   BC=01   BC=11   BC=10
+A=0  [  m0   |  m1   |  m3   |  m2   ]
+A=1  [  m4   |  m5   |  m7   |  m6   ]
+```
+Notice that column $11$ ($m_3, m_7$) comes before column $10$ ($m_2, m_6$). The rightmost column ($10$) is adjacent to the leftmost column ($00$) because $10$ and $00$ differ only in the first bit. The 3-variable map wraps around horizontally like a cylinder.
+
+### 4-variable map ($4 \times 4$, 16 cells)
+Variables $AB$ index rows ($00, 01, 11, 10$); variables $CD$ index columns ($00, 01, 11, 10$):
+```text
+        CD=00   CD=01   CD=11   CD=10
+AB=00 [  m0   |  m1   |  m3   |  m2   ]
+AB=01 [  m4   |  m5   |  m7   |  m6   ]
+AB=11 [  m12  |  m13  |  m15  |  m14  ]
+AB=10 [  m8   |  m9   |  m11  |  m10  ]
+```
+
+A 4-variable map wraps around in **both directions** like a torus (a doughnut):
+- The leftmost column is adjacent to the rightmost column.
+- The top row is adjacent to the bottom row.
+- **The four corners** ($m_0, m_2, m_8, m_{10}$) are mutually adjacent and form a single valid group of 4 cells, which reduces to $B'D'$.
+
+Click the cells in the interactive 3-variable map below to explore how groupings form and how algebraic expressions shrink:
 
 <KMapExplorer />
 
-This starting map is $AB'C + A'BC + A'B'C + A'B'C' + AB'C'$. The answer is $B' + A'C$: from five terms to two.
-
 ## Grouping rules
 
-1. Groups must contain 1, 2, 4, 8 or 16 cells: a power of 2.
-2. Groups are rectangles, and they can wrap around the edges.
-3. Make each group as big as you can. Bigger groups mean shorter terms.
-4. Every 1 must be in at least one group, and groups may overlap.
-5. Use as few groups as you can.
+On **Karnaugh maps**, grouping adjacent cells simplifies switching functions by eliminating redundant literals to find the minimal sum-of-products (SOP) expression:
 
-## Reading the answer
+1. **Powers of 2:** Group sizes must strictly equal $1, 2, 4, 8, 16, \dots$ ($2^k$) cells. You cannot group 3, 5, or 6 cells.
+2. **Rectangular geometry:** Every group must form a rectangle or square on the toroidal grid. Diagonal groupings are illegal.
+3. **Variable elimination rate:** Each doubling in group size eliminates one variable:
+   - Group of 1 cell: retains all $n$ literals (the original minterm).
+   - Group of 2 cells: eliminates 1 variable ($n - 1$ literals).
+   - Group of 4 cells: eliminates 2 variables ($n - 2$ literals).
+   - Group of 8 cells: eliminates 3 variables ($n - 3$ literals).
+   - Group of 16 cells: eliminates 4 variables (evaluates to logic constant 1).
+4. **Maximal group size:** Always make each group as large as possible. Larger groups produce shorter product terms with fewer gate inputs.
+5. **Complete coverage:** Every logic 1 must be covered by at least one group. Groups may overlap as needed.
+6. **Minimal group count:** Select the minimum number of groups necessary to cover all 1s. Fewer groups produce fewer AND gates in the first logic level.
 
-For each group, look at which variables stay the same across all its cells. Keep those and drop the rest:
-
-- A variable that's always 1 in the group appears plain.
-- A variable that's always 0 in the group appears inverted.
-- A variable that changes inside the group cancels out.
-
-On a 3-variable map, a group of 1 gives a 3-variable term, a group of 2 gives 2 variables, a group of 4 gives 1 variable and a group of all 8 gives just 1.
-
-Now try this 4-variable map. Click cells in all four corners, which count as a single group because of the wrap-around.
+Now test this 4-variable map. Click cells in all four corners ($m_0, m_2, m_8, m_{10}$) to see them merge into the 2-literal term $B'D'$:
 
 <KMapExplorer vars={["A", "B", "C", "D"]} start={[0, 1, 4, 5, 15]} />
 
-<Callout tone="neon" label="Is this used in practice?">
-Software simplifies today's circuits, and it can handle thousands of inputs. K-maps are how you learn what that software is doing, and they're still the quickest method for a small function by hand. An exam will almost certainly ask you for one.
-</Callout>
+## Formal terminology of logic minimization
+
+Standard switching theory defines strict classifications for K-map groups:
+
+- **Implicant:** Any product term that covers only 1-cells (and don't-cares) of a function without covering any 0-cells. Every valid rectangle on a K-map is an implicant.
+- **Prime Implicant (PI):** A rectangular group of $2^k$ cells that cannot be combined with any other group to form a larger group of size $2^{k+1}$. A prime implicant is maximal; no literal can be removed without causing it to cover a 0.
+- **Distinguished Minterm:** A minterm (1-cell) that is covered by **exactly one** prime implicant.
+- **Essential Prime Implicant (EPI):** A prime implicant that covers at least one distinguished minterm. Because no other prime implicant can cover that specific 1, **every EPI must be included in every minimal sum-of-products expression**.
+- **Non-Essential / Redundant Prime Implicants:** Prime implicants whose 1-cells are completely covered by the set of chosen essential prime implicants. Redundant implicants must be discarded.
+
+## Step-by-step minimization algorithm
+
+1. **Step 1:** Plot all minterms (1s) and don't-cares ($X$) onto the K-map grid.
+2. **Step 2:** Identify all prime implicants (find all maximal rectangles of sizes $16, 8, 4, 2, 1$).
+3. **Step 3:** Inspect each 1-cell. If a 1-cell is covered by only one prime implicant, circle that prime implicant as an **Essential Prime Implicant**.
+4. **Step 4:** Add all EPIs to the minimal SOP equation.
+5. **Step 5:** If any 1s remain uncovered, select the minimal combination of non-essential prime implicants that covers all remaining 1s.
+
+## Minimizing Product of Sums (POS) with K-maps
+
+To obtain a minimal Product of Sums (POS) circuit:
+
+### Method 1: Grouping the 0s
+1. Form maximal rectangular groups of **0s** instead of 1s.
+2. Reading these groups yields the minimal Sum of Products for the complement function, $F'$.
+3. Apply De Morgan's theorem to invert the result: $F = (F')'$. This directly transforms the AND-OR expression into an OR-AND (POS) expression.
+
+### Method 2: Direct Maxterm Reading
+Read the 0-groups directly as sum terms:
+- A variable that remains constant at **0** across the group appears **uncomplemented** ($A$).
+- A variable that remains constant at **1** across the group appears **complemented** ($A'$).
+- A variable that changes cancels out.
+
+## Don't-Care conditions in K-maps
+
+When simplifying functions with don't-care conditions ($d$ or $X$):
+- Treat an $X$ as **1** if doing so allows you to form a larger group (reducing literals) or fewer total groups.
+- Treat an $X$ as **0** (leave it uncircled) if it does not help expand a group of 1s.
+- **Never create a group consisting entirely of don't-cares.** Doing so adds an unnecessary AND gate to the circuit without covering any required 1s.
+
+## Timing hazards in combinational circuits
+
+In ideal switching theory, gates switch instantaneously. In physical hardware, signal transitions incur propagation delay. These unequal delays cause **timing hazards**:
+
+### The Static-1 Hazard
+A **static-1 hazard** is an unwanted momentary glitch to 0 on an output that is theoretically expected to remain steadily at 1 during an input transition:
+
+```text
+Input A:   0 -----------------> 1
+Input B=1: 1 ------------------- 1
+Input C=1: 1 ------------------- 1
+
+Ideal Output:   1 ---------------------------------- 1
+Actual Output:  1 -------------\____/--------------- 1  <-- Glitch (0 pulse)
+```
+
+Consider $F = A'C + AB$. When $B=1$ and $C=1$:
+- For $A=0$, term $A'C = 1 \cdot 1 = 1$, so $F = 1$.
+- For $A=1$, term $AB = 1 \cdot 1 = 1$, so $F = 1$.
+- When $A$ transitions $0 \to 1$, $A'$ must fall to 0 through an inverter while $A$ rises. Because the inverter adds propagation delay, $A'$ may fall to 0 *before* the second gate registers that $A$ is 1. For several nanoseconds, both $A'C$ and $AB$ are 0, producing an unwanted glitch to 0.
+
+### Detecting and eliminating hazards on a K-map
+On a K-map, a static-1 hazard occurs whenever two adjacent 1s are covered by **different** prime implicants without being enclosed in a common group.
+
+To make a circuit hazard-free, add a **redundant consensus group** that covers the adjacent minterms. In $F = A'C + AB$, the consensus of $A'C$ and $AB$ is $BC$. Adding $BC$ yields:
+$$
+F_{\text{hazard-free}} = A'C + AB + BC
+$$
+When $B=1$ and $C=1$, term $BC$ remains solidly at 1 throughout the transition of $A$, completely bridging the delay gap and eliminating the glitch.
+
+## Practice problems
+
+### Problem 1: 4-variable K-map minimization with PI and EPI identification
+
+Given the switching function:
+$$
+F(A, B, C, D) = \sum m(0, 2, 5, 7, 8, 10, 14, 15)
+$$
+
+1. Plot the minterms on a 4-variable K-map.
+2. List all Prime Implicants (PIs).
+3. Identify all Essential Prime Implicants (EPIs) and their distinguished minterms.
+4. Write the minimal sum-of-products expression.
+
+<ModelAnswer>
+1. **Map Layout ($AB \times CD$):**
+   - Row $00$: $m_0=1$, $m_1=0$, $m_3=0$, $m_2=1$
+   - Row $01$: $m_4=0$, $m_5=1$, $m_7=1$, $m_6=0$
+   - Row $11$: $m_{12}=0$, $m_{13}=0$, $m_{15}=1$, $m_{14}=1$
+   - Row $10$: $m_8=1$, $m_9=0$, $m_{11}=0$, $m_{10}=1$
+
+2. **Identify all Prime Implicants:**
+   - **Corner Quad ($m_0, m_2, m_8, m_{10}$):** Covers the four corners. $B=0$ and $D=0$ remain constant $\implies \mathbf{B'D'}$.
+   - **Quad ($m_5, m_7, m_{13}, m_{15}$? No, $m_{13}=0$):**
+     - Pair $(m_5, m_7)$: Row $01$, columns $01, 11 \implies \mathbf{A'BD}$.
+     - Pair $(m_7, m_{15})$: Column $11$, rows $01, 11 \implies \mathbf{BCD}$.
+     - Pair $(m_{14}, m_{15})$: Row $11$, columns $11, 10 \implies \mathbf{ABC}$.
+     - Pair $(m_{10}, m_{14})$: Column $10$, rows $10, 11 \implies \mathbf{ACD'}$.
+
+   All Prime Implicants: $\{B'D', A'BD, BCD, ABC, ACD'\}$.
+
+3. **Determine Essential Prime Implicants:**
+   - Inspect $m_0$: covered only by $B'D'$. Thus **$B'D'$ is an EPI** (distinguished minterms $m_0, m_2, m_8$).
+   - Inspect $m_5$: covered only by $A'BD$. Thus **$A'BD$ is an EPI** (distinguished minterm $m_5$).
+   - Inspect $m_{14}$: covered by $ABC$ and $ACD'$.
+   - Inspect $m_7$: covered by $A'BD$ and $BCD$. Since $A'BD$ is already selected, $m_7$ is covered!
+   - Now consider remaining uncovered minterms:
+     $m_{14}$ and $m_{15}$ remain.
+     - Prime implicant $ABC$ covers both $m_{14}$ and $m_{15}$ simultaneously in one 2-cell group!
+     - Alternatively, $ACD'$ covers $m_{14}$ and $BCD$ covers $m_{15}$, which would require two terms instead of one.
+
+4. **Minimal SOP:**
+   $$
+   F = B'D' + A'BD + ABC
+   $$
+</ModelAnswer>
+
+### Problem 2: Minimization with Don't-Cares in SOP and POS
+
+Minimize the incompletely specified function:
+$$
+F(w, x, y, z) = \sum m(1, 3, 7, 11, 15) + \sum d(0, 2, 5)
+$$
+in both minimal SOP and minimal POS forms.
+
+<ModelAnswer>
+1. **Plot the function:**
+   - Row $wx = 00$: $m_0 = X$, $m_1 = 1$, $m_3 = 1$, $m_2 = X$.
+   - Row $wx = 01$: $m_4 = 0$, $m_5 = X$, $m_7 = 1$, $m_6 = 0$.
+   - Row $wx = 11$: $m_{12} = 0$, $m_{13} = 0$, $m_{15} = 1$, $m_{14} = 0$.
+   - Row $wx = 10$: $m_8 = 0$, $m_9 = 0$, $m_{11} = 1$, $m_{10} = 0$.
+
+2. **Minimal SOP (Grouping 1s and useful Xs):**
+   - Column $yz = 11$ contains $m_3=1, m_7=1, m_{15}=1, m_{11}=1$. This is an entire column of four 1s!
+     Group: $(m_3, m_7, m_{11}, m_{15}) \implies \mathbf{yz}$.
+   - Row $wx = 00$ contains $m_0=X, m_1=1, m_3=1, m_2=X$. Grouping all 4 cells:
+     Group: $(m_0, m_1, m_2, m_3) \implies \mathbf{w'x'}$.
+   All 1s ($m_1, m_3, m_7, m_{11}, m_{15}$) are now completely covered! Don't-care $m_5$ is left as 0.
+   $$
+   F_{\text{SOP}} = w'x' + yz
+   $$
+
+3. **Minimal POS (Grouping 0s):**
+   The 0s are located at:
+   - Row $01$: $m_4=0, m_6=0$
+   - Row $11$: $m_{12}=0, m_{13}=0, m_{14}=0$
+   - Row $10$: $m_8=0, m_9=0, m_{10}=0$
+
+   Group 0s (treating $m_0, m_2, m_5$ as 0 if helpful):
+   - Notice $w=1$ covers rows 11 and 10, where all cells are 0s except $m_{11}$ and $m_{15}$ (which are in column $yz=11$).
+   - Can we group 0s into large blocks?
+     - Group of 8 cells: columns $00, 01, 10$ across rows $11, 10$ gives 6 cells.
+     - Taking $F' = w(z') + x(z') \dots$
+     Let's group 0s on $F'$:
+     - Group 1 (8 cells): columns $CD=00, 10$ or rows?
+       Look at column $z=0$ (columns $00$ and $10$):
+       In column $00$: $m_0(X), m_4(0), m_{12}(0), m_8(0)$.
+       In column $10$: $m_2(X), m_6(0), m_{14}(0), m_{10}(0)$.
+       If we treat $m_0$ and $m_2$ as 0, all 8 cells in columns $00$ and $10$ are 0!
+       Group of 8 cells: $z = 0 \implies \mathbf{z'}$.
+     - Remaining 0s are in column $z=1$, specifically $CD=01$:
+       $m_1=1, m_5=X, m_{13}=0, m_9=0$.
+       The 0s are $m_9$ (row 10) and $m_{13}$ (row 11), plus row $01$ has $m_5=X$.
+       Group $m_9, m_{13}$ with don't-care or with each other:
+       Pair $(m_9, m_{13})$ in column $01$ has $w=1, y=0, z=1 \implies wy'z$.
+       Can we make it a quad? Rows $11, 10$ in columns $01, 00$: $(m_8, m_9, m_{12}, m_{13}) \implies \mathbf{wx}$.
+     Thus, $F' = z' + wx'$.
+     Applying De Morgan's:
+     $$
+     F = (F')' = (z' + w(x' + y \dots))'
+     $$
+     By direct POS factoring:
+     From $F = w'x' + yz$:
+     Use distributive law $X + YZ = (X + Y)(X + Z)$:
+     $$
+     F = (w'x' + y)(w'x' + z) = (w' + y)(x' + y)(w' + z)(x' + z)
+     $$
+     Or from the 0-map directly:
+     $$
+     F_{\text{POS}} = (w' + y)(x' + z) \dots
+     $$
+     Check:
+     When $wx=00$: $w'=1, x'=1 \implies F=1$.
+     When $yz=11$: $y=1, z=1 \implies F=1$.
+     The minimal POS is:
+     $$
+     F_{\text{POS}} = (w' + yz)(x' + yz) = (w' + y)(w' + z)(x' + z)
+     $$
+</ModelAnswer>
+
+### Problem 3: Static-1 Hazard detection and elimination
+
+A combinational logic network implements $F(A, B, C) = A'C + AB$.
+
+1. Construct the K-map and determine the input transition that exposes a static-1 hazard.
+2. Explain the physical cause of the glitch in terms of gate propagation delays.
+3. Modify the expression to guarantee hazard-free operation.
+
+<ModelAnswer>
+1. **K-Map Analysis:**
+   - Term $A'C$ covers minterms $m_1 (001)$ and $m_3 (011)$.
+   - Term $AB$ covers minterms $m_6 (110)$ and $m_7 (111)$.
+   - Notice minterms $m_3 (011)$ and $m_7 (111)$ are geometrically adjacent ($d_H = 1$, differing only in $A$).
+   - However, $m_3$ is in group $A'C$ and $m_7$ is in group $AB$. There is no single group containing both $m_3$ and $m_7$.
+   - **Hazardous transition:** With $B=1$ and $C=1$, when input $A$ changes from $0 \to 1$ (or $1 \to 0$).
+
+2. **Physical Cause of Glitch:**
+   When $A$ changes $0 \to 1$, signal $A'$ must pass through an inverter. The falling edge of $A'$ arrives at gate $A'C$ before the rising edge of $A$ reaches gate $AB$. For a brief duration equal to the inverter propagation delay ($t_{pd}$), both AND gate outputs are 0, causing the output OR gate to produce an unintended 0-spike.
+
+3. **Hazard-Free Circuit Design:**
+   Add the consensus term between $A'C$ and $AB$:
+   $$
+   \text{Consensus}(A'C, AB) = BC
+   $$
+   Term $BC$ covers $(m_3, m_7)$. 
+   The hazard-free equation is:
+   $$
+   F_{\text{hazard-free}} = A'C + AB + BC
+   $$
+   When $B=1$ and $C=1$, $BC$ remains continuously at 1, holding the output steady at 1 regardless of switching transients on $A$ and $A'$.
+</ModelAnswer>
+
+### Problem 4: 5-variable K-map minimization
+
+Minimize $F(A, B, C, D, E) = \sum m(0, 2, 4, 6, 9, 11, 13, 15, 16, 18, 20, 22, 25, 27, 29, 31)$ using two 4-variable maps.
+
+<ModelAnswer>
+A 5-variable function uses two 4-variable maps: Map 0 for $A=0$ (minterms $0-15$) and Map 1 for $A=1$ (minterms $16-31$). Minterms with the same $(B,C,D,E)$ coordinates in both maps are adjacent along the third dimension ($A$).
+
+1. **Analyze Map 0 ($A=0$):**
+   - 1s are at: $m_0, m_2, m_4, m_6$ (row $BC=00, 01$ in columns $00, 10 \implies B'E'$).
+   - 1s are at: $m_9, m_{11}, m_{13}, m_{15}$ (row $BC=10, 11$ in columns $01, 11 \implies BE$).
+
+2. **Analyze Map 1 ($A=1$):**
+   - 1s are at: $m_{16}, m_{18}, m_{20}, m_{22}$ (identical coordinates as $m_0, m_2, m_4, m_6$).
+   - 1s are at: $m_{25}, m_{27}, m_{29}, m_{31}$ (identical coordinates as $m_9, m_{11}, m_{13}, m_{15}$).
+
+3. **3D Superimposition:**
+   Because the exact same patterns appear in both Map 0 ($A=0$) and Map 1 ($A=1$), each 4-cell group merges into an 8-cell group across the $A$ dimension, eliminating variable $A$:
+   - Group 1 (8 cells): $\{m_0, m_2, m_4, m_6, m_{16}, m_{18}, m_{20}, m_{22}\} \implies \mathbf{B'E'}$.
+   - Group 2 (8 cells): $\{m_9, m_{11}, m_{13}, m_{15}, m_{25}, m_{27}, m_{29}, m_{31}\} \implies \mathbf{BE}$.
+
+4. **Minimal Sum of Products:**
+   $$
+   F(A, B, C, D, E) = B'E' + BE = (B \oplus E)'
+   $$
+   The function reduces to an equivalence (XNOR) relationship between $B$ and $E$, completely independent of variables $A$, $C$, and $D$.
+</ModelAnswer>

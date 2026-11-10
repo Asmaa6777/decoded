@@ -1,47 +1,398 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { GatePlayground } from "@/components/mdx/CircuitVisualizers";
 
 # Logic Gates
 
-A **gate** is a tiny circuit that takes one or more bits in and gives one bit out. That's the only thing it does. Everything a computer does comes from wiring huge numbers of these together.
+A **logic gate** is the elementary physical building block of all digital circuits. It takes one or more binary inputs—represented by electric voltages—and produces a single binary output according to a Boolean switching function. Every digital system, from a simple microwave timer to a 64-bit multi-core microprocessor, is built by interconnecting millions or billions of these basic gates.
 
-Inside, a gate is built from transistors, which are switches controlled by electricity. The easiest way to understand gates is to picture real switches on a wire powering a lamp. Two switches in a row (series) give you AND. Two side by side (parallel) give you OR.
+Underneath the logic abstraction, gates are constructed from semiconductor switches called **MOSFETs** (Metal-Oxide-Semiconductor Field-Effect Transistors). In modern **CMOS** (Complementary Metal-Oxide-Semiconductor) technology, gates use matched pairs of n-channel (nMOS) and p-channel (pMOS) transistors:
+- **nMOS transistors** conduct electricity when their gate terminal is driven with a high voltage (logic 1).
+- **pMOS transistors** conduct electricity when their gate terminal is driven with a low voltage (logic 0).
 
-Click the input boxes in the circuit, and try every gate. The highlighted row of the table follows you.
+By wiring transistors in series and parallel networks between the positive power supply ($V_{DD}$) and ground ($V_{SS}$), digital circuits create clean binary decisions that consume virtually zero power when idling.
+
+Click the input terminals below to toggle their logic levels, and cycle through each gate type to observe how the truth table and output signal respond.
 
 <GatePlayground />
 
-## The gates at a glance
+## The eight fundamental logic gates
 
-| Gate | Output is 1 when | Expression |
-|---|---|---|
-| NOT | The input is 0 | $X = A'$ |
-| BUF | The input is 1 | $X = A$ |
-| AND | All inputs are 1 | $X = AB$ |
-| OR | At least one input is 1 | $X = A + B$ |
-| NAND | Not all inputs are 1 | $X = (AB)'$ |
-| NOR | No input is 1 | $X = (A + B)'$ |
-| XOR | The inputs differ | $X = A \oplus B = A'B + AB'$ |
-| XNOR | The inputs match | $X = (A \oplus B)' = A'B' + AB$ |
+Digital switching systems rely on eight basic gate types, classified by how their outputs respond to input combinations:
 
-The small circle (a **bubble**) on a gate's symbol means "invert here". NAND is an AND with a bubble on its output, and an inverter is a buffer with a bubble.
+| Gate | Graphic Symbol | IEEE Rectangular Symbol | Boolean Expression | Output is 1 when |
+|---|---|---|---|---|
+| **NOT** (Inverter) | Triangle with bubble | `1` with right bubble | $Y = A'$ or $\overline{A}$ | Input $A = 0$ |
+| **Buffer** | Triangle | `1` | $Y = A$ | Input $A = 1$ |
+| **AND** | Curved back, flat front | `&` | $Y = AB$ or $A \cdot B$ | All inputs are 1 |
+| **OR** | Curved back, pointed front | `≥1` | $Y = A + B$ | At least one input is 1 |
+| **NAND** | AND with inversion bubble | `&` with right bubble | $Y = (AB)'$ | Not all inputs are 1 |
+| **NOR** | OR with inversion bubble | `≥1` with right bubble | $Y = (A + B)'$ | All inputs are 0 |
+| **XOR** | Double-curved back, pointed | `=1` | $Y = A \oplus B = A'B + AB'$ | Exactly one input is 1 (inputs differ) |
+| **XNOR** | XOR with inversion bubble | `=1` with right bubble | $Y = (A \oplus B)' = AB + A'B'$ | Inputs are equal |
 
-<Callout tone="neon" label="Reading the notation">
-In Boolean notation, $AB$ means AND, $A + B$ means OR and $A'$ means NOT. Don't read + as adding: here, $1 + 1 = 1$, because "this or that" is simply true.
-</Callout>
+### NOT gate (Inverter) and Buffer
+
+The **NOT gate** (or inverter) performs logical negation. It changes a 0 into a 1 and a 1 into a 0:
+
+| $A$ | $Y = A'$ |
+|:---:|:---:|
+| 0 | 1 |
+| 1 | 0 |
+
+The triangular body of the symbol represents a generic amplifier, while the small circle—the **inversion bubble**—denotes the logical inversion.
+
+A **buffer** does not alter the logical value ($Y = A$). Despite performing no logical transformation, buffers are essential in physical hardware design:
+1. **Signal restoration:** As signals travel across capacitive PCB traces or long on-chip interconnects, resistance and parasitic capacitance degrade transition edges. Buffers sharpen slewing edges back to sharp digital pulses.
+2. **Fan-out amplification:** A single gate output has finite current-driving capacity. A buffer acts as a current amplifier, enabling one output signal to drive dozens of downstream gate inputs.
+3. **Delay insertion:** In high-speed sequential circuits, buffers are inserted into clock and data lines to balance arrival times and eliminate hold-time violations.
+
+### AND and OR gates
+
+The **AND gate** outputs 1 if and only if every input is 1. If any input is 0, the output is forced to 0:
+
+| $A$ | $B$ | $Y = AB$ |
+|:---:|:---:|:---:|
+| 0 | 0 | 0 |
+| 0 | 1 | 0 |
+| 1 | 0 | 0 |
+| 1 | 1 | 1 |
+
+The mechanical analogy is two switches in **series** on a wire powering a light bulb: current flows only when switch $A$ AND switch $B$ are both closed.
+
+The **OR gate** outputs 1 if at least one input is 1. It outputs 0 only when all inputs are simultaneously 0:
+
+| $A$ | $B$ | $Y = A + B$ |
+|:---:|:---:|:---:|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 1 |
+
+The mechanical analogy is two switches in **parallel**: closing switch $A$ OR switch $B$ (or both) completes the circuit and illuminates the bulb.
+
+### NAND and NOR gates
+
+The **NAND gate** produces the complement of the AND operation ($Y = (AB)'$). Its output is 0 only when all inputs are 1:
+
+| $A$ | $B$ | $Y = (AB)'$ |
+|:---:|:---:|:---:|
+| 0 | 0 | 1 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 0 |
+
+The **NOR gate** produces the complement of the OR operation ($Y = (A + B)'$). Its output is 1 only when all inputs are 0:
+
+| $A$ | $B$ | $Y = (A + B)'$ |
+|:---:|:---:|:---:|
+| 0 | 0 | 1 |
+| 0 | 1 | 0 |
+| 1 | 0 | 0 |
+| 1 | 1 | 0 |
+
+NAND and NOR gates are termed **universal gates**: any arbitrary digital switching function can be realized exclusively using NAND gates or exclusively using NOR gates, as explored in depth in [Universal Gates](/courses/logic-design/universal-gates).
+
+### Exclusive-OR (XOR) and Exclusive-NOR (XNOR)
+
+The **XOR gate** (Exclusive-OR) outputs 1 if its two inputs have different logic levels:
+
+| $A$ | $B$ | $Y = A \oplus B$ |
+|:---:|:---:|:---:|
+| 0 | 0 | 0 |
+| 0 | 1 | 1 |
+| 1 | 0 | 1 |
+| 1 | 1 | 0 |
+
+Algebraically, $A \oplus B = A'B + AB'$. XOR acts as:
+1. **Modulo-2 adder:** Adding two single-bit binary numbers without carry: $0+0=0$, $0+1=1$, $1+0=1$, and $1+1=0$ (sum bit in binary [adders](/courses/logic-design/adders)).
+2. **Controllable inverter:**
+   - $A \oplus 0 = A$ (buffer mode)
+   - $A \oplus 1 = A'$ (invert mode)
+3. **Parity checker:** For three or more inputs, $A \oplus B \oplus C$ is an **odd function**; it outputs 1 whenever an odd number of inputs are 1. This property is used for [parity generation and checking](/courses/logic-design/codes-and-floating-point#parity-bits-for-error-detection).
+
+The **XNOR gate** (Exclusive-NOR or equivalence gate) is the complement of XOR: $Y = (A \oplus B)' = AB + A'B'$. Its output is 1 when both inputs are equal ($A = B$). XNOR forms the core of digital [comparators](/courses/logic-design/comparators-decoders-encoders).
 
 ## What each one is good for
 
-**AND** works as a door. Treat one input as data and the other as a control. With the control at 1, the data passes. With it at 0, the output is stuck at 0. This single idea is behind the [latch's control input](/courses/logic-design/d-latch-and-clock) and the [multiplexer](/courses/logic-design/multiplexers).
+Every gate type has specialized roles in digital systems:
 
-**XOR** is a controllable inverter: $A \oplus 0 = A$ and $A \oplus 1 = A'$. It also adds two bits while ignoring the carry, which is half of an [adder](/courses/logic-design/adders).
+**AND** works as an enable gate or digital door. Treat one input as data and the other as control. With the control at 1, the data passes through ($Y = A \cdot 1 = A$). With control at 0, the output is held low ($Y = A \cdot 0 = 0$). This gating technique controls data flow in [latches and registers](/courses/logic-design/d-latch-and-clock) and [multiplexers](/courses/logic-design/multiplexers).
 
-**XNOR** tests whether two bits are equal, so [comparators](/courses/logic-design/comparators-decoders-encoders) use it.
+**XOR** acts as a controllable inverter and modulo-2 adder: $A \oplus 0 = A$ and $A \oplus 1 = A'$. XORing bits adds two binary digits without carry, forming the sum bit of an [adder](/courses/logic-design/adders). In parity trees, cascading XOR gates generates and verifies error-detecting codes.
 
-**Buffers** do no logic. They strengthen a signal that has to travel a long way or drive many other gates.
+**XNOR** tests whether two bits match ($Y = 1$ when $A = B$). Digital [comparators](/courses/logic-design/comparators-decoders-encoders) use XNOR gates to compare multi-bit register values.
+
+**Buffers** perform no logical transformation ($Y = A$). They restore degraded voltage levels, drive high-capacitance bus lines, boost fan-out, and insert controlled propagation delay.
 
 A row of inverters is also all it takes to form a [1's complement](/courses/logic-design/binary-arithmetic): one inverter per bit.
 
-## Gates on a chip
+## Graphic symbols and standard notation
 
-Gates are sold and built as **integrated circuits**: a small piece of silicon holding the gates, in a package with metal pins. A basic chip might hold four NAND gates. A modern CPU holds billions of transistors on the same principle. This course stays at the level of the gates, and the [Computer Organization course](/courses/computer-organization/inside-the-cpu) shows you the same thing from the top down.
+Digital schematics adhere to two recognized graphic standards governed by IEEE/ANSI Std 91-1984:
+1. **Distinctive-shape symbols:** Curved shapes showing function by contour (standard in North America and widely used globally).
+2. **Rectangular-shape symbols:** Uniform rectangular boxes containing internal qualifying symbols:
+   - `&` indicates AND functionality.
+   - `≥1` indicates OR functionality (at least one active input).
+   - `1` indicates a single-input buffer or inverter.
+   - `=1` indicates exclusive-OR (exactly one active input).
+
+```text
+Distinctive Shapes:
+     ___                    ___                    ___
+A --|   \              A --\   \              A --|   \
+    |    )--- Y             )   )--- Y            |    )o--- Y
+B --|___/              B --/___/              B --|___/
+     AND                     OR                    NAND
+
+Rectangular (IEEE Std 91):
+     +---+                  +---+                  +---+
+A ---| & |             A ---|≥1 |             A ---| & |o--- Y
+     |   |--- Y             |   |--- Y             |   |
+B ---|   |             B ---|   |             B ---|   |
+     +---+                  +---+                  +---+
+```
+
+### Active-high vs. active-low logic
+
+Signals in digital circuits are classified by their active assertion state:
+- **Active-high signals:** Asserted (true) when driven to high voltage (logic 1), and deasserted (false) when driven to low voltage (logic 0).
+- **Active-low signals:** Asserted (true) when driven to low voltage (logic 0), and deasserted (false) when driven to high voltage (logic 1).
+
+Active-low signals are designated on schematics by an inversion bubble at the gate terminal, and in text with an overbar ($\overline{\text{RESET}}$), a trailing slash (`RESET/`), an underscore suffix (`RESET_N`), or a hash (`RESET#`).
+
+Hardware designers routinely use active-low logic for control signals (e.g., chip enable, write enable, clear) because open-collector and open-drain bus structures sink current more effectively than they source it, offering superior noise immunity and safe wired-OR bus sharing.
+
+## Electrical parameters and real hardware constraints
+
+Logic gates are physical analog circuits operating in saturation. Real-world constraints dictate their timing, loading, and noise tolerance.
+
+### Propagation delay and transition times
+
+Gates do not switch instantaneously. The physical delay required for a signal change at the input to propagate to the output is the **propagation delay**:
+- **$t_{pHL}$ (High-to-Low propagation delay):** Time from the 50% voltage point of the input transition to the 50% point of the falling output transition.
+- **$t_{pLH}$ (Low-to-High propagation delay):** Time from the 50% voltage point of the input transition to the 50% point of the rising output transition.
+- **Average propagation delay ($t_{pd}$):**
+  $$
+  t_{pd} = \frac{t_{pHL} + t_{pLH}}{2}
+  $$
+
+Output waveforms also require finite time to traverse voltage levels:
+- **Rise time ($t_r$):** Time required for the output voltage to rise from 10% to 90% of its final value.
+- **Fall time ($t_f$):** Time required for the output voltage to drop from 90% to 10% of its initial value.
+
+```text
+Input:   _______/‾‾‾‾‾‾‾\_______
+                |       |
+Output:  ‾‾‾‾‾‾‾\_______/‾‾‾‾‾‾‾
+                |---|   |---|
+                tpHL    tpLH
+```
+
+Cumulative propagation delays along critical combinational paths set the maximum operating clock frequency ($f_{\max}$) of synchronous digital hardware.
+
+### Noise margins
+
+Electric circuits operate in environments subject to electromagnetic interference, power supply ripple, and cross-talk. **Noise margin** quantifies a gate's ability to tolerate unwanted voltage fluctuations without misinterpreting logic levels:
+
+```text
+Output Voltage Ranges                 Input Voltage Tolerances
++----------------------+              +----------------------+
+| V_OH(min) - Logic 1  |              | V_IH(min) - Logic 1  |
++----------------------+              +----------------------+
+|                      |  <-- NM_H    |                      |
++----------------------+              +----------------------+
+| Indeterminate State  |              | Indeterminate State  |
++----------------------+              +----------------------+
+|                      |  <-- NM_L    |                      |
++----------------------+              +----------------------+
+| V_OL(max) - Logic 0  |              | V_IL(max) - Logic 0  |
++----------------------+              +----------------------+
+```
+
+The parameters are defined as:
+- $V_{OH(\min)}$: Minimum output voltage guaranteed when driving logic 1.
+- $V_{OL(\max)}$: Maximum output voltage guaranteed when driving logic 0.
+- $V_{IH(\min)}$: Minimum input voltage recognized reliably as logic 1.
+- $V_{IL(\max)}$: Maximum input voltage recognized reliably as logic 0.
+
+The **high-level noise margin ($NM_H$)** and **low-level noise margin ($NM_L$)** are:
+$$
+NM_H = V_{OH(\min)} - V_{IH(\min)}
+$$
+$$
+NM_L = V_{IL(\max)} - V_{OL(\max)}
+$$
+
+For standard 5V Transistor-Transistor Logic (TTL):
+- $V_{OH(\min)} = 2.4\,\text{V}$, $V_{IH(\min)} = 2.0\,\text{V} \implies NM_H = 2.4 - 2.0 = 0.4\,\text{V}$.
+- $V_{IL(\max)} = 0.8\,\text{V}$, $V_{OL(\max)} = 0.4\,\text{V} \implies NM_L = 0.8 - 0.4 = 0.4\,\text{V}$.
+
+In contrast, 5V CMOS devices exhibit symmetric switching thresholds ($V_{IH(\min)} \approx 3.5\,\text{V}$, $V_{IL(\max)} \approx 1.5\,\text{V}$, with rail-to-rail outputs $V_{OH} \approx 4.9\,\text{V}$, $V_{OL} \approx 0.1\,\text{V}$), producing noise margins exceeding $1.4\,\text{V}$.
+
+### Fan-in and Fan-out
+
+- **Fan-in:** The number of physical input terminals connected to a single logic gate. Exceeding recommended fan-in degrades switching speed because additional internal transistors add parasitic capacitance.
+- **Fan-out:** The maximum number of standard gate inputs of the same logic family that a gate output can drive without exceeding voltage threshold ratings.
+
+Fan-out is calculated in both output states:
+$$
+\text{Fan-out (High)} = \left\lfloor \frac{I_{OH(\max)}}{I_{IH(\max)}} \right\rfloor, \qquad \text{Fan-out (Low)} = \left\lfloor \frac{I_{OL(\max)}}{I_{IL(\max)}} \right\rfloor
+$$
+The rated DC fan-out of the gate is the minimum of the two values:
+$$
+\text{Fan-out} = \min\Big(\text{Fan-out (High)}, \text{Fan-out (Low)}\Big)
+$$
+
+### Logic families and the standard 7400 series
+
+Historically and in prototyping, discrete digital logic is packaged in 14-pin or 16-pin Dual In-line Packages (DIP). The industry-standard **7400 series** integrated circuits define standard pinout assignments:
+- **7400:** Quad 2-input NAND gates
+- **7402:** Quad 2-input NOR gates
+- **7404:** Hex Inverter (six independent inverters)
+- **7408:** Quad 2-input AND gates
+- **7432:** Quad 2-input OR gates
+- **7486:** Quad 2-input XOR gates
+
+On standard 14-pin DIP packages, pin 14 supplies $+5\,\text{V}$ ($V_{CC}$), and pin 7 connects to ground (GND).
+
+## Practice problems
+
+### Problem 1: Cascaded gate propagation delay
+
+A signal path consists of an inverter ($t_{pHL} = 3\,\text{ns}$, $t_{pLH} = 4\,\text{ns}$) driving a 2-input AND gate ($t_{pHL} = 6\,\text{ns}$, $t_{pLH} = 8\,\text{ns}$), which in turn drives a 2-input NOR gate ($t_{pHL} = 5\,\text{ns}$, $t_{pLH} = 7\,\text{ns}$). 
+
+Calculate the total path delay when the primary input signal transitions from logic 0 to logic 1, assuming all second inputs to the AND and NOR gates are held at static logic 1 and logic 0, respectively.
+
+<ModelAnswer>
+Trace the alternating output transitions along the signal path:
+
+1. **Stage 1 (Inverter):**
+   - The input transitions $0 \to 1$ (rising edge).
+   - An inverter flips the direction: the inverter output falls ($1 \to 0$, falling edge).
+   - Applicable delay: $t_{pHL(\text{INV})} = 3\,\text{ns}$.
+
+2. **Stage 2 (AND gate):**
+   - One input transitions $1 \to 0$ while the other input is fixed at 1.
+   - The AND output transitions $1 \cdot 1 \to 0 \cdot 1$, falling from $1 \to 0$.
+   - Applicable delay: $t_{pHL(\text{AND})} = 6\,\text{ns}$.
+
+3. **Stage 3 (NOR gate):**
+   - One input transitions $1 \to 0$ while the other input is fixed at 0.
+   - The NOR output transitions $(1 + 0)' \to (0 + 0)'$, rising from $0 \to 1$.
+   - Applicable delay: $t_{pLH(\text{NOR})} = 7\,\text{ns}$.
+
+**Total path delay:**
+$$
+t_{\text{total}} = t_{pHL(\text{INV})} + t_{pHL(\text{AND})} + t_{pLH(\text{NOR})} = 3\,\text{ns} + 6\,\text{ns} + 7\,\text{ns} = 16\,\text{ns}
+$$
+</ModelAnswer>
+
+### Problem 2: Parity generation and controllable inversion
+
+Given three data bits $A$, $B$, and $C$, an even-parity bit $P$ is generated such that the total number of 1s in $(A, B, C, P)$ is always even.
+
+1. Express $P$ in terms of $A$, $B$, and $C$ using XOR operations.
+2. Show that if $P$ is transmitted across a noisy channel and bit $B$ is flipped during transit, a receiver evaluating $E = A \oplus B_{\text{rx}} \oplus C \oplus P$ will detect the error.
+
+<ModelAnswer>
+1. **Parity bit generation:**
+   For the total count of 1s in $\{A, B, C, P\}$ to be even, the modulo-2 sum must be zero:
+   $$
+   A \oplus B \oplus C \oplus P = 0
+   $$
+   Adding $P$ to both sides (since $P \oplus P = 0$ and $x \oplus 0 = x$):
+   $$
+   P = A \oplus B \oplus C
+   $$
+
+2. **Error syndrome evaluation:**
+   Suppose bit $B$ flips during transmission: $B_{\text{rx}} = B \oplus 1 = B'$.
+   The receiver calculates syndrome $E$:
+   $$
+   \begin{aligned}
+   E &= A \oplus B_{\text{rx}} \oplus C \oplus P \\
+   &= A \oplus (B \oplus 1) \oplus C \oplus (A \oplus B \oplus C)
+   \end{aligned}
+   $$
+   By commutativity and associativity of XOR ($x \oplus x = 0$):
+   $$
+   \begin{aligned}
+   E &= (A \oplus A) \oplus (B \oplus B) \oplus (C \oplus C) \oplus 1 \\
+   &= 0 \oplus 0 \oplus 0 \oplus 1 = 1
+   \end{aligned}
+   $$
+   Because $E = 1$, the parity checker flags an odd-bit transmission error.
+</ModelAnswer>
+
+### Problem 3: Fan-out and noise margin calculation
+
+A manufacturer data sheet for a high-speed logic gate specifies:
+- $V_{OH(\min)} = 4.3\,\text{V}$, $V_{OL(\max)} = 0.35\,\text{V}$
+- $V_{IH(\min)} = 3.1\,\text{V}$, $V_{IL(\max)} = 1.1\,\text{V}$
+- Output drive currents: $I_{OH(\max)} = -4.0\,\text{mA}$, $I_{OL(\max)} = 16.0\,\text{mA}$
+- Input load currents: $I_{IH(\max)} = 40\,\mu\text{A}$, $I_{IL(\max)} = -0.8\,\text{mA}$
+
+*(Negative signs indicate current flowing out of a terminal).*
+
+1. Calculate the high-state and low-state noise margins ($NM_H$ and $NM_L$).
+2. Determine the maximum allowable DC fan-out.
+
+<ModelAnswer>
+1. **Noise margins:**
+   $$
+   NM_H = V_{OH(\min)} - V_{IH(\min)} = 4.3\,\text{V} - 3.1\,\text{V} = 1.2\,\text{V}
+   $$
+   $$
+   NM_L = V_{IL(\max)} - V_{OL(\max)} = 1.1\,\text{V} - 0.35\,\text{V} = 0.75\,\text{V}
+   $$
+
+2. **DC fan-out:**
+   High-state fan-out capacity:
+   $$
+   \text{Fan-out (High)} = \left\lfloor \frac{|I_{OH(\max)}|}{|I_{IH(\max)}|} \right\rfloor = \left\lfloor \frac{4.0\,\text{mA}}{0.040\,\text{mA}} \right\rfloor = 100
+   $$
+   Low-state fan-out capacity:
+   $$
+   \text{Fan-out (Low)} = \left\lfloor \frac{|I_{OL(\max)}|}{|I_{IL(\max)}|} \right\rfloor = \left\lfloor \frac{16.0\,\text{mA}}{0.8\,\text{mA}} \right\rfloor = 20
+   $$
+
+   The rated fan-out is limited by the lower sinking capacity in the low state:
+   $$
+   \text{Fan-out} = \min(100, 20) = 20
+   $$
+   The output can safely drive up to 20 identical gate inputs.
+</ModelAnswer>
+
+### Problem 4: Active-low enable steering logic
+
+A memory module requires an active-low chip select signal ($\overline{\text{CS}}$). The chip must be enabled only when two conditions hold simultaneously:
+1. Address line $A_{15}$ is high ($A_{15} = 1$).
+2. Address line $A_{14}$ is low ($A_{14} = 0$).
+3. The microprocessor's read/write request strobe $\overline{\text{REQ}}$ is asserted low ($\overline{\text{REQ}} = 0$).
+
+Write the Boolean equation for $\overline{\text{CS}}$ in terms of $A_{15}$, $A_{14}$, and $\overline{\text{REQ}}$, and implement the function using a single standard logic gate.
+
+<ModelAnswer>
+Identify when the enable condition is active:
+The memory is selected when condition $E$ is true:
+$$
+E = A_{15} \cdot A_{14}' \cdot (\overline{\text{REQ}})'
+$$
+
+Since the chip select signal is active-low, $\overline{\text{CS}} = 0$ when $E = 1$, which means $\overline{\text{CS}} = E'$:
+$$
+\overline{\text{CS}} = (A_{15} \cdot A_{14}' \cdot \overline{\text{REQ}}')'
+$$
+
+By De Morgan's theorem:
+$$
+\overline{\text{CS}} = A_{15}' + A_{14} + \overline{\text{REQ}}
+$$
+
+To realize this with a single gate:
+- Using a 3-input NAND gate: connect input 1 to $A_{15}$, input 2 to an inverted $A_{14}$, and input 3 to an inverted $\overline{\text{REQ}}$.
+- Alternatively, recognizing that $\overline{\text{CS}}$ is 0 only when $A_{15}=1$, $A_{14}=0$, and $\overline{\text{REQ}}=0$, a single 3-input NOR gate with active-low inputs (or OR gate in positive logic) directly evaluates the sum:
+  $$
+  \overline{\text{CS}} = A_{15}' + A_{14} + \overline{\text{REQ}}
+  $$
+</ModelAnswer>
