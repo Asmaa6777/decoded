@@ -843,5 +843,272 @@ describe("visualizers step all the way through", () => {
         expect(lcm).toBe(120);
       });
     });
+
+    describe("Module 3 practice calculations and exam questions", () => {
+      it("verifies Lecture 7 DFS and BFS traces, orders, and tree edges on 7-vertex graph", () => {
+        // Graph V = {A, B, C, D, E, F, G}
+        const adj: Record<string, string[]> = {
+          A: ["B", "D", "E"],
+          B: ["A", "C", "E"],
+          C: ["B", "E", "F", "G"],
+          D: ["A", "E"],
+          E: ["A", "B", "C", "D", "F"],
+          F: ["C", "E", "G"],
+          G: ["C", "F"],
+        };
+
+        // 1. DFS trace starting from A (alphabetical order)
+        const dfsVisited = new Set<string>();
+        const dfsOrder: string[] = [];
+        const dfsTreeEdges: string[] = [];
+        const stack: string[] = ["A"];
+        dfsVisited.add("A");
+        dfsOrder.push("A");
+
+        while (stack.length > 0) {
+          const top = stack[stack.length - 1];
+          const unvisitedNeighbor = adj[top].find((w) => !dfsVisited.has(w));
+          if (unvisitedNeighbor) {
+            dfsVisited.add(unvisitedNeighbor);
+            dfsOrder.push(unvisitedNeighbor);
+            dfsTreeEdges.push(`${top}-${unvisitedNeighbor}`);
+            stack.push(unvisitedNeighbor);
+          } else {
+            stack.pop(); // backtrack
+          }
+        }
+
+        expect(dfsOrder).toEqual(["A", "B", "C", "E", "D", "F", "G"]);
+        expect(dfsTreeEdges).toEqual(["A-B", "B-C", "C-E", "E-D", "E-F", "F-G"]);
+        expect(dfsTreeEdges.length).toBe(6);
+
+        // 2. BFS trace starting from A (alphabetical order)
+        const bfsVisited = new Set<string>();
+        const bfsOrder: string[] = [];
+        const bfsTreeEdges: string[] = [];
+        const queue: string[] = ["A"];
+        bfsVisited.add("A");
+
+        while (queue.length > 0) {
+          const v = queue.shift()!;
+          bfsOrder.push(v);
+          for (const w of adj[v]) {
+            if (!bfsVisited.has(w)) {
+              bfsVisited.add(w);
+              bfsTreeEdges.push(`${v}-${w}`);
+              queue.push(w);
+            }
+          }
+        }
+
+        expect(bfsOrder).toEqual(["A", "B", "D", "E", "C", "F", "G"]);
+        expect(bfsTreeEdges).toEqual(["A-B", "A-D", "A-E", "B-C", "E-F", "C-G"]);
+        expect(bfsTreeEdges.length).toBe(6);
+      });
+
+      it("verifies Homework 9-vertex A-to-S graph DFS and BFS spanning trees", () => {
+        const adj: Record<string, string[]> = {
+          A: ["B", "S"],
+          B: ["A"],
+          C: ["D", "E", "F", "S"],
+          D: ["C"],
+          E: ["C", "H"],
+          F: ["C", "G"],
+          G: ["F", "H", "S"],
+          H: ["E", "G"],
+          S: ["A", "C", "G"],
+        };
+
+        // DFS trace from A
+        const dfsVisited = new Set<string>();
+        const dfsOrder: string[] = [];
+        const dfsTreeEdges: string[] = [];
+        const stack: string[] = ["A"];
+        dfsVisited.add("A");
+        dfsOrder.push("A");
+
+        while (stack.length > 0) {
+          const top = stack[stack.length - 1];
+          const next = adj[top].find((w) => !dfsVisited.has(w));
+          if (next) {
+            dfsVisited.add(next);
+            dfsOrder.push(next);
+            dfsTreeEdges.push(`${top}-${next}`);
+            stack.push(next);
+          } else {
+            stack.pop();
+          }
+        }
+
+        expect(dfsOrder).toEqual(["A", "B", "S", "C", "D", "E", "H", "G", "F"]);
+        expect(dfsTreeEdges).toEqual(["A-B", "A-S", "S-C", "C-D", "C-E", "E-H", "H-G", "G-F"]);
+        expect(dfsTreeEdges.length).toBe(8); // V - 1 = 9 - 1 = 8
+
+        // BFS trace from A
+        const bfsVisited = new Set<string>();
+        const bfsOrder: string[] = [];
+        const bfsTreeEdges: string[] = [];
+        const queue: string[] = ["A"];
+        bfsVisited.add("A");
+
+        while (queue.length > 0) {
+          const v = queue.shift()!;
+          bfsOrder.push(v);
+          for (const w of adj[v]) {
+            if (!bfsVisited.has(w)) {
+              bfsVisited.add(w);
+              bfsTreeEdges.push(`${v}-${w}`);
+              queue.push(w);
+            }
+          }
+        }
+
+        expect(bfsOrder).toEqual(["A", "B", "S", "C", "G", "D", "E", "F", "H"]);
+        expect(bfsTreeEdges).toEqual(["A-B", "A-S", "S-C", "S-G", "C-D", "C-E", "C-F", "G-H"]);
+        expect(bfsTreeEdges.length).toBe(8); // V - 1 = 8
+
+        // Both spanning trees have exactly V - 1 edges
+        const V = Object.keys(adj).length;
+        expect(dfsTreeEdges.length).toBe(V - 1);
+        expect(bfsTreeEdges.length).toBe(V - 1);
+      });
+
+      it("verifies BFS Queue Explosion on diamond graph when marking visited on dequeue", () => {
+        // Diamond graph: 0-1, 0-2, 1-3, 2-3
+        const adj = [
+          [1, 2],
+          [0, 3],
+          [0, 3],
+          [1, 2],
+        ];
+
+        // 1. Correct BFS: mark visited on enqueue
+        const correctQueue: number[] = [];
+        const correctVisited = new Array(4).fill(false);
+        let correctEnqueues = 0;
+
+        correctVisited[0] = true;
+        correctQueue.push(0);
+        correctEnqueues++;
+
+        while (correctQueue.length > 0) {
+          const v = correctQueue.shift()!;
+          for (const w of adj[v]) {
+            if (!correctVisited[w]) {
+              correctVisited[w] = true;
+              correctQueue.push(w);
+              correctEnqueues++;
+            }
+          }
+        }
+        expect(correctEnqueues).toBe(4); // Each vertex enqueued exactly once
+
+        // 2. Buggy BFS: mark visited on dequeue
+        const buggyQueue: number[] = [];
+        const buggyVisited = new Array(4).fill(false);
+        let buggyEnqueues = 0;
+
+        buggyQueue.push(0);
+        buggyEnqueues++;
+
+        const enqueuedOrder: number[] = [0];
+        while (buggyQueue.length > 0) {
+          const v = buggyQueue.shift()!;
+          buggyVisited[v] = true; // Bug: marked here!
+          for (const w of adj[v]) {
+            if (!buggyVisited[w]) {
+              buggyQueue.push(w);
+              buggyEnqueues++;
+              enqueuedOrder.push(w);
+            }
+          }
+        }
+        expect(buggyEnqueues).toBe(5); // Vertex 3 is enqueued twice!
+        expect(enqueuedOrder).toEqual([0, 1, 2, 3, 3]);
+      });
+
+      it("verifies Adjacency List vs Matrix space and Handshaking Lemma", () => {
+        const V = 10_000;
+        const E = 50_000;
+
+        // Matrix: 1 byte per cell
+        const matrixBytes = V * V * 1;
+        expect(matrixBytes).toBe(100_000_000); // 100 MB
+
+        // List: 4 bytes per header (V headers) + 4 bytes per edge endpoint (2E endpoints)
+        const listInts = V + 2 * E;
+        expect(listInts).toBe(110_000);
+        const listBytes = listInts * 4;
+        expect(listBytes).toBe(440_000); // 0.44 MB
+
+        const spaceSavingsRatio = matrixBytes / listBytes;
+        expect(spaceSavingsRatio).toBeCloseTo(227.27, 2);
+
+        // Handshaking Lemma: sum of degrees is 2E
+        const averageDegree = 10;
+        const totalDegreeSum = V * averageDegree;
+        expect(totalDegreeSum).toBe(2 * E);
+      });
+
+      it("verifies Disconnected Components traversal with wrapper", () => {
+        // Component 1: 0-1, 1-2, 2-0 (size 3)
+        // Component 2: 3-4, 4-5, 5-6, 6-7 (size 5)
+        const n = 8;
+        const adj: number[][] = [
+          [1, 2],
+          [0, 2],
+          [0, 1],
+          [4],
+          [3, 5],
+          [4, 6],
+          [5, 7],
+          [6],
+        ];
+
+        // Single BFS from 0
+        const visitedSingle = new Array(n).fill(false);
+        const queueSingle: number[] = [0];
+        visitedSingle[0] = true;
+        let singleVisitedCount = 0;
+
+        while (queueSingle.length > 0) {
+          const v = queueSingle.shift()!;
+          singleVisitedCount++;
+          for (const w of adj[v]) {
+            if (!visitedSingle[w]) {
+              visitedSingle[w] = true;
+              queueSingle.push(w);
+            }
+          }
+        }
+        expect(singleVisitedCount).toBe(3); // Only component 1
+        expect(visitedSingle).toEqual([true, true, true, false, false, false, false, false]);
+
+        // Full wrapper across all components
+        const visitedFull = new Array(n).fill(false);
+        let components = 0;
+        let fullVisitedCount = 0;
+
+        for (let i = 0; i < n; i++) {
+          if (!visitedFull[i]) {
+            components++;
+            const q = [i];
+            visitedFull[i] = true;
+            while (q.length > 0) {
+              const v = q.shift()!;
+              fullVisitedCount++;
+              for (const w of adj[v]) {
+                if (!visitedFull[w]) {
+                  visitedFull[w] = true;
+                  q.push(w);
+                }
+              }
+            }
+          }
+        }
+        expect(components).toBe(2);
+        expect(fullVisitedCount).toBe(8);
+      });
+    });
   });
 });

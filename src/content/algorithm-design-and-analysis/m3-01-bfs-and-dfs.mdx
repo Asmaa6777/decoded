@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import {
   GraphTraversal,
   AdjacencyVisualizer,
@@ -271,3 +271,391 @@ The sample graph matches the structure illustrated in the visualizer above, enab
     { id: 637, title: "Average of Levels in Binary Tree", slug: "average-of-levels-in-binary-tree", why: "Process vertices level by level with BFS, evaluating exactly queue.size() elements per tree depth to compute level averages." },
   ]}
 />
+
+## Practice from past exams
+
+### Part 1: Midterm and written exam questions
+
+**1.** *(Lecture 7 DFS and BFS traces on 7-vertex graph)* An exam question presents the 7-vertex undirected graph analyzed in lecture, with vertices $V = \{A, B, C, D, E, F, G\}$ and edges:
+$$
+E = \{(A,B), (A,D), (A,E), (B,C), (B,E), (C,E), (C,F), (C,G), (D,E), (E,F), (F,G)\}
+$$
+Assume all adjacency lists list neighbors in alphabetical order.
+1. Trace Depth-First Search (DFS) starting from vertex $A$ using an explicit stack. Produce a step-by-step trace detailing: step number, top-of-stack vertex, action taken, stack contents (bottom to top), and classify each edge explored as a **tree edge** (discovering an unvisited vertex) or a **back edge** (incident to an already visited vertex). State the resulting DFS visit sequence.
+2. Trace Breadth-First Search (BFS) starting from vertex $A$ using an explicit FIFO queue. Produce a step-by-step trace detailing: dequeued vertex, discovered neighbors added to the queue, queue contents, and concentric layer distance from $A$. List the resulting BFS tree edges.
+3. Compare the depth of the resulting spanning trees and the paths discovered from $A$ to $G$. Explain why BFS guarantees a shortest path (minimum edge count) in unweighted graphs while DFS does not.
+
+<ModelAnswer>
+**(a) DFS step-by-step trace from vertex $A$ (alphabetical tie-breaking):**
+
+Adjacency lists in alphabetical order:
+- $A$: $[B, D, E]$
+- $B$: $[A, C, E]$
+- $C$: $[B, E, F, G]$
+- $D$: $[A, E]$
+- $E$: $[A, B, C, D, F]$
+- $F$: $[C, E, G]$
+- $G$: $[C, F]$
+
+| Step | Top of stack | Action & edge classification | Stack (bottom $\to$ top) | Visited vertices |
+| --- | --- | --- | --- | --- |
+| 1 | None | Start at $A$: mark visited, push $A$ | $A$ | $\{A\}$ |
+| 2 | $A$ | Inspect $A \to B$: unvisited. Tree edge $(A, B)$, visit $B$, push $B$ | $A, B$ | $\{A, B\}$ |
+| 3 | $B$ | Inspect $B \to A$: visited (back edge). Inspect $B \to C$: unvisited. Tree edge $(B, C)$, visit $C$, push $C$ | $A, B, C$ | $\{A, B, C\}$ |
+| 4 | $C$ | Inspect $C \to B$: visited (back edge). Inspect $C \to E$: unvisited. Tree edge $(C, E)$, visit $E$, push $E$ | $A, B, C, E$ | $\{A, B, C, E\}$ |
+| 5 | $E$ | Inspect $E \to A, B, C$: visited (back edges). Inspect $E \to D$: unvisited. Tree edge $(E, D)$, visit $D$, push $D$ | $A, B, C, E, D$ | $\{A, B, C, E, D\}$ |
+| 6 | $D$ | Inspect $D \to A, E$: both visited (back edges). Dead end! Pop $D$ | $A, B, C, E$ | $\{A, B, C, E, D\}$ |
+| 7 | $E$ | Resume $E$. Remaining neighbor $E \to F$: unvisited. Tree edge $(E, F)$, visit $F$, push $F$ | $A, B, C, E, F$ | $\{A, B, C, E, D, F\}$ |
+| 8 | $F$ | Inspect $F \to C, E$: visited (back edges). Inspect $F \to G$: unvisited. Tree edge $(F, G)$, visit $G$, push $G$ | $A, B, C, E, F, G$ | $\{A, B, C, E, D, F, G\}$ |
+| 9 | $G$ | Inspect $G \to C, F$: both visited (back edges). Dead end! Pop $G$ | $A, B, C, E, F$ | $\{A, B, C, E, D, F, G\}$ |
+| 10–14 | Various | No unvisited neighbors remain from $F, E, C, B, A$. Backtrack and pop each vertex until stack is empty | Empty | All 7 visited |
+
+- **DFS visit sequence:** **A B C E D F G**
+- **DFS tree edges (6 edges):** $(A, B), (B, C), (C, E), (E, D), (E, F), (F, G)$
+- **Back edges (5 non-tree edges):** $(A, D), (A, E), (B, E), (C, F)$ (explored as back edges from later visits), $(C, G)$
+
+**(b) BFS step-by-step trace from vertex $A$ (alphabetical tie-breaking):**
+
+- **Initial state:** Enqueue start vertex $A$, mark $A$ as visited. `queue = [A]`.
+- **Iteration 1 (Distance 0):**
+  - Dequeue $A$.
+  - Neighbors of $A$ are $B, D, E$. All are unvisited.
+  - Mark visited and enqueue $B, D, E$.
+  - Tree edges: $(A, B), (A, D), (A, E)$.
+  - `queue = [B, D, E]`.
+- **Iteration 2 (Distance 1):**
+  - Dequeue $B$.
+  - Neighbors of $B$: $A$ (visited), $C$ (unvisited), $E$ (already queued/visited).
+  - Mark visited and enqueue $C$. Tree edge: $(B, C)$.
+  - `queue = [D, E, C]`.
+- **Iteration 3 (Distance 1):**
+  - Dequeue $D$.
+  - Neighbors of $D$: $A, E$ (both already visited/queued).
+  - No new vertices added.
+  - `queue = [E, C]`.
+- **Iteration 4 (Distance 1):**
+  - Dequeue $E$.
+  - Neighbors of $E$: $A, B, C, D$ (all visited/queued), $F$ (unvisited).
+  - Mark visited and enqueue $F$. Tree edge: $(E, F)$.
+  - `queue = [C, F]`.
+- **Iteration 5 (Distance 2):**
+  - Dequeue $C$.
+  - Neighbors of $C$: $B, E$ (visited), $F$ (already queued), $G$ (unvisited).
+  - Mark visited and enqueue $G$. Tree edge: $(C, G)$.
+  - `queue = [F, G]`.
+- **Iteration 6 (Distance 2):**
+  - Dequeue $F$.
+  - Neighbors of $F$: $C, E, G$ (all already visited/queued).
+  - `queue = [G]`.
+- **Iteration 7 (Distance 3):**
+  - Dequeue $G$.
+  - Neighbors of $G$: $C, F$ (both visited).
+  - `queue = []`. Queue is empty; search terminates.
+
+- **BFS visit sequence:** **A B D E C F G**
+- **BFS concentric distance layers:**
+  - Layer 0 (distance 0): $\{A\}$
+  - Layer 1 (distance 1): $\{B, D, E\}$
+  - Layer 2 (distance 2): $\{C, F\}$ (where $C$ was reached from $B$, and $F$ from $E$)
+  - Layer 3 (distance 3): $\{G\}$ (reached from $C$)
+- **BFS tree edges (6 edges):** $(A, B), (A, D), (A, E), (B, C), (E, F), (C, G)$
+
+**(c) Tree depth and shortest path comparison:**
+- **Path from $A$ to $G$:**
+  - **BFS path:** $A \to B \to C \to G$ has length **3 edges**. This is the absolute minimum number of hops connecting $A$ to $G$ in this graph.
+  - **DFS path:** $A \to B \to C \to E \to F \to G$ has length **5 edges**.
+- **Spanning tree height:** The DFS tree has height 5 (a long, skinny path reflecting deep exploration along dead ends). The BFS tree has height 3 (a broad, shallow tree reflecting level-by-level expansion).
+- **Why BFS guarantees shortest paths:** BFS uses a FIFO queue. Vertices at distance $k$ are enqueued during iteration $k - 1$ and processed before any vertex at distance $k + 1$ can be explored. Therefore, the first time BFS reaches any vertex $v$, it does so along a path containing the minimum possible number of edges. DFS prioritizes depth along whatever arbitrary branch it selects first, frequently reaching target nodes via suboptimal winding detours before ever considering closer alternative routes.
+</ModelAnswer>
+
+**2.** *(Homework 9-vertex A-to-S spanning trees and edge counts)* Lecture 7 Slide 27 presents a homework problem asking for the spanning tree of a 9-vertex graph produced by DFS and BFS, starting from vertex $A$. The vertices are $V = \{A, B, C, D, E, F, G, H, S\}$ and the 10 edges are:
+$$
+(A, B), (A, S), (S, C), (S, G), (C, D), (C, E), (C, F), (F, G), (G, H), (E, H)
+$$
+Assume adjacency lists break ties alphabetically.
+1. Trace DFS starting at vertex $A$. State the visit sequence and the 8 edges that form the DFS spanning tree. Note where dead ends occur and where the search backtracks.
+2. Trace BFS starting at vertex $A$. Group all vertices into concentric layers (distance 0, 1, 2, 3), list the 8 edges in the BFS spanning tree, and determine the shortest path distance from $A$ to each other vertex.
+3. A student claims that because the graph has $V = 9$ vertices and 10 edges, the spanning tree produced by DFS has more edges than the spanning tree produced by BFS because DFS traverses deeper into the graph. Prove why this claim is mathematically false and state the general theorem for the number of edges in any spanning tree of a connected graph with $V$ vertices.
+
+<ModelAnswer>
+**(a) DFS trace from vertex $A$ (alphabetical tie-breaking):**
+
+Adjacency lists in alphabetical order:
+- $A$: $[B, S]$
+- $B$: $[A]$
+- $C$: $[D, E, F, S]$
+- $D$: $[C]$
+- $E$: $[C, H]$
+- $F$: $[C, G]$
+- $G$: $[F, H, S]$
+- $H$: $[E, G]$
+- $S$: $[A, C, G]$
+
+- Start at $A$: visit $A$, push $A$. Stack: $[A]$.
+- From $A$, unvisited neighbors are $B, S$. Alphabetical order selects $B$:
+  - Tree edge $(A, B)$, visit $B$, push $B$. Stack: $[A, B]$.
+- From $B$, only neighbor is $A$ (visited). **Dead end!** Pop $B$. Stack: $[A]$. Backtrack to $A$.
+- From $A$, next unvisited neighbor is $S$:
+  - Tree edge $(A, S)$, visit $S$, push $S$. Stack: $[A, S]$.
+- From $S$, unvisited neighbors are $C, G$. Select $C$:
+  - Tree edge $(S, C)$, visit $C$, push $C$. Stack: $[A, S, C]$.
+- From $C$, unvisited neighbors are $D, E, F$. Select $D$:
+  - Tree edge $(C, D)$, visit $D$, push $D$. Stack: $[A, S, C, D]$.
+- From $D$, only neighbor is $C$ (visited). **Dead end!** Pop $D$. Stack: $[A, S, C]$. Backtrack to $C$.
+- From $C$, unvisited neighbors remaining are $E, F$. Select $E$:
+  - Tree edge $(C, E)$, visit $E$, push $E$. Stack: $[A, S, C, E]$.
+- From $E$, neighbors are $C$ (visited) and $H$ (unvisited). Select $H$:
+  - Tree edge $(E, H)$, visit $H$, push $H$. Stack: $[A, S, C, E, H]$.
+- From $H$, neighbors are $E$ (visited) and $G$ (unvisited). Select $G$:
+  - Tree edge $(H, G)$, visit $G$, push $G$. Stack: $[A, S, C, E, H, G]$.
+- From $G$, neighbors are $F$ (unvisited), $H$ (visited), $S$ (visited). Select $F$:
+  - Tree edge $(G, F)$, visit $F$, push $F$. Stack: $[A, S, C, E, H, G, F]$.
+- From $F$, neighbors are $C$ (visited) and $G$ (visited). **Dead end!**
+- Pop $F, G, H, E, C, S, A$ successively until stack is empty.
+
+- **DFS visit sequence:** **A B S C D E H G F**
+- **DFS spanning tree edges (8 edges):** $(A, B), (A, S), (S, C), (C, D), (C, E), (E, H), (H, G), (G, F)$
+- **Non-tree edges (2 edges):** $(S, G)$ and $(C, F)$
+
+**(b) BFS trace from vertex $A$ (alphabetical tie-breaking):**
+
+- Start at $A$: enqueue $A$. `queue = [A]`.
+- Dequeue $A$ (Distance 0): Unvisited neighbors are $B, S$. Enqueue $B, S$. Tree edges: $(A, B), (A, S)$. `queue = [B, S]`.
+- Dequeue $B$ (Distance 1): Neighbor $A$ visited. No new additions. `queue = [S]`.
+- Dequeue $S$ (Distance 1): Unvisited neighbors are $C, G$. Enqueue $C, G$. Tree edges: $(S, C), (S, G)$. `queue = [C, G]`.
+- Dequeue $C$ (Distance 2): Unvisited neighbors are $D, E, F$. Enqueue $D, E, F$. Tree edges: $(C, D), (C, E), (C, F)$. `queue = [G, D, E, F]`.
+- Dequeue $G$ (Distance 2): Neighbor $F$ is already queued; neighbor $H$ is unvisited. Enqueue $H$. Tree edge: $(G, H)$. `queue = [D, E, F, H]`.
+- Dequeue $D, E, F, H$ (Distance 3): All incident neighbors are already visited/queued. No new vertices added. Queue empties.
+
+- **BFS visit sequence:** **A B S C G D E F H**
+- **Layers and shortest path distances from $A$:**
+  - Distance 0: $A$
+  - Distance 1: $B, S$
+  - Distance 2: $C, G$
+  - Distance 3: $D, E, F, H$
+- **BFS spanning tree edges (8 edges):** $(A, B), (A, S), (S, C), (S, G), (C, D), (C, E), (C, F), (G, H)$
+- **Non-tree edges (2 edges):** $(E, H)$ and $(F, G)$
+
+**(c) Mathematical proof of spanning tree edge counts:**
+- **Theorem:** Any spanning tree of a connected undirected graph with $V$ vertices contains **exactly $V - 1$ edges**.
+- **Proof:** A spanning tree is by definition a connected, acyclic graph spanning all $V$ vertices. A tree with 1 vertex has 0 edges. Every time an unvisited vertex is connected to an existing tree component, exactly 1 new edge is added. Adding fewer than $V - 1$ edges leaves at least one vertex disconnected. Adding $V$ or more edges introduces at least one cycle by the Pigeonhole Principle.
+- For this graph with $V = 9$ vertices:
+  $$
+  |E_{\text{tree}}| = V - 1 = 9 - 1 = \mathbf{8\text{ edges}}
+  $$
+- Both the DFS tree and the BFS tree contain **exactly 8 edges**. Traversal depth affects the tree's height and topology, but cannot alter the fundamental combinatorial property of trees: any tree on 9 vertices must have exactly 8 edges. Exactly $E - (V - 1) = 10 - 8 = \mathbf{2\text{ edges}}$ are discarded as non-tree edges in both cases.
+</ModelAnswer>
+
+**3.** *(Adjacency matrix vs adjacency list: memory calculation and Handshaking Lemma)* A university department analyzes a campus network graph with $V = 10{,}000$ computer hosts and $E = 50{,}000$ undirected communication links (average degree $2E/V = 10$).
+1. Suppose the graph is stored as an adjacency matrix of 8-bit bytes (`byte[][]`, 1 byte per cell). Calculate the exact memory required for the matrix in megabytes ($1\text{ MB} = 10^6\text{ bytes}$).
+2. Suppose the graph is stored as an adjacency list in Java. Each vertex has a 4-byte reference list header, and each directed endpoint of an edge is stored as a 4-byte primitive integer (`int`). For an undirected graph, calculate the exact number of integer elements stored across all lists, the total memory consumed, and the ratio of memory saved by using the adjacency list.
+3. State the **Handshaking Lemma** and prove why the inner loop of BFS and DFS over all vertices runs in aggregate $\Theta(E)$ time rather than $O(V \times E)$ time.
+
+<ModelAnswer>
+**(a) Adjacency matrix memory:**
+- An adjacency matrix for $V$ vertices allocates a $V \times V$ grid.
+- Total cell count:
+  $$
+  V^2 = 10{,}000 \times 10{,}000 = 100{,}000{,}000\text{ cells}
+  $$
+- At 1 byte per cell:
+  $$
+  100{,}000{,}000\text{ bytes} = \mathbf{100\text{ MB}} \quad (\text{or } 100 \times 10^6 / 2^{20} \approx 95.37\text{ MiB})
+  $$
+- In this matrix, only $2E = 100{,}000$ entries contain `1` (a matrix density of $0.1\%$). Over $99.9\%$ of the allocated memory stores `0`s.
+
+**(b) Adjacency list memory and savings ratio:**
+- In an undirected graph, each edge $(u, v)$ connects two endpoints, so it is recorded twice: vertex $u$'s list contains $v$, and vertex $v$'s list contains $u$.
+- Total edge entries stored across all lists:
+  $$
+  2E = 2 \times 50{,}000 = \mathbf{100{,}000\text{ integer entries}}
+  $$
+- Together with the $V = 10{,}000$ list header references, the structure stores:
+  $$
+  V + 2E = 10{,}000 + 100{,}000 = \mathbf{110{,}000\text{ entries}}
+  $$
+- At 4 bytes per entry:
+  $$
+  110{,}000 \times 4\text{ bytes} = 440{,}000\text{ bytes} = \mathbf{0.44\text{ MB}} \quad (\approx 430\text{ KiB})
+  $$
+- **Space savings ratio:**
+  $$
+  \frac{\text{Matrix memory}}{\text{List memory}} = \frac{100{,}000{,}000\text{ bytes}}{440{,}000\text{ bytes}} \approx \mathbf{227.27\times}
+  $$
+  The adjacency list requires less than half a megabyte, achieving over a **$227\times$ reduction in memory** compared to the adjacency matrix.
+
+**(c) Handshaking Lemma and aggregate traversal time:**
+- **The Handshaking Lemma:** In any undirected graph $G = (V, E)$, the sum of the degrees of all vertices equals twice the number of edges:
+  $$
+  \sum_{v \in V} \operatorname{deg}(v) = 2E
+  $$
+  This identity holds because every edge $(u, v)$ connects exactly two vertices, contributing 1 to $\operatorname{deg}(u)$ and 1 to $\operatorname{deg}(v)$.
+- **Why BFS and DFS run in $\Theta(V + E)$ and not $O(V \times E)$:**
+  - The outer loop/recursion processes each vertex $v$ exactly once, doing $O(1)$ work per vertex: $\sum_{v \in V} 1 = V = \Theta(V)$.
+  - When vertex $v$ is visited, the inner loop `for (int w : adj.get(v))` runs for each neighbor of $v$, executing exactly $\operatorname{deg}(v)$ times.
+  - Summing the inner loop iterations over all vertices throughout the entire traversal:
+    $$
+    \sum_{v \in V} \operatorname{deg}(v) = 2E = \Theta(E)
+    $$
+  - The inner loop does not inspect all $E$ edges for each of the $V$ vertices; it inspects only the incident edges. Across the entire execution, each edge is examined exactly twice (once from each endpoint).
+  - Combining the two components gives total running time:
+    $$
+    \Theta(V) + \Theta(2E) = \mathbf{\Theta(V + E)}
+    $$
+  - Conversely, with an adjacency matrix, checking neighbors for vertex $v$ requires reading all $V$ entries in row $v$ (even if empty). Summing across all $V$ rows yields $\sum_{v \in V} V = V^2 = \mathbf{\Theta(V^2)}$, making it drastically slower on sparse graphs.
+</ModelAnswer>
+
+**4.** *(Traversal bugs: BFS queue explosion and disconnected components)*
+1. In BFS, a student writes the visited check inside the while loop as follows:
+   ```java
+   while (!queue.isEmpty()) {
+       int v = queue.poll();
+       visited[v] = true; // BUG: marked on dequeue instead of enqueue
+       for (int w : adj.get(v)) {
+           if (!visited[w]) {
+               queue.add(w);
+           }
+       }
+   }
+   ```
+   Consider a 4-vertex diamond graph with vertices $\{0, 1, 2, 3\}$ and edges $0-1, 0-2, 1-3, 2-3$, starting traversal at vertex 0.
+   - Trace the queue contents step by step and demonstrate which vertex is enqueued multiple times.
+   - Contrast this with the correct implementation.
+   - Explain why on dense or bipartite graphs, this bug causes queue memory to explode from $O(V)$ to $O(E)$, leading to runtime memory crashes or timeouts.
+2. An undirected graph has $V = 8$ vertices with edges defining two separate components: Component 1 with vertices $\{0, 1, 2\}$ and Component 2 with vertices $\{3, 4, 5, 6, 7\}$. If a programmer calls `bfs(adj, 0)`, which vertices will be visited? Provide the complete Java code required to traverse all vertices across any disconnected graph, and state its overall time complexity.
+
+<ModelAnswer>
+**(a) The BFS queue explosion trace:**
+- Trace on 4-vertex diamond graph ($0-1, 0-2, 1-3, 2-3$) starting at 0:
+  - **Start:** Add 0 to queue. `queue = [0]`. `visited = [F, F, F, F]`.
+  - **Iteration 1:** Poll 0. Mark `visited[0] = true`. Neighbors of 0 are 1 and 2. Neither is visited. Add 1 and 2 to queue.
+    `queue = [1, 2]`. `visited = [T, F, F, F]`.
+  - **Iteration 2:** Poll 1. Mark `visited[1] = true`. Neighbors of 1 are 0 (visited) and 3 (unvisited). Add 3 to queue.
+    `queue = [2, 3]`. `visited = [T, T, F, F]`.
+    *Critical moment:* Vertex 3 is currently in the queue, but `visited[3]` remains `false`!
+  - **Iteration 3:** Poll 2. Mark `visited[2] = true`. Neighbors of 2 are 0 (visited) and 3. Because `visited[3]` is still `false`, vertex 2 ALSO adds 3 to the queue!
+    `queue = [3, 3]`. `visited = [T, T, T, F]`.
+  - **The bug:** Vertex 3 is now present in the queue **twice**.
+  - **Iterations 4 & 5:** Poll the first 3, setting `visited[3] = true`. Then poll the duplicate 3, which redundantly inspects its incident edges again.
+  - Total enqueue operations: **5** (instead of the correct 4).
+- **The correct implementation:** Mark `visited[w] = true` immediately before or at the moment of calling `queue.add(w)`. When vertex 2 evaluates neighbor 3, `visited[3]` is already `true`, so the duplicate enqueue is skipped.
+- **Why this explodes on larger graphs:** On a complete bipartite graph $K_{2, n}$ or a dense grid, every node in layer $k$ discovers every neighbor in layer $k + 1$. If nodes are marked only on dequeue, every vertex in layer $k + 1$ gets enqueued once by *every single neighbor* in layer $k$. For $m$ edges, the queue stores $O(E)$ redundant elements rather than at most $V$. On large test cases, this causes immediate `OutOfMemoryError` or `TimeLimitExceeded`.
+
+**(b) Disconnected graphs and the full traversal wrapper:**
+- When `bfs(adj, 0)` is called, traversal explores only vertices reachable along paths originating from vertex 0. It visits vertices $\{0, 1, 2\}$ in Component 1. Because no edge connects Component 1 to Component 2, vertices $\{3, 4, 5, 6, 7\}$ are never discovered and remain unvisited.
+- **Complete traversal wrapper:** To guarantee every vertex is visited regardless of connectivity, wrap the traversal in an outer loop over all vertex indices from $0$ to $V - 1$:
+  ```java
+  public static void traverseAll(List<List<Integer>> adj) {
+      int n = adj.size();
+      boolean[] visited = new boolean[n];
+      int componentCount = 0;
+      for (int i = 0; i < n; i++) {
+          if (!visited[i]) {
+              componentCount++;
+              bfsComponent(adj, i, visited);
+          }
+      }
+      System.out.println("Total connected components: " + componentCount);
+  }
+
+  private static void bfsComponent(List<List<Integer>> adj, int start, boolean[] visited) {
+      Queue<Integer> queue = new ArrayDeque<>();
+      visited[start] = true;
+      queue.add(start);
+      while (!queue.isEmpty()) {
+          int v = queue.poll();
+          System.out.print(v + " ");
+          for (int w : adj.get(v)) {
+              if (!visited[w]) {
+                  visited[w] = true;
+                  queue.add(w);
+              }
+          }
+      }
+  }
+  ```
+- **Time complexity:** **$\Theta(V + E)$**. The outer loop checks each vertex index once in $\Theta(V)$. Each vertex is enqueued and polled in `bfsComponent` exactly once, and each edge is scanned twice in total across all components.
+</ModelAnswer>
+
+### Part 2: Exam multiple-choice questions
+
+<Quiz
+  courseSlug="algorithm-design-and-analysis"
+  lessonSlug="bfs-and-dfs"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "Which data structure manages pending vertices in DFS versus BFS, and how does this choice dictate their exploration patterns?",
+      options: [
+        { id: "a", text: "DFS uses a LIFO stack to explore as deeply as possible along a single path; BFS uses a FIFO queue to explore level by level in concentric ripples" },
+        { id: "b", text: "DFS uses a FIFO queue to backtrack along branches; BFS uses a LIFO stack to radiate outwards" },
+        { id: "c", text: "Both algorithms use a binary min-heap priority queue to greedily expand the minimum-cost edge" },
+        { id: "d", text: "DFS uses an adjacency matrix; BFS uses an adjacency list" },
+      ],
+      correctOptionId: "a",
+      explanation: "DFS relies on a Last-In, First-Out (LIFO) stack (either an explicit java.util.ArrayDeque or the JVM runtime call stack in recursion), so the most recently discovered vertex is explored immediately, pushing deep into the graph until reaching a dead end. BFS uses a First-In, First-Out (FIFO) queue, ensuring that all vertices at distance k from the source are processed before any vertex at distance k + 1. Option B inverts the data structures. Option C describes Dijkstra's algorithm or Prim's MST algorithm, which use priority queues. Option D names graph storage formats, not traversal frontier structures.",
+    },
+    {
+      id: "q2",
+      prompt: "Why does BFS guarantee finding a shortest path (fewest edges) from the start vertex to every reachable vertex in an unweighted graph, while DFS does not?",
+      options: [
+        { id: "a", text: "BFS explores vertices in strictly increasing order of their edge distance from the start vertex, so the first time a vertex is reached, the path taken must have the minimum number of edges" },
+        { id: "b", text: "BFS checks all possible paths and picks the shortest one using dynamic programming memoization" },
+        { id: "c", text: "DFS always hits dead ends and cannot reach distant vertices" },
+        { id: "d", text: "BFS calculates edge weights dynamically using an unweighted distance formula" },
+      ],
+      correctOptionId: "a",
+      explanation: "Because BFS uses a FIFO queue, it visits the start vertex at distance 0, then all neighbors at distance 1 (layer 1), then all neighbors at distance 2 (layer 2), and so on. The first time BFS encounters an unvisited vertex v, it is guaranteed to arrive via a path with the fewest possible edges. DFS plunges deep along whichever neighbor is listed first, often arriving at v via an unnecessarily long winding path before backtracking. Option B is incorrect because BFS does not enumerate all paths or use DP. Option C is incorrect because DFS visits all reachable vertices eventually. Option D is nonsensical because unweighted graphs have uniform edge distances.",
+    },
+    {
+      id: "q3",
+      prompt: "In a standard BFS implementation on an undirected graph, what is the consequence of marking a vertex as visited when it is polled (removed from the queue) rather than when it is enqueued (added to the queue)?",
+      options: [
+        { id: "a", text: "Multiple adjacent vertices can discover the same unvisited neighbor and enqueue duplicate copies of it, causing queue size to explode to O(E) and wasting time and memory" },
+        { id: "b", text: "The algorithm terminates prematurely and misses reachable vertices" },
+        { id: "c", text: "The algorithm throws an ArithmeticException due to division by zero in the queue index" },
+        { id: "d", text: "The traversal order reverses and becomes identical to DFS" },
+      ],
+      correctOptionId: "a",
+      explanation: "If a vertex w is marked visited only when polled, any other neighbor of w that is polled while w is still waiting in the queue will see visited[w] == false and enqueue w a second (or third) time. In dense or bipartite graphs, this causes duplicate enqueues for every incident edge, increasing peak queue memory from O(V) to O(E) and causing timeouts or OutOfMemoryError on large graphs. Option B is incorrect because all vertices are still eventually visited. Option C is incorrect because queues do not perform division. Option D is incorrect because queue ordering remains FIFO.",
+    },
+    {
+      id: "q4",
+      prompt: "You need to traverse a sparse tree graph with V = 1,000 vertices and E = 999 edges. How many neighbor inspections will BFS or DFS perform using an adjacency matrix, compared to an adjacency list?",
+      options: [
+        { id: "a", text: "Adjacency matrix: exactly V² = 1,000,000 cell checks; Adjacency list: 2E = 1,998 edge endpoint inspections" },
+        { id: "b", text: "Adjacency matrix: 999 checks; Adjacency list: 1,000,000 checks" },
+        { id: "c", text: "Adjacency matrix: V × E = 999,000 checks; Adjacency list: V = 1,000 checks" },
+        { id: "d", text: "Both representations require exactly 999 operations because they represent the same tree" },
+      ],
+      correctOptionId: "a",
+      explanation: "With an adjacency matrix, finding the neighbors of vertex v requires scanning the entire v-th row of length V. Across all V vertices, this requires inspecting V × V = 1,000 × 1,000 = 1,000,000 cells, even though almost all cells are 0. With an adjacency list, scanning the neighbors of all vertices visits each edge endpoint exactly twice (once from each end in an undirected graph), requiring exactly 2E = 2 × 999 = 1,998 operations. The adjacency list is over 500 times faster on this graph. Option B inverts the counts. Option C repeats the V × E fallacy. Option D confuses mathematical graph equivalence with representation performance.",
+    },
+    {
+      id: "q5",
+      prompt: "A connected undirected graph has V = 12 vertices and E = 18 edges. How many tree edges will any BFS or DFS spanning tree contain, and how many edges from the original graph are discarded as non-tree (back or cross) edges?",
+      options: [
+        { id: "a", text: "11 tree edges and 7 discarded non-tree edges" },
+        { id: "b", text: "12 tree edges and 6 discarded non-tree edges" },
+        { id: "c", text: "18 tree edges and 0 discarded non-tree edges" },
+        { id: "d", text: "8 tree edges and 10 discarded non-tree edges" },
+      ],
+      correctOptionId: "a",
+      explanation: "By the fundamental theorem of trees, any spanning tree connecting V vertices without cycles must contain exactly V − 1 edges. For V = 12, every spanning tree contains exactly 12 − 1 = 11 edges. The remaining E − (V − 1) = 18 − 11 = 7 edges in the graph would form cycles if included, so they are discarded during traversal as non-tree edges (back edges in DFS, or cross/back edges in BFS). Option B incorrectly uses V edges (which contains a cycle). Option C includes all edges, which is not a tree. Option D uses arbitrary counts.",
+    },
+    {
+      id: "q6",
+      prompt: "An undirected graph consists of 3 disjoint connected components with 20 vertices and 15 edges in total. What happens if a program executes a single call to bfs(adj, 0) where vertex 0 belongs to component 1 (which has 6 vertices)?",
+      options: [
+        { id: "a", text: "It visits only the 6 vertices in component 1, leaving the 14 vertices in the other two components unvisited" },
+        { id: "b", text: "It visits all 20 vertices because the queue hops across disconnected components when it runs empty" },
+        { id: "c", text: "It throws a NullPointerException when the queue attempts to poll beyond component 1" },
+        { id: "d", text: "It enters an infinite loop waiting for edges to connect the other components" },
+      ],
+      correctOptionId: "a",
+      explanation: "A single BFS or DFS invocation only discovers vertices reachable by following paths of edges from the start vertex. Since no edges connect component 1 to components 2 or 3, the queue empties after processing component 1's 6 vertices, and the method terminates normally without visiting the remaining 14 vertices. To traverse all components, the program must wrap traversal in an outer loop: for (int i = 0; i < n; i++) if (!visited[i]) bfs(adj, i). Option B is false because BFS cannot hop across disconnected components. Option C is false because ArrayDeque.poll() returns null or isEmpty() halts cleanly. Option D is false because the loop condition while (!queue.isEmpty()) terminates as soon as the queue empties.",
+    },
+  ]}
+/>
+

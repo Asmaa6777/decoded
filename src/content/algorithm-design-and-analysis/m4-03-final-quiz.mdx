@@ -55,7 +55,7 @@ The second half of the course in eight questions. Get 6 right to pass and finish
         { id: "d", text: "A hash table" },
       ],
       correctOptionId: "b",
-      explanation: "BFS uses a FIFO queue, so vertices are explored in the order they were discovered: level by level. DFS uses a stack (often the recursion call stack).",
+      explanation: "BFS uses a FIFO queue, so vertices are explored in the order they were discovered: level by level in concentric ripples. Option A (a stack) is used by Depth-First Search (DFS) to explore paths deeply before backtracking. Option C (a sorted array) is used for binary search or static lookups, not dynamic frontier traversal. Option D (a hash table) is used for constant-time key-value lookups or tracking visited sets, but does not provide the ordered first-in, first-out scheduling that BFS requires.",
     },
     {
       id: "q5",
@@ -67,7 +67,7 @@ The second half of the course in eight questions. Get 6 right to pass and finish
         { id: "d", text: "O(V²) always" },
       ],
       correctOptionId: "c",
-      explanation: "Each vertex is processed once and each edge is examined a constant number of times. With an adjacency matrix it becomes O(V²), because finding neighbours means scanning a whole row.",
+      explanation: "Each vertex is enqueued/pushed and processed once (O(V)), and each edge is examined a constant number of times when scanning adjacency lists (twice for undirected graphs, O(E)), giving O(V + E) total time. Option A (O(V)) is incomplete because it ignores the time spent scanning edges incident to each vertex. Option B (O(V × E)) is a classic misconception: the inner loop does not scan all E edges for every vertex, but only the edges incident to that vertex, which sum to 2E over the whole traversal by the Handshaking Lemma. Option D (O(V²)) is the time complexity when using an adjacency matrix, where finding neighbors requires scanning a whole row of size V for every vertex.",
     },
     {
       id: "q6",
