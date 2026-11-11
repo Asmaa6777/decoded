@@ -331,7 +331,7 @@ A semaphore avoids it by blocking: a process that finds the value not positive j
 </ModelAnswer>
 
 <ModelAnswer>
-**(Midterm 2022, Q5) Regarding the readers-writers problem, with the shared variables `int readCount`, `FILE *sharedFile` and `semaphore mutex, writeBlock`.** *(The 2022 answer key is a scan that has not been checked yet; the answers below are ours.)*
+**(Midterm 2022, Q5) Regarding the Readers-Writers Problem: The following variables are shared among all processes: `int readCount; FILE *sharedFile; semaphore mutex, writeBlock;`** *(The 2022 answer key is a scan that has not been checked yet; the answers below are ours.)*
 
 1. **Initial values:** `readCount = 0`, `mutex = 1`, `writeBlock = 1`. `mutex` protects `readCount`, and `writeBlock` is the lock that writers, and the first reader, take.
 2. **Three new readers while a writer is updating:** the first reader takes `mutex` and then blocks on `wait(writeBlock)`, because the writer holds it. It keeps `mutex` while it waits. The second and third readers block at `wait(mutex)`, which the first reader holds.
