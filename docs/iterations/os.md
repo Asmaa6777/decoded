@@ -104,3 +104,22 @@ Commits: `f262403` (midterms), `c0b7eb2` (finals).
 **Found but not fixed:** the 2019 spring Q2 "system calls and system programs" pair has no separate final answer (it is covered by the midterm answers).
 
 **Not checked:** the 2022 midterm key (scan) and the 2018, 2023, 2024 and undated finals (scans not yet read); 2017 final true/false (OCR too noisy); 2020 MCQ 21 to 62; the 2016 final's true/false list (not read). Round 9 (real readers) has not started.
+
+### Round 2, source fidelity (later pass: 2015 to 2024 finals)
+
+Commits: `2365f62`, `f262403`, `c0b7eb2`, `b495c6b`, `2f71614`, `3d3fcda`, `798aaca`, `2fc72ab`, `ec3ffed`, `61899e9`, `6caaac9`, `02a3c77`, `7e3a942`, `1a81a69`.
+
+**Placed:** the 2023 final (all items: true/false 1 to 30, multiple-choice 31 to 70, essay questions); the 2020 final (true/false, multiple-choice 21 to 75); the 2024 final (multiple-choice 1 to 22 and 25 to 60, essays); midterm items the audit found missing.
+
+**Not placed, and why:**
+- 2024 final, items 23 and 24: options cut off in the scan. Essay 3a: the round-robin table lists P4 twice, so the data is unclear.
+- 2020 final, items 63 to 66: none of the printed options matches our round-robin schedule. Recorded with our values in the lesson, not answered.
+- 2023 final, item 63: the same mismatch (our 9.75; printed options 5.25, 6.75, 8.25, 10.25).
+- "No Date" final 1: its questions match the 2018 final (dual mode, direct and indirect communication, client-server techniques, atomic instructions). Not placed separately yet.
+- "No Date" final 2: its questions match the 2023 final, and its scan shows some handwritten T/F marks. Not placed separately yet. Those marks may be a second answer source, to check later.
+- 2018 final: handwritten; the page images need reading.
+- 2017 final, true/false items: OCR too noisy for exact wording.
+
+**Checked with scripts:** the 2019 spring and fall tables, the page-replacement counts for each string, the round-robin rows for 2019 spring and 2020, the 2023 scheduling and paging answers.
+
+**Found but not fixed:** the OCR-based question text (2020, 2023, 2024) has not been checked word by word against the scans.
