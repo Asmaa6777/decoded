@@ -183,8 +183,8 @@ export function VoltageBands() {
         return {
           sent: String(i),
           noisy,
-          read: String(res.readDigit),
-          status: res.readDigit === i ? "correct" : "flipped",
+          read: String(res.digit),
+          status: res.digit === i ? "correct" : "flipped",
         };
       });
     }

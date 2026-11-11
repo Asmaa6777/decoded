@@ -135,7 +135,7 @@ export function classifyDecimalVoltage(v: number) {
   const nominal = Number((digit * 0.5).toFixed(2));
   const delta = Number(Math.abs(clamped - nominal).toFixed(3));
   const error = delta > 0.25;
-  return { digit, nominal, delta, error };
+  return { digit, readDigit: digit, nominal, delta, error };
 }
 
 export type DriverMode = "push-pull" | "open-drain";
