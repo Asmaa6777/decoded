@@ -275,6 +275,7 @@ export function lessonKind(lesson: Lesson): LessonKind {
 
 export type Module = {
   title: string;
+  label?: string;
   blurb?: string;
   lessons: Lesson[];
 };
@@ -794,6 +795,7 @@ export const courses: Course[] = [
     modules: [
       {
         title: "Introduction and OS Structures",
+        label: "Chapters 1–2",
         blurb: "What an OS is, how the hardware underneath it works, and how the OS is built.",
         lessons: [
           { slug: "what-an-os-does", title: "What an Operating System Does", duration: "18 min", Component: OsWhatAnOsDoes },
@@ -805,6 +807,7 @@ export const courses: Course[] = [
       },
       {
         title: "Processes",
+        label: "Chapter 3",
         blurb: "A program in motion: its states, how the OS switches between processes, how they talk, and threads.",
         lessons: [
           { slug: "processes", title: "Processes: The Program in Motion", duration: "22 min", Component: OsProcesses },
@@ -814,6 +817,7 @@ export const courses: Course[] = [
       },
       {
         title: "Process Synchronization",
+        label: "Chapter 5",
         blurb: "When processes share data: race conditions, critical sections, locks, semaphores and the classic problems.",
         lessons: [
           { slug: "critical-section-problem", title: "Race Conditions and the Critical-Section Problem", duration: "24 min", Component: OsCriticalSection },
@@ -823,6 +827,7 @@ export const courses: Course[] = [
       },
       {
         title: "CPU Scheduling",
+        label: "Chapter 6",
         blurb: "Who runs next? FCFS, SJF, priority, round robin and multilevel queues, and how to judge them.",
         lessons: [
           { slug: "cpu-scheduling-basics", title: "CPU Scheduling: FCFS, SJF and Priority", duration: "26 min", Component: OsSchedulingBasics },
@@ -831,6 +836,7 @@ export const courses: Course[] = [
       },
       {
         title: "Main Memory and Virtual Memory",
+        label: "Chapters 8–9",
         blurb: "Sharing RAM safely: addresses and the MMU, swapping, allocation, segmentation, paging and virtual memory.",
         lessons: [
           { slug: "memory-allocation", title: "Main Memory: Addresses, Swapping and Allocation", duration: "26 min", Component: OsMemoryAllocation },
