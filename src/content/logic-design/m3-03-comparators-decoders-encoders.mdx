@@ -4,9 +4,9 @@ import { PriorityEncoder } from "@/components/mdx/LogicVisualizers";
 
 # Comparators, Decoders and Encoders
 
-Individual logic gates make single-bit decisions. To construct practical microprocessors, digital systems combine these gates into Medium-Scale Integration (MSI) combinational building blocks. Three of the most ubiquitous building blocks are **comparators**, **decoders**, and **encoders**.
+Digital circuits combine individual logic gates into Medium-Scale Integration (MSI) building blocks. Three standard blocks are **comparators**, **decoders**, and **encoders**.
 
-Each component performs a foundational data-routing or decision-making task: comparators determine relative numerical order, decoders activate a unique channel from an encoded binary address, and encoders compress multiple active status lines into a compact binary representation.
+Each block performs a specific task: comparators determine numerical order, decoders activate a single channel from a binary address, and encoders compress multiple active lines into a binary code.
 
 ## Magnitude Comparators
 
@@ -56,10 +56,10 @@ First, define the bitwise equivalence function $x_i$ for each bit position $i \i
 $$
 x_i = (A_i \oplus B_i)' = A_i B_i + A_i' B_i'
 $$
-The signal $x_i = 1$ if and only if bit $A_i$ matches bit $B_i$.
+The signal $x_i = 1$ only when bit $A_i$ matches bit $B_i$.
 
 1. **Equality ($A = B$):**
-   $A$ equals $B$ if and only if every single pair of bits matches simultaneously:
+   $A$ equals $B$ only when all four pairs match:
    $$
    (A = B) = x_3 \cdot x_2 \cdot x_1 \cdot x_0
    $$
@@ -88,7 +88,7 @@ The standard **74LS85** is a commercial 4-bit magnitude comparator. To compare 8
 
 Each chip features three cascading expansion inputs: $I_{A>B}, I_{A=B}, I_{A<B}$. The higher-order comparator inspects its 4 MSBs:
 - If its 4 MSBs are unequal ($A > B$ or $A < B$), the higher chip drives the final outputs directly.
-- If its 4 MSBs are strictly equal ($x_3 x_2 x_1 x_0 = 1$), the higher chip looks at its cascading inputs, passing along the decision made by the lower-order comparator!
+- If its 4 MSBs are equal ($x_3 x_2 x_1 x_0 = 1$), the higher chip uses its cascading inputs, passing along the decision made by the lower-order comparator.
 - For the lowest-order chip in the chain, $I_{A=B}$ is tied to logic 1 ($V_{CC}$), and $I_{A>B}$ and $I_{A<B}$ are tied to logic 0 (GND).
 
 ## Decoders: pick exactly one
@@ -137,7 +137,7 @@ $$
 > **Why active-LOW is standard in hardware:**
 > Active-LOW signals ($\overline{\text{CS}}$, $\overline{\text{CE}}$, $\overline{\text{OE}}$) dominate digital systems for three reasons:
 > 1. NAND gates are physically faster and smaller than AND gates in CMOS and TTL silicon.
-> 2. Bipolar TTL and NMOS transistors sink far more current to ground ($I_{OL}$) than they can source from $V_{CC}$ ($I_{OH}$), making low-driven signals much more robust against noise.
+> 2. Bipolar TTL and NMOS transistors sink far more current to ground ($I_{OL}$) than they can source from $V_{CC}$ ($I_{OH}$), making low-driven signals less vulnerable to noise.
 > 3. Active-LOW outputs allow multiple devices to connect in a "wired-OR" configuration with pull-up resistors for shared bus arbitration.
 
 ### Commercial IC 74LS138 (3-to-8 line decoder)
@@ -148,7 +148,7 @@ It features three dedicated enable inputs to make cascading effortless:
 - One active-HIGH enable: $G_1$
 - Two active-LOW enables: $\overline{G_{2A}}$ and $\overline{G_{2B}}$
 
-The chip is enabled if and only if all three conditions are satisfied simultaneously:
+The chip is enabled only when all three conditions hold:
 $$
 \text{Enable} = G_1 \cdot \overline{G_{2A}}' \cdot \overline{G_{2B}}'
 $$
@@ -285,15 +285,15 @@ The standard **74LS148** encodes eight active-LOW data inputs ($\overline{0}\dot
 It provides three status lines for cascading into 16-to-4 or 64-to-6 priority networks:
 - **Enable Input ($\overline{EI}$):** When HIGH, disables all outputs (forces all outputs HIGH).
 - **Group Select ($\overline{GS}$):** Goes LOW when the chip is enabled and at least one input is asserted (equivalent to an active-LOW Valid flag).
-- **Enable Output ($\overline{EO}$):** Goes LOW when the chip is enabled but *none* of its inputs are active. In a cascaded network, $\overline{EO}$ connects to the $\overline{EI}$ of the next lower-priority encoder, waking it up only when the higher-priority chip has nothing to report!
+- **Enable Output ($\overline{EO}$):** Goes LOW when the chip is enabled but *none* of its inputs are active. In a cascaded network, $\overline{EO}$ connects to the $\overline{EI}$ of the next lower-priority encoder, waking it up only when the higher-priority chip has nothing to report.
 
 <Callout tone="neon" label="Interrupt Controllers">
-Priority encoders are the core of CPU [interrupt handling](/courses/microprocessors/interrupts). When multiple peripheral devices—such as a network card, keyboard, and hard drive—request CPU attention simultaneously, a priority encoder (such as the 8259A PIC) arbitrates immediately, presenting the vector of the highest-priority device directly to the processor's interrupt pins.
+Priority encoders are the core of CPU [interrupt handling](/courses/microprocessors/interrupts). When multiple devices, such as a network card, keyboard, and disk controller, request CPU attention at once, a priority encoder (such as the 8259A PIC) arbitrates immediately. It sends the identifier of the highest-priority device to the processor.
 </Callout>
 
 ## Common exam pitfalls and student mistakes
 
-When working with MSI comparators, decoders, and encoders, students frequently make these six errors:
+When working with comparators, decoders, and encoders, students often make these six mistakes:
 
 1. **Combining Active-LOW Decoder Outputs with an OR Gate:** Connecting the active-LOW minterm outputs ($\overline{Y_i} = m_i'$) of a decoder into an OR gate when attempting to synthesize a Sum-of-Products function. Applying an OR gate computes $\sum \overline{Y_i} = \sum m_i' = (\prod m_i)'$, which evaluates to logic 1 almost everywhere. Synthesizing $\sum m_i$ from active-LOW outputs requires a **NAND gate**: $(\prod m_i')' = \sum m_i$.
 2. **Reversing Decoder Address Line Polarities or Weights:** Confusing the MSB and LSB of address inputs. On the standard 74LS138, input pin $C$ is the MSB ($2^2 = 4$) and input pin $A$ is the LSB ($2^0 = 1$). Reversing these pins swaps channels across the binary mirror (e.g., input code $001_2 = 1$ is decoded as $100_2 = 4$).
@@ -399,7 +399,7 @@ Show how two 74LS85 4-bit magnitude comparators are cascaded to compare two 8-bi
 
 2. **Interconnects:**
    - The three outputs of Comparator 0 ($(A>B)_{\text{out}}, (A=B)_{\text{out}}, (A<B)_{\text{out}}$) connect directly to the corresponding cascading expansion inputs of Comparator 1 ($I_{A>B}, I_{A=B}, I_{A<B}$).
-   - The primary outputs of Comparator 1 serve as the overall 8-bit comparison results.
+   - The primary outputs of Comparator 1 give the final 8-bit comparison results.
 
 3. **Least Significant Chip Configuration:**
    For Comparator 0 (the lowest nibble):

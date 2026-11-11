@@ -5,7 +5,7 @@ import { CarryRace } from "@/components/mdx/LogicVisualizers";
 
 Digital logic gates are physical electronic devices made of transistors. When gate inputs switch between logic levels, the output does not respond instantaneously. The finite time required for transistors to charge and discharge parasitic capacitances is the [propagation delay](/courses/logic-design/logic-gates#propagation-delay-and-transition-times) ($t_{pd}$).
 
-While a single gate delay is minuscule—often less than 50 picoseconds in modern silicon—delays accumulate along combinational signal paths. In arithmetic circuits, this accumulation creates a critical performance bottleneck known as the **carry propagation problem**.
+A single gate delay is small, often under 50 picoseconds in modern silicon, but delays accumulate along signal paths. In arithmetic circuits, this creates a performance bottleneck known as the **carry propagation problem**.
 
 ## The Propagation Delay Bottleneck in Ripple-Carry Adders
 
@@ -42,11 +42,11 @@ $$
 | 32 bits | 64 levels | $64\tau$ | $15.6\text{ MHz}$ |
 | 64 bits | 128 levels | $128\tau$ | $7.8\text{ MHz}$ |
 
-Because a CPU's clock frequency is bounded by the longest path in the machine ($f_{\text{clk}} \le \frac{1}{t_{\text{critical}}}$), a 64-bit ripple-carry adder would limit the entire processor to unacceptable clock speeds.
+Because a CPU's clock frequency depends on the longest path in the machine ($f_{\text{clk}} \le \frac{1}{t_{\text{critical}}}$), a 64-bit ripple-carry adder would limit the processor to very low clock speeds.
 
 ## The Carry-Lookahead Principle
 
-To eliminate the linear delay $O(n)$, we must eliminate the sequential dependency where each stage waits for its neighbor. The **carry-lookahead adder** (CLA) achieves this by calculating all carry bits simultaneously directly from the primary inputs $A$, $B$, and $C_0$.
+To avoid linear delay $O(n)$, stages must not wait for their neighbors. The **carry-lookahead adder** (CLA) achieves this by calculating all carry bits in parallel directly from the primary inputs $A$, $B$, and $C_0$.
 
 Consider what causes stage $i$ to produce an outgoing carry $C_{i+1}$:
 1. **Carry Generate ($G_i$):** If both input bits are 1 ($A_i = 1$ and $B_i = 1$), the stage produces a carry unconditionally, regardless of the incoming carry $C_i$:
@@ -75,7 +75,7 @@ $$
 
 ## Unrolling the Recursive Carry Equations
 
-The breakthrough of carry-lookahead logic is that we can recursively substitute each carry expression into the next:
+Carry-lookahead logic recursively substitutes each carry expression into the next:
 
 For stage 0:
 $$
@@ -139,7 +139,7 @@ A 4-bit carry-lookahead adder operates in three distinct, highly parallel stages
    All $P_i = A_i \oplus B_i$ and $G_i = A_i B_i$ are generated simultaneously for all $i \in \{0, 1, 2, 3\}$.
    *Latency: $1\tau_{\text{gate}}$ for $G_i$, $1\tau_{\text{XOR}}$ (or $2\tau$) for $P_i$.*
 
-2. **Stage 2 (Carry-Lookahead Generator - CLAG):**
+2. **Stage 2 (Carry-Lookahead Generator, CLAG):**
    The specialized CLAG logic block evaluates the expanded equations for $C_1, C_2, C_3, C_4$ in parallel using two levels of gates (one level of multi-input AND gates feeding one multi-input OR gate per carry).
    *Latency: $2\tau_{\text{gate}}$ (1 AND level + 1 OR level).*
 
@@ -154,7 +154,7 @@ Total propagation delay through the entire 4-bit CLA:
 $$
 t_{\text{CLA}} = t_{P,G} + t_{\text{CLAG}} + t_{\text{Sum}} \approx 2\tau + 2\tau + 2\tau = 6\tau
 $$
-Crucially, this delay is constant: $C_4$ arrives at the exact same instant as $C_1$!
+This delay is constant: $C_4$ arrives at the same instant as $C_1$.
 
 <CarryRace />
 
@@ -211,7 +211,7 @@ $$
    └────────────────────┼────────────────────────────────┘
 ```
 
-A second-level lookahead unit—such as the classic **74182 Look-Ahead Carry Generator** IC—takes the $(P_G, G_G)$ pairs from four 4-bit adder blocks (e.g. 74181 or 74283 adders) and computes the block carries $C_4, C_8, C_{12}, C_{16}$ simultaneously:
+A second-level lookahead unit, such as the classic **74182 Look-Ahead Carry Generator** IC, takes the $(P_G, G_G)$ pairs from four 4-bit adder blocks (such as 74181 or 74283 adders) and computes the block carries $C_4, C_8, C_{12}, C_{16}$ simultaneously:
 
 $$
 \begin{aligned}
@@ -254,7 +254,7 @@ Faster adders always consume more silicon area and more dynamic power. Ripple-ca
 
 ## Common exam pitfalls and student mistakes
 
-When analyzing and designing high-speed arithmetic hardware, students frequently encounter these six conceptual and calculation pitfalls:
+When working with fast arithmetic circuits, students often make these six mistakes:
 
 1. **Confusing Generate ($G_i$) and Propagate ($P_i$):** Mistaking $G_i = A_i B_i$ with $P_i = A_i \oplus B_i$. Generate is an unconditional AND: if $A_i = B_i = 1$, a carry is produced regardless of incoming carries. Propagate is an XOR (or OR): if $A_i \oplus B_i = 1$, an incoming carry will pass through to the next stage.
 2. **Dropping the Initial Carry ($C_0$) from the Carry-Lookahead Equations:** Forgetting the trailing product term ($P_3 P_2 P_1 P_0 C_0$) in $C_4$. Students often mistakenly assume $C_0 = 0$ is fixed, which causes the lookahead equations to fail completely when adders are cascaded or used in subtraction mode where $C_0 = 1$.
@@ -290,7 +290,7 @@ Assume elementary gates (AND, OR, NAND, NOR) have a propagation delay of $\tau =
    - **Step 3:** The second-level 74182 lookahead generator receives all $(P_G, G_G)$ and computes block carries ($C_4, C_8, \dots, C_{28}$):
      $$t_{\text{CLAG2}} = 2\text{ gate levels} = 2\tau$$
      Accumulated time to block carry $C_{28}$: $4\tau + 2\tau = 6\tau$.
-   - **Step 4:** The internal CLAG of the final 4-bit block (bits 28–31) generates internal carry $C_{31}$ using $C_{28}$:
+   - **Step 4:** The internal CLAG of the final 4-bit block (bits 28 to 31) generates internal carry $C_{31}$ using $C_{28}$:
      $$t_{\text{CLAG1}} = 2\text{ gate levels} = 2\tau$$
      Accumulated time to $C_{31}$: $6\tau + 2\tau = 8\tau$.
    - **Step 5:** Final sum bit $S_{31} = P_{31} \oplus C_{31}$:
@@ -349,12 +349,12 @@ Derive the formal expressions for Block Propagate ($P_G$) and Block Generate ($G
      This term is true if a carry is generated at stage 3, or generated at stage 2 and propagated through stage 3, or generated at stage 1 and propagated through stages 2 and 3, or generated at stage 0 and propagated through stages 1, 2, and 3. In all these cases, a carry exits the block without requiring $C_0$.
    - Define **Block Propagate ($P_G$):**
      $$P_G = P_3 P_2 P_1 P_0$$
-     This term is true if and only if all four stages propagate an incoming carry.
+     This term is 1 only when all four stages propagate an incoming carry.
 
 4. **Conclusion:**
    Substituting $G_G$ and $P_G$ directly into the equation gives:
    $$C_4 = G_G + P_G C_0$$
-   This proves that a 4-bit block behaves mathematically as a single macroscopic adder stage with generate signal $G_G$ and propagate signal $P_G$.
+   This proves that a 4-bit block behaves like a single larger adder stage with generate signal $G_G$ and propagate signal $P_G$.
 </ModelAnswer>
 
 ### Problem 4: Carry-Select vs Carry-Lookahead architectural comparison
@@ -364,7 +364,7 @@ Compare the Carry-Select Adder (CSA) and Carry-Lookahead Adder (CLA) across thre
 <ModelAnswer>
 1. **Silicon Area (Transistor Count):**
    - **CLA:** Moderate area overhead. Requires dedicated multi-input AND/OR lookahead carry generator circuits, but does not duplicate the underlying full adders.
-   - **CSA:** High area overhead. Duplicates the ripple adder hardware for each block (one adder for $C_{in}=0$ and one for $C_{in}=1$), plus a bank of 2-to-1 multiplexers for sum and carry selection. Consumes approximately 80%–100% more area than a ripple adder.
+   - **CSA:** High area overhead. Duplicates the ripple adder hardware for each block (one adder for $C_{in}=0$ and one for $C_{in}=1$), plus a bank of 2-to-1 multiplexers for sum and carry selection. Consumes roughly 80% to 100% more area than a ripple adder.
 
 2. **Propagation Delay Scaling:**
    - **CLA:** Logarithmic scaling $O(\log n)$ when using multilevel hierarchical lookahead trees. Offers the highest speed for wide words (32-bit and 64-bit).

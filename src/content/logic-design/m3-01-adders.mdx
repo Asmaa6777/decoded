@@ -3,9 +3,9 @@ import { HalfAdderCircuit, FullAdderCircuit } from "@/components/mdx/CircuitVisu
 
 # Adders: Teaching Gates to Count
 
-Boolean logic makes decisions, but computation requires arithmetic. The central engine of every digital computer—the Arithmetic Logic Unit ([ALU](/courses/computer-organization/inside-the-cpu))—is built by combining elementary logic gates into circuits that add, subtract, multiply, and divide binary numbers.
+Boolean logic makes decisions, but computation needs arithmetic. The core of a digital computer, the Arithmetic Logic Unit ([ALU](/courses/computer-organization/inside-the-cpu)), is built by combining logic gates into circuits that add, subtract, multiply, and divide binary numbers.
 
-At the lowest level, binary addition operates on the same column-by-column principle learned in primary school arithmetic: two digits are added together to produce a single-digit sum and, if the sum exceeds the base's maximum digit, a carry digit passed to the next higher-order column.
+Binary addition works like pencil-and-paper decimal addition: two digits are added together to produce a single-digit sum, and if the sum exceeds what one digit can hold, a carry digit passes to the next column to the left.
 
 ## The Half Adder
 
@@ -18,7 +18,7 @@ The simplest arithmetic circuit is the **half adder**, a combinational logic blo
 | 1 | 0 | $1 + 0 = 1$ | 0 | 1 |
 | 1 | 1 | $1 + 1 = 2_{10} = 10_2$ | 1 | 0 |
 
-Inspecting the truth table reveals that the two outputs correspond directly to standard logic functions:
+The truth table matches two standard logic functions:
 - The **Sum** column is 1 whenever exactly one of the inputs is 1, which is the definition of the [XOR gate](/courses/logic-design/logic-gates#exclusive-or-xor-and-exclusive-nor-xnor):
   $$
   S = A'B + AB' = A \oplus B
@@ -61,11 +61,11 @@ A half adder can also be constructed entirely from [universal gates](/courses/lo
    \text{Carry} = (N_1)' = ((AB)')' = AB
    $$
 
-Thus, a complete half adder with both Sum and Carry outputs can be synthesized from exactly 5 two-input NAND gates, requiring zero extraneous inverters.
+Thus, a complete half adder with both Sum and Carry outputs can be built from 5 two-input NAND gates, requiring no extra inverters.
 
 ## The Half Subtractor
 
-Binary subtraction also operates on single bits. A **half subtractor** takes two single bits—a minuend $A$ and a subtrahend $B$—and computes their arithmetic difference ($A - B$), yielding a **Difference** bit ($D$) and a **Borrow-out** bit ($B_{out}$).
+Binary subtraction also operates on single bits. A **half subtractor** takes two single bits, a minuend $A$ and a subtrahend $B$, and computes their difference ($A - B$). It outputs a **Difference** bit ($D$) and a **Borrow-out** bit ($B_{out}$).
 
 When subtracting 1 from 0 ($0 - 1$), the circuit must borrow 1 from the next higher column (worth $2_{10}$ in binary), giving $2 - 1 = 1$ with an active borrow.
 
@@ -88,7 +88,7 @@ Notice that the difference equation ($D = A \oplus B$) is identical to the half 
 
 ## The Full Adder
 
-The half adder is called "half" because it lacks an incoming carry input. It suffices only for the least significant bit (LSB) column of an addition, where no incoming carry can exist. For all subsequent columns $i > 0$, the circuit must add three single bits: $A_i$, $B_i$, and the incoming carry $C_{in}$ produced by column $i-1$.
+The half adder is called "half" because it lacks a carry input. It works only for the least significant bit (LSB) column of an addition, where no incoming carry can exist. For all higher columns $i > 0$, the circuit must add three bits: $A_i$, $B_i$, and the incoming carry $C_{in}$ produced by column $i-1$.
 
 A **full adder** accepts three one-bit inputs ($A$, $B$, $C_{in}$) and produces two one-bit outputs: a **Sum** bit ($S$) and an outgoing **Carry** bit ($C_{out}$).
 
@@ -114,7 +114,7 @@ $$
 C_{out} = \sum m(3, 5, 6, 7) = A'BC_{in} + AB'C_{in} + ABC_{in}' + ABC_{in}
 $$
 
-The Sum function represents the 3-variable odd parity function: it is 1 if and only if an odd number of inputs are 1. Factoring the algebraic expression:
+The Sum function is an odd parity function: it equals 1 only when an odd number of inputs are 1. Factoring the algebraic expression:
 $$
 S = C_{in}'(A'B + AB') + C_{in}(A'B' + AB)
 $$
@@ -123,7 +123,7 @@ $$
 S = C_{in}'(A \oplus B) + C_{in}(A \oplus B)' = (A \oplus B) \oplus C_{in} = A \oplus B \oplus C_{in}
 $$
 
-The Carry-out function represents the 3-variable **majority function**: it outputs 1 whenever at least two of the three inputs are 1. Using a [Karnaugh map](/courses/logic-design/karnaugh-maps#geometry-and-coordinate-layouts), grouping adjacent minterm pairs yields the standard two-level minimal SOP:
+The Carry-out function is a **majority function**: it outputs 1 whenever at least two of the three inputs are 1. Using a [Karnaugh map](/courses/logic-design/karnaugh-maps#geometry-and-coordinate-layouts), grouping adjacent minterms yields the standard minimal SOP:
 $$
 C_{out} = AB + BC_{in} + AC_{in}
 $$
@@ -165,13 +165,13 @@ $$
 
 > [!NOTE]
 > **Why an OR gate combines the carries without error:**
-> Notice that $C_{out} = C_1 + C_2$. Could $C_1$ and $C_2$ both be 1 simultaneously, creating a conflict where an XOR gate would be required instead of an OR gate?
+> Notice that $C_{out} = C_1 + C_2$. Could $C_1$ and $C_2$ both be 1 at the same time, requiring an XOR gate instead of an OR gate?
 > 
-> No. Compute the logical product of $C_1$ and $C_2$:
+> No. The logical product of $C_1$ and $C_2$ is always zero:
 > $$
 > C_1 \cdot C_2 = (AB) \cdot ((A \oplus B)C_{in}) = AB(A'B + AB')C_{in} = (ABA'B + ABAB')C_{in} = (0 + 0)C_{in} = 0
 > $$
-> The two intermediate carries are **mutually exclusive**: $C_1 = 1$ requires $A = B = 1$, which forces $A \oplus B = 0$, ensuring $C_2 = 0$. Because $C_1$ and $C_2$ can never both be 1, an OR gate produces the exact same output as an XOR gate ($C_1 + C_2 = C_1 \oplus C_2$) while saving silicon area and propagation delay.
+> The two intermediate carries are **mutually exclusive**: $C_1 = 1$ requires $A = B = 1$, which forces $A \oplus B = 0$, making $C_2 = 0$. Because $C_1$ and $C_2$ can never both be 1, an OR gate produces the exact same output as an XOR gate ($C_1 + C_2 = C_1 \oplus C_2$) while saving silicon area and propagation delay.
 
 ## The Full Subtractor
 
@@ -237,7 +237,7 @@ The resulting Sum is $S = S_3 S_2 S_1 S_0 = 1000_2$, with final carry $C_4 = 1$.
 
 ## The Controlled Adder-Subtractor Circuit
 
-A separate hardware subtractor is rarely built into a processor. Instead, modern systems exploit [two's complement arithmetic](/courses/logic-design/binary-arithmetic#3-signed-twos-complement):
+Processors rarely include a separate hardware subtractor. Instead, systems use [two's complement arithmetic](/courses/logic-design/binary-arithmetic#3-signed-twos-complement):
 $$
 A - B = A + (-B) = A + B' + 1
 $$
@@ -277,7 +277,7 @@ By introducing a single mode control line $M$ connected to both the initial carr
   - Initial carry $C_0 = 1$.
   - The circuit computes $\text{Result} = A + B' + 1 = A - B$.
 
-This unified adder-subtractor circuit is the foundation of the arithmetic hardware in every microchip.
+This combined adder-subtractor circuit forms the arithmetic core of microprocessors.
 
 <Callout tone="neon" label="ALU Flag Generation">
 In addition to the sum output, real ALUs generate condition flags from this circuit:
@@ -289,7 +289,7 @@ In addition to the sum output, real ALUs generate condition flags from this circ
 
 ## Signed Overflow Detection
 
-A critical issue in fixed-width computer arithmetic is [arithmetic overflow](/courses/logic-design/binary-arithmetic#arithmetic-overflow-in-signed-numbers). In an $n$-bit signed two's complement system, values must lie strictly in the range:
+A common issue in fixed-width arithmetic is [arithmetic overflow](/courses/logic-design/binary-arithmetic#arithmetic-overflow-in-signed-numbers). In an $n$-bit signed two's complement system, values must stay within this range:
 $$
 -2^{n-1} \le X \le 2^{n-1} - 1
 $$
@@ -330,7 +330,7 @@ If the carry into the sign bit differs from the carry out of the sign bit, an ov
    - Result: $0111_2 = +7_{10}$ (correct!).
    - Overflow check: $V = C_4 \oplus C_3 = 0 \oplus 0 = 0$ (no overflow).
 
-### Carry flag vs Overflow flag: The crucial distinction
+### Carry flag vs Overflow flag: The key difference
 
 Digital system designers and programmers frequently confuse the **Carry Flag ($C$)** and the **Overflow Flag ($V$)**:
 
@@ -341,26 +341,26 @@ Digital system designers and programmers frequently confuse the **Carry Flag ($C
 | **Example in 4 bits** | $1100_2 (12) + 0110_2 (6) = 10010_2 \to C=1, V=0$ | $0101_2 (+5) + 0100_2 (+4) = 1001_2 (-7) \to C=0, V=1$ |
 | **Example with Both Active** | $1000_2 (-8) + 1000_2 (-8) = 10000_2 \to C=1, V=1$ | Unsigned $8+8=16 > 15$; Signed $-8 + -8 = -16 < -8$ |
 
-The carry flag indicates whether an extra bit is required to represent an unsigned sum; the overflow flag indicates whether the arithmetic result has wrapped around into the wrong algebraic sign.
+The carry flag indicates whether an extra bit is required to represent an unsigned sum. The overflow flag indicates whether the arithmetic result has wrapped around into the wrong algebraic sign.
 
 ## Commercial MSI Binary Adders
 
-Standard commercial integrated circuits bundle 4-bit full adders with integrated high-speed lookahead carries onto a single silicon die:
+Standard commercial integrated circuits bundle 4-bit full adders with internal lookahead carries onto a single chip:
 - **7483 / 74LS83:** 4-bit binary full adder with internal carry lookahead.
-- **74283 / 74LS283:** modernized pinout version of the 7483, positioning $V_{CC}$ (pin 16) and GND (pin 8) at standard DIP corner positions for cleaner PCB routing.
+- **74283 / 74LS283:** a version of the 7483 with standard DIP corner power pins ($V_{CC}$ at pin 16, GND at pin 8) for easier board routing.
 
 These ICs provide pins for $A_3\dots A_0$, $B_3\dots B_0$, $C_0$, sum outputs $S_3\dots S_0$, and carry-out $C_4$, allowing multiple 4-bit chips to be cascaded into 8-bit, 16-bit, or 32-bit arithmetic pipelines.
 
 ## Common exam pitfalls and student mistakes
 
-When analyzing and designing arithmetic logic circuits, students frequently make these six errors on examinations:
+When working with arithmetic circuits, students often make these six mistakes on exams:
 
 1. **Confusing Unsigned Carry ($C_n$) with Signed Overflow ($V$):** Assuming that a non-zero carry-out ($C_n = 1$) always indicates overflow in signed arithmetic. For example, adding $-1$ and $-1$ in 4 bits ($1111_2 + 1111_2 = 11110_2$) produces $C_4 = 1$, but $C_3 = 1$ as well. The overflow flag evaluates to $V = C_4 \oplus C_3 = 1 \oplus 1 = 0$, correctly showing that $-2$ is valid and no signed overflow occurred.
 2. **Forgetting $C_0 = M$ in the Controlled Adder-Subtractor:** Connecting mode control $M = 1$ to the XOR inverters on operand $B$ but failing to connect $M$ to initial carry-in $C_0$. If $C_0$ is left grounded, the circuit computes $A + B' = A - B - 1$ (one's complement subtraction) rather than true two's complement subtraction ($A + B' + 1$).
 3. **Attempting to Build Parallel Adders Exclusively from Half Adders:** Believing that an $n$-bit parallel adder can be formed by cascading $n$ half adders. A half adder has only two inputs ($A$ and $B$) and cannot accept an incoming carry bit from a lower-order stage. While stage 0 can use a half adder (if $C_0 = 0$ is guaranteed), all stages $1$ through $n-1$ require full adders.
 4. **Minuend and Subtrahend Polarity Inversion:** Confusing the roles of $A$ and $B$ in subtractor logic. The borrow-out for $A - B$ is $B_{out} = A'B$ (requiring a borrow when $A=0$ and $B=1$). Inverting the wrong input ($AB'$) computes $B - A$, completely corrupting the carry/borrow chain.
 5. **Assuming All Sum and Carry Bits Stabilize Simultaneously:** Overlooking propagation delays in ripple-carry adders. Stage 0 stabilizes first ($S_0$ in $t_{XOR}$, $C_1$ in $2t_{gate}$), while stage $n-1$ cannot stabilize its final sum $S_{n-1}$ until time $2(n-1)t_{gate} + t_{XOR}$. Testing outputs before this propagation window elapses samples transient glitch states.
-6. **Assuming XOR is Required to Merge Intermediate Full Adder Carries:** Insisting that $C_{out} = C_1 \oplus C_2$ is strictly necessary because $C_1$ and $C_2$ are distinct carry terms. Because $C_1 = AB$ and $C_2 = (A \oplus B)C_{in}$ are mutually exclusive ($C_1 \cdot C_2 = 0$), an OR gate produces the exact same result while using fewer transistors and operating faster.
+6. **Assuming XOR is Required to Merge Intermediate Full Adder Carries:** Insisting that $C_{out} = C_1 \oplus C_2$ is required because $C_1$ and $C_2$ are separate carry terms. Because $C_1 = AB$ and $C_2 = (A \oplus B)C_{in}$ are mutually exclusive ($C_1 \cdot C_2 = 0$), an OR gate produces the exact same result while using fewer transistors and operating faster.
 
 ## Practice problems
 
@@ -412,7 +412,7 @@ For each case, state input vectors $A, B$, mode control $M$, internal carries $C
      - Stage 3: $A_3=0, B_3'=1, C_3=0 \implies S_3 = 0 \oplus 1 \oplus 0 = 1$, $C_4 = 0\cdot 1 + (0\oplus 1)\cdot 0 = 0 + 0 = 0$.
    - Sum output: $S = 1101_2 = -8 + 4 + 1 = -3_{10}$.
    - Overflow detection: $V = C_4 \oplus C_3 = 0 \oplus 0 = 0$.
-   - Conclusion: The arithmetic result $-3_{10}$ is completely valid and correctly represented without overflow.
+   - Conclusion: The result $-3_{10}$ is valid and requires no overflow flag.
 
 2. **Case B: $(+5_{10}) - (-4_{10})$:**
    - Input vectors: $A = +5_{10} = 0101_2$, $B = -4_{10} = 1100_2$.
@@ -425,7 +425,7 @@ For each case, state input vectors $A, B$, mode control $M$, internal carries $C
      - Stage 3: $A_3=0, B_3'=0, C_3=1 \implies S_3 = 0 \oplus 0 \oplus 1 = 1$, $C_4 = 0\cdot 0 + (0\oplus 0)\cdot 1 = 0$.
    - Sum output: $S = 1001_2 = -7_{10}$ (incorrect!).
    - Overflow detection: $V = C_4 \oplus C_3 = 0 \oplus 1 = 1$.
-   - Conclusion: Subtracting a negative number from a positive number is equivalent to adding two positive numbers ($5 - (-4) = +9$). Because $+9$ exceeds the maximum positive 4-bit two's complement value ($+7$), signed overflow occurs, correctly flagged by $V = 1$.
+   - Conclusion: Subtracting a negative number from a positive number is equivalent to adding two positive numbers ($5 - (-4) = +9$). Because $+9$ exceeds the maximum positive 4-bit two's complement value ($+7$), signed overflow occurs, flagged by $V = 1$.
 </ModelAnswer>
 
 ### Problem 3: Derivation of the full subtractor borrow logic
@@ -495,5 +495,5 @@ Prove that the condition $V = C_n \oplus C_{n-1}$ accurately flags signed two's 
      - Therefore $C_n \oplus C_{n-1} = C_{n-1} \oplus C_{n-1} = 0$.
      - Overflow is impossible with opposite signs, and $V = 0$ in all instances. Matches!
 
-Across all possible input combinations, $C_n \oplus C_{n-1}$ produces 1 if and only if true arithmetic overflow occurs.
+Across all possible input combinations, $C_n \oplus C_{n-1}$ produces 1 only when signed arithmetic overflow occurs.
 </ModelAnswer>

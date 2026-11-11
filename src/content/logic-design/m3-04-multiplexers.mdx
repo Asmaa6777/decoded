@@ -3,9 +3,9 @@ import { MuxCircuit, DemuxCircuit } from "@/components/mdx/CircuitVisualizers";
 
 # Multiplexers and Demultiplexers
 
-In complex digital systems like microprocessors and communication networks, many functional units share common resources—such as buses, arithmetic pipelines, and storage registers. To prevent bus contention and short circuits, systems require dedicated switching elements that can select a specific data source from multiple candidates, or route a single data stream to one of several destinations.
+In digital systems like microprocessors and communication networks, many functional units share resources such as buses, arithmetic pipelines, and registers. To prevent bus contention and short circuits, systems use switching elements that select a data source from several candidates or route a data stream to one of several destinations.
 
-The two fundamental data-steering components that perform this traffic control are the **multiplexer** (data selector) and the **demultiplexer** (data distributor).
+Two data-steering components perform this routing: the **multiplexer** (data selector) and the **demultiplexer** (data distributor).
 
 ## The Multiplexer (Data Selector)
 
@@ -15,7 +15,7 @@ The selection of which input line is connected to the output is controlled by a 
 
 ### 2-to-1 multiplexer
 
-The fundamental atomic multiplexer has two data inputs ($I_0, I_1$), one select line ($S$), and one output ($Y$):
+The basic multiplexer has two data inputs ($I_0, I_1$), one select line ($S$), and one output ($Y$):
 
 | Select ($S$) | Output ($Y$) | Operational Meaning |
 |:---:|:---:|:---|
@@ -38,7 +38,7 @@ In standard-cell CMOS VLSI design, a 2-to-1 MUX is rarely constructed using disc
 - When $S = 0$, $TG_0$ is turned ON, creating a low-resistance bilateral switch passing $I_0$ directly to $Y$, while $TG_1$ is OFF.
 - When $S = 1$, $TG_1$ turns ON, passing $I_1$, while $TG_0$ turns OFF.
 
-This transmission gate design requires only **4 switch transistors plus 2 inverter transistors (6 transistors total)**—compared to 14 transistors for an AND-OR-INVERT gate implementation—drastically reducing chip area, static power, and signal propagation delay.
+This transmission gate design uses 6 transistors total (4 switch transistors plus 2 inverter transistors), compared to 14 transistors for an AND-OR-INVERT gate implementation. That reduces chip area, static power, and propagation delay.
 
 ### 4-to-1 multiplexer
 
@@ -68,7 +68,7 @@ Standard 7400-series TTL and CMOS families package multiplexers in diverse confi
 
 ## Implementing Arbitrary Boolean Functions with Multiplexers
 
-A multiplexer is fundamentally a **universal function generator**. Any combinational logic function can be synthesized directly using a multiplexer without needing external AND, OR, or XOR gates.
+A multiplexer can serve as a **universal function generator**. Any combinational logic function can be synthesized directly using a multiplexer without needing external AND, OR, or XOR gates.
 
 ### Method 1: Direct implementation with $n$ select lines ($2^n$-to-1 MUX)
 
@@ -174,11 +174,11 @@ $$
 Y_0 = D \cdot S_1' S_0', \quad Y_1 = D \cdot S_1' S_0, \quad Y_2 = D \cdot S_1 S_0', \quad Y_3 = D \cdot S_1 S_0
 $$
 
-When $D = 0$, all outputs are forced to 0 regardless of $S_1, S_0$. When $D = 1$, the selected output line follows $D$ to logic 1 while all other lines remain 0. These equations are algebraically identical to a 2-to-4 decoder with an active-HIGH enable input $E = D$. Therefore, commercial decoder ICs—such as the 74LS138—are officially labeled in manufacturer datasheets as **"3-to-8 Line Decoder / Demultiplexer"**.
+When $D = 0$, all outputs are forced to 0 regardless of $S_1, S_0$. When $D = 1$, the selected output line follows $D$ to logic 1 while all other lines remain 0. These equations are algebraically identical to a 2-to-4 decoder with an active-HIGH enable input $E = D$. Commercial decoder ICs, such as the 74LS138, are labeled in manufacturer datasheets as **"3-to-8 Line Decoder / Demultiplexer"**.
 
 ## Applications in Processor Datapaths and Buses
 
-Multiplexers and demultiplexers are the arterial routing network of modern microprocessors:
+Multiplexers and demultiplexers route data throughout microprocessors:
 
 1. **ALU Operand Routing:**
    In an instruction like `ADD R1, R2, R3`, the processor's register file contains many general-purpose registers. Dual multiplexer trees select which two register outputs are delivered to inputs $A$ and $B$ of the ALU. The register fields within the [instruction format](/courses/computer-architecture/instruction-formats) drive the multiplexer select lines directly.
@@ -194,7 +194,7 @@ Multiplexers and demultiplexers are the arterial routing network of modern micro
 
 ## Common exam pitfalls and student mistakes
 
-When designing and simplifying combinational systems using multiplexers and demultiplexers, students frequently make these six errors:
+When working with multiplexers and demultiplexers, students often make these six mistakes:
 
 1. **Reversing Select Line Weights:** Connecting the MSB of the control variable to $S_0$ and the LSB to $S_1$. For example, an input condition $AB = 10_2$ ($2_{10}$) will assert select pattern $S_1 S_0 = 01_2$ ($1_{10}$), causing the multiplexer to output channel $I_1$ instead of $I_2$. Select line indices must strictly mirror binary place values ($S_k$ has weight $2^k$).
 2. **Inverting Residues in Shannon's Implementation Tables:** Confusing the data assignment rule when decomposing a function. In the implementation table, if only the minterm in row $C = 0$ is 1, the data input is $C'$, NOT $C$. If only the minterm in row $C = 1$ is 1, the data input is $C$. If both rows are 1, the input is constant 1; if neither row is 1, the input is constant 0.
