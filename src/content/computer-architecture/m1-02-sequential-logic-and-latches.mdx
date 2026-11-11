@@ -1,106 +1,103 @@
 import { Callout } from "@/components/mdx/MdxComponents";
+import { FlipFlopMap } from "@/components/mdx/SymbolMaps";
 
 # Sequential Logic and Latches
 
-Combinational logic circuits compute outputs based strictly on current inputs. A sequential circuit uses memory elements to retain past values, allowing the machine to step through states over time.
+A combinational circuit's output depends only on its inputs right now. A **sequential circuit** also remembers: it holds a value after its inputs change. Registers, counters and the CPU's whole state are built from one-bit memories called latches and flip-flops.
+
+This lesson is about reading them as they appear on the slides: as gate drawings, and as boxes with letters on them. How the cross-coupled gates hold a bit, step by step, is taught in Logic Design's [SR latch lesson](/courses/logic-design/sr-latch); here we use the result.
 
 ## Synchronous sequential logic
 
-A **synchronous sequential circuit** synchronizes state transitions to discrete instants of time. Synchronization is provided by a periodic square wave called a **clock generator**.
+A **synchronous** sequential circuit changes its stored values only at set moments. Those moments come from a **clock generator**, which sends a steady train of pulses (a square wave) to every storage element. Between pulses the gates settle; at each pulse the storage elements update together.
 
-The clock signal distributes to every storage element in the system. Between clock ticks, combinational logic evaluates inputs and stabilizes. On the arrival of each clock pulse, storage devices update to their next binary state simultaneously.
+The words the slides use:
 
-## The SR latch with NOR gates
+* A **latch** is the simplest storage element. It holds one bit for as long as power is on, and it is built from two gates feeding back into each other.
+* A **flip-flop** is a storage element that changes at most once per clock pulse. The change is called a **trigger**.
+* **Level-triggered** elements react for as long as the clock is at 1. **Edge-triggered** elements react only at the moment the clock changes: on the **positive (rising) edge**, 0 to 1, or the **negative (falling) edge**, 1 to 0.
 
-The most basic binary storage element is a latch built from two cross-coupled NOR gates. The output of each gate feeds back into an input of the opposite gate:
+## The SR latch
 
-```text
-R (Reset) ───\ NOR 1 \
-              )       >──── Q (Stored bit)
-         ┌───/       /      │
-         │                  │ (feedback to NOR 2)
-         │   ┌──────────────┘
-         └───┼──────────────┐ (feedback to NOR 1)
-             │   \ NOR 2 \  │
-S (Set)   ───┴────)       >─┴── Q' (Complement)
-                 /       /
-```
+Two NOR gates, each output wired back into the other gate's input, make an **SR latch**. S (set) stores a 1, R (reset) stores a 0, and Q shows the stored bit, with $\overline{Q}$ always its opposite.
 
-* Input **$S$ (Set)** forces the stored output $Q$ to 1. Notice $S$ connects to NOR 2, driving $Q'$ down to 0, which feeds into NOR 1 to drive $Q$ up to 1.
-* Input **$R$ (Reset)** forces the stored output $Q$ to 0 by asserting NOR 1 directly.
-* Output **$Q$** represents the stored bit, while $Q'$ provides its logical complement.
-
-| $S$ | $R$ | $Q$ | $Q'$ | Operation |
+| $S$ | $R$ | $Q$ | $\overline{Q}$ | Meaning |
 |:---:|:---:|:---:|:---:|:---|
-| 0 | 0 | No change | No change | **Hold**: circuit maintains its stored state indefinitely |
-| 0 | 1 | 0 | 1 | **Reset**: output $Q$ clears to 0 |
-| 1 | 0 | 1 | 0 | **Set**: output $Q$ asserts to 1 |
-| 1 | 1 | 0 | 0 | **Forbidden**: undefined race condition upon release |
+| 1 | 0 | 1 | 0 | set |
+| 0 | 0 | 1 | 0 | hold (after S = 1) |
+| 0 | 1 | 0 | 1 | reset |
+| 0 | 0 | 0 | 1 | hold (after R = 1) |
+| 1 | 1 | 0 | 0 | forbidden |
 
-Under normal operation, both inputs remain at 0 unless a state change is commanded. If both $S$ and $R$ are set to 1 simultaneously, both outputs drop to 0, violating the rule that $Q$ and $Q'$ remain complementary. If both inputs return to 0 at the same instant, slight differences in gate propagation delay determine which gate wins, causing an unpredictable final state. The interactive signal-flow demonstration is explored in the [SR latch lesson](/courses/logic-design/sr-latch).
+Both inputs rest at 0. S = R = 1 is **forbidden**: both outputs go to 0, so $\overline{Q}$ is no longer the opposite of Q, and if both inputs then drop to 0 together, whichever gate is slightly faster decides the stored value.
 
-## The SR latch with NAND gates
+Built from NAND gates instead, the latch works on 0s. Its inputs rest at 1, and pulling S' or R' to 0 does the setting or resetting. That is why the slides call it the **S'R' latch**, and why its box symbol has bubbles on both inputs. Its forbidden input is S' = R' = 0, which drives both outputs to 1.
 
-An alternate latch uses two cross-coupled NAND gates. Because a NAND gate outputs 1 whenever any input is 0, this latch operates with inverted, active-low inputs, designated $S'$ and $R'$:
-
-```text
-S' (Set)   ───\ NAND 1 \
-               )        >──── Q
-          ┌───/        /      │
-          │                   │ (feedback to NAND 2)
-          │   ┌───────────────┘
-          └───┼───────────────┐ (feedback to NAND 1)
-              │   \ NAND 2 \  │
-R' (Reset) ───┴────)        >─┴── Q'
-                  /        /
-```
-
-| $S'$ | $R'$ | $Q$ | $Q'$ | Operation |
+| $S'$ | $R'$ | $Q$ | $\overline{Q}$ | Meaning |
 |:---:|:---:|:---:|:---:|:---|
-| 1 | 1 | No change | No change | **Hold**: latches previous state |
-| 1 | 0 | 0 | 1 | **Reset**: pulling $R'$ low clears $Q$ to 0 |
-| 0 | 1 | 1 | 0 | **Set**: pulling $S'$ low sets $Q$ to 1 |
-| 0 | 0 | 1 | 1 | **Forbidden**: illegal state, both outputs driven high |
+| 0 | 1 | 1 | 0 | set |
+| 1 | 1 | 1 | 0 | hold (after S' = 0) |
+| 1 | 0 | 0 | 1 | reset |
+| 1 | 1 | 0 | 1 | hold (after R' = 0) |
+| 0 | 0 | 1 | 1 | forbidden |
 
-Active-low control pins are standard in industrial memory chips, where ground (0V) serves as the asserting signal.
+## Adding a control input
 
-## The controlled SR latch and the D latch
+The latches above react the moment S or R changes. Adding two gates in front, both fed by a **control input** C, decides *when* the latch listens:
 
-To prevent inputs from changing the latch during unintended intervals, two input AND gates (called **steering gates**) gate the inputs with a control signal $C$:
+* C = 0: the front gates block S and R, and the latch holds.
+* C = 1: S and R reach the latch, which behaves as above.
 
-* When $C = 0$, both steering gate outputs are forced to 0, locking the internal latch in its Hold state.
-* When $C = 1$, the external $S$ and $R$ inputs pass through the steering gates to update the latch.
+C is usually the clock. The latch is then **level-sensitive**: it listens for the whole time the clock is 1. S = R = 1 with C = 1 is still forbidden.
 
-The **D latch** resolves the forbidden $S=1, R=1$ problem permanently. By placing an inverter between the inputs such that $S = D$ and $R = D'$, the two inputs can never be 1 at the same time:
+The **D latch** removes the forbidden input. One data input D drives S directly and drives R through an inverter, so S and R are always opposite:
 
-| Clock ($C$) | Input ($D$) | Next $Q$ | Operation |
-|:---:|:---:|:---:|:---|
-| 0 | X | $Q$ | No change, latch disabled |
-| 1 | 0 | 0 | Reset to 0 |
-| 1 | 1 | 1 | Set to 1 |
+| $C$ | $D$ | Next $Q$ |
+|:---:|:---:|:---|
+| 0 | X | no change |
+| 1 | 0 | 0 |
+| 1 | 1 | 1 |
 
-As long as the clock line $C$ remains high, the D latch is level-sensitive: any change on input $D$ ripples directly through to output $Q$.
+While C is 1, Q copies D, and any change on D passes straight through. When C drops to 0, Q keeps the last value. (X means "either value".)
 
-## The JK and T flip-flops
+## Reading the boxes
 
-In complex datapaths, level sensitivity can cause feedback instability when a flip-flop's output feeds back into its own input logic within the same clock period. Hardware requires **edge-triggered flip-flops**, which sample inputs only on the clock edge.
+Draw the gates every time and a register would be a page of NORs. Schematics draw each latch or flip-flop as a box instead. Inputs go on the left, Q and $\overline{Q}$ on the right, and the marks from [the schematics lesson](/courses/computer-architecture/demystifying-circuit-schematics) say how each pin behaves:
 
-The **JK flip-flop** eliminates the forbidden state by feeding the outputs back to the input steering gates ($Q'$ feeds into the $J$ gate; $Q$ feeds into the $K$ gate):
+* a bubble on S and R: the NAND (S'R') latch, acting on 0s;
+* a plain C pin: a control input, level-triggered;
+* a triangle on C: edge-triggered, a flip-flop;
+* a bubble and a triangle: acts on the falling edge.
 
-* **$J$ behaves as Set**: when $J = 1$ and $K = 0$, output $Q$ sets to 1 on the clock edge.
-* **$K$ behaves as Reset**: when $J = 0$ and $K = 1$, output $Q$ resets to 0 on the clock edge.
-* When $J = 0$ and $K = 0$, the state holds unchanged.
-* When $J = 1$ and $K = 1$, the inputs swap roles through the feedback wires, causing output $Q$ to **toggle** to its opposite value ($Q^+ = Q'$).
+Pick a device, point at its marks, then drive its pins. The timing diagram underneath records what you do, the same kind of drawing the slides use to show a latch over time. Try the D latch and the D flip-flop with the same moves: change D while C is 1. The latch follows; the flip-flop waits for the next edge.
 
-Connecting inputs $J$ and $K$ together into a single input line forms the **T (Toggle) flip-flop**:
+<FlipFlopMap />
 
-* When $T = 0$ ($J=0, K=0$): the flip-flop holds its previous state ($Q^+ = Q$).
-* When $T = 1$ ($J=1, K=1$): the flip-flop toggles its state on every clock pulse ($Q^+ = Q'$).
+## Edge-triggered flip-flops
 
-Because a T flip-flop inverts its output on every active clock edge when $T=1$, it divides input clock frequency by two, making it the fundamental building block for binary counters.
+A level-sensitive latch causes trouble when its output feeds back into its own input logic, as it does in a counter: while the clock is 1, the new output can run round the loop and change the latch again. An **edge-triggered flip-flop** avoids this by acting at one instant per clock cycle.
 
-<Callout tone="violet" label="Master-Slave flip-flop operation">
-A **master-slave flip-flop** connects two latches in series with an inverter on the clock line. When the clock is high, the master latch accepts input data while the slave latch is disabled. When the clock falls to zero, the master disables, and the slave copies the master's state to the primary output. Because the input and output are never enabled at the same instant, data updates cleanly without race conditions.
+<Callout tone="violet" label="Master-slave flip-flop">
+The lecture builds one from **two SR latches and one inverter**. The clock drives the first latch (the master) directly and the second (the slave) through the inverter. While the clock is 1 the master takes in S and R and the slave is shut. When the clock falls to 0 the master shuts and the slave copies it to Q. Input and output are never open at the same time, so Q changes only once, on the falling edge. Logic Design walks through it phase by phase in [the flip-flops lesson](/courses/logic-design/flip-flops#how-to-freeze-an-instant-the-master-slave-architecture).
 </Callout>
 
-These edge-triggered flip-flops form the building blocks for multi-bit registers and binary counters.
+### JK and T flip-flops
+
+The **JK flip-flop** is an SR flip-flop that uses its forbidden input. J acts as set and K as reset, and J = K = 1 makes Q **toggle**, flip to its opposite.
+
+| $J$ | $K$ | Next $Q$ |
+|:---:|:---:|:---|
+| 0 | 0 | no change |
+| 0 | 1 | 0 |
+| 1 | 0 | 1 |
+| 1 | 1 | toggle |
+
+The lecture builds it from a D latch with two AND gates, an inverter and an OR gate in front, which compute
+
+$$D = J\,\overline{Q} + \overline{K}\,Q$$
+
+Check it against the table: J = K = 0 gives D = Q (hold), J = 1, K = 0 gives D = 1, J = 0, K = 1 gives D = 0, and J = K = 1 gives D = $\overline{Q}$ (toggle).
+
+Tie J and K together into one input T and you have the **T flip-flop**: T = 0 holds, T = 1 toggles on every clock edge. A T flip-flop with T = 1 changes once per clock cycle, so its output runs at half the clock's frequency. That is the start of a binary counter, two lessons on.
+
+Next, these flip-flops grouped side by side become registers.

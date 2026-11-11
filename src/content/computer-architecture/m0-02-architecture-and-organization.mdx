@@ -1,4 +1,5 @@
 import { Callout } from "@/components/mdx/MdxComponents";
+import { ComputerZoom } from "@/components/mdx/SymbolMaps";
 
 # Architecture and Organization
 
@@ -45,13 +46,16 @@ These four structural units cooperate to execute four fundamental functions:
 * **Data Movement**: Transferring words between memory locations, internal registers, and external peripheral devices.
 * **Control**: Interpreting instructions and directing physical control lines to coordinate all hardware operations.
 
-## The internal structure of the CPU
+## Zooming in: computer, CPU, control unit
 
-Opening the CPU reveals four internal building blocks connected by an **internal CPU bus**:
+The lecture draws this structure as circles inside circles. The outer circle is the whole computer, and each small circle is a part of it. Pick one part and draw it large, and it has parts of its own. Three levels cover the course:
 
-* **Control Unit (CU)**: The coordinator of the processor. It decodes instructions and generates the timed electrical control signals that trigger registers, buses, and arithmetic circuits.
-* **Arithmetic and Logic Unit (ALU)**: The computational engine, containing combinational adder, subtractor, and bit-manipulation circuits.
-* **Registers**: High-speed internal storage cells, including the accumulator, instruction register, and status flags.
-* **Internal Bus**: The set of shared internal wires that route data words between registers and ALU inputs without cluttering the external system bus.
+* **The computer**: CPU, main memory, I/O, and the system interconnection that touches all three.
+* **The CPU**: registers, the arithmetic and logic unit (ALU), the control unit, and the **internal CPU interconnection** that carries values between them without using the system bus.
+* **The control unit**: **sequencing logic** that steps through each instruction in order, **control unit registers and decoders** that hold the instruction and turn its operation code into one active signal, and **control memory**, which a microprogrammed control unit uses to store its control words. Module 2 builds both kinds in [the control unit lesson](/courses/computer-architecture/control-unit).
 
-Before studying instruction sets and memory hierarchies, engineers must understand the physical datapath building blocks: how gates combine into latches, flip-flops, registers, and counters.
+<ComputerZoom />
+
+Every circle does one or more of the four functions above. Registers and memory store, the ALU processes, the buses move, and the control unit controls. Click a circle above to see which.
+
+Before instruction sets and memory hierarchies, the next module builds the parts these circles are made of: how gates become latches, flip-flops, registers and counters.
