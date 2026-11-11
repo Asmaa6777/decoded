@@ -4071,5 +4071,184 @@ export function simulateBarrelShifter4Bit(
   return { inputWord: d, shiftedWord: res, bitTrace: bits };
 }
 
+export function simulateSrLatch(
+  type: "nor" | "nand",
+  s: Bit,
+  r: Bit,
+  qPrev: Bit
+): {
+  qNext: Bit;
+  qBarNext: Bit;
+  state: "hold" | "reset" | "set" | "forbidden";
+  isForbidden: boolean;
+  raceOnSimultaneousRelease: boolean;
+} {
+  if (type === "nor") {
+    // Active-HIGH NOR latch
+    if (s === 0 && r === 0) {
+      return { qNext: qPrev, qBarNext: (1 - qPrev) as Bit, state: "hold", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else if (s === 0 && r === 1) {
+      return { qNext: 0, qBarNext: 1, state: "reset", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else if (s === 1 && r === 0) {
+      return { qNext: 1, qBarNext: 0, state: "set", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else {
+      // s=1, r=1 is forbidden for NOR; both outputs forced to 0
+      return { qNext: 0, qBarNext: 0, state: "forbidden", isForbidden: true, raceOnSimultaneousRelease: true };
+    }
+  } else {
+    // Active-LOW NAND latch (s and r are /S and /R)
+    if (s === 1 && r === 1) {
+      return { qNext: qPrev, qBarNext: (1 - qPrev) as Bit, state: "hold", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else if (s === 1 && r === 0) {
+      return { qNext: 0, qBarNext: 1, state: "reset", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else if (s === 0 && r === 1) {
+      return { qNext: 1, qBarNext: 0, state: "set", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else {
+      // s=0, r=0 is forbidden for NAND; both outputs forced to 1
+      return { qNext: 1, qBarNext: 1, state: "forbidden", isForbidden: true, raceOnSimultaneousRelease: true };
+    }
+  }
+}
+
+export function simulateDLatchGated(
+  c: Bit,
+  d: Bit,
+  qPrev: Bit
+): {
+  qNext: Bit;
+  qBarNext: Bit;
+  isTransparent: boolean;
+} {
+  const qNext = c === 1 ? d : qPrev;
+  return {
+    qNext,
+    qBarNext: (1 - qNext) as Bit,
+    isTransparent: c === 1,
+  };
+}
+
+export function simulateJkFlipFlop(
+  j: Bit,
+  k: Bit,
+  qPrev: Bit,
+  pre_n: Bit = 1,
+  clr_n: Bit = 1
+): {
+  qNext: Bit;
+  qBarNext: Bit;
+  state: "hold" | "reset" | "set" | "toggle" | "async-preset" | "async-clear" | "async-invalid";
+  isAsync: boolean;
+} {
+  if (pre_n === 0 && clr_n === 1) {
+    return { qNext: 1, qBarNext: 0, state: "async-preset", isAsync: true };
+  }
+  if (pre_n === 1 && clr_n === 0) {
+    return { qNext: 0, qBarNext: 1, state: "async-clear", isAsync: true };
+  }
+  if (pre_n === 0 && clr_n === 0) {
+    return { qNext: 1, qBarNext: 1, state: "async-invalid", isAsync: true };
+  }
+
+  // Synchronous operation
+  if (j === 0 && k === 0) {
+    return { qNext: qPrev, qBarNext: (1 - qPrev) as Bit, state: "hold", isAsync: false };
+  } else if (j === 0 && k === 1) {
+    return { qNext: 0, qBarNext: 1, state: "reset", isAsync: false };
+  } else if (j === 1 && k === 0) {
+    return { qNext: 1, qBarNext: 0, state: "set", isAsync: false };
+  } else {
+    const qToggled = (1 - qPrev) as Bit;
+    return { qNext: qToggled, qBarNext: (1 - qToggled) as Bit, state: "toggle", isAsync: false };
+  }
+}
+
+export function simulateTFlipFlop(
+  t: Bit,
+  qPrev: Bit
+): {
+  qNext: Bit;
+  qBarNext: Bit;
+  state: "hold" | "toggle";
+} {
+  const qNext = t === 1 ? ((1 - qPrev) as Bit) : qPrev;
+  return {
+    qNext,
+    qBarNext: (1 - qNext) as Bit,
+    state: t === 1 ? "toggle" : "hold",
+  };
+}
+
+export function simulateSram6TCell(
+  op: "read" | "write" | "hold",
+  storedBit: Bit,
+  bitLineIn?: Bit
+): {
+  storedBit: Bit;
+  bl: Bit;
+  blBar: Bit;
+  wordLine: Bit;
+  actionDescription: string;
+} {
+  if (op === "hold") {
+    return {
+      storedBit,
+      bl: 1,
+      blBar: 1,
+      wordLine: 0,
+      actionDescription: "Hold: Wordline is 0, access transistors OFF, cell isolated and stable.",
+    };
+  }
+
+  if (op === "read") {
+    // Both bitlines precharged to 1 prior to wordline activation.
+    // The side holding 0 discharges its bitline through the access and pull-down NMOS.
+    const bl = storedBit === 1 ? 1 : 0;
+    const blBar = storedBit === 1 ? 0 : 1;
+    return {
+      storedBit,
+      bl,
+      blBar,
+      wordLine: 1,
+      actionDescription: `Read: Wordline asserted. Node Q=${storedBit} maintains BL=${bl}, node Q'=${1 - storedBit} discharges BL_bar to ${blBar}. Sense amp detects voltage difference.`,
+    };
+  }
+
+  // Write operation
+  const newBit = (bitLineIn ?? 1) as Bit;
+  return {
+    storedBit: newBit,
+    bl: newBit,
+    blBar: (1 - newBit) as Bit,
+    wordLine: 1,
+    actionDescription: `Write: Wordline asserted. Strong write drivers force BL=${newBit} and BL_bar=${1 - newBit}, overpowering internal cross-coupled PMOS pull-ups to flip the cell.`,
+  };
+}
+
+export function simulateDramRefreshOverhead(
+  rows: number,
+  refreshPeriodMs: number,
+  cycleTimeNs: number
+): {
+  rows: number;
+  refreshPeriodMs: number;
+  cycleTimeNs: number;
+  totalRefreshTimeNs: number;
+  totalPeriodNs: number;
+  overheadPercent: number;
+} {
+  const totalRefreshTimeNs = rows * cycleTimeNs;
+  const totalPeriodNs = refreshPeriodMs * 1e6;
+  const overheadPercent = parseFloat(((totalRefreshTimeNs / totalPeriodNs) * 100).toFixed(3));
+  return {
+    rows,
+    refreshPeriodMs,
+    cycleTimeNs,
+    totalRefreshTimeNs,
+    totalPeriodNs,
+    overheadPercent,
+  };
+}
+
+
 
 

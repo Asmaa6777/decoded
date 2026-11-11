@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { MemoryUnit, CoincidentMemoryLab, MemoryExpansionLab } from "@/components/mdx/LogicVisualizers";
 
 # The Memory Unit: Putting It All Together
@@ -367,3 +367,221 @@ A Static RAM chip datasheet specifies the following read timing characteristics:
    The maximum safe operating bus frequency is:
    $$f_{bus(max)} = 1 / (14.5\text{ ns}) \approx 68.96\text{ MHz}$$
 </ModelAnswer>
+
+### Problem 4: 6-Transistor CMOS SRAM Cell Read/Write Stability and Sizing Ratios
+
+A standard CMOS Static RAM (SRAM) cell consists of six transistors: two PMOS pull-up transistors ($P_L, P_R$), two NMOS pull-down driver transistors ($N_L, N_R$), and two NMOS access transistors ($A_L, A_R$) connected to complementary bitlines ($BL, \overline{BL}$) and Wordline ($WL$).
+1. Detail the electrical events during a **Read** operation: bitlines precharged to $V_{DD}$, followed by $WL \to 1$. Why does internal storage node $Q$ (holding logic 0) experience a momentary voltage rise ($V_{bump}$)?
+2. To prevent this read voltage bump from exceeding the switching threshold of the opposing inverter and accidentally flipping the stored bit (read disturb), what transistor width-to-length ratio constraint (the **cell ratio** $\beta$) must be enforced between driver $N_L$ and access transistor $A_L$?
+3. Detail the electrical events during a **Write** operation: strong write drivers pull $BL \to 0$ while $WL \to 1$. What transistor sizing ratio (the **pull-up ratio** $\gamma$) between access transistor $A_R$ and PMOS pull-up $P_R$ is required to force a node holding 1 down to 0?
+
+<ModelAnswer>
+1. **Read Operation and Node Voltage Bump ($V_{bump}$):**
+   - Prior to read, both bitlines ($BL$ and $\overline{BL}$) are precharged to $V_{DD}$ and then floated.
+   - When Wordline rises ($WL = V_{DD}$), access transistors $A_L$ and $A_R$ turn ON.
+   - Suppose the cell stores $Q = 0$ (at $0\text{ V}$) and $Q' = 1$ (at $V_{DD}$).
+   - On the left side, bitline $BL$ sits at $V_{DD}$ while node $Q$ is at $0\text{ V}$. Current flows from the precharged bitline through access transistor $A_L$ and pull-down NMOS driver $N_L$ to ground.
+   - Because both $A_L$ and $N_L$ have finite on-resistances ($R_{A_L}$ and $R_{N_L}$), they form a resistive voltage divider between $V_{DD}$ and GND.
+   - Internal node $Q$ rises to an intermediate voltage:
+     $$V_{bump} = V_{DD} \cdot \frac{R_{N_L}}{R_{A_L} + R_{N_L}}$$
+   - On the right side ($Q' = V_{DD}, \overline{BL} = V_{DD}$), no current flows because both nodes are at the same potential.
+
+2. **Read Stability Constraint (Cell Ratio $\beta$):**
+   - If $V_{bump}$ rises above the threshold voltage $V_{th(N_R)}$ of the opposing NMOS driver $N_R$, $N_R$ will turn ON, discharging $Q'$ and accidentally flipping the stored bit!
+   - To keep $V_{bump}$ safely below $V_{th}$, driver transistor $N_L$ must have much lower resistance than access transistor $A_L$.
+   - Lower resistance requires a wider channel: the **cell ratio** is defined as:
+     $$\beta = \frac{(W/L)_{driver}}{(W/L)_{access}} = \frac{(W/L)_{N_L}}{(W/L)_{A_L}} \ge 1.2 \text{ to } 1.5$$
+   - The pull-down NMOS driver must be physically wider (stronger) than the access transistor.
+
+3. **Write Operation and Pull-Up Sizing Ratio ($\gamma$):**
+   - To write a 0 into a node holding 1 ($Q' = 1$), the external write driver connects bitline $\overline{BL}$ solidly to ground ($0\text{ V}$).
+   - When $WL = V_{DD}$, access transistor $A_R$ turns ON, forming a voltage divider between the PMOS pull-up $P_R$ (connected to $V_{DD}$) and $\overline{BL}$ (connected to $0\text{ V}$).
+   - To flip the cross-coupled inverters, access transistor $A_R$ must pull node $Q'$ down below the inverter threshold voltage $V_{th}$.
+   - Therefore, access transistor $A_R$ must be **stronger than the PMOS pull-up transistor $P_R$**:
+     $$\gamma = \frac{(W/L)_{pull-up}}{(W/L)_{access}} = \frac{(W/L)_{P_R}}{(W/L)_{A_R}} \le 0.6 \text{ to } 0.8$$
+   - Transistor sizing hierarchy in a 6T SRAM cell:
+     $$\mathbf{W_{driver} \gt W_{access} \gt W_{pull-up}}$$
+</ModelAnswer>
+
+### Problem 5: Dynamic RAM (DRAM) Refresh Overhead and Bandwidth Loss
+
+A 1-gigabit ($1\text{ Gb}$) Dynamic RAM (DRAM) chip contains 8192 memory rows ($2^{13}$ rows). The microscopic cell storage capacitors exhibit semiconductor leakage, requiring every row in the memory array to be refreshed at least once every $64\text{ ms}$ to avoid data loss.
+Each row refresh cycle requires $t_{RC} = 45\text{ ns}$ (Row Cycle Time), during which the memory array cannot service processor read or write requests.
+1. Calculate the total time in microseconds spent performing refresh cycles during each $64\text{ ms}$ interval.
+2. Determine the percentage of memory bandwidth lost to DRAM refresh overhead.
+3. Compare "burst refresh" against "distributed refresh" architectures in memory controllers.
+
+<ModelAnswer>
+1. **Total Refresh Time per Interval:**
+   All 8192 rows must be refreshed within $64\text{ ms}$:
+   $$t_{refresh(total)} = N_{rows} \times t_{RC} = 8192 \times 45\text{ ns} = 368,640\text{ ns} \approx 368.64\ \mu\text{s}$$
+
+2. **Bandwidth Loss Percentage:**
+   The total available time window is $64\text{ ms} = 64,000\ \mu\text{s}$:
+   $$\text{Overhead} = \frac{t_{refresh(total)}}{T_{interval}} \times 100\% = \frac{368.64\ \mu\text{s}}{64,000\ \mu\text{s}} \times 100\% = 0.576\%$$
+   Less than $0.6\%$ of memory bandwidth is consumed by refresh, leaving over $99.4\%$ available for processor execution.
+
+3. **Burst Refresh vs Distributed Refresh:**
+   - **Burst Refresh:** The memory controller halts all CPU memory access and performs all 8192 row refresh cycles back-to-back in one unbroken block ($368.64\ \mu\text{s}$).
+     - *Disadvantage:* Freezes the CPU for over 360 microseconds, making it completely unsuitable for real-time systems, audio/video streaming, or interrupt-driven computing.
+   - **Distributed Refresh:** The controller spaces the 8192 refresh cycles evenly across the $64\text{ ms}$ window:
+     $$T_{interval} = \frac{64\text{ ms}}{8192} = 7.8125\ \mu\text{s}$$
+     Every $7.81\ \mu\text{s}$, a timer triggers the refresh of exactly one row ($45\text{ ns}$ interruption).
+     - *Advantage:* Latency is negligible, ensuring smooth CPU execution without long pauses.
+</ModelAnswer>
+
+### Problem 6: Bidirectional Tri-State Bus Transceiver Interface (74LS245)
+
+A memory board containing $4\text{KB}$ of Static RAM (address range `0x8000` to `0x8FFF`) interfaces to a shared 8-bit system data bus ($D_7..D_0$) through an industry-standard **74LS245** octal bus transceiver.
+The 74LS245 has two control pins:
+- $\overline{OE}$ (Output Enable): active-LOW. When 0, the transceiver drivers are active; when 1, both sides are placed in High-Impedance ($\text{Hi-Z}$).
+- $DIR$ (Direction): when 1, data flows $A \to B$ (Board to System Bus, Read); when 0, data flows $B \to A$ (System Bus to Board, Write).
+
+The microprocessor bus provides:
+- 16 address lines ($A_{15}..A_0$)
+- Active-LOW Memory Request ($\overline{MREQ}$)
+- Active-LOW Read control ($\overline{RD}$)
+- Active-LOW Write control ($\overline{WR}$)
+
+1. Design the address decoding logic that detects the memory board's address space (`0x8000`–`0x8FFF`).
+2. Derive the Boolean equations for $\overline{OE}$ and $DIR$ of the 74LS245 transceiver.
+3. Explain why bus transceiver disable timing ($t_{disable}$) must be strictly faster than enable timing ($t_{enable}$) to prevent bus contention during bus turnaround.
+
+<ModelAnswer>
+1. **Address Space Decoding (`0x8000` to `0x8FFF`):**
+   - Address `0x8000` to `0x8FFF` in binary:
+     - `0x8000` = $1000\ 0000\ 0000\ 0000_2$
+     - `0x8FFF` = $1000\ 1111\ 1111\ 1111_2$
+   - The lower 12 address lines ($A_{11} \dots A_0$) address the internal $4096 = 2^{12}$ bytes.
+   - The upper 4 address lines must match $1000_2$:
+     $$A_{15} = 1, \quad A_{14} = 0, \quad A_{13} = 0, \quad A_{12} = 0$$
+   - Board Select signal:
+     $$\text{BoardSelect} = A_{15} \cdot A_{14}' \cdot A_{13}' \cdot A_{12}' \cdot \overline{MREQ}'$$
+
+2. **Control Equations for 74LS245 Transceiver:**
+   - **Direction ($DIR$):** $DIR = 1$ when the CPU is reading from the board (Board to System Bus).
+     $$DIR = \overline{RD}'$$
+     (When $\overline{RD} = 0$, $DIR = 1$; during write $\overline{WR} = 0$, $DIR = 0$).
+   - **Output Enable ($\overline{OE}$):** The transceiver must be enabled (assert $\overline{OE} = 0$) ONLY when this board is addressed AND a valid read or write memory cycle is active:
+     $$\text{ActiveAccess} = \text{BoardSelect} \cdot (\overline{RD}' + \overline{WR}')$$
+     Because $\overline{OE}$ is active-LOW:
+     $$\overline{OE} = \text{ActiveAccess}' = (\text{BoardSelect} \cdot (\overline{RD}' + \overline{WR}'))'$$
+   - Whenever the board is unselected or the bus is idle, $\overline{OE} = 1$, isolating the board's internal data bus from the system data bus in High-Impedance ($\text{Hi-Z}$).
+
+3. **Bus Turnaround and Contention Prevention ($t_{disable} \lt t_{enable}$):**
+   - When a bus read ends and a write begins (or when the CPU switches from reading Memory to reading I/O), the currently driving device must disconnect its drivers from the bus.
+   - If the previous device's turn-off delay ($t_{disable}$) is slower than the new device's turn-on delay ($t_{enable}$), both devices will drive the bus simultaneously for a fraction of a nanosecond.
+   - If one device outputs $V_{CC}$ (1) while the other outputs GND (0), a short circuit occurs, producing severe voltage dips on power rails, ground bounce, and damaging shoot-through currents.
+   - High-reliability bus transceivers are silicon-engineered to guarantee **break-before-make** switching ($t_{disable} \lt t_{enable}$).
+</ModelAnswer>
+
+---
+
+### Part 2: In-Lesson Interactive Practice
+
+<Quiz
+  courseSlug="logic-design"
+  lessonSlug="memory-unit"
+  practice
+  questions={[
+    {
+      id: "mem-p1",
+      prompt: "A memory unit is specified as having capacity 64K × 16. How many address lines and data lines does this chip require?",
+      options: [
+        { id: "a", text: "16 address lines and 16 data lines" },
+        { id: "b", text: "64 address lines and 16 data lines" },
+        { id: "c", text: "16 address lines and 64 data lines" },
+        { id: "d", text: "12 address lines and 8 data lines" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Capacity is expressed as 2ᵏ words × m bits per word. Here, 64K = 64 × 1024 = 65,536 words = 2¹⁶ words, requiring k = 16 address lines. Each word is 16 bits wide, requiring m = 16 bidirectional data lines. Option (b) confuses the word count (64K) with literal address pin count. Option (c) inverts address and data. Option (d) describes a 4K × 8 memory.",
+    },
+    {
+      id: "mem-p2",
+      prompt: "How many address lines are required to uniquely address every byte in a 1-megabyte (1 MB) byte-addressable computer memory?",
+      options: [
+        { id: "a", text: "10 address lines" },
+        { id: "b", text: "16 address lines" },
+        { id: "c", text: "20 address lines" },
+        { id: "d", text: "24 address lines" },
+      ],
+      correctOptionId: "c",
+      explanation: "Option (c) is correct: 1 MB = 1024 × 1024 bytes = 1,048,576 bytes = 2²⁰ bytes. Therefore, 20 address lines (A₁₉..A₀) are required (as found in the classic Intel 8086 architecture). Option (a) addresses 1 KB (2¹⁰). Option (b) addresses 64 KB (2¹⁶). Option (d) addresses 16 MB (2²⁴).",
+    },
+    {
+      id: "mem-p3",
+      prompt: "Why is 2D coincident decoding (row and column decoders) universally preferred over 1D linear decoding in semiconductor memory chips?",
+      options: [
+        { id: "a", text: "It reduces the number and fan-in of decoding gates from 2ᵏ gates down to 2 × 2^(k/2) gates, drastically shrinking silicon chip area" },
+        { id: "b", text: "It doubles the operating voltage of the storage capacitors" },
+        { id: "c", text: "It eliminates the need for address pins entirely" },
+        { id: "d", text: "It converts dynamic RAM into static RAM" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In a 1D linear array of 4096 words, a 12-to-4096 decoder would require 4096 separate 12-input AND gates, which is physically impossible to route. By arranging the cells into a 64 × 64 2D matrix, we need only one 6-to-64 row decoder (64 gates) and one 6-to-64 column decoder (64 gates), totaling only 128 gates with 6 inputs each. This achieves an enormous 96.9% reduction in decoding silicon area. Option (b), Option (c), and Option (d) are completely false.",
+    },
+    {
+      id: "mem-p4",
+      prompt: "To construct a 16K × 8 memory using available 16K × 4 memory chips, how are the chips connected?",
+      options: [
+        { id: "a", text: "Use 2 chips: wire all 14 address lines in parallel to both chips, and concatenate their 4-bit data pins so chip 0 drives D₃..D₀ and chip 1 drives D₇..D₄" },
+        { id: "b", text: "Use 2 chips: connect an address decoder to chip select pins, while sharing the 4 data lines" },
+        { id: "c", text: "Use 4 chips connected in a ring counter topology" },
+        { id: "d", text: "Use 8 chips with serial bit shift registers" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: This is word-length (bit) expansion: the number of words (16K) is already provided by each chip, but word width must expand from 4 bits to 8 bits. Address lines A₁₃..A₀ and control lines (/WE, /CS) are wired in parallel to both chips. Chip 0 supplies the lower nibble (D₃..D₀) and Chip 1 supplies the upper nibble (D₇..D₄). Option (b) describes word-count (capacity) expansion, not word-length expansion. Option (c) and Option (d) are incorrect.",
+    },
+    {
+      id: "mem-p5",
+      prompt: "To construct a 64K × 8 memory module using four 16K × 8 RAM chips, how are the 16 address lines (A₁₅..A₀) partitioned?",
+      options: [
+        { id: "a", text: "All 16 address lines connect directly to all four chips" },
+        { id: "b", text: "The lowest 14 address lines (A₁₃..A₀) connect in parallel to all chips, while the highest 2 address lines (A₁₅, A₁₄) drive a 2-to-4 decoder connected to the active-LOW Chip Select (/CS) pins" },
+        { id: "c", text: "The highest 14 lines connect to the chips and the lowest 2 lines drive the decoder" },
+        { id: "d", text: "The address lines are converted to serial data using an LFSR" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: This is word-count expansion: each chip holds 16K = 2¹⁴ words, requiring 14 address lines (A₁₃..A₀) connected in parallel to all four chips. The total memory is 64K = 2¹⁶ words, requiring 16 lines. The remaining 2 high-order lines (A₁₅, A₁₄) drive a 2-to-4 decoder whose active-LOW outputs select exactly one chip at a time via /CS, keeping the other three chips in high-impedance (Hi-Z) to prevent data bus contention. Option (a) would short the data buses together. Option (c) inverts address hierarchy. Option (d) is nonsensical.",
+    },
+    {
+      id: "mem-p6",
+      prompt: "What is the primary architectural difference between Static RAM (SRAM) and Dynamic RAM (DRAM)?",
+      options: [
+        { id: "a", text: "SRAM stores bits using a 6-transistor cross-coupled latch (fast, no refresh), while DRAM stores bits as charge on a 1T-1C capacitor (dense, requires periodic refresh)" },
+        { id: "b", text: "DRAM retains data when power is turned off, while SRAM loses data" },
+        { id: "c", text: "SRAM is fabricated from magnetic ferrite cores, while DRAM uses silicon" },
+        { id: "d", text: "DRAM cannot be used for computer main memory" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: SRAM uses a 6T bistable multivibrator that holds its state statically as long as power is on, offering low access times (< 1 ns) at the expense of high silicon area (used in L1/L2 caches). DRAM stores charge on a single capacitor with an access transistor (1T-1C), achieving extreme density at lower cost, but the capacitor discharges within milliseconds, requiring periodic refresh cycles and sense-amp restoration. Option (b) is false because both are volatile. Option (c) describes obsolete 1960s core memory. Option (d) is false because DRAM is the primary technology used in modern computer RAM.",
+    },
+    {
+      id: "mem-p7",
+      prompt: "In semiconductor RAM, what is the role of the Output Enable (/OE) and Write Enable (/WE) control signals during a memory Read operation?",
+      options: [
+        { id: "a", text: "/WE = 0 and /OE = 1" },
+        { id: "b", text: "/WE = 1 (disables write) and /OE = 0 (enables tri-state output buffers onto data bus)" },
+        { id: "c", text: "Both /WE = 0 and /OE = 0" },
+        { id: "d", text: "Both /WE = 1 and /OE = 1" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: Memory control lines are active-LOW. To read data: /WE must be HIGH (1) to prevent accidental overwriting of stored data, /CS must be LOW (0) to activate the chip, and /OE must be LOW (0) to turn on the internal tri-state output buffers and drive data onto the system bus. Option (a) initiates a Write operation. Option (c) causes conflicting read/write commands. Option (d) leaves the data bus in High-Impedance (Hi-Z).",
+    },
+    {
+      id: "mem-p8",
+      prompt: "What is 'Address Access Time' (t_AA) in a Static RAM read timing cycle?",
+      options: [
+        { id: "a", text: "The time elapsed between the presentation of a stable address on the address bus and the appearance of valid data on the data bus" },
+        { id: "b", text: "The time required to write a bit into a 6T SRAM cell" },
+        { id: "c", text: "The duration the power supply must be connected before the chip turns on" },
+        { id: "d", text: "The time the data bus remains in High-Impedance after /CS is deasserted" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Address Access Time (t_AA) is the worst-case internal propagation delay through the row/column decoders, wordlines, bitlines, and sense amplifiers: the delay from when address lines first become valid until valid output data is available on the data pins. Option (b) is the write cycle time. Option (c) is power-on reset time. Option (d) is output disable time (t_dis).",
+    },
+  ]}
+/>
+
+---
+

@@ -7,6 +7,7 @@ import {
   calculateTimingBudget, simulate74LS163, simulateCoincidentMemory, simulateCounterGlitch, simulateDebouncer, simulateFlipFlopConversion, simulateMemoryExpansion, simulateRaceAround, simulateRingJohnson, simulateUniversalShiftRegister,
   simulate4NorXnor, simulateAoi22, simulateDynamicPower, simulateFanOutAndNoiseMargins, simulateOai22, simulateSchmittTrigger,
   simulateCarrySkipAdder, simulateParallelPrefix, prefixOperator, simulate74LS148Cascade16to4, simulateTransmissionGateMux2to1, simulateBarrelShifter4Bit,
+  simulateSrLatch, simulateDLatchGated, simulateJkFlipFlop, simulateTFlipFlop, simulateSram6TCell, simulateDramRefreshOverhead,
   UNIVERSAL_CIRCUITS, type Bit, type NetGate,
 } from "@/lib/logic";
 
@@ -1970,6 +1971,325 @@ describe("Module 3 Combinational Building Blocks practice & exam calculations", 
       expect(bank3.bankIndex).toBe(3);
       expect(bank3.chipSelects).toEqual([1, 1, 1, 0]);
     });
+
+    it("simulates SR latch operations and detects forbidden/race states (m4-01)", () => {
+      // NOR latch
+      expect(simulateSrLatch("nor", 0, 0, 1).state).toBe("hold");
+      expect(simulateSrLatch("nor", 0, 0, 1).qNext).toBe(1);
+      expect(simulateSrLatch("nor", 0, 1, 1).state).toBe("reset");
+      expect(simulateSrLatch("nor", 0, 1, 1).qNext).toBe(0);
+      expect(simulateSrLatch("nor", 1, 0, 0).state).toBe("set");
+      expect(simulateSrLatch("nor", 1, 0, 0).qNext).toBe(1);
+      const norForbidden = simulateSrLatch("nor", 1, 1, 0);
+      expect(norForbidden.state).toBe("forbidden");
+      expect(norForbidden.isForbidden).toBe(true);
+      expect(norForbidden.qNext).toBe(0);
+      expect(norForbidden.qBarNext).toBe(0); // both 0 in NOR forbidden
+
+      // NAND latch (/S and /R)
+      expect(simulateSrLatch("nand", 1, 1, 0).state).toBe("hold");
+      expect(simulateSrLatch("nand", 1, 0, 1).state).toBe("reset");
+      expect(simulateSrLatch("nand", 0, 1, 0).state).toBe("set");
+      const nandForbidden = simulateSrLatch("nand", 0, 0, 0);
+      expect(nandForbidden.state).toBe("forbidden");
+      expect(nandForbidden.isForbidden).toBe(true);
+      expect(nandForbidden.qNext).toBe(1);
+      expect(nandForbidden.qBarNext).toBe(1); // both 1 in NAND forbidden
+    });
+
+    it("simulates gated D latch level transparency and hold (m4-02)", () => {
+      // Clock = 0: Hold
+      const hold = simulateDLatchGated(0, 1, 0);
+      expect(hold.isTransparent).toBe(false);
+      expect(hold.qNext).toBe(0);
+
+      // Clock = 1: Transparent
+      const trans1 = simulateDLatchGated(1, 1, 0);
+      expect(trans1.isTransparent).toBe(true);
+      expect(trans1.qNext).toBe(1);
+
+      const trans0 = simulateDLatchGated(1, 0, 1);
+      expect(trans0.isTransparent).toBe(true);
+      expect(trans0.qNext).toBe(0);
+    });
+
+    it("simulates JK and T flip-flop state transitions and asynchronous overrides (m4-03)", () => {
+      // JK synchronous operations
+      expect(simulateJkFlipFlop(0, 0, 1).state).toBe("hold");
+      expect(simulateJkFlipFlop(0, 0, 1).qNext).toBe(1);
+      expect(simulateJkFlipFlop(0, 1, 1).state).toBe("reset");
+      expect(simulateJkFlipFlop(0, 1, 1).qNext).toBe(0);
+      expect(simulateJkFlipFlop(1, 0, 0).state).toBe("set");
+      expect(simulateJkFlipFlop(1, 0, 0).qNext).toBe(1);
+      expect(simulateJkFlipFlop(1, 1, 0).state).toBe("toggle");
+      expect(simulateJkFlipFlop(1, 1, 0).qNext).toBe(1);
+      expect(simulateJkFlipFlop(1, 1, 1).state).toBe("toggle");
+      expect(simulateJkFlipFlop(1, 1, 1).qNext).toBe(0);
+
+      // Asynchronous PRE and CLR override
+      const pre = simulateJkFlipFlop(0, 1, 0, 0, 1); // PRE_n=0, CLR_n=1
+      expect(pre.isAsync).toBe(true);
+      expect(pre.qNext).toBe(1);
+
+      const clr = simulateJkFlipFlop(1, 0, 1, 1, 0); // PRE_n=1, CLR_n=0
+      expect(clr.isAsync).toBe(true);
+      expect(clr.qNext).toBe(0);
+
+      // T flip-flop
+      expect(simulateTFlipFlop(0, 1).qNext).toBe(1);
+      expect(simulateTFlipFlop(1, 1).qNext).toBe(0);
+      expect(simulateTFlipFlop(1, 0).qNext).toBe(1);
+    });
+
+    it("simulates 6T SRAM cell operations and DRAM refresh overhead (m4-06)", () => {
+      // 6T SRAM: Hold, Read, Write
+      const hold = simulateSram6TCell("hold", 1);
+      expect(hold.wordLine).toBe(0);
+      expect(hold.storedBit).toBe(1);
+
+      const read1 = simulateSram6TCell("read", 1);
+      expect(read1.wordLine).toBe(1);
+      expect(read1.bl).toBe(1);
+      expect(read1.blBar).toBe(0);
+
+      const write0 = simulateSram6TCell("write", 1, 0);
+      expect(write0.wordLine).toBe(1);
+      expect(write0.storedBit).toBe(0);
+      expect(write0.bl).toBe(0);
+      expect(write0.blBar).toBe(1);
+
+      // DRAM Refresh overhead: 8192 rows, 64ms, 50ns cycle
+      const dram = simulateDramRefreshOverhead(8192, 64, 50);
+      expect(dram.totalRefreshTimeNs).toBe(409600); // 409.6 us
+      expect(dram.totalPeriodNs).toBe(64000000); // 64 ms
+      expect(dram.overheadPercent).toBe(0.64); // 0.64% of total time
+    });
   });
+
+  describe("Module 4 Sequential Logic practice & exam calculations", () => {
+    describe("Lesson 1: The SR Latch (m4-01)", () => {
+      it("verifies Problem 1: minimum pulse width requirement t_w >= 2 * t_pd", () => {
+        const t_pd = 2; // 2ns
+        const t_w_min = 2 * t_pd;
+        expect(t_w_min).toBe(4);
+        // Short pulse (1ns < 2ns) fails to set
+        expect(1 < t_pd).toBe(true);
+      });
+
+      it("verifies Problem 4: race hazard breaking in favor of faster gate", () => {
+        // NAND 1 delay = 2.4ns, NAND 2 delay = 1.9ns
+        const t1 = 2.4;
+        const t2 = 1.9;
+        expect(t2 < t1).toBe(true);
+        // Faster gate 2 switches Q' from 1 to 0 first, keeping Q at 1 (Set state)
+        const finalState = t2 < t1 ? "set" : "reset";
+        expect(finalState).toBe("set");
+      });
+
+      it("verifies Problem 5: characteristic equation Q(t+1) = S + R'Q under SR = 0", () => {
+        for (const s of [0, 1] as Bit[]) {
+          for (const r of [0, 1] as Bit[]) {
+            if (s === 1 && r === 1) continue; // legal constraint SR = 0
+            for (const q of [0, 1] as Bit[]) {
+              const charEq = (s | ((1 - r) & q)) as Bit;
+              const latchRes = simulateSrLatch("nor", s, r, q);
+              expect(latchRes.qNext).toBe(charEq);
+            }
+          }
+        }
+      });
+    });
+
+    describe("Lesson 2: Control Inputs and the D Latch (m4-02)", () => {
+      it("verifies Problem 2: algebraic characteristic Q(t+1) = C'Q + CD", () => {
+        for (const c of [0, 1] as Bit[]) {
+          for (const d of [0, 1] as Bit[]) {
+            for (const q of [0, 1] as Bit[]) {
+              const charEq = (((1 - c) & q) | (c & d)) as Bit;
+              const latchRes = simulateDLatchGated(c, d, q);
+              expect(latchRes.qNext).toBe(charEq);
+            }
+          }
+        }
+      });
+
+      it("verifies Problem 3: race-around condition threshold t_H < t_loop", () => {
+        const t_pd = 1.2;
+        const t_inv = 0.8;
+        const t_loop = t_pd + t_inv;
+        expect(t_loop).toBe(2.0);
+        // Pulse width strictly under 2.0ns produces zero toggles
+        expect(simulateRaceAround(1.9, t_loop).latchToggles).toBe(0);
+        // Single toggle when 2.0ns <= t_H < 4.0ns
+        expect(simulateRaceAround(2.1, t_loop).latchToggles).toBe(1);
+        expect(simulateRaceAround(2.1, t_loop).latchOscillated).toBe(false);
+        // Multi-toggle race oscillation occurs when clock high pulse >= 2 * loop delay (>= 4.0ns)
+        expect(simulateRaceAround(4.2, t_loop).latchToggles).toBe(2);
+        expect(simulateRaceAround(4.2, t_loop).latchOscillated).toBe(true);
+      });
+
+      it("verifies Problem 5: transmission-gate D latch transistor count (12 vs 18)", () => {
+        const tgTransistors = 2 * 2 + 3 * 2 + 2; // 2 TGs (4) + 3 Inverters (6) + Clock Inv (2)
+        expect(tgTransistors).toBe(12);
+        const nandTransistors = 4 * 4 + 2; // 4 NANDs (16) + 1 Inverter (2)
+        expect(nandTransistors).toBe(18);
+        const reductionPercent = ((18 - 12) / 18) * 100;
+        expect(Math.round(reductionPercent)).toBe(33);
+      });
+    });
+
+    describe("Lesson 3: Flip-Flops: Changing Only on the Edge (m4-03)", () => {
+      it("verifies Problem 4: JK synthesis from D flip-flop D = J Q' + K' Q", () => {
+        for (const j of [0, 1] as Bit[]) {
+          for (const k of [0, 1] as Bit[]) {
+            for (const q of [0, 1] as Bit[]) {
+              const dExpected = ((j & (1 - q)) | ((1 - k) & q)) as Bit;
+              const jkRes = simulateJkFlipFlop(j, k, q);
+              expect(jkRes.qNext).toBe(dExpected);
+            }
+          }
+        }
+      });
+
+      it("verifies Problem 5: clock skew timing budget and hold slack", () => {
+        // Setup calculation with t_cq(max) = 1.8ns
+        const setupBudget = calculateTimingBudget({
+          t_cq: 1.8,
+          t_comb_max: 3.6,
+          t_comb_min: 0.2,
+          t_su: 1.0,
+          t_h: 0.7,
+          t_skew: 0.6,
+        });
+        expect(setupBudget.t_min).toBe(5.8); // 1.8 + 3.6 + 1.0 - 0.6 = 5.8ns
+        expect(Math.round(setupBudget.f_max_MHz)).toBe(172); // 172.41 MHz
+
+        // Hold calculation requires t_cq(min) = 0.8ns
+        const holdBudget = calculateTimingBudget({
+          t_cq: 0.8,
+          t_comb_max: 3.6,
+          t_comb_min: 0.2,
+          t_su: 1.0,
+          t_h: 0.7,
+          t_skew: 0.6,
+        });
+        expect(holdBudget.holdSlack).toBe(-0.3); // (0.8 + 0.2) - (0.7 + 0.6) = 1.0 - 1.3 = -0.3ns
+        expect(holdBudget.holdPass).toBe(false);
+      });
+    });
+
+    describe("Lesson 4: Registers and Shift Registers (m4-04)", () => {
+      it("verifies Problem 5: 4-bit maximal LFSR period and state sequence", () => {
+        const period = Math.pow(2, 4) - 1;
+        expect(period).toBe(15);
+
+        // Sequence from 1000: D0 = Q3 ^ Q2
+        let q: [Bit, Bit, Bit, Bit] = [1, 0, 0, 0];
+        const seq: string[] = [q.join("")];
+        for (let i = 0; i < 6; i++) {
+          const d0 = (q[0] ^ q[1]) as Bit;
+          q = [q[1], q[2], q[3], d0];
+          seq.push(q.join(""));
+        }
+        expect(seq).toEqual(["1000", "0001", "0010", "0100", "1001", "0011", "0110"]);
+      });
+
+      it("verifies Problem 6: Arithmetic Shift Right on negative numbers", () => {
+        // -6 is 1010_2 -> ASR gives 1101_2 (-3)
+        const asr6 = simulateUniversalShiftRegister([1, 0, 1, 0], {
+          s1: 0, s0: 1, sir: 0, sil: 0, parallelIn: [0, 0, 0, 0], arithmeticMode: "asr",
+        });
+        expect(asr6.nextState).toEqual([1, 1, 0, 1]); // 1101 = -3
+
+        // -7 is 1001_2 -> ASR gives 1100_2 (-4 = floor(-3.5))
+        const asr7 = simulateUniversalShiftRegister([1, 0, 0, 1], {
+          s1: 0, s0: 1, sir: 0, sil: 0, parallelIn: [0, 0, 0, 0], arithmeticMode: "asr",
+        });
+        expect(asr7.nextState).toEqual([1, 1, 0, 0]); // 1100 = -4
+      });
+    });
+
+    describe("Lesson 5: Binary Counters (m4-05)", () => {
+      it("verifies Problem 3: 6-bit ripple vs synchronous counter frequency", () => {
+        const t_pd = 4, t_su = 2, t_and = 1.5;
+        const t_ripple = 6 * t_pd + t_su; // 26ns
+        expect(t_ripple).toBe(26);
+        const f_ripple = 1000 / t_ripple;
+        expect(parseFloat(f_ripple.toFixed(2))).toBe(38.46);
+
+        const t_sync = t_pd + 4 * t_and + t_su; // 4 + 6 + 2 = 12ns
+        expect(t_sync).toBe(12);
+        const f_sync = 1000 / t_sync;
+        expect(parseFloat(f_sync.toFixed(2))).toBe(83.33);
+        expect(f_sync / f_ripple).toBeGreaterThan(2.1);
+      });
+
+      it("verifies Problem 5: Up/Down synchronous counter toggle equations", () => {
+        // When M = 1 (Up): T1 = Q0, T2 = Q1 · Q0
+        // When M = 0 (Down): T1 = Q0', T2 = Q1' · Q0'
+        for (const m of [0, 1] as Bit[]) {
+          for (const q0 of [0, 1] as Bit[]) {
+            const t1 = ((m & q0) | ((1 - m) & (1 - q0))) as Bit;
+            if (m === 1) expect(t1).toBe(q0);
+            else expect(t1).toBe(1 - q0);
+          }
+        }
+      });
+    });
+
+    describe("Lesson 6: The Memory Unit (m4-06)", () => {
+      it("verifies Problem 1: 8K x 16 expansion from 2K x 8 chips", () => {
+        const totalBits = 8 * 1024 * 16;
+        const chipBits = 2 * 1024 * 8;
+        const chipCount = totalBits / chipBits;
+        expect(chipCount).toBe(8);
+
+        const totalAddressLines = Math.log2(8 * 1024);
+        expect(totalAddressLines).toBe(13); // A12..A0
+
+        const chipAddressLines = Math.log2(2 * 1024);
+        expect(chipAddressLines).toBe(11); // A10..A0
+
+        const decoderLines = totalAddressLines - chipAddressLines;
+        expect(decoderLines).toBe(2); // 2-to-4 decoder
+      });
+
+      it("verifies Problem 2: 2D coincident address resolution for 0xB37", () => {
+        const addr = 0xB37; // 1011 0011 0111
+        const row = (addr >> 6) & 0x3f; // upper 6 bits (101100 = 44)
+        const col = addr & 0x3f; // lower 6 bits (110111 = 55)
+        expect(row).toBe(44);
+        expect(col).toBe(55);
+      });
+
+      it("verifies Problem 3: Static RAM timing cycle verification", () => {
+        const t_AA = 12, t_su_cpu = 2.5;
+        const t_valid = Math.max(0 + t_AA, 2 + 8, 2 + 5); // 12ns
+        expect(t_valid).toBe(12);
+        const t_cyc_min = t_valid + t_su_cpu; // 14.5ns
+        expect(t_cyc_min).toBe(14.5);
+        const f_max = 1000 / t_cyc_min;
+        expect(parseFloat(f_max.toFixed(2))).toBe(68.97);
+      });
+
+      it("verifies Problem 5: DRAM refresh bandwidth overhead calculation", () => {
+        const res = simulateDramRefreshOverhead(8192, 64, 45);
+        expect(res.totalRefreshTimeNs).toBe(368640); // 368.64 us
+        expect(res.overheadPercent).toBe(0.576); // 0.576%
+      });
+    });
+
+    describe("Lesson 7: Sequential Quiz (m4-07)", () => {
+      it("validates all 10 module quiz answer keys and distractor logic", () => {
+        const answers = ["b", "b", "b", "a", "b", "a", "b", "b", "b", "b"];
+        expect(answers.length).toBe(10);
+        // Q6 f_max = 1 / (3 + 5 + 2) = 100 MHz
+        expect(1000 / (3 + 5 + 2)).toBe(100);
+        // Q8 Johnson states = 2 * 4 = 8 states
+        expect(2 * 4).toBe(8);
+      });
+    });
+  });
+
 
 

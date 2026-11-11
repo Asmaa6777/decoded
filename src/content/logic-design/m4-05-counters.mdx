@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { CounterLab, CounterComparisonLab, ModCounterLab } from "@/components/mdx/LogicVisualizers";
 
 # Binary Counters
@@ -326,6 +326,217 @@ Compare the maximum operating frequency of a 6-bit ripple counter against a 6-bi
 
 The synchronous counter runs more than **twice as fast**, without intermediate decoding glitches.
 </ModelAnswer>
+
+### Problem 4: Asynchronous (74LS93) vs Synchronous (74LS163) Truncated Counter Design
+
+An engineer must design a **Mod-10 (decade) counter** cycling through states $0_{10}$ to $9_{10}$ and repeating.
+1. The engineer first uses a **74LS93** 4-bit ripple counter with active-HIGH asynchronous reset inputs $R_0(1)$ and $R_0(2)$ that clear the counter when both inputs are 1. Which output pins must connect to the reset pins? How long does state $10_{10}$ ($1010_2$) appear before the counter clears? Explain the runt glitch hazard.
+2. The engineer redesigns the circuit using a **74LS163** 4-bit synchronous counter with active-LOW synchronous clear (/CLR). Which state must be decoded and connected to /CLR?
+3. Contrast the two approaches when driving a high-speed digital bus or display driver.
+
+<ModelAnswer>
+1. **Asynchronous Truncation with 74LS93:**
+   - The counter must count $0, 1, 2, 3, 4, 5, 6, 7, 8, 9$ (10 stable states).
+   - Because reset is asynchronous (immediate), the counter must advance to state $10_{10} = 1010_2$ to trigger the reset.
+   - Detect state 10: $Q_3 = 1$ and $Q_1 = 1$. Connect $Q_3$ to $R_0(1)$ and $Q_1$ to $R_0(2)$.
+   - When count reaches $1010_2$, the internal reset logic asserts. State 10 persists only for the internal gate propagation delay of the clear path ($t_{clear} \approx 10\text{–}25\text{ ns}$) before forcing the counter to 0000.
+   - **Runt Glitch Hazard:** State 10 appears as an extremely narrow, illegal spike (a **runt pulse**). If this output drives external combinational decoders or registers, the transient 10 can trigger false alarms, clock violations, or race conditions.
+
+2. **Synchronous Truncation with 74LS163:**
+   - The 74LS163 has a synchronous clear pin (/CLR) that takes effect on the *next active clock edge*.
+   - State $9_{10} = 1001_2$ is the terminal valid state and must persist for an entire clock period.
+   - While state 9 is displayed, /CLR must be driven LOW so that the subsequent clock edge resets the counter to 0000.
+   - Detect state 9 ($Q_3 \cdot Q_0 = 1$) using a 2-input NAND gate:
+     $$\overline{\text{CLR}} = (Q_3 \cdot Q_0)'$$
+   - The counter cleanly displays state 9 for a full clock cycle, then rolls over to 0000 on the clock tick without ever entering state 10.
+
+3. **Comparison:**
+   - The synchronous design is completely glitch-free: all output transitions occur in unison at clock edges, and no transient invalid states are ever generated.
+   - The asynchronous design generates high-frequency glitches on $Q_3$ and $Q_1$ that can corrupt downstream logic. Synchronous truncation is the mandatory standard in professional ASIC and FPGA designs.
+</ModelAnswer>
+
+### Problem 5: Up/Down Synchronous Counter with Mode Control
+
+Design a 3-bit synchronous binary Up/Down counter using T flip-flops ($Q_2, Q_1, Q_0$) and mode input $M$:
+- When $M = 1$, the counter counts **UP**: $000 \to 001 \to 010 \to 011 \to 100 \to 101 \to 110 \to 111 \to 000$.
+- When $M = 0$, the counter counts **DOWN**: $111 \to 110 \to 101 \to 100 \to 011 \to 010 \to 001 \to 000 \to 111$.
+
+1. Derive the toggle condition for each stage ($T_0, T_1, T_2$) separately for Up mode and Down mode.
+2. Combine the mode conditions to derive minimal Boolean sum-of-products equations for $T_0, T_1, T_2$ in terms of $M$ and flip-flop outputs.
+3. Show how the steering logic can be implemented using standard 2-to-1 multiplexers.
+
+<ModelAnswer>
+1. **Toggle Analysis:**
+   - **Stage 0 ($Q_0$):** In both Up and Down counting, the least-significant bit alternates on every clock edge:
+     $$T_0 = 1$$
+   - **Stage 1 ($Q_1$):**
+     - When counting Up ($M = 1$): $Q_1$ toggles when $Q_0 = 1$.
+     - When counting Down ($M = 0$): $Q_1$ toggles when $Q_0 = 0$ ($Q_0' = 1$).
+   - **Stage 2 ($Q_2$):**
+     - When counting Up ($M = 1$): $Q_2$ toggles when all lower bits are 1 ($Q_1 \cdot Q_0 = 1$).
+     - When counting Down ($M = 0$): $Q_2$ toggles when all lower bits are 0 ($Q_1' \cdot Q_0' = 1$).
+
+2. **Combined Steering Equations:**
+   - For $T_0$:
+     $$T_0 = 1$$
+   - For $T_1$:
+     $$T_1 = M \cdot Q_0 + M' \cdot Q_0'$$
+   - For $T_2$:
+     $$T_2 = M \cdot (Q_1 \cdot Q_0) + M' \cdot (Q_1' \cdot Q_0')$$
+
+3. **Multiplexer-Based Implementation:**
+   - Recall that a 2-to-1 multiplexer computes $Y = S' \cdot I_0 + S \cdot I_1$.
+   - Using $M$ as the select line ($S = M$):
+     - For $T_1$: Connect $I_0 = Q_0'$ and $I_1 = Q_0$.
+       $$T_1 = \text{MUX}(M, Q_0', Q_0)$$
+     - For $T_2$: Connect $I_0 = (Q_1' \cdot Q_0')$ and $I_1 = (Q_1 \cdot Q_0)$.
+       $$T_2 = \text{MUX}(M, Q_1' \cdot Q_0', Q_1 \cdot Q_0)$$
+   Each stage uses one 2-to-1 multiplexer to steer the appropriate carry or borrow signal to the flip-flop toggle input.
+</ModelAnswer>
+
+### Problem 6: Glitch Spike Analysis in Asynchronous Decoded Output
+
+A 4-bit asynchronous ripple counter ($Q_3 Q_2 Q_1 Q_0$) is constructed from four negative-edge-triggered flip-flops, each having a propagation delay of $t_{pd} = 3\text{ ns}$. The counter outputs connect directly to a 4-to-16 line active-HIGH decoder.
+1. Trace the physical intermediate states that occur during the single count transition from $7_{10}$ ($0111_2$) to $8_{10}$ ($1000_2$).
+2. Identify which false decoder output line momentarily activates during this transition, and calculate the exact duration of the spurious glitch.
+3. Explain two distinct methods to prevent this glitch from propagating to downstream circuits.
+
+<ModelAnswer>
+1. **Transition Trace from $7_{10}$ ($0111_2$) to $8_{10}$ ($1000_2$):**
+   In a ripple counter clocked from $Q$, flip-flop $i+1$ clocks when $Q_i$ makes a $1 \to 0$ transition:
+   - At $t = 0\text{ ns}$: External clock falling edge arrives at FF 0.
+     - State is $0111_2$ ($7_{10}$).
+   - At $t = 3\text{ ns}$ ($1 \times t_{pd}$): FF 0 toggles $1 \to 0$.
+     - State becomes $Q_3 Q_2 Q_1 Q_0 = 0110_2$ ($6_{10}$).
+     - Because $Q_0$ went $1 \to 0$, it triggers FF 1.
+   - At $t = 6\text{ ns}$ ($2 \times t_{pd}$): FF 1 toggles $1 \to 0$.
+     - State becomes $Q_3 Q_2 Q_1 Q_0 = 0100_2$ ($4_{10}$).
+     - Because $Q_1$ went $1 \to 0$, it triggers FF 2.
+   - At $t = 9\text{ ns}$ ($3 \times t_{pd}$): FF 2 toggles $1 \to 0$.
+     - State becomes $Q_3 Q_2 Q_1 Q_0 = \mathbf{0000_2}$ ($\mathbf{0_{10}}$).
+     - Because $Q_2$ went $1 \to 0$, it triggers FF 3.
+   - At $t = 12\text{ ns}$ ($4 \times t_{pd}$): FF 3 toggles $0 \to 1$.
+     - State settles to $Q_3 Q_2 Q_1 Q_0 = 1000_2$ ($8_{10}$).
+
+2. **Spurious Decoder Glitch:**
+   - During the interval from $t = 9\text{ ns}$ to $t = 12\text{ ns}$, the counter outputs present $0000_2$.
+   - The 4-to-16 decoder sees address 0 and momentarily asserts decoder output line **$Y_0$**!
+   - Glitch duration:
+     $$\Delta t_{glitch} = 12\text{ ns} - 9\text{ ns} = 3\text{ ns} = 1 \times t_{pd}$$
+   - Output $Y_0$ fires a $3\text{ ns}$ high voltage spike even though the counter was stepping from 7 to 8 and should never have visited 0!
+
+3. **Glitch Elimination Methods:**
+   - **Method 1: Strobed Enable Gating:** Connect a delayed strobe signal to the decoder's active-HIGH Enable pin ($EN$). The strobe is held LOW during the transition window ($0 \le t \le 12\text{ ns}$) and pulsed HIGH only after all 4 stages have fully settled ($t \ge 15\text{ ns}$).
+   - **Method 2: Use a Synchronous Counter:** Replace the ripple counter with a synchronous counter. Because all four flip-flops share the same clock, $Q_3$ rises at the exact same instant that $Q_2, Q_1, Q_0$ fall ($t = 3\text{ ns}$). Intermediate false states $0110, 0100, 0000$ never exist.
+</ModelAnswer>
+
+---
+
+### Part 2: In-Lesson Interactive Practice
+
+<Quiz
+  courseSlug="logic-design"
+  lessonSlug="counters"
+  practice
+  questions={[
+    {
+      id: "cnt-p1",
+      prompt: "In an n-bit asynchronous ripple counter where each flip-flop has propagation delay t_pd, what is the total worst-case time required for the counter to settle after a clock edge?",
+      options: [
+        { id: "a", text: "t_total = t_pd" },
+        { id: "b", text: "t_total = n × t_pd" },
+        { id: "c", text: "t_total = 2ⁿ × t_pd" },
+        { id: "d", text: "t_total = t_pd / n" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: In a ripple counter, each flip-flop clocks the next stage. In the worst-case transition (such as 111...1 → 000...0), the change ripples sequentially through all n stages, accumulating delay: t_total = n × t_pd. Option (a) describes a synchronous counter where all flip-flops switch simultaneously. Option (c) confuses state count with propagation delay. Option (d) is physically impossible.",
+    },
+    {
+      id: "cnt-p2",
+      prompt: "Why does connecting a combinational decoder directly to an asynchronous ripple counter produce spurious glitch spikes?",
+      options: [
+        { id: "a", text: "Because ripple counters use three-phase clocks" },
+        { id: "b", text: "Because flip-flops switch sequentially rather than simultaneously, passing through temporary false intermediate states" },
+        { id: "c", text: "Because decoders cannot operate at digital voltage levels" },
+        { id: "d", text: "Because two's complement numbers cannot be counted" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: Because each stage has finite delay, multi-bit transitions take time to ripple. For example, during 0111 → 1000, the counter momentarily outputs 0110, 0100, and 0000 for several nanoseconds each. Decoders immediately respond to these transient codes by producing spurious spikes (glitches) on unexpected outputs. Option (a), Option (c), and Option (d) are factually incorrect.",
+    },
+    {
+      id: "cnt-p3",
+      prompt: "In a synchronous binary counter using T flip-flops, under what condition must flip-flop i toggle?",
+      options: [
+        { id: "a", text: "When only the immediately preceding bit is 1 (T_i = Q_{i-1})" },
+        { id: "b", text: "When ALL lower-order bits are 1 (T_i = Q_{i-1} · Q_{i-2} · ... · Q_0)" },
+        { id: "c", text: "On every single clock cycle unconditionally (T_i = 1)" },
+        { id: "d", text: "When any single lower-order bit is 0" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: In binary arithmetic, a bit position flips if and only if a carry ripples up from all lesser significant positions (e.g., bit 3 flips when bits 2, 1, and 0 are all 1: 0111 → 1000). Thus, T_i = Q_{i-1} Q_{i-2} ... Q_0. Option (a) would cause false toggling whenever Q_{i-1} is 1 even if lower bits are 0 (e.g. at 0010). Option (c) is only true for the LSB (stage 0). Option (d) inverts the carry condition.",
+    },
+    {
+      id: "cnt-p4",
+      prompt: "When designing a Mod-N counter using a synchronous counter with synchronous clear (such as the 74LS163), which state must be decoded to trigger the clear?",
+      options: [
+        { id: "a", text: "State N" },
+        { id: "b", text: "State N - 1" },
+        { id: "c", text: "State N + 1" },
+        { id: "d", text: "State 0" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: With synchronous clear, the clear action takes effect on the *subsequent* clock edge. State N - 1 is the terminal valid state: the counter must display N - 1 for a full clock cycle, assert /CLR, and then reset to 0 on the next clock tick. If you decoded state N, the counter would count 0 through N (N+1 states, Mod-(N+1)). Option (a) applies to asynchronous clear counters (such as the 74LS93), which reset immediately upon hitting state N. Option (c) and Option (d) are incorrect.",
+    },
+    {
+      id: "cnt-p5",
+      prompt: "Two counters with moduli M₁ = 10 and M₂ = 6 are cascaded together in series (the carry output of counter 1 drives the clock of counter 2). What is the total modulus of the cascaded counter system?",
+      options: [
+        { id: "a", text: "16" },
+        { id: "b", text: "60" },
+        { id: "c", text: "4" },
+        { id: "d", text: "100" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: When counters are cascaded, each cycle of the second counter requires a complete cycle of the first counter. The overall system modulus is the product of the individual moduli: M_total = M₁ × M₂ = 10 × 6 = 60 (commonly used in digital clocks to divide seconds into minutes). Option (a) mistakenly adds the moduli (10 + 6 = 16). Option (c) subtracts them. Option (d) squares the first.",
+    },
+    {
+      id: "cnt-p6",
+      prompt: "What is the Boolean expression driving the toggle input T_i of stage i in a synchronous Up/Down binary counter with mode control M (M = 1 for Up, M = 0 for Down)?",
+      options: [
+        { id: "a", text: "T_i = M · (Q_{i-1} ··· Q_0) + M' · (Q'_{i-1} ··· Q'_0)" },
+        { id: "b", text: "T_i = M ⊕ Q_{i-1}" },
+        { id: "c", text: "T_i = M · Q_i + M' · Q'_i" },
+        { id: "d", text: "T_i = M + Q_{i-1}" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In Up mode (M = 1), stage i toggles when all lower bits are 1 (Q_{i-1} ... Q_0). In Down mode (M = 0), stage i toggles when all lower bits are 0, meaning all their complements are 1 (Q'_{i-1} ... Q'_0). Combining with mode select M yields T_i = M (Q_{i-1}...Q_0) + M' (Q'_{i-1}...Q'_0). Option (b), Option (c), and Option (d) fail to implement the multi-bit carry/borrow conditions.",
+    },
+    {
+      id: "cnt-p7",
+      prompt: "What is the architectural trade-off between series carry (ripple carry) and parallel carry (lookahead carry) in synchronous counters?",
+      options: [
+        { id: "a", text: "Series carry requires no flip-flops, while parallel carry requires twice as many flip-flops" },
+        { id: "b", text: "Parallel carry uses wide multi-input AND gates to achieve higher operating frequency, while series carry cascades 2-input AND gates with accumulated delay" },
+        { id: "c", text: "Series carry is faster than parallel carry for word sizes exceeding 16 bits" },
+        { id: "d", text: "Parallel carry can only count down" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: In series carry, each stage's carry cascades into the next AND gate, accumulating delay t = (n-2) t_AND. In parallel carry, all carry terms are computed directly from all lower bits using wide multi-input AND gates in parallel, running at the speed of a single gate delay but requiring gates with higher fan-in. Option (a) is false because both use the same flip-flops. Option (c) is false because parallel carry is strictly faster. Option (d) is false.",
+    },
+    {
+      id: "cnt-p8",
+      prompt: "Why must a digital designer verify that a truncated state machine (such as a Mod-6 counter using 3 flip-flops) is 'self-starting'?",
+      options: [
+        { id: "a", text: "Because three flip-flops generate 8 possible states, and noise or power-up could land the counter in an unused state (6 or 7) that might cycle indefinitely without entering the main sequence" },
+        { id: "b", text: "Because counters will not run unless manually kicked by a battery" },
+        { id: "c", text: "Because self-starting counters do not require a clock signal" },
+        { id: "d", text: "Because unused states cause an immediate hardware short circuit to GND" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A 3-bit register has 2³ = 8 physical states. A Mod-6 counter uses only 6 states (0–5), leaving states 6 and 7 unused and often designed with don't-cares (X). If a power-on glitch lands the counter in state 6, and state 6 transitions to 7, and 7 loops back to 6, the system will remain trapped in an illegal lockout cycle forever. Verifying self-starting ensures that all unused states transition into the valid sequence. Option (b), Option (c), and Option (d) are absurd.",
+    },
+  ]}
+/>
 
 ---
 

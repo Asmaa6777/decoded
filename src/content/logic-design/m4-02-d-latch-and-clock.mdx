@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { GatedSrLatch, DLatch } from "@/components/mdx/CircuitVisualizers";
 import { ClockExplorer, RaceAroundLab } from "@/components/mdx/LogicVisualizers";
 
@@ -331,6 +331,220 @@ An engineer attempts to build a frequency divider using a transparent gated D la
    Maintaining a clock pulse width strictly narrower than $2.0\text{ ns}$ across varying temperature, power supply voltage, and semiconductor fabrication corners is virtually impossible. A small drift in clock pulse width or ambient temperature would cause the counter to corrupt its data.
    This shows that reliable sequential circuits require **edge-triggered flip-flops**, which isolate input from output regardless of how long the clock stays high.
 </ModelAnswer>
+
+### Problem 4: Gated SR Latch Forbidden State and Clock Gating Race Hazard
+
+Analyze the behavior of a 4-NAND gated SR latch under invalid input conditions:
+1. External inputs $S = 1$ and $R = 1$ are applied while enable $C = 1$. Determine the voltage logic levels on intermediate nodes $\bar{S}$ and $\bar{R}$, and output nodes $Q$ and $Q'$.
+2. While $S = 1$ and $R = 1$ remain asserted, the clock enable signal $C$ falls from 1 to 0. Both front-end steering NAND gates transition from $(1 \cdot 1)' = 0$ to $(0 \cdot 1)' = 1$. Suppose front-end Gate 1 has propagation delay $t_1 = 1.6\text{ ns}$ and front-end Gate 2 has propagation delay $t_2 = 1.1\text{ ns}$. Trace the race condition inside the storage loop and determine the final settled state of the latch.
+3. Contrast this with a gated D latch. Explain why this race condition is impossible in a D latch regardless of clock transitions.
+
+<ModelAnswer>
+1. **Intermediate Nodes and Outputs ($S = 1, R = 1, C = 1$):**
+   - Front-end Gate 1 computes: $\bar{S} = (S \cdot C)' = (1 \cdot 1)' = 0$.
+   - Front-end Gate 2 computes: $\bar{R} = (R \cdot C)' = (1 \cdot 1)' = 0$.
+   - The internal cross-coupled NAND latch receives inputs $(\bar{S} = 0, \bar{R} = 0)$.
+   - Recall that any 0 input into a NAND gate unconditionally forces its output to 1:
+     $$Q = (\bar{S} \cdot Q')' = (0 \cdot Q')' = 1$$
+     $$Q' = (\bar{R} \cdot Q)' = (0 \cdot Q)' = 1$$
+   - Both outputs are driven to logic 1 simultaneously ($Q = 1, Q' = 1$), destroying their complementary relationship.
+
+2. **Race Condition Trace upon Clock Falling Edge ($C \to 0$):**
+   - As $C$ falls to 0, both front-end NAND gates attempt to pull their outputs up to 1 ($\bar{S} \to 1$ and $\bar{R} \to 1$).
+   - Gate 2 is faster ($t_2 = 1.1\text{ ns}$) than Gate 1 ($t_1 = 1.6\text{ ns}$).
+   - At $t = 1.1\text{ ns}$: Gate 2 output $\bar{R}$ rises to 1.
+   - The bottom storage NAND gate (producing $Q'$) now sees inputs $\bar{R} = 1$ and $Q = 1$. It immediately pulls its output down:
+     $$Q' = (1 \cdot 1)' = 0$$
+   - At $t = 1.6\text{ ns}$: Gate 1 output $\bar{S}$ rises to 1.
+   - However, the top storage NAND gate (producing $Q$) now receives inputs $\bar{S} = 1$ and $Q' = 0$.
+   - Because $Q' = 0$, the top gate's output is forced to stay at 1:
+     $$Q = (1 \cdot 0)' = 1$$
+   - Output $Q$ never leaves 1, while $Q'$ has settled solidly to 0.
+   - **Settled State:** The latch settles into the **Set** state ($Q = 1, Q' = 0$). If Gate 1 had been faster, it would have settled into the Reset state ($Q = 0, Q' = 1$).
+
+3. **Architectural Immunity of the Gated D Latch:**
+   - In a gated D latch, input $R$ is permanently wired to $D'$ through an inverter ($R = D'$).
+   - Because a single binary variable cannot be simultaneously 0 and 1, the condition $S = 1$ and $R = 1$ can never occur.
+   - The front-end steering gates can never simultaneously present $\bar{S} = 0$ and $\bar{R} = 0$ to the storage loop. Therefore, the simultaneous release race hazard cannot occur.
+</ModelAnswer>
+
+### Problem 5: CMOS Transmission-Gate D Latch Implementation
+
+Modern ASIC standard-cell libraries construct gated D latches using CMOS transmission gates (TGs) and inverters rather than 4 cross-coupled NAND gates.
+1. Describe the circuit topology of a transmission-gate D latch.
+2. Determine the total transistor count (NMOS and PMOS) of this TG latch, including the local clock inverter. Compare this count against a standard 4-NAND + 1-NOT gate-level D latch implementation.
+3. Identify which physical components establish the setup time ($t_{su}$) and hold time ($t_h$) constraints in this architecture.
+
+<ModelAnswer>
+1. **Circuit Topology:**
+   A transmission-gate D latch consists of:
+   - An input transmission gate $TG_1$ that connects external data $D$ to internal node $X$. $TG_1$ is ON when $C = 1$ and OFF when $C = 0$.
+   - A forward inverter $I_1$ whose input connects to node $X$ and whose output drives complementary node $Q'$.
+   - An output inverter $I_2$ driven by $Q'$ that outputs primary normal data $Q$.
+   - A feedback transmission gate $TG_2$ in series with a feedback inverter $I_3$ that drives node $X$ from $Q'$. $TG_2$ is ON when $C = 0$ (Hold) and OFF when $C = 1$ (Transparent).
+   - A local clock inverter that generates complementary clock $C'$ from $C$.
+
+2. **Transistor Count Comparison:**
+   - **TG Latch Component Sizing:**
+     - Input $TG_1$: 1 NMOS + 1 PMOS = 2 transistors.
+     - Feedback $TG_2$: 1 NMOS + 1 PMOS = 2 transistors.
+     - Inverters $I_1, I_2, I_3$: each 1 NMOS + 1 PMOS = $3 \times 2 = 6$ transistors.
+     - Clock Inverter: 1 NMOS + 1 PMOS = 2 transistors.
+     - **Total TG Latch:** $2 + 2 + 6 + 2 = \mathbf{12 \text{ transistors}}$.
+   - **NAND-Based Gate Implementation:**
+     - Four 2-input NAND gates: $4 \times 4\text{ transistors} = 16$ transistors.
+     - One input data inverter for $D'$: 2 transistors.
+     - **Total NAND Latch:** $16 + 2 = \mathbf{18 \text{ transistors}}$.
+   - The transmission-gate latch uses **33% fewer transistors**, consumes significantly less silicon area, and provides lower propagation delay and dynamic power dissipation.
+
+3. **Physical Origin of Setup and Hold Times:**
+   - **Setup Time ($t_{su}$):** Node $X$ has parasitic junction and gate capacitance. External data $D$ must pass through the channel resistance of $TG_1$ and charge or discharge node $X$ past the switching threshold of inverter $I_1$ *before* the clock falls to turn $TG_1$ OFF. This charging time defines $t_{su}$.
+   - **Hold Time ($t_h$):** When the clock transitions $1 \to 0$, $TG_1$ requires finite time to turn fully OFF (MOSFET channel charge removal). Data $D$ must remain stable during this turn-off interval so that late transitions on $D$ do not leak onto node $X$. This turn-off duration defines $t_h$.
+</ModelAnswer>
+
+### Problem 6: Clock Gating Hazards and Glitch-Free Cell Architecture
+
+An engineer attempts to reduce dynamic power in a digital block by gating the clock line with an AND gate: $CLK_{gated} = CLK \cdot EN$.
+1. Suppose $EN$ transitions from 1 to 0 while the clock is high ($CLK = 1$). Sketch or describe the resulting $CLK_{gated}$ waveform. What failure does this cause in downstream sequential circuits?
+2. Suppose $EN$ transitions from 0 to 1 while $CLK = 1$. Describe the resulting glitch on $CLK_{gated}$.
+3. Show how an Integrated Clock Gating (ICG) cell using a negative-level-sensitive latch (active-LOW enable latch) combined with an AND gate completely eliminates both hazards.
+
+<ModelAnswer>
+1. **Premature Deassertion while $CLK = 1$ (Runt Clock Glitch):**
+   - If $EN$ drops from 1 to 0 in the middle of a high clock phase, the output of the AND gate ($CLK \cdot EN$) drops to 0 prematurely.
+   - This creates a **shortened, truncated clock pulse** (known as a **runt clock**).
+   - If this runt pulse width is narrower than the minimum allowable pulse width ($t_{w(min)}$) of the downstream flip-flops, the master stage will fail to capture the data properly, inducing metastability and catastrophic state corruption.
+
+2. **Spurious Assertion while $CLK = 1$ (False Clock Edge):**
+   - If $EN$ rises from 0 to 1 while $CLK = 1$, the AND gate output immediately transitions from 0 to 1.
+   - Downstream positive-edge-triggered flip-flops interpret this sudden rising edge as an active clock transition!
+   - The downstream registers clock prematurely, sampling data mid-cycle before combinational logic has settled, corrupting the pipeline.
+
+3. **Integrated Clock Gating (ICG) Solution:**
+   - An ICG cell inserts a **negative-level-sensitive latch** (transparent when $CLK = 0$, opaque hold when $CLK = 1$) between $EN$ and the AND gate:
+     ```
+                 +-------------+
+        EN ----->| D   Latch   |
+                 |      Q      |--------+
+        CLK -+-->| C (Active-L)|        |
+             |   +-------------+        |
+             |                       +----+
+             |                       | AND|-----> CLK_gated
+             +---------------------->+    |
+                                     +----+
+     ```
+   - **When $CLK = 0$:** The latch is transparent. Any changes on $EN$ propagate to the latch output $EN_{latched}$. Because $CLK = 0$, the AND gate output remains 0 regardless of $EN$.
+   - **When $CLK = 1$:** The latch is in **Hold** mode! The latch output $EN_{latched}$ is frozen and cannot change, even if external $EN$ switches wildly.
+   - Because $EN_{latched}$ is stable throughout the entire interval when $CLK = 1$, the AND gate passes a clean, full-width clock pulse without truncation or glitches.
+</ModelAnswer>
+
+---
+
+### Part 2: In-Lesson Interactive Practice
+
+<Quiz
+  courseSlug="logic-design"
+  lessonSlug="d-latch-and-clock"
+  practice
+  questions={[
+    {
+      id: "dl-p1",
+      prompt: "In a 4-NAND gated SR latch, what occurs when the clock/enable input is deasserted (C = 0)?",
+      options: [
+        { id: "a", text: "Both front-end NAND gates output 0, forcing both Q and Q' to 1" },
+        { id: "b", text: "Both front-end NAND gates output 1, placing the internal storage latch in its quiescent Hold state" },
+        { id: "c", text: "Outputs Q and Q' are disconnected into high impedance (Hi-Z)" },
+        { id: "d", text: "The latch resets unconditionally to Q = 0" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: Any 0 input into a NAND gate unconditionally forces its output to 1. When C = 0, both front-end NAND gates output 1 (/S = 1, /R = 1) regardless of S and R. The cross-coupled NAND storage latch sees (1, 1), which is its quiescent Hold state (Q_next = Q). Option (a) confuses NAND behavior with AND gates. Option (c) is incorrect because latches have active push-pull outputs, not tri-state buffers. Option (d) describes an active reset, whereas C = 0 holds whatever value was already stored.",
+    },
+    {
+      id: "dl-p2",
+      prompt: "Why is a transparent gated D latch classified as 'level-sensitive' rather than 'edge-triggered'?",
+      options: [
+        { id: "a", text: "It samples data only during the instantaneous 0-to-1 voltage threshold crossing of the clock" },
+        { id: "b", text: "Output Q continuously follows input D throughout the entire duration that enable C is held HIGH (C = 1)" },
+        { id: "c", text: "It requires three distinct voltage levels (0V, 2.5V, 5V) to operate" },
+        { id: "d", text: "Its internal storage relies on dynamic charge stored on gate oxide capacitance" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: A gated D latch is transparent whenever the control signal sits at its active voltage level (C = 1). During this time window, any changes on D pass directly through the combinational gates to Q after propagation delay. Edge-triggered flip-flops, by contrast, isolate input from output and capture data only during a clock transition. Option (a) describes edge triggering. Option (c) describes multi-level ternary logic. Option (d) describes dynamic RAM rather than static gate latches.",
+    },
+    {
+      id: "dl-p3",
+      prompt: "How does the circuit architecture of a gated D latch permanently prevent the forbidden state (S = 1, R = 1)?",
+      options: [
+        { id: "a", text: "By adding an external Schmitt trigger filter to the clock input" },
+        { id: "b", text: "By tying input S to D and deriving input R through an inverter (R = D'), ensuring S and R are strictly complementary" },
+        { id: "c", text: "By slowing down the clock frequency until race conditions cannot occur" },
+        { id: "d", text: "By replacing the NAND gates with XOR gates" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: The gated D latch eliminates the two independent inputs (S, R) by feeding D directly to the Set steering gate and inverted D (D') to the Reset steering gate. Because a single digital line can never be 1 and 0 at the same time, S and R are always complementary (1, 0 or 0, 1). The forbidden state (S = 1, R = 1) is physically impossible. Option (a) cleans up slow signal rise times but does not prevent input combinations. Option (c) does not eliminate forbidden input logic. Option (d) alters the fundamental latch logic.",
+    },
+    {
+      id: "dl-p4",
+      prompt: "What is the primary cause of the 'race-around' condition when a transparent latch is used in a closed feedback loop?",
+      options: [
+        { id: "a", text: "The clock pulse high duration (t_H) is strictly shorter than the gate propagation delay" },
+        { id: "b", text: "The clock pulse high duration (t_H) is significantly longer than the loop feedback delay (t_loop), allowing the updated output to loop back and toggle repeatedly" },
+        { id: "c", text: "The supply voltage drops below the CMOS threshold voltage" },
+        { id: "d", text: "The pull-up resistor has an excessively high resistance value" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: In a transparent latch with inverted feedback, when C = 1 the output changes in t_loop nanoseconds. If the clock stays high longer than this delay (t_H > t_loop), the newly produced value feeds back into D while the latch is still open, causing Q to toggle again (and again), oscillating uncontrollably until C drops to 0. Option (a) prevents toggling rather than causing oscillation. Option (c) causes power failure rather than race-around. Option (d) affects switch pull-up time, not feedback loop oscillation.",
+    },
+    {
+      id: "dl-p5",
+      prompt: "What is the characteristic equation of a gated D latch when enable C is asserted (C = 1)?",
+      options: [
+        { id: "a", text: "Q(t+1) = Q(t)" },
+        { id: "b", text: "Q(t+1) = D" },
+        { id: "c", text: "Q(t+1) = D ⊕ Q(t)" },
+        { id: "d", text: "Q(t+1) = D'" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: The complete characteristic equation of a gated D latch is Q(t+1) = C' Q(t) + C D. When C = 1, C' = 0 and C = 1, which reduces the equation directly to Q(t+1) = 0 · Q(t) + 1 · D = D. The next state equals the data input. Option (a) describes the disabled Hold mode (when C = 0). Option (c) is the characteristic equation of a T flip-flop. Option (d) describes an inverted latch.",
+    },
+    {
+      id: "dl-p6",
+      prompt: "What is the formal definition of 'setup time' (t_su) in a gated D latch?",
+      options: [
+        { id: "a", text: "The minimum time data input D must remain stable before the closing edge (1 → 0) of enable C" },
+        { id: "b", text: "The time required for output Q to transition from 10% to 90% of Vcc" },
+        { id: "c", text: "The delay between the rising edge of C and the appearance of valid data at Q" },
+        { id: "d", text: "The minimum time data input D must remain stable after enable C has fallen to 0" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Setup time (t_su) is the minimum duration that data D must be held stable prior to the latch closing edge (the 1-to-0 transition of C) to guarantee that internal capacitance has charged past the switching threshold. Option (b) is the rise time (t_r). Option (c) is the propagation delay (t_pd). Option (d) is the definition of hold time (t_h).",
+    },
+    {
+      id: "dl-p7",
+      prompt: "Why does an integrated CMOS transmission-gate D latch require only 12 transistors compared to 18 in a 4-NAND gate design?",
+      options: [
+        { id: "a", text: "It replaces static CMOS pull-up and pull-down networks with bidirectional 2-transistor transmission gates and inverters" },
+        { id: "b", text: "It uses bipolar junction transistors (BJTs) instead of MOSFETs" },
+        { id: "c", text: "It removes the feedback inverter entirely" },
+        { id: "d", text: "It eliminates the need for power and ground supply connections" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A transmission gate requires only 2 complementary transistors (1 PMOS, 1 NMOS) to steer a signal without the 4-transistor series/parallel structures of NAND gates. Using two TGs (4 transistors), three inverters (6 transistors), and a clock inverter (2 transistors) implements a complete D latch with only 12 transistors. Option (b) is incorrect because standard digital ICs are CMOS. Option (c) would leave the latch unable to hold static data when closed. Option (d) is physically impossible.",
+    },
+    {
+      id: "dl-p8",
+      prompt: "In an Integrated Clock Gating (ICG) cell, why must the gating latch be negative-level-sensitive (transparent when CLK = 0) when driving an AND gate?",
+      options: [
+        { id: "a", text: "To invert the system clock frequency" },
+        { id: "b", text: "To guarantee that the enable signal updates only while CLK is LOW, holding enable completely stable while CLK is HIGH and preventing runt clock glitches" },
+        { id: "c", text: "To double the output clock voltage swing" },
+        { id: "d", text: "Because positive latches consume five times more leakage power" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: An AND gate passes the clock when enable is 1. If enable changes while CLK = 1, it will truncate the clock pulse (runt pulse) or insert a false rising edge. By using a negative-level-sensitive latch, enable updates only when CLK = 0 (when the AND gate output is already locked at 0). When CLK rises to 1, the latch freezes, ensuring enable cannot change during the active clock phase and preventing runt glitches. Option (a) is incorrect because ICG cells preserve clock frequency. Option (c) is incorrect because voltage swing remains rail-to-rail. Option (d) is incorrect because leakage characteristics are comparable.",
+    },
+  ]}
+/>
 
 ---
 

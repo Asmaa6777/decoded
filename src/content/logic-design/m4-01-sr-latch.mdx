@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { SrLatchNor, SrLatchNand } from "@/components/mdx/CircuitVisualizers";
 import { DebouncerLab } from "@/components/mdx/LogicVisualizers";
 
@@ -247,6 +247,8 @@ When working with latches and memory elements, students often make these six mis
 
 ## Past-Exam Practice
 
+### Part 1: Written Exam Practice
+
 ### Problem 1: NOR SR Latch Timing and Delay Analysis
 
 An active-HIGH NOR SR latch has identical gates, each with a propagation delay of $t_{pd} = 2\text{ ns}$. Initially, $Q = 0$ and $Q' = 1$ with $S = 0, R = 0$.
@@ -324,6 +326,240 @@ Mapping each transition step-by-step:
 Summary input sequence:
 $$(S, R) = (1, 0) \longrightarrow (\text{X}, 0) \longrightarrow (0, 1) \longrightarrow (0, \text{X})$$
 </ModelAnswer>
+
+### Problem 4: NAND SR Latch with Inverted External Inputs & Race Hazard Analysis
+
+A digital circuit designer creates an active-HIGH interface for an active-LOW cross-coupled NAND latch by placing inverters on the external control lines: $\bar{S} = S'$ and $\bar{R} = R'$.
+1. Construct the complete truth table mapping external active-HIGH inputs $(S, R)$ and current state $Q(t)$ to next state $Q(t+1)$ and complement $Q'(t+1)$.
+2. Identify which external input combination $(S, R)$ corresponds to the Hold condition, and which represents the Forbidden condition.
+3. Suppose external inputs are driven to the forbidden state ($S = 1, R = 1$) for $100\text{ ns}$ and then released simultaneously to the hold state ($S = 0, R = 0$). Gate delay for NAND 1 (producing $Q$) is $t_1 = 2.4\text{ ns}$ and for NAND 2 (producing $Q'$) is $t_2 = 1.9\text{ ns}$. Trace the race condition and determine the final stable state of the latch.
+
+<ModelAnswer>
+1. **Truth Table with Inverted Inputs:**
+   - External $S = 0 \implies \bar{S} = 1$; external $R = 0 \implies \bar{R} = 1$. The internal NAND latch sees $(1, 1)$, which is **Hold** ($Q(t+1) = Q(t), Q'(t+1) = Q'(t)$).
+   - External $S = 0, R = 1 \implies \bar{S} = 1, \bar{R} = 0$. Internal NAND sees $(1, 0)$, which is **Reset** ($Q(t+1) = 0, Q'(t+1) = 1$).
+   - External $S = 1, R = 0 \implies \bar{S} = 0, \bar{R} = 1$. Internal NAND sees $(0, 1)$, which is **Set** ($Q(t+1) = 1, Q'(t+1) = 0$).
+   - External $S = 1, R = 1 \implies \bar{S} = 0, \bar{R} = 0$. Internal NAND sees $(0, 0)$, which forces both outputs high: $Q = 1$ and $Q' = 1$ (**Forbidden**).
+
+2. **Hold and Forbidden Conditions:**
+   - **Hold state:** $S = 0, R = 0$.
+   - **Forbidden state:** $S = 1, R = 1$.
+   The inverters successfully align the external polarities with active-HIGH conventions.
+
+3. **Race Condition Trace upon Simultaneous Release:**
+   - While $S = 1, R = 1$ ($\bar{S} = 0, \bar{R} = 0$), both NAND outputs are held at 1: $Q = 1$ and $Q' = 1$.
+   - At $t = 0\text{ ns}$, inputs transition simultaneously to $S = 0, R = 0$ ($\bar{S} \to 1, \bar{R} \to 1$).
+   - Both NAND gates now see their external input switch to 1 while their feedback input is currently 1:
+     - Gate 1 evaluates: $( \bar{S} \cdot Q' )' = (1 \cdot 1)' = 0$. Delay is $t_1 = 2.4\text{ ns}$.
+     - Gate 2 evaluates: $( \bar{R} \cdot Q )' = (1 \cdot 1)' = 0$. Delay is $t_2 = 1.9\text{ ns}$.
+   - Because $t_2 = 1.9\text{ ns} \lt t_1 = 2.4\text{ ns}$, Gate 2 switches first!
+   - At $t = 1.9\text{ ns}$, $Q'$ falls from 1 to 0.
+   - This new 0 on $Q'$ propagates across the feedback wire to Gate 1.
+   - At Gate 1, the inputs become $\bar{S} = 1$ and $Q' = 0$. A NAND gate with an input of 0 immediately forces its output to 1:
+     $$Q = (1 \cdot 0)' = 1$$
+   - The pending transition on Gate 1 is cancelled before it can pull $Q$ down.
+   - Output $Q$ stays at 1, while $Q'$ has fallen to 0.
+   - **Final Settled State:** The latch settles into the **Set** state ($Q = 1, Q' = 0$).
+   - Physical propagation asymmetry ($t_2 \lt t_1$) breaks the race condition deterministically in favor of the faster gate.
+</ModelAnswer>
+
+### Problem 5: Algebraic Derivation of Characteristic Equation from Feedback Equations
+
+Prove that the next-state characteristic equation for an active-HIGH NOR SR latch is:
+$$Q(t+1) = S + R' Q(t) \quad \text{subject to} \quad S \cdot R = 0$$
+
+1. Formulate the simultaneous Boolean feedback equations for the two NOR gates.
+2. Eliminate the internal intermediate variable $Q'(t)$ using algebraic substitution and De Morgan's laws.
+3. Show how applying the forbidden-state prevention constraint $S \cdot R = 0$ simplifies the expression into standard sum-of-products form.
+4. Construct the 3-variable Karnaugh map for $Q(t+1)$ over variables $S, R, Q(t)$ treating the illegal states $S = R = 1$ as don't-cares ($\text{X}$), and derive the minimal SOP expression.
+
+<ModelAnswer>
+1. **Feedback Equations:**
+   In an active-HIGH NOR SR latch:
+   $$Q(t+1) = (R + Q'(t))'$$
+   $$Q'(t) = (S + Q(t))'$$
+
+2. **Algebraic Substitution:**
+   Substitute the expression for $Q'(t)$ into $Q(t+1)$:
+   $$Q(t+1) = (R + (S + Q(t))')'$$
+   Apply De Morgan's theorem to the outer NOR operation:
+   $$Q(t+1) = R' \cdot ((S + Q(t))')' = R' \cdot (S + Q(t))$$
+   Distribute $R'$ across the sum:
+   $$Q(t+1) = R' S + R' Q(t) = S R' + R' Q(t)$$
+
+3. **Enforcing the Operational Constraint $S \cdot R = 0$:**
+   In legal operation, $S$ and $R$ can never both be 1 simultaneously ($S R = 0$).
+   Examine the term $S R'$:
+   $$S = S(R + R') = S R + S R'$$
+   Because $S R = 0$, we have $S = 0 + S R' = S R'$.
+   Therefore, we can replace $S R'$ directly with $S$:
+   $$Q(t+1) = S + R' Q(t)$$
+
+4. **Karnaugh Map Minimization with Don't-Cares:**
+   Variables: $S, R, Q$. Minterms $m(S, R, Q)$:
+   - $m_0 (0, 0, 0): Q_{next} = 0$ (Hold 0)
+   - $m_1 (0, 0, 1): Q_{next} = 1$ (Hold 1)
+   - $m_2 (0, 1, 0): Q_{next} = 0$ (Reset)
+   - $m_3 (0, 1, 1): Q_{next} = 0$ (Reset)
+   - $m_4 (1, 0, 0): Q_{next} = 1$ (Set)
+   - $m_5 (1, 0, 1): Q_{next} = 1$ (Set)
+   - $m_6 (1, 1, 0): \text{X}$ (Forbidden)
+   - $m_7 (1, 1, 1): \text{X}$ (Forbidden)
+
+   Plotting on a $2 \times 4$ K-map ($S$ on rows, $R Q$ on columns):
+   - Row $S = 0$: column 00 is 0, column 01 is 1, column 11 is 0, column 10 is 0.
+   - Row $S = 1$: column 00 is 1, column 01 is 1, column 11 is X, column 10 is X.
+
+   Groupings:
+   - Group 1: Entire bottom row ($S = 1$, covering minterms 4, 5, 7, 6) $\implies S$.
+   - Group 2: Quad covering columns 01 and 11 across both rows (minterms 1, 5 and don't-care 7, and minterm 3 is 0; specifically, minterms 1 and 5 combine with no other minterms since 3 is 0, grouping cell $(0, 01)$ and $(1, 01)$) $\implies R' Q$.
+   Resulting minimal SOP:
+   $$Q(t+1) = S + R' Q$$
+</ModelAnswer>
+
+### Problem 6: CMOS Transistor-Level Structure of a NOR SR Latch
+
+Analyze the CMOS transistor implementation of a 2-gate active-HIGH NOR SR latch:
+1. Determine the total transistor count (NMOS and PMOS) required to build the latch in static CMOS.
+2. Describe the pull-up and pull-down networks for one of the NOR gates.
+3. For the quiescent hold state $(S = 0, R = 0)$ with stored state $Q = 1$ and $Q' = 0$, trace the conduction state (ON or OFF) of all transistors in both gates.
+4. Explain why the forbidden state $(S = 1, R = 1)$ pulls both outputs to logic 0 simultaneously and why it does not cause high static power dissipation in steady state.
+
+<ModelAnswer>
+1. **Transistor Count:**
+   - A static CMOS 2-input NOR gate requires 2 PMOS transistors in the pull-up network and 2 NMOS transistors in the pull-down network, totaling 4 transistors per gate.
+   - An SR latch constructed from two cross-coupled NOR gates requires:
+     $$2 \times 4 = 8 \text{ transistors (4 PMOS, 4 NMOS)}$$
+
+2. **Pull-Up and Pull-Down Networks:**
+   - In each 2-input NOR gate:
+     - **Pull-Up Network (PUN):** Two PMOS transistors connected in **series** between $V_{DD}$ and the gate output. Both inputs must be logic 0 (0 V) to turn both PMOS ON and connect the output to $V_{DD}$.
+     - **Pull-Down Network (PDN):** Two NMOS transistors connected in **parallel** between the gate output and GND. If either input is logic 1 ($V_{DD}$), that NMOS turns ON and discharges the output to GND.
+
+3. **Conduction Trace in Hold State ($S = 0, R = 0, Q = 1, Q' = 0$):**
+   - **Gate 1 (producing $Q$, inputs $R = 0$ and $Q' = 0$):**
+     - Both inputs are 0.
+     - Both series PMOS transistors are **ON**, connecting $Q$ solidly to $V_{DD}$ ($Q = 1$).
+     - Both parallel NMOS transistors are **OFF**, disconnecting $Q$ from GND.
+   - **Gate 2 (producing $Q'$, inputs $S = 0$ and $Q = 1$):**
+     - Input $Q = 1$ turns the series PMOS connected to $Q$ **OFF**, breaking the pull-up path to $V_{DD}$.
+     - Input $Q = 1$ turns the parallel NMOS connected to $Q$ **ON**, pulling $Q'$ solidly to GND ($Q' = 0$).
+     - Both gates are in stable, complementary equilibrium.
+
+4. **Forbidden State Analysis ($S = 1, R = 1$):**
+   - In Gate 1, input $R = 1$ turns its parallel NMOS ON, pulling $Q \to 0$, while its series PMOS is turned OFF.
+   - In Gate 2, input $S = 1$ turns its parallel NMOS ON, pulling $Q' \to 0$, while its series PMOS is turned OFF.
+   - Both outputs are simultaneously pulled to 0 V ($Q = 0, Q' = 0$).
+   - **Static Power:** Because the series PMOS pull-up networks in both gates have at least one transistor turned OFF, there is no direct low-impedance path between $V_{DD}$ and GND. The steady-state current is limited purely to subthreshold leakage, so static power dissipation remains near zero.
+</ModelAnswer>
+
+---
+
+### Part 2: In-Lesson Interactive Practice
+
+<Quiz
+  courseSlug="logic-design"
+  lessonSlug="sr-latch"
+  practice
+  questions={[
+    {
+      id: "sr-p1",
+      prompt: "What are the quiescent (holding) input combinations for an active-HIGH NOR SR latch and an active-LOW NAND SR latch, respectively?",
+      options: [
+        { id: "a", text: "NOR: (S=0, R=0); NAND: (/S=1, /R=1)" },
+        { id: "b", text: "NOR: (S=1, R=1); NAND: (/S=0, /R=0)" },
+        { id: "c", text: "NOR: (S=0, R=1); NAND: (/S=1, /R=0)" },
+        { id: "d", text: "NOR: (S=0, R=0); NAND: (/S=0, /R=0)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A NOR gate outputs 1 only when both inputs are 0, so (0, 0) permits feedback to sustain the existing state without forcing a change. In a NAND gate, any 0 input forces the output to 1, so the inactive hold state requires both inputs to rest at 1 (/S=1, /R=1). Option (b) specifies the forbidden inputs for both gates. Option (c) describes the reset states for both latches. Option (d) erroneously assumes both circuits hold on (0, 0), failing to account for the active-LOW inversion of NAND gates.",
+    },
+    {
+      id: "sr-p2",
+      prompt: "When the forbidden input combination is applied to an active-HIGH NOR SR latch (S=1, R=1), what are the resulting output logic levels?",
+      options: [
+        { id: "a", text: "Q = 1 and Q' = 0" },
+        { id: "b", text: "Q = 0 and Q' = 0" },
+        { id: "c", text: "Q = 1 and Q' = 1" },
+        { id: "d", text: "The outputs oscillate continuously at the gate propagation frequency" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: In a NOR gate, any input of 1 unconditionally drives the output to 0. When S=1 and R=1, both NOR gates are forced to output 0 simultaneously (Q = 0 and Q' = 0), destroying the complementary relationship Q' = NOT(Q). Option (a) describes the normal Set state. Option (c) describes the forbidden state of an active-LOW NAND latch (where any 0 forces outputs to 1). Option (d) confuses the static forbidden condition with the dynamic race condition that occurs *after* inputs are simultaneously released back to (0, 0).",
+    },
+    {
+      id: "sr-p3",
+      prompt: "Why is a simultaneous transition from (S=1, R=1) to (S=0, R=0) in a NOR SR latch dangerous in digital circuits?",
+      options: [
+        { id: "a", text: "It causes thermal runaway in the silicon substrate due to excessive static current" },
+        { id: "b", text: "Both gates attempt to switch from 0 to 1 simultaneously, leading to a race condition that causes oscillation or unpredictable metastability" },
+        { id: "c", text: "It permanently destroys the pull-down NMOS transistors" },
+        { id: "d", text: "It causes the latch to convert irreversibly into a transparent D latch" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: During S=1, R=1, both outputs are 0. When both inputs drop to 0 simultaneously, both NOR gates see inputs (0, 0) and attempt to drive their outputs high at the same instant. As each output rises, it feeds into the other gate, attempting to drive it back low. The two gates enter a race condition, oscillating until microscopic transistor imbalances, noise, or delay differences resolve the conflict into an unpredictable state (metastability). Option (a) is incorrect because static current remains low in CMOS. Option (c) is false because no physical damage occurs. Option (d) is nonsensical as circuit topologies do not physically alter themselves.",
+    },
+    {
+      id: "sr-p4",
+      prompt: "What is the theoretical minimum pulse width t_w required on the Set pin of an active-HIGH NOR SR latch with gate propagation delay t_pd to guarantee latching?",
+      options: [
+        { id: "a", text: "t_w ≥ 0.5 × t_pd" },
+        { id: "b", text: "t_w ≥ 1 × t_pd" },
+        { id: "c", text: "t_w ≥ 2 × t_pd" },
+        { id: "d", text: "t_w ≥ 4 × t_pd" },
+      ],
+      correctOptionId: "c",
+      explanation: "Option (c) is correct: To latch data permanently, the state change must traverse the entire feedback loop: S=1 causes Q' to drop to 0 (takes 1 t_pd), and Q'=0 causes Q to rise to 1 (takes a second 1 t_pd). Only after 2 t_pd has elapsed is the 1 on Q fed back to NOR 2 to sustain Q'=0 independently of S. Therefore, t_w(min) ≥ 2 t_pd. Option (a) and Option (b) will cause the input pulse to vanish before the loop closes, resulting in glitch rejection or metastability. Option (d) is safe but exceeds the theoretical minimum.",
+    },
+    {
+      id: "sr-p5",
+      prompt: "In a mechanical switch debouncer using an active-LOW cross-coupled NAND latch, what happens when the switch wiper bounces off contact A into open air?",
+      options: [
+        { id: "a", text: "The latch resets to Q = 0" },
+        { id: "b", text: "The pull-up resistor pulls /S to 1, placing the latch in the Hold state (/S=1, /R=1) so Q remains stably at 1" },
+        { id: "c", text: "The latch enters the forbidden state (/S=0, /R=0)" },
+        { id: "d", text: "Output Q oscillates until the wiper touches ground again" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: When the wiper makes initial contact with A, /S is pulled to GND (0), setting Q = 1. When the wiper bounces off A into the air, the pull-up resistor pulls terminal A back to Vcc (1). The latch inputs are now /S = 1 and /R = 1, which is the quiescent Hold state! Output Q remains locked at 1. Every subsequent bounce alternates between Set (0, 1) and Hold (1, 1), producing zero glitches on Q. Option (a) is incorrect because /R is never grounded during bounces on contact A. Option (c) is incorrect because an open circuit is pulled HIGH, not LOW. Option (d) is incorrect because the latch holds steady.",
+    },
+    {
+      id: "sr-p6",
+      prompt: "Under the legal operating condition that Set and Reset are never asserted simultaneously (S · R = 0), what is the characteristic equation of an active-HIGH SR latch?",
+      options: [
+        { id: "a", text: "Q(t+1) = S · R' + Q(t)" },
+        { id: "b", text: "Q(t+1) = S + R' · Q(t)" },
+        { id: "c", text: "Q(t+1) = S' · R + Q'(t)" },
+        { id: "d", text: "Q(t+1) = S ⊕ Q(t)" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: The feedback equation is Q(t+1) = (R + Q')' = R'(S + Q) = S R' + R' Q. Under the legal condition S · R = 0, S R' simplifies directly to S, giving Q(t+1) = S + R' Q(t). If S=1 (and R=0), Q(t+1) = 1. If R=1 (and S=0), Q(t+1) = 0. If S=R=0, Q(t+1) = Q(t). Option (a) forgets to multiply Q(t) by R', meaning it would never reset if Q(t) were 1. Option (c) uses active-LOW polarity. Option (d) is the characteristic equation of a T flip-flop, not an SR latch.",
+    },
+    {
+      id: "sr-p7",
+      prompt: "According to the excitation table of an SR latch, what inputs (S, R) are required to cause the state transition Q(t) = 1 → Q(t+1) = 1?",
+      options: [
+        { id: "a", text: "S = 1, R = 0" },
+        { id: "b", text: "S = 0, R = 0" },
+        { id: "c", text: "S = X, R = 0" },
+        { id: "d", text: "S = 0, R = X" },
+      ],
+      correctOptionId: "c",
+      explanation: "Option (c) is correct: To maintain Q at 1, the circuit can either be explicitly Set (S = 1, R = 0) or simply Kept in Hold (S = 0, R = 0). In both valid cases, R must strictly be 0 (to prevent resetting), while S can be either 0 or 1. Hence, S = X (don't care) and R = 0. Option (a) is unnecessarily restrictive because holding (0, 0) also achieves the transition. Option (b) is also unnecessarily restrictive. Option (d) describes the transition 0 → 0, where S must be 0 and R is don't-care.",
+    },
+    {
+      id: "sr-p8",
+      prompt: "How many total transistors are required to implement a static CMOS cross-coupled NOR SR latch?",
+      options: [
+        { id: "a", text: "4 transistors (2 PMOS, 2 NMOS)" },
+        { id: "b", text: "6 transistors (2 PMOS, 4 NMOS)" },
+        { id: "c", text: "8 transistors (4 PMOS, 4 NMOS)" },
+        { id: "d", text: "12 transistors (6 PMOS, 6 NMOS)" },
+      ],
+      correctOptionId: "c",
+      explanation: "Option (c) is correct: A static CMOS 2-input NOR gate consists of 2 PMOS transistors in series (pull-up network) and 2 NMOS transistors in parallel (pull-down network), totaling 4 transistors per gate. The SR latch uses two cross-coupled NOR gates, requiring 2 × 4 = 8 transistors (4 PMOS and 4 NMOS). Option (a) is the transistor count for a cross-coupled inverter bistable element. Option (b) is the count for a 6T SRAM memory cell. Option (d) overestimates the count, including redundant pass transistors.",
+    },
+  ]}
+/>
 
 ---
 
