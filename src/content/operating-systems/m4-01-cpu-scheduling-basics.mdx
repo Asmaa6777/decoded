@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { CpuScheduler, BurstPrediction } from "@/components/mdx/OsVisualizers";
 
 # CPU Scheduling: FCFS, SJF and Priority
@@ -212,10 +212,48 @@ Draw the Gantt chart **first**, then read every process's completion time off it
 
 ## Practice from past exams
 
+These questions are copied from the exam papers. The wording is unchanged. Answers and explanations after them are ours, not the exam's.
+
 ### Part 1: Midterm questions
 
-*Questions from the midterm exams are added in the next round.*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "m-fcfs-starvation",
+      prompt: "(Midterm 2014, Q1 item 12) A major problem with FCFS scheduling algorithm is starvation.",
+      options: [
+        { id: "t", text: "True" },
+        { id: "f", text: "False" },
+      ],
+      correctOptionId: "f",
+      explanation: "FCFS is fair in order: every process runs in arrival order, so none waits forever. Its real problem is the convoy effect, where one long job at the front makes short jobs behind it wait.",
+    },
+    {
+      id: "m-cpu-bound-first",
+      prompt: "(Midterm 2018, Q1 item 6) It is important that the CPU scheduler select CPU-bound processes more than I/O-bound processes.",
+      options: [
+        { id: "t", text: "True" },
+        { id: "f", text: "False" },
+      ],
+      correctOptionId: "f",
+      explanation: "The scheduler should not favour either kind. A good mix of CPU-bound and I/O-bound processes keeps both the CPU and the devices busy.",
+    },
+  ]}
+/>
+
+**Midterm 2018 second version, Q1 item 9:** the same statement, "It is important that the CPU scheduler select CPU-bound processes more than I/O-bound processes," is marked false in the first version and appears again here. The answer above applies to both.
+
+<ModelAnswer>
+**(Midterm 2015, Q4) How do I/O-bound and CPU-bound processes differ? Which of them is better for efficient machine utilization? Why?**
+
+An **I/O-bound** process spends most of its time waiting for input or output, so it has many short CPU bursts. A **CPU-bound** process spends most of its time computing, so it has long CPU bursts and makes few I/O requests.
+
+Neither type alone is best. If every process is I/O-bound, the ready queue is almost always empty, so the CPU sits idle and the scheduler has little to do. If every process is CPU-bound, the devices sit idle while the processes queue for the CPU. A **mix of both** keeps the CPU and the devices working at the same time, so a mix gives the best utilization.
+</ModelAnswer>
 
 ### Part 2: Final exam questions
 
-*Questions from the final exams are added in the next round.*
+*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
