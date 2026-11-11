@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
-import { NandBuilds } from "@/components/mdx/CircuitVisualizers";
+import { BubblePushingLab, UniversalGateLab } from "@/components/mdx/LogicVisualizers";
 
 # Universal Gates: Everything from NAND
 
@@ -105,9 +105,9 @@ B ----+------------------/             /
    $$
 *Cost: exactly 4 NAND gates.*
 
-Test each NAND-based circuit interactively below:
+Test each NAND-based and NOR-based circuit interactively below, including the celebrated 4-gate minimal XOR:
 
-<NandBuilds />
+<UniversalGateLab />
 
 ## Constructing the fundamental gates from NOR
 
@@ -181,6 +181,10 @@ Similarly, a Product of Sums (OR-AND) circuit converts directly into an all-NOR 
 $$
 \text{OR-AND} \equiv \text{NOR-NOR}
 $$
+
+Step through the bubble-pushing conversion of two-level circuits into all-universal gate implementations below:
+
+<BubblePushingLab />
 
 ## Multi-level NAND and NOR synthesis
 

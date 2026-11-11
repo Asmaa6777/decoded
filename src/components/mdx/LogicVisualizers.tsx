@@ -3,11 +3,13 @@ import { btn, inputCls, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers
 import { Panel } from "@/components/mdx/MatrixVisualizers";
 import type { Frame } from "@/lib/algorithms";
 import {
-  bitString, bitsOf, bitsToNumber, classifyDecimalVoltage, classifyLogicVoltage, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evaluateParallelSkew,
-  expandRadixToBinary, floatParts, fractionBits, generateRealWaveform, groupBinaryBits, jkNext, kmapLayout, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries,
-  minimizeSop, onesComplement, placeValues, posFromMinterms, rippleAdd, sameFunction, shiftFrames, signedValue, signExtend, simulateAdc, simulateBcdAdder,
-  simulateBusDrivers, simulateParity, simulateSignedArithmetic, sopFromMinterms, toBase, toBcd, toExcess3, toGray, truthRows, twosComplement, type Bit,
-  type DriverMode, type DriverState, type LogicFamilyId,
+  bitString, bitsOf, bitsToNumber, CascadeStageConfig, classifyDecimalVoltage, classifyLogicVoltage, CmosGateType, computeBooleanDual,
+  computeNoiseMargins, counterStep, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
+  expandRadixToBinary, floatParts, fractionBits, generateRealWaveform, groupBinaryBits, jkNext, kmapLayout, KMapImplicant, latchVersusFlipFlop,
+  LOGIC_FAMILIES, lookaheadCarries, minimizeKMap, minimizeSop, onesComplement, placeValues, posFromMinterms, rippleAdd, sameFunction, shiftFrames,
+  signedValue, signExtend, simulateAdc, simulateBcdAdder, simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateParity,
+  simulateSignedArithmetic, simulateStatic1Hazard, sopFromMinterms, TargetOperation, toBase, toBcd, toExcess3, toGray, truthRows, twosComplement,
+  type Bit, type DriverMode, type DriverState, type LogicFamilyId, UNIVERSAL_CIRCUITS, UniversalGateFamily,
 } from "@/lib/logic";
 
 const BIT_ON: Record<string, string> = { mint: "border-mint bg-mint/20", neon: "border-neon bg-neon/20", sky: "border-sky bg-sky/20" };
@@ -2073,65 +2075,625 @@ export function FloatExplorer() {
   );
 }
 
-/* ---------------------------- Boolean algebra -------------------------- */
+/* ---------------------------- CMOS Switch Simulation -------------------------- */
 
-const LAWS: [string, string, string, string[]][] = [
-  ["Rule 2", "A + 1", "1", ["A"]],
-  ["Rule 3", "A · 0", "0", ["A"]],
-  ["Rule 6", "A + A'", "1", ["A"]],
-  ["Rule 8", "A · A'", "0", ["A"]],
-  ["Rule 10", "A + AB", "A", ["A", "B"]],
-  ["Rule 11", "A + A'B", "A + B", ["A", "B"]],
-  ["Rule 12", "(A + B)(A + C)", "A + BC", ["A", "B", "C"]],
-  ["De Morgan 1", "(AB)'", "A' + B'", ["A", "B"]],
-  ["De Morgan 2", "(A + B)'", "A'B'", ["A", "B"]],
-];
+/** Simulates and visualizes CMOS complementary transistor switch behavior (PDN vs PUN). */
+export function CmosSwitchVisualizer() {
+  const [gate, setGate] = useState<CmosGateType>("NOT");
+  const [va, setVa] = useState<number>(0);
+  const [vb, setVb] = useState<number>(0);
 
-/** A law is only true if the two sides agree on every row, so check every row. */
-export function LawChecker() {
-  const [i, setI] = useState(5);
-  const [l, left, right, vars] = LAWS[i];
-  const rows = truthRows(vars);
+  const isDual = gate !== "NOT";
+  const inputs = useMemo(() => ({ A: va, B: vb }), [va, vb]);
+  const sim = useMemo(() => simulateCmosGate(gate, inputs), [gate, inputs]);
+
+  const rows = useMemo(() => {
+    if (gate === "NOT") return [{ a: 0, b: 0, out: 1 }, { a: 1, b: 0, out: 0 }];
+    const target = gate === "NAND" ? "NAND" : "NOR";
+    return [
+      { a: 0, b: 0, out: evalGate(target, [0, 0]) },
+      { a: 0, b: 1, out: evalGate(target, [0, 1]) },
+      { a: 1, b: 0, out: evalGate(target, [1, 0]) },
+      { a: 1, b: 1, out: evalGate(target, [1, 1]) },
+    ];
+  }, [gate]);
+
+  const curA = va >= 3.5 ? 1 : va <= 1.5 ? 0 : "X";
+  const curB = vb >= 3.5 ? 1 : vb <= 1.5 ? 0 : "X";
+
   return (
-    <Panel title="Prove a rule by checking every row">
-      <div className="flex flex-wrap gap-1.5">{LAWS.map((x, k) => <button key={x[0]} type="button" onClick={() => setI(k)} aria-pressed={k === i} className={`${btn} !px-2 ${k === i ? "bg-foreground text-background" : ""}`}>{x[0]}</button>)}</div>
-      <div className="font-mono text-lg">{left} = {right}</div>
-      <table className="font-mono text-[13px] w-fit border-collapse">
-        <thead><tr>{vars.map((v) => <th key={v} className="px-3 border-b border-border">{v}</th>)}<th className="px-3 border-b border-border text-sky">{left}</th><th className="px-3 border-b border-border text-sky">{right}</th><th className="px-3 border-b border-border" /></tr></thead>
-        <tbody>
-          {rows.map(({ m, env }) => {
-            const a = evalExpr(left.replace(/·/g, "."), env), b = evalExpr(right.replace(/·/g, "."), env);
-            return <tr key={m}>{vars.map((v) => <td key={v} className="px-3 text-center">{env[v]}</td>)}<td className="px-3 text-center font-bold">{a}</td><td className="px-3 text-center font-bold">{b}</td><td className="px-3 text-mint">{a === b ? "✓" : "✗"}</td></tr>;
-          })}
-        </tbody>
-      </table>
-      <div className="font-mono text-[12px] text-mint">{sameFunction(left.replace(/·/g, "."), right.replace(/·/g, "."), vars) ? `${rows.length} of ${rows.length} rows agree, so the two sides are the same function (${l}).` : "The sides differ."}</div>
+    <Panel
+      title="CMOS Transistor Switch Model"
+      legend={[
+        ["bg-mint/40", "conducting channel (ON)"],
+        ["bg-border", "open circuit (OFF)"],
+        ["bg-orange/40", "shoot-through alert"],
+      ]}
+    >
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Gate selector */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="eyebrow text-muted-foreground mr-1">Gate:</span>
+          {(["NOT", "NAND", "NOR"] as CmosGateType[]).map((g) => (
+            <button
+              key={g}
+              type="button"
+              aria-pressed={g === gate}
+              onClick={() => { setGate(g); setVa(0); setVb(0); }}
+              className={`${btn} !px-2.5 ${g === gate ? "bg-foreground text-background font-bold" : ""}`}
+            >
+              {g}
+            </button>
+          ))}
+          <div className="ml-auto flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => { setVa(2.5); setVb(2.5); }}
+              className={`${btn} !px-2 text-[11px] text-orange border-orange/40 hover:bg-orange/10`}
+            >
+              Test Shoot-Through (2.5V)
+            </button>
+          </div>
+        </div>
+
+        {/* Input level toggles */}
+        <div className="flex flex-wrap items-center gap-4 bg-muted/20 p-2.5 rounded border border-border/60">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-foreground">Input A:</span>
+            <button
+              type="button"
+              onClick={() => setVa(0)}
+              className={`${btn} !px-2 ${va === 0 ? "bg-mint text-background font-bold" : ""}`}
+            >
+              0 (0.0V)
+            </button>
+            <button
+              type="button"
+              onClick={() => setVa(5.0)}
+              className={`${btn} !px-2 ${va === 5.0 ? "bg-mint text-background font-bold" : ""}`}
+            >
+              1 (5.0V)
+            </button>
+          </div>
+          {isDual && (
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-foreground">Input B:</span>
+              <button
+                type="button"
+                onClick={() => setVb(0)}
+                className={`${btn} !px-2 ${vb === 0 ? "bg-mint text-background font-bold" : ""}`}
+              >
+                0 (0.0V)
+              </button>
+              <button
+                type="button"
+                onClick={() => setVb(5.0)}
+                className={`${btn} !px-2 ${vb === 5.0 ? "bg-mint text-background font-bold" : ""}`}
+              >
+                1 (5.0V)
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Schematic & Table Grid */}
+        <div className="grid md:grid-cols-[1.2fr_0.8fr] gap-6 items-start">
+          {/* Circuit SVG schematic */}
+          <div className="border border-border rounded bg-card p-3">
+            <svg viewBox="0 0 320 230" className="w-full max-w-[340px] mx-auto block select-none" role="img" aria-label="CMOS transistor schematic">
+              {/* VDD rail */}
+              <line x1="40" y1="20" x2="280" y2="20" stroke="currentColor" strokeWidth="2.5" className="text-neon" />
+              <text x="160" y="14" textAnchor="middle" className="fill-neon text-[10px] font-bold">VDD (+5.0V Power Rail)</text>
+
+              {/* GND rail */}
+              <line x1="40" y1="210" x2="280" y2="210" stroke="currentColor" strokeWidth="2.5" className="text-muted-foreground" />
+              <line x1="145" y1="215" x2="175" y2="215" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" />
+              <line x1="152" y1="220" x2="168" y2="220" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" />
+              <text x="160" y="228" textAnchor="middle" className="fill-muted-foreground text-[9px]">GND (0.0V)</text>
+
+              {/* Output node Y */}
+              <line x1="160" y1="115" x2="265" y2="115" stroke="currentColor" strokeWidth={sim.pullUpConnected || sim.pullDownConnected ? 2.5 : 1.5} className={sim.outputState === "HIGH" ? "text-mint" : sim.outputState === "LOW" ? "text-sky" : sim.outputState === "SHOOT_THROUGH" ? "text-orange" : "text-muted-foreground"} />
+              <circle cx="160" cy="115" r="3.5" className="fill-foreground" />
+              <circle cx="270" cy="115" r="9" className={sim.outputState === "HIGH" ? "fill-mint/20 stroke-mint stroke-2" : sim.outputState === "LOW" ? "fill-sky/20 stroke-sky stroke-2" : "fill-background stroke-border stroke-2"} />
+              <text x="270" y="119" textAnchor="middle" className="fill-foreground text-[11px] font-bold">{sim.outputBit}</text>
+              <text x="295" y="119" className="fill-foreground text-[12px] font-bold">Y</text>
+
+              {gate === "NOT" && (
+                <>
+                  {/* Pull-up pMOS */}
+                  <line x1="160" y1="20" x2="160" y2="50" stroke="currentColor" strokeWidth="2" className={sim.transistors[0]?.isOn ? "text-mint" : "text-border"} />
+                  <rect x="145" y="50" width="30" height="24" rx="2" className={sim.transistors[0]?.isOn ? "fill-mint/20 stroke-mint stroke-2" : "fill-card stroke-border stroke-1.5"} />
+                  <circle cx="138" cy="62" r="3.5" className="fill-background stroke-foreground stroke-1.5" />
+                  <line x1="90" y1="62" x2="134" y2="62" stroke="currentColor" strokeWidth="1.5" className="text-foreground" />
+                  <text x="160" y="65" textAnchor="middle" className="fill-foreground text-[10px] font-bold">pMOS</text>
+                  <line x1="160" y1="74" x2="160" y2="115" stroke="currentColor" strokeWidth="2" className={sim.transistors[0]?.isOn ? "text-mint" : "text-border"} />
+                  <text x="75" y="65" textAnchor="end" className="fill-foreground text-[11px] font-bold">A ({va.toFixed(1)}V)</text>
+
+                  {/* Pull-down nMOS */}
+                  <line x1="160" y1="115" x2="160" y2="145" stroke="currentColor" strokeWidth="2" className={sim.transistors[1]?.isOn ? "text-sky" : "text-border"} />
+                  <rect x="145" y="145" width="30" height="24" rx="2" className={sim.transistors[1]?.isOn ? "fill-sky/20 stroke-sky stroke-2" : "fill-card stroke-border stroke-1.5"} />
+                  <line x1="90" y1="157" x2="145" y2="157" stroke="currentColor" strokeWidth="1.5" className="text-foreground" />
+                  <line x1="90" y1="62" x2="90" y2="157" stroke="currentColor" strokeWidth="1.5" className="text-foreground" />
+                  <text x="160" y="160" textAnchor="middle" className="fill-foreground text-[10px] font-bold">nMOS</text>
+                  <line x1="160" y1="169" x2="160" y2="210" stroke="currentColor" strokeWidth="2" className={sim.transistors[1]?.isOn ? "text-sky" : "text-border"} />
+                </>
+              )}
+
+              {gate === "NAND" && (
+                <>
+                  {/* PUN: Parallel pMOS A and B */}
+                  <path d="M160,20 V35 H120 V50" fill="none" stroke="currentColor" strokeWidth="2" className={sim.transistors[0]?.isOn ? "text-mint" : "text-border"} />
+                  <path d="M160,20 V35 H200 V50" fill="none" stroke="currentColor" strokeWidth="2" className={sim.transistors[1]?.isOn ? "text-mint" : "text-border"} />
+                  <rect x="105" y="50" width="30" height="22" rx="2" className={sim.transistors[0]?.isOn ? "fill-mint/20 stroke-mint stroke-2" : "fill-card stroke-border"} />
+                  <rect x="185" y="50" width="30" height="22" rx="2" className={sim.transistors[1]?.isOn ? "fill-mint/20 stroke-mint stroke-2" : "fill-card stroke-border"} />
+                  <circle cx="98" cy="61" r="3.5" className="fill-background stroke-foreground" />
+                  <circle cx="178" cy="61" r="3.5" className="fill-background stroke-foreground" />
+                  <text x="120" y="64" textAnchor="middle" className="fill-foreground text-[9px]">pA</text>
+                  <text x="200" y="64" textAnchor="middle" className="fill-foreground text-[9px]">pB</text>
+                  <path d="M120,72 V88 H160 V115" fill="none" stroke="currentColor" strokeWidth="2" className={sim.transistors[0]?.isOn ? "text-mint" : "text-border"} />
+                  <path d="M200,72 V88 H160 V115" fill="none" stroke="currentColor" strokeWidth="2" className={sim.transistors[1]?.isOn ? "text-mint" : "text-border"} />
+
+                  {/* PDN: Series nMOS A and B */}
+                  <line x1="160" y1="115" x2="160" y2="135" stroke="currentColor" strokeWidth="2" className={sim.transistors[2]?.isOn ? "text-sky" : "text-border"} />
+                  <rect x="145" y="135" width="30" height="22" rx="2" className={sim.transistors[2]?.isOn ? "fill-sky/20 stroke-sky stroke-2" : "fill-card stroke-border"} />
+                  <text x="160" y="149" textAnchor="middle" className="fill-foreground text-[9px]">nA</text>
+                  <line x1="160" y1="157" x2="160" y2="175" stroke="currentColor" strokeWidth="2" className={sim.transistors[2]?.isOn && sim.transistors[3]?.isOn ? "text-sky" : "text-border"} />
+                  <rect x="145" y="175" width="30" height="22" rx="2" className={sim.transistors[3]?.isOn ? "fill-sky/20 stroke-sky stroke-2" : "fill-card stroke-border"} />
+                  <text x="160" y="189" textAnchor="middle" className="fill-foreground text-[9px]">nB</text>
+                  <line x1="160" y1="197" x2="160" y2="210" stroke="currentColor" strokeWidth="2" className={sim.transistors[3]?.isOn ? "text-sky" : "text-border"} />
+                </>
+              )}
+
+              {gate === "NOR" && (
+                <>
+                  {/* PUN: Series pMOS A and B */}
+                  <line x1="160" y1="20" x2="160" y2="38" stroke="currentColor" strokeWidth="2" className={sim.transistors[0]?.isOn ? "text-mint" : "text-border"} />
+                  <rect x="145" y="38" width="30" height="22" rx="2" className={sim.transistors[0]?.isOn ? "fill-mint/20 stroke-mint stroke-2" : "fill-card stroke-border"} />
+                  <circle cx="138" cy="49" r="3.5" className="fill-background stroke-foreground" />
+                  <text x="160" y="52" textAnchor="middle" className="fill-foreground text-[9px]">pA</text>
+                  <line x1="160" y1="60" x2="160" y2="78" stroke="currentColor" strokeWidth="2" className={sim.transistors[0]?.isOn && sim.transistors[1]?.isOn ? "text-mint" : "text-border"} />
+                  <rect x="145" y="78" width="30" height="22" rx="2" className={sim.transistors[1]?.isOn ? "fill-mint/20 stroke-mint stroke-2" : "fill-card stroke-border"} />
+                  <circle cx="138" cy="89" r="3.5" className="fill-background stroke-foreground" />
+                  <text x="160" y="92" textAnchor="middle" className="fill-foreground text-[9px]">pB</text>
+                  <line x1="160" y1="100" x2="160" y2="115" stroke="currentColor" strokeWidth="2" className={sim.transistors[0]?.isOn && sim.transistors[1]?.isOn ? "text-mint" : "text-border"} />
+
+                  {/* PDN: Parallel nMOS A and B */}
+                  <path d="M160,115 V130 H120 V145" fill="none" stroke="currentColor" strokeWidth="2" className={sim.transistors[2]?.isOn ? "text-sky" : "text-border"} />
+                  <path d="M160,115 V130 H200 V145" fill="none" stroke="currentColor" strokeWidth="2" className={sim.transistors[3]?.isOn ? "text-sky" : "text-border"} />
+                  <rect x="105" y="145" width="30" height="22" rx="2" className={sim.transistors[2]?.isOn ? "fill-sky/20 stroke-sky stroke-2" : "fill-card stroke-border"} />
+                  <rect x="185" y="145" width="30" height="22" rx="2" className={sim.transistors[3]?.isOn ? "fill-sky/20 stroke-sky stroke-2" : "fill-card stroke-border"} />
+                  <text x="120" y="159" textAnchor="middle" className="fill-foreground text-[9px]">nA</text>
+                  <text x="200" y="159" textAnchor="middle" className="fill-foreground text-[9px]">nB</text>
+                  <path d="M120,167 V190 H160 V210" fill="none" stroke="currentColor" strokeWidth="2" className={sim.transistors[2]?.isOn ? "text-sky" : "text-border"} />
+                  <path d="M200,167 V190 H160 V210" fill="none" stroke="currentColor" strokeWidth="2" className={sim.transistors[3]?.isOn ? "text-sky" : "text-border"} />
+                </>
+              )}
+            </svg>
+          </div>
+
+          {/* Truth table & state status */}
+          <div className="flex flex-col gap-3">
+            <div className={`p-2.5 rounded border text-[12px] leading-relaxed ${sim.outputState === "SHOOT_THROUGH" ? "bg-orange/15 border-orange text-orange" : sim.outputState === "HIGH" ? "bg-mint/15 border-mint text-mint" : "bg-sky/15 border-sky text-sky"}`}>
+              {sim.statusText}
+            </div>
+
+            <div className="text-[12px] text-muted-foreground">
+              <div>Pull-Up Network (pMOS): <span className={sim.pullUpConnected ? "text-mint font-bold" : "text-muted-foreground"}>{sim.pullUpConnected ? "CONDUCTING" : "OFF"}</span></div>
+              <div>Pull-Down Network (nMOS): <span className={sim.pullDownConnected ? "text-sky font-bold" : "text-muted-foreground"}>{sim.pullDownConnected ? "CONDUCTING" : "OFF"}</span></div>
+              <div>Output Voltage: <span className="font-bold text-foreground">{sim.outputVoltage.toFixed(1)} V</span></div>
+            </div>
+
+            <table className="font-mono text-[12px] border-collapse w-full border border-border">
+              <thead>
+                <tr className="bg-muted/40">
+                  <th className="px-2 py-1 border-b border-border text-center">A</th>
+                  {isDual && <th className="px-2 py-1 border-b border-border text-center">B</th>}
+                  <th className="px-2 py-1 border-b border-border text-center text-mint font-bold">Y</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, idx) => {
+                  const match = curA === r.a && (!isDual || curB === r.b);
+                  return (
+                    <tr key={idx} className={match ? "bg-mint/20 font-bold" : ""}>
+                      <td className="px-2 py-1 border-b border-border/50 text-center">{r.a}</td>
+                      {isDual && <td className="px-2 py-1 border-b border-border/50 text-center">{r.b}</td>}
+                      <td className="px-2 py-1 border-b border-border/50 text-center">{r.out}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </Panel>
   );
 }
 
-/** Click output cells; the SOP and POS rewrite themselves. */
-export function TruthTableBuilder({ start = [3, 4] }: { start?: number[] }) {
-  const vars = ["A", "B", "C"];
-  const [on, setOn] = useState<number[]>(start);
-  const rows = truthRows(vars);
+/* ---------------------------- Propagation Delay Cascade -------------------------- */
+
+/** Interactive cascaded path propagation delay analyzer demonstrating alternating edge polarities. */
+export function PropagationDelayLab() {
+  const [transition, setTransition] = useState<"0to1" | "1to0">("0to1");
+  const [tpInv, setTpInv] = useState<{ tpHL: number; tpLH: number }>({ tpHL: 3, tpLH: 4 });
+  const [tpAnd, setTpAnd] = useState<{ tpHL: number; tpLH: number }>({ tpHL: 6, tpLH: 8 });
+  const [tpNor, setTpNor] = useState<{ tpHL: number; tpLH: number }>({ tpHL: 5, tpLH: 7 });
+
+  const stages: CascadeStageConfig[] = useMemo(() => [
+    { label: "Stage 1: Inverter", gate: "NOT", tpHL: tpInv.tpHL, tpLH: tpInv.tpLH },
+    { label: "Stage 2: AND Gate (B=1)", gate: "AND", tpHL: tpAnd.tpHL, tpLH: tpAnd.tpLH, staticInputs: [1] },
+    { label: "Stage 3: NOR Gate (B=0)", gate: "NOR", tpHL: tpNor.tpHL, tpLH: tpNor.tpLH, staticInputs: [0] },
+  ], [tpInv, tpAnd, tpNor]);
+
+  const result = useMemo(() => simulateCascadeDelay(stages, transition), [stages, transition]);
+
   return (
-    <Panel title="From a truth table to an expression">
-      <div className="grid md:grid-cols-[auto_1fr] gap-6 items-start">
-        <table className="font-mono text-[13px] border-collapse">
-          <thead><tr>{[...vars, "X"].map((v) => <th key={v} className="px-3 border-b border-border">{v}</th>)}</tr></thead>
-          <tbody>
-            {rows.map(({ m, env }) => (
-              <tr key={m} className={on.includes(m) ? "bg-mint/15" : ""}>
-                {vars.map((v) => <td key={v} className="px-3 text-center">{env[v]}</td>)}
-                <td className="px-1 text-center"><button type="button" aria-label={`Output for row ${m}`} onClick={() => setOn(on.includes(m) ? on.filter((x) => x !== m) : [...on, m])} className={`w-7 h-6 border rounded-[2px] font-bold ${on.includes(m) ? "border-mint" : "border-border"}`}>{on.includes(m) ? 1 : 0}</button></td>
+    <Panel
+      title="Cascaded Path Propagation Delay Analyzer"
+      legend={[
+        ["bg-mint/30", "rising transition (0 \u2192 1)"],
+        ["bg-sky/30", "falling transition (1 \u2192 0)"],
+      ]}
+    >
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Input Transition Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-2.5 rounded border border-border/60">
+          <div className="flex items-center gap-2">
+            <span className="eyebrow text-muted-foreground">Primary Input Edge:</span>
+            <button
+              type="button"
+              aria-pressed={transition === "0to1"}
+              onClick={() => setTransition("0to1")}
+              className={`${btn} !px-2.5 ${transition === "0to1" ? "bg-mint text-background font-bold" : ""}`}
+            >
+              Rising (0 \u2192 1)
+            </button>
+            <button
+              type="button"
+              aria-pressed={transition === "1to0"}
+              onClick={() => setTransition("1to0")}
+              className={`${btn} !px-2.5 ${transition === "1to0" ? "bg-sky text-background font-bold" : ""}`}
+            >
+              Falling (1 \u2192 0)
+            </button>
+          </div>
+          <div className="text-[14px]">
+            Total Path Delay: <span className="font-bold text-mint text-base">{result.totalDelayNs} ns</span>
+          </div>
+        </div>
+
+        {/* Stage Delay Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full font-mono text-[12px] border-collapse border border-border">
+            <thead>
+              <tr className="bg-muted/40 text-left">
+                <th className="px-3 py-1.5 border-b border-border">Stage</th>
+                <th className="px-3 py-1.5 border-b border-border text-center">Input Transition</th>
+                <th className="px-3 py-1.5 border-b border-border text-center">Output Transition</th>
+                <th className="px-3 py-1.5 border-b border-border text-center">Parameter</th>
+                <th className="px-3 py-1.5 border-b border-border text-right">Stage Delay</th>
+                <th className="px-3 py-1.5 border-b border-border text-right">Cumulative</th>
               </tr>
+            </thead>
+            <tbody>
+              {result.stages.map((stg) => (
+                <tr key={stg.index} className="border-b border-border/50 hover:bg-muted/10">
+                  <td className="px-3 py-2 font-bold text-foreground">{stg.label}</td>
+                  <td className="px-3 py-2 text-center">
+                    <span className={`px-2 py-0.5 rounded text-[11px] ${stg.inEdge === "rising" ? "bg-mint/20 text-mint" : "bg-sky/20 text-sky"}`}>
+                      {stg.inBefore} \u2192 {stg.inAfter} ({stg.inEdge})
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${stg.outEdge === "rising" ? "bg-mint/20 text-mint" : "bg-sky/20 text-sky"}`}>
+                      {stg.outBefore} \u2192 {stg.outAfter} ({stg.outEdge})
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-center font-bold text-neon">{stg.delayParameter}</td>
+                  <td className="px-3 py-2 text-right">{stg.delayNs} ns</td>
+                  <td className="px-3 py-2 text-right font-bold text-foreground">{stg.cumulativeNs} ns</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Timeline Visualization */}
+        <div className="bg-card p-3 rounded border border-border">
+          <div className="eyebrow text-muted-foreground mb-2">Stage-by-Stage Timeline Waveforms</div>
+          <svg viewBox="0 0 460 140" className="w-full max-w-[500px] mx-auto block select-none" role="img" aria-label="Propagation delay timeline">
+            {/* Axis time markers */}
+            <line x1="80" y1="125" x2="440" y2="125" stroke="currentColor" strokeWidth="1" className="text-border" />
+            {[0, 5, 10, 15, 20].map((t) => {
+              const x = 80 + t * 16;
+              return (
+                <g key={t}>
+                  <line x1={x} y1="122" x2={x} y2="128" stroke="currentColor" strokeWidth="1" className="text-border" />
+                  <text x={x} y="137" textAnchor="middle" className="fill-muted-foreground text-[9px]">{t}ns</text>
+                </g>
+              );
+            })}
+
+            {/* Input Signal */}
+            <text x="70" y="24" textAnchor="end" className="fill-muted-foreground text-[10px]">Input</text>
+            <path
+              d={transition === "0to1" ? "M80,26 H100 V12 H440" : "M80,12 H100 V26 H440"}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="text-foreground"
+            />
+
+            {/* Stage traces */}
+            {result.stages.map((stg, i) => {
+              const yBase = 45 + i * 26;
+              const tX = 80 + stg.cumulativeNs * 16;
+              const prevX = i === 0 ? 100 : 80 + result.stages[i - 1].cumulativeNs * 16;
+              const highY = yBase - 8;
+              const lowY = yBase + 6;
+              const startY = stg.outBefore === 1 ? highY : lowY;
+              const endY = stg.outAfter === 1 ? highY : lowY;
+
+              return (
+                <g key={i}>
+                  <text x="70" y={yBase + 2} textAnchor="end" className="fill-muted-foreground text-[10px]">Stg {i + 1}</text>
+                  <path
+                    d={`M80,${startY} H${tX} V${endY} H440`}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className={stg.outEdge === "rising" ? "text-mint" : "text-sky"}
+                  />
+                  {/* Transition marker */}
+                  <line x1={tX} y1={highY - 2} x2={tX} y2={lowY + 2} stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" className="text-neon" />
+                  <text x={tX + 3} y={highY + 3} className="fill-neon text-[8px] font-bold">{stg.delayParameter}</text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/* ---------------------------- Boolean algebra -------------------------- */
+
+const THEOREMS: [string, string, string, string[]][] = [
+  ["Huntington Distributive", "A + BC", "(A + B)(A + C)", ["A", "B", "C"]],
+  ["Absorption Law", "A + AB", "A", ["A", "B"]],
+  ["Elimination Law", "A + A'B", "A + B", ["A", "B"]],
+  ["Consensus Theorem", "AB + A'C + BC", "AB + A'C", ["A", "B", "C"]],
+  ["De Morgan 1", "(AB)'", "A' + B'", ["A", "B"]],
+  ["De Morgan 2", "(A + B)'", "A'B'", ["A", "B"]],
+  ["Idempotent Law", "A + A", "A", ["A"]],
+  ["Boundedness Law", "A + 1", "1", ["A"]],
+  ["Involution Law", "(A')'", "A", ["A"]],
+];
+
+/** Interactive Boolean Algebra theorem lab and Principle of Duality explorer. */
+export function BooleanAlgebraLab() {
+  const [i, setI] = useState(0);
+  const [title, left, right, vars] = THEOREMS[i];
+  const rows = truthRows(vars);
+
+  const leftDual = useMemo(() => computeBooleanDual(left), [left]);
+  const rightDual = useMemo(() => computeBooleanDual(right), [right]);
+
+  return (
+    <Panel title="Boolean Algebra: Theorems and Duality Explorer">
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Theorem selection tabs */}
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Select Boolean theorem">
+          {THEOREMS.map((x, k) => (
+            <button
+              key={x[0]}
+              type="button"
+              onClick={() => setI(k)}
+              aria-pressed={k === i}
+              className={`${btn} !px-2.5 ${k === i ? "bg-foreground text-background font-bold" : ""}`}
+            >
+              {x[0]}
+            </button>
+          ))}
+        </div>
+
+        {/* Primary and Dual identities */}
+        <div className="grid sm:grid-cols-2 gap-4 bg-muted/20 p-3 rounded border border-border/60">
+          <div>
+            <div className="eyebrow text-mint mb-1">Primary Form</div>
+            <div className="text-base font-bold text-foreground break-words">{left} = {right}</div>
+            <div className="text-[11px] text-muted-foreground font-body mt-1">Verified row-by-row via perfect induction below.</div>
+          </div>
+          <div>
+            <div className="eyebrow text-sky mb-1">Dual Form (Principle of Duality)</div>
+            <div className="text-base font-bold text-sky break-words">{leftDual} = {rightDual}</div>
+            <div className="text-[11px] text-muted-foreground font-body mt-1">Interchanging (+ \u2194 \u00B7) and (0 \u2194 1) while preserving literals.</div>
+          </div>
+        </div>
+
+        {/* Perfect Induction Truth Table */}
+        <div className="overflow-x-auto">
+          <table className="font-mono text-[12px] w-full border-collapse border border-border">
+            <thead>
+              <tr className="bg-muted/30">
+                {vars.map((v) => (
+                  <th key={v} className="px-3 py-1 border-b border-border text-center">{v}</th>
+                ))}
+                <th className="px-3 py-1 border-b border-border text-center text-mint font-bold">{left}</th>
+                <th className="px-3 py-1 border-b border-border text-center text-mint font-bold">{right}</th>
+                <th className="px-3 py-1 border-b border-border text-center text-muted-foreground">Match?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ m, env }) => {
+                const a = evalExpr(left.replace(/·/g, "."), env);
+                const b = evalExpr(right.replace(/·/g, "."), env);
+                const match = a === b;
+                return (
+                  <tr key={m} className="border-b border-border/40 hover:bg-muted/10">
+                    {vars.map((v) => (
+                      <td key={v} className="px-3 py-0.5 text-center text-muted-foreground">{env[v]}</td>
+                    ))}
+                    <td className="px-3 py-0.5 text-center font-bold text-foreground">{a}</td>
+                    <td className="px-3 py-0.5 text-center font-bold text-foreground">{b}</td>
+                    <td className="px-3 py-0.5 text-center text-mint font-bold">{match ? "\u2713" : "\u2717"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="text-[12px] text-mint">
+          {rows.length} of {rows.length} truth table rows agree, rigorously proving {title} by perfect induction.
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Legacy alias preserving backward compatibility. */
+export function LawChecker() {
+  return <BooleanAlgebraLab />;
+}
+
+/* ---------------------------- SOP and POS -------------------------- */
+
+const SOP_PRESETS: { label: string; vars: string[]; on: number[] }[] = [
+  { label: "Majority Vote (3-var)", vars: ["A", "B", "C"], on: [3, 5, 6, 7] },
+  { label: "XOR / Odd Parity (3-var)", vars: ["A", "B", "C"], on: [1, 2, 4, 7] },
+  { label: "2-to-1 MUX (A'B + AC)", vars: ["A", "B", "C"], on: [2, 3, 5, 7] },
+  { label: "Full Adder Carry (3-var)", vars: ["A", "B", "C"], on: [3, 5, 6, 7] },
+  { label: "4-Var Corner Quad", vars: ["A", "B", "C", "D"], on: [0, 2, 8, 10] },
+];
+
+/** Click output cells; inspect canonical SOP (sum of minterms) and POS (product of maxterms). */
+export function TruthTableBuilder({ start = [3, 4] }: { start?: number[] }) {
+  const [varCount, setVarCount] = useState<2 | 3 | 4>(3);
+  const vars = useMemo(() => ["A", "B", "C", "D"].slice(0, varCount), [varCount]);
+  const [on, setOn] = useState<number[]>(start);
+
+  const rows = useMemo(() => truthRows(vars), [vars]);
+  const zeros = useMemo(() => Array.from({ length: 2 ** varCount }, (_, m) => m).filter((m) => !on.includes(m)), [varCount, on]);
+
+  const sopStr = useMemo(() => sopFromMinterms(on, vars), [on, vars]);
+  const posStr = useMemo(() => posFromMinterms(on, vars), [on, vars]);
+
+  return (
+    <Panel title="Truth Tables to Circuits: Canonical SOP and POS Explorer">
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Variable count and presets */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="eyebrow text-muted-foreground">Variables:</span>
+            {([2, 3, 4] as const).map((n) => (
+              <button
+                key={n}
+                type="button"
+                aria-pressed={varCount === n}
+                onClick={() => { setVarCount(n); setOn([1, 2]); }}
+                className={`${btn} !px-2.5 ${varCount === n ? "bg-foreground text-background font-bold" : ""}`}
+              >
+                {n} vars
+              </button>
             ))}
-          </tbody>
-        </table>
-        <div className="flex flex-col gap-4 font-mono text-[13px]">
-          <div><div className="eyebrow text-mint mb-1">Sum of products</div><div className="break-words">X = {sopFromMinterms(on, vars)}</div><div className="text-muted-foreground text-[11px] font-body mt-1">One AND term for each row that gives 1. X is 1 if this row or that row happened.</div></div>
-          <div><div className="eyebrow text-sky mb-1">Product of sums</div><div className="break-words">X = {posFromMinterms(on, vars)}</div><div className="text-muted-foreground text-[11px] font-body mt-1">One OR term for each row that gives 0. Each term rules out one bad row.</div></div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {SOP_PRESETS.filter((p) => p.vars.length === varCount).map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => setOn(p.on)}
+                className={`${btn} !px-2 text-[11px]`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Truth Table & Formulas Grid */}
+        <div className="grid md:grid-cols-[auto_1fr] gap-6 items-start">
+          <div className="overflow-x-auto max-h-[380px] overflow-y-auto border border-border rounded">
+            <table className="font-mono text-[12px] border-collapse w-full">
+              <thead className="sticky top-0 bg-card z-10 shadow-sm">
+                <tr>
+                  <th className="px-2 py-1 border-b border-border text-center text-muted-foreground">Row</th>
+                  {vars.map((v) => (
+                    <th key={v} className="px-2 py-1 border-b border-border text-center">{v}</th>
+                  ))}
+                  <th className="px-2 py-1 border-b border-border text-center text-mint font-bold">F</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(({ m, env }) => {
+                  const isOn = on.includes(m);
+                  return (
+                    <tr key={m} className={`border-b border-border/40 ${isOn ? "bg-mint/15" : ""}`}>
+                      <td className="px-2 py-0.5 text-center text-muted-foreground text-[10px]">m{m} / M{m}</td>
+                      {vars.map((v) => (
+                        <td key={v} className="px-2 py-0.5 text-center">{env[v]}</td>
+                      ))}
+                      <td className="px-2 py-0.5 text-center">
+                        <button
+                          type="button"
+                          aria-label={`Toggle row ${m}`}
+                          onClick={() => setOn(isOn ? on.filter((x) => x !== m) : [...on, m])}
+                          className={`w-7 h-6 border rounded-[2px] font-bold transition-colors ${isOn ? "border-mint bg-mint/30 text-mint" : "border-border text-muted-foreground"}`}
+                        >
+                          {isOn ? 1 : 0}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {/* Canonical SOP */}
+            <div className="bg-muted/20 p-3 rounded border border-border/60">
+              <div className="flex items-center justify-between mb-1">
+                <span className="eyebrow text-mint">Canonical Sum of Minterms (SOP)</span>
+                <span className="text-[11px] text-muted-foreground">{on.length} minterms</span>
+              </div>
+              <div className="font-bold text-mint break-words mb-1">
+                F({vars.join(", ")}) = \u2211 m({[...on].sort((a, b) => a - b).join(", ") || "\u2205"})
+              </div>
+              <div className="text-[12px] text-foreground break-words font-mono">
+                F = {sopStr}
+              </div>
+              <div className="text-[11px] text-muted-foreground font-body mt-1">
+                Two-level AND-OR structure: {on.length} AND gates feeding a single {on.length}-input OR gate.
+              </div>
+            </div>
+
+            {/* Canonical POS */}
+            <div className="bg-muted/20 p-3 rounded border border-border/60">
+              <div className="flex items-center justify-between mb-1">
+                <span className="eyebrow text-sky">Canonical Product of Maxterms (POS)</span>
+                <span className="text-[11px] text-muted-foreground">{zeros.length} maxterms</span>
+              </div>
+              <div className="font-bold text-sky break-words mb-1">
+                F({vars.join(", ")}) = \u220F M({[...zeros].sort((a, b) => a - b).join(", ") || "\u2205"})
+              </div>
+              <div className="text-[12px] text-foreground break-words font-mono">
+                F = {posStr}
+              </div>
+              <div className="text-[11px] text-muted-foreground font-body mt-1">
+                Two-level OR-AND structure: {zeros.length} OR gates feeding a single {zeros.length}-input AND gate.
+              </div>
+            </div>
+
+            {/* Inverted function */}
+            <div className="text-[12px] text-muted-foreground">
+              Complement function: <span className="font-bold text-foreground">F' = \u2211 m({zeros.join(", ")}) = \u220F M({[...on].sort((a, b) => a - b).join(", ")})</span>
+            </div>
+          </div>
         </div>
       </div>
     </Panel>
@@ -2140,52 +2702,646 @@ export function TruthTableBuilder({ start = [3, 4] }: { start?: number[] }) {
 
 /* -------------------------------- K-map -------------------------------- */
 
-const GROUP_TONES = ["border-mint bg-mint/25", "border-sky bg-sky/25", "border-orange bg-orange/25", "border-violet bg-violet/25", "border-neon bg-neon/25"];
-const TERM_TONES = ["text-mint", "text-sky", "text-orange", "text-violet", "text-neon"];
+const KMAP_GROUP_TONES = [
+  "border-mint bg-mint/25 text-mint",
+  "border-sky bg-sky/25 text-sky",
+  "border-orange bg-orange/25 text-orange",
+  "border-violet bg-violet/25 text-violet",
+  "border-neon bg-neon/25 text-neon",
+];
 
-/** Click cells on or off. The groups, and the simplified expression, follow. */
-export function KMapExplorer({ vars = ["A", "B", "C"], start = [5, 3, 1, 0, 4] }: { vars?: string[]; start?: number[] }) {
-  const n = vars.length as 2 | 3 | 4;
+const KMAP_PRESETS = [
+  { label: "Problem 1: EPIs & Quad", vars: ["A", "B", "C", "D"], on: [0, 2, 5, 7, 8, 10, 14, 15], dc: [] },
+  { label: "Problem 2: Don't Cares", vars: ["w", "x", "y", "z"], on: [1, 3, 7, 11, 15], dc: [0, 2, 5] },
+  { label: "Corner Quad (B'D')", vars: ["A", "B", "C", "D"], on: [0, 2, 8, 10], dc: [] },
+  { label: "Static-1 Hazard Pair", vars: ["A", "B", "C"], on: [2, 3, 6, 7], dc: [] },
+  { label: "Checkerboard (XOR)", vars: ["A", "B", "C"], on: [1, 2, 4, 7], dc: [] },
+];
+
+/** Upgraded Karnaugh Map Explorer supporting 2/3/4 vars, Don't-Cares, SOP vs POS, and EPI identification. */
+export function KMapExplorer({
+  vars: initialVars = ["A", "B", "C"],
+  start = [5, 3, 1, 0, 4],
+}: {
+  vars?: string[];
+  start?: number[];
+}) {
+  const [currentVars, setCurrentVars] = useState<string[]>(initialVars);
+  const n = currentVars.length as 2 | 3 | 4;
+
   const [on, setOn] = useState<number[]>(start);
-  const layout = kmapLayout(n);
-  const groups = useMemo(() => minimizeSop(on, vars), [on, vars]);
+  const [dc, setDc] = useState<number[]>([]);
+  const [mode, setMode] = useState<"SOP" | "POS">("SOP");
+
+  const layout = useMemo(() => kmapLayout(n), [n]);
+
+  const minResult = useMemo(
+    () => minimizeKMap(currentVars, on, dc, mode),
+    [currentVars, on, dc, mode],
+  );
+
   const label = (bits: number, count: number) => bitString(bits, count);
-  const before = sopFromMinterms(on, vars);
-  const after = groups.map((g) => g.term).join(" + ") || "0";
-  const litBefore = on.length === 2 ** n ? 0 : on.length * n;
-  const litAfter = groups.reduce((s, g) => s + (g.term === "1" ? 0 : g.term.replace(/'/g, "").length), 0);
+
+  const handleCellClick = (m: number) => {
+    // 3-way toggle: 0 -> 1 -> X (don't care) -> 0
+    if (on.includes(m)) {
+      setOn(on.filter((x) => x !== m));
+      setDc([...dc, m]);
+    } else if (dc.includes(m)) {
+      setDc(dc.filter((x) => x !== m));
+    } else {
+      setOn([...on, m]);
+    }
+  };
+
   return (
-    <Panel title="Karnaugh map" legend={[["bg-mint/40", "each colour is one group"]]}>
-      <div className="grid md:grid-cols-[auto_1fr] gap-6 items-start">
-        <div className="font-mono text-[12px]">
-          <div className="flex">
-            <div className="w-14 h-7 flex items-end justify-end pr-1 text-[10px] text-muted-foreground">{vars.slice(0, layout.rowBits).join("")}\{vars.slice(layout.rowBits).join("")}</div>
-            {layout.cols.map((c) => <div key={c} className="w-14 h-7 flex items-center justify-center text-muted-foreground">{label(c, layout.colBits)}</div>)}
+    <Panel
+      title="Karnaugh Map Interactive Minimization Lab"
+      legend={[
+        ["bg-mint/40", "prime implicant group"],
+        ["border-orange", "don't-care (X)"],
+        ["border-neon", "essential prime implicant (EPI)"],
+      ]}
+    >
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Controls: variables, mode, presets */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="eyebrow text-muted-foreground">Dimension:</span>
+            {([2, 3, 4] as const).map((dim) => (
+              <button
+                key={dim}
+                type="button"
+                aria-pressed={n === dim}
+                onClick={() => {
+                  const newVars = ["A", "B", "C", "D"].slice(0, dim);
+                  setCurrentVars(newVars);
+                  setOn([0, 1]);
+                  setDc([]);
+                }}
+                className={`${btn} !px-2.5 ${n === dim ? "bg-foreground text-background font-bold" : ""}`}
+              >
+                {dim} vars
+              </button>
+            ))}
           </div>
-          {layout.rows.map((rv, r) => (
-            <div key={rv} className="flex">
-              <div className="w-14 h-14 flex items-center justify-end pr-2 text-muted-foreground">{label(rv, layout.rowBits)}</div>
-              {layout.cols.map((_, c) => {
-                const m = layout.cell(r, c);
-                const isOn = on.includes(m);
-                const owners = groups.map((g, i) => (g.cells.includes(m) ? i : -1)).filter((i) => i >= 0);
+
+          <div className="flex items-center gap-2">
+            <span className="eyebrow text-muted-foreground">Mode:</span>
+            <button
+              type="button"
+              aria-pressed={mode === "SOP"}
+              onClick={() => setMode("SOP")}
+              className={`${btn} !px-2.5 ${mode === "SOP" ? "bg-mint text-background font-bold" : ""}`}
+            >
+              SOP (Group 1s)
+            </button>
+            <button
+              type="button"
+              aria-pressed={mode === "POS"}
+              onClick={() => setMode("POS")}
+              className={`${btn} !px-2.5 ${mode === "POS" ? "bg-sky text-background font-bold" : ""}`}
+            >
+              POS (Group 0s)
+            </button>
+          </div>
+        </div>
+
+        {/* Presets */}
+        <div className="flex flex-wrap items-center gap-1.5 bg-muted/20 p-2 rounded border border-border/60">
+          <span className="eyebrow text-muted-foreground text-[10px] mr-1">Presets:</span>
+          {KMAP_PRESETS.map((p) => (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => {
+                setCurrentVars(p.vars);
+                setOn(p.on);
+                setDc(p.dc);
+              }}
+              className={`${btn} !px-2 text-[11px]`}
+            >
+              {p.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => { setOn([]); setDc([]); }}
+            className={`${btn} !px-2 text-[11px] text-muted-foreground ml-auto`}
+          >
+            Clear All
+          </button>
+        </div>
+
+        {/* K-Map Grid & Solutions */}
+        <div className="grid md:grid-cols-[auto_1fr] gap-6 items-start">
+          {/* Grid */}
+          <div className="font-mono text-[12px] bg-card p-3 rounded border border-border overflow-x-auto">
+            <div className="flex">
+              <div className="w-14 h-7 flex items-end justify-end pr-1 text-[10px] text-muted-foreground">
+                {currentVars.slice(0, layout.rowBits).join("")}\{currentVars.slice(layout.rowBits).join("")}
+              </div>
+              {layout.cols.map((c) => (
+                <div key={c} className="w-14 h-7 flex items-center justify-center text-muted-foreground font-bold">
+                  {label(c, layout.colBits)}
+                </div>
+              ))}
+            </div>
+
+            {layout.rows.map((rv, r) => (
+              <div key={rv} className="flex">
+                <div className="w-14 h-14 flex items-center justify-end pr-2 text-muted-foreground font-bold">
+                  {label(rv, layout.rowBits)}
+                </div>
+                {layout.cols.map((_, c) => {
+                  const m = layout.cell(r, c);
+                  const is1 = on.includes(m);
+                  const isX = dc.includes(m);
+                  const owners = minResult.primes
+                    .map((g, idx) => (g.cells.includes(m) ? idx : -1))
+                    .filter((idx) => idx >= 0);
+
+                  const isDistinguished = minResult.essentials.some((e) => e.distinguishedMinterms.includes(m));
+
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      aria-label={`Cell m${m} (${bitString(m, n)})`}
+                      onClick={() => handleCellClick(m)}
+                      className={`relative w-14 h-14 border text-base font-bold transition-colors select-none ${
+                        is1 && owners.length
+                          ? KMAP_GROUP_TONES[owners[0] % 5]
+                          : isX
+                          ? "border-orange/60 bg-orange/15 text-orange"
+                          : "border-border hover:bg-muted/10 text-muted-foreground/40"
+                      }`}
+                    >
+                      <span className="absolute top-1 left-1.5 text-[9px] text-muted-foreground/60 font-normal">m{m}</span>
+                      {isDistinguished && (
+                        <span className="absolute top-1 right-1.5 text-[10px] text-neon font-bold" title="Distinguished minterm (covered by only 1 prime implicant)">★</span>
+                      )}
+                      <span className={is1 ? "text-foreground font-bold text-lg" : isX ? "text-orange font-bold text-lg" : ""}>
+                        {is1 ? 1 : isX ? "X" : 0}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+            <div className="text-[10px] text-muted-foreground mt-2">
+              Tip: Click cell to cycle <span className="text-foreground font-bold">0 \u2192 1 \u2192 X (don't care) \u2192 0</span>.
+            </div>
+          </div>
+
+          {/* Solutions & Implicant Analysis */}
+          <div className="flex flex-col gap-3">
+            <div className="bg-muted/20 p-3 rounded border border-border/60">
+              <div className="eyebrow text-mint mb-1">Minimal {mode} Expression</div>
+              <div className="font-mono text-lg font-bold text-mint break-words">
+                F = {minResult.minimalExpr}
+              </div>
+            </div>
+
+            {/* Implicants breakdown */}
+            <div>
+              <div className="eyebrow text-muted-foreground mb-1">Prime Implicants Analysis</div>
+              {minResult.primes.length === 0 ? (
+                <div className="text-muted-foreground text-[12px]">No implicants active.</div>
+              ) : (
+                <ul className="space-y-1.5 text-[12px]">
+                  {minResult.primes.map((p, idx) => (
+                    <li key={idx} className="flex items-center justify-between p-1.5 rounded bg-muted/10 border border-border/40">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-3 h-3 rounded-full ${KMAP_GROUP_TONES[idx % 5].split(" ")[1]}`} />
+                        <span className="font-bold text-foreground">{p.term}</span>
+                        <span className="text-muted-foreground text-[11px]">({p.cells.length} cells: {p.cells.join(",")})</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {p.isEssential && (
+                          <span className="px-1.5 py-0.5 rounded bg-neon/20 text-neon font-bold text-[10px]">
+                            EPI (covers {p.distinguishedMinterms.map((m) => `m${m}`).join(",")})
+                          </span>
+                        )}
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] ${p.isChosen ? "bg-mint/20 text-mint font-bold" : "bg-muted text-muted-foreground line-through"}`}>
+                          {p.isChosen ? "Selected" : "Redundant"}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/* ---------------------------- Timing Hazards -------------------------- */
+
+/** Interactive Static-1 Hazard simulator for F = A'C + AB demonstrating glitch elimination with consensus. */
+export function HazardLab() {
+  const [hasConsensus, setHasConsensus] = useState<boolean>(false);
+  const [timeStep, setTimeStep] = useState<number>(3); // default at glitch position
+
+  const trace = useMemo(() => simulateStatic1Hazard(), []);
+  const cur = trace[timeStep] ?? trace[0];
+
+  return (
+    <Panel
+      title="Combinational Timing Hazard Simulator"
+      legend={[
+        ["bg-orange/40", "static-1 glitch (unwanted 0 spike)"],
+        ["bg-mint/40", "hazard-free consensus term (BC)"],
+      ]}
+    >
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-2.5 rounded border border-border/60">
+          <div className="flex items-center gap-3">
+            <span className="eyebrow text-muted-foreground">Transition:</span>
+            <span className="font-bold text-foreground">A: 0 \u2192 1 (with B=1, C=1)</span>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={hasConsensus}
+              onChange={(e) => setHasConsensus(e.target.checked)}
+              className="w-4 h-4 rounded border-border accent-mint"
+            />
+            <span className={`font-bold ${hasConsensus ? "text-mint" : "text-muted-foreground"}`}>
+              Add Redundant Consensus Term (BC)
+            </span>
+          </label>
+        </div>
+
+        {/* Time slider */}
+        <div className="flex items-center gap-4 bg-card p-3 rounded border border-border">
+          <span className="eyebrow text-muted-foreground whitespace-nowrap">Time t: {cur.t} ns</span>
+          <input
+            type="range"
+            min={0}
+            max={6}
+            step={1}
+            value={timeStep}
+            onChange={(e) => setTimeStep(Number(e.target.value))}
+            className="w-full accent-mint"
+          />
+          <div className="flex gap-1">
+            <button
+              type="button"
+              onClick={() => setTimeStep(Math.max(0, timeStep - 1))}
+              className={`${btn} !px-2 text-[11px]`}
+            >
+              \u25C0 Step
+            </button>
+            <button
+              type="button"
+              onClick={() => setTimeStep(Math.min(6, timeStep + 1))}
+              className={`${btn} !px-2 text-[11px]`}
+            >
+              Step \u25B6
+            </button>
+          </div>
+        </div>
+
+        {/* Live signals and Glitch Alert */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="p-3 rounded border bg-card text-[12px] space-y-1">
+            <div className="font-bold text-foreground mb-1">Circuit State at t = {cur.t} ns:</div>
+            <div>Primary Input A: <span className="font-bold text-foreground">{cur.a}</span></div>
+            <div>Inverter Output A': <span className="font-bold text-foreground">{cur.aNot}</span> (delayed transition)</div>
+            <div>First Product T1 = A'C: <span className={cur.termA ? "text-mint font-bold" : "text-muted-foreground"}>{cur.termA}</span></div>
+            <div>Second Product T2 = AB: <span className={cur.termB ? "text-mint font-bold" : "text-muted-foreground"}>{cur.termB}</span></div>
+            {hasConsensus && (
+              <div>Consensus Term T3 = BC: <span className="text-mint font-bold">1 (Holds output high)</span></div>
+            )}
+          </div>
+
+          <div className={`p-3 rounded border flex flex-col justify-center items-center text-center ${!hasConsensus && cur.isGlitch ? "bg-orange/15 border-orange text-orange" : "bg-mint/15 border-mint text-mint"}`}>
+            <div className="text-2xl font-bold font-mono">
+              Output F = {!hasConsensus ? cur.fWithoutConsensus : cur.fWithConsensus}
+            </div>
+            <div className="text-[12px] font-body mt-1">
+              {!hasConsensus && cur.isGlitch ? (
+                <span className="font-bold">DANGER: STATIC-1 HAZARD GLITCH! Output dipped to 0 for 2 ns during inverter delay overlap.</span>
+              ) : hasConsensus ? (
+                <span className="font-bold">HAZARD-FREE: Consensus term BC bridges the gap. Output remains solidly at logic 1 throughout transition!</span>
+              ) : (
+                <span>Steady state logic 1. Drag slider to t=3 ns to observe glitch.</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Timing Waveform Display */}
+        <div className="bg-card p-3 rounded border border-border">
+          <div className="eyebrow text-muted-foreground mb-2">Dynamic Timing Diagram Across Transition</div>
+          <svg viewBox="0 0 460 160" className="w-full max-w-[500px] mx-auto block select-none" role="img" aria-label="Hazard timing diagram">
+            {/* Time markers */}
+            <line x1="80" y1="145" x2="440" y2="145" stroke="currentColor" strokeWidth="1" className="text-border" />
+            {[0, 1, 2, 3, 4, 5, 6].map((t) => {
+              const x = 90 + t * 50;
+              return (
+                <g key={t}>
+                  <line x1={x} y1="142" x2={x} y2="148" stroke="currentColor" strokeWidth="1" className="text-border" />
+                  <text x={x} y="156" textAnchor="middle" className="fill-muted-foreground text-[9px]">{t}ns</text>
+                </g>
+              );
+            })}
+
+            {/* Current time cursor */}
+            <line x1={90 + timeStep * 50} y1="10" x2={90 + timeStep * 50} y2="145" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" className="text-neon" />
+
+            {/* Signal A */}
+            <text x="75" y="24" textAnchor="end" className="fill-muted-foreground text-[10px]">A</text>
+            <path d="M80,26 H190 V14 H440" fill="none" stroke="currentColor" strokeWidth="2" className="text-foreground" />
+
+            {/* Signal A' */}
+            <text x="75" y="48" textAnchor="end" className="fill-muted-foreground text-[10px]">A'</text>
+            <path d="M80,38 H240 V50 H440" fill="none" stroke="currentColor" strokeWidth="2" className="text-sky" />
+
+            {/* Signal T1 (A'C) */}
+            <text x="75" y="72" textAnchor="end" className="fill-muted-foreground text-[10px]">A'C</text>
+            <path d="M80,62 H240 V74 H440" fill="none" stroke="currentColor" strokeWidth="2" className="text-sky" />
+
+            {/* Signal T2 (AB) */}
+            <text x="75" y="96" textAnchor="end" className="fill-muted-foreground text-[10px]">AB</text>
+            <path d="M80,98 H340 V86 H440" fill="none" stroke="currentColor" strokeWidth="2" className="text-mint" />
+
+            {/* Output F */}
+            <text x="75" y="122" textAnchor="end" className="fill-foreground text-[10px] font-bold">F</text>
+            {!hasConsensus ? (
+              <>
+                <path d="M80,112 H240 V124 H340 V112 H440" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-foreground" />
+                {/* Glitch zone highlight */}
+                <rect x="240" y="110" width="100" height="18" className="fill-orange/25 stroke-orange stroke-1 stroke-dasharray-2" />
+                <text x="290" y="123" textAnchor="middle" className="fill-orange text-[9px] font-bold">GLITCH</text>
+              </>
+            ) : (
+              <path d="M80,112 H440" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-mint" />
+            )}
+          </svg>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/* ---------------------------- Universal Gates -------------------------- */
+
+/** Interactive Universal Gates Lab simulating complete logic synthesis using only NAND or only NOR. */
+export function UniversalGateLab() {
+  const [family, setFamily] = useState<UniversalGateFamily>("NAND");
+  const [target, setTarget] = useState<TargetOperation>("XOR");
+  const [a, setA] = useState<Bit>(0);
+  const [b, setB] = useState<Bit>(1);
+
+  const circuit = UNIVERSAL_CIRCUITS[family][target] ?? UNIVERSAL_CIRCUITS.NAND.XOR;
+  const sim = useMemo(() => circuit.simulate({ A: a, B: b }), [circuit, a, b]);
+
+  const rows = useMemo(() => {
+    const isSingle = target === "NOT";
+    if (isSingle) {
+      return [
+        { a: 0 as Bit, b: 0 as Bit, out: evalGate("NOT", [0]) },
+        { a: 1 as Bit, b: 0 as Bit, out: evalGate("NOT", [1]) },
+      ];
+    }
+    return [
+      { a: 0 as Bit, b: 0 as Bit, out: evalGate(target, [0, 0]) },
+      { a: 0 as Bit, b: 1 as Bit, out: evalGate(target, [0, 1]) },
+      { a: 1 as Bit, b: 0 as Bit, out: evalGate(target, [1, 0]) },
+      { a: 1 as Bit, b: 1 as Bit, out: evalGate(target, [1, 1]) },
+    ];
+  }, [target]);
+
+  return (
+    <Panel
+      title="Universal Gates: Everything from NAND or NOR"
+      legend={[
+        ["bg-mint/30", "logic 1 wire"],
+        ["bg-muted-foreground/30", "logic 0 wire"],
+        ["border-neon", "minimal multi-gate realization"],
+      ]}
+    >
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Family and target buttons */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="eyebrow text-muted-foreground">Universal Gate:</span>
+            {(["NAND", "NOR"] as UniversalGateFamily[]).map((f) => (
+              <button
+                key={f}
+                type="button"
+                aria-pressed={f === family}
+                onClick={() => setFamily(f)}
+                className={`${btn} !px-2.5 ${f === family ? "bg-foreground text-background font-bold" : ""}`}
+              >
+                {f}-Only
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="eyebrow text-muted-foreground mr-1">Synthesize:</span>
+            {(["NOT", "AND", "OR", "NAND", "NOR", "XOR", "XNOR"] as TargetOperation[])
+              .filter((t) => t !== family)
+              .map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  aria-pressed={t === target}
+                  onClick={() => setTarget(t)}
+                  className={`${btn} !px-2 ${t === target ? "bg-mint text-background font-bold" : ""}`}
+                >
+                  {t}
+                </button>
+              ))}
+          </div>
+        </div>
+
+        {/* Input toggles and gate count badge */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-2.5 rounded border border-border/60">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-foreground">A:</span>
+              <button
+                type="button"
+                onClick={() => setA(a ? 0 : 1)}
+                className={`w-7 h-6 border rounded-[2px] font-bold ${a ? "border-mint bg-mint/20 text-mint" : "border-border text-muted-foreground"}`}
+              >
+                {a}
+              </button>
+            </div>
+            {target !== "NOT" && (
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-foreground">B:</span>
+                <button
+                  type="button"
+                  onClick={() => setB(b ? 0 : 1)}
+                  className={`w-7 h-6 border rounded-[2px] font-bold ${b ? "border-mint bg-mint/20 text-mint" : "border-border text-muted-foreground"}`}
+                >
+                  {b}
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded bg-neon/15 border border-neon/40 text-neon font-bold text-[11px]">
+              {circuit.gateCount} {family} gate{circuit.gateCount > 1 ? "s" : ""}
+            </span>
+            <span className="text-[14px]">
+              Output Y = <span className="font-bold text-mint text-base">{sim.output}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Formula and explanation card */}
+        <div className="bg-card p-3 rounded border border-border">
+          <div className="font-bold text-foreground text-sm mb-1">{circuit.title}</div>
+          <div className="font-mono text-xs text-mint break-words mb-1.5">{circuit.formula}</div>
+          <p className="text-[12px] text-muted-foreground font-body leading-relaxed">{circuit.notes}</p>
+        </div>
+
+        {/* Truth Table */}
+        <div className="overflow-x-auto">
+          <table className="font-mono text-[12px] border-collapse w-full border border-border">
+            <thead>
+              <tr className="bg-muted/30">
+                <th className="px-3 py-1 border-b border-border text-center">A</th>
+                {target !== "NOT" && <th className="px-3 py-1 border-b border-border text-center">B</th>}
+                <th className="px-3 py-1 border-b border-border text-center text-mint font-bold">Output Y</th>
+                <th className="px-3 py-1 border-b border-border text-left">Internal Node States</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, idx) => {
+                const match = a === r.a && (target === "NOT" || b === r.b);
+                const evalRow = circuit.simulate({ A: r.a, B: r.b });
                 return (
-                  <button key={m} type="button" aria-pressed={isOn} aria-label={`Cell ${bitString(m, n)}`} onClick={() => setOn(isOn ? on.filter((x) => x !== m) : [...on, m])} className={`relative w-14 h-14 border text-lg font-bold transition-colors ${isOn && owners.length ? GROUP_TONES[owners[0] % 5] : "border-border"}`}>
-                    {isOn ? 1 : <span className="text-muted-foreground/40 font-normal">0</span>}
-                    {owners.length > 1 && <span className={`absolute inset-1.5 border-2 rounded-sm pointer-events-none ${GROUP_TONES[owners[1] % 5].split(" ")[0]}`} />}
-                  </button>
+                  <tr key={idx} className={match ? "bg-mint/15 font-bold" : "hover:bg-muted/10"}>
+                    <td className="px-3 py-1 border-b border-border/40 text-center">{r.a}</td>
+                    {target !== "NOT" && <td className="px-3 py-1 border-b border-border/40 text-center">{r.b}</td>}
+                    <td className="px-3 py-1 border-b border-border/40 text-center font-bold text-mint">{evalRow.output}</td>
+                    <td className="px-3 py-1 border-b border-border/40 text-[11px] text-muted-foreground">
+                      {Object.entries(evalRow.internalSignals).map(([k, v]) => `${k}=${v}`).join(", ")}
+                    </td>
+                  </tr>
                 );
               })}
-            </div>
-          ))}
+            </tbody>
+          </table>
         </div>
-        <div className="flex flex-col gap-3 text-[13px]">
-          <div className="font-mono text-muted-foreground break-words"><span className="eyebrow block mb-1">Before</span>{before}</div>
-          <div className="font-mono text-lg break-words"><span className="eyebrow block mb-1 text-mint">After</span>{groups.length ? groups.map((g, i) => <span key={i}>{i > 0 && " + "}<span className={TERM_TONES[i % 5]}>{g.term}</span></span>) : after}</div>
-          <div className="font-mono text-[12px] text-muted-foreground">{litBefore} variables wired up before, {litAfter} after.</div>
-          <ul className="text-sm space-y-1">
-            {groups.map((g, i) => <li key={i}><span className={`font-mono font-bold ${TERM_TONES[i % 5]}`}>{g.term}</span>: a group of {g.cells.length}. The variables that change inside it cancel out.</li>)}
-          </ul>
+      </div>
+    </Panel>
+  );
+}
+
+/* ---------------------------- Bubble Pushing -------------------------- */
+
+const BUBBLE_STEPS = [
+  {
+    step: 0,
+    title: "Step 0: Original Two-Level AND-OR Circuit",
+    desc: "A classical Sum of Products circuit consists of first-level AND gates computing product terms, feeding a second-level OR gate computing the sum.",
+  },
+  {
+    step: 1,
+    title: "Step 1: Inversion Insertion (Double Bubble Cancellation)",
+    desc: "By Boolean involution (A'' = A), adding two inversion bubbles to a wire preserves the signal logic completely. Place an output bubble on each AND gate and a compensating input bubble on the OR gate.",
+  },
+  {
+    step: 2,
+    title: "Step 2: De Morgan Graphic Equivalence",
+    desc: "By De Morgan's theorem, (A' \u00B7 B')' = A + B. An OR gate with bubbles on all its inputs is physically and logically identical to a standard NAND gate with an output bubble!",
+  },
+  {
+    step: 3,
+    title: "Step 3: Complete All-NAND Synthesis",
+    desc: "Substitute the second-level Invert-OR gate with a standard NAND gate. Both levels are now identical NAND gates, requiring zero change in wiring or gate count!",
+  },
+];
+
+/** Interactive walkthrough of the Bubble-Pushing conversion technique. */
+export function BubblePushingLab() {
+  const [step, setStep] = useState<number>(0);
+  const cur = BUBBLE_STEPS[step];
+
+  return (
+    <Panel
+      title="Bubble-Pushing and De Morgan Graphic Equivalences"
+      legend={[
+        ["bg-mint/30", "standard NAND gate"],
+        ["bg-sky/30", "De Morgan Invert-OR (OR with bubbly inputs)"],
+      ]}
+    >
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Step navigation */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-2.5 rounded border border-border/60">
+          <div className="flex items-center gap-1.5">
+            {BUBBLE_STEPS.map((s) => (
+              <button
+                key={s.step}
+                type="button"
+                aria-pressed={s.step === step}
+                onClick={() => setStep(s.step)}
+                className={`${btn} !px-2.5 ${s.step === step ? "bg-foreground text-background font-bold" : ""}`}
+              >
+                Step {s.step}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={step === 0}
+              onClick={() => setStep(Math.max(0, step - 1))}
+              className={`${btn} !px-2 text-[11px] disabled:opacity-40`}
+            >
+              \u25C0 Previous
+            </button>
+            <button
+              type="button"
+              disabled={step === BUBBLE_STEPS.length - 1}
+              onClick={() => setStep(Math.min(BUBBLE_STEPS.length - 1, step + 1))}
+              className={`${btn} !px-2 text-[11px] disabled:opacity-40`}
+            >
+              Next \u25B6
+            </button>
+          </div>
+        </div>
+
+        {/* Step description */}
+        <div className="bg-card p-3 rounded border border-border">
+          <div className="font-bold text-foreground text-sm mb-1">{cur.title}</div>
+          <p className="text-[12px] text-muted-foreground font-body leading-relaxed">{cur.desc}</p>
+        </div>
+
+        {/* Graphic Equivalence Reference */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="bg-muted/10 p-3 rounded border border-border/60 text-center">
+            <div className="eyebrow text-mint mb-2">NAND Graphic Equivalence</div>
+            <div className="font-mono text-sm text-foreground">
+              [AND with bubble] \u2261 [OR with input bubbles]
+            </div>
+            <div className="text-[11px] text-muted-foreground font-body mt-1">
+              (AB)' = A' + B' (De Morgan Law 1)
+            </div>
+          </div>
+          <div className="bg-muted/10 p-3 rounded border border-border/60 text-center">
+            <div className="eyebrow text-sky mb-2">NOR Graphic Equivalence</div>
+            <div className="font-mono text-sm text-foreground">
+              [OR with bubble] \u2261 [AND with input bubbles]
+            </div>
+            <div className="text-[11px] text-muted-foreground font-body mt-1">
+              (A + B)' = A'B' (De Morgan Law 2)
+            </div>
+          </div>
         </div>
       </div>
     </Panel>

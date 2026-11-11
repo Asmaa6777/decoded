@@ -667,3 +667,5 @@ export function NandBuilds() {
     </div>
   );
 }
+
+export { BubblePushingLab, UniversalGateLab } from "@/components/mdx/LogicVisualizers";

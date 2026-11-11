@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
-  bitString, classifyDecimalVoltage, classifyLogicVoltage, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
+  bitString, classifyDecimalVoltage, classifyLogicVoltage, computeBooleanDual, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
   expandRadixToBinary, floatParts, fromGray, fullAdd, generateRealWaveform, groupBinaryBits, jkNext, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries,
-  minimizeSop, onesComplement, posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, signExtend, simulateAdc, simulateBcdAdder,
-  simulateBusDrivers, simulateParity, simulateSignedArithmetic, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
-  type Bit, type NetGate,
+  minimizeKMap, minimizeSop, onesComplement, posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, signExtend, simulateAdc, simulateBcdAdder,
+  simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateParity, simulateSignedArithmetic, simulateStatic1Hazard, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
+  UNIVERSAL_CIRCUITS, type Bit, type NetGate,
 } from "@/lib/logic";
 
 const srNor: NetGate[] = [
@@ -21,6 +21,61 @@ describe("gates", () => {
     for (const [g, out] of table) {
       [0, 1, 2, 3].forEach((n) => expect(evalGate(g, [(n >> 1) as Bit, (n & 1) as Bit])).toBe(out[n]));
     }
+  });
+  it("simulates CMOS switch networks and detects shoot-through current", () => {
+    // CMOS NOT
+    const notLow = simulateCmosGate("NOT", { A: 0 });
+    expect(notLow.outputState).toBe("HIGH");
+    expect(notLow.outputBit).toBe(1);
+    expect(notLow.pullUpConnected).toBe(true);
+    expect(notLow.pullDownConnected).toBe(false);
+
+    const notHigh = simulateCmosGate("NOT", { A: 5.0 });
+    expect(notHigh.outputState).toBe("LOW");
+    expect(notHigh.outputBit).toBe(0);
+
+    // Intermediate voltage (shoot-through)
+    const notShoot = simulateCmosGate("NOT", { A: 2.5 });
+    expect(notShoot.outputState).toBe("SHOOT_THROUGH");
+    expect(notShoot.outputBit).toBe("X");
+
+    // CMOS NAND: parallel pull-up, series pull-down
+    expect(simulateCmosGate("NAND", { A: 0, B: 0 }).outputBit).toBe(1);
+    expect(simulateCmosGate("NAND", { A: 0, B: 5.0 }).outputBit).toBe(1);
+    expect(simulateCmosGate("NAND", { A: 5.0, B: 0 }).outputBit).toBe(1);
+    expect(simulateCmosGate("NAND", { A: 5.0, B: 5.0 }).outputBit).toBe(0);
+
+    // CMOS NOR: series pull-up, parallel pull-down
+    expect(simulateCmosGate("NOR", { A: 0, B: 0 }).outputBit).toBe(1);
+    expect(simulateCmosGate("NOR", { A: 0, B: 5.0 }).outputBit).toBe(0);
+    expect(simulateCmosGate("NOR", { A: 5.0, B: 0 }).outputBit).toBe(0);
+    expect(simulateCmosGate("NOR", { A: 5.0, B: 5.0 }).outputBit).toBe(0);
+  });
+  it("simulates cascaded propagation delay with alternating edge polarities (Problem 1)", () => {
+    const stages = [
+      { label: "Inverter", gate: "NOT" as const, tpHL: 3, tpLH: 4 },
+      { label: "AND Gate", gate: "AND" as const, tpHL: 6, tpLH: 8, staticInputs: [1 as Bit] },
+      { label: "NOR Gate", gate: "NOR" as const, tpHL: 5, tpLH: 7, staticInputs: [0 as Bit] },
+    ];
+
+    // Primary input 0 -> 1:
+    // Inverter: 0 -> 1 in => 1 -> 0 out (falling), tpHL = 3 ns
+    // AND: 1 -> 0 in => 1 -> 0 out (falling), tpHL = 6 ns
+    // NOR: 1 -> 0 in => 0 -> 1 out (rising), tpLH = 7 ns
+    // Total = 3 + 6 + 7 = 16 ns
+    const resRising = simulateCascadeDelay(stages, "0to1");
+    expect(resRising.totalDelayNs).toBe(16);
+    expect(resRising.stages[0].delayParameter).toBe("tpHL");
+    expect(resRising.stages[1].delayParameter).toBe("tpHL");
+    expect(resRising.stages[2].delayParameter).toBe("tpLH");
+
+    // Primary input 1 -> 0:
+    // Inverter: 1 -> 0 in => 0 -> 1 out (rising), tpLH = 4 ns
+    // AND: 0 -> 1 in => 0 -> 1 out (rising), tpLH = 8 ns
+    // NOR: 0 -> 1 in => 1 -> 0 out (falling), tpHL = 5 ns
+    // Total = 4 + 8 + 5 = 17 ns
+    const resFalling = simulateCascadeDelay(stages, "1to0");
+    expect(resFalling.totalDelayNs).toBe(17);
   });
 });
 
@@ -235,6 +290,16 @@ describe("Boolean algebra", () => {
       }
     }
   });
+  it("computes Boolean dual expressions according to the Principle of Duality", () => {
+    // Huntington laws and identities
+    expect(computeBooleanDual("x + xy")).toBe("x(x + y)");
+    expect(computeBooleanDual("x + x'y")).toBe("x(x' + y)");
+    expect(computeBooleanDual("xy + x'z + yz")).toBe("(x + y)(x' + z)(y + z)");
+    expect(computeBooleanDual("(x + y)'")).toBe("(xy)'");
+    expect(computeBooleanDual("(A + B)(A + C)")).toBe("AB + AC");
+    expect(computeBooleanDual("x + 0 = x")).toBe("x1 = x");
+    expect(computeBooleanDual("x + 1 = 1")).toBe("x0 = 0");
+  });
 });
 
 describe("K-map minimization", () => {
@@ -253,6 +318,120 @@ describe("K-map minimization", () => {
   });
   it("handles everything on", () => {
     expect(minimizeSop([0, 1, 2, 3], ["A", "B"])[0].term).toBe("1");
+  });
+  it("identifies Essential Prime Implicants and distinguished minterms (Problem 1)", () => {
+    // F(A, B, C, D) = sum m(0, 2, 5, 7, 8, 10, 14, 15)
+    const res = minimizeKMap(["A", "B", "C", "D"], [0, 2, 5, 7, 8, 10, 14, 15], [], "SOP");
+    const primeTerms = res.primes.map((p) => p.term).sort();
+    expect(primeTerms).toEqual(["ABC", "ACD'", "A'BD", "BCD", "B'D'"].sort());
+
+    const essTerms = res.essentials.map((p) => p.term).sort();
+    expect(essTerms).toEqual(["A'BD", "B'D'"].sort());
+
+    // Corner quad B'D' covers distinguished minterms 0, 2, 8
+    const bd = res.essentials.find((p) => p.term === "B'D'");
+    expect(bd?.distinguishedMinterms.sort((a, b) => a - b)).toEqual([0, 2, 8]);
+
+    // Pair A'BD covers distinguished minterm 5
+    const abd = res.essentials.find((p) => p.term === "A'BD");
+    expect(abd?.distinguishedMinterms).toEqual([5]);
+
+    // Chosen minimal SOP
+    expect(res.chosen.map((p) => p.term)).toEqual(["A'BD", "ABC", "B'D'"]);
+    expect(res.minimalExpr).toBe("A'BD + ABC + B'D'");
+  });
+  it("minimizes with Don't Cares and verifies POS mode (Problem 2)", () => {
+    // F(w, x, y, z) = sum m(1, 3, 7, 11, 15) + sum d(0, 2, 5)
+    const resSop = minimizeKMap(["w", "x", "y", "z"], [1, 3, 7, 11, 15], [0, 2, 5], "SOP");
+    expect(resSop.chosen.length).toBe(2);
+    expect(resSop.chosen.map((p) => p.term)).toContain("yz");
+    const otherTerm = resSop.chosen.find((p) => p.term !== "yz")?.term;
+    expect(["w'x'", "w'z"]).toContain(otherTerm);
+
+    // Product of Sums (POS) mode
+    const resPos = minimizeKMap(["w", "x", "y", "z"], [1, 3, 7, 11, 15], [0, 2, 5], "POS");
+    // Covering 0-cells with useful don't cares yields product of maxterms
+    expect(resPos.chosen.length).toBeGreaterThan(0);
+    // Verify each row in truth table evaluates correctly for both SOP and POS
+    for (let m = 0; m < 16; m++) {
+      if ([0, 2, 5].includes(m)) continue; // don't care
+      const want = [1, 3, 7, 11, 15].includes(m) ? 1 : 0;
+      const env: Record<string, Bit> = {
+        w: ((m >> 3) & 1) as Bit,
+        x: ((m >> 2) & 1) as Bit,
+        y: ((m >> 1) & 1) as Bit,
+        z: (m & 1) as Bit,
+      };
+      expect(evalExpr(resSop.minimalExpr, env)).toBe(want);
+      expect(evalExpr(resPos.minimalExpr, env)).toBe(want);
+    }
+  });
+});
+
+describe("timing hazards", () => {
+  it("detects static-1 glitch without consensus and verifies complete elimination with consensus", () => {
+    const trace = simulateStatic1Hazard();
+    // At t=0,1: F = 1
+    expect(trace[0].fWithoutConsensus).toBe(1);
+    expect(trace[1].fWithoutConsensus).toBe(1);
+
+    // Glitch occurs during delay overlap at t=3,4
+    expect(trace[3].isGlitch).toBe(true);
+    expect(trace[3].fWithoutConsensus).toBe(0);
+    expect(trace[4].isGlitch).toBe(true);
+    expect(trace[4].fWithoutConsensus).toBe(0);
+
+    // With consensus term BC, every single step remains solidly 1
+    trace.forEach((step) => {
+      expect(step.fWithConsensus).toBe(1);
+    });
+  });
+});
+
+describe("universal gates", () => {
+  it("synthesizes all basic gates from NAND, including the 4-gate minimal XOR", () => {
+    const builds = UNIVERSAL_CIRCUITS.NAND;
+    expect(builds.NOT.gateCount).toBe(1);
+    expect(builds.AND.gateCount).toBe(2);
+    expect(builds.OR.gateCount).toBe(3);
+    expect(builds.NOR.gateCount).toBe(4);
+    expect(builds.XOR.gateCount).toBe(4); // minimal 4-gate
+    expect(builds.XNOR.gateCount).toBe(5);
+
+    // Verify truth tables for all input combinations
+    for (const a of [0, 1] as Bit[]) {
+      expect(builds.NOT.simulate({ A: a }).output).toBe(a ? 0 : 1);
+      for (const b of [0, 1] as Bit[]) {
+        const inp = { A: a, B: b };
+        expect(builds.AND.simulate(inp).output).toBe(evalGate("AND", [a, b]));
+        expect(builds.OR.simulate(inp).output).toBe(evalGate("OR", [a, b]));
+        expect(builds.NOR.simulate(inp).output).toBe(evalGate("NOR", [a, b]));
+        expect(builds.XOR.simulate(inp).output).toBe(evalGate("XOR", [a, b]));
+        expect(builds.XNOR.simulate(inp).output).toBe(evalGate("XNOR", [a, b]));
+      }
+    }
+  });
+
+  it("synthesizes all basic gates from NOR, including the 4-gate minimal XNOR", () => {
+    const builds = UNIVERSAL_CIRCUITS.NOR;
+    expect(builds.NOT.gateCount).toBe(1);
+    expect(builds.OR.gateCount).toBe(2);
+    expect(builds.AND.gateCount).toBe(3);
+    expect(builds.NAND.gateCount).toBe(4);
+    expect(builds.XNOR.gateCount).toBe(4); // minimal 4-gate
+    expect(builds.XOR.gateCount).toBe(5);
+
+    for (const a of [0, 1] as Bit[]) {
+      expect(builds.NOT.simulate({ A: a }).output).toBe(a ? 0 : 1);
+      for (const b of [0, 1] as Bit[]) {
+        const inp = { A: a, B: b };
+        expect(builds.OR.simulate(inp).output).toBe(evalGate("OR", [a, b]));
+        expect(builds.AND.simulate(inp).output).toBe(evalGate("AND", [a, b]));
+        expect(builds.NAND.simulate(inp).output).toBe(evalGate("NAND", [a, b]));
+        expect(builds.XNOR.simulate(inp).output).toBe(evalGate("XNOR", [a, b]));
+        expect(builds.XOR.simulate(inp).output).toBe(evalGate("XOR", [a, b]));
+      }
+    }
   });
 });
 

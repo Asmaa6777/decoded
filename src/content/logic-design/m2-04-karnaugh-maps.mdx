@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
-import { KMapExplorer } from "@/components/mdx/LogicVisualizers";
+import { HazardLab, KMapExplorer } from "@/components/mdx/LogicVisualizers";
 
 # Karnaugh Maps
 
@@ -161,6 +161,10 @@ $$
 F_{\text{hazard-free}} = A'C + AB + BC
 $$
 When $B=1$ and $C=1$, term $BC$ remains solidly at 1 throughout the transition of $A$, bridging the delay gap and eliminating the glitch. While $BC$ is algebraically redundant, it is physically necessary for glitch-free hardware operation.
+
+Observe the static-1 hazard glitch and see how adding the consensus term bridges the transition below:
+
+<HazardLab />
 
 ## Common exam pitfalls and student mistakes
 

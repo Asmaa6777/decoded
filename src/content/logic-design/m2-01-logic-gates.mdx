@@ -1,5 +1,6 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { GatePlayground } from "@/components/mdx/CircuitVisualizers";
+import { CmosSwitchVisualizer, PropagationDelayLab } from "@/components/mdx/LogicVisualizers";
 
 # Logic Gates
 
@@ -12,6 +13,10 @@ In **CMOS** (Complementary Metal-Oxide-Semiconductor) technology, gates use matc
 - **pMOS transistors (Pull-Up Network, PUN):** Conduct electricity when their gate terminal receives a low voltage (logic 0, near $V_{SS}$). When driven with a high voltage (logic 1), they turn off. The PUN connects the positive power rail ($V_{DD}$) to the output node.
 
 Because the nMOS and pMOS networks are duals of each other, in steady state exactly one network is ON while the other is OFF. This complementary switching keeps the output connected to either $V_{DD}$ or $V_{SS}$, but never both at once. If both networks turned on at the same time, such as during slow voltage transitions, a direct path from power to ground would form. That causes a brief current spike called **shoot-through current**. When idle, CMOS circuits draw almost no static DC power.
+
+Test the complementary switching of pMOS and nMOS networks below, and see what happens when inputs linger at intermediate voltages:
+
+<CmosSwitchVisualizer />
 
 Click the input terminals below to toggle their logic levels, and cycle through each gate type to observe how the truth table and output signal respond.
 
@@ -198,6 +203,10 @@ Cumulative propagation delays along critical combinational paths set the maximum
 $$
 f_{\max} \le \frac{1}{t_{\text{path(longest)}} + t_{\text{setup}} + t_{\text{clk-to-Q}}}
 $$
+
+Trace how signal transitions alternate polarities along cascaded stages and accumulate path delay below:
+
+<PropagationDelayLab />
 
 ### Noise margins
 

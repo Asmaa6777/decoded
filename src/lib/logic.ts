@@ -892,7 +892,7 @@ export function evalExpr(expr: string, env: Record<string, Bit>): Bit {
   };
   const parseAnd = (): Bit => {
     let v = parseUnary();
-    while (i < s.length && (s[i] === "." || s[i] === "(" || /[A-Z01]/.test(s[i]))) {
+    while (i < s.length && (s[i] === "." || s[i] === "(" || /[A-Za-z01]/.test(s[i]))) {
       if (s[i] === ".") i++;
       const r = parseUnary();
       v = (v & r) as Bit;
@@ -976,14 +976,69 @@ function termOf(mask: number, value: number, vars: string[]) {
   return parts.join("") || "1";
 }
 
+function popcount(x: number) {
+  let c = 0;
+  for (let v = x; v; v &= v - 1) c++;
+  return c;
+}
+
 /** All maximal rectangles of 1s (Quine–McCluskey), then a smallest set that covers every 1. */
 export function minimizeSop(minterms: number[], vars: string[]): Implicant[] {
+  return minimizeKMap(vars, minterms).chosen.map((c) => ({ cells: c.cells, term: c.term }));
+}
+
+export type KMapImplicant = {
+  cells: number[];
+  term: string;
+  isEssential: boolean;
+  distinguishedMinterms: number[];
+  isChosen: boolean;
+};
+
+export type KMapMinimizationResult = {
+  vars: string[];
+  mode: "SOP" | "POS";
+  primes: KMapImplicant[];
+  essentials: KMapImplicant[];
+  chosen: KMapImplicant[];
+  minimalExpr: string;
+  coverageDetails: { minterm: number; coveredBy: string[] }[];
+};
+
+function posTermOf(mask: number, value: number, vars: string[]) {
   const n = vars.length;
-  const on = [...new Set(minterms)];
-  if (!on.length) return [];
+  const parts: string[] = [];
+  vars.forEach((v, i) => {
+    const bit = 1 << (n - 1 - i);
+    if (!(mask & bit)) parts.push(value & bit ? `${v}'` : v);
+  });
+  return parts.length ? `(${parts.join(" + ")})` : "0";
+}
+
+/** General K-map minimization supporting SOP and POS, don't-cares, and prime/essential implicant analysis. */
+export function minimizeKMap(
+  vars: string[],
+  on: number[],
+  dc: number[] = [],
+  mode: "SOP" | "POS" = "SOP",
+): KMapMinimizationResult {
+  const n = vars.length;
+  const allCells = Array.from({ length: 2 ** n }, (_, m) => m);
+  const target = mode === "SOP"
+    ? [...new Set(on)]
+    : allCells.filter((m) => !on.includes(m) && !dc.includes(m));
+  const available = mode === "SOP"
+    ? [...new Set([...on, ...dc])]
+    : [...new Set([...target, ...dc])];
+
+  if (!target.length) {
+    const emptyExpr = mode === "SOP" ? "0" : "1";
+    return { vars, mode, primes: [], essentials: [], chosen: [], minimalExpr: emptyExpr, coverageDetails: [] };
+  }
+
   type Cube = { value: number; mask: number };
-  let current: Cube[] = on.map((m) => ({ value: m, mask: 0 }));
-  const primes: Cube[] = [];
+  let current: Cube[] = available.map((m) => ({ value: m, mask: 0 }));
+  const rawPrimes: Cube[] = [];
   while (current.length) {
     const used = new Set<number>();
     const next = new Map<string, Cube>();
@@ -999,30 +1054,78 @@ export function minimizeSop(minterms: number[], vars: string[]): Implicant[] {
         }
       }),
     );
-    current.forEach((c, i) => !used.has(i) && primes.push(c));
+    current.forEach((c, i) => !used.has(i) && rawPrimes.push(c));
     current = [...next.values()];
   }
-  const covers = (c: Cube) => on.filter((m) => (m & ~c.mask) === c.value);
-  // the smallest cover by brute force; maps here have at most 16 cells and few primes
-  const k = primes.length;
+
+  // Filter out cubes that cover zero target minterms (pure don't-care groups)
+  const cubeCells = (c: Cube) => allCells.filter((m) => (m & ~c.mask) === c.value);
+  const validPrimes = rawPrimes.filter((c) => cubeCells(c).some((m) => target.includes(m)));
+
+  // Identify essential prime implicants and distinguished minterms
+  const primeCoverage = validPrimes.map((c) => ({
+    cube: c,
+    coveredTargets: target.filter((m) => (m & ~c.mask) === c.value),
+  }));
+
+  const distinguishedMap = new Map<Cube, number[]>();
+  for (const m of target) {
+    const covering = primeCoverage.filter((p) => p.coveredTargets.includes(m));
+    if (covering.length === 1) {
+      const ep = covering[0].cube;
+      const list = distinguishedMap.get(ep) ?? [];
+      list.push(m);
+      distinguishedMap.set(ep, list);
+    }
+  }
+
+  const essentialSet = new Set(distinguishedMap.keys());
+
+  // Branch and bound / brute force minimal set of primes covering all targets
+  const k = validPrimes.length;
   let best: Cube[] | null = null;
   const cost = (set: Cube[]) => set.length * 100 + set.reduce((s, c) => s + (n - popcount(c.mask)), 0);
-  for (let pick = 1; pick < 2 ** k; pick++) {
-    const set = primes.filter((_, i) => (pick >> i) & 1);
-    if (best && cost(set) >= cost(best)) continue;
-    const covered = new Set(set.flatMap(covers));
-    if (on.every((m) => covered.has(m))) best = set;
-  }
-  return (best ?? primes).map((c) => ({
-    cells: Array.from({ length: 2 ** n }, (_, m) => m).filter((m) => (m & ~c.mask) === c.value),
-    term: termOf(c.mask, c.value, vars),
-  }));
-}
 
-function popcount(x: number) {
-  let c = 0;
-  for (let v = x; v; v &= v - 1) c++;
-  return c;
+  // Must include all essential prime implicants
+  const essMask = validPrimes.reduce((acc, c, i) => (essentialSet.has(c) ? acc | (1 << i) : acc), 0);
+
+  for (let pick = essMask; pick < 2 ** k; pick++) {
+    if ((pick & essMask) !== essMask) continue;
+    const set = validPrimes.filter((_, i) => (pick >> i) & 1);
+    if (best && cost(set) >= cost(best)) continue;
+    const covered = new Set(set.flatMap((c) => primeCoverage.find((p) => p.cube === c)?.coveredTargets ?? []));
+    if (target.every((m) => covered.has(m))) best = set;
+  }
+
+  const chosenSet = new Set(best ?? validPrimes);
+
+  const formatTerm = (c: Cube) =>
+    mode === "SOP" ? termOf(c.mask, c.value, vars) : posTermOf(c.mask, c.value, vars);
+
+  const primes: KMapImplicant[] = validPrimes.map((c) => ({
+    cells: cubeCells(c),
+    term: formatTerm(c),
+    isEssential: essentialSet.has(c),
+    distinguishedMinterms: distinguishedMap.get(c) ?? [],
+    isChosen: chosenSet.has(c),
+  }));
+
+  const essentials = primes.filter((p) => p.isEssential);
+  const chosen = primes.filter((p) => p.isChosen).sort((a, b) => a.term.localeCompare(b.term));
+
+  let minimalExpr = "";
+  if (mode === "SOP") {
+    minimalExpr = chosen.map((p) => p.term).join(" + ") || "0";
+  } else {
+    minimalExpr = chosen.map((p) => p.term).join("") || "1";
+  }
+
+  const coverageDetails = target.map((m) => ({
+    minterm: m,
+    coveredBy: primes.filter((p) => p.cells.includes(m)).map((p) => p.term),
+  }));
+
+  return { vars, mode, primes, essentials, chosen, minimalExpr, coverageDetails };
 }
 
 /* ----------------------------- storage logic --------------------------- */
@@ -1069,3 +1172,583 @@ export function counterStep(bits: Bit[]) {
   }
   return { next, toggled };
 }
+
+/* ------------------------------- CMOS Switch Simulation ------------------------------- */
+
+export type CmosGateType = "NOT" | "NAND" | "NOR";
+export type TransistorKind = "pmos" | "nmos";
+
+export type TransistorState = {
+  id: string;
+  kind: TransistorKind;
+  gateLabel: string;
+  gateVoltage: number;
+  isOn: boolean;
+  position: "pull-up" | "pull-down";
+  description: string;
+};
+
+export type CmosSimResult = {
+  gate: CmosGateType;
+  inputs: Record<string, number>;
+  transistors: TransistorState[];
+  pullUpConnected: boolean;
+  pullDownConnected: boolean;
+  outputState: "HIGH" | "LOW" | "SHOOT_THROUGH" | "FLOATING";
+  outputVoltage: number;
+  outputBit: Bit | "X" | "Z";
+  statusText: string;
+};
+
+/** Simulates steady-state and shoot-through transistor behavior in CMOS logic gates. */
+export function simulateCmosGate(gate: CmosGateType, inputs: Record<string, number>): CmosSimResult {
+  const isPmosOn = (v: number) => v < 3.0;
+  const isNmosOn = (v: number) => v > 2.0;
+
+  const va = inputs.A ?? 0;
+  const vb = inputs.B ?? 0;
+
+  const transistors: TransistorState[] = [];
+  let pullUpConnected = false;
+  let pullDownConnected = false;
+
+  if (gate === "NOT") {
+    const p1On = isPmosOn(va);
+    const n1On = isNmosOn(va);
+    transistors.push(
+      { id: "P1", kind: "pmos", gateLabel: "A", gateVoltage: va, isOn: p1On, position: "pull-up", description: `pMOS conducts when gate < 3.0V (current: ${va.toFixed(1)}V)` },
+      { id: "N1", kind: "nmos", gateLabel: "A", gateVoltage: va, isOn: n1On, position: "pull-down", description: `nMOS conducts when gate > 2.0V (current: ${va.toFixed(1)}V)` },
+    );
+    pullUpConnected = p1On;
+    pullDownConnected = n1On;
+  } else if (gate === "NAND") {
+    const p1On = isPmosOn(va);
+    const p2On = isPmosOn(vb);
+    const n1On = isNmosOn(va);
+    const n2On = isNmosOn(vb);
+    transistors.push(
+      { id: "P1", kind: "pmos", gateLabel: "A", gateVoltage: va, isOn: p1On, position: "pull-up", description: `pMOS A in parallel: ${p1On ? "ON (pulls to VDD)" : "OFF"}` },
+      { id: "P2", kind: "pmos", gateLabel: "B", gateVoltage: vb, isOn: p2On, position: "pull-up", description: `pMOS B in parallel: ${p2On ? "ON (pulls to VDD)" : "OFF"}` },
+      { id: "N1", kind: "nmos", gateLabel: "A", gateVoltage: va, isOn: n1On, position: "pull-down", description: `nMOS A in series: ${n1On ? "ON" : "OFF"}` },
+      { id: "N2", kind: "nmos", gateLabel: "B", gateVoltage: vb, isOn: n2On, position: "pull-down", description: `nMOS B in series: ${n2On ? "ON" : "OFF"}` },
+    );
+    pullUpConnected = p1On || p2On; // parallel PUN
+    pullDownConnected = n1On && n2On; // series PDN
+  } else {
+    // NOR
+    const p1On = isPmosOn(va);
+    const p2On = isPmosOn(vb);
+    const n1On = isNmosOn(va);
+    const n2On = isNmosOn(vb);
+    transistors.push(
+      { id: "P1", kind: "pmos", gateLabel: "A", gateVoltage: va, isOn: p1On, position: "pull-up", description: `pMOS A in series: ${p1On ? "ON" : "OFF"}` },
+      { id: "P2", kind: "pmos", gateLabel: "B", gateVoltage: vb, isOn: p2On, position: "pull-up", description: `pMOS B in series: ${p2On ? "ON" : "OFF"}` },
+      { id: "N1", kind: "nmos", gateLabel: "A", gateVoltage: va, isOn: n1On, position: "pull-down", description: `nMOS A in parallel: ${n1On ? "ON (pulls to GND)" : "OFF"}` },
+      { id: "N2", kind: "nmos", gateLabel: "B", gateVoltage: vb, isOn: n2On, position: "pull-down", description: `nMOS B in parallel: ${n2On ? "ON (pulls to GND)" : "OFF"}` },
+    );
+    pullUpConnected = p1On && p2On; // series PUN
+    pullDownConnected = n1On || n2On; // parallel PDN
+  }
+
+  let outputState: "HIGH" | "LOW" | "SHOOT_THROUGH" | "FLOATING";
+  let outputVoltage: number;
+  let outputBit: Bit | "X" | "Z";
+  let statusText: string;
+
+  if (pullUpConnected && !pullDownConnected) {
+    outputState = "HIGH";
+    outputVoltage = 5.0;
+    outputBit = 1;
+    statusText = "Pull-up network active: output pulled cleanly to VDD (5.0V, Logic 1). Static DC current is zero.";
+  } else if (!pullUpConnected && pullDownConnected) {
+    outputState = "LOW";
+    outputVoltage = 0.0;
+    outputBit = 0;
+    statusText = "Pull-down network active: output pulled cleanly to GND (0.0V, Logic 0). Static DC current is zero.";
+  } else if (pullUpConnected && pullDownConnected) {
+    outputState = "SHOOT_THROUGH";
+    outputVoltage = 2.5;
+    outputBit = "X";
+    statusText = "DANGER: Both pull-up and pull-down networks conduct simultaneously! High shoot-through current flows directly from VDD to GND, producing excessive heat and unpredictable voltage.";
+  } else {
+    outputState = "FLOATING";
+    outputVoltage = 2.5;
+    outputBit = "Z";
+    statusText = "High-impedance (Hi-Z): output is disconnected from both power and ground rails.";
+  }
+
+  return { gate, inputs, transistors, pullUpConnected, pullDownConnected, outputState, outputVoltage, outputBit, statusText };
+}
+
+/* ------------------------------- Cascade Propagation Delay ------------------------------- */
+
+export type CascadeStageConfig = {
+  label: string;
+  gate: GateType;
+  tpHL: number; // nanoseconds
+  tpLH: number; // nanoseconds
+  staticInputs?: Bit[];
+};
+
+export type CascadeStageTrace = {
+  index: number;
+  label: string;
+  gate: GateType;
+  inEdge: "rising" | "falling";
+  inBefore: Bit;
+  inAfter: Bit;
+  outEdge: "rising" | "falling" | "none";
+  outBefore: Bit;
+  outAfter: Bit;
+  delayParameter: "tpLH" | "tpHL" | "none";
+  delayNs: number;
+  cumulativeNs: number;
+  note: string;
+};
+
+/** Traces signal edges through cascaded gates, tracking alternating polarities and delay parameters. */
+export function simulateCascadeDelay(
+  stages: CascadeStageConfig[],
+  primaryInputTransition: "0to1" | "1to0",
+): { stages: CascadeStageTrace[]; totalDelayNs: number } {
+  let curBefore: Bit = primaryInputTransition === "0to1" ? 0 : 1;
+  let curAfter: Bit = primaryInputTransition === "0to1" ? 1 : 0;
+  let cumulative = 0;
+
+  const traces: CascadeStageTrace[] = stages.map((cfg, idx) => {
+    const inBefore = curBefore;
+    const inAfter = curAfter;
+    const inEdge: "rising" | "falling" = inBefore < inAfter ? "rising" : "falling";
+
+    const inBitsBefore = [inBefore, ...(cfg.staticInputs ?? [])];
+    const inBitsAfter = [inAfter, ...(cfg.staticInputs ?? [])];
+
+    const outBefore = evalGate(cfg.gate, inBitsBefore);
+    const outAfter = evalGate(cfg.gate, inBitsAfter);
+
+    let outEdge: "rising" | "falling" | "none" = "none";
+    let delayParameter: "tpLH" | "tpHL" | "none" = "none";
+    let delayNs = 0;
+
+    if (outBefore === 0 && outAfter === 1) {
+      outEdge = "rising";
+      delayParameter = "tpLH";
+      delayNs = cfg.tpLH;
+    } else if (outBefore === 1 && outAfter === 0) {
+      outEdge = "falling";
+      delayParameter = "tpHL";
+      delayNs = cfg.tpHL;
+    }
+
+    cumulative += delayNs;
+    curBefore = outBefore;
+    curAfter = outAfter;
+
+    const note =
+      delayParameter === "none"
+        ? "Output unchanged; no propagation delay incurred"
+        : `Output transitions ${outBefore} \u2192 ${outAfter} (${outEdge}); applies ${delayParameter} = ${delayNs} ns`;
+
+    return {
+      index: idx,
+      label: cfg.label,
+      gate: cfg.gate,
+      inEdge,
+      inBefore,
+      inAfter,
+      outEdge,
+      outBefore,
+      outAfter,
+      delayParameter,
+      delayNs,
+      cumulativeNs: cumulative,
+      note,
+    };
+  });
+
+  return { stages: traces, totalDelayNs: cumulative };
+}
+
+/* ------------------------------- Boolean Duality ------------------------------- */
+
+type AstNode =
+  | { type: "var"; name: string; negated: boolean }
+  | { type: "const"; value: 0 | 1 }
+  | { type: "not"; inner: AstNode }
+  | { type: "and"; items: AstNode[] }
+  | { type: "or"; items: AstNode[] };
+
+function parseBooleanAst(expr: string): AstNode {
+  const s = expr.replace(/\s+/g, "");
+  let i = 0;
+
+  const parseOr = (): AstNode => {
+    const items: AstNode[] = [parseAnd()];
+    while (i < s.length && s[i] === "+") {
+      i++;
+      items.push(parseAnd());
+    }
+    return items.length === 1 ? items[0] : { type: "or", items };
+  };
+
+  const parseAnd = (): AstNode => {
+    const items: AstNode[] = [parseUnary()];
+    while (i < s.length && (s[i] === "." || s[i] === "(" || /[A-Za-z01]/.test(s[i]))) {
+      if (s[i] === ".") i++;
+      items.push(parseUnary());
+    }
+    return items.length === 1 ? items[0] : { type: "and", items };
+  };
+
+  const parseUnary = (): AstNode => {
+    let node: AstNode;
+    if (s[i] === "(") {
+      i++;
+      node = parseOr();
+      if (s[i] === ")") i++;
+    } else if (s[i] === "0" || s[i] === "1") {
+      node = { type: "const", value: Number(s[i++]) as 0 | 1 };
+    } else if (/[A-Za-z]/.test(s[i])) {
+      node = { type: "var", name: s[i++], negated: false };
+    } else {
+      throw new Error(`Unexpected character in expression: ${s[i]}`);
+    }
+
+    while (i < s.length && s[i] === "'") {
+      i++;
+      if (node.type === "var") {
+        node = { ...node, negated: !node.negated };
+      } else {
+        node = { type: "not", inner: node };
+      }
+    }
+    return node;
+  };
+
+  return parseOr();
+}
+
+function dualizeAst(node: AstNode): AstNode {
+  switch (node.type) {
+    case "var":
+      return { ...node };
+    case "const":
+      return { type: "const", value: (node.value === 0 ? 1 : 0) as 0 | 1 };
+    case "not":
+      return { type: "not", inner: dualizeAst(node.inner) };
+    case "and":
+      return { type: "or", items: node.items.map(dualizeAst) };
+    case "or":
+      return { type: "and", items: node.items.map(dualizeAst) };
+  }
+}
+
+function formatAst(node: AstNode, parentType?: "and" | "or"): string {
+  switch (node.type) {
+    case "var":
+      return `${node.name}${node.negated ? "'" : ""}`;
+    case "const":
+      return `${node.value}`;
+    case "not":
+      return `(${formatAst(node.inner)})'`;
+    case "and": {
+      const parts = node.items.map((item) => {
+        if (item.type === "or") return `(${formatAst(item)})`;
+        return formatAst(item, "and");
+      });
+      // If parent is also 'and', no wrapping needed
+      return parts.join("");
+    }
+    case "or": {
+      const formatted = node.items.map((item) => formatAst(item, "or")).join(" + ");
+      return parentType === "and" ? `(${formatted})` : formatted;
+    }
+  }
+}
+
+/** Computes the Boolean dual of an expression or equation according to the Principle of Duality. */
+export function computeBooleanDual(expr: string): string {
+  if (expr.includes("=")) {
+    const [lhs, rhs] = expr.split("=").map((part) => part.trim());
+    return `${computeBooleanDual(lhs)} = ${computeBooleanDual(rhs)}`;
+  }
+  try {
+    const ast = parseBooleanAst(expr);
+    const dualAst = dualizeAst(ast);
+    return formatAst(dualAst);
+  } catch {
+    // Fallback: character-by-character replacement
+    return expr
+      .replace(/\+/g, "§")
+      .replace(/·|\./g, "+")
+      .replace(/§/g, " · ")
+      .replace(/\b0\b/g, "1")
+      .replace(/\b1\b/g, "0");
+  }
+}
+
+/* ------------------------------- Static-1 Hazard Simulation ------------------------------- */
+
+export type HazardStep = {
+  t: number;
+  a: Bit;
+  aNot: Bit;
+  termA: Bit; // A'C
+  termB: Bit; // AB
+  consensus: Bit; // BC
+  fWithoutConsensus: Bit;
+  fWithConsensus: Bit;
+  isGlitch: boolean;
+};
+
+/** Simulates the dynamic response of F = A'C + AB during an A = 0 -> 1 transition with B=1, C=1. */
+export function simulateStatic1Hazard(): HazardStep[] {
+  // Input sequence across 7 discrete time increments (e.g. nanoseconds)
+  // At t=0,1: steady A=0
+  // At t=2: A rises to 1
+  // Inverter has delay: aNot falls to 0 at t=3
+  // AND2 (termB) has propagation delay: rises to 1 at t=5
+  const table = [
+    { t: 0, a: 0 as Bit, aNot: 1 as Bit, termA: 1 as Bit, termB: 0 as Bit },
+    { t: 1, a: 0 as Bit, aNot: 1 as Bit, termA: 1 as Bit, termB: 0 as Bit },
+    { t: 2, a: 1 as Bit, aNot: 1 as Bit, termA: 1 as Bit, termB: 0 as Bit },
+    { t: 3, a: 1 as Bit, aNot: 0 as Bit, termA: 0 as Bit, termB: 0 as Bit }, // GLITCH: termA dropped, termB not high yet
+    { t: 4, a: 1 as Bit, aNot: 0 as Bit, termA: 0 as Bit, termB: 0 as Bit }, // GLITCH persists
+    { t: 5, a: 1 as Bit, aNot: 0 as Bit, termA: 0 as Bit, termB: 1 as Bit }, // termB turns on
+    { t: 6, a: 1 as Bit, aNot: 0 as Bit, termA: 0 as Bit, termB: 1 as Bit },
+  ];
+
+  return table.map((row) => {
+    const consensus: Bit = 1; // B=1, C=1 constant
+    const fWithoutConsensus = (row.termA | row.termB) as Bit;
+    const fWithConsensus = (row.termA | row.termB | consensus) as Bit;
+    const isGlitch = fWithoutConsensus === 0;
+
+    return {
+      t: row.t,
+      a: row.a,
+      aNot: row.aNot,
+      termA: row.termA,
+      termB: row.termB,
+      consensus,
+      fWithoutConsensus,
+      fWithConsensus,
+      isGlitch,
+    };
+  });
+}
+
+/* ------------------------------- Universal Gate Synthesis ------------------------------- */
+
+export type UniversalGateFamily = "NAND" | "NOR";
+export type TargetOperation = "NOT" | "AND" | "OR" | "NAND" | "NOR" | "XOR" | "XNOR";
+
+export type UniversalGateCircuit = {
+  family: UniversalGateFamily;
+  target: TargetOperation;
+  title: string;
+  gateCount: number;
+  formula: string;
+  notes: string;
+  simulate: (inputs: Record<string, Bit>) => { output: Bit; internalSignals: Record<string, Bit> };
+};
+
+export const UNIVERSAL_CIRCUITS: Record<UniversalGateFamily, Record<string, UniversalGateCircuit>> = {
+  NAND: {
+    NOT: {
+      family: "NAND",
+      target: "NOT",
+      title: "NOT from NAND",
+      gateCount: 1,
+      formula: "Y = (A \u00B7 A)' = A'",
+      notes: "Tie both inputs together (or tie second input to VDD). One NAND gate acts as an inverter.",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const y = (a ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { N1: y } };
+      },
+    },
+    AND: {
+      family: "NAND",
+      target: "AND",
+      title: "AND from NAND",
+      gateCount: 2,
+      formula: "Y = ((AB)' \u00B7 (AB)')' = AB",
+      notes: "NAND gate followed by a NAND-configured inverter restores the true AND function.",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const b = inputs.B ?? 0;
+        const n1 = (a && b ? 0 : 1) as Bit;
+        const y = (n1 ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { N1: n1, N2: y } };
+      },
+    },
+    OR: {
+      family: "NAND",
+      target: "OR",
+      title: "OR from NAND",
+      gateCount: 3,
+      formula: "Y = (A' \u00B7 B')' = A + B",
+      notes: "De Morgan's theorem: invert each input using NAND inverters, then combine in a third NAND.",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const b = inputs.B ?? 0;
+        const na = (a ? 0 : 1) as Bit;
+        const nb = (b ? 0 : 1) as Bit;
+        const y = (na && nb ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { NA: na, NB: nb, Y: y } };
+      },
+    },
+    NOR: {
+      family: "NAND",
+      target: "NOR",
+      title: "NOR from NAND",
+      gateCount: 4,
+      formula: "Y = ((A' \u00B7 B')')' = (A + B)'",
+      notes: "Invert the 3-NAND OR output with a fourth NAND inverter.",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const b = inputs.B ?? 0;
+        const na = (a ? 0 : 1) as Bit;
+        const nb = (b ? 0 : 1) as Bit;
+        const norPre = (na && nb ? 0 : 1) as Bit;
+        const y = (norPre ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { NA: na, NB: nb, N_OR: norPre, Y: y } };
+      },
+    },
+    XOR: {
+      family: "NAND",
+      target: "XOR",
+      title: "XOR from NAND (Minimal 4 Gates)",
+      gateCount: 4,
+      formula: "Y = ((A \u00B7 (AB)')' \u00B7 (B \u00B7 (AB)')')' = A \u2295 B",
+      notes: "The celebrated 4-NAND minimal XOR: Gate 1 generates N1 = (AB)'. Gates 2 and 3 cross-couple inputs with N1, and Gate 4 synthesizes XOR with zero redundant gates.",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const b = inputs.B ?? 0;
+        const n1 = (a && b ? 0 : 1) as Bit;
+        const n2 = (a && n1 ? 0 : 1) as Bit;
+        const n3 = (b && n1 ? 0 : 1) as Bit;
+        const y = (n2 && n3 ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { N1: n1, N2: n2, N3: n3, Y: y } };
+      },
+    },
+    XNOR: {
+      family: "NAND",
+      target: "XNOR",
+      title: "XNOR from NAND",
+      gateCount: 5,
+      formula: "Y = (A \u2295 B)'",
+      notes: "Follow the 4-gate minimal XOR circuit with a 5th NAND inverter.",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const b = inputs.B ?? 0;
+        const n1 = (a && b ? 0 : 1) as Bit;
+        const n2 = (a && n1 ? 0 : 1) as Bit;
+        const n3 = (b && n1 ? 0 : 1) as Bit;
+        const xorVal = (n2 && n3 ? 0 : 1) as Bit;
+        const y = (xorVal ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { N1: n1, N2: n2, N3: n3, XOR: xorVal, Y: y } };
+      },
+    },
+  },
+  NOR: {
+    NOT: {
+      family: "NOR",
+      target: "NOT",
+      title: "NOT from NOR",
+      gateCount: 1,
+      formula: "Y = (A + A)' = A'",
+      notes: "Tie both inputs together (or tie second input to GND). One NOR gate acts as an inverter.",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const y = (a ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { N1: y } };
+      },
+    },
+    OR: {
+      family: "NOR",
+      target: "OR",
+      title: "OR from NOR",
+      gateCount: 2,
+      formula: "Y = ((A + B)' + (A + B)')' = A + B",
+      notes: "NOR gate followed by a NOR-configured inverter restores the true OR function.",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const b = inputs.B ?? 0;
+        const n1 = (a || b ? 0 : 1) as Bit;
+        const y = (n1 ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { N1: n1, Y: y } };
+      },
+    },
+    AND: {
+      family: "NOR",
+      target: "AND",
+      title: "AND from NOR",
+      gateCount: 3,
+      formula: "Y = (A' + B')' = AB",
+      notes: "De Morgan's theorem: invert each input with NOR inverters, then combine in a third NOR.",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const b = inputs.B ?? 0;
+        const na = (a ? 0 : 1) as Bit;
+        const nb = (b ? 0 : 1) as Bit;
+        const y = (na || nb ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { NA: na, NB: nb, Y: y } };
+      },
+    },
+    NAND: {
+      family: "NOR",
+      target: "NAND",
+      title: "NAND from NOR",
+      gateCount: 4,
+      formula: "Y = ((A' + B')')' = (AB)'",
+      notes: "Invert the 3-NOR AND output with a fourth NOR inverter.",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const b = inputs.B ?? 0;
+        const na = (a ? 0 : 1) as Bit;
+        const nb = (b ? 0 : 1) as Bit;
+        const andPre = (na || nb ? 0 : 1) as Bit;
+        const y = (andPre ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { NA: na, NB: nb, N_AND: andPre, Y: y } };
+      },
+    },
+    XNOR: {
+      family: "NOR",
+      target: "XNOR",
+      title: "XNOR from NOR (Minimal 4 Gates)",
+      gateCount: 4,
+      formula: "Y = ((A + (A + B)')' + (B + (A + B)')')' = (A \u2295 B)'",
+      notes: "The dual of the 4-gate NAND XOR: Gate 1 computes N1 = (A + B)'. Gates 2 and 3 NOR with A and B, and Gate 4 produces equivalence (XNOR).",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const b = inputs.B ?? 0;
+        const n1 = (a || b ? 0 : 1) as Bit;
+        const n2 = (a || n1 ? 0 : 1) as Bit;
+        const n3 = (b || n1 ? 0 : 1) as Bit;
+        const y = (n2 || n3 ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { N1: n1, N2: n2, N3: n3, Y: y } };
+      },
+    },
+    XOR: {
+      family: "NOR",
+      target: "XOR",
+      title: "XOR from NOR",
+      gateCount: 5,
+      formula: "Y = ((A \u2295 B)')'",
+      notes: "Follow the 4-gate minimal XNOR circuit with a 5th NOR inverter to obtain XOR.",
+      simulate: (inputs) => {
+        const a = inputs.A ?? 0;
+        const b = inputs.B ?? 0;
+        const n1 = (a || b ? 0 : 1) as Bit;
+        const n2 = (a || n1 ? 0 : 1) as Bit;
+        const n3 = (b || n1 ? 0 : 1) as Bit;
+        const xnorVal = (n2 || n3 ? 0 : 1) as Bit;
+        const y = (xnorVal ? 0 : 1) as Bit;
+        return { output: y, internalSignals: { N1: n1, N2: n2, N3: n3, XNOR: xnorVal, Y: y } };
+      },
+    },
+  },
+};
+
