@@ -360,6 +360,21 @@ There are two fundamental models:
 **Indirect** communication sends messages to a mailbox (or port). The processes don't need to know each other, and several processes can share one mailbox.
 </ModelAnswer>
 
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "m-2014-direct-link",
+      prompt: "(Midterm 2014, Q1 item 8) In case of direct communication, a link is established only if processes share a common mailbox.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "With direct communication the link forms between two processes that name each other. No mailbox is involved, so the statement is false. The 2014 key marks it false.",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

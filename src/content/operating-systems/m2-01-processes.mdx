@@ -401,6 +401,27 @@ The kernel saves the state of the running process into its PCB: the CPU register
 The **PCB** is the process control block, the kernel's record for one process (see the 2017 answer above). To context-switch, the kernel saves the running process's registers and program counter into its PCB, then restores the same fields from the next process's PCB and hands over the CPU.
 </ModelAnswer>
 
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "m-2021-device-queue",
+      prompt: "(Midterm 2021, Q1 item 3) The list of processes waiting for a particular I/O device is called a(n) _____ a) standby queue; b) device queue; c) ready queue; d) interrupt queue.",
+      options: [{ id: "a", text: "standby queue" }, { id: "b", text: "device queue" }, { id: "c", text: "ready queue" }, { id: "d", text: "interrupt queue" }],
+      correctOptionId: "b",
+      explanation: "A device queue holds the processes waiting for one particular I/O device. (Our answer.)",
+    },
+  ]}
+/>
+<ModelAnswer>
+**(Midterm 2021, Q1 item 6) A _______ saves the state of the currently running process and restores the state of the next process to run.**
+
+Answer: **context switch.** (Our answer, which matches the printed 2021 key.)
+</ModelAnswer>
+
 ### Part 2: Final exam questions
 
 <Quiz

@@ -254,6 +254,28 @@ An **I/O-bound** process spends most of its time waiting for input or output, so
 Neither type alone is best. If every process is I/O-bound, the ready queue is almost always empty, so the CPU sits idle and the scheduler has little to do. If every process is CPU-bound, the devices sit idle while the processes queue for the CPU. A **mix of both** keeps the CPU and the devices working at the same time, so a mix gives the best utilization.
 </ModelAnswer>
 
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "m-2019sv-schedulers",
+      prompt: "(Midterm 2019 second version, Q2 item 1) CPU scheduler is a short-term scheduler that is invoked frequently while Job scheduler is a long-term one that is invoked infrequently.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The CPU (short-term) scheduler runs very often, every time the CPU needs a new process. The job (long-term) scheduler runs rarely. The 2019 second-version key marks it true.",
+    },
+    {
+      id: "m-2021-short-term",
+      prompt: "(Midterm 2021, Q1 item 13) What is a short-term scheduler? a) It selects which process has to be brought into the ready queue; b) It selects which process has to be executed next and allocates CPU; c) It selects which process to remove from memory by swapping; d) None of the mentioned.",
+      options: [{ id: "a", text: "It selects which process has to be brought into the ready queue" }, { id: "b", text: "It selects which process has to be executed next and allocates CPU" }, { id: "c", text: "It selects which process to remove from memory by swapping" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "The short-term scheduler picks the next ready process and gives it the CPU. Bringing processes in is the long-term scheduler's job. (Our answer; the paper prints no answer letters.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz
