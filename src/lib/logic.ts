@@ -415,6 +415,414 @@ export function floatParts(value: number): FloatParts {
   return { sign: (u >>> 31) as Bit, exponent, fraction, bits: u.toString(2).padStart(32, "0"), value: view.getFloat32(0), kind };
 }
 
+export type BitGroup = {
+  rawBits: string;
+  paddedBits: string;
+  digit: string;
+  paddingCount: number;
+  position: "integer" | "fractional";
+  distanceFromRadix: number;
+};
+
+export type GroupedBinaryResult = {
+  groupSize: 3 | 4;
+  baseName: "octal" | "hex";
+  radix: 8 | 16;
+  integerGroups: BitGroup[];
+  fractionalGroups: BitGroup[];
+  resultString: string;
+  intPadCount: number;
+  fracPadCount: number;
+  originalBinary: string;
+};
+
+/**
+ * Groups binary digits outward from the radix point into chunks of 3 (octal) or 4 (hex),
+ * padding leftmost integer digits with leading zeros and rightmost fractional digits with trailing zeros.
+ */
+export function groupBinaryBits(binaryInput: string, groupSize: 3 | 4): GroupedBinaryResult {
+  const clean = binaryInput.replace(/[^01.]/g, "");
+  const [rawInt = "", rawFrac = ""] = clean.split(".");
+  const intStr = rawInt.length > 0 ? rawInt : "0";
+  const fracStr = clean.includes(".") ? rawFrac : "";
+
+  const intPadCount = (groupSize - (intStr.length % groupSize)) % groupSize;
+  const paddedInt = "0".repeat(intPadCount) + intStr;
+  const numIntGroups = paddedInt.length / groupSize;
+  const integerGroups: BitGroup[] = [];
+
+  for (let g = 0; g < numIntGroups; g++) {
+    const chunk = paddedInt.slice(g * groupSize, (g + 1) * groupSize);
+    const distanceFromRadix = numIntGroups - 1 - g;
+    const paddedInThisGroup = g === 0 ? intPadCount : 0;
+    const rawBits = chunk.slice(paddedInThisGroup);
+    const digitVal = parseInt(chunk, 2);
+    integerGroups.push({
+      rawBits,
+      paddedBits: chunk,
+      digit: DIGITS[digitVal],
+      paddingCount: paddedInThisGroup,
+      position: "integer",
+      distanceFromRadix,
+    });
+  }
+
+  const fractionalGroups: BitGroup[] = [];
+  let fracPadCount = 0;
+  if (fracStr.length > 0) {
+    fracPadCount = (groupSize - (fracStr.length % groupSize)) % groupSize;
+    const paddedFrac = fracStr + "0".repeat(fracPadCount);
+    const numFracGroups = paddedFrac.length / groupSize;
+
+    for (let g = 0; g < numFracGroups; g++) {
+      const chunk = paddedFrac.slice(g * groupSize, (g + 1) * groupSize);
+      const distanceFromRadix = g;
+      const paddedInThisGroup = g === numFracGroups - 1 ? fracPadCount : 0;
+      const rawBits = chunk.slice(0, chunk.length - paddedInThisGroup);
+      const digitVal = parseInt(chunk, 2);
+      fractionalGroups.push({
+        rawBits,
+        paddedBits: chunk,
+        digit: DIGITS[digitVal],
+        paddingCount: paddedInThisGroup,
+        position: "fractional",
+        distanceFromRadix,
+      });
+    }
+  }
+
+  const intDigits = integerGroups.map((g) => g.digit).join("");
+  const fracDigits = fractionalGroups.map((g) => g.digit).join("");
+  const resultString = fracDigits ? `${intDigits}.${fracDigits}` : intDigits;
+
+  return {
+    groupSize,
+    baseName: groupSize === 3 ? "octal" : "hex",
+    radix: groupSize === 3 ? 8 : 16,
+    integerGroups,
+    fractionalGroups,
+    resultString,
+    intPadCount,
+    fracPadCount,
+    originalBinary: clean,
+  };
+}
+
+/** Expands octal or hex digits into 3-bit or 4-bit binary groups. */
+export function expandRadixToBinary(inputStr: string, groupSize: 3 | 4) {
+  const clean = inputStr.toUpperCase().replace(groupSize === 3 ? /[^0-7.]/g : /[^0-9A-F.]/g, "");
+  const [rawInt = "", rawFrac = ""] = clean.split(".");
+  const intStr = rawInt.length > 0 ? rawInt : "0";
+  const fracStr = clean.includes(".") ? rawFrac : "";
+
+  const intGroups = [...intStr].map((ch) => ({
+    digit: ch,
+    bits: parseInt(ch, groupSize === 3 ? 8 : 16).toString(2).padStart(groupSize, "0"),
+  }));
+  const fracGroups = [...fracStr].map((ch) => ({
+    digit: ch,
+    bits: parseInt(ch, groupSize === 3 ? 8 : 16).toString(2).padStart(groupSize, "0"),
+  }));
+
+  const fullBinary = `${intGroups.map((g) => g.bits).join("")}${fracGroups.length ? "." + fracGroups.map((g) => g.bits).join("") : ""}`;
+
+  return {
+    groupSize,
+    radix: groupSize === 3 ? 8 : 16,
+    intGroups,
+    fracGroups,
+    fullBinary,
+  };
+}
+
+export type SignedArithmeticResult = {
+  a: number;
+  b: number;
+  operation: "add" | "sub";
+  width: 4 | 8;
+  aSigned: number;
+  bSigned: number;
+  aBits: Bit[];
+  bBits: Bit[];
+  bEffBits: Bit[];
+  bEffTwosComplement: Bit[];
+  columns: AddColumn[];
+  sumBits: Bit[];
+  carryInMsb: Bit;
+  carryOutMsb: Bit;
+  overflow: boolean;
+  carryOut: Bit;
+  unsignedSum: number;
+  signedResult: number;
+  expectedTrueResult: number;
+  overflowReason: string;
+};
+
+/**
+ * Simulates signed two's complement addition or subtraction column by column,
+ * extracting the carry into MSB (C_{n-1}) and carry out (C_n) to evaluate V = C_{n-1} ^ C_n.
+ */
+export function simulateSignedArithmetic(
+  a: number,
+  b: number,
+  width: 4 | 8,
+  operation: "add" | "sub" = "add",
+): SignedArithmeticResult {
+  const minVal = -(2 ** (width - 1));
+  const maxVal = 2 ** (width - 1) - 1;
+
+  const aClamped = Math.max(minVal, Math.min(maxVal, a));
+  const bClamped = Math.max(minVal, Math.min(maxVal, b));
+
+  const aMasked = aClamped < 0 ? aClamped + 2 ** width : aClamped;
+  const bMasked = bClamped < 0 ? bClamped + 2 ** width : bClamped;
+
+  const aBits = bitsOf(aMasked, width);
+  const bBits = bitsOf(bMasked, width);
+
+  let bEffMasked = bMasked;
+  if (operation === "sub") {
+    bEffMasked = (~bMasked + 1) & (2 ** width - 1);
+  }
+  const bEffBits = bitsOf(bEffMasked, width);
+  const bEffTwosComp = bitsOf((~bMasked + 1) & (2 ** width - 1), width);
+
+  const cols = rippleAdd(aMasked, bEffMasked, width, 0);
+  const sumBits = cols.map((c) => c.sum);
+
+  const msbCol = cols[width - 1];
+  const carryInMsb = msbCol.carryIn;
+  const carryOutMsb = msbCol.carryOut;
+
+  const overflow = carryInMsb !== carryOutMsb;
+  const carryOut = carryOutMsb;
+
+  const unsignedSum = cols.reduce((acc, c) => acc + (c.sum << c.index), 0);
+  const signedResult = signedValue(unsignedSum, width);
+  const expectedTrueResult = operation === "add" ? aClamped + bClamped : aClamped - bClamped;
+
+  let overflowReason = "";
+  if (overflow) {
+    if (aClamped > 0 && (operation === "add" ? bClamped > 0 : bClamped < 0) && signedResult < 0) {
+      overflowReason = `Positive + Positive gave Negative (${signedResult}). The true result ${expectedTrueResult} exceeds maximum +${maxVal}.`;
+    } else if (aClamped < 0 && (operation === "add" ? bClamped < 0 : bClamped > 0) && signedResult >= 0) {
+      overflowReason = `Negative + Negative gave Positive (${signedResult}). The true result ${expectedTrueResult} is below minimum ${minVal}.`;
+    } else {
+      overflowReason = `Signed overflow: true result ${expectedTrueResult} outside [${minVal}, +${maxVal}].`;
+    }
+  } else {
+    overflowReason = `Result ${signedResult} fits within [${minVal}, +${maxVal}]. No signed overflow.`;
+  }
+
+  return {
+    a: aClamped,
+    b: bClamped,
+    operation,
+    width,
+    aSigned: aClamped,
+    bSigned: bClamped,
+    aBits,
+    bBits,
+    bEffBits,
+    bEffTwosComplement: bEffTwosComp,
+    columns: cols,
+    sumBits,
+    carryInMsb,
+    carryOutMsb,
+    overflow,
+    carryOut,
+    unsignedSum,
+    signedResult,
+    expectedTrueResult,
+    overflowReason,
+  };
+}
+
+/** Demonstrates sign extension preserving signed value vs zero extension corrupting it. */
+export function signExtend(val: number, fromWidth: number, toWidth: number) {
+  const minVal = -(2 ** (fromWidth - 1));
+  const maxVal = 2 ** (fromWidth - 1) - 1;
+  const clamped = Math.max(minVal, Math.min(maxVal, val));
+  const rawBits = bitsOf(clamped < 0 ? clamped + 2 ** fromWidth : clamped, fromWidth);
+  const signBit = rawBits[0];
+
+  const signExtendedBits = [...Array(toWidth - fromWidth).fill(signBit), ...rawBits];
+  const zeroExtendedBits = [...Array(toWidth - fromWidth).fill(0 as Bit), ...rawBits];
+
+  const rawSignExtVal = bitsToNumber(signExtendedBits);
+  const signedValExtended = signedValue(rawSignExtVal, toWidth);
+  const zeroExtendedVal = bitsToNumber(zeroExtendedBits);
+
+  return {
+    originalValue: clamped,
+    signBit,
+    rawBits,
+    signExtendedBits,
+    zeroExtendedBits,
+    signedValExtended,
+    zeroExtendedVal,
+    preserved: signedValExtended === clamped,
+  };
+}
+
+export type BcdAdderResult = {
+  digitA: number;
+  digitB: number;
+  carryIn: Bit;
+  aBits: Bit[];
+  bBits: Bit[];
+  stage1Sum: number;
+  stage1Bits: Bit[];
+  binaryCarryK: Bit;
+  termK: Bit;
+  termZ3Z2: Bit;
+  termZ3Z1: Bit;
+  needsCorrection: boolean;
+  correctionCode: Bit[];
+  correctedBits: Bit[];
+  finalBcdDigit: number;
+  bcdCarryOut: Bit;
+  totalDecimal: number;
+  reason: string;
+};
+
+/**
+ * Simulates a two-stage BCD adder with Boolean correction logic C = K + Z3*Z2 + Z3*Z1
+ * injecting 0110_2 when correction is required.
+ */
+export function simulateBcdAdder(digitA: number, digitB: number, carryIn: Bit = 0): BcdAdderResult {
+  const a = Math.max(0, Math.min(9, Math.floor(digitA)));
+  const b = Math.max(0, Math.min(9, Math.floor(digitB)));
+  const cin = carryIn ? 1 : 0;
+
+  const aBits = bitsOf(a, 4);
+  const bBits = bitsOf(b, 4);
+
+  const stage1Sum = a + b + cin;
+  const binaryCarryK: Bit = stage1Sum >= 16 ? 1 : 0;
+  const zVal = stage1Sum % 16;
+  const stage1Bits = bitsOf(zVal, 4);
+  const [z3, z2, z1] = stage1Bits;
+
+  const termK: Bit = binaryCarryK;
+  const termZ3Z2: Bit = z3 && z2 ? 1 : 0;
+  const termZ3Z1: Bit = z3 && z1 ? 1 : 0;
+  const needsCorrection = Boolean(termK || termZ3Z2 || termZ3Z1);
+  const bcdCarryOut: Bit = needsCorrection ? 1 : 0;
+
+  const correctionCode: Bit[] = needsCorrection ? [0, 1, 1, 0] : [0, 0, 0, 0];
+  const correctedSumVal = (zVal + (needsCorrection ? 6 : 0)) % 16;
+  const correctedBits = bitsOf(correctedSumVal, 4);
+  const finalBcdDigit = correctedSumVal;
+  const totalDecimal = bcdCarryOut * 10 + finalBcdDigit;
+
+  let reason = "";
+  if (binaryCarryK) {
+    reason = `Binary carry K=1 occurred (stage 1 sum ${stage1Sum} ≥ 16). Adder wrapped modulo 16. Adding 6 (0110₂) advances to the next decade.`;
+  } else if (needsCorrection) {
+    reason = `Intermediate sum ${stage1Sum} falls into the forbidden range (10 to 15, 1010₂-1111₂). Adding 6 (0110₂) skips 6 invalid states and carries 1.`;
+  } else {
+    reason = `Sum ${stage1Sum} is a valid BCD digit (≤ 9) with K=0. No correction needed (+0000₂).`;
+  }
+
+  return {
+    digitA: a,
+    digitB: b,
+    carryIn: cin as Bit,
+    aBits,
+    bBits,
+    stage1Sum,
+    stage1Bits,
+    binaryCarryK,
+    termK,
+    termZ3Z2,
+    termZ3Z1,
+    needsCorrection,
+    correctionCode,
+    correctedBits,
+    finalBcdDigit,
+    bcdCarryOut,
+    totalDecimal,
+    reason,
+  };
+}
+
+export type ParityResult = {
+  dataBits: Bit[];
+  mode: "even" | "odd";
+  onesInData: number;
+  parityBit: Bit;
+  transmittedWord: Bit[];
+  flippedIndices: number[];
+  receivedWord: Bit[];
+  onesInReceived: number;
+  receiverSyndromeValid: boolean;
+  errorDetected: boolean;
+  actualErrorsCount: number;
+  silentCorruption: boolean;
+  diagnostic: string;
+};
+
+/**
+ * Simulates parity generation (even/odd), channel bit-flipping noise,
+ * and receiver parity checking (demonstrating why single errors are detected but double errors pass).
+ */
+export function simulateParity(
+  dataBits: Bit[],
+  mode: "even" | "odd" = "even",
+  flippedIndices: number[] = [],
+): ParityResult {
+  const cleanData = dataBits.slice(0, 7).map((b) => (b ? 1 : 0) as Bit);
+  while (cleanData.length < 7) cleanData.push(0);
+
+  const onesInData = cleanData.filter(Boolean).length;
+  let parityBit: Bit = 0;
+  if (mode === "even") {
+    parityBit = onesInData % 2 === 1 ? 1 : 0;
+  } else {
+    parityBit = onesInData % 2 === 0 ? 1 : 0;
+  }
+
+  const transmittedWord: Bit[] = [...cleanData, parityBit];
+  const receivedWord = [...transmittedWord];
+  for (const idx of flippedIndices) {
+    if (idx >= 0 && idx < receivedWord.length) {
+      receivedWord[idx] = (receivedWord[idx] ? 0 : 1) as Bit;
+    }
+  }
+
+  const onesInReceived = receivedWord.filter(Boolean).length;
+  const receiverSyndromeValid = mode === "even" ? onesInReceived % 2 === 0 : onesInReceived % 2 === 1;
+  const errorDetected = !receiverSyndromeValid;
+  const actualErrorsCount = flippedIndices.length;
+  const silentCorruption = actualErrorsCount > 0 && !errorDetected;
+
+  let diagnostic = "";
+  if (silentCorruption) {
+    diagnostic = `CRITICAL SILENT FAILURE: ${actualErrorsCount} bits flipped (even number of errors), so the parity check passed unnoticed. The received byte is corrupt! Parity cannot detect even numbers of bit errors.`;
+  } else if (errorDetected) {
+    diagnostic = `PARITY ERROR DETECTED: Parity check failed (received ${onesInReceived} 1s in ${mode} parity mode). Hardware flags error and halts/retransmits.`;
+  } else {
+    diagnostic = `CLEAN: Received ${onesInReceived} 1s, satisfying ${mode} parity requirements. No errors detected.`;
+  }
+
+  return {
+    dataBits: cleanData,
+    mode,
+    onesInData,
+    parityBit,
+    transmittedWord,
+    flippedIndices,
+    receivedWord,
+    onesInReceived,
+    receiverSyndromeValid,
+    errorDetected,
+    actualErrorsCount,
+    silentCorruption,
+    diagnostic,
+  };
+}
+
 /* ------------------------------ arithmetic ----------------------------- */
 
 export type AddColumn = { index: number; a: Bit; b: Bit; carryIn: Bit; sum: Bit; carryOut: Bit };

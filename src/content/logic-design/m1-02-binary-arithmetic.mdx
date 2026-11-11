@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
-import { BinaryAddition, TwosComplementWheel } from "@/components/mdx/LogicVisualizers";
+import { BinaryAddition, TwosComplementWheel, SignedArithmeticLab } from "@/components/mdx/LogicVisualizers";
 
 # Binary Arithmetic and Negative Numbers
 
@@ -304,6 +304,10 @@ Thus, $V = C_{n-1} \oplus C_n$ accurately detects signed overflow under every op
 - The **overflow flag** shows whether signed two's complement arithmetic flipped the sign incorrectly.
 CPUs keep separate status bits for both, so code can [check flags](/courses/microprocessors/flags) after each operation.
 </Callout>
+
+Explore two's complement addition and subtraction, monitor carries into and out of the MSB, and watch the XOR overflow gate evaluate in real time:
+
+<SignedArithmeticLab />
 
 ## Practice problems
 

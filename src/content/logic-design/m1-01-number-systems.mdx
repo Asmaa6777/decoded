@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
-import { PlaceValueBits, BaseConverter, FractionConverter } from "@/components/mdx/LogicVisualizers";
+import { PlaceValueBits, BaseConverter, FractionConverter, BitGroupingVisualizer } from "@/components/mdx/LogicVisualizers";
 
 # Number Systems
 
@@ -232,6 +232,10 @@ To convert a binary number to octal or hex:
 <Callout tone="orange" label="Mistake students make">
 **Grouping bits across the radix point or padding fractional bits on the wrong side.** Grouping must start *at* the radix point and move outward in both directions. Never group across the radix point. Padding $0.1_2$ on the left into $0.0001_2$ corrupts the number from $0.5_{10}$ to $0.0625_{10}$. For fractional parts, pad with trailing zeros on the right: $0.1_2 \to 0.1000_2 = 0.8_{16} = 0.5_{10}$.
 </Callout>
+
+Test the grouping and zero-padding algorithm on any binary pattern below:
+
+<BitGroupingVisualizer />
 
 ### Worked grouping examples
 

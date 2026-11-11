@@ -3,10 +3,11 @@ import { btn, inputCls, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers
 import { Panel } from "@/components/mdx/MatrixVisualizers";
 import type { Frame } from "@/lib/algorithms";
 import {
-  bitString, bitsOf, bitsToNumber, classifyDecimalVoltage, classifyLogicVoltage, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evaluateParallelSkew, floatParts, fractionBits,
-  generateRealWaveform, jkNext, kmapLayout, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries, minimizeSop, onesComplement, placeValues, posFromMinterms, rippleAdd, sameFunction,
-  shiftFrames, signedValue, simulateAdc, simulateBusDrivers, sopFromMinterms, toBase, toBcd, toExcess3, toGray, truthRows, twosComplement, type Bit, type DriverMode, type DriverState,
-  type LogicFamilyId,
+  bitString, bitsOf, bitsToNumber, classifyDecimalVoltage, classifyLogicVoltage, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evaluateParallelSkew,
+  expandRadixToBinary, floatParts, fractionBits, generateRealWaveform, groupBinaryBits, jkNext, kmapLayout, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries,
+  minimizeSop, onesComplement, placeValues, posFromMinterms, rippleAdd, sameFunction, shiftFrames, signedValue, signExtend, simulateAdc, simulateBcdAdder,
+  simulateBusDrivers, simulateParity, simulateSignedArithmetic, sopFromMinterms, toBase, toBcd, toExcess3, toGray, truthRows, twosComplement, type Bit,
+  type DriverMode, type DriverState, type LogicFamilyId,
 } from "@/lib/logic";
 
 const BIT_ON: Record<string, string> = { mint: "border-mint bg-mint/20", neon: "border-neon bg-neon/20", sky: "border-sky bg-sky/20" };
@@ -918,6 +919,180 @@ export function FractionConverter() {
   );
 }
 
+/** Visualizes grouping binary digits outward from the radix point into 4-bit nibbles (hex) or 3-bit octal digits, with explicit zero-padding. */
+export function BitGroupingVisualizer() {
+  const [binaryStr, setBinaryStr] = useState("10110110101.101011");
+  const [groupSize, setGroupSize] = useState<3 | 4>(4);
+
+  const presets = [
+    { label: "Exam sample (10110110101.101011)", val: "10110110101.101011" },
+    { label: "Padded fraction (1111101.1)", val: "1111101.1" },
+    { label: "12-bit integer (110110110101)", val: "110110110101" },
+    { label: "0.1 in binary (0.1)", val: "0.1" },
+  ];
+
+  const grouped = useMemo(() => groupBinaryBits(binaryStr, groupSize), [binaryStr, groupSize]);
+
+  return (
+    <Panel title="Bit Grouping Around the Radix Point">
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground text-xs">Group into:</span>
+            <Toggle
+              value={String(groupSize)}
+              options={[
+                ["4", "Hexadecimal (4 bits)"],
+                ["3", "Octal (3 bits)"],
+              ]}
+              onChange={(v) => setGroupSize(Number(v) as 3 | 4)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-xs">Binary:</span>
+            <input
+              type="text"
+              value={binaryStr}
+              onChange={(e) => setBinaryStr(e.target.value.replace(/[^01.]/g, ""))}
+              className={`${inputCls} w-52 text-xs`}
+              placeholder="e.g. 101101.101"
+              aria-label="Binary number input"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-xs text-muted-foreground">Presets:</span>
+          {presets.map((p) => (
+            <button
+              key={p.val}
+              type="button"
+              onClick={() => setBinaryStr(p.val)}
+              className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                binaryStr === p.val ? "border-mint bg-mint/20 text-mint font-bold" : "border-border hover:bg-muted text-muted-foreground"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Direction guidance */}
+        <div className="grid grid-cols-2 gap-2 text-center text-xs py-1 px-2 rounded bg-muted/40 border border-border">
+          <div className="flex items-center justify-center gap-1.5 text-sky font-semibold">
+            <span>←</span>
+            <span>Integer: Group LEFT from point (pad leading 0s)</span>
+          </div>
+          <div className="flex items-center justify-center gap-1.5 text-orange font-semibold">
+            <span>Fraction: Group RIGHT from point (pad trailing 0s)</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        {/* Group visualization cards */}
+        <div className="flex flex-wrap items-center justify-center gap-2 p-3 bg-card rounded-md border border-border overflow-x-auto">
+          {/* Integer groups (left of radix point) */}
+          <div className="flex items-center gap-1.5">
+            {grouped.integerGroups.map((grp, idx) => (
+              <div key={idx} className="flex flex-col items-center p-2 rounded border border-sky/40 bg-sky/5">
+                <span className="text-[10px] text-muted-foreground uppercase">
+                  {idx === 0 && grp.paddingCount > 0 ? `Pad +${grp.paddingCount}` : `Nibble ${grouped.integerGroups.length - 1 - idx}`}
+                </span>
+                <div className="flex gap-0.5 my-1">
+                  {[...grp.paddedBits].map((b, bIdx) => {
+                    const isPadded = idx === 0 && bIdx < grp.paddingCount;
+                    return (
+                      <span
+                        key={bIdx}
+                        className={`w-5 h-6 flex items-center justify-center text-xs rounded-[2px] border ${
+                          isPadded
+                            ? "border-orange/60 bg-orange/20 text-orange font-bold"
+                            : b === "1"
+                            ? "border-sky bg-sky/20 font-bold"
+                            : "border-border text-muted-foreground"
+                        }`}
+                        title={isPadded ? "Padded leading zero" : `Bit ${b}`}
+                      >
+                        {b}
+                      </span>
+                    );
+                  })}
+                </div>
+                <span className="text-base font-bold text-mint">{grp.digit}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Radix Point */}
+          <div className="flex flex-col items-center px-1">
+            <span className="text-[10px] text-muted-foreground">point</span>
+            <span className="text-2xl font-bold text-neon leading-none my-1">·</span>
+            <span className="text-xs text-muted-foreground font-bold">.</span>
+          </div>
+
+          {/* Fractional groups (right of radix point) */}
+          <div className="flex items-center gap-1.5">
+            {grouped.fractionalGroups.length === 0 ? (
+              <span className="text-xs text-muted-foreground italic">No fractional bits</span>
+            ) : (
+              grouped.fractionalGroups.map((grp, idx) => (
+                <div key={idx} className="flex flex-col items-center p-2 rounded border border-orange/40 bg-orange/5">
+                  <span className="text-[10px] text-muted-foreground uppercase">
+                    {idx === grouped.fractionalGroups.length - 1 && grp.paddingCount > 0
+                      ? `Pad +${grp.paddingCount}`
+                      : `Frac ${idx + 1}`}
+                  </span>
+                  <div className="flex gap-0.5 my-1">
+                    {[...grp.paddedBits].map((b, bIdx) => {
+                      const isPadded = idx === grouped.fractionalGroups.length - 1 && bIdx >= grp.paddedBits.length - grp.paddingCount;
+                      return (
+                        <span
+                          key={bIdx}
+                          className={`w-5 h-6 flex items-center justify-center text-xs rounded-[2px] border ${
+                            isPadded
+                              ? "border-orange/60 bg-orange/20 text-orange font-bold"
+                              : b === "1"
+                              ? "border-orange/80 bg-orange/20 font-bold"
+                              : "border-border text-muted-foreground"
+                          }`}
+                          title={isPadded ? "Padded trailing zero" : `Bit ${b}`}
+                        >
+                          {b}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <span className="text-base font-bold text-mint">{grp.digit}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Converted representation */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded bg-muted/20 border border-border">
+          <div>
+            <span className="text-muted-foreground">Converted Result: </span>
+            <span className="text-lg font-bold text-mint font-mono">({grouped.resultString})</span>
+            <sub className="text-muted-foreground font-mono font-bold text-xs ml-1">{grouped.radix}</sub>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {grouped.intPadCount > 0 && <span className="text-orange mr-3">+{grouped.intPadCount} leading zero{grouped.intPadCount > 1 ? "s" : ""}</span>}
+            {grouped.fracPadCount > 0 && <span className="text-orange">+{grouped.fracPadCount} trailing zero{grouped.fracPadCount > 1 ? "s" : ""}</span>}
+          </div>
+        </div>
+
+        <div className="text-xs text-muted-foreground leading-relaxed">
+          <strong className="text-foreground">Why padding side matters: </strong>
+          In fraction <code className="text-foreground">0.1₂</code>, adding trailing zeros yields{" "}
+          <code className="text-foreground">0.1000₂ = 0.8₁₆ = 0.5₁₀</code> (preserves exact value).
+          Padding on the left would give <code className="text-foreground">0.0001₂ = 0.0625₁₀</code> (corrupting the value by an 8× division error).
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
 /** Column addition with carries lifted above the numbers. */
 export function BinaryAddition() {
   const [a, setA] = useState(6);
@@ -954,11 +1129,37 @@ export function TwosComplementWheel() {
   const sa = signedValue(v, 4), sb = signedValue(add, 4), ss = signedValue(sum, 4);
   const overflow = sa + sb !== ss;
   const neg = twosComplement(v, 4);
+
+  // Position between 7 and 8 (the seam)
+  const seamAngle = ((7.5 * 360) / 16 - 90) * (Math.PI / 180);
+  const xSeamInner = C + (R - 26) * Math.cos(seamAngle);
+  const ySeamInner = C + (R - 26) * Math.sin(seamAngle);
+  const xSeamOuter = C + (R + 26) * Math.cos(seamAngle);
+  const ySeamOuter = C + (R + 26) * Math.sin(seamAngle);
+
   return (
-    <Panel title="Four bits bent into a circle">
+    <Panel title="Four bits bent into a circle (The Two's Complement Wheel)">
       <div className="grid md:grid-cols-[300px_1fr] gap-5 items-center">
         <svg viewBox={`0 0 ${W} ${W}`} className="w-full max-w-[300px] mx-auto">
           <circle cx={C} cy={C} r={R} fill="none" className="stroke-border" strokeWidth={2} />
+          {/* The Seam between +7 and -8 */}
+          <line
+            x1={xSeamInner}
+            y1={ySeamInner}
+            x2={xSeamOuter}
+            y2={ySeamOuter}
+            stroke="hsl(var(--orange))"
+            strokeWidth={3}
+            strokeDasharray="3 3"
+          />
+          <text
+            x={xSeamOuter - 4}
+            y={ySeamOuter + 14}
+            textAnchor="middle"
+            className="fill-orange font-mono text-[9px] font-bold"
+          >
+            THE SEAM
+          </text>
           {Array.from({ length: 16 }, (_, n) => {
             const [x, y] = pos(n);
             const tone = n === v ? "fill-neon/40 stroke-neon" : n === sum ? "fill-mint/40 stroke-mint" : "fill-card stroke-border";
@@ -970,17 +1171,312 @@ export function TwosComplementWheel() {
               </g>
             );
           })}
-          <text x={C} y={C - 4} textAnchor="middle" className="fill-muted-foreground font-mono text-[11px]">click a number</text>
-          <text x={C} y={C + 12} textAnchor="middle" className="fill-muted-foreground font-mono text-[11px]">top half of bits = negative</text>
+          <text x={C} y={C - 8} textAnchor="middle" className="fill-muted-foreground font-mono text-[10px]">click a state</text>
+          <text x={C} y={C + 8} textAnchor="middle" className="fill-muted-foreground font-mono text-[10px]">bottom half = negative</text>
         </svg>
-        <div className="flex flex-col gap-3 font-mono text-[13px]">
-          <div>value <Bits value={bitString(v, 4)} tone="neon" /> = {sa}</div>
-          <div className="text-muted-foreground">flip every bit (1's complement) <span className="text-foreground">{bitString(onesComplement(v, 4), 4)}</span></div>
-          <div className="text-muted-foreground">add 1 (2's complement) <span className="text-foreground">{bitString(neg, 4)}</span> = {signedValue(neg, 4)}</div>
-          <label className="flex items-center gap-2 text-muted-foreground">add <input type="range" min={0} max={7} value={add} onChange={(e) => setAdd(Number(e.target.value))} aria-label="Amount to add" className="flex-1 accent-[hsl(var(--mint))]" /><span className="text-foreground w-3">{add}</span></label>
-          <div>{sa} + {sb} → <Bits value={bitString(sum, 4)} /> = {ss}</div>
-          <div className={overflow ? "text-orange" : "text-mint"}>{overflow ? `Overflow: the true answer ${sa + sb} doesn't fit in 4 bits, so it wrapped past the seam between 7 and -8.` : "Fits. The answer is correct."}</div>
+        <div className="flex flex-col gap-2.5 font-mono text-[13px]">
+          <div>Starting value <Bits value={bitString(v, 4)} tone="neon" /> = <span className="font-bold">{sa}</span></div>
+          <div className="text-muted-foreground text-xs">flip every bit (1&apos;s complement): <span className="text-foreground">{bitString(onesComplement(v, 4), 4)}</span></div>
+          <div className="text-muted-foreground text-xs">add 1 (2&apos;s complement negation): <span className="text-foreground">{bitString(neg, 4)}</span> = {signedValue(neg, 4)}</div>
+          <label className="flex items-center gap-2 text-muted-foreground text-xs pt-1">
+            add offset:
+            <input type="range" min={-7} max={7} value={add} onChange={(e) => setAdd(Number(e.target.value))} aria-label="Amount to add" className="flex-1 accent-[hsl(var(--mint))]" />
+            <span className="text-foreground w-6 font-bold">{add >= 0 ? `+${add}` : add}</span>
+          </label>
+          <div className="pt-1">
+            Operation: {sa} + ({sb}) → <Bits value={bitString(sum, 4)} /> = <span className="font-bold">{ss}</span>
+          </div>
+          <div className={`p-2 rounded text-xs border ${overflow ? "border-orange bg-orange/15 text-orange font-semibold" : "border-mint/50 bg-mint/10 text-mint"}`}>
+            {overflow
+              ? `OVERFLOW DETECTED: The true mathematical sum ${sa + sb} falls outside the 4-bit signed range [-8, +7]. The needle crossed the orange seam, wrapping past +7 into negative values.`
+              : `NO OVERFLOW: Result fits within [-8, +7]. Arithmetic wrapping preserves valid two's complement modular sum.`}
+          </div>
         </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Interactive two's complement adder/subtractor with column-by-column carries, V = C_{n-1} ^ C_n overflow logic, and sign extension. */
+export function SignedArithmeticLab() {
+  const [width, setWidth] = useState<4 | 8>(4);
+  const [op, setOp] = useState<"add" | "sub">("add");
+  const [a, setA] = useState<number>(5);
+  const [b, setB] = useState<number>(4);
+  const [showSignExt, setShowSignExt] = useState(false);
+
+  const minVal = -(2 ** (width - 1));
+  const maxVal = 2 ** (width - 1) - 1;
+
+  const result = useMemo(() => simulateSignedArithmetic(a, b, width, op), [a, b, width, op]);
+  const ext = useMemo(() => signExtend(a, 4, 8), [a]);
+
+  const presets = [
+    { label: "4-bit Pos Overflow (+5 + +4)", w: 4 as const, op: "add" as const, a: 5, b: 4 },
+    { label: "4-bit Neg Overflow (-6 + -5)", w: 4 as const, op: "add" as const, a: -6, b: -5 },
+    { label: "4-bit Opposite Signs (+5 + -3)", w: 4 as const, op: "add" as const, a: 5, b: -3 },
+    { label: "8-bit Valid Sum (+42 + +19)", w: 8 as const, op: "add" as const, a: 42, b: 19 },
+    { label: "8-bit Pos Overflow (+80 + +70)", w: 8 as const, op: "add" as const, a: 80, b: 70 },
+    { label: "8-bit Sub M≥N (+42 - +19)", w: 8 as const, op: "sub" as const, a: 42, b: 19 },
+    { label: "8-bit Sub M<N (+19 - +42)", w: 8 as const, op: "sub" as const, a: 19, b: 42 },
+  ];
+
+  const colsReversed = useMemo(() => [...result.columns].reverse(), [result.columns]);
+
+  return (
+    <Panel title="Signed Two's Complement Arithmetic & Overflow Lab">
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Top Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Toggle
+              value={String(width)}
+              options={[
+                ["4", "4-Bit ([-8, +7])"],
+                ["8", "8-Bit ([-128, +127])"],
+              ]}
+              onChange={(v) => {
+                const nw = Number(v) as 4 | 8;
+                setWidth(nw);
+                const nMin = -(2 ** (nw - 1));
+                const nMax = 2 ** (nw - 1) - 1;
+                setA(Math.max(nMin, Math.min(nMax, a)));
+                setB(Math.max(nMin, Math.min(nMax, b)));
+              }}
+            />
+            <Toggle
+              value={op}
+              options={[
+                ["add", "Addition (A + B)"],
+                ["sub", "Subtraction (A - B)"],
+              ]}
+              onChange={(v) => setOp(v as "add" | "sub")}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowSignExt(!showSignExt)}
+            className={`text-xs px-2.5 py-1 rounded border transition-colors ${
+              showSignExt ? "border-mint bg-mint/20 text-mint font-bold" : "border-border hover:bg-muted text-muted-foreground"
+            }`}
+          >
+            {showSignExt ? "Hide Sign Extension" : "Show Sign Extension"}
+          </button>
+        </div>
+
+        {/* Quick Presets */}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-xs text-muted-foreground">Presets:</span>
+          {presets.map((p, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => {
+                setWidth(p.w);
+                setOp(p.op);
+                setA(p.a);
+                setB(p.b);
+              }}
+              className="text-xs px-2 py-0.5 rounded border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Inputs */}
+        <div className="grid sm:grid-cols-2 gap-4 p-3 bg-muted/20 rounded border border-border">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-muted-foreground font-semibold">Operand A</span>
+              <span className="text-foreground font-bold">{result.a}</span>
+            </div>
+            <input
+              type="range"
+              min={minVal}
+              max={maxVal}
+              value={result.a}
+              onChange={(e) => setA(Number(e.target.value))}
+              className="accent-[hsl(var(--mint))] w-full"
+              aria-label="Operand A"
+            />
+            <span className="text-[11px] text-muted-foreground">
+              Binary: <code className="text-foreground">{bitString(result.a < 0 ? result.a + 2 ** width : result.a, width)}</code>
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-muted-foreground font-semibold">Operand B</span>
+              <span className="text-foreground font-bold">{result.b}</span>
+            </div>
+            <input
+              type="range"
+              min={minVal}
+              max={maxVal}
+              value={result.b}
+              onChange={(e) => setB(Number(e.target.value))}
+              className="accent-[hsl(var(--mint))] w-full"
+              aria-label="Operand B"
+            />
+            <span className="text-[11px] text-muted-foreground">
+              Binary: <code className="text-foreground">{bitString(result.b < 0 ? result.b + 2 ** width : result.b, width)}</code>
+              {op === "sub" && (
+                <span className="text-orange ml-1">
+                  → Negated -B: <code className="text-orange">{result.bEffBits.join("")}</code>
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+
+        {/* Subtraction reduction note */}
+        {op === "sub" && (
+          <div className="text-xs p-2.5 rounded bg-muted/40 border border-border text-muted-foreground">
+            <strong className="text-foreground">Subtraction via Two&apos;s Complement: </strong>
+            <span className="text-foreground">A - B = A + (-B)</span>. Hardware inverts B (<code className="text-foreground">{onesComplement(result.b < 0 ? result.b + 2 ** width : result.b, width).toString(2).padStart(width, "0")}</code>) and adds 1 to obtain 2&apos;s complement <code className="text-foreground">{result.bEffBits.join("")}</code>, feeding both into an ordinary adder.
+          </div>
+        )}
+
+        {/* Column-by-column adder table */}
+        <div className="p-3 bg-card rounded-md border border-border overflow-x-auto">
+          <div className="min-w-fit mx-auto flex flex-col items-center">
+            <div className="grid gap-y-1.5 items-center font-mono" style={{ gridTemplateColumns: `5.5rem repeat(${width}, 2.2rem)` }}>
+              {/* Carry Row */}
+              <span className="text-xs text-orange font-bold text-right pr-2">Carry</span>
+              {colsReversed.map((c) => {
+                const isMsbIn = c.index === width - 1;
+                return (
+                  <span
+                    key={`c-${c.index}`}
+                    className={`h-6 flex items-center justify-center text-xs rounded-[2px] font-bold ${
+                      isMsbIn ? "border border-orange bg-orange/20 text-orange" : c.carryIn ? "text-orange" : "text-muted-foreground/40"
+                    }`}
+                    title={isMsbIn ? `Carry entering MSB (C_${width - 1} = ${c.carryIn})` : `Carry in`}
+                  >
+                    {c.carryIn}
+                  </span>
+                );
+              })}
+
+              {/* Operand A Row */}
+              <span className="text-xs text-muted-foreground text-right pr-2">A ({result.a})</span>
+              {colsReversed.map((c) => (
+                <span key={`a-${c.index}`} className="h-7 flex items-center justify-center text-sm font-bold border border-border rounded-[2px] bg-muted/10">
+                  {c.a}
+                </span>
+              ))}
+
+              {/* Operand B / -B Row */}
+              <span className="text-xs text-muted-foreground text-right pr-2">
+                {op === "sub" ? `-B (${-result.b})` : `B (${result.b})`}
+              </span>
+              {colsReversed.map((c) => (
+                <span key={`b-${c.index}`} className="h-7 flex items-center justify-center text-sm font-bold border-b-2 border-foreground rounded-[2px] bg-muted/10">
+                  {c.b}
+                </span>
+              ))}
+
+              {/* Sum Row */}
+              <span className="text-xs text-mint font-bold text-right pr-2">Sum</span>
+              {colsReversed.map((c) => (
+                <span key={`s-${c.index}`} className="h-8 flex items-center justify-center text-sm font-bold border border-mint bg-mint/20 text-mint rounded-[2px]">
+                  {c.sum}
+                </span>
+              ))}
+
+              {/* Bit Weight Labels */}
+              <span className="text-[10px] text-muted-foreground text-right pr-2">Weight</span>
+              {colsReversed.map((c) => (
+                <span key={`w-${c.index}`} className="text-center text-[10px] text-muted-foreground">
+                  {c.index === width - 1 ? `-${2 ** c.index}` : `+${2 ** c.index}`}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* XOR Overflow Detector & Carry-Out Analysis */}
+        <div className="grid md:grid-cols-2 gap-3">
+          {/* XOR Overflow Gate */}
+          <div className="p-3 bg-card rounded border border-border flex flex-col gap-2">
+            <span className="text-xs font-bold text-foreground">Signed Overflow Detector (XOR Gate)</span>
+            <div className="flex items-center justify-between p-2 rounded bg-muted/30 border border-border">
+              <div className="flex flex-col text-xs">
+                <span>Carry into MSB (C_{width - 1}): <strong className="text-orange">{result.carryInMsb}</strong></span>
+                <span>Carry out of MSB (C_{width}): <strong className="text-sky">{result.carryOutMsb}</strong></span>
+              </div>
+              <div className="flex items-center gap-2 font-mono">
+                <span className="text-sm">V = C_{width - 1} ⊕ C_{width} =</span>
+                <span className={`px-2 py-0.5 rounded text-sm font-bold ${result.overflow ? "bg-orange text-black" : "bg-mint/20 text-mint border border-mint"}`}>
+                  {result.overflow ? "1 (OVERFLOW)" : "0 (OK)"}
+                </span>
+              </div>
+            </div>
+            <div className={`text-xs p-2 rounded border ${result.overflow ? "border-orange bg-orange/10 text-orange" : "border-mint/40 bg-mint/10 text-mint"}`}>
+              {result.overflowReason}
+            </div>
+          </div>
+
+          {/* Unsigned vs Signed Summary */}
+          <div className="p-3 bg-card rounded border border-border flex flex-col gap-2">
+            <span className="text-xs font-bold text-foreground">Hardware Flag Interpretation</span>
+            <div className="flex flex-col gap-1.5 text-xs">
+              <div className="flex justify-between items-center py-1 border-b border-border">
+                <span className="text-muted-foreground">Unsigned Carry-out (C_{width}):</span>
+                <span className="font-bold text-sky">{result.carryOut} {result.carryOut ? "(Result ≥ 2ⁿ)" : "(No carry-out)"}</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-border">
+                <span className="text-muted-foreground">Signed Two&apos;s Complement Result:</span>
+                <span className={`font-bold ${result.overflow ? "text-orange line-through" : "text-mint"}`}>
+                  {result.signedResult} {result.overflow ? `(True answer ${result.expectedTrueResult} truncated!)` : ""}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-muted-foreground">Carry-out in Subtraction:</span>
+                <span className="text-muted-foreground text-[11px]">
+                  {op === "sub" && (result.carryOut ? "M ≥ N: Carry 2ⁿ discarded normally" : "M < N: No carry, result is negative")}
+                  {op === "add" && (result.carryOut ? "Unsigned addition overflowed" : "Unsigned addition fits")}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sign Extension Explorer */}
+        {showSignExt && (
+          <div className="p-3 bg-card rounded border border-border flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-foreground">Sign Extension: Widening 4 Bits to 8 Bits</span>
+              <span className={`text-xs px-2 py-0.5 rounded font-bold ${ext.preserved ? "bg-mint/20 text-mint" : "bg-orange/20 text-orange"}`}>
+                {ext.preserved ? "Value Preserved" : "Value Corrupted"}
+              </span>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-2 rounded bg-muted/20 border border-border flex flex-col gap-1">
+                <span className="text-muted-foreground font-semibold">Sign Extended (Replicate MSB {ext.signBit}):</span>
+                <div className="flex items-center gap-1 font-mono my-1">
+                  <span className="text-mint font-bold">{ext.signExtendedBits.slice(0, 4).join("")}</span>
+                  <span className="text-foreground">{ext.signExtendedBits.slice(4).join("")}</span>
+                  <span className="ml-2 font-bold text-mint">= {ext.signedValExtended}</span>
+                </div>
+                <span className="text-[11px] text-muted-foreground">Upper bits carry negative weight, exactly preserving {ext.originalValue}.</span>
+              </div>
+
+              <div className="p-2 rounded bg-muted/20 border border-border flex flex-col gap-1">
+                <span className="text-muted-foreground font-semibold">Zero Extended (Pad 0000):</span>
+                <div className="flex items-center gap-1 font-mono my-1">
+                  <span className="text-orange font-bold">{ext.zeroExtendedBits.slice(0, 4).join("")}</span>
+                  <span className="text-foreground">{ext.zeroExtendedBits.slice(4).join("")}</span>
+                  <span className="ml-2 font-bold text-orange">= {ext.zeroExtendedVal}</span>
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  {ext.originalValue < 0 ? `Corrupts negative value ${ext.originalValue} into positive +${ext.zeroExtendedVal}!` : "Valid for unsigned only."}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Panel>
   );
@@ -1038,32 +1534,540 @@ export function CodeTable() {
   );
 }
 
-/** Live IEEE 754 single precision breakdown. */
+/** Visualizes the two-stage BCD adder architecture with Boolean correction logic C = K + Z3*Z2 + Z3*Z1 injecting +6 (0110_2). */
+export function BcdAdderVisualizer() {
+  const [digitA, setDigitA] = useState<number>(7);
+  const [digitB, setDigitB] = useState<number>(8);
+  const [carryIn, setCarryIn] = useState<Bit>(0);
+
+  const res = useMemo(() => simulateBcdAdder(digitA, digitB, carryIn), [digitA, digitB, carryIn]);
+
+  const presets = [
+    { label: "Valid Sum (4 + 3 = 7)", a: 4, b: 3, cin: 0 as Bit },
+    { label: "Sum > 9 (7 + 8 = 15)", a: 7, b: 8, cin: 0 as Bit },
+    { label: "Binary Carry K=1 (8 + 8 = 16)", a: 8, b: 8, cin: 0 as Bit },
+    { label: "Max Decade (9 + 9 + 1 = 19)", a: 9, b: 9, cin: 1 as Bit },
+  ];
+
+  return (
+    <Panel title="Two-Stage BCD Adder with +6 Correction Logic">
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Presets */}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-xs text-muted-foreground">Presets:</span>
+          {presets.map((p, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => {
+                setDigitA(p.a);
+                setDigitB(p.b);
+                setCarryIn(p.cin);
+              }}
+              className="text-xs px-2 py-0.5 rounded border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Inputs */}
+        <div className="grid sm:grid-cols-3 gap-3 p-3 bg-muted/20 rounded border border-border">
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-muted-foreground">Digit A (0..9)</span>
+              <span className="font-bold text-foreground">{digitA} (<code className="text-sky">{res.aBits.join("")}</code>)</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={9}
+              value={digitA}
+              onChange={(e) => setDigitA(Number(e.target.value))}
+              className="accent-[hsl(var(--mint))] w-full"
+              aria-label="Digit A"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-muted-foreground">Digit B (0..9)</span>
+              <span className="font-bold text-foreground">{digitB} (<code className="text-sky">{res.bBits.join("")}</code>)</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={9}
+              value={digitB}
+              onChange={(e) => setDigitB(Number(e.target.value))}
+              className="accent-[hsl(var(--mint))] w-full"
+              aria-label="Digit B"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-muted-foreground">Carry-in (Cin)</span>
+              <span className="font-bold text-foreground">{carryIn}</span>
+            </div>
+            <div className="flex gap-2">
+              {[0, 1].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setCarryIn(c as Bit)}
+                  className={`flex-1 py-1 rounded text-xs border transition-colors ${
+                    carryIn === c ? "border-mint bg-mint/20 text-mint font-bold" : "border-border text-muted-foreground"
+                  }`}
+                >
+                  Cin = {c}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Architecture flow */}
+        <div className="grid lg:grid-cols-3 gap-3">
+          {/* Stage 1 */}
+          <div className="p-3 bg-card rounded border border-border flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-foreground">Stage 1: 4-Bit Binary Adder</span>
+              <span className="text-[10px] text-muted-foreground uppercase px-1.5 py-0.5 rounded bg-muted">Modulo 16</span>
+            </div>
+            <div className="flex flex-col gap-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Binary sum:</span>
+                <span className="font-bold text-foreground">{digitA} + {digitB} + {carryIn} = {res.stage1Sum}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Intermediate sum (Z):</span>
+                <span className="font-bold text-mint font-mono">{res.stage1Bits.join("")} ({res.stage1Sum % 16}₁₀)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Binary carry (K):</span>
+                <span className={`font-bold font-mono ${res.binaryCarryK ? "text-orange" : "text-foreground"}`}>{res.binaryCarryK}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Correction Logic */}
+          <div className="p-3 bg-card rounded border border-border flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-foreground">Correction Logic</span>
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${res.needsCorrection ? "bg-orange/20 text-orange border border-orange/40" : "bg-mint/20 text-mint"}`}>
+                {res.needsCorrection ? "Correction Active" : "No Correction"}
+              </span>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              Formula: <code className="text-foreground font-semibold">C = K + Z₃·Z₂ + Z₃·Z₁</code>
+            </div>
+            <div className="flex flex-col gap-1 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Term K (sum ≥ 16):</span>
+                <span className={`font-mono font-bold ${res.termK ? "text-orange" : "text-muted-foreground"}`}>{res.termK}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Term Z₃·Z₂ (sum 12..15):</span>
+                <span className={`font-mono font-bold ${res.termZ3Z2 ? "text-orange" : "text-muted-foreground"}`}>{res.termZ3Z2}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Term Z₃·Z₁ (sum 10,11,14,15):</span>
+                <span className={`font-mono font-bold ${res.termZ3Z1 ? "text-orange" : "text-muted-foreground"}`}>{res.termZ3Z1}</span>
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t border-border font-bold">
+                <span className="text-foreground">Decade Carry Out (C):</span>
+                <span className={`font-mono ${res.bcdCarryOut ? "text-orange" : "text-mint"}`}>{res.bcdCarryOut}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Stage 2 */}
+          <div className="p-3 bg-card rounded border border-border flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-bold text-foreground">Stage 2: +6 Correction Adder</span>
+              <span className="text-[10px] text-muted-foreground uppercase px-1.5 py-0.5 rounded bg-muted">Modulo 10</span>
+            </div>
+            <div className="flex flex-col gap-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Injected offset:</span>
+                <span className="font-bold font-mono text-orange">+{res.correctionCode.join("")} ({res.needsCorrection ? "6" : "0"})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Corrected BCD digit (S):</span>
+                <span className="font-bold font-mono text-mint">{res.correctedBits.join("")} ({res.finalBcdDigit}₁₀)</span>
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t border-border">
+                <span className="text-muted-foreground">Total Output:</span>
+                <span className="text-base font-bold text-mint font-mono">
+                  {res.bcdCarryOut ? `${res.bcdCarryOut} ` : ""}{res.finalBcdDigit} ({res.totalDecimal}₁₀)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Reason banner */}
+        <div className={`text-xs p-2.5 rounded border ${res.needsCorrection ? "border-orange/50 bg-orange/10 text-orange" : "border-mint/40 bg-mint/10 text-mint"}`}>
+          {res.reason}
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Visualizes 7-bit ASCII parity generation, physical channel noise, and single-bit vs undetected double-bit errors. */
+export function ParityLab() {
+  const [dataBits, setDataBits] = useState<Bit[]>([1, 0, 0, 0, 0, 1, 1]); // ASCII 'C'
+  const [mode, setMode] = useState<"even" | "odd">("even");
+  const [flipped, setFlipped] = useState<number[]>([]);
+
+  const presets = [
+    { label: "ASCII 'C' (1000011)", bits: [1, 0, 0, 0, 0, 1, 1] as Bit[] },
+    { label: "ASCII 'A' (1000001)", bits: [1, 0, 0, 0, 0, 0, 1] as Bit[] },
+    { label: "ASCII 'G' (1000111)", bits: [1, 0, 0, 0, 1, 1, 1] as Bit[] },
+    { label: "ASCII '0' (0110000)", bits: [0, 1, 1, 0, 0, 0, 0] as Bit[] },
+  ];
+
+  const result = useMemo(() => simulateParity(dataBits, mode, flipped), [dataBits, mode, flipped]);
+
+  const toggleBit = (idx: number) => {
+    const next = [...dataBits];
+    next[idx] = (next[idx] ? 0 : 1) as Bit;
+    setDataBits(next);
+  };
+
+  const toggleChannelFlip = (idx: number) => {
+    if (flipped.includes(idx)) {
+      setFlipped(flipped.filter((i) => i !== idx));
+    } else {
+      setFlipped([...flipped, idx]);
+    }
+  };
+
+  return (
+    <Panel title="Parity Bit Generator & Error Detection Lab">
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Top Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Parity Scheme:</span>
+            <Toggle
+              value={mode}
+              options={[
+                ["even", "Even Parity"],
+                ["odd", "Odd Parity"],
+              ]}
+              onChange={(v) => setMode(v as "even" | "odd")}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setFlipped([0])}
+              className="text-xs px-2 py-0.5 rounded border border-border hover:bg-muted text-muted-foreground transition-colors"
+            >
+              Inject 1-Bit Error
+            </button>
+            <button
+              type="button"
+              onClick={() => setFlipped([0, 1])}
+              className="text-xs px-2 py-0.5 rounded border border-border hover:bg-muted text-muted-foreground transition-colors"
+            >
+              Inject 2-Bit Error
+            </button>
+            <button
+              type="button"
+              onClick={() => setFlipped([])}
+              className="text-xs px-2 py-0.5 rounded border border-mint bg-mint/10 text-mint transition-colors"
+            >
+              Clear Channel
+            </button>
+          </div>
+        </div>
+
+        {/* Presets */}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-xs text-muted-foreground">Presets:</span>
+          {presets.map((p) => (
+            <button
+              key={p.label}
+              type="button"
+              onClick={() => {
+                setDataBits(p.bits);
+                setFlipped([]);
+              }}
+              className="text-xs px-2 py-0.5 rounded border border-border hover:bg-muted text-muted-foreground transition-colors"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Transmitter Block */}
+        <div className="p-3 bg-card rounded border border-border flex flex-col gap-2">
+          <div className="flex justify-between items-center text-xs">
+            <span className="font-bold text-foreground">Transmitter: 7 Data Bits + 1 Parity Bit (P)</span>
+            <span className="text-muted-foreground">
+              Total 1s in Data: <strong className="text-foreground">{result.onesInData}</strong> → Parity Bit P = <strong className="text-mint">{result.parityBit}</strong>
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-1.5 my-1">
+            {dataBits.map((b, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => toggleBit(i)}
+                aria-label={`Toggle data bit b${6 - i}`}
+                className={`w-10 flex flex-col items-center rounded border py-1 transition-colors ${
+                  b ? "border-sky bg-sky/20" : "border-border text-muted-foreground"
+                }`}
+              >
+                <span className="text-[9px] text-muted-foreground">b{6 - i}</span>
+                <span className="text-base font-bold">{b}</span>
+              </button>
+            ))}
+            <div className="w-10 flex flex-col items-center rounded border border-mint bg-mint/20 py-1" title="Generated Parity Bit">
+              <span className="text-[9px] text-mint font-bold">P</span>
+              <span className="text-base font-bold text-mint">{result.parityBit}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Channel Noise Simulator */}
+        <div className="p-3 bg-muted/20 rounded border border-border flex flex-col gap-2">
+          <div className="flex justify-between items-center text-xs">
+            <span className="font-bold text-foreground">Transmission Channel (Click bits to flip / inject electrical noise)</span>
+            <span className="text-muted-foreground">
+              Errors: <strong className={flipped.length ? "text-orange" : "text-mint"}>{flipped.length} bit(s)</strong>
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-1.5 my-1">
+            {result.receivedWord.map((b, i) => {
+              const isFlipped = flipped.includes(i);
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => toggleChannelFlip(i)}
+                  className={`w-10 flex flex-col items-center rounded border py-1 transition-colors ${
+                    isFlipped
+                      ? "border-orange bg-orange/30 text-orange font-bold animate-pulse"
+                      : "border-border bg-card hover:bg-muted"
+                  }`}
+                  title={isFlipped ? "Corrupted by noise! Click to restore" : "Click to flip bit simulating noise"}
+                >
+                  <span className="text-[9px] text-muted-foreground">{i < 7 ? `d${6 - i}` : "P"}</span>
+                  <span className="text-base font-bold">{b}</span>
+                  <span className="text-[9px] text-muted-foreground">{isFlipped ? "FLIPPED" : "clean"}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Receiver Block */}
+        <div className={`p-3 rounded border flex flex-col gap-2 ${
+          result.silentCorruption
+            ? "border-orange bg-orange/15 text-orange"
+            : result.errorDetected
+            ? "border-destructive bg-destructive/15 text-foreground"
+            : "border-mint/50 bg-mint/10 text-mint"
+        }`}>
+          <div className="flex justify-between items-center text-xs font-bold">
+            <span>Receiver Parity Evaluation</span>
+            <span>
+              {result.silentCorruption
+                ? "⚠ SILENT CORRUPTION DETECTED"
+                : result.errorDetected
+                ? "❌ PARITY ERROR DETECTED"
+                : "✓ PARITY CHECK PASSED"}
+            </span>
+          </div>
+          <div className="text-xs leading-relaxed">
+            {result.diagnostic}
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Live IEEE 754 single precision breakdown with presets, bit-level toggles, and hexadecimal equivalent. */
 export function FloatExplorer() {
-  const [text, setText] = useState("0.15625");
+  const [text, setText] = useState("-43.625");
   const value = Number(text) || 0;
   const p = floatParts(value);
   const exp = p.exponent - 127;
+
+  const presets = [
+    { label: "-43.625 (Exam example)", val: "-43.625" },
+    { label: "0.15625 (Exact fraction)", val: "0.15625" },
+    { label: "1.0 (Unit)", val: "1.0" },
+    { label: "0.1 (Repeating)", val: "0.1" },
+    { label: "+0.0", val: "0" },
+    { label: "-0.0", val: "-0" },
+    { label: "Infinity", val: "Infinity" },
+    { label: "1e-40 (Subnormal)", val: "1e-40" },
+    { label: "NaN", val: "NaN" },
+  ];
+
+  const hexNibbles = useMemo(() => {
+    const out: { nibble: string; hex: string }[] = [];
+    for (let i = 0; i < 32; i += 4) {
+      const chunk = p.bits.slice(i, i + 4);
+      out.push({ nibble: chunk, hex: parseInt(chunk, 2).toString(16).toUpperCase() });
+    }
+    return out;
+  }, [p.bits]);
+
   const seg = (s: string, cls: string, label: string) => (
     <div className="flex flex-col gap-1">
-      <div className="flex flex-wrap gap-px">{[...s].map((b, i) => <span key={i} className={`w-[14px] h-6 flex items-center justify-center font-mono text-[10px] rounded-[1px] ${b === "1" ? `${cls} font-bold` : "bg-background border border-border text-muted-foreground"}`}>{b}</span>)}</div>
+      <div className="flex flex-wrap gap-px">
+        {[...s].map((b, i) => (
+          <span
+            key={i}
+            className={`w-[14px] h-6 flex items-center justify-center font-mono text-[10px] rounded-[1px] ${
+              b === "1" ? `${cls} font-bold` : "bg-background border border-border text-muted-foreground"
+            }`}
+          >
+            {b}
+          </span>
+        ))}
+      </div>
       <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
     </div>
   );
+
   return (
-    <Panel title="32 bits: sign, exponent, fraction" legend={[["bg-orange", "sign"], ["bg-sky", "exponent"], ["bg-mint", "fraction"]]}>
-      <input value={text} onChange={(e) => setText(e.target.value)} aria-label="A decimal number" className={`${inputCls} w-48`} />
-      <div className="flex flex-wrap gap-3">
-        {seg(p.bits[0], "bg-orange/40", "sign")}
-        {seg(p.bits.slice(1, 9), "bg-sky/40", "exponent")}
-        {seg(p.bits.slice(9), "bg-mint/40", "fraction")}
-      </div>
-      <div className="font-mono text-[13px] flex flex-col gap-1">
-        <div>sign {p.sign} means {p.sign ? "negative" : "positive"}</div>
-        {p.kind === "normal" && <div>stored exponent {p.exponent}, minus the bias of 127, is {exp}: the point moves {Math.abs(exp)} place{Math.abs(exp) === 1 ? "" : "s"} {exp >= 0 ? "right" : "left"}</div>}
-        {p.kind === "normal" && <div>value = 1.<span className="text-mint">{p.bits.slice(9).replace(/0+$/, "") || "0"}</span> × 2^{exp}</div>}
-        {p.kind !== "normal" && <div className="text-muted-foreground">special case: {p.kind}</div>}
-        <div>what actually got stored: <span className="font-bold">{p.value}</span>{p.value !== value && <span className="text-orange"> (rounded; {value} has no exact binary form in 32 bits)</span>}</div>
+    <Panel
+      title="IEEE 754 Single Precision (32-Bit) Floating Point"
+      legend={[
+        ["bg-orange", "sign (1 bit)"],
+        ["bg-sky", "exponent (8 bits, bias 127)"],
+        ["bg-mint", "fraction (23 bits, implicit 1.)"],
+      ]}
+    >
+      <div className="flex flex-col gap-4 font-mono text-[13px]">
+        {/* Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Decimal input:</span>
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              aria-label="A decimal number"
+              className={`${inputCls} w-44`}
+            />
+          </div>
+          <div className="flex flex-wrap gap-1.5 items-center">
+            <span className="text-xs text-muted-foreground">Presets:</span>
+            {presets.slice(0, 5).map((pr) => (
+              <button
+                key={pr.val}
+                type="button"
+                onClick={() => setText(pr.val)}
+                className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                  text === pr.val ? "border-mint bg-mint/20 text-mint font-bold" : "border-border hover:bg-muted text-muted-foreground"
+                }`}
+              >
+                {pr.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* More Presets */}
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-xs text-muted-foreground">Special cases:</span>
+          {presets.slice(5).map((pr) => (
+            <button
+              key={pr.val}
+              type="button"
+              onClick={() => setText(pr.val)}
+              className={`text-xs px-2 py-0.5 rounded border transition-colors ${
+                text === pr.val ? "border-orange bg-orange/20 text-orange font-bold" : "border-border hover:bg-muted text-muted-foreground"
+              }`}
+            >
+              {pr.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 32-bit segment visualization */}
+        <div className="p-3 bg-card rounded border border-border overflow-x-auto flex flex-col gap-2">
+          <div className="flex flex-wrap gap-3">
+            {seg(p.bits[0], "bg-orange/50 text-orange-foreground", "Sign (1)")}
+            {seg(p.bits.slice(1, 9), "bg-sky/50 text-sky-foreground", "Exponent (8)")}
+            {seg(p.bits.slice(9), "bg-mint/50 text-mint-foreground", "Fraction / Mantissa (23)")}
+          </div>
+        </div>
+
+        {/* Hex grouping representation */}
+        <div className="p-2.5 rounded bg-muted/20 border border-border flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Hexadecimal (0x):</span>
+            <div className="flex gap-1.5 font-bold text-mint text-base">
+              {hexNibbles.map((h, i) => (
+                <span key={i} title={`Bits ${h.nibble}`} className="px-1 py-0.5 rounded bg-muted/40 border border-border">
+                  {h.hex}
+                </span>
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">(= 0x{hexNibbles.map((h) => h.hex).join("")})</span>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            Class: <strong className="text-foreground uppercase">{p.kind}</strong>
+          </span>
+        </div>
+
+        {/* Decoded interpretation breakdown */}
+        <div className="flex flex-col gap-1.5 text-xs p-3 rounded bg-card border border-border">
+          <div>
+            • <strong>Sign:</strong> bit is <code className="text-orange">{p.sign}</code> → number is{" "}
+            <strong className="text-foreground">{p.sign ? "negative (-)" : "positive (+)"}</strong>.
+          </div>
+          {p.kind === "normal" && (
+            <div>
+              • <strong>Biased Exponent:</strong> stored <code className="text-sky">{p.exponent}</code> (binary{" "}
+              <code className="text-sky">{p.bits.slice(1, 9)}</code>), minus bias of 127 ={" "}
+              <strong className="text-foreground">{exp}</strong>. Binary point scales by{" "}
+              <code className="text-foreground">2^{exp}</code>.
+            </div>
+          )}
+          {p.kind === "normal" && (
+            <div>
+              • <strong>Significand (with implicit 1.):</strong>{" "}
+              <code className="text-mint">1.{p.bits.slice(9).replace(/0+$/, "") || "0"}₂</code>
+            </div>
+          )}
+          {p.kind === "subnormal" && (
+            <div className="text-orange">
+              • <strong>Subnormal:</strong> Exponent is 0 with non-zero fraction. Evaluates as{" "}
+              <code>(-1)^S × 0.F × 2^(-126)</code> (gradual underflow, no implicit 1).
+            </div>
+          )}
+          {p.kind === "infinity" && (
+            <div className="text-orange font-bold">
+              • <strong>Infinity:</strong> Exponent = 255 with all-zero fraction. Result of overflow or division by zero.
+            </div>
+          )}
+          {p.kind === "nan" && (
+            <div className="text-destructive font-bold">
+              • <strong>NaN (Not a Number):</strong> Exponent = 255 with non-zero fraction. Result of invalid operations (0/0, √-1).
+            </div>
+          )}
+          <div className="pt-1 border-t border-border flex justify-between items-center text-muted-foreground">
+            <span>Exact float32 value recovered: <strong className="text-foreground">{p.value}</strong></span>
+            {p.value !== value && (
+              <span className="text-orange">
+                (Rounded: {value} cannot be stored with finite binary precision)
+              </span>
+            )}
+          </div>
+        </div>
       </div>
     </Panel>
   );

@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   bitString, classifyDecimalVoltage, classifyLogicVoltage, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
-  floatParts, fromGray, fullAdd, generateRealWaveform, jkNext, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries, minimizeSop, onesComplement,
-  posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, simulateAdc, simulateBusDrivers, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
+  expandRadixToBinary, floatParts, fromGray, fullAdd, generateRealWaveform, groupBinaryBits, jkNext, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries,
+  minimizeSop, onesComplement, posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, signExtend, simulateAdc, simulateBcdAdder,
+  simulateBusDrivers, simulateParity, simulateSignedArithmetic, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
   type Bit, type NetGate,
 } from "@/lib/logic";
 
@@ -69,6 +70,146 @@ describe("number systems, including the worked examples from the notes", () => {
     expect(p.exponent - 127).toBe(-3);
     expect(floatParts(-1).sign).toBe(1);
     expect(floatParts(0).kind).toBe("zero");
+  });
+  it("groups binary bits into octal and hex with outward padding", () => {
+    // Worked example from m1-01: (10110110101.101011)_2
+    const hex = groupBinaryBits("10110110101.101011", 4);
+    expect(hex.resultString).toBe("5B5.AC");
+    expect(hex.intPadCount).toBe(1); // 1 leading zero added to leftmost group
+    expect(hex.fracPadCount).toBe(2); // 2 trailing zeros added to rightmost group
+    expect(hex.integerGroups.map((g) => g.digit).join("")).toBe("5B5");
+    expect(hex.fractionalGroups.map((g) => g.digit).join("")).toBe("AC");
+
+    const oct = groupBinaryBits("10110110101.101011", 3);
+    expect(oct.resultString).toBe("2665.53");
+    expect(oct.intPadCount).toBe(1);
+    expect(oct.fracPadCount).toBe(0);
+
+    // Expansion test
+    const expandedHex = expandRadixToBinary("5B5.AC", 4);
+    expect(expandedHex.fullBinary).toBe("010110110101.10101100");
+    const expandedOct = expandRadixToBinary("173.2", 3);
+    expect(expandedOct.fullBinary).toBe("001111011.010");
+  });
+  it("simulates signed arithmetic and overflow detection V = C_{n-1} ^ C_n", () => {
+    // 4-bit addition: positive overflow (+5 + +4 = -7, V=1)
+    const posOverflow = simulateSignedArithmetic(5, 4, 4, "add");
+    expect(posOverflow.signedResult).toBe(-7);
+    expect(posOverflow.carryInMsb).toBe(1);
+    expect(posOverflow.carryOutMsb).toBe(0);
+    expect(posOverflow.overflow).toBe(true);
+
+    // 4-bit addition: negative overflow (-6 + -5 = +5, V=1)
+    const negOverflow = simulateSignedArithmetic(-6, -5, 4, "add");
+    expect(negOverflow.signedResult).toBe(5);
+    expect(negOverflow.carryInMsb).toBe(0);
+    expect(negOverflow.carryOutMsb).toBe(1);
+    expect(negOverflow.overflow).toBe(true);
+
+    // 4-bit addition: opposite signs never overflow (+5 + -3 = +2, V=0)
+    const oppSigns = simulateSignedArithmetic(5, -3, 4, "add");
+    expect(oppSigns.signedResult).toBe(2);
+    expect(oppSigns.overflow).toBe(false);
+
+    // 8-bit addition: worked case (+42 + +19 = +61)
+    const sum8 = simulateSignedArithmetic(42, 19, 8, "add");
+    expect(sum8.signedResult).toBe(61);
+    expect(sum8.overflow).toBe(false);
+
+    // 8-bit subtraction: M >= N (42 - 19 = 23, Cout=1 discarded, V=0)
+    const subPos = simulateSignedArithmetic(42, 19, 8, "sub");
+    expect(subPos.signedResult).toBe(23);
+    expect(subPos.carryOut).toBe(1);
+    expect(subPos.overflow).toBe(false);
+
+    // 8-bit subtraction: M < N (19 - 42 = -23, Cout=0, V=0)
+    const subNeg = simulateSignedArithmetic(19, 42, 8, "sub");
+    expect(subNeg.signedResult).toBe(-23);
+    expect(subNeg.carryOut).toBe(0);
+    expect(subNeg.overflow).toBe(false);
+
+    // 8-bit exam problem: 80 + 70 = 150 -> overflows to -106
+    const examProblem = simulateSignedArithmetic(80, 70, 8, "add");
+    expect(examProblem.signedResult).toBe(-106);
+    expect(examProblem.carryInMsb).toBe(1);
+    expect(examProblem.carryOutMsb).toBe(0);
+    expect(examProblem.overflow).toBe(true);
+  });
+  it("sign extension preserves negative value while zero extension corrupts it", () => {
+    // 4-bit +5 (0101) to 8-bit
+    const extPos = signExtend(5, 4, 8);
+    expect(extPos.signedValExtended).toBe(5);
+    expect(extPos.zeroExtendedVal).toBe(5);
+    expect(extPos.preserved).toBe(true);
+
+    // 4-bit -5 (1011) to 8-bit
+    const extNeg = signExtend(-5, 4, 8);
+    expect(extNeg.signedValExtended).toBe(-5);
+    expect(extNeg.signExtendedBits.join("")).toBe("11111011");
+    // Zero extension turns -5 into +11!
+    expect(extNeg.zeroExtendedVal).toBe(11);
+    expect(extNeg.zeroExtendedBits.join("")).toBe("00001011");
+    expect(extNeg.preserved).toBe(true);
+  });
+  it("simulates two-stage BCD adder with Boolean correction C = K + Z3*Z2 + Z3*Z1", () => {
+    // 7 + 8 = 15 -> Z = 1111, K = 0, C = 1 (Z3*Z2=1), +6 -> sum 5, carry 1
+    const bcd1 = simulateBcdAdder(7, 8, 0);
+    expect(bcd1.stage1Sum).toBe(15);
+    expect(bcd1.binaryCarryK).toBe(0);
+    expect(bcd1.termZ3Z2).toBe(1);
+    expect(bcd1.needsCorrection).toBe(true);
+    expect(bcd1.finalBcdDigit).toBe(5);
+    expect(bcd1.bcdCarryOut).toBe(1);
+    expect(bcd1.totalDecimal).toBe(15);
+
+    // 8 + 8 = 16 -> Z = 0000, binary carry K = 1, C = 1, +6 -> sum 6, carry 1
+    const bcd2 = simulateBcdAdder(8, 8, 0);
+    expect(bcd2.stage1Sum).toBe(16);
+    expect(bcd2.binaryCarryK).toBe(1);
+    expect(bcd2.needsCorrection).toBe(true);
+    expect(bcd2.finalBcdDigit).toBe(6);
+    expect(bcd2.bcdCarryOut).toBe(1);
+    expect(bcd2.totalDecimal).toBe(16);
+
+    // 4 + 3 = 7 -> Z = 0111, K = 0, C = 0 -> sum 7, carry 0
+    const bcd3 = simulateBcdAdder(4, 3, 0);
+    expect(bcd3.stage1Sum).toBe(7);
+    expect(bcd3.needsCorrection).toBe(false);
+    expect(bcd3.finalBcdDigit).toBe(7);
+    expect(bcd3.bcdCarryOut).toBe(0);
+    expect(bcd3.totalDecimal).toBe(7);
+
+    // 9 + 9 + 1 = 19 -> Z = 0011, K = 1, C = 1 -> sum 9, carry 1
+    const bcd4 = simulateBcdAdder(9, 9, 1);
+    expect(bcd4.stage1Sum).toBe(19);
+    expect(bcd4.binaryCarryK).toBe(1);
+    expect(bcd4.finalBcdDigit).toBe(9);
+    expect(bcd4.bcdCarryOut).toBe(1);
+    expect(bcd4.totalDecimal).toBe(19);
+  });
+  it("simulates parity generation and demonstrates why 2-bit errors pass undetected", () => {
+    // ASCII 'C' = 01000011 (binary 7-bit 1000011 has three 1s)
+    const charCBits: Bit[] = [1, 0, 0, 0, 0, 1, 1];
+    const evenParity = simulateParity(charCBits, "even", []);
+    expect(evenParity.onesInData).toBe(3);
+    expect(evenParity.parityBit).toBe(1); // 3 + 1 = 4 (even)
+    expect(evenParity.transmittedWord).toEqual([1, 0, 0, 0, 0, 1, 1, 1]);
+    expect(evenParity.errorDetected).toBe(false);
+
+    // 1-bit flip on bit 0: received 00000111 has three 1s -> Parity error detected!
+    const singleBitError = simulateParity(charCBits, "even", [0]);
+    expect(singleBitError.errorDetected).toBe(true);
+    expect(singleBitError.silentCorruption).toBe(false);
+
+    // 2-bit flip on bit 0 and bit 1: received 01000111 has four 1s -> SILENT CORRUPTION!
+    const doubleBitError = simulateParity(charCBits, "even", [0, 1]);
+    expect(doubleBitError.errorDetected).toBe(false);
+    expect(doubleBitError.silentCorruption).toBe(true);
+
+    // Odd parity test
+    const oddParity = simulateParity(charCBits, "odd", []);
+    expect(oddParity.parityBit).toBe(0); // 3 + 0 = 3 (odd)
+    expect(oddParity.errorDetected).toBe(false);
   });
 });
 
