@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { EqualityCircuit, DecoderCircuit } from "@/components/mdx/CircuitVisualizers";
 import { MagnitudeComparatorLab, DecoderLab, SevenSegmentLab, PriorityEncoder, PriorityEncoderLab } from "@/components/mdx/LogicVisualizers";
 
@@ -418,3 +418,216 @@ Show how two 74LS85 4-bit magnitude comparators are cascaded to compare two 8-bi
    **Explanation:**
    The cascading inputs specify what the comparator should decide if all its local bit comparisons result in equality. If all 8 bits of $A$ and $B$ are identical, both nibbles evaluate to local equality. Comparator 1 falls back to its cascading inputs from Comparator 0; Comparator 0 in turn falls back to its cascading inputs. By setting $I_{A=B} = 1$ on Comparator 0, the entire cascade correctly resolves to $A = B$. If $I_{A=B}$ were erroneously tied to 0, an identical 8-bit match would report no active output.
 </ModelAnswer>
+
+### Problem 5: 16-to-4 Priority Encoder cascading with two 74LS148 ICs
+
+Design a 16-to-4 priority encoder with active-LOW inputs $\overline{I_{15}}\dots\overline{I_0}$ and active-LOW outputs $\overline{A_3}, \overline{A_2}, \overline{A_1}, \overline{A_0}$ using two 8-to-3 priority encoder ICs (74LS148: Chip High for inputs $\overline{I_{15}}\dots\overline{I_8}$ and Chip Low for inputs $\overline{I_7}\dots\overline{I_0}$) and external gates.
+The 74LS148 has active-LOW inputs $\overline{I_7}\dots\overline{I_0}$, active-LOW outputs $\overline{A_2}, \overline{A_1}, \overline{A_0}$, active-LOW enable input $\overline{EI}$, active-LOW group select $\overline{GS}$ (asserted LOW when enabled and at least one input is LOW), and active-LOW enable output $\overline{EO}$ (asserted LOW when enabled and ALL inputs are HIGH).
+
+1. Detail the wiring connecting $\overline{EI}$ of Chip High, $\overline{EO}$ of Chip High, and $\overline{EI}$ of Chip Low.
+2. Derive the Boolean equations for the combined 4-bit output bus $\overline{A_3}, \overline{A_2}, \overline{A_1}, \overline{A_0}$ and the overall circuit Group Select $\overline{GS}_{\text{total}}$.
+3. Trace the circuit state when input lines $\overline{I_{12}}$ and $\overline{I_5}$ are asserted LOW simultaneously (all other 14 inputs HIGH).
+
+<ModelAnswer>
+1. **Cascading Control Wiring:**
+   - **Chip High (Encoder 1, handles upper priority inputs $\overline{I_{15}}\dots\overline{I_8}$):**
+     - Master enable $\overline{EI}_{\text{master}}$ is connected directly to $\overline{EI}$ of Chip High.
+     - Inputs $\overline{I_{15}}\dots\overline{I_8}$ connect to pins $\overline{I_7}\dots\overline{I_0}$ of Chip High.
+   - **Chip Low (Encoder 0, handles lower priority inputs $\overline{I_7}\dots\overline{I_0}$):**
+     - Connect the Enable Output ($\overline{EO}$) of Chip High directly to the Enable Input ($\overline{EI}$) of Chip Low.
+     - Inputs $\overline{I_7}\dots\overline{I_0}$ connect to pins $\overline{I_7}\dots\overline{I_0}$ of Chip Low.
+     - **Mechanism:** If any input in the high group ($\overline{I_{15}}\dots\overline{I_8}$) is asserted LOW, Chip High handles it and sets its $\overline{EO} = 1$ (HIGH, inactive). This disables Chip Low ($\overline{EI}=1$), forcing all outputs of Chip Low to 1 (inactive). Only when ALL inputs $\overline{I_{15}}\dots\overline{I_8}$ are HIGH (idle) does Chip High assert $\overline{EO} = 0$, passing enabling authority to Chip Low.
+
+2. **Output Bus Logic Equations:**
+   - **Most Significant Bit $\overline{A_3}$:**
+     $\overline{A_3}$ must be LOW (active) if the winning active input came from Chip High ($\overline{I_{15}}\dots\overline{I_8}$), and HIGH if from Chip Low.
+     Chip High asserts $\overline{GS}_H = 0$ when it has an active input. Therefore:
+     $$\overline{A_3} = \overline{GS}_H$$
+     (No external gate needed! Connect $\overline{GS}$ of Chip High directly to $\overline{A_3}$).
+   - **Lower Bits $\overline{A_2}, \overline{A_1}, \overline{A_0}$:**
+     When Chip High is active, Chip Low is disabled (all its outputs are HIGH). When Chip Low is active, Chip High's outputs are all HIGH (because inputs are idle).
+     Because inactive outputs are HIGH ($1$), active-LOW outputs from the two chips can be combined using 2-input AND gates:
+     $$\overline{A_2} = \overline{A_{2,H}} \cdot \overline{A_{2,L}}$$
+     $$\overline{A_1} = \overline{A_{1,H}} \cdot \overline{A_{1,L}}$$
+     $$\overline{A_0} = \overline{A_{0,H}} \cdot \overline{A_{0,L}}$$
+     When one chip is active, the other outputs $1$, passing the active chip's bits through unchanged ($X \cdot 1 = X$).
+   - **Total Group Select $\overline{GS}_{\text{total}}$:**
+     The overall system has active data if either Chip High OR Chip Low has active data:
+     $$\overline{GS}_{\text{total}} = \overline{GS}_H \cdot \overline{GS}_L$$
+     (asserts LOW if either $\overline{GS}_H = 0$ or $\overline{GS}_L = 0$).
+
+3. **Trace for $\overline{I_{12}} = 0$ and $\overline{I_5} = 0$:**
+   - $\overline{I_{12}}$ connects to pin $\overline{I_4}$ of Chip High. Since $\overline{I_{15}}\dots\overline{I_{13}}$ are HIGH, $\overline{I_4}$ is the highest asserted line on Chip High.
+   - Chip High encodes pin 4 ($100_2$): its active-LOW outputs produce $\overline{A_{2,H}} = 0, \overline{A_{1,H}} = 1, \overline{A_{0,H}} = 1$.
+   - Chip High asserts its Group Select: $\overline{GS}_H = 0 \implies \overline{A_3} = 0$.
+   - Because Chip High has active data, its Enable Output is deasserted: $\overline{EO}_H = 1$.
+   - $\overline{EO}_H = 1$ disables Chip Low ($\overline{EI}_L = 1$).
+   - Chip Low is completely disabled: despite $\overline{I_5} = 0$, Chip Low sets all outputs HIGH ($\overline{A_{2,L}} = 1, \overline{A_{1,L}} = 1, \overline{A_{0,L}} = 1$, $\overline{GS}_L = 1$).
+   - Combining through AND gates:
+     - $\overline{A_3} = 0$
+     - $\overline{A_2} = 0 \cdot 1 = 0$
+     - $\overline{A_1} = 1 \cdot 1 = 1$
+     - $\overline{A_0} = 1 \cdot 1 = 1$
+   - Combined output: $\overline{A_3}\overline{A_2}\overline{A_1}\overline{A_0} = 0011_2$.
+   - In active-HIGH interpretation, $A_3 A_2 A_1 A_0 = 1100_2 = 12_{10}$, accurately identifying input 12 and completely ignoring lower-priority input 5.
+
+<Callout tone="orange" label="Common exam pitfall">
+A frequent error is connecting $\overline{GS}_H$ (Group Select) to the downstream chip's $\overline{EI}$ instead of $\overline{EO}_H$. $\overline{GS}$ asserts when inputs *are* present; $\overline{EO}$ asserts when inputs *are absent*. Wiring $\overline{GS}$ into downstream enable inverts priority: the low-order chip would only turn ON when the high-order chip had active inputs!
+</Callout>
+</ModelAnswer>
+
+### Problem 6: Microprocessor memory address decoding and partial decoding hazards
+
+A microprocessor system has a 16-bit address bus ($A_{15}\dots A_0$) addressing up to 64 KB of memory space. The system includes:
+- Two 8 KB ROM chips (ROM 0 and ROM 1)
+- Two 8 KB SRAM chips (RAM 0 and RAM 1)
+Each 8 KB memory IC has 13 address pins ($A_{12}\dots A_0$) and an active-LOW chip enable pin $\overline{CE}$.
+A 74LS138 3-to-8 decoder is used to generate chip enables. The decoder inputs are:
+- Select inputs $C, B, A$ connected to address bus lines $A_{15}, A_{14}, A_{13}$
+- Enable inputs: $G_1$ tied to active-HIGH control signal $\text{VMA}$ (Valid Memory Address), $\overline{G_{2A}}$ tied to $\text{RESET}'$ (active-LOW), and $\overline{G_{2B}}$ grounded to GND (0V).
+
+1. Determine the memory map (starting and ending hexadecimal address ranges) selected by each of the decoder outputs $\overline{Y_0}$ through $\overline{Y_3}$. Assign ROM 0 to $\overline{Y_0}$, ROM 1 to $\overline{Y_1}$, RAM 0 to $\overline{Y_2}$, and RAM 1 to $\overline{Y_3}$.
+2. What are the hexadecimal address ranges of the unmapped decoder outputs $\overline{Y_4}$ through $\overline{Y_7}$?
+3. Suppose a rogue peripheral uses **partial address decoding**, monitoring only address lines $A_{15}$ and $A_{14}$ while leaving $A_{13}$ unmonitored. Explain the concept of **memory aliasing** and identify the addresses where memory access collisions will occur.
+
+<ModelAnswer>
+1. **Memory Map for $\overline{Y_0}$ through $\overline{Y_3}$:**
+   The lower 13 address lines ($A_{12}\dots A_0$) span $2^{13} = 8192$ bytes ($8\text{ KB}$), ranging from $\text{0x0000}$ to $\text{0x1FFF}$ within each bank.
+   Address lines $A_{15} A_{14} A_{13}$ select the bank:
+   - **$\overline{Y_0}$ ($A_{15}A_{14}A_{13} = 000_2$): ROM 0**
+     $$\text{Binary: } 000\,0\,0000\,0000\,0000_2 \text{ to } 000\,1\,1111\,1111\,1111_2$$
+     $$\text{Hex range: } \text{0x0000} - \text{0x1FFF}$$
+   - **$\overline{Y_1}$ ($A_{15}A_{14}A_{13} = 001_2$): ROM 1**
+     $$\text{Binary: } 001\,0\,0000\,0000\,0000_2 \text{ to } 001\,1\,1111\,1111\,1111_2$$
+     $$\text{Hex range: } \text{0x2000} - \text{0x3FFF}$$
+   - **$\overline{Y_2}$ ($A_{15}A_{14}A_{13} = 010_2$): RAM 0**
+     $$\text{Binary: } 010\,0\,0000\,0000\,0000_2 \text{ to } 010\,1\,1111\,1111\,1111_2$$
+     $$\text{Hex range: } \text{0x4000} - \text{0x5FFF}$$
+   - **$\overline{Y_3}$ ($A_{15}A_{14}A_{13} = 011_2$): RAM 1**
+     $$\text{Binary: } 011\,0\,0000\,0000\,0000_2 \text{ to } 011\,1\,1111\,1111\,1111_2$$
+     $$\text{Hex range: } \text{0x6000} - \text{0x7FFF}$$
+
+2. **Unmapped Address Space ($\overline{Y_4}$ to $\overline{Y_7}$):**
+   - $\overline{Y_4}$ ($100_2$): $\text{0x8000} - \text{0x9FFF}$ (8 KB, unpopulated)
+   - $\overline{Y_5}$ ($101_2$): $\text{0xA000} - \text{0xBFFF}$ (8 KB, unpopulated)
+   - $\overline{Y_6}$ ($110_2$): $\text{0xC000} - \text{0xDFFF}$ (8 KB, unpopulated)
+   - $\overline{Y_7}$ ($111_2$): $\text{0xE000} - \text{0xFFFF}$ (8 KB, unpopulated)
+   Total unmapped space: $\text{0x8000} - \text{0xFFFF}$ (32 KB reserved for system I/O expansion).
+
+3. **Memory Aliasing and Partial Address Decoding:**
+   - **Definition:** Partial address decoding occurs when one or more address bus lines are omitted from decoding logic to save gates. The omitted address lines become "don't-cares" ($\text{X}$).
+   - **Mechanism of Aliasing:** If a peripheral responds whenever $A_{15}A_{14} = 01_2$ without decoding $A_{13}$, it asserts its select line for both $A_{15}A_{14}A_{13} = 010_2$ (RAM 0, $\text{0x4000}-\text{0x5FFF}$) and $A_{15}A_{14}A_{13} = 011_2$ (RAM 1, $\text{0x6000}-\text{0x7FFF}$).
+   - **Collision Hazard:** When the CPU reads from address $\text{0x4100}$, both RAM 0 and the rogue peripheral will drive the shared data bus simultaneously, causing catastrophic **bus contention**, high supply currents, and garbled data. Full address decoding (decoding all address bits uniquely) is essential to prevent ghost images (aliases) and bus fighting.
+
+<Callout tone="orange" label="Common exam pitfall">
+Do not calculate memory block boundaries by dividing by 1000 decimal. An 8 KB block is $8 \times 1024 = 8192$ bytes, which in hexadecimal is $\text{0x2000}$ bytes. The range for an 8 KB block starting at $\text{0x0000}$ ends at $\text{0x0000} + \text{0x2000} - 1 = \text{0x1FFF}$, not $\text{0x2000}$.
+</Callout>
+</ModelAnswer>
+
+---
+
+### Part 2: In-lesson interactive practice
+
+<Quiz
+  practice
+  courseSlug="logic-design"
+  lessonSlug="comparators-decoders-encoders"
+  questions={[
+    {
+      id: "cde-p1",
+      prompt: "A 74LS138 3-to-8 line decoder has select inputs CBA = 011₂ (C is MSB, A is LSB), active-HIGH enable G1 = 1, and active-LOW enables G2A' = 0, G2B' = 0. What are the states of the output lines Y0' through Y7'?",
+      options: [
+        { id: "a", text: "Y3' = 0, and all other seven outputs (Y0', Y1', Y2', Y4', Y5', Y6', Y7') are 1" },
+        { id: "b", text: "Y3' = 1, and all other seven outputs are 0" },
+        { id: "c", text: "Y6' = 0, because CBA is read in reverse bit order" },
+        { id: "d", text: "All outputs are 1 because the chip is disabled" },
+      ],
+      correctOptionId: "a",
+      explanation: "The enable condition G1 · (G2A')' · (G2B')' = 1 · 1 · 1 = 1 is met, so the decoder is active. Input code CBA = 011₂ = 3₁₀ selects channel 3. Because the 74LS138 has active-LOW outputs, the selected line Y3' drops to logic 0, while all seven unselected lines stay at logic 1. Option b describes an active-HIGH decoder; option c reverses bit weights (confusing pin A and pin C); option d ignores the valid enable signals.",
+    },
+    {
+      id: "cde-p2",
+      prompt: "When using an active-LOW 3-to-8 decoder (outputs Y_i' = m_i') to implement the Boolean function F = ∑ m(2, 4, 6), why is connecting the selected outputs into an OR gate a serious design mistake?",
+      options: [
+        { id: "a", text: "Because an OR gate computes Y2' + Y4' + Y6' = m2' + m4' + m6' = (m2 · m4 · m6)', which produces logic 1 almost everywhere; correct implementation requires a NAND gate" },
+        { id: "b", text: "Because OR gates cannot interface with TTL decoder outputs" },
+        { id: "c", text: "Because the OR gate will invert the select address lines" },
+        { id: "d", text: "Because decoders only support minterms with odd indices" },
+      ],
+      correctOptionId: "a",
+      explanation: "Active-LOW decoder outputs produce complemented minterms Y_i' = m_i'. Feeding them to an OR gate yields the sum of complements, which by De Morgan's laws equals the complement of the product: (m2 · m4 · m6)'. Since minterms are mutually exclusive, their product is always 0, so the OR gate outputs a static 1 for nearly all inputs! A NAND gate computes (Y2' · Y4' · Y6')' = m2 + m4 + m6 = F. Option b, c, and d are physically and mathematically false.",
+    },
+    {
+      id: "cde-p3",
+      prompt: "When cascading two 74LS85 4-bit magnitude comparators to form an 8-bit comparator, how must the cascading expansion inputs (I_A>B, I_A=B, I_A<B) on the least-significant chip be biased?",
+      options: [
+        { id: "a", text: "I_A=B = 1 (V_CC), and I_A>B = I_A<B = 0 (GND)" },
+        { id: "b", text: "I_A=B = 0 (GND), and I_A>B = I_A<B = 1 (V_CC)" },
+        { id: "c", text: "All three cascading inputs left floating (unconnected)" },
+        { id: "d", text: "All three cascading inputs tied to GND (0V)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Cascading inputs act as the tie-breaker when all 4 bits of the local stage compare equal. If all 8 bits of both numbers are identical, both the upper and lower chips detect equality. The upper chip defers to the lower chip, and the lower chip must report equality if its own bits match. Setting I_A=B = 1 and I_A>B = I_A<B = 0 on the LSB chip ensures that an exact 8-bit match resolves to A = B. Grounding I_A=B causes an 8-bit match to report no output (all outputs 0). Options b, c, and d corrupt equality detection.",
+    },
+    {
+      id: "cde-p4",
+      prompt: "What are the two fundamental operational defects of a standard binary encoder (such as an 8-to-3 encoder without priority arbitration)?",
+      options: [
+        { id: "a", text: "First, if no input lines are asserted, the output 000₂ is indistinguishable from activating input line 0; second, if multiple input lines are asserted simultaneously, the output produces an erroneous composite OR code" },
+        { id: "b", text: "It cannot operate at clock frequencies above 1 MHz and requires ECL silicon" },
+        { id: "c", text: "It requires negative power supply rails and cannot drive CMOS inputs" },
+        { id: "d", text: "It can only encode Gray codes and cannot decode BCD" },
+      ],
+      correctOptionId: "a",
+      explanation: "A standard encoder has two fatal flaws: (1) Output 000₂ occurs both when input 0 is active and when NO inputs are active (zero ambiguity); (2) If two inputs (e.g. D1 and D2) are pressed simultaneously, the output is the bitwise OR of their codes (001 | 010 = 011₂ = 3), reporting an unpressed key. Priority encoders fix both flaws with priority arbitration and a Valid (V / GS) status bit. Options b, c, and d are incorrect.",
+    },
+    {
+      id: "cde-p5",
+      prompt: "In the 74LS148 8-to-3 priority encoder, what is the critical difference between the Group Select (GS') and Enable Output (EO') status pins?",
+      options: [
+        { id: "a", text: "GS' asserts LOW when the chip is enabled and AT LEAST ONE input is active; EO' asserts LOW when the chip is enabled and NO inputs are active (all inputs idle)" },
+        { id: "b", text: "GS' is active-HIGH, whereas EO' is active-LOW" },
+        { id: "c", text: "GS' outputs the MSB of the encoded address, whereas EO' outputs the parity bit" },
+        { id: "d", text: "GS' and EO' are identical signals wired internally in parallel" },
+      ],
+      correctOptionId: "a",
+      explanation: "Group Select (GS') indicates 'I have valid data': it goes LOW when the chip is enabled and at least one input line is asserted LOW. Enable Output (EO') indicates 'I have NO data, pass authority to the next chip': it goes LOW when the chip is enabled but all 8 input lines are inactive (HIGH). EO' connects directly to the downstream chip's EI' in cascaded priority networks. Option b, c, and d are false.",
+    },
+    {
+      id: "cde-p6",
+      prompt: "When driving a 7-segment LED display, why must an active-LOW decoder/driver (such as the 74LS47) be paired specifically with a common-anode display rather than a common-cathode display?",
+      options: [
+        { id: "a", text: "In a common-anode display, all LED anodes connect to V_CC, so an individual segment illuminates only when its cathode is pulled LOW to ground by an active-LOW driver" },
+        { id: "b", text: "Common-cathode displays require AC sinusoidal voltage drive" },
+        { id: "c", text: "Active-LOW drivers produce higher positive output voltages than active-HIGH drivers" },
+        { id: "d", text: "Connecting active-LOW outputs to common-anode burns out the LED current limiting resistors" },
+      ],
+      correctOptionId: "a",
+      explanation: "An LED emits light when current flows from anode to cathode (anode more positive). In a common-anode display, all anodes share a permanent connection to +5V (V_CC). The driver must sink current to ground (pull LOW to 0V) to turn a segment ON, which requires an active-LOW driver like the 74LS47. Connecting an active-LOW driver to common-cathode inverts every segment, illuminating the background and darkening the digit. Options b, c, and d are incorrect.",
+    },
+    {
+      id: "cde-p7",
+      prompt: "In a multi-bit magnitude comparator, how is the bitwise equality condition x_i for bit position i defined in terms of inputs A_i and B_i?",
+      options: [
+        { id: "a", text: "x_i = (A_i ⊕ B_i)' = A_i B_i + A_i' B_i' (XNOR gate)" },
+        { id: "b", text: "x_i = A_i ⊕ B_i (XOR gate)" },
+        { id: "c", text: "x_i = A_i B_i (AND gate)" },
+        { id: "d", text: "x_i = A_i + B_i' (OR gate with inverted B)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Bitwise equality requires x_i = 1 when both bits are 1 or both bits are 0 (A_i = B_i). This is the definition of the XNOR (equivalence) function: x_i = (A_i ⊕ B_i)' = A_i B_i + A_i' B_i'. The overall equality for an n-bit word is the AND combination of all bitwise equalities: (A = B) = x_(n-1) · x_(n-2) ··· x_0. Option b detects inequality (A_i ≠ B_i); option c detects only when both bits are 1; option d is an implication term.",
+    },
+    {
+      id: "cde-p8",
+      prompt: "For a 4-to-2 priority encoder with inputs D3 (highest priority) through D0 (lowest priority) and active-HIGH outputs A1 A0, what are the minimal Sum-of-Products equations for A1 and A0?",
+      options: [
+        { id: "a", text: "A1 = D3 + D2, and A0 = D3 + D2' D1" },
+        { id: "b", text: "A1 = D3 D2, and A0 = D1 D0" },
+        { id: "c", text: "A1 = D3 + D1, and A0 = D2 + D0" },
+        { id: "d", text: "A1 = D3' D2, and A0 = D3' D2' D1" },
+      ],
+      correctOptionId: "a",
+      explanation: "Output A1 is 1 when input 3 or 2 is active: since D3 has priority, A1 = D3 + D3' D2 = D3 + D2 (by absorption/elimination). Output A0 is 1 when input 3 is active OR when input 1 is active with both D3 and D2 inactive: A0 = D3 + D3' D2' D1 = D3 + D2' D1. Notice D0 does not appear because it encodes code 00₂. Option b uses AND products; option c groups alternate lines; option d includes unnecessary redundant inverted literals D3' that increase gate count.",
+    },
+  ]}
+/>

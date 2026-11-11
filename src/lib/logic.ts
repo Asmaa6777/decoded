@@ -135,7 +135,7 @@ export function classifyDecimalVoltage(v: number) {
   const nominal = Number((digit * 0.5).toFixed(2));
   const delta = Number(Math.abs(clamped - nominal).toFixed(3));
   const error = delta > 0.25;
-  return { digit, nominal, delta, error };
+  return { digit, readDigit: digit, nominal, delta, error };
 }
 
 export type DriverMode = "push-pull" | "open-drain";
@@ -851,6 +851,248 @@ export function simulateParity(
     actualErrorsCount,
     silentCorruption,
     diagnostic,
+  };
+}
+
+/* ------------------------------ Module 1 simulation helpers ----------------------------- */
+
+/** Parses an unsigned string in base r to decimal integer. */
+function parseBaseR(str: string, r: number): number {
+  let val = 0;
+  for (const ch of str.toUpperCase()) {
+    const d = parseInt(ch, 36);
+    if (isNaN(d) || d >= r) return NaN;
+    val = val * r + d;
+  }
+  return val;
+}
+
+/** Finds the maximum digit in a string across all allowed alphanumeric digits. */
+function maxDigitValue(str: string): number {
+  let maxD = 0;
+  for (const ch of str.toUpperCase()) {
+    const d = parseInt(ch, 36);
+    if (!isNaN(d) && d > maxD) maxD = d;
+  }
+  return maxD;
+}
+
+/**
+ * Solves an addition equation in an unknown radix: (a)_r + (b)_r = (sum)_r.
+ * Evaluates candidates where r > max(digits), returning the valid integer radix.
+ */
+export function solveRadixAddition(aStr: string, bStr: string, sumStr: string): { radix: number; minRadix: number; isValid: boolean } {
+  const minRadix = Math.max(maxDigitValue(aStr), maxDigitValue(bStr), maxDigitValue(sumStr)) + 1;
+  for (let r = Math.max(2, minRadix); r <= 36; r++) {
+    const aVal = parseBaseR(aStr, r);
+    const bVal = parseBaseR(bStr, r);
+    const sumVal = parseBaseR(sumStr, r);
+    if (!isNaN(aVal) && !isNaN(bVal) && !isNaN(sumVal) && aVal + bVal === sumVal) {
+      return { radix: r, minRadix, isValid: true };
+    }
+  }
+  return { radix: -1, minRadix, isValid: false };
+}
+
+/**
+ * Solves a multiplication equation in an unknown radix: (a)_r * (b)_r = (prod)_r.
+ * Evaluates candidates where r > max(digits), returning the valid integer radix.
+ */
+export function solveRadixProduct(aStr: string, bStr: string, prodStr: string): { radix: number; minRadix: number; isValid: boolean } {
+  const minRadix = Math.max(maxDigitValue(aStr), maxDigitValue(bStr), maxDigitValue(prodStr)) + 1;
+  for (let r = Math.max(2, minRadix); r <= 36; r++) {
+    const aVal = parseBaseR(aStr, r);
+    const bVal = parseBaseR(bStr, r);
+    const prodVal = parseBaseR(prodStr, r);
+    if (!isNaN(aVal) && !isNaN(bVal) && !isNaN(prodVal) && aVal * bVal === prodVal) {
+      return { radix: r, minRadix, isValid: true };
+    }
+  }
+  return { radix: -1, minRadix, isValid: false };
+}
+
+export type Hamming74Result = {
+  dataBits: [Bit, Bit, Bit, Bit];
+  p1: Bit;
+  p2: Bit;
+  p4: Bit;
+  codeword: Bit[]; // 1-indexed layout: [p1, p2, d1, p4, d2, d3, d4]
+  checkSyndrome: (received: Bit[]) => {
+    syndromeInt: number;
+    syndromeBits: [Bit, Bit, Bit];
+    correctedCodeword: Bit[];
+    correctedData: [Bit, Bit, Bit, Bit];
+    errorBitPos: number | null;
+    hasError: boolean;
+  };
+};
+
+/**
+ * Simulates a single-error-correcting Hamming (7,4) code with even parity.
+ * Data bits d = [d1, d2, d3, d4] are mapped to positions [3, 5, 6, 7],
+ * with parity bits at positions 1 (p1), 2 (p2), and 4 (p4).
+ */
+export function simulateHamming74(d: [Bit, Bit, Bit, Bit]): Hamming74Result {
+  const [d1, d2, d3, d4] = d;
+  const p1 = (d1 ^ d2 ^ d4) as Bit;
+  const p2 = (d1 ^ d3 ^ d4) as Bit;
+  const p4 = (d2 ^ d3 ^ d4) as Bit;
+
+  const codeword: Bit[] = [p1, p2, d1, p4, d2, d3, d4];
+
+  const checkSyndrome = (received: Bit[]) => {
+    const rx = received.slice(0, 7) as Bit[];
+    while (rx.length < 7) rx.push(0);
+
+    const [r1, r2, r3, r4, r5, r6, r7] = rx;
+    const s1 = (r1 ^ r3 ^ r5 ^ r7) as Bit;
+    const s2 = (r2 ^ r3 ^ r6 ^ r7) as Bit;
+    const s4 = (r4 ^ r5 ^ r6 ^ r7) as Bit;
+
+    const syndromeInt = s4 * 4 + s2 * 2 + s1;
+    const hasError = syndromeInt !== 0;
+    const errorBitPos = hasError ? syndromeInt : null;
+
+    const correctedCodeword = [...rx];
+    if (hasError && syndromeInt >= 1 && syndromeInt <= 7) {
+      correctedCodeword[syndromeInt - 1] = (correctedCodeword[syndromeInt - 1] ? 0 : 1) as Bit;
+    }
+
+    const correctedData: [Bit, Bit, Bit, Bit] = [
+      correctedCodeword[2], // bit 3 (d1)
+      correctedCodeword[4], // bit 5 (d2)
+      correctedCodeword[5], // bit 6 (d3)
+      correctedCodeword[6], // bit 7 (d4)
+    ];
+
+    return {
+      syndromeInt,
+      syndromeBits: [s4, s2, s1] as [Bit, Bit, Bit],
+      correctedCodeword,
+      correctedData,
+      errorBitPos,
+      hasError,
+    };
+  };
+
+  return {
+    dataBits: d,
+    p1,
+    p2,
+    p4,
+    codeword,
+    checkSyndrome,
+  };
+}
+
+export type SaturatedArithmeticResult = {
+  a: number;
+  b: number;
+  width: number;
+  op: "add" | "sub";
+  rawSum: number;
+  wrappedSum: number;
+  saturatedSum: number;
+  overflow: boolean;
+  minLimit: number;
+  maxLimit: number;
+};
+
+/**
+ * Simulates signed integer arithmetic with saturation clamp vs modular wraparound.
+ * Clamps to [-2^(n-1), 2^(n-1)-1] on overflow (as in audio/DSP/graphics processors).
+ */
+export function simulateSaturatedArithmetic(
+  a: number,
+  b: number,
+  width: number = 8,
+  op: "add" | "sub" = "add",
+): SaturatedArithmeticResult {
+  const minLimit = -(2 ** (width - 1));
+  const maxLimit = 2 ** (width - 1) - 1;
+
+  const rawSum = op === "add" ? a + b : a - b;
+  const overflow = rawSum > maxLimit || rawSum < minLimit;
+  const saturatedSum = Math.max(minLimit, Math.min(maxLimit, rawSum));
+
+  const mod = 2 ** width;
+  let wrappedUnsigned = rawSum % mod;
+  if (wrappedUnsigned < 0) wrappedUnsigned += mod;
+  const wrappedSum = signedValue(wrappedUnsigned, width);
+
+  return {
+    a,
+    b,
+    width,
+    op,
+    rawSum,
+    wrappedSum,
+    saturatedSum,
+    overflow,
+    minLimit,
+    maxLimit,
+  };
+}
+
+export type Ieee754DecodeResult = {
+  hex: string;
+  sign: Bit;
+  exponentRaw: number;
+  trueExponent: number;
+  fractionHex: string;
+  fractionVal: number;
+  significand: number;
+  decimalValue: number;
+  classification: "zero" | "normal" | "subnormal" | "infinity" | "nan";
+};
+
+/**
+ * Decodes a 32-bit hexadecimal word according to IEEE 754 single-precision format.
+ */
+export function decodeIeee754Hex(hex: string): Ieee754DecodeResult {
+  const cleanHex = hex.replace(/^0x/i, "").padStart(8, "0");
+  const u = parseInt(cleanHex, 16) >>> 0;
+  const sign = ((u >>> 31) & 1) as Bit;
+  const exponentRaw = (u >>> 23) & 0xff;
+  const fractionRaw = u & 0x7fffff;
+  const fractionHex = fractionRaw.toString(16).toUpperCase().padStart(6, "0");
+  const fractionVal = fractionRaw / 2 ** 23;
+
+  let classification: Ieee754DecodeResult["classification"] = "normal";
+  let trueExponent = exponentRaw - 127;
+  let significand = 1 + fractionVal;
+  let decimalValue = (sign ? -1 : 1) * significand * 2 ** trueExponent;
+
+  if (exponentRaw === 255) {
+    if (fractionRaw !== 0) {
+      classification = "nan";
+      decimalValue = NaN;
+    } else {
+      classification = "infinity";
+      decimalValue = sign ? -Infinity : Infinity;
+    }
+  } else if (exponentRaw === 0) {
+    if (fractionRaw === 0) {
+      classification = "zero";
+      decimalValue = sign ? -0 : 0;
+    } else {
+      classification = "subnormal";
+      trueExponent = -126;
+      significand = fractionVal;
+      decimalValue = (sign ? -1 : 1) * significand * 2 ** trueExponent;
+    }
+  }
+
+  return {
+    hex: cleanHex,
+    sign,
+    exponentRaw,
+    trueExponent,
+    fractionHex,
+    fractionVal,
+    significand,
+    decimalValue,
+    classification,
   };
 }
 
@@ -1782,6 +2024,132 @@ export const UNIVERSAL_CIRCUITS: Record<UniversalGateFamily, Record<string, Univ
     },
   },
 };
+
+/* ============================================================
+   Module 2: Gates & Boolean Algebra Practice Helpers
+   ============================================================ */
+
+export interface DynamicPowerResult {
+  pDynWatts: number;
+  pStatWatts: number;
+  pTotalWatts: number;
+}
+
+export function simulateDynamicPower(
+  cLoadFarads: number,
+  vddVolts: number,
+  freqHz: number,
+  alpha = 0.25,
+  iLeakAmperes = 0,
+): DynamicPowerResult {
+  const pDynWatts = alpha * cLoadFarads * vddVolts * vddVolts * freqHz;
+  const pStatWatts = vddVolts * iLeakAmperes;
+  return {
+    pDynWatts,
+    pStatWatts,
+    pTotalWatts: pDynWatts + pStatWatts,
+  };
+}
+
+export interface FanOutAndNoiseMarginResult {
+  nmH: number;
+  nmL: number;
+  fanOutHigh: number;
+  fanOutLow: number;
+  ratedFanOut: number;
+}
+
+export function simulateFanOutAndNoiseMargins(spec: {
+  voh: number;
+  vol: number;
+  vih: number;
+  vil: number;
+  ioh: number; // e.g. -4.0 mA
+  iol: number; // e.g. 16.0 mA
+  iih: number; // e.g. 0.040 mA
+  iil: number; // e.g. -0.8 mA
+}): FanOutAndNoiseMarginResult {
+  const nmH = +(spec.voh - spec.vih).toFixed(4);
+  const nmL = +(spec.vil - spec.vol).toFixed(4);
+  const fanOutHigh = Math.floor(Math.abs(spec.ioh) / Math.abs(spec.iih));
+  const fanOutLow = Math.floor(Math.abs(spec.iol) / Math.abs(spec.iil));
+  const ratedFanOut = Math.min(fanOutHigh, fanOutLow);
+  return { nmH, nmL, fanOutHigh, fanOutLow, ratedFanOut };
+}
+
+export interface SchmittTriggerResult {
+  vH: number;
+  canRejectNoise: boolean;
+  maxTolerableVpp: number;
+}
+
+export function simulateSchmittTrigger(
+  vtPlus: number,
+  vtMinus: number,
+  noiseVpp: number,
+): SchmittTriggerResult {
+  const vH = +(vtPlus - vtMinus).toFixed(4);
+  return {
+    vH,
+    canRejectNoise: noiseVpp < vH,
+    maxTolerableVpp: vH,
+  };
+}
+
+export interface FourNorXnorResult {
+  n1: Bit;
+  n2: Bit;
+  n3: Bit;
+  y: Bit;
+}
+
+export function simulate4NorXnor(a: Bit, b: Bit): FourNorXnorResult {
+  const n1 = (a || b ? 0 : 1) as Bit;
+  const n2 = (a || n1 ? 0 : 1) as Bit;
+  const n3 = (b || n1 ? 0 : 1) as Bit;
+  const y = (n2 || n3 ? 0 : 1) as Bit;
+  return { n1, n2, n3, y };
+}
+
+export interface ComplexCmosGateResult {
+  type: "AOI-22" | "OAI-22";
+  output: Bit;
+  pdnConducting: boolean;
+  punConducting: boolean;
+  transistorCount: number;
+}
+
+export function simulateAoi22(a: Bit, b: Bit, c: Bit, d: Bit): ComplexCmosGateResult {
+  // AOI-22: Output = ((A * B) + (C * D))'
+  const branch1 = a === 1 && b === 1;
+  const branch2 = c === 1 && d === 1;
+  const pdnConducting = branch1 || branch2;
+  const punConducting = !pdnConducting;
+  const output: Bit = pdnConducting ? 0 : 1;
+  return {
+    type: "AOI-22",
+    output,
+    pdnConducting,
+    punConducting,
+    transistorCount: 8,
+  };
+}
+
+export function simulateOai22(a: Bit, b: Bit, c: Bit, d: Bit): ComplexCmosGateResult {
+  // OAI-22: Output = ((A + B) * (C + D))'
+  const sum1 = a === 1 || b === 1;
+  const sum2 = c === 1 || d === 1;
+  const pdnConducting = sum1 && sum2;
+  const punConducting = !pdnConducting;
+  const output: Bit = pdnConducting ? 0 : 1;
+  return {
+    type: "OAI-22",
+    output,
+    pdnConducting,
+    punConducting,
+    transistorCount: 8,
+  };
+}
 
 /* ============================================================
    Combinational Building Blocks (Module 3)
@@ -3403,6 +3771,484 @@ export function simulateMemoryExpansion(
     hasContention: false,
   };
 }
+
+export interface CarrySkipBlockAnalysis {
+  blockIndex: number;
+  bitStart: number;
+  bitEnd: number;
+  blockPropagate: Bit;
+  blockGenerate: Bit;
+  canSkip: boolean;
+}
+
+export interface CarrySkipAdderResult {
+  a: number;
+  b: number;
+  cin: Bit;
+  wordSize: number;
+  blockSize: number;
+  blocks: CarrySkipBlockAnalysis[];
+  criticalPathDelayNs: number;
+  rippleCarryEquivalentDelayNs: number;
+  speedup: number;
+}
+
+export function simulateCarrySkipAdder(
+  a: number,
+  b: number,
+  cin: Bit = 0,
+  wordSize = 16,
+  blockSize = 4
+): CarrySkipAdderResult {
+  const numBlocks = Math.ceil(wordSize / blockSize);
+  const blocks: CarrySkipBlockAnalysis[] = [];
+
+  for (let blk = 0; blk < numBlocks; blk++) {
+    const bitStart = blk * blockSize;
+    const bitEnd = Math.min(wordSize - 1, bitStart + blockSize - 1);
+    let bp: Bit = 1;
+    let bg: Bit = 0;
+
+    for (let i = bitEnd; i >= bitStart; i--) {
+      const ai = ((a >> i) & 1) as Bit;
+      const bi = ((b >> i) & 1) as Bit;
+      const pi = (ai ^ bi) as Bit;
+      const gi = (ai & bi) as Bit;
+      if (pi === 0) bp = 0;
+      if (gi === 1 && bg === 0) {
+        let propagatesOut: Bit = 1;
+        for (let j = i + 1; j <= bitEnd; j++) {
+          const pj = (((a >> j) & 1) ^ ((b >> j) & 1)) as Bit;
+          if (pj === 0) propagatesOut = 0;
+        }
+        if (propagatesOut === 1) bg = 1;
+      }
+    }
+
+    blocks.push({
+      blockIndex: blk,
+      bitStart,
+      bitEnd,
+      blockPropagate: bp,
+      blockGenerate: bg,
+      canSkip: bp === 1,
+    });
+  }
+
+  const tCarry = 1.0;
+  const tSkip = 1.2;
+  const tXor = 1.8;
+  const worstCaseDelay = blockSize * tCarry + (numBlocks - 2) * tSkip + (blockSize - 1) * tCarry + tXor;
+  const rcaDelay = (wordSize - 1) * tCarry + tXor;
+  const speedup = parseFloat((rcaDelay / worstCaseDelay).toFixed(2));
+
+  return {
+    a,
+    b,
+    cin,
+    wordSize,
+    blockSize,
+    blocks,
+    criticalPathDelayNs: worstCaseDelay,
+    rippleCarryEquivalentDelayNs: rcaDelay,
+    speedup,
+  };
+}
+
+export interface ParallelPrefixResult {
+  a: number;
+  b: number;
+  cin: Bit;
+  bits: number;
+  generates: Bit[];
+  propagates: Bit[];
+  prefixCarries: Bit[];
+  sumBits: Bit[];
+  sum: number;
+}
+
+export function prefixOperator(
+  b: { g: Bit; p: Bit },
+  a: { g: Bit; p: Bit }
+): { g: Bit; p: Bit } {
+  return {
+    g: (b.g | (b.p & a.g)) as Bit,
+    p: (b.p & a.p) as Bit,
+  };
+}
+
+export function simulateParallelPrefix(
+  a: number,
+  b: number,
+  cin: Bit = 0,
+  bits = 4
+): ParallelPrefixResult {
+  const generates: Bit[] = [];
+  const propagates: Bit[] = [];
+  for (let i = 0; i < bits; i++) {
+    const ai = ((a >> i) & 1) as Bit;
+    const bi = ((b >> i) & 1) as Bit;
+    generates.push((ai & bi) as Bit);
+    propagates.push((ai ^ bi) as Bit);
+  }
+
+  const prefixPairs: Array<{ g: Bit; p: Bit }> = [];
+  prefixPairs[0] = { g: generates[0], p: propagates[0] };
+
+  for (let i = 1; i < bits; i++) {
+    prefixPairs[i] = prefixOperator({ g: generates[i], p: propagates[i] }, prefixPairs[i - 1]);
+  }
+
+  const prefixCarries: Bit[] = [cin];
+  for (let i = 0; i < bits; i++) {
+    const cout = (prefixPairs[i].g | (prefixPairs[i].p & cin)) as Bit;
+    prefixCarries.push(cout);
+  }
+
+  const sumBits: Bit[] = [];
+  let sum = 0;
+  for (let i = 0; i < bits; i++) {
+    const s = (propagates[i] ^ prefixCarries[i]) as Bit;
+    sumBits.push(s);
+    if (s) sum |= (1 << i);
+  }
+  if (prefixCarries[bits]) sum |= (1 << bits);
+
+  return {
+    a,
+    b,
+    cin,
+    bits,
+    generates,
+    propagates,
+    prefixCarries,
+    sumBits,
+    sum,
+  };
+}
+
+export interface PriorityEncoder16to4Result {
+  inputs: Bit[];
+  masterEI: Bit;
+  chipHigh: {
+    inputs: Bit[];
+    aOutputs: [Bit, Bit, Bit];
+    gs: Bit;
+    eo: Bit;
+  };
+  chipLow: {
+    inputs: Bit[];
+    aOutputs: [Bit, Bit, Bit];
+    gs: Bit;
+    eo: Bit;
+  };
+  finalOutputs: [Bit, Bit, Bit, Bit];
+  finalEncodedValue: number;
+  systemGS: Bit;
+  systemEO: Bit;
+}
+
+export function simulate74LS148Cascade16to4(
+  inputs16: Bit[],
+  masterEI: Bit = 0
+): PriorityEncoder16to4Result {
+  const inputs = [...inputs16];
+  while (inputs.length < 16) inputs.push(1);
+
+  const highInputs: Bit[] = [];
+  for (let i = 8; i <= 15; i++) highInputs.push(inputs[i]);
+
+  const sim74148 = (pins: Bit[], ei: Bit) => {
+    if (ei === 1) {
+      return {
+        aOutputs: [1, 1, 1] as [Bit, Bit, Bit],
+        gs: 1 as Bit,
+        eo: 1 as Bit,
+        highestActive: -1,
+      };
+    }
+    let highestActive = -1;
+    for (let i = 7; i >= 0; i--) {
+      if (pins[i] === 0) {
+        highestActive = i;
+        break;
+      }
+    }
+    if (highestActive === -1) {
+      return {
+        aOutputs: [1, 1, 1] as [Bit, Bit, Bit],
+        gs: 1 as Bit,
+        eo: 0 as Bit,
+        highestActive: -1,
+      };
+    }
+    const code = highestActive;
+    const a2: Bit = ((code >> 2) & 1 ? 0 : 1) as Bit;
+    const a1: Bit = ((code >> 1) & 1 ? 0 : 1) as Bit;
+    const a0: Bit = (code & 1 ? 0 : 1) as Bit;
+    return {
+      aOutputs: [a2, a1, a0] as [Bit, Bit, Bit],
+      gs: 0 as Bit,
+      eo: 1 as Bit,
+      highestActive,
+    };
+  };
+
+  const highRes = sim74148(highInputs, masterEI);
+  const lowEI = highRes.eo;
+  const lowInputs: Bit[] = inputs.slice(0, 8);
+  const lowRes = sim74148(lowInputs, lowEI);
+
+  const a3: Bit = highRes.gs;
+  const a2: Bit = (highRes.aOutputs[0] & lowRes.aOutputs[0]) as Bit;
+  const a1: Bit = (highRes.aOutputs[1] & lowRes.aOutputs[1]) as Bit;
+  const a0: Bit = (highRes.aOutputs[2] & lowRes.aOutputs[2]) as Bit;
+
+  const systemGS: Bit = (highRes.gs & lowRes.gs) as Bit;
+  const systemEO: Bit = lowRes.eo;
+
+  let finalEncodedValue = -1;
+  if (systemGS === 0) {
+    const val3 = a3 === 0 ? 8 : 0;
+    const val2 = a2 === 0 ? 4 : 0;
+    const val1 = a1 === 0 ? 2 : 0;
+    const val0 = a0 === 0 ? 1 : 0;
+    finalEncodedValue = val3 + val2 + val1 + val0;
+  }
+
+  return {
+    inputs,
+    masterEI,
+    chipHigh: {
+      inputs: highInputs,
+      aOutputs: highRes.aOutputs,
+      gs: highRes.gs,
+      eo: highRes.eo,
+    },
+    chipLow: {
+      inputs: lowInputs,
+      aOutputs: lowRes.aOutputs,
+      gs: lowRes.gs,
+      eo: lowRes.eo,
+    },
+    finalOutputs: [a3, a2, a1, a0],
+    finalEncodedValue,
+    systemGS,
+    systemEO,
+  };
+}
+
+export function simulateTransmissionGateMux2to1(
+  i0: Bit,
+  i1: Bit,
+  s: Bit
+): { y: Bit; tg0On: boolean; tg1On: boolean } {
+  const tg0On = s === 0;
+  const tg1On = s === 1;
+  const y = tg0On ? i0 : i1;
+  return { y, tg0On, tg1On };
+}
+
+export function simulateBarrelShifter4Bit(
+  data: number,
+  shiftAmount: number,
+  mode: "rotate-left" | "rotate-right" = "rotate-right"
+): { inputWord: number; shiftedWord: number; bitTrace: [Bit, Bit, Bit, Bit] } {
+  const d = data & 0xf;
+  const k = ((shiftAmount % 4) + 4) % 4;
+  let res = 0;
+  if (mode === "rotate-right") {
+    res = ((d >> k) | (d << (4 - k))) & 0xf;
+  } else {
+    res = ((d << k) | (d >> (4 - k))) & 0xf;
+  }
+  const bits: [Bit, Bit, Bit, Bit] = [
+    ((res >> 3) & 1) as Bit,
+    ((res >> 2) & 1) as Bit,
+    ((res >> 1) & 1) as Bit,
+    (res & 1) as Bit,
+  ];
+  return { inputWord: d, shiftedWord: res, bitTrace: bits };
+}
+
+export function simulateSrLatch(
+  type: "nor" | "nand",
+  s: Bit,
+  r: Bit,
+  qPrev: Bit
+): {
+  qNext: Bit;
+  qBarNext: Bit;
+  state: "hold" | "reset" | "set" | "forbidden";
+  isForbidden: boolean;
+  raceOnSimultaneousRelease: boolean;
+} {
+  if (type === "nor") {
+    // Active-HIGH NOR latch
+    if (s === 0 && r === 0) {
+      return { qNext: qPrev, qBarNext: (1 - qPrev) as Bit, state: "hold", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else if (s === 0 && r === 1) {
+      return { qNext: 0, qBarNext: 1, state: "reset", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else if (s === 1 && r === 0) {
+      return { qNext: 1, qBarNext: 0, state: "set", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else {
+      // s=1, r=1 is forbidden for NOR; both outputs forced to 0
+      return { qNext: 0, qBarNext: 0, state: "forbidden", isForbidden: true, raceOnSimultaneousRelease: true };
+    }
+  } else {
+    // Active-LOW NAND latch (s and r are /S and /R)
+    if (s === 1 && r === 1) {
+      return { qNext: qPrev, qBarNext: (1 - qPrev) as Bit, state: "hold", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else if (s === 1 && r === 0) {
+      return { qNext: 0, qBarNext: 1, state: "reset", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else if (s === 0 && r === 1) {
+      return { qNext: 1, qBarNext: 0, state: "set", isForbidden: false, raceOnSimultaneousRelease: false };
+    } else {
+      // s=0, r=0 is forbidden for NAND; both outputs forced to 1
+      return { qNext: 1, qBarNext: 1, state: "forbidden", isForbidden: true, raceOnSimultaneousRelease: true };
+    }
+  }
+}
+
+export function simulateDLatchGated(
+  c: Bit,
+  d: Bit,
+  qPrev: Bit
+): {
+  qNext: Bit;
+  qBarNext: Bit;
+  isTransparent: boolean;
+} {
+  const qNext = c === 1 ? d : qPrev;
+  return {
+    qNext,
+    qBarNext: (1 - qNext) as Bit,
+    isTransparent: c === 1,
+  };
+}
+
+export function simulateJkFlipFlop(
+  j: Bit,
+  k: Bit,
+  qPrev: Bit,
+  pre_n: Bit = 1,
+  clr_n: Bit = 1
+): {
+  qNext: Bit;
+  qBarNext: Bit;
+  state: "hold" | "reset" | "set" | "toggle" | "async-preset" | "async-clear" | "async-invalid";
+  isAsync: boolean;
+} {
+  if (pre_n === 0 && clr_n === 1) {
+    return { qNext: 1, qBarNext: 0, state: "async-preset", isAsync: true };
+  }
+  if (pre_n === 1 && clr_n === 0) {
+    return { qNext: 0, qBarNext: 1, state: "async-clear", isAsync: true };
+  }
+  if (pre_n === 0 && clr_n === 0) {
+    return { qNext: 1, qBarNext: 1, state: "async-invalid", isAsync: true };
+  }
+
+  // Synchronous operation
+  if (j === 0 && k === 0) {
+    return { qNext: qPrev, qBarNext: (1 - qPrev) as Bit, state: "hold", isAsync: false };
+  } else if (j === 0 && k === 1) {
+    return { qNext: 0, qBarNext: 1, state: "reset", isAsync: false };
+  } else if (j === 1 && k === 0) {
+    return { qNext: 1, qBarNext: 0, state: "set", isAsync: false };
+  } else {
+    const qToggled = (1 - qPrev) as Bit;
+    return { qNext: qToggled, qBarNext: (1 - qToggled) as Bit, state: "toggle", isAsync: false };
+  }
+}
+
+export function simulateTFlipFlop(
+  t: Bit,
+  qPrev: Bit
+): {
+  qNext: Bit;
+  qBarNext: Bit;
+  state: "hold" | "toggle";
+} {
+  const qNext = t === 1 ? ((1 - qPrev) as Bit) : qPrev;
+  return {
+    qNext,
+    qBarNext: (1 - qNext) as Bit,
+    state: t === 1 ? "toggle" : "hold",
+  };
+}
+
+export function simulateSram6TCell(
+  op: "read" | "write" | "hold",
+  storedBit: Bit,
+  bitLineIn?: Bit
+): {
+  storedBit: Bit;
+  bl: Bit;
+  blBar: Bit;
+  wordLine: Bit;
+  actionDescription: string;
+} {
+  if (op === "hold") {
+    return {
+      storedBit,
+      bl: 1,
+      blBar: 1,
+      wordLine: 0,
+      actionDescription: "Hold: Wordline is 0, access transistors OFF, cell isolated and stable.",
+    };
+  }
+
+  if (op === "read") {
+    // Both bitlines precharged to 1 prior to wordline activation.
+    // The side holding 0 discharges its bitline through the access and pull-down NMOS.
+    const bl = storedBit === 1 ? 1 : 0;
+    const blBar = storedBit === 1 ? 0 : 1;
+    return {
+      storedBit,
+      bl,
+      blBar,
+      wordLine: 1,
+      actionDescription: `Read: Wordline asserted. Node Q=${storedBit} maintains BL=${bl}, node Q'=${1 - storedBit} discharges BL_bar to ${blBar}. Sense amp detects voltage difference.`,
+    };
+  }
+
+  // Write operation
+  const newBit = (bitLineIn ?? 1) as Bit;
+  return {
+    storedBit: newBit,
+    bl: newBit,
+    blBar: (1 - newBit) as Bit,
+    wordLine: 1,
+    actionDescription: `Write: Wordline asserted. Strong write drivers force BL=${newBit} and BL_bar=${1 - newBit}, overpowering internal cross-coupled PMOS pull-ups to flip the cell.`,
+  };
+}
+
+export function simulateDramRefreshOverhead(
+  rows: number,
+  refreshPeriodMs: number,
+  cycleTimeNs: number
+): {
+  rows: number;
+  refreshPeriodMs: number;
+  cycleTimeNs: number;
+  totalRefreshTimeNs: number;
+  totalPeriodNs: number;
+  overheadPercent: number;
+} {
+  const totalRefreshTimeNs = rows * cycleTimeNs;
+  const totalPeriodNs = refreshPeriodMs * 1e6;
+  const overheadPercent = parseFloat(((totalRefreshTimeNs / totalPeriodNs) * 100).toFixed(3));
+  return {
+    rows,
+    refreshPeriodMs,
+    cycleTimeNs,
+    totalRefreshTimeNs,
+    totalPeriodNs,
+    overheadPercent,
+  };
+}
+
 
 
 

@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { CodeTable, GrayEncoder, FloatExplorer, BcdAdderVisualizer, ParityLab } from "@/components/mdx/LogicVisualizers";
 
 # Codes and Floating Point
@@ -387,9 +387,13 @@ $$
 
 The IEEE 754 representation of $-43.625_{10}$ is `0xC22E8000`.
 
-## Practice problems
+## Practice from past exams
 
-### Problem 1: Multi-digit BCD addition with correction
+Review these hand-worked problems and practice questions to reinforce your grasp of decimal codes, error detection, Gray code encoders, and IEEE 754 floating-point standards.
+
+### Part 1: Written exam & lab problems
+
+#### Problem 1: Multi-digit BCD addition with correction
 
 Perform the BCD addition of decimal $86_{10}$ and $79_{10}$. Show each 4-bit nibble addition, test for BCD correction, and display the final BCD sum.
 
@@ -435,7 +439,7 @@ In the tens decade, $8 + 7 + 1$ produces sum `0000` with binary carry $K = 1$. S
 </Callout>
 </ModelAnswer>
 
-### Problem 2: Gray code shaft encoder analysis
+#### Problem 2: Gray code shaft encoder analysis
 
 A digital control system uses a 4-bit shaft encoder.
 1. Determine the Gray code corresponding to angle sector 11 ($11_{10}$).
@@ -460,7 +464,7 @@ Gray code is not a weighted code; bit positions have no numerical weights. It is
 </Callout>
 </ModelAnswer>
 
-### Problem 3: Self-complementing codes
+#### Problem 3: Self-complementing codes
 
 Prove whether the 2421 code and Excess-3 code are self-complementing, and explain why standard 8421 BCD is not.
 
@@ -488,7 +492,7 @@ For a weighted 4-bit decimal code to be self-complementing, the sum of its weigh
 </Callout>
 </ModelAnswer>
 
-### Problem 4: IEEE 754 single-precision decoding
+#### Problem 4: IEEE 754 single-precision decoding
 
 Decode the 32-bit hexadecimal value `0x42A60000` into its exact decimal value, showing the extraction of sign, exponent, and fraction.
 
@@ -533,3 +537,227 @@ The IEEE 754 word `0x42A60000` represents the decimal number $+83.0$.
 Students often evaluate the fraction field as $0.010011_2 \times 2^6 = 0010011_2 = 19_{10}$ by omitting the implicit leading 1. For normalized floats ($1 \le E \le 254$), the implicit bit $1.$ is required.
 </Callout>
 </ModelAnswer>
+
+#### Problem 5: Hamming (7, 4) error detection and single-bit correction
+
+A digital communication transceiver uses a standard Hamming $(7, 4)$ code with even parity to transmit 4-bit data nibbles across a noisy serial bus. The transmitted codeword layout maps parity bits to bit positions that are powers of 2 (positions 1, 2, 4) and data bits to the remaining positions (3, 5, 6, 7):
+$$\text{Codeword} = [p_1, p_2, d_1, p_4, d_2, d_3, d_4]$$
+
+1. Given data nibble $D = (d_1, d_2, d_3, d_4) = (1, 0, 1, 1)$, calculate the values of the three parity bits $p_1, p_2, p_4$ using even parity bit-coverage equations.
+2. Write out the complete 7-bit transmitted codeword.
+3. During transmission over the noisy channel, an electrical spike flips bit 5 ($d_2$ toggles from 0 to 1). The receiver receives the corrupted word $[0, 1, 1, 0, 1, 1, 1]$. Calculate the syndrome vector $S = (s_4, s_2, s_1)$ at the receiver.
+4. Show how the binary integer value of the syndrome vector identifies the exact position of the erroneous bit, and demonstrate how hardware corrects the word back to the original data nibble.
+
+<ModelAnswer>
+**1. Calculating parity bits for data $(1, 0, 1, 1)$:**
+The parity bits are placed so that each checks positions whose binary representation has a 1 in that bit position:
+- $p_1$ (checks positions 1, 3, 5, 7):
+  $$p_1 \oplus d_1 \oplus d_2 \oplus d_4 = 0 \implies p_1 = d_1 \oplus d_2 \oplus d_4 = 1 \oplus 0 \oplus 1 = 0$$
+- $p_2$ (checks positions 2, 3, 6, 7):
+  $$p_2 \oplus d_1 \oplus d_3 \oplus d_4 = 0 \implies p_2 = d_1 \oplus d_3 \oplus d_4 = 1 \oplus 1 \oplus 1 = 1$$
+- $p_4$ (checks positions 4, 5, 6, 7):
+  $$p_4 \oplus d_2 \oplus d_3 \oplus d_4 = 0 \implies p_4 = d_2 \oplus d_3 \oplus d_4 = 0 \oplus 1 \oplus 1 = 0$$
+
+**2. Transmitted codeword:**
+$$
+[p_1, p_2, d_1, p_4, d_2, d_3, d_4] = [0, 1, 1, 0, 0, 1, 1]
+$$
+
+**3. Syndrome calculation at the receiver:**
+The received corrupted word is $R = [r_1, r_2, r_3, r_4, r_5, r_6, r_7] = [0, 1, 1, 0, 1, 1, 1]$ (bit 5 flipped from 0 to 1).
+Evaluate the parity check equations at the receiver:
+- $s_1 = r_1 \oplus r_3 \oplus r_5 \oplus r_7 = 0 \oplus 1 \oplus 1 \oplus 1 = 1$
+- $s_2 = r_2 \oplus r_3 \oplus r_6 \oplus r_7 = 1 \oplus 1 \oplus 1 \oplus 1 = 0$
+- $s_4 = r_4 \oplus r_5 \oplus r_6 \oplus r_7 = 0 \oplus 1 \oplus 1 \oplus 1 = 1$
+
+The syndrome vector is $S = (s_4, s_2, s_1) = (1, 0, 1)$.
+
+**4. Error location and correction:**
+Evaluate the syndrome vector as an unsigned binary integer:
+$$
+\text{Error index} = s_4(2^2) + s_2(2^1) + s_1(2^0) = 1(4) + 0(2) + 1(1) = 5_{10}
+$$
+Because the syndrome integer is non-zero ($S = 5$), hardware detects an error and pinpoints bit position 5 as the faulty bit.
+To correct the error, hardware inverts bit 5:
+$$
+\text{Corrected bit } 5 = r_5 \oplus 1 = 1 \oplus 1 = 0
+$$
+The corrected 7-bit codeword is $[0, 1, 1, 0, 0, 1, 1]$.
+Extracting the data bits from positions 3, 5, 6, and 7 gives:
+$$
+(d_1, d_2, d_3, d_4) = (1, 0, 1, 1)
+$$
+The original data nibble is completely restored without requesting a retransmission!
+
+<Callout tone="orange" label="Common exam pitfall">
+Remember that the syndrome vector must be ordered with $s_4$ as the MSB and $s_1$ as the LSB ($S = s_4 s_2 s_1$). Writing $S = s_1 s_2 s_4$ gives binary $101_2 = 5$ by coincidence here, but for an error on bit 4 ($s_4=1, s_2=0, s_1=0$), reversing the bits would point to bit 1 instead of bit 4!
+</Callout>
+</ModelAnswer>
+
+#### Problem 6: IEEE 754 single-precision encoding and special representations
+
+1. Encode the negative decimal number $-19.375_{10}$ into the 32-bit IEEE 754 single-precision format, providing the sign bit, biased exponent, fraction bits, and final hexadecimal word.
+2. Explain what **subnormal (denormalized)** numbers are, what exponent field value $E$ triggers them, and how they implement gradual underflow.
+3. Provide the exact bit-level definitions for $+0, -0, +\infty, -\infty$, and $\text{NaN}$ in IEEE 754 single precision.
+
+<ModelAnswer>
+**1. Encoding $-19.375_{10}$ into IEEE 754 single precision:**
+- **Sign bit ($S$):** The number is negative, so $S = 1$.
+- **Integer part ($19_{10}$):** $19 = 16 + 2 + 1 = 10011_2$.
+- **Fractional part ($0.375_{10}$):** $0.375 = \frac{3}{8} = 0.011_2$.
+- **Combined unnormalized binary:**
+  $$
+  -19.375_{10} = -10011.011_2
+  $$
+- **Normalize to $1.F \times 2^E$:**
+  Shift the binary point 4 places to the left:
+  $$
+  -1.0011011_2 \times 2^4
+  $$
+- **Biased exponent ($E$):**
+  Add bias 127: $E = 4 + 127 = 131_{10} = 10000011_2$.
+- **Fraction field ($F$):**
+  Drop the implicit leading 1 and pad with trailing zeros to 23 bits:
+  $$
+  F = 00110110000000000000000_2
+  $$
+- **Assemble the 32-bit word:**
+  - Bit 31 (Sign): `1`
+  - Bits 30-23 (Exponent): `1000 0011`
+  - Bits 22-0 (Fraction): `001 1011 0000 0000 0000 0000`
+- **Group into 4-bit hexadecimal nibbles:**
+  $$
+  \underbrace{1100}_{\text{C}}\ \underbrace{0001}_{1}\ \underbrace{1001}_{9}\ \underbrace{1011}_{\text{B}}\ \underbrace{0000}_{0}\ \underbrace{0000}_{0}\ \underbrace{0000}_{0}\ \underbrace{0000}_{0} \implies \text{0xC19B0000}
+  $$
+
+**2. Subnormal numbers and gradual underflow:**
+In normal representation ($1 \le E \le 254$), the smallest positive number is $1.0 \times 2^{-126} \approx 1.18 \times 10^{-38}$. Without subnormal numbers, any subtraction resulting in a smaller value abruptly underflows to zero, destroying mathematical precision.
+
+When $E = 0$ ($00000000_2$) and $F \ne 0$:
+- The implicit leading bit is forced to **0** instead of 1 ($0.F$).
+- The true exponent is fixed at $-126$ ($1 - \text{bias} = 1 - 127 = -126$).
+- The value is calculated as:
+  $$
+  \text{Value} = (-1)^S \times (0.F) \times 2^{-126}
+  $$
+This allows numbers to decrease smoothly down to $2^{-23} \times 2^{-126} = 2^{-149} \approx 1.4 \times 10^{-45}$ (**gradual underflow**), ensuring that $x - y = 0 \iff x = y$.
+
+**3. Bit-level definitions of special representations:**
+- **Positive zero ($+0$):** $S = 0, E = 00000000_2, F = 00\dots0_2$ (`0x00000000`).
+- **Negative zero ($-0$):** $S = 1, E = 00000000_2, F = 00\dots0_2$ (`0x80000000`).
+- **Positive infinity ($+\infty$):** $S = 0, E = 11111111_2 (255), F = 00\dots0_2$ (`0x7F800000`). Produced by positive overflow or dividing a positive number by zero ($+1.0 / 0.0$).
+- **Negative infinity ($-\infty$):** $S = 1, E = 11111111_2 (255), F = 00\dots0_2$ (`0xFF800000`). Produced by negative overflow or dividing a negative number by zero.
+- **NaN (Not a Number):** $S = \text{any}, E = 11111111_2 (255), F \ne 0$ (e.g., `0x7FC00000`). Produced by mathematically undefined operations such as $0.0 / 0.0$, $\infty - \infty$, or $\sqrt{-1.0}$.
+
+<Callout tone="orange" label="Common exam pitfall">
+A common exam error is stating that zero has an implicit leading 1. If $E = 0$ had an implicit leading 1, $00000000_2$ would evaluate to $1.0 \times 2^{-127} \ne 0$. For $E = 0$, the implicit bit is always $0$, enabling both exact zero and subnormal representations.
+</Callout>
+</ModelAnswer>
+
+---
+
+### Part 2: In-lesson interactive practice
+
+<Quiz
+  practice
+  courseSlug="logic-design"
+  lessonSlug="codes-and-floating-point"
+  questions={[
+    {
+      id: "cp-q1",
+      prompt: "Under what specific condition must a 4-bit BCD adder stage inject a correction factor of +0110₂ into its intermediate binary sum?",
+      options: [
+        { id: "a", text: "When the intermediate binary sum produces a carry-out (K = 1) or exceeds decimal 9 (evaluated by Boolean logic C = K + Z₃Z₂ + Z₃Z₁)" },
+        { id: "b", text: "Whenever both input operands have an odd number of 1 bits" },
+        { id: "c", text: "Only when the intermediate sum is strictly equal to 1111₂ (decimal 15)" },
+        { id: "d", text: "When the adder mode control line M is asserted HIGH for subtraction" },
+      ],
+      correctOptionId: "a",
+      explanation: "A 4-bit binary adder cycles modulo 16, whereas a decimal decade cycles modulo 10. The 6 patterns from 1010₂ (10₁₀) to 1111₂ (15₁₀) are illegal in BCD. Whenever the sum falls in the range 10-15 (detected by Z₃Z₂ + Z₃Z₁) or generates a binary carry K = 1 (sums 16-19), adding 0110₂ (6₁₀) skips the 6 invalid codes and advances the decade with a decimal carry. Option b confuses BCD correction with parity; option c ignores values 10 through 14 and carries ≥ 16; option d confuses BCD with two's complement mode control.",
+    },
+    {
+      id: "cp-q2",
+      prompt: "Given the 4-bit binary code B = 1010₂, what is its corresponding Gray code, and what property makes Gray codes superior for mechanical encoders?",
+      options: [
+        { id: "a", text: "1111_Gray; successive codes differ by exactly one bit (unit Hamming distance), preventing false intermediate states during physical transitions" },
+        { id: "b", text: "0101_Gray; each bit position represents an exact negative power-of-two weight" },
+        { id: "c", text: "1101_Gray; all code words contain an even number of 1s for error detection" },
+        { id: "d", text: "1011_Gray; inverting all bits yields the 9's complement" },
+      ],
+      correctOptionId: "a",
+      explanation: "Apply Gi = Bi+1 ⊕ Bi: G₃ = B₃ = 1; G₂ = B₃ ⊕ B₂ = 1 ⊕ 0 = 1; G₁ = B₂ ⊕ B₁ = 0 ⊕ 1 = 1; G₀ = B₁ ⊕ B₀ = 1 ⊕ 0 = 1, giving 1111_Gray. Gray code has unit Hamming distance (dH = 1) between adjacent states, guaranteeing that only a single sensor bit toggles when rotating between physical sectors, eliminating switch bounce race conditions. Option b is false because Gray code is non-weighted; option c confuses Gray code with even parity; option d confuses Gray code with self-complementing decimal codes.",
+    },
+    {
+      id: "cp-q3",
+      prompt: "Why are the 2421 code and Excess-3 code classified as self-complementing codes, while standard 8421 BCD is not?",
+      options: [
+        { id: "a", text: "Inverting all bits of a code word directly yields the 9's complement of the decimal digit, which holds because their positional weights sum to 9 (or excess 3 cancels under 15 - (d + 3))" },
+        { id: "b", text: "They can be converted to binary without using logic gates" },
+        { id: "c", text: "They contain built-in parity bits that automatically correct single-bit errors" },
+        { id: "d", text: "They represent both signed and unsigned integers within the same 4-bit nibble" },
+      ],
+      correctOptionId: "a",
+      explanation: "A decimal code is self-complementing if bitwise inversion (1's complement) of digit d produces 9 - d. In 2421, the weights sum to 2 + 4 + 2 + 1 = 9, so flipping bits evaluates to 9 - d. In Excess-3, inverting bits computes 15 - (d + 3) = 12 - d = (9 - d) + 3, which is the Excess-3 code for 9 - d. In 8421 BCD, weights sum to 15, so inverting 0000 gives 1111 (illegal, not 9's code 1001). Option b is false as conversion still requires gates; option c describes Hamming codes; option d confuses decimal codes with two's complement.",
+    },
+    {
+      id: "cp-q4",
+      prompt: "To guarantee that a digital communication code can detect up to s bit errors and correct up to t bit errors, what minimum Hamming distance (d_min) is required between all valid codewords?",
+      options: [
+        { id: "a", text: "d_min ≥ s + 1 to detect s errors, and d_min ≥ 2t + 1 to correct t errors" },
+        { id: "b", text: "d_min ≥ s to detect s errors, and d_min ≥ t to correct t errors" },
+        { id: "c", text: "d_min ≥ 2s + 1 to detect s errors, and d_min ≥ t + 1 to correct t errors" },
+        { id: "d", text: "d_min = 2ⁿ regardless of s and t" },
+      ],
+      correctOptionId: "a",
+      explanation: "If two valid codewords are separated by distance d_min, flipping up to s bits cannot transform one valid codeword into another valid codeword as long as d_min ≥ s + 1 (detecting s errors). To correct t errors, spheres of radius t centered on each valid codeword must not overlap, requiring d_min ≥ 2t + 1 so that a corrupted word with ≤ t errors remains strictly closest to its original codeword. Option b allows corrupted words to equal other valid words; option c swaps the detection and correction bounds; option d is mathematically meaningless.",
+    },
+    {
+      id: "cp-q5",
+      prompt: "Why does the IEEE 754 floating-point standard store exponents with a bias (such as +127 for single precision) rather than using signed two's complement?",
+      options: [
+        { id: "a", text: "Biasing shifts all valid exponents to positive unsigned integers, allowing fast magnitude comparisons using standard unsigned integer comparator circuits" },
+        { id: "b", text: "Two's complement exponents cannot represent negative powers of two" },
+        { id: "c", text: "A biased exponent prevents floating-point numbers from overflowing" },
+        { id: "d", text: "The bias eliminates the requirement for a sign bit on the significand" },
+      ],
+      correctOptionId: "a",
+      explanation: "With bias 127, true exponents from -126 to +127 map to unsigned fields from 1 to 254. Because the exponent field sits directly to the left of the fraction bits, two positive floating-point numbers can be compared for relative magnitude using a standard, ultra-fast unsigned integer comparator, without unpacking exponents or aligning mantissas. Option b is false because two's complement easily handles negative numbers; option c is false because biased exponents can still overflow; option d is false because the sign of the overall number remains stored in bit 31.",
+    },
+    {
+      id: "cp-q6",
+      prompt: "What is the primary advantage of the 'implicit leading bit' (hidden bit) convention used in normalized IEEE 754 floating-point numbers?",
+      options: [
+        { id: "a", text: "It gains one additional bit of precision for free, giving 24 bits of significand precision from only 23 physically stored fraction bits" },
+        { id: "b", text: "It prevents division by zero exceptions in hardware ALUs" },
+        { id: "c", text: "It allows floating-point numbers to be added without aligning their binary points" },
+        { id: "d", text: "It forces all numbers to be integers" },
+      ],
+      correctOptionId: "a",
+      explanation: "Every non-zero normalized binary number in scientific notation has the form 1.xxx...₂ × 2ᵉ. Since the leading bit before the binary point is always 1, storing it physically in memory would waste silicon and memory bandwidth. Omitting it from the register and hardwiring it into the ALU datapath provides 24 bits of effective precision while occupying only 23 bits of storage. Options b, c, and d have no connection to the implicit bit convention.",
+    },
+    {
+      id: "cp-q7",
+      prompt: "How does an odd-parity generator circuit implemented with XOR/XNOR gates generate the parity bit P for an 8-bit data byte D[7:0]?",
+      options: [
+        { id: "a", text: "P = (D₇ ⊕ D₆ ⊕ D₅ ⊕ D₄ ⊕ D₃ ⊕ D₂ ⊕ D₁ ⊕ D₀)', an XNOR tree that sets P = 1 when the data contains an even number of 1s so that the total count of 1s is odd" },
+        { id: "b", text: "P = D₇ ⊕ D₆ ⊕ D₅ ⊕ D₄ ⊕ D₃ ⊕ D₂ ⊕ D₁ ⊕ D₀, an XOR tree that sets P = 1 when the data contains an odd number of 1s" },
+        { id: "c", text: "P = D₇ · D₆ · D₅ · D₄ · D₃ · D₂ · D₁ · D₀, an 8-input AND gate" },
+        { id: "d", text: "P is hardwired to 1 on odd-numbered clock cycles" },
+      ],
+      correctOptionId: "a",
+      explanation: "An XOR tree across the data bits evaluates to 1 when the data contains an odd number of 1s, and 0 when it contains an even number. For odd parity, the total number of 1s (data bits plus P) must be odd. Therefore, when data has an even count of 1s, P must be 1; when data has an odd count, P must be 0. This inverted relationship is implemented by an XNOR tree (XOR tree followed by an inverter). Option b produces even parity; option c checks if all bits are 1; option d is clock-dependent rather than data-dependent.",
+    },
+    {
+      id: "cp-q8",
+      prompt: "In IEEE 754 single precision, how does hardware interpret a 32-bit word with an exponent field of all 1s (E = 255) and a non-zero fraction field (F ≠ 0)?",
+      options: [
+        { id: "a", text: "NaN (Not a Number), signaling mathematically undefined operations such as 0/0 or square root of a negative number" },
+        { id: "b", text: "Positive or negative infinity, signaling arithmetic overflow" },
+        { id: "c", text: "A subnormal number approaching zero" },
+        { id: "d", text: "An unnormalized integer that requires left-shifting" },
+      ],
+      correctOptionId: "a",
+      explanation: "In IEEE 754, exponent 255 (all 1s) is reserved for special values: if fraction F = 0, the word represents infinity (±∞); if fraction F ≠ 0, the word represents NaN (Not a Number). NaNs propagate through arithmetic operations to signal invalid conditions without crashing the processor. Option b describes E = 255 with F = 0; option c describes E = 0 with F ≠ 0; option d is not an IEEE 754 standard state.",
+    },
+  ]}
+/>

@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { MuxCircuit, DemuxCircuit } from "@/components/mdx/CircuitVisualizers";
 import { MuxFunctionLab, MuxTreeLab, DemuxLab } from "@/components/mdx/LogicVisualizers";
 
@@ -332,3 +332,241 @@ Design a full adder (Sum $S$ and Carry-out $C_{out}$) using two 4-to-1 multiplex
 4. **Hardware Requirements:**
    Two 4-to-1 multiplexers, with $A \to S_1$ and $B \to S_0$ on both chips, one inverter to create $C_{in}'$, and connections to $V_{CC}$, GND, and $C_{in}$.
 </ModelAnswer>
+
+### Problem 5: Multi-level multiplexer synthesis with residue functions
+
+Synthesize the 4-variable Boolean function:
+$$F(A, B, C, D) = \sum m(0, 1, 3, 4, 8, 9, 15)$$
+using a single 4-to-1 multiplexer and the minimum number of standard external 2-input logic gates.
+1. Assign $A$ and $B$ to multiplexer select inputs $S_1$ and $S_0$ respectively ($S_1 = A, S_0 = B$).
+2. Use Shannon's expansion theorem to find the four residue functions $F_{00}(C, D), F_{01}(C, D), F_{10}(C, D),$ and $F_{11}(C, D)$ that feed data inputs $I_0, I_1, I_2, I_3$.
+3. Minimize each residue function algebraically or with 2-variable Karnaugh maps, and specify the external gates needed to drive the multiplexer data lines.
+
+<ModelAnswer>
+1. **Shannon Decomposition around $A$ and $B$:**
+   The function expands as:
+   $$F(A, B, C, D) = A'B' \cdot I_0 + A'B \cdot I_1 + AB' \cdot I_2 + AB \cdot I_3$$
+   We partition the 16 minterms by their $(A, B)$ prefix:
+   - For $AB = 00$ (minterms $m_0$ to $m_3$):
+     - Minterms present: $m_0$ ($0000_2$), $m_1$ ($0001_2$), $m_3$ ($0011_2$).
+     - Residue truth values for $(C, D) \in \{00, 01, 10, 11\}$:
+       - $(0, 0) \to m_0 = 1$
+       - $(0, 1) \to m_1 = 1$
+       - $(1, 0) \to m_2 = 0$
+       - $(1, 1) \to m_3 = 1$
+     - K-map for $I_0(C, D)$: 1-cells at $(0,0), (0,1), (1,1)$. Only cell $(1,0)$ is 0.
+     - Group $(0,0)$ and $(0,1)$ to get $C'$. Group $(0,1)$ and $(1,1)$ to get $D$.
+     - Minimal SOP for $I_0$:
+       $$I_0 = C' + D$$
+
+   - For $AB = 01$ (minterms $m_4$ to $m_7$):
+     - Minterms present: $m_4$ ($0100_2$). Minterms $m_5, m_6, m_7$ are absent.
+     - Residue truth values for $(C, D)$:
+       - $(0, 0) \to m_4 = 1$
+       - $(0, 1) \to m_5 = 0$
+       - $(1, 0) \to m_6 = 0$
+       - $(1, 1) \to m_7 = 0$
+     - Minimal expression for $I_1$:
+       $$I_1 = C' D' = (C + D)' \quad (\text{a 2-input NOR gate})$$
+
+   - For $AB = 10$ (minterms $m_8$ to $m_{11}$):
+     - Minterms present: $m_8$ ($1000_2$), $m_9$ ($1001_2$). Minterms $m_{10}, m_{11}$ are absent.
+     - Residue truth values for $(C, D)$:
+       - $(0, 0) \to m_8 = 1$
+       - $(0, 1) \to m_9 = 1$
+       - $(1, 0) \to m_{10} = 0$
+       - $(1, 1) \to m_{11} = 0$
+     - Notice that whenever $C = 0$, $F = 1$, regardless of $D$. When $C = 1$, $F = 0$.
+     - Minimal expression for $I_2$:
+       $$I_2 = C'$$
+
+   - For $AB = 11$ (minterms $m_{12}$ to $m_{15}$):
+     - Minterms present: $m_{15}$ ($1111_2$). Minterms $m_{12}, m_{13}, m_{14}$ are absent.
+     - Residue truth values for $(C, D)$:
+       - $(0, 0) \to m_{12} = 0$
+       - $(0, 1) \to m_{13} = 0$
+       - $(1, 0) \to m_{14} = 0$
+       - $(1, 1) \to m_{15} = 1$
+     - Minimal expression for $I_3$:
+       $$I_3 = CD \quad (\text{a 2-input AND gate})$$
+
+2. **Hardware Implementation Summary:**
+   - One 4-to-1 multiplexer (select lines $S_1 = A, S_0 = B$).
+   - One inverter to generate $C'$.
+   - One 2-input OR gate computing $I_0 = C' + D$.
+   - One 2-input NOR gate computing $I_1 = (C + D)' = C' D'$.
+   - Direct connection from inverter output to $I_2 = C'$.
+   - One 2-input AND gate computing $I_3 = CD$.
+   Total gates: 1 MUX, 1 inverter, 1 OR, 1 NOR, 1 AND.
+
+<Callout tone="orange" label="Common exam pitfall">
+Students frequently map the minterm numbers into the wrong residue channels. Remember that for $AB = 01$, the binary indices have an offset of $0100_2 = 4$. Minterm 4 has relative coordinates $(C,D) = (0,0)$, minterm 5 has $(0,1)$, and so on. Swapping the select variable order ($S_1=B, S_0=A$) scrambles all four residue equations.
+</Callout>
+</ModelAnswer>
+
+### Problem 6: Transmission Gate CMOS multiplexers and single-cycle Barrel Shifters
+
+Modern digital datapaths (such as ARM and RISC-V execution pipelines) use transmission gate (TG) multiplexers and barrel shifters to execute arbitrary bit shifts in a single clock cycle.
+1. A CMOS transmission gate consists of an nMOS and pMOS transistor connected in parallel, controlled by complementary select signals ($S$ and $S'$). Explain why a single NMOS pass transistor is insufficient to pass a logic 1, and why a single PMOS pass transistor cannot pass a logic 0.
+2. Draw the schematic topology of a 2-to-1 multiplexer using two transmission gates ($TG_0$ and $TG_1$) and one inverter. State the total transistor count and compare it to a static CMOS NAND-NAND multiplexer.
+3. Design a 4-bit barrel shifter capable of circular rotating a 4-bit word $D = D_3 D_2 D_1 D_0$ to the right by $k \in \{0, 1, 2, 3\}$ positions using two stages of 2-to-1 multiplexers controlled by select bits $S_1$ and $S_0$ (where $k = 2S_1 + S_0$).
+
+<ModelAnswer>
+1. **Need for Complementary Transmission Gates:**
+   - **NMOS pass transistor:** Passes a strong logic 0 (pulls cleanly to ground $0\text{V}$). However, when passing a logic 1 ($V_{DD}$), the source voltage rises until $V_{GS} = V_{DD} - V_{\text{out}} = V_{tn}$ (the threshold voltage). The transistor turns OFF prematurely, passing only a degraded "weak 1" ($V_{DD} - V_{tn}$).
+   - **PMOS pass transistor:** Passes a strong logic 1 (pulls cleanly to $V_{DD}$). However, when passing a logic 0 ($0\text{V}$), $V_{SG} = V_{\text{out}} - 0 = |V_{tp}|$. The transistor cuts off, passing only a degraded "weak 0" ($|V_{tp}|$).
+   - **Transmission Gate (TG):** By wiring NMOS and PMOS in parallel with opposite gate polarities ($S$ on NMOS, $S'$ on PMOS), the NMOS pulls the node down cleanly to $0\text{V}$ and the PMOS pulls it up cleanly to $V_{DD}$. The result is a bidirectional, full rail-to-rail analog switch.
+
+2. **2-to-1 Transmission Gate Multiplexer Architecture:**
+   - **Circuit Topology:**
+     - $TG_0$ connects input $I_0$ to output $Y$. Its NMOS gate connects to $S'$ and PMOS gate connects to $S$.
+     - $TG_1$ connects input $I_1$ to output $Y$. Its NMOS gate connects to $S$ and PMOS gate connects to $S'$.
+     - An inverter produces $S'$ from $S$.
+     - When $S = 0$: $TG_0$ is ON, passing $I_0 \to Y$. $TG_1$ is OFF.
+     - When $S = 1$: $TG_1$ is ON, passing $I_1 \to Y$. $TG_0$ is OFF.
+   - **Transistor Count Comparison:**
+     - Each transmission gate uses 2 transistors ($1\text{ NMOS} + 1\text{ PMOS}$).
+     - The inverter uses 2 transistors ($1\text{ NMOS} + 1\text{ PMOS}$).
+     - Total TG MUX transistor count: $2 \times 2 + 2 = 6\text{ transistors}$.
+     - Static CMOS NAND-NAND MUX: requires two 2-input NAND gates ($2 \times 4 = 8$), one 2-input NAND output stage ($4$), and an inverter on $S$ ($2$), totaling **14 transistors**.
+     - The transmission gate MUX uses **57% fewer transistors** and provides faster propagation delay without static shoot-through current.
+
+3. **4-Bit Barrel Shifter Design (Rotate Right by $k$):**
+   A barrel shifter performs multi-bit shifting in $O(1)$ clock cycles using $\log_2(4) = 2$ multiplexer stages:
+   - **Stage 1 (Controlled by $S_0$, shifts by 1 position if $S_0 = 1$):**
+     Consists of four 2-to-1 MUXes producing intermediate vector $W = W_3 W_2 W_1 W_0$:
+     - For $S_0 = 0$: $W$ passes $D$ unchanged ($W_i = D_i$).
+     - For $S_0 = 1$: $W$ rotates $D$ right by 1 bit:
+       $$W_3 = (S_0=0 ? D_3 : D_0)$$
+       $$W_2 = (S_0=0 ? D_2 : D_3)$$
+       $$W_1 = (S_0=0 ? D_1 : D_2)$$
+       $$W_0 = (S_0=0 ? D_0 : D_1)$$
+
+   - **Stage 2 (Controlled by $S_1$, shifts by 2 positions if $S_1 = 1$):**
+     Consists of four 2-to-1 MUXes taking intermediate vector $W$ and producing final output $Y = Y_3 Y_2 Y_1 Y_0$:
+     - For $S_1 = 0$: $Y$ passes $W$ unchanged ($Y_i = W_i$).
+     - For $S_1 = 1$: $Y$ rotates $W$ right by 2 bits:
+       $$Y_3 = (S_1=0 ? W_3 : W_1)$$
+       $$Y_2 = (S_1=0 ? W_2 : W_0)$$
+       $$Y_1 = (S_1=0 ? W_1 : W_3)$$
+       $$Y_0 = (S_1=0 ? W_0 : W_2)$$
+
+   - **Operation Trace:**
+     - If $k = 0$ ($S_1 S_0 = 00$): Stage 1 shift = 0, Stage 2 shift = 0 $\implies$ total rotate = 0.
+     - If $k = 1$ ($S_1 S_0 = 01$): Stage 1 shift = 1, Stage 2 shift = 0 $\implies$ total rotate = 1.
+     - If $k = 2$ ($S_1 S_0 = 10$): Stage 1 shift = 0, Stage 2 shift = 2 $\implies$ total rotate = 2.
+     - If $k = 3$ ($S_1 S_0 = 11$): Stage 1 shift = 1, Stage 2 shift = 2 $\implies$ total rotate = $1 + 2 = 3$.
+   Every possible rotation from 0 to 3 positions stabilizes within the propagation delay of just two 2-to-1 multiplexers.
+
+<Callout tone="orange" label="Common exam pitfall">
+Students often attempt to build barrel shifters by cascading serial shift registers and clocking them multiple times. A shift register requires $k$ clock cycles (variable latency), whereas a barrel shifter is purely combinational logic that completes the shift in a fraction of a single clock cycle.
+</Callout>
+</ModelAnswer>
+
+---
+
+### Part 2: In-lesson interactive practice
+
+<Quiz
+  practice
+  courseSlug="logic-design"
+  lessonSlug="multiplexers"
+  questions={[
+    {
+      id: "mux-p1",
+      prompt: "What is the algebraic expression for the output Y of a 4-to-1 multiplexer with select inputs S1, S0 and data inputs I0, I1, I2, I3?",
+      options: [
+        { id: "a", text: "Y = S1' S0' I0 + S1' S0 I1 + S1 S0' I2 + S1 S0 I3" },
+        { id: "b", text: "Y = (S1 + S0 + I0)(S1 + S0' + I1)(S1' + S0 + I2)(S1' + S0' + I3)" },
+        { id: "c", text: "Y = (S1 ⊕ S0) · (I0 + I1 + I2 + I3)" },
+        { id: "d", text: "Y = S1 I3 + S0 I2 + S1' I1 + S0' I0" },
+      ],
+      correctOptionId: "a",
+      explanation: "A 4-to-1 multiplexer decodes select lines S1 and S0 into four mutually exclusive minterms m0, m1, m2, m3, each gating its corresponding data line: Y = S1' S0' I0 + S1' S0 I1 + S1 S0' I2 + S1 S0 I3. This is the direct hardware realization of Shannon's expansion theorem. Option b is an incorrect POS structure; option c uses XOR; option d does not uniquely decode all 4 binary address combinations.",
+    },
+    {
+      id: "mux-p2",
+      prompt: "Using Shannon's expansion theorem, what is the maximum number of variables in a Boolean function that can be implemented on a 2^n-to-1 multiplexer without any external logic gates (using only constants 0, 1 and true/complemented literals)?",
+      options: [
+        { id: "a", text: "n + 1 variables: connect n variables to select lines, and connect the remaining variable (in true form, inverted form, 0, or 1) to the data inputs" },
+        { id: "b", text: "n variables: each data input must strictly receive a constant 0 or 1" },
+        { id: "c", text: "2n variables" },
+        { id: "d", text: "2^n variables" },
+      ],
+      correctOptionId: "a",
+      explanation: "By Shannon's expansion theorem, any Boolean function of n+1 variables can be factored around n select variables: F(X_n, ..., X_0) = ∑ m_i(X_n...X_1) · f_i(X_0). Since each residue f_i is a function of only 1 single variable X_0, f_i can only take one of four values: 0, 1, X_0, or X_0'. Therefore, a 2^n-to-1 multiplexer implements any (n+1)-variable function using at most one external inverter. Option b restricts inputs to constants (which realizes only n variables); options c and d exceed Shannon expansion capacity.",
+    },
+    {
+      id: "mux-p3",
+      prompt: "How many 4-to-1 multiplexers are required to construct a 16-to-1 multiplexer without any other external gates?",
+      options: [
+        { id: "a", text: "5 multiplexers: 4 multiplexers in the first tier (selecting 4 of 16 lines using S1, S0), and 1 multiplexer in the second tier (selecting 1 of the 4 intermediate outputs using S3, S2)" },
+        { id: "b", text: "4 multiplexers wired with active-LOW open-collector outputs" },
+        { id: "c", text: "8 multiplexers arranged in a binary tree" },
+        { id: "d", text: "16 multiplexers cascaded sequentially" },
+      ],
+      correctOptionId: "a",
+      explanation: "In a hierarchical tree, 16 data inputs are divided into four groups of 4. Four 4-to-1 MUXes in Tier 1 receive the 16 inputs and are controlled by lower address lines S1, S0. The four outputs of Tier 1 feed into a single 4-to-1 MUX in Tier 2, controlled by upper address lines S3, S2. Total MUX count is 4 + 1 = 5 multiplexers, with zero external gates. Option b lacks an output selector; options c and d use unnecessary extra stages.",
+    },
+    {
+      id: "mux-p4",
+      prompt: "How can a 2-input XOR gate (Y = A ⊕ B) be synthesized using a single 2-to-1 multiplexer with select input S = A?",
+      options: [
+        { id: "a", text: "Connect I0 = B and I1 = B' (with an inverter on B)" },
+        { id: "b", text: "Connect I0 = 0 and I1 = 1" },
+        { id: "c", text: "Connect I0 = B' and I1 = B" },
+        { id: "d", text: "Connect I0 = 1 and I1 = 0" },
+      ],
+      correctOptionId: "a",
+      explanation: "When A = 0, A ⊕ B = 0 ⊕ B = B, so data line I0 must equal B. When A = 1, A ⊕ B = 1 ⊕ B = B', so data line I1 must equal B'. Therefore, Y = A' I0 + A I1 = A' B + A B' = A ⊕ B. Option b implements a buffer Y = A; option c implements an XNOR gate (A ⊙ B); option d implements an inverter Y = A'.",
+    },
+    {
+      id: "mux-p5",
+      prompt: "What is the structural relationship between a 1-to-2^n demultiplexer and an n-to-2^n binary decoder?",
+      options: [
+        { id: "a", text: "They are logically identical: an n-to-2^n decoder with an active Enable input functions as a 1-to-2^n demultiplexer by using the Enable pin as the data input" },
+        { id: "b", text: "A demultiplexer requires flip-flops, whereas a decoder is purely combinational" },
+        { id: "c", text: "A decoder can only decode BCD, whereas a demultiplexer routes analog signals" },
+        { id: "d", text: "Demultiplexers invert all outputs, whereas decoders never invert" },
+      ],
+      correctOptionId: "a",
+      explanation: "An n-to-2^n decoder asserts output line Y_k only when the address matches k AND enable E is 1. If we treat E as a 1-bit data input D, then output Y_k receives D when address = k, and 0 otherwise. This is the exact definition of a 1-to-2^n demultiplexer. Thus, decoders with enable inputs (like the 74LS138) are sold and used interchangeably as demultiplexers. Option b falsely adds memory; options c and d are false.",
+    },
+    {
+      id: "mux-p6",
+      prompt: "Why does a 2-to-1 multiplexer constructed from CMOS Transmission Gates (TGs) require only 6 transistors, whereas a static CMOS NAND-NAND multiplexer requires 14 transistors?",
+      options: [
+        { id: "a", text: "Each transmission gate requires only 2 transistors (1 NMOS + 1 PMOS in parallel) acting as a bidirectional pass switch, plus 2 transistors for a select inverter, eliminating multi-stage logic gates" },
+        { id: "b", text: "Transmission gates use bipolar junction transistors with higher current gain" },
+        { id: "c", text: "Static CMOS gates require internal inductors that consume extra silicon area" },
+        { id: "d", text: "TG multiplexers omit the ground connection to reduce transistor count" },
+      ],
+      correctOptionId: "a",
+      explanation: "A transmission gate 2-to-1 MUX uses two TGs (2 × 2 = 4 transistors) and one inverter on select line S (2 transistors), totaling 6 transistors. In contrast, static CMOS requires two 2-input NAND gates (2 × 4 = 8), one 2-input NAND output gate (4), and an inverter (2), totaling 14 transistors. The TG MUX saves 57% in area and power while reducing latency. Option b, c, and d are physically impossible.",
+    },
+    {
+      id: "mux-p7",
+      prompt: "In high-speed multiplexer networks, what causes a transient dynamic glitch when switching between two data inputs that both currently carry logic 1 (e.g. I0 = 1, I1 = 1)?",
+      options: [
+        { id: "a", text: "Unequal propagation delays through the select line inverter: during select transition 0 → 1, S' drops to 0 before S rises to 1, momentarily turning off both AND gates and producing a brief 0-glitch" },
+        { id: "b", text: "Thermal noise fluctuations inside the load capacitor" },
+        { id: "c", text: "Electromigration inside the aluminum power interconnects" },
+        { id: "d", text: "Clock jitter in upstream flip-flop clock distribution networks" },
+      ],
+      correctOptionId: "a",
+      explanation: "In the multiplexer equation Y = S' I0 + S I1, when I0 = I1 = 1, the function simplifies to Y = S' + S = 1. However, physical inverters have a finite delay t_inv. When S switches from 0 to 1, S' falls to 0 before the input S reaches the other gate, creating a brief interval where S = 0 and S' = 0 simultaneously. Both product terms drop to 0, producing a downward glitch (static-1 hazard). Option b, c, and d do not cause combinational hazards.",
+    },
+    {
+      id: "mux-p8",
+      prompt: "The commercial 74LS157 is a Quad 2-to-1 Multiplexer. What does the term 'Quad' mean in this integrated circuit specification?",
+      options: [
+        { id: "a", text: "It contains four independent 2-to-1 multiplexers sharing a common Select line (S) and a common active-LOW Strobe/Enable line (G')" },
+        { id: "b", text: "It has four select lines and can choose from 16 data inputs" },
+        { id: "c", text: "It operates exclusively at four times standard TTL clock frequencies" },
+        { id: "d", text: "It multiplexes four-phase AC electrical power lines" },
+      ],
+      correctOptionId: "a",
+      explanation: "A Quad 2-to-1 multiplexer integrates four separate 2-to-1 MUX slices on a single 16-pin chip. All four slices share a single Select line (S) and a master active-LOW Enable line (G'). It is commonly used to steer 4-bit nibbles between two alternative buses (e.g., selecting between Register A and Register B in an ALU datapath). Option b describes a 16-to-1 MUX; options c and d are nonsensical.",
+    },
+  ]}
+/>

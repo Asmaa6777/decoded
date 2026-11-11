@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { BinaryAddition, TwosComplementWheel, SignedArithmeticLab } from "@/components/mdx/LogicVisualizers";
 
 # Binary Arithmetic and Negative Numbers
@@ -309,9 +309,13 @@ Explore two's complement addition and subtraction, monitor carries into and out 
 
 <SignedArithmeticLab />
 
-## Practice problems
+## Practice from past exams
 
-### Problem 1: Two's complement addition and overflow diagnosis
+Review these hand-worked problems and practice questions to reinforce your grasp of signed representations, complements, overflow detection, sign extension, and arithmetic circuits.
+
+### Part 1: Written exam & lab problems
+
+#### Problem 1: Two's complement addition and overflow diagnosis
 
 Perform the following additions in an 8-bit signed two's complement system. For each, determine the decimal equivalent of the result, examine the carries into and out of the MSB, and state whether signed overflow occurred:
 
@@ -364,7 +368,7 @@ Students often see $C_8 = 1$ in case 3 and think overflow occurred. For signed n
 </Callout>
 </ModelAnswer>
 
-### Problem 2: 2's complement subtraction with negative subtrahend
+#### Problem 2: 2's complement subtraction with negative subtrahend
 
 Compute $(-35) - (-50)$ using 8-bit signed two's complement arithmetic. Show each step including operand negation, addition, and carry handling.
 
@@ -402,7 +406,7 @@ When calculating $(-35) - (-50)$, write subtraction as adding the two's compleme
 </Callout>
 </ModelAnswer>
 
-### Problem 3: Sign extension and negative polynomial evaluation
+#### Problem 3: Sign extension and negative polynomial evaluation
 
 Given the 6-bit two's complement number $A = 101101_2$:
 1. Determine its decimal value.
@@ -437,7 +441,7 @@ When converting $A_{10\text{-bit}}$ back to decimal, students often forget that 
 </Callout>
 </ModelAnswer>
 
-### Problem 4: 1's complement addition vs 2's complement addition
+#### Problem 4: 1's complement addition vs 2's complement addition
 
 Explain the "end-around carry" rule required when performing addition in signed one's complement, and contrast it with how carry-out is handled in two's complement.
 
@@ -463,3 +467,211 @@ In contrast, in **two's complement**:
 Skipping the end-around carry leaves a 1's complement answer off by 1. Adding $(+5) + (-2)$ in 4-bit 1's complement gives $0101_2 + 1101_2 = 1\,0010_2$. If the carry 1 is dropped, the result is $+2$ instead of $+3$. Adding the end-around carry ($0010_2 + 1 = 0011_2$) yields the correct sum $+3$.
 </Callout>
 </ModelAnswer>
+
+#### Problem 5: Boolean derivation of signed overflow logic and gate implementation
+
+1. Derive the Boolean equation for the signed overflow flag $V$ in an $n$-bit adder from first principles, considering the sign bits of the operands ($A_{n-1}, B_{n-1}$) and the sum ($S_{n-1}$).
+2. Prove that this condition is algebraically equivalent to the simple 2-input XOR relationship $V = C_n \oplus C_{n-1}$.
+3. Explain why modern processors generate both a Carry flag ($C$) and an Overflow flag ($V$) on every arithmetic operation, and give specific examples showing when $C = 1, V = 0$ and $C = 0, V = 1$.
+
+<ModelAnswer>
+**1. First-principles sign bit derivation:**
+In signed two's complement, an overflow occurs if and only if:
+- Adding two positive numbers ($A_{n-1} = 0, B_{n-1} = 0$) produces a negative sum ($S_{n-1} = 1$).
+- Adding two negative numbers ($A_{n-1} = 1, B_{n-1} = 1$) produces a positive sum ($S_{n-1} = 0$).
+- Adding numbers of opposite signs can never overflow because the sum's magnitude is strictly smaller than the larger operand.
+
+Combining these two mutually exclusive conditions yields:
+$$
+V = \overline{A_{n-1}}\,\overline{B_{n-1}}S_{n-1} + A_{n-1}B_{n-1}\overline{S_{n-1}}
+$$
+
+**2. Equivalence to $V = C_n \oplus C_{n-1}$:**
+Consider the full adder for the sign bit position ($n-1$):
+- $S_{n-1} = A_{n-1} \oplus B_{n-1} \oplus C_{n-1}$
+- $C_n = A_{n-1}B_{n-1} + C_{n-1}(A_{n-1} \oplus B_{n-1})$
+
+Examine the four combinations of operand signs:
+- **Case 1: $A_{n-1} = 0, B_{n-1} = 0$ (both positive):**
+  - $C_n = 0 + C_{n-1}(0) = 0$.
+  - $S_{n-1} = 0 \oplus 0 \oplus C_{n-1} = C_{n-1}$.
+  - Overflow occurs if $S_{n-1} = 1$, which requires $C_{n-1} = 1$.
+  - Here, $C_n = 0$ and $C_{n-1} = 1 \implies C_n \oplus C_{n-1} = 0 \oplus 1 = 1$.
+- **Case 2: $A_{n-1} = 1, B_{n-1} = 1$ (both negative):**
+  - $C_n = 1\cdot 1 + C_{n-1}(1 \oplus 1) = 1 + 0 = 1$.
+  - $S_{n-1} = 1 \oplus 1 \oplus C_{n-1} = C_{n-1}$.
+  - Overflow occurs if $S_{n-1} = 0$, which requires $C_{n-1} = 0$.
+  - Here, $C_n = 1$ and $C_{n-1} = 0 \implies C_n \oplus C_{n-1} = 1 \oplus 0 = 1$.
+- **Case 3: $A_{n-1} \ne B_{n-1}$ (opposite signs, one 0 and one 1):**
+  - $A_{n-1} \oplus B_{n-1} = 1$, and $A_{n-1}B_{n-1} = 0$.
+  - $C_n = 0 + C_{n-1}(1) = C_{n-1}$.
+  - Because $C_n = C_{n-1}$, their XOR is always $C_n \oplus C_{n-1} = 0$ (no overflow possible).
+
+In all cases, $V = C_n \oplus C_{n-1}$ perfectly mirrors the first-principles definition. A single 2-input XOR gate connected to the carry-in and carry-out of the MSB full adder detects signed overflow!
+
+**3. Carry flag ($C$) vs Overflow flag ($V$):**
+- Hardware does not know whether the bits in a register represent signed or unsigned numbers. Therefore, the ALU evaluates both flags on every addition and subtraction.
+- The **Carry flag ($C$)** indicates unsigned overflow (or borrow in subtraction). Software uses it for unsigned comparisons (such as `JAE`/`JBE` in x86).
+- The **Overflow flag ($V$)** indicates signed two's complement range violation. Software uses it for signed comparisons (such as `JGE`/`JLE` in x86).
+
+**Examples in 8 bits:**
+- **$C = 1, V = 0$:** $(+100) + (-30) = (+70)$
+  $01100100_2 + 11100010_2 = 1\ 01000110_2$.
+  Here, $C_7 = 1, C_8 = 1 \implies V = 1 \oplus 1 = 0$. The unsigned sum exceeded 255 (setting $C = 1$), but the signed result $+70$ fits cleanly in $[-128, +127]$ ($V = 0$).
+- **$C = 0, V = 1$:** $(+80) + (+70) = (+150)$
+  $01010000_2 + 01000110_2 = 0\ 10010110_2$ ($-106_{10}$).
+  Here, $C_7 = 1, C_8 = 0 \implies V = 1 \oplus 0 = 1$. No unsigned carry was generated ($C = 0$), but signed range was exceeded ($V = 1$).
+
+<Callout tone="orange" label="Common exam pitfall">
+Never assume that a carry-out ($C = 1$) implies an error. In signed two's complement subtraction and adding positive to negative numbers, $C = 1$ is the expected normal behavior. Look exclusively at $V$ for signed overflow.
+</Callout>
+</ModelAnswer>
+
+#### Problem 6: Modular wraparound arithmetic vs saturating arithmetic
+
+In standard integer ALUs, overflows wrap around modulo $2^n$. In digital audio signal processing and multimedia graphics (e.g. ARM NEON or Intel SIMD instructions), modular wraparound creates ear-splitting distortion (a positive volume peak of $+120$ plus $+20$ wrapping to $-116$, a loud crackle). Instead, DSPs employ **saturating arithmetic**.
+
+1. Contrast modular wraparound with saturating arithmetic when computing $(+110) + (+45)$ and $(-90) + (-60)$ in an 8-bit signed two's complement register $[-128, +127]$.
+2. Design a multiplexer-based hardware circuit that uses the standard adder sum $S[7:0]$, operand sign bit $A_7$, and overflow flag $V$ to produce the saturated output.
+
+<ModelAnswer>
+**1. Comparing wraparound vs saturation:**
+- **Operation 1: $(+110) + (+45) = +155_{10}$:**
+  - True sum $+155$ exceeds $+127$.
+  - In 8-bit binary: $01101110_2 + 00101101_2 = 10011011_2$.
+  - **Modular wraparound:** Reads the raw register bits: $-128 + 16 + 8 + 2 + 1 = -101_{10}$. The positive peak wraps to a large negative number.
+  - **Saturating arithmetic:** Detects positive overflow ($V = 1, A_7 = 0$) and clamps the output to the maximum positive limit: $+127_{10}$ (`01111111_2`).
+- **Operation 2: $(-90) + (-60) = -150_{10}$:**
+  - True sum $-150$ falls below $-128$.
+  - In 8-bit binary: $10100110_2 + 11000100_2 = 1\ 01101010_2$.
+  - **Modular wraparound:** Discards the carry and keeps $01101010_2 = +106_{10}$. The negative peak wraps to positive.
+  - **Saturating arithmetic:** Detects negative overflow ($V = 1, A_7 = 1$) and clamps the output to the minimum negative limit: $-128_{10}$ (`10000000_2`).
+
+**2. Hardware implementation with multiplexers:**
+The saturating logic sits directly at the output of the standard binary adder:
+- A primary 2-to-1 bus multiplexer selects between:
+  - Input 0: The normal adder sum $S[7:0]$ (selected when $V = 0$, no overflow).
+  - Input 1: The saturated limit (selected when $V = 1$, overflow occurred).
+- A secondary multiplexer determines which rail to clamp to based on operand sign $A_7$:
+  - When $A_7 = 0$ (positive operands), select $+127_{10}$ (`01111111_2`).
+  - When $A_7 = 1$ (negative operands), select $-128_{10}$ (`10000000_2`).
+- Notice that in binary:
+  - $+127 = 01111111_2$ (MSB = 0, low 7 bits = all 1s).
+  - $-128 = 10000000_2$ (MSB = 1, low 7 bits = all 0s).
+- Therefore, when $V = 1$:
+  - Saturated MSB = $A_7$ (the original operand sign).
+  - Saturated low bits $[6:0] = \overline{A_7}$ replicated 7 times.
+  - Saturated output bus $= \{A_7, \overline{A_7}, \overline{A_7}, \overline{A_7}, \overline{A_7}, \overline{A_7}, \overline{A_7}, \overline{A_7}\}$.
+
+<Callout tone="orange" label="Common exam pitfall">
+Notice that when positive overflow occurs, the raw sum bit $S_7$ is 1 (negative), while the operand sign $A_7$ is 0. If hardware inspected $S_7$ instead of $A_7$ to pick the saturation direction, it would clamp in the wrong direction! Always use operand sign $A_{n-1}$ (or $B_{n-1}$) to determine whether the overflow was positive or negative.
+</Callout>
+</ModelAnswer>
+
+---
+
+### Part 2: In-lesson interactive practice
+
+<Quiz
+  practice
+  courseSlug="logic-design"
+  lessonSlug="binary-arithmetic"
+  questions={[
+    {
+      id: "ba-q1",
+      prompt: "In an n-bit two's complement system, what happens when hardware attempts to negate the most negative number (-2ⁿ⁻¹)?",
+      options: [
+        { id: "a", text: "The bit pattern is unchanged (-2ⁿ⁻¹) and signed overflow (V = 1) is signaled because +2ⁿ⁻¹ exceeds the n-bit representable range [-2ⁿ⁻¹, 2ⁿ⁻¹ - 1]" },
+        { id: "b", text: "The hardware automatically widens the register by 1 bit without triggering an exception" },
+        { id: "c", text: "The result wraps cleanly to +0" },
+        { id: "d", text: "The operation executes without error, producing positive +2ⁿ⁻¹ in n bits" },
+      ],
+      correctOptionId: "a",
+      explanation: "For an 8-bit system, -128 is 10000000₂. Negating it requires inverting all bits (01111111₂) and adding 1, yielding 10000000₂ (-128). Because +128 cannot be represented in 8 bits (range is [-128, +127]), the ALU sets the signed overflow flag V = 1. Option b is false for fixed-width registers; option c confuses negation with subtraction of identical numbers; option d is mathematically impossible within n bits.",
+    },
+    {
+      id: "ba-q2",
+      prompt: "An 8-bit ALU adds (+100) and (-30), yielding a carry-out of 1 (C = 1) and overflow flag 0 (V = 0). What does this indicate?",
+      options: [
+        { id: "a", text: "Normal operation: C = 1 represents the modulo 256 carry of two's complement arithmetic, and V = 0 confirms the signed result (+70) is completely valid" },
+        { id: "b", text: "An arithmetic error has occurred because carry-out always flags an overflow" },
+        { id: "c", text: "The result is negative and must be complemented again" },
+        { id: "d", text: "An end-around carry must be added back into the LSB" },
+      ],
+      correctOptionId: "a",
+      explanation: "In two's complement addition, adding a positive number to a negative number of smaller magnitude produces an unsigned sum ≥ 256, generating a carry-out of 1. In two's complement, this carry-out has weight 2ⁿ and is discarded by the register. Because both C₇ = 1 and C₈ = 1, the overflow flag V = 1 ⊕ 1 = 0. The signed answer (+70) is exact. Option b is the single most common student misconception regarding signed arithmetic; option c is false because the MSB is 0 (positive); option d confuses two's complement with one's complement.",
+    },
+    {
+      id: "ba-q3",
+      prompt: "What is the result of sign-extending the 6-bit signed two's complement number 110100₂ (-12₁₀) into an 8-bit register?",
+      options: [
+        { id: "a", text: "11110100₂, replicating the sign bit (1) into the two higher bit positions to preserve the value -12₁₀" },
+        { id: "b", text: "00110100₂, zero-extending on the left which changes the value to +52₁₀" },
+        { id: "c", text: "11010000₂, shifting the bits left and padding with zeros on the right" },
+        { id: "d", text: "10110100₂, setting only the new MSB to 1" },
+      ],
+      correctOptionId: "a",
+      explanation: "Sign extension preserves the mathematical value of a two's complement number by replicating its sign bit into all new higher-order positions. Here the sign bit is 1, so extending by 2 bits produces 11110100₂ (-128 + 64 + 32 + 16 + 4 = -12₁₀). Option b performs zero extension, which incorrectly turns negative numbers into positive numbers (+52₁₀); option c shifts the number, multiplying it by 4; option d creates an invalid magnitude (-76₁₀).",
+    },
+    {
+      id: "ba-q4",
+      prompt: "Why does signed one's complement addition require an 'end-around carry' when a carry-out is generated from the MSB?",
+      options: [
+        { id: "a", text: "One's complement arithmetic operates modulo (2ⁿ - 1); a carry-out has weight 2ⁿ, which is congruent to 1 modulo (2ⁿ - 1) and must be added back to the LSB" },
+        { id: "b", text: "To clear the negative zero representation and force it to positive zero" },
+        { id: "c", text: "Because one's complement registers lack an inverter on the B operand" },
+        { id: "d", text: "To prevent the adder from overheating due to static current leakage" },
+      ],
+      correctOptionId: "a",
+      explanation: "In one's complement, numbers range across [- (2ⁿ⁻¹ - 1), + (2ⁿ⁻¹ - 1)] with dual zeros (+0 and -0), giving a cycle of 2ⁿ - 1 states. In modular arithmetic modulo (2ⁿ - 1), 2ⁿ = (2ⁿ - 1) + 1 ≡ 1. Thus, a carry-out generated from the MSB represents a value of +1 that wrapped around the modulus, which must be added into the LSB to correct the sum. Option b is a side effect but not the mathematical origin; options c and d are physically and logically nonsensical.",
+    },
+    {
+      id: "ba-q5",
+      prompt: "Which logic gate configuration detects signed two's complement overflow in an n-bit parallel adder?",
+      options: [
+        { id: "a", text: "A 2-input XOR gate evaluating the carry into the sign bit and the carry out of the sign bit: V = C_{n-1} ⊕ C_n" },
+        { id: "b", text: "A 2-input AND gate evaluating the carry out and the sign bit: V = C_n · S_{n-1}" },
+        { id: "c", text: "A 2-input OR gate evaluating the sign bits of the two inputs: V = A_{n-1} + B_{n-1}" },
+        { id: "d", text: "An XNOR gate evaluating the operand sign bits: V = (A_{n-1} ⊕ B_{n-1})'" },
+      ],
+      correctOptionId: "a",
+      explanation: "Signed overflow occurs when the carry into the sign bit differs from the carry out of the sign bit. If a carry enters the sign bit but does not exit, two positives produce a negative. If a carry exits but did not enter, two negatives produce a positive. The 2-input XOR condition V = C_{n-1} ⊕ C_n detects both cases with minimal gate delay. Options b, c, and d fail to properly diagnose signed overflow across all input combinations.",
+    },
+    {
+      id: "ba-q6",
+      prompt: "Why is the representable range of an n-bit two's complement system asymmetric, extending from -2ⁿ⁻¹ to +2ⁿ⁻¹ - 1?",
+      options: [
+        { id: "a", text: "Zero is allocated the pattern with sign bit 0 (00...0), leaving 2ⁿ⁻¹ - 1 positive numbers, while all patterns with sign bit 1 are allocated to negative numbers (2ⁿ⁻¹ count)" },
+        { id: "b", text: "Negative numbers require an extra parity bit in hardware" },
+        { id: "c", text: "Because the number +2ⁿ⁻¹ is reserved for floating-point NaN" },
+        { id: "d", text: "The MSB carries weight -2ⁿ⁻¹ + 1 instead of -2ⁿ⁻¹" },
+      ],
+      correctOptionId: "a",
+      explanation: "An n-bit word has 2ⁿ patterns: 2ⁿ⁻¹ have MSB = 0, and 2ⁿ⁻¹ have MSB = 1. Since zero (00...0₂) is non-negative and has MSB = 0, it shares the positive half of the pattern space, leaving only 2ⁿ⁻¹ - 1 positive values (1 to 2ⁿ⁻¹ - 1). The negative half has no zero representation, allowing it to cover all 2ⁿ⁻¹ negative values (-1 to -2ⁿ⁻¹). Option b is incorrect because no parity bit is used; option c confuses integer arithmetic with IEEE 754; option d is mathematically incorrect.",
+    },
+    {
+      id: "ba-q7",
+      prompt: "What is the standard inspection shortcut to quickly find the two's complement of a binary number by hand?",
+      options: [
+        { id: "a", text: "Working from right to left (LSB to MSB), leave all zeros and the first 1 unchanged, then invert all remaining bits to the left" },
+        { id: "b", text: "Invert all bits and subtract 1 from the result" },
+        { id: "c", text: "Reverse the order of all bits from MSB to LSB" },
+        { id: "d", text: "Shift all bits right by 1 and set the MSB to 1" },
+      ],
+      correctOptionId: "a",
+      explanation: "Scanning from right to left, bits remain identical up to and including the first 1 encountered (since inverting 0s and adding 1 ripples a carry through those positions). Once the first 1 is reached, the carry stops rippling, and all subsequent bits to the left are simply inverted. For example, for 01011000₂, the trailing '1000' stays '1000', and the leading '0101' inverts to '1010', yielding 10101000₂. Option b describes the reverse of one's complement; options c and d do not compute the mathematical complement.",
+    },
+    {
+      id: "ba-q8",
+      prompt: "How is binary subtraction A - B performed in hardware using a standard parallel binary adder?",
+      options: [
+        { id: "a", text: "Invert each bit of B with XOR gates and inject a carry-in C₀ = 1 into the least significant full adder, computing A + B' + 1" },
+        { id: "b", text: "Run the clock backwards to reverse the propagation of carries" },
+        { id: "c", text: "Swap the power and ground rails of the adder circuit" },
+        { id: "d", text: "Subtract 1 from operand A before passing it into the adder" },
+      ],
+      correctOptionId: "a",
+      explanation: "Two's complement subtraction computes A - B = A + (-B) = A + (B' + 1). By passing each bit of B through an XOR gate with control line M (Mode), setting M = 1 inverts all B bits (B ⊕ 1 = B') and simultaneously supplies C₀ = M = 1 as the carry-in to the LSB full adder. This performs two's complement subtraction with zero extra adder hardware. Options b, c, and d are fictional and physically meaningless.",
+    },
+  ]}
+/>

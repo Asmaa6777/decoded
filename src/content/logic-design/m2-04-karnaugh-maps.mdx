@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { HazardLab, KMapExplorer } from "@/components/mdx/LogicVisualizers";
 
 # Karnaugh Maps
@@ -180,6 +180,8 @@ When minimizing logic on Karnaugh maps, students frequently make these seven err
 
 ## Practice problems
 
+### Part 1: Written exam practice
+
 ### Problem 1: 4-variable K-map minimization with PI and EPI identification
 
 Given the switching function:
@@ -223,6 +225,10 @@ $$
    $$
    F = B'D' + A'BD + ABC
    $$
+
+<Callout tone="orange" label="Common exam pitfall">
+A prime implicant is only *essential* if it covers at least one 1-cell that no other prime implicant covers. Even though $BCD$ is a valid prime implicant, it is not essential because $m_7$ is covered by $A'BD$ and $m_{15}$ is covered by $ABC$. Including $BCD$ would add a redundant gate.
+</Callout>
 </ModelAnswer>
 
 ### Problem 2: Minimization with Don't-Cares in SOP and POS
@@ -279,21 +285,11 @@ in both minimal SOP and minimal POS forms.
    F = (F')' = (z' + wy')' = (z')' \cdot (wy')' = z(w' + y)
    $$
 
-   **Verification of $F_{\text{POS}} = z(w' + y)$:**
-   - 1-cells ($z$ must be 1, and either $w=0$ or $y=1$):
-     - $m_1 (0001)$: $z=1, w'=1 \implies 1(1+0) = 1$ (Covered)
-     - $m_3 (0011)$: $z=1, w'=1 \implies 1(1+1) = 1$ (Covered)
-     - $m_7 (0111)$: $z=1, w'=1 \implies 1(1+1) = 1$ (Covered)
-     - $m_{11} (1011)$: $z=1, y=1 \implies 1(0+1) = 1$ (Covered)
-     - $m_{15} (1111)$: $z=1, y=1 \implies 1(0+1) = 1$ (Covered)
-   - 0-cells ($z=0$ or ($w=1$ and $y=0$)):
-     - Any cell with $z=0$ ($m_4, m_6, m_8, m_{10}, m_{12}, m_{14}$) evaluates to $0 \cdot (\dots) = 0$.
-     - Cells $m_9 (1001)$ and $m_{13} (1101)$ have $z=1, w=1, y=0 \implies 1 \cdot (0 + 0) = 0$.
-   - Don't-cares:
-     - $m_0 (0000), m_2 (0010)$ have $z=0 \implies 0$ (treated as 0 in POS).
-     - $m_5 (0101)$ has $z=1, w=0 \implies 1$ (treated as 1 in POS).
-
    The minimal POS expression $F = z(w' + y)$ requires only 3 literals and 2 logic gates, offering a much cheaper hardware implementation than the minimal SOP form ($w'x' + yz$, 4 literals).
+
+<Callout tone="orange" label="Common exam pitfall">
+Notice that don't-cares $m_0$ and $m_2$ were treated as $1$ in the SOP minimization, but treated as $0$ in the POS minimization! Don't-cares can take whichever value minimizes the specific hardware form under design.
+</Callout>
 </ModelAnswer>
 
 ### Problem 3: Static-1 Hazard detection and elimination
@@ -326,6 +322,10 @@ A combinational logic network implements $F(A, B, C) = A'C + AB$.
    F_{\text{hazard-free}} = A'C + AB + BC
    $$
    When $B=1$ and $C=1$, $BC$ remains continuously at 1, holding the output steady at 1 regardless of switching transients on $A$ and $A'$.
+
+<Callout tone="orange" label="Common exam pitfall">
+Static hazards can only occur when a single input variable transitions between adjacent 1-cells. Transitions changing two or more variables simultaneously (e.g. from $001 \to 110$) are dynamic multiple-input transitions where race conditions are unpredictable.
+</Callout>
 </ModelAnswer>
 
 ### Problem 4: 5-variable K-map minimization
@@ -353,4 +353,209 @@ A 5-variable function uses two 4-variable maps: Map 0 for $A=0$ (minterms 0 to 1
    F(A, B, C, D, E) = B'E' + BE = (B \oplus E)'
    $$
    The function reduces to an equivalence (XNOR) relationship between $B$ and $E$, completely independent of variables $A$, $C$, and $D$.
+
+<Callout tone="orange" label="Common exam pitfall">
+In 5-variable K-maps, minterms that occupy the identical row and column on both maps are geometrically adjacent along the 3D axis. Forgetting to merge across maps doubles the term count and leaves literal $A$ un-eliminated.
+</Callout>
 </ModelAnswer>
+
+### Problem 5: Larger prime implicant trap and redundant groups
+
+A 4-variable function is defined as:
+$$
+F(A, B, C, D) = \sum m(1, 5, 6, 7, 11, 12, 13, 15)
+$$
+
+1. Plot the function on a 4-variable K-map and find all Prime Implicants.
+2. Identify which Prime Implicants are Essential Prime Implicants (EPIs).
+3. Demonstrate why the 4-cell group (quad) covering minterms $\{m_5, m_7, m_{13}, m_{15}\}$ is NOT part of the minimal sum of products, despite being larger than all other groups.
+
+<ModelAnswer>
+1. **Identify all Prime Implicants:**
+   - 4-cell group (Quad): $\{m_5, m_7, m_{13}, m_{15}\} \implies \mathbf{BD}$.
+   - 2-cell groups (Pairs):
+     - $\{m_1, m_5\} \implies \mathbf{A'C'D}$.
+     - $\{m_6, m_7\} \implies \mathbf{A'BC}$.
+     - $\{m_{12}, m_{13}\} \implies \mathbf{ABC'}$.
+     - $\{m_{11}, m_{15}\} \implies \mathbf{ACD}$.
+   All Prime Implicants: $\{BD, A'C'D, A'BC, ABC', ACD\}$.
+
+2. **Evaluate Essential Prime Implicants:**
+   - Minterm $m_1 (0001)$ is covered only by $A'C'D$. $\implies \mathbf{A'C'D}$ is an EPI.
+   - Minterm $m_6 (0110)$ is covered only by $A'BC$. $\implies \mathbf{A'BC}$ is an EPI.
+   - Minterm $m_{12} (1100)$ is covered only by $ABC'$. $\implies \mathbf{ABC'}$ is an EPI.
+   - Minterm $m_{11} (1011)$ is covered only by $ACD$. $\implies \mathbf{ACD}$ is an EPI.
+
+3. **Check coverage of minterms by the four EPIs:**
+   - $A'C'D$ covers: $\{m_1, m_5\}$
+   - $A'BC$ covers: $\{m_6, m_7\}$
+   - $ABC'$ covers: $\{m_{12}, m_{13}\}$
+   - $ACD$ covers: $\{m_{11}, m_{15}\}$
+   Together, these four EPIs cover every single minterm in the function:
+   $$
+   \{m_1, m_5, m_6, m_7, m_{11}, m_{12}, m_{13}, m_{15}\}
+   $$
+   Notice that all four minterms of the quad $BD$ ($\{m_5, m_7, m_{13}, m_{15}\}$) are already covered!
+   Including $BD$ in the expression would produce a 5-term expression ($BD + A'C'D + A'BC + ABC' + ACD$).
+   Therefore, the 4-cell prime implicant $BD$ is completely redundant. The unique minimal SOP is:
+   $$
+   F_{\text{minimal}} = A'C'D + A'BC + ABC' + ACD
+   $$
+
+<Callout tone="orange" label="Common exam pitfall">
+A common exam heuristic is "always circle the biggest group first." As this problem proves, a large group can have zero distinguished minterms. If you blindly include the 4-cell group, you still need all four pairs to cover $m_1, m_6, m_{11}, m_{12}$, leaving you with a non-minimal 5-term solution. Always find the Essential Prime Implicants first!
+</Callout>
+</ModelAnswer>
+
+### Problem 6: Static-0 hazard in Product of Sums (POS) circuits
+
+A combinational logic network implements the Product of Sums function:
+$$
+F(A, B, C) = (A + B)(A' + C)
+$$
+
+1. Plot the function's 0-cells on a 3-variable K-map.
+2. Identify the single-variable input transition that exposes a static-0 hazard.
+3. Determine the consensus sum term needed to prevent the glitch and state the hazard-free POS equation.
+
+<ModelAnswer>
+1. **K-Map Analysis (0-cells):**
+   - Factor $(A + B) = 0$ when $A=0, B=0$, covering maxterms $M_0 (000)$ and $M_1 (001)$.
+   - Factor $(A' + C) = 0$ when $A=1, C=0$, covering maxterms $M_4 (100)$ and $M_6 (110)$.
+   - Notice maxterm $M_0 (000)$ and maxterm $M_4 (100)$ are geometrically adjacent ($d_H = 1$, differing only in $A$).
+   - However, $M_0$ belongs to group $(A + B)$ and $M_4$ belongs to group $(A' + C)$. They are not covered by a common sum term.
+   - **Hazardous condition:** When $B = 0$ and $C = 0$, while input $A$ switches from $0 \to 1$ (or $1 \to 0$).
+
+2. **Physical cause of the static-0 glitch:**
+   With $B=0$ and $C=0$, $F = (A + 0)(A' + 0) = A \cdot A' = 0$.
+   During an input transition $A: 1 \to 0$:
+   - Gate 1 computes $A + B = 1 \to 0$ (falling edge).
+   - Gate 2 computes $A' + C = 0 \to 1$ (rising edge).
+   - Because $A'$ is generated through an inverter, the rising edge at Gate 2 may arrive before the falling edge at Gate 1 completes.
+   - For a brief interval $\Delta t$, both OR gates output logic 1 simultaneously.
+   - The output AND gate receives $(1 \cdot 1) = 1$, producing an unintended momentary 1-spike (glitch) on an output that was supposed to remain stably at 0.
+
+3. **Hazard-free circuit:**
+   Apply the dual consensus theorem to sum terms $(A + B)$ and $(A' + C)$:
+   $$
+   \text{Dual Consensus}\big((A + B), (A' + C)\big) = (B + C)
+   $$
+   The consensus term $(B + C)$ bridges adjacent 0-cells $M_0$ and $M_4$.
+   The hazard-free POS equation is:
+   $$
+   F_{\text{hazard-free}} = (A + B)(A' + C)(B + C)
+   $$
+   When $B=0$ and $C=0$, the factor $(B + C) = 0 + 0 = 0$, holding the output AND gate firmly at 0 during any switching on $A$.
+
+<Callout tone="orange" label="Common exam pitfall">
+A static-1 hazard in SOP produces an unwanted glitch to 0; a static-0 hazard in POS produces an unwanted glitch to 1. In both cases, the glitch is eliminated by adding the consensus term bridging the uncovered adjacent cells.
+</Callout>
+</ModelAnswer>
+
+---
+
+### Part 2: In-lesson interactive practice
+
+<Quiz
+  practice
+  courseSlug="logic-design"
+  lessonSlug="karnaugh-maps"
+  questions={[
+    {
+      id: "km-p1",
+      prompt: "Why are the rows and columns of a Karnaugh map labeled in Gray code sequence (00, 01, 11, 10)?",
+      options: [
+        { id: "a", text: "To ensure that adjacent cells differ by exactly 1 bit (Hamming distance 1), translating physical adjacency into the algebraic rule xy + xy' = x" },
+        { id: "b", text: "To match the numerical order of binary counting" },
+        { id: "c", text: "To minimize the propagation delay of the input signals" },
+        { id: "d", text: "Because Gray code requires fewer transistors to decode than binary" },
+      ],
+      correctOptionId: "a",
+      explanation: "Gray code guarantees that adjacent coordinates differ by a single bit flip. This allows two geometrically adjacent 1-cells to combine algebraically as xy + xy' = x(y + y') = x, eliminating the changing variable. Option b is false because Gray code intentionally deviates from standard binary order (00, 01, 10, 11); options c and d confuse map layout notation with physical transistor hardware.",
+    },
+    {
+      id: "km-p2",
+      prompt: "Which of the following group sizes is STRICTLY FORBIDDEN when grouping 1s on a Karnaugh map?",
+      options: [
+        { id: "a", text: "A group of 6 cells, because valid groups must have sizes that are integer powers of two (2^k)" },
+        { id: "b", text: "A group of 4 cells (quad)" },
+        { id: "c", text: "A group of 8 cells (octet)" },
+        { id: "d", text: "A group of 2 cells (pair)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Every group of 2^k cells eliminates exactly k variables. A group of 6 cells cannot eliminate an integer number of variables because 6 is not a power of two (6 ≠ 2^k), so it violates Boolean algebra laws. Options b, c, and d are valid groups corresponding to 2², 2³, and 2¹ cells respectively.",
+    },
+    {
+      id: "km-p3",
+      prompt: "In a 4-variable K-map (AB × CD), what product term is obtained by grouping the four outer corner cells (m₀, m₂, m₈, m₁₀)?",
+      options: [
+        { id: "a", text: "B' D', because B = 0 and D = 0 across all four corners" },
+        { id: "b", text: "A' C', representing the upper-left 2×2 block" },
+        { id: "c", text: "B D, representing the inner center 4 cells" },
+        { id: "d", text: "A' B' C' D', representing only cell m₀" },
+      ],
+      correctOptionId: "a",
+      explanation: "The four corners are m₀(0000), m₂(0010), m₈(1000), and m₁₀(1010). Across these cells: A changes (0, 1), B remains 0 (B'), C changes (0, 1), and D remains 0 (D'). Grouping all 4 eliminates A and C, yielding B'D'. Option b is m₀, m₁, m₄, m₅; option c is m₅, m₇, m₁₃, m₁₅; option d is a 1-cell term without minimization.",
+    },
+    {
+      id: "km-p4",
+      prompt: "What condition uniquely qualifies a Prime Implicant as an Essential Prime Implicant (EPI)?",
+      options: [
+        { id: "a", text: "It covers at least one 1-cell (a distinguished minterm) that is covered by no other prime implicant" },
+        { id: "b", text: "It is the group that contains the largest number of cells on the map" },
+        { id: "c", text: "It covers all corner cells of the map" },
+        { id: "d", text: "It does not contain any don't-care conditions" },
+      ],
+      correctOptionId: "a",
+      explanation: "An Essential Prime Implicant must be included in every minimal SOP expression because it is the sole implicant covering at least one distinguished minterm. Option b is false because large groups may be redundant if all their 1s are covered by other EPIs; options c and d are incidental properties that do not define essentiality.",
+    },
+    {
+      id: "km-p5",
+      prompt: "When minimizing a function containing don't-care conditions (X), what is the correct optimization strategy?",
+      options: [
+        { id: "a", text: "Treat an X as 1 only if it enlarges an existing group of 1s or reduces the total number of groups; leave all remaining Xs uncovered" },
+        { id: "b", text: "Circle every X on the map to ensure all input combinations are defined" },
+        { id: "c", text: "Form separate groups that consist purely of X cells" },
+        { id: "d", text: "Treat all Xs strictly as 0 to avoid unintended outputs" },
+      ],
+      correctOptionId: "a",
+      explanation: "Don't-cares represent input combinations that never occur or whose outputs are ignored. They should be assigned 1 only when doing so reduces circuit cost (larger groups or fewer terms). Grouping all Xs (option b) or grouping Xs alone (option c) adds unnecessary physical gates. Treating all Xs as 0 (option d) misses valid algebraic simplifications.",
+    },
+    {
+      id: "km-p6",
+      prompt: "In a two-level AND-OR circuit, what visual condition on a K-map indicates the presence of a static-1 timing hazard?",
+      options: [
+        { id: "a", text: "Two adjacent 1-cells covered by separate prime implicants without an overlapping group covering both" },
+        { id: "b", text: "A single isolated 1-cell that has no adjacent 1s" },
+        { id: "c", text: "A group containing both 1s and Xs" },
+        { id: "d", text: "Two adjacent 0-cells in the Product of Sums map" },
+      ],
+      correctOptionId: "a",
+      explanation: "When an input transition moves between adjacent 1-cells belonging to different prime implicants, unequal gate delays can cause the first AND gate to turn off before the second turns on, causing a momentary glitch to 0. Overlapping them with a redundant consensus term keeps the output high throughout the switch. Option b is an irreducible minterm, not a hazard; option c is a valid minimization group; option d relates to static-0 hazards in POS.",
+    },
+    {
+      id: "km-p7",
+      prompt: "How is a minimal Product of Sums (POS) expression derived from a Karnaugh map?",
+      options: [
+        { id: "a", text: "Group the 0-cells to find the minimal SOP for F', then apply De Morgan's laws to obtain F = (F')'" },
+        { id: "b", text: "Group the 1-cells and swap all AND and OR operations" },
+        { id: "c", text: "Invert all minterm indices and read off the 1-cells" },
+        { id: "d", text: "Circle diagonal patterns of 1s across the map" },
+      ],
+      correctOptionId: "a",
+      explanation: "The 0-cells on a K-map represent where F = 0, which is where F' = 1. Grouping 0s produces minimal SOP for F'. Taking the complement via De Morgan's laws: (F')' = F yields the minimal POS directly. Option b creates an invalid Boolean function; option c misinterprets duality; option d violates power-of-two rectangular grouping rules.",
+    },
+    {
+      id: "km-p8",
+      prompt: "In a 5-variable K-map consisting of two 4-variable maps (A = 0 and A = 1), what constitutes adjacency across the maps?",
+      options: [
+        { id: "a", text: "Cells that occupy the identical row and column coordinates in both maps are adjacent along the third dimension (differing only in A)" },
+        { id: "b", text: "Any cell in the A = 0 map is adjacent to any cell in the A = 1 map" },
+        { id: "c", text: "Cells are adjacent only if they lie along the outer borders of both maps" },
+        { id: "d", text: "5-variable maps cannot be merged; they must be minimized independently" },
+      ],
+      correctOptionId: "a",
+      explanation: "In a 5-variable K-map, the two 4-variable sub-maps represent the third dimension (variable A). Cells with the identical row and column coordinates have identical (B, C, D, E) values and differ only in A, making them Hamming distance 1 apart. Merging these cells eliminates variable A. Options b, c, and d contradict multi-dimensional K-map theory.",
+    },
+  ]}
+/>

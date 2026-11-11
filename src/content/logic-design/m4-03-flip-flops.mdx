@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { EdgeLab, MasterSlave, JkLab, FlipFlopConversionLab, SystemTimingLab } from "@/components/mdx/LogicVisualizers";
 
 # Flip-Flops: Changing Only on the Edge
@@ -441,6 +441,245 @@ Trace output $Q$ across the following sequential events:
    - A rising clock edge arrives with $D = 0$.
    - The flip-flop samples $D=0$ and maintains $Q = 0$.
 </ModelAnswer>
+
+### Problem 4: Synthesizing a JK Flip-Flop from a D Flip-Flop and Multiplexer
+
+Synthesize a positive-edge-triggered **JK flip-flop** using an available **D flip-flop** and minimal external combinational logic.
+1. Formulate the state transition and conversion table mapping current state $Q(t)$ and desired inputs $(J, K)$ to the required data input $D$.
+2. Derive the minimal Boolean sum-of-products equation for $D$ using a 3-variable Karnaugh map.
+3. Show that input $D$ can be implemented directly using a single 2-to-1 multiplexer without any external logic gates.
+
+<ModelAnswer>
+1. **Conversion Table:**
+   Using the characteristic requirements of a JK flip-flop ($J=0, K=0 \implies Q$; $J=0, K=1 \implies 0$; $J=1, K=0 \implies 1$; $J=1, K=1 \implies Q'$):
+
+   | $J$ | $K$ | $Q(t)$ | Desired $Q(t+1)$ | Required $D$ ($D = Q_{next}$) |
+   |:---:|:---:|:---:|:---:|:---:|
+   | 0 | 0 | 0 | 0 | 0 |
+   | 0 | 0 | 1 | 1 | 1 |
+   | 0 | 1 | 0 | 0 | 0 |
+   | 0 | 1 | 1 | 0 | 0 |
+   | 1 | 0 | 0 | 1 | 1 |
+   | 1 | 0 | 1 | 1 | 1 |
+   | 1 | 1 | 0 | 1 | 1 |
+   | 1 | 1 | 1 | 0 | 0 |
+
+2. **Karnaugh Map Minimization for $D(J, K, Q)$:**
+   Plotting on a $2 \times 4$ K-map ($J$ on rows, $K Q$ on columns):
+   - Row $J = 0$: column 00 is 0, column 01 is 1, column 11 is 0, column 10 is 0.
+   - Row $J = 1$: column 00 is 1, column 01 is 1, column 11 is 0, column 10 is 1.
+
+   Groupings:
+   - Group 1: $J = 1$ with $Q = 0$ (minterms 4 and 6) $\implies J \cdot Q'$.
+   - Group 2: $K = 0$ with $Q = 1$ (minterms 1 and 5) $\implies K' \cdot Q$.
+   Resulting minimal sum-of-products equation:
+   $$D = J \cdot Q' + K' \cdot Q$$
+
+3. **Multiplexer-Based Implementation:**
+   Recall the output equation of a 2-to-1 multiplexer with select input $S$ and data inputs $I_0, I_1$:
+   $$Y = S' \cdot I_0 + S \cdot I_1$$
+   Comparing with the JK equation $D = Q' \cdot J + Q \cdot K'$:
+   - Connect state $Q$ to select input $S$ ($S = Q$).
+   - Connect input $J$ to multiplexer input $I_0$ ($I_0 = J$).
+   - Connect inverted input $K'$ to multiplexer input $I_1$ ($I_1 = K'$).
+   The 2-to-1 multiplexer computes:
+   $$D = Q' \cdot J + Q \cdot K'$$
+   A single 2-to-1 multiplexer driven by $Q$ completely synthesizes the JK flip-flop steering logic.
+</ModelAnswer>
+
+### Problem 5: Clock Skew and Pipeline Timing Budget Analysis
+
+A high-speed synchronous digital pipeline transmits data from register $R_1$ to register $R_2$. The clock distribution network introduces spatial clock skew $\Delta t_{skew} = t_{clk2} - t_{clk1}$ between the clock arrival times at $R_2$ and $R_1$.
+The datasheet specifications are:
+- $t_{cq(max)} = 1.8\text{ ns}, \quad t_{cq(min)} = 0.8\text{ ns}$
+- $t_{su} = 1.0\text{ ns}, \quad t_h = 0.7\text{ ns}$
+- $t_{comb(max)} = 3.6\text{ ns}, \quad t_{comb(min)} = 0.2\text{ ns}$
+
+1. Assuming **positive clock skew** of $\Delta t_{skew} = +0.6\text{ ns}$ (clock arrives late at receiving register $R_2$), calculate the minimum allowable clock period $T_{min}$ and maximum clock frequency $f_{max}$.
+2. With this positive skew $\Delta t_{skew} = +0.6\text{ ns}$, verify the hold time constraint. Is there a hold time violation? Calculate the hold slack and specify the physical hardware fix if needed.
+3. If clock skew is instead **negative** ($\Delta t_{skew} = -0.8\text{ ns}$), evaluate the impact on $f_{max}$ and hold time slack.
+
+<ModelAnswer>
+1. **Setup Time and $f_{max}$ with Positive Skew ($\Delta t_{skew} = +0.6\text{ ns}$):**
+   The setup time constraint across a clock skewed pipeline is:
+   $$T_{CLK} + \Delta t_{skew} \ge t_{cq(max)} + t_{comb(max)} + t_{su}$$
+   $$T_{min} = t_{cq(max)} + t_{comb(max)} + t_{su} - \Delta t_{skew}$$
+   Substitute values:
+   $$T_{min} = 1.8\text{ ns} + 3.6\text{ ns} + 1.0\text{ ns} - 0.6\text{ ns} = 5.8\text{ ns}$$
+   $$f_{max} = 1 / (5.8 \times 10^{-9}\text{ s}) \approx 172.41\text{ MHz}$$
+   Positive clock skew helps setup time by granting $0.6\text{ ns}$ of additional time before $R_2$ samples data.
+
+2. **Hold Time Check with Positive Skew ($\Delta t_{skew} = +0.6\text{ ns}$):**
+   The hold time constraint requires:
+   $$t_{cq(min)} + t_{comb(min)} \ge t_h + \Delta t_{skew}$$
+   Substitute values:
+   - Minimum data arrival time: $t_{data(min)} = t_{cq(min)} + t_{comb(min)} = 0.8\text{ ns} + 0.2\text{ ns} = 1.0\text{ ns}$.
+   - Required hold boundary: $t_{h} + \Delta t_{skew} = 0.7\text{ ns} + 0.6\text{ ns} = 1.3\text{ ns}$.
+   - Hold slack:
+     $$\text{Slack}_{hold} = t_{data(min)} - (t_h + \Delta t_{skew}) = 1.0\text{ ns} - 1.3\text{ ns} = -0.3\text{ ns}$$
+   - **Hold Time Violation!** Because slack is negative, the fast path changes before $R_2$ finishes holding its data.
+   - **Hardware Remedy:** Hold time violations cannot be fixed by lowering clock frequency! An engineer must insert physical delay buffers (pairs of non-inverting buffers) into the data path to increase $t_{comb(min)}$ by at least $0.3\text{ ns} + \text{margin}$ (e.g. adding $+0.5\text{ ns}$ delay buffer).
+
+3. **Negative Skew ($\Delta t_{skew} = -0.8\text{ ns}$):**
+   - Minimum clock period:
+     $$T_{min} = 1.8 + 3.6 + 1.0 - (-0.8) = 6.4 + 0.8 = 7.2\text{ ns}$$
+     $$f_{max} = 1 / (7.2 \times 10^{-9}\text{ s}) \approx 138.89\text{ MHz}$$
+     Maximum frequency drops significantly from $172.41\text{ MHz}$ to $138.89\text{ MHz}$.
+   - Hold time check:
+     $$\text{Slack}_{hold} = 1.0\text{ ns} - (0.7\text{ ns} - 0.8\text{ ns}) = 1.0 - (-0.1) = +1.1\text{ ns}$$
+     Hold margin is exceptionally robust ($+1.1\text{ ns}$). Negative skew hurts performance but protects hold time.
+</ModelAnswer>
+
+### Problem 6: CMOS Master-Slave Transmission Gate D Flip-Flop Architecture
+
+Analyze the internal structure of a master-slave positive-edge-triggered D flip-flop constructed with transmission gates:
+1. Describe the circuit stages and signal routing for both the master latch and the slave latch.
+2. Detail the conduction status (conducting or high-impedance) of all transmission gates across the three phases: $CLK = 0$, $CLK: 0 \to 1$ transition, and $CLK = 1$.
+3. Count the total number of transistors required and contrast this against a 6-NAND gate edge-triggered flip-flop.
+
+<ModelAnswer>
+1. **Circuit Topology:**
+   A master-slave D flip-flop consists of two cascaded transmission-gate latches controlled by complementary clock phases:
+   - **Master Stage:** Input transmission gate $TG_1$ (clocked by $CLK'$ and $CLK$), forward inverter $I_1$, feedback inverter $I_2$, and feedback transmission gate $TG_2$ (clocked by $CLK$ and $CLK'$).
+   - **Slave Stage:** Transfer transmission gate $TG_3$ (clocked by $CLK$ and $CLK'$), forward inverter $I_3$, output buffer inverter $I_4$, feedback inverter $I_5$, and feedback transmission gate $TG_4$ (clocked by $CLK'$ and $CLK$).
+   - **Clock Inverter:** Generates complementary clock $CLK'$ from $CLK$.
+
+2. **Operational Phases:**
+   - **Phase 1 ($CLK = 0, CLK' = 1$):**
+     - $TG_1$ is **ON**: External data $D$ enters the master latch and sets internal node $Q_M$.
+     - $TG_2$ is **OFF**: Master feedback loop is open.
+     - $TG_3$ is **OFF**: Slave stage is sealed shut, isolating the master from the external output.
+     - $TG_4$ is **ON**: Slave feedback loop is closed, holding the previous output $Q$ stable.
+   - **Phase 2 (Rising Edge $CLK: 0 \to 1$):**
+     - $TG_1$ switches OFF, trapping and freezing the bit sampled at $D$ inside the master stage.
+     - $TG_2$ switches ON, closing the master feedback loop to latch the trapped value.
+     - A moment later, $TG_3$ switches ON, permitting the trapped bit to flow into the slave stage.
+     - $TG_4$ switches OFF, allowing the new value to update the slave.
+     - Because $TG_1$ turns OFF before $TG_3$ opens, at no instant is there an open combinational path from $D$ to $Q$.
+   - **Phase 3 ($CLK = 1, CLK' = 0$):**
+     - $TG_1$ is **OFF**: Any subsequent fluctuations on $D$ are blocked by the master.
+     - $TG_2$ is **ON**: Master holds the captured bit.
+     - $TG_3$ is **ON**: Bit drives the slave output buffer $Q$.
+     - $TG_4$ is **OFF**.
+
+3. **Transistor Count Comparison:**
+   - **TG Master-Slave Flip-Flop:**
+     - 4 Transmission Gates ($TG_1..TG_4$): $4 \times 2 = 8$ transistors.
+     - 5 Inverters ($I_1..I_5$): $5 \times 2 = 10$ transistors.
+     - 1 Clock Inverter: 2 transistors.
+     - **Total TG Flip-Flop:** $8 + 10 + 2 = \mathbf{20 \text{ transistors}}$ (often optimized to 16–18 transistors in standard cells by using tri-state inverters).
+   - **NAND-Gate Implementation (6 gates):**
+     - Six 3-input/2-input NAND gates: requires 24 to 28 transistors.
+   - The transmission-gate design achieves higher switching speed, tighter setup/hold windows, and saves over 25% of silicon real estate.
+</ModelAnswer>
+
+---
+
+### Part 2: In-Lesson Interactive Practice
+
+<Quiz
+  courseSlug="logic-design"
+  lessonSlug="flip-flops"
+  practice
+  questions={[
+    {
+      id: "ff-p1",
+      prompt: "What is the consequence if the setup time constraint (t_su) of an edge-triggered D flip-flop is violated?",
+      options: [
+        { id: "a", text: "The flip-flop may enter a metastable state where its output hovers between logic levels for an unbounded duration before settling randomly" },
+        { id: "b", text: "The flip-flop permanently burns out due to gate oxide breakdown" },
+        { id: "c", text: "The flip-flop automatically converts into a negative-edge device" },
+        { id: "d", text: "The clock frequency automatically doubles" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Violating setup time means input data transitioned too close to the clock edge. The internal feedback transistors cannot finish charging to a valid high or low rail, placing the cross-coupled inverter pair in an unstable analog equilibrium (metastability) where voltage hovers near Vdd/2 before thermal noise causes a random collapse to 0 or 1. Option (b) is incorrect because timing violations do not cause physical electrical destruction. Option (c) is false because triggering polarity is hardwired. Option (d) is nonsensical.",
+    },
+    {
+      id: "ff-p2",
+      prompt: "Why can hold time violations in a synchronous digital circuit NOT be resolved by simply lowering the clock frequency?",
+      options: [
+        { id: "a", text: "Because hold time is evaluated relative to the same clock edge, depending solely on fast-path propagation delay and flip-flop hold time" },
+        { id: "b", text: "Because lowering the clock frequency decreases the power supply voltage" },
+        { id: "c", text: "Because flip-flops only operate at their rated maximum frequency" },
+        { id: "d", text: "Because hold violations only occur when the clock period is infinite" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Setup time checks how slow the combinational path is across a full clock period (T_clk). Hold time checks whether newly launched data from register R1 arrives at register R2 too fast, corrupting the previous data before R2 has finished holding it. Because both the launch and latch occur on the *same* clock edge, clock period T_clk does not even appear in the hold equation: t_cq(min) + t_comb(min) ≥ t_h + t_skew. Changing clock frequency has zero impact on hold slack. Option (b) confuses frequency scaling with voltage scaling. Option (c) is incorrect because static flip-flops operate down to DC. Option (d) is false.",
+    },
+    {
+      id: "ff-p3",
+      prompt: "How does the 'airlock' principle in a master-slave D flip-flop prevent transparency race hazards?",
+      options: [
+        { id: "a", text: "The two cascaded latches are clocked on complementary phases, ensuring that when the master is open to accept input, the slave is sealed shut holding output, and vice versa" },
+        { id: "b", text: "It uses an airtight vacuum package to eliminate humidity" },
+        { id: "c", text: "It introduces a 3-clock-cycle pipeline delay" },
+        { id: "d", text: "It drains stored charge into a ground reservoir on every clock cycle" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Like a spacecraft airlock where the outer door and inner door are never open simultaneously, a master-slave flip-flop controls its two latches with complementary clocks. When CLK = 0, master is open and slave is shut. On the rising edge, master seals shut *before* slave opens. Because there is never a moment when both latches are open, data can never race continuously from input to output. Option (b) confuses physical packaging with logical airlocks. Option (c) is incorrect because master-slave flip-flops update within a fraction of a cycle. Option (d) describes dynamic logic discharge.",
+    },
+    {
+      id: "ff-p4",
+      prompt: "In a JK flip-flop, what operation occurs when both inputs are asserted simultaneously (J = 1, K = 1) on an active clock edge?",
+      options: [
+        { id: "a", text: "The flip-flop enters an undefined forbidden state where both outputs are 0" },
+        { id: "b", text: "The output toggles to the complement of its previous state: Q(t+1) = Q'(t)" },
+        { id: "c", text: "The output holds its previous state unchanged: Q(t+1) = Q(t)" },
+        { id: "d", text: "The flip-flop resets to 0 unconditionally" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: The JK flip-flop was specifically designed to eliminate the forbidden state of the SR latch. Internal feedback from Q and Q' steers the inputs so that when J=1 and K=1, the circuit inverts its stored bit (Toggle mode: Q_next = Q'). Option (a) describes the forbidden state of a NOR SR latch. Option (c) describes the Hold state (J=0, K=0). Option (d) describes the Reset state (J=0, K=1).",
+    },
+    {
+      id: "ff-p5",
+      prompt: "What is the characteristic equation of a JK flip-flop?",
+      options: [
+        { id: "a", text: "Q(t+1) = J · Q' + K' · Q" },
+        { id: "b", text: "Q(t+1) = J · Q + K · Q'" },
+        { id: "c", text: "Q(t+1) = J + K' · Q" },
+        { id: "d", text: "Q(t+1) = (J ⊕ K) · Q" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Derived from the JK truth table: when Q = 0, Q(t+1) is determined by J (hence J · Q'); when Q = 1, Q(t+1) holds 1 unless reset by K (hence K' · Q). Combining these gives Q(t+1) = J Q' + K' Q. Option (b) inverts the state conditions. Option (c) is the characteristic equation of an SR latch (with S replaced by J). Option (d) fails to toggle properly when J=K=1.",
+    },
+    {
+      id: "ff-p6",
+      prompt: "What is the excitation equation for a T (Toggle) flip-flop to produce the transition Q(t) → Q(t+1)?",
+      options: [
+        { id: "a", text: "T = Q(t) · Q'(t+1)" },
+        { id: "b", text: "T = Q(t) ⊕ Q(t+1)" },
+        { id: "c", text: "T = Q(t) + Q(t+1)" },
+        { id: "d", text: "T = Q'(t) · Q(t+1)" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: A T flip-flop holds its state when T = 0 and toggles its state when T = 1. Therefore, T must be 1 if and only if Q(t) and Q(t+1) differ. This matches the XOR relationship: T = Q(t) ⊕ Q(t+1). Option (a) only flags 1-to-0 transitions. Option (c) would require T = 1 for the 1-to-1 hold transition, causing a false toggle. Option (d) only flags 0-to-1 transitions.",
+    },
+    {
+      id: "ff-p7",
+      prompt: "A synchronous digital path has flip-flops with t_cq = 2 ns, setup time t_su = 1.5 ns, and combinational logic delay t_comb = 6.5 ns. What is the maximum operating frequency f_max (assuming zero clock skew)?",
+      options: [
+        { id: "a", text: "80 MHz" },
+        { id: "b", text: "100 MHz" },
+        { id: "c", text: "125 MHz" },
+        { id: "d", text: "150 MHz" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: The minimum clock period is governed by the setup time constraint: T_min = t_cq + t_comb + t_su = 2 ns + 6.5 ns + 1.5 ns = 10.0 ns. Therefore, f_max = 1 / T_min = 1 / (10 × 10⁻⁹ s) = 100 MHz. Option (a) overestimates delay to 12.5 ns. Option (c) (125 MHz, T = 8 ns) omits the flip-flop clock-to-Q delay (6.5 + 1.5 = 8 ns). Option (d) (150 MHz) is impossibly fast.",
+    },
+    {
+      id: "ff-p8",
+      prompt: "How do active-LOW asynchronous inputs (/PRE and /CLR) interact with the synchronous clock and data inputs of a D flip-flop?",
+      options: [
+        { id: "a", text: "They take effect only on the next rising clock edge" },
+        { id: "b", text: "They immediately override the clock and data inputs, forcing Q to 1 (/PRE=0) or 0 (/CLR=0) within gate propagation delay" },
+        { id: "c", text: "They only work when data input D is at logic 1" },
+        { id: "d", text: "They are sampled at the clock falling edge only" },
+      ],
+      correctOptionId: "b",
+      explanation: "Option (b) is correct: Asynchronous inputs bypass the master clock gates and inject directly into the internal cross-coupled storage nodes. When /PRE = 0 or /CLR = 0, the flip-flop sets or clears immediately, overriding any clock transitions or data inputs present on D. Synchronous inputs are completely ignored while asynchronous overrides are asserted. Option (a) describes synchronous preset and clear. Option (c) is incorrect because asynchronous inputs override D regardless of its value. Option (d) confuses level overriding with falling-edge clocking.",
+    },
+  ]}
+/>
 
 ---
 

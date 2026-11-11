@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { CarryRace, FastAdderLab } from "@/components/mdx/LogicVisualizers";
 
 # Ripple Carry and Look-Ahead
@@ -376,3 +376,222 @@ Compare the Carry-Select Adder (CSA) and Carry-Lookahead Adder (CLA) across thre
    - **CLA:** Irregular interconnect topology. The carry equations have irregular numbers of inputs ($1, 2, 3, 4, 5$ inputs), causing non-uniform routing density and routing congestion in VLSI standard-cell layouts.
    - **CSA:** Highly regular and modular layout. Composed of repetitive standard ripple-adder slices and uniform multiplexer banks. Much easier to place and route automatically in VLSI design tools.
 </ModelAnswer>
+
+### Problem 5: Carry-Skip (Bypass) Adder timing analysis and optimal block sizing
+
+A 16-bit adder is implemented as a carry-skip adder (CSA) partitioned into $k = 4$ uniform blocks of $m = 4$ bits each (Block 0: bits 0-3; Block 1: bits 4-7; Block 2: bits 8-11; Block 3: bits 12-15).
+The circuit specifications are:
+- Full adder ripple carry delay per bit: $t_{carry} = 1.0\text{ ns}$
+- 4-input AND gate delay to compute block propagate $P_{G,j} = P_{4j+3} P_{4j+2} P_{4j+1} P_{4j}$: $t_{AND} = 1.5\text{ ns}$
+- 2-to-1 skip multiplexer delay per block: $t_{\text{skip}} = 1.2\text{ ns}$
+- XOR delay to produce final sum bits from incoming carry: $t_{XOR} = 1.8\text{ ns}$
+- Primary inputs $A$ and $B$ arrive at $t = 0\text{ ns}$, with $C_0 = 0$.
+
+1. Formulate the worst-case propagation delay path through the uniform 16-bit carry-skip adder.
+2. Calculate the worst-case delay $t_{\text{worst}}$ and compare the speedup achieved relative to a 16-bit ripple-carry adder ($16 \times 1.0\text{ ns} = 16.0\text{ ns}$ carry ripple).
+3. Explain why variable (non-uniform) block sizing (such as 2, 3, 4, 4, 3) reduces the worst-case delay compared to uniform block sizing.
+
+<ModelAnswer>
+1. **Critical Path Formulation:**
+   The worst-case delay in a carry-skip adder occurs when:
+   - A carry is generated at the least-significant bit of the first block (bit 0: $A_0=B_0=1$).
+   - The carry ripples through the remaining $(m - 1) = 3$ bits of Block 0 to produce carry-out $C_4$.
+   - All intermediate blocks (Block 1 and Block 2) have all bit propagates equal to 1 ($P_i = 1$), allowing the carry to skip through their 2-to-1 multiplexers without rippling through their internal adders.
+   - The carry enters the final block (Block 3), where it cannot skip (at least one $P_i = 0$), forcing the carry to ripple through all $m$ bits of the final block to compute the final sum bit $S_{15}$.
+
+   The total delay formula is:
+   $$t_{\text{worst}} = t_{\text{gen, block 0}} + (m_0 - 1)t_{carry} + (k - 2)t_{\text{skip}} + (m_{k-1})t_{carry} + t_{XOR}$$
+   Here $t_{\text{gen, block 0}} = t_{carry} = 1.0\text{ ns}$ (or $m_0 t_{carry} = 4.0\text{ ns}$ through Block 0).
+
+2. **Numerical Calculation:**
+   - Time for Block 0 to generate and ripple carry $C_4$:
+     $$t_{\text{Block 0}} = 4 \times t_{carry} = 4 \times 1.0\text{ ns} = 4.0\text{ ns}$$
+     *(Note: $P_{G,0}$ is computed in $t_{AND} = 1.5\text{ ns} < 4.0\text{ ns}$, so the skip MUX control line is already stable).*
+   - Skipping intermediate blocks (Block 1 and Block 2, $k - 2 = 2$ skips):
+     $$t_{\text{skips}} = 2 \times t_{\text{skip}} = 2 \times 1.2\text{ ns} = 2.4\text{ ns}$$
+   - Carry arrives at Block 3 at time:
+     $$t_{\text{arrive, Block 3}} = 4.0\text{ ns} + 2.4\text{ ns} = 6.4\text{ ns}$$
+   - In Block 3, carry ripples through bits 12, 13, 14, and 15 ($4 \times t_{carry} = 4.0\text{ ns}$), then generates $S_{15}$ via XOR ($t_{XOR} = 1.8\text{ ns}$, or $(m - 1)t_{carry} + t_{XOR} = 3 \times 1.0 + 1.8 = 4.8\text{ ns}$):
+     $$t_{\text{Block 3}} = (4 - 1) \times 1.0\text{ ns} + 1.8\text{ ns} = 4.8\text{ ns}$$
+   - Total worst-case propagation delay:
+     $$t_{\text{worst}} = 4.0\text{ ns} + 2.4\text{ ns} + 4.8\text{ ns} = 11.2\text{ ns}$$
+
+   **Speedup vs Ripple-Carry:**
+   In a 16-bit ripple-carry adder:
+   $$t_{\text{RCA}} = 15 \times 1.0\text{ ns} + 1.8\text{ ns} = 16.8\text{ ns}$$
+   $$\text{Speedup} = \frac{16.8\text{ ns}}{11.2\text{ ns}} \approx 1.50\times \quad (\approx 33.3\%\text{ delay reduction})$$
+
+3. **Why Variable Block Sizing Outperforms Uniform Sizing:**
+   In uniform sizing, the carry arrives at later blocks after significant skip delay. While the carry is skipping through middle blocks, the early bits of later blocks are sitting idle.
+   By making the middle blocks larger and the edge blocks smaller (e.g., sizes $2, 3, 4, 4, 3$):
+   - First block has fewer bits (e.g., 2 bits), so it generates $C_2$ very quickly ($2.0\text{ ns}$ instead of $4.0\text{ ns}$).
+   - Middle blocks have more bits (e.g., 4 bits). Since they are bypassed via a single skip MUX ($1.2\text{ ns}$), making them larger allows more bits to be skipped per unit delay.
+   - Final block has fewer bits (e.g., 3 bits), so the rippling required to finalize the most significant sums is shortened.
+   Variable block sizing balances the arrival times across all paths, achieving $O(\sqrt{n})$ delay with minimal hardware overhead.
+
+<Callout tone="orange" label="Common exam pitfall">
+A common misconception is assuming that the skip path is taken for every block simultaneously. If a block generates its own carry internally ($P_{G,j} = 0$), the skip MUX selects the internal ripple path, not the bypass path. The worst case is a hybrid path: rippling in the first block, skipping intermediate blocks, and rippling in the final block.
+</Callout>
+</ModelAnswer>
+
+### Problem 6: Parallel Prefix Adders and Prefix Operator associativity
+
+Parallel prefix adders (including Kogge-Stone and Brent-Kung) reformulate carry computation as a prefix problem using the carry generate ($G$) and carry propagate ($P$) pairs.
+The fundamental prefix associative operator $\circ$ combines two adjacent blocks $(G_a, P_a)$ and $(G_b, P_b)$ (where block $b$ is more significant than block $a$):
+$$(G_{b:a}, P_{b:a}) = (G_b, P_b) \circ (G_a, P_a) = (G_b + P_b G_a, \, P_b P_a)$$
+
+1. Formally prove that the prefix operator $\circ$ is associative:
+   $$(G_c, P_c) \circ \big[(G_b, P_b) \circ (G_a, P_a)\big] = \big[(G_c, P_c) \circ (G_b, P_b)\big] \circ (G_a, P_a)$$
+2. Explain the fundamental architectural consequence of associativity in parallel computer arithmetic.
+3. Compare the 32-bit Kogge-Stone and 32-bit Brent-Kung adders across three design parameters: logic tree depth (number of prefix levels), total prefix cell count, and maximum wire fan-out/routing congestion.
+
+<ModelAnswer>
+1. **Proof of Associativity:**
+   Let:
+   - Left-hand association: evaluate $(G_{ba}, P_{ba}) = (G_b, P_b) \circ (G_a, P_a) = (G_b + P_b G_a, P_b P_a)$.
+     Then combine with $(G_c, P_c)$:
+     $$
+     \begin{aligned}
+     (G_c, P_c) \circ (G_{ba}, P_{ba}) &= \big(G_c + P_c G_{ba}, \, P_c P_{ba}\big) \\
+     &= \big(G_c + P_c (G_b + P_b G_a), \, P_c (P_b P_a)\big) \\
+     &= \big(G_c + P_c G_b + P_c P_b G_a, \, P_c P_b P_a\big)
+     \end{aligned}
+     $$
+
+   - Right-hand association: evaluate $(G_{cb}, P_{cb}) = (G_c, P_c) \circ (G_b, P_b) = (G_c + P_c G_b, P_c P_b)$.
+     Then combine with $(G_a, P_a)$:
+     $$
+     \begin{aligned}
+     (G_{cb}, P_{cb}) \circ (G_a, P_a) &= \big(G_{cb} + P_{cb} G_a, \, P_{cb} P_a\big) \\
+     &= \big((G_c + P_c G_b) + (P_c P_b) G_a, \, (P_c P_b) P_a\big) \\
+     &= \big(G_c + P_c G_b + P_c P_b G_a, \, P_c P_b P_a\big)
+     \end{aligned}
+     $$
+   Both groupings produce the identical result $(G_c + P_c G_b + P_c P_b G_a, P_c P_b P_a)$. Therefore, the prefix operator $\circ$ is strictly associative.
+
+2. **Architectural Consequence of Associativity:**
+   Because $\circ$ is associative, prefix operations can be grouped in any order without altering the mathematical result. This allows the sequential linear recurrence $C_{i} = G_{i-1} + P_{i-1} C_{i-1}$ (which has $O(n)$ chain depth) to be restructured into a balanced binary tree of depth $O(\log_2 n)$.
+   All $n$ prefix carries can be evaluated concurrently in $\lceil \log_2 n \rceil$ gate levels, breaking the sequential carry chain bottleneck.
+
+3. **Comparison of 32-bit Kogge-Stone vs Brent-Kung Adders:**
+
+| Metric | 32-bit Kogge-Stone Adder | 32-bit Brent-Kung Adder |
+|:---|:---|:---|
+| **Logic Levels (Tree Depth)** | $\lceil \log_2(32) \rceil = 5$ levels (fastest possible prefix tree) | $2\log_2(32) - 2 = 8$ levels (forward tree + inverse distribution tree) |
+| **Prefix Cell Count** | High: $n \log_2 n - n + 1 = 32 \times 5 - 32 + 1 = 129$ cells | Low: $2n - 2 - \log_2 n = 64 - 2 - 5 = 57$ cells |
+| **Wiring Fan-out and Congestion** | High fan-out (2 at each level) and dense overlapping lateral tracks | Low fan-out (maximum fan-out = 2) and sparse, tree-like non-overlapping routing |
+| **Silicon Area & Power** | Large area, high dynamic routing power | Minimal area, low switching power |
+| **Primary Industrial Use** | High-performance CPU execution units where raw clock cycle time dominates | Low-power mobile and embedded processors where silicon footprint and power are critical |
+
+<Callout tone="orange" label="Common exam pitfall">
+Students often claim that Brent-Kung is faster because it uses fewer cells. Fewer cells reduce power and layout area, but the trade-off is a deeper tree ($2\log_2 n - 2$ levels vs $\log_2 n$ levels for Kogge-Stone). Kogge-Stone is strictly faster because it minimizes the number of logic levels on the critical path.
+</Callout>
+</ModelAnswer>
+
+---
+
+### Part 2: In-lesson interactive practice
+
+<Quiz
+  practice
+  courseSlug="logic-design"
+  lessonSlug="fast-carries"
+  questions={[
+    {
+      id: "fc-p1",
+      prompt: "In carry-lookahead adder theory, how are the carry generate (G_i) and carry propagate (P_i) signals defined, and what do they physically represent?",
+      options: [
+        { id: "a", text: "G_i = A_i B_i (stage generates a carry unconditionally), and P_i = A_i ⊕ B_i (stage propagates an incoming carry C_i to C_(i+1))" },
+        { id: "b", text: "G_i = A_i + B_i and P_i = A_i B_i" },
+        { id: "c", text: "G_i = A_i ⊕ B_i and P_i = A_i' B_i" },
+        { id: "d", text: "G_i = (A_i B_i)' and P_i = A_i + B_i + C_i" },
+      ],
+      correctOptionId: "a",
+      explanation: "Generate G_i = A_i B_i is 1 when both inputs are 1, forcing an outgoing carry regardless of incoming carry C_i. Propagate P_i = A_i ⊕ B_i is 1 when exactly one input is 1, causing an incoming carry C_i to propagate directly through the stage to C_(i+1). In hardware, P_i = A_i ⊕ B_i is preferred over A_i + B_i because the intermediate XOR output is reused to compute Sum S_i = P_i ⊕ C_i without extra gates. Option b swaps generate and propagate; option c gives XOR for generate; option d is mathematically meaningless.",
+    },
+    {
+      id: "fc-p2",
+      prompt: "Why is a single-level unrolled Carry-Lookahead Adder impractical for word sizes greater than 4 bits (such as 16 or 32 bits) in CMOS VLSI?",
+      options: [
+        { id: "a", text: "Gate fan-in limits: the equation for carry C_k requires an AND gate with k+1 inputs and an OR gate with k+1 inputs, causing prohibitive propagation delay degradation from series transistor stacks" },
+        { id: "b", text: "Lookahead equations become mathematically non-linear for k > 4" },
+        { id: "c", text: "Two's complement overflow cannot be detected in lookahead adders wider than 4 bits" },
+        { id: "d", text: "CMOS technology does not support XOR gates beyond 4 bits" },
+      ],
+      correctOptionId: "a",
+      explanation: "In an unrolled CLA, carry C_k requires product terms with up to k+1 inputs (e.g. C_16 needs a 17-input AND gate and a 17-input OR gate). In static CMOS, an n-input gate requires n transistors in series, increasing gate resistance and RC delay as O(n²). Practically, fan-in is constrained to 4 or 5 inputs, requiring hierarchical multi-level lookahead units. Option b is false because lookahead equations are strictly linear Boolean Sum of Products; option c is false because overflow V = C_n ⊕ C_(n-1) holds for any width; option d is nonsensical.",
+    },
+    {
+      id: "fc-p3",
+      prompt: "For a 4-bit block of a Carry-Lookahead Adder (bits 0 to 3), how are the Block Generate (G_G) and Block Propagate (P_G) equations defined?",
+      options: [
+        { id: "a", text: "G_G = G_3 + P_3 G_2 + P_3 P_2 G_1 + P_3 P_2 P_1 G_0, and P_G = P_3 P_2 P_1 P_0" },
+        { id: "b", text: "G_G = G_0 + G_1 + G_2 + G_3, and P_G = P_0 + P_1 + P_2 + P_3" },
+        { id: "c", text: "G_G = G_3 G_2 G_1 G_0, and P_G = P_3 + P_2 + P_1 + P_0" },
+        { id: "d", text: "G_G = G_3 ⊕ G_2 ⊕ G_1 ⊕ G_0, and P_G = P_3 ⊕ P_2 ⊕ P_1 ⊕ P_0" },
+      ],
+      correctOptionId: "a",
+      explanation: "Block generate G_G asserts if a carry is produced within the 4-bit block and exits the block without needing initial carry C_0. Block propagate P_G asserts only when all 4 stages propagate (P_3 P_2 P_1 P_0 = 1), so an incoming carry C_0 passes entirely through the block: C_4 = G_G + P_G C_0. Option b ignores stage propagation conditions; option c requires all stages to generate simultaneously (impossible since inputs cannot generate and propagate simultaneously); option d uses XOR.",
+    },
+    {
+      id: "fc-p4",
+      prompt: "How does the asymptotic delay scaling of an n-bit Ripple-Carry Adder compare with an n-bit Hierarchical Carry-Lookahead Adder?",
+      options: [
+        { id: "a", text: "Ripple-carry scales as O(n) (linear), whereas hierarchical lookahead scales as O(log n) (logarithmic)" },
+        { id: "b", text: "Both scale linearly as O(n), but lookahead has a smaller constant factor" },
+        { id: "c", text: "Ripple-carry scales as O(log n), whereas lookahead scales as O(1)" },
+        { id: "d", text: "Ripple-carry scales as O(n²), whereas lookahead scales as O(√n)" },
+      ],
+      correctOptionId: "a",
+      explanation: "In an RCA, carry ripples stage-by-stage: delay grows linearly with bit width as t = O(n). In a multilevel hierarchical CLA, carry lookahead units form a tree of constant-branching-factor blocks, reducing tree height to t = O(log n). For a 64-bit adder, this reduces delay from 64 ripple steps to approximately 6 tree levels. Option b ignores tree depth reduction; option c and d reverse or distort the scaling exponents.",
+    },
+    {
+      id: "fc-p5",
+      prompt: "Under what specific condition can a 4-bit block in a Carry-Skip (Bypass) Adder bypass its internal carry ripple chain via its skip multiplexer?",
+      options: [
+        { id: "a", text: "When every bit in the block has propagate P_i = 1 (P_0 P_1 P_2 P_3 = 1)" },
+        { id: "b", text: "When every bit in the block has generate G_i = 1" },
+        { id: "c", text: "When the block sum equals zero (S_3 S_2 S_1 S_0 = 0000₂)" },
+        { id: "d", text: "When initial carry-in C_0 = 0" },
+      ],
+      correctOptionId: "a",
+      explanation: "A block bypasses internal ripple addition only if an incoming carry is guaranteed to propagate through all 4 bit positions unchanged. This requires every stage propagate condition to be satisfied: P_G = P_3 · P_2 · P_1 · P_0 = 1. A single 4-input AND gate evaluates this condition to steer the 2-to-1 skip MUX. Option b is impossible because adjacent bits cannot all have G_i = 1 and propagate an external carry; option c confuses sum equality with carry propagation; option d is irrelevant to the block bypass decision.",
+    },
+    {
+      id: "fc-p6",
+      prompt: "How does a Carry-Select Adder (CSA) achieve high-speed addition, and what is its primary engineering trade-off?",
+      options: [
+        { id: "a", text: "It duplicates addition hardware by calculating two speculative sums in parallel (one assuming C_in = 0 and one assuming C_in = 1), using a multiplexer to select the correct result once C_in arrives; trade-off is ~80% greater silicon area" },
+        { id: "b", text: "It replaces all transistors with dynamic optical waveguides; trade-off is high thermal dissipation" },
+        { id: "c", text: "It converts binary operands to residue number system format; trade-off is complex decimal decoding" },
+        { id: "d", text: "It eliminates carry propagation entirely by storing sums in Gray code; trade-off is loss of arithmetic precision" },
+      ],
+      correctOptionId: "a",
+      explanation: "A carry-select adder speculatively evaluates both possibilities (C_in = 0 and C_in = 1) concurrently using twin adder blocks. When the true incoming carry arrives from the preceding block, it acts as the select line for a bank of 2-to-1 MUXes, instantly choosing the valid sum in a single MUX delay. The trade-off is roughly double the transistor count and layout area. Options b, c, and d describe unrelated optical, residue, or Gray code systems.",
+    },
+    {
+      id: "fc-p7",
+      prompt: "What is a Manchester Carry Chain, and how does it implement carry propagation in VLSI silicon?",
+      options: [
+        { id: "a", text: "A dynamic CMOS circuit that precharges a carry line HIGH and uses pass transistors controlled by Propagate signals to discharge the node to ground if an incoming carry is asserted" },
+        { id: "b", text: "A serial shift register that clocks carry bits one bit per cycle over a single wire" },
+        { id: "c", text: "A biological neural network algorithm used for floating-point division" },
+        { id: "d", text: "A parity-check matrix implemented on a field-programmable gate array" },
+      ],
+      correctOptionId: "a",
+      explanation: "A Manchester carry chain is a compact VLSI circuit implementation of the carry-lookahead principle. It precharges carry nodes and uses series NMOS pass transistors driven by propagate signals P_i and pull-down transistors driven by generate signals G_i. If P_i is high, the pass transistor switches ON, propagating carry voltage across the chain with minimal transistor count. Option b describes a bit-serial adder; options c and d are entirely unrelated.",
+    },
+    {
+      id: "fc-p8",
+      prompt: "Among parallel prefix tree architectures, what distinguishes the Kogge-Stone adder from the Brent-Kung adder?",
+      options: [
+        { id: "a", text: "Kogge-Stone achieves minimal logic depth ⌈log₂ n⌉ for maximum speed at the cost of high wiring congestion and maximum cell count, whereas Brent-Kung minimizes cell count and wiring at the cost of nearly double the logic depth" },
+        { id: "b", text: "Kogge-Stone operates only on unsigned integers, whereas Brent-Kung supports floating-point" },
+        { id: "c", text: "Brent-Kung has lower latency than Kogge-Stone for 64-bit addition" },
+        { id: "d", text: "Kogge-Stone does not require propagate signals" },
+      ],
+      correctOptionId: "a",
+      explanation: "The Kogge-Stone prefix tree has the lowest possible logic depth (⌈log₂ n⌉ = 5 levels for 32 bits), making it the fastest parallel adder design. However, it generates lateral interconnects at every level, creating high wiring congestion and high power. Brent-Kung builds a forward reduction tree followed by an inverse distribution tree (2 log₂ n - 2 = 8 levels for 32 bits), halving the cell count and simplifying wiring at the expense of extra delay. Option b is false because both compute standard binary carries; option c is false because Kogge-Stone is faster; option d is false because both rely on prefix G and P signals.",
+    },
+  ]}
+/>

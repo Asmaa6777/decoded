@@ -1,46 +1,68 @@
 import { Callout } from "@/components/mdx/MdxComponents";
-import { SchematicReaderGuide } from "@/components/mdx/DatapathVisualizers";
+import { SchematicMarks, GateAnatomy, IcChip } from "@/components/mdx/SymbolMaps";
 
 # How to Read Circuit Schematics
 
-Textbooks and hardware specifications present dense wiring schematics filled with crossed lines, circles, and angled triangles. When these conventions are unexplained, a circuit schematic resembles an arbitrary electrical drawing. A few standard drafting conventions govern every digital logic diagram.
+The slides in this module are full of drawings: triangles, D shapes, boxes with letters on them, wires with dots and wires without. They follow a small set of rules. Once you know the rules, every drawing in the module can be read the same way: find the parts, read each mark, follow the wires.
 
-## Wires and junctions
+This lesson covers the marks on wires and pins, then the gate symbols, then the chips the gates come in.
 
-In a schematic, lines represent conductive copper traces carrying digital binary voltages (high or low).
+## Marks on wires and pins
 
-Two drafting rules distinguish connected wires from passing wires:
+A line is a wire. It carries one bit: high voltage for 1, low (ground) for 0. Five marks change what a wire or pin means.
 
-1. **Junction Node (Connected)**: When two intersecting wires form a solid black dot at their crossing point, they are electrically bonded together. Both lines share identical voltage at all times.
-2. **Simple Crossing (Unconnected)**: When two lines cross perpendicular with no dot, they pass over each other without touching. Signals on one line do not leak onto the other.
+**Dot or no dot.** Where wires meet at a dot, they are joined: one wire, one value. Where two wires cross with no dot, they pass over each other without touching. The register drawing in this module has its data wires crossing the shared clock wire with no dot; they are not connected.
 
-<SchematicReaderGuide />
+**Slash and number.** A short slash across a line with a number beside it, like /8, means that many wires drawn as one line. An 8-wire **bus** carrying a byte is usually labelled $D_0$ to $D_7$; a 16-wire address bus $A_0$ to $A_{15}$.
 
-## The bus slash notation
+**A bubble** (small circle) means "inverted". On an input it means the pin is **active-low**: it does its job when pulled to 0 and rests at 1. Its name usually carries a bar or a prime, such as $\overline{\text{CLR}}$ or CLR'. On an output it means the pin gives the opposite of the value inside, which is why a flip-flop's $\overline{Q}$ pin has one.
 
-Drawing thirty-two individual parallel lines between a register and an adder clutters diagrams. Hardware designers condense parallel wires into a single thick line with a diagonal slash:
+**A triangle on the clock pin** means **edge-triggered**: the device acts only at the instant the clock changes from 0 to 1 (the **rising edge**). A clock pin with no triangle is **level-triggered**: the device acts for the whole time the clock is 1.
 
-$$\text{— } /n \text{ —}$$
+**A bubble and a triangle** means the device acts on the **falling edge**, when the clock goes from 1 to 0.
 
-The integer $n$ indicates the bus width in bits. A line marked `/8` represents eight physical wires running in parallel, typically carrying one byte of data with lines designated $D_0$ through $D_7$. A line marked `/16` carries sixteen address bits, designated $A_0$ through $A_{15}$.
+Pick a mark below and drive the wire to see what it does.
 
-## Inversion bubbles and active-low signals
+<SchematicMarks />
 
-A small circular bubble drawn on an input or output pin denotes logical inversion:
-
-* **Active-Low Inputs**: An input pin without a bubble triggers when the line reaches logical 1 (high voltage, such as 3.3V or 5V). An input pin with a bubble triggers when the line drops to logical 0 (ground potential, 0V). For example, a register clear input with an inversion bubble holds stored data while kept at 1, and clears stored data to all zeros when forced to 0. In schematics, active-low signals often appear with an overbar or trailing prime, such as $\overline{\text{CLR}}$ or $\text{CLR}'$.
-* **Inverted Outputs**: An output pin with a bubble outputs the logical complement of the internal circuit state. On a flip-flop, the true output is designated $Q$, while the inverted output with a bubble is designated $\overline{Q}$ or $Q'$. On memory decoders, an active-low chip select output drives 0 to enable the target memory bank and 1 to disable all others.
-
-## Clock input symbols: level vs edge triggering
-
-Storage elements respond to clock signals in three distinct schematic notations:
-
-* **Level-Sensitive (Latches)**: An input marked simply with the letters $\text{CLK}$, $\text{C}$, or $\text{EN}$ without a triangle is level-sensitive. The device remains transparent, updating its output continuously, whenever the clock voltage is high.
-* **Positive Edge-Triggered (Rising Edge)**: An input marked with a small triangle ($\triangleright$) triggers state changes only during the transition from low to high ($0 \to 1$).
-* **Negative Edge-Triggered (Falling Edge)**: An input marked with a small triangle preceded by an inversion bubble ($\circ\triangleright$) triggers state changes only during the transition from high to low ($1 \to 0$). Ripple counters rely heavily on negative edge-triggered flip-flops.
-
-<Callout tone="sky" label="Feedback loops create memory">
-In combinational logic, signals travel strictly forward from gate inputs to gate outputs. Whenever you see a wire route from a gate's output back into an earlier gate's input, the circuit has a **feedback loop**. Feedback gives the circuit a past, converting stateless combinational logic into stateful sequential memory.
+<Callout tone="sky" label="Feedback means memory">
+In most gate drawings, signals flow one way: inputs on the left, outputs on the right. When a wire runs from an output back to an earlier input, the circuit has **feedback**. Feedback lets a circuit hold a value after its inputs change, and it is how the latches in the next lesson remember a bit.
 </Callout>
 
-Once you can read wire junctions, bus slashes, active-low bubbles, and clock triangles, circuit diagrams for latches, registers, and counters become straightforward state machines.
+## Gate symbols, read by their parts
+
+The lecture's chart of gate symbols has a dozen entries, but they are built from four bodies and two kinds of bubble. Read a symbol from left to right:
+
+1. **Bubbles on the inputs?** Flip each input first.
+2. **The body.** A triangle passes the signal through (a **buffer**). A flat back with a round front is AND. A curved back with a pointed front is OR. A curved back with a second curved line behind it is XOR.
+3. **Bubble on the output?** Flip the result.
+
+So NAND is an AND body with an output bubble, and NOR is an OR body with an output bubble. The inverter is a triangle with a bubble, and the chart draws it twice, with the bubble on either side, because both mean the same thing.
+
+The two entries that confuse people are the **negative-AND** and **negative-OR**: an AND or OR body with bubbles on the inputs. Build one below and compare its truth table: a negative-AND gives exactly the same table as NOR, and a negative-OR the same as NAND. That is [De Morgan's theorem](/courses/logic-design/boolean-algebra#de-morgans-theorems-and-function-complementation), $\overline{A}\cdot\overline{B} = \overline{A+B}$, drawn as a picture. Designers pick whichever drawing matches what the circuit means: a gate that should fire when both inputs are 0 is clearer drawn as a negative-AND.
+
+Two marks can appear inside the body without changing the logic. A diamond with a bar under it marks an **open-collector** output: the gate can pull its wire to 0 but cannot drive it to 1, so a pull-up resistor supplies the 1 (Logic Design covers [open-drain outputs and pull-up resistors](/courses/logic-design/signals#push-pull-vs-open-drain-outputs-and-pull-up-resistors)). A small loop marks **Schmitt-trigger** inputs, which switch at two different voltages so a slow or noisy input doesn't make the output flicker.
+
+<GateAnatomy />
+
+## Integrated circuits
+
+Gates are sold inside **integrated circuits** (ICs). An IC is a small silicon chip carrying the transistors that make up the gates, wired together on the chip. The chip sits in a ceramic or plastic package, and thin gold wires join it to the metal pins outside.
+
+A small package has 14 pins; large ones have 100 or more. Each package has a number printed on top that says what is inside. The classic 7400 family uses one number per job: the 7400 holds four 2-input NAND gates, the 7404 six inverters, the 7408 four ANDs. Logic Design covers [the 7400 series and logic families](/courses/logic-design/logic-gates#logic-families-and-the-standard-7400-series).
+
+To read a pin diagram:
+
+* Pin 1 is marked by a dot or sits just left of a notch at one end of the package.
+* Pins are numbered counterclockwise seen from the top: down one side, back up the other. On a 14-pin package that is 1 to 7 along the bottom and 8 to 14 along the top.
+* Two pins power every gate inside: on these chips, pin 14 is the supply ($V_{CC}$, +5 V) and pin 7 is ground.
+
+Switch chips below and look at where the gates sit. The 7402 puts its outputs before its inputs, so check the pin diagram for each chip.
+
+<IcChip />
+
+## Decoders and multiplexers
+
+The lecture's list of digital components also names **decoders** and **multiplexers**. On a schematic both are drawn as labelled boxes, with a multiplexer often drawn as a trapezoid, and the same pin marks apply: a bubble on an enable pin means the enable is active-low. What they do is covered in Logic Design: [decoders](/courses/logic-design/comparators-decoders-encoders) pick one output line from a binary number, and [multiplexers](/courses/logic-design/multiplexers) pick one input to pass through. The register later in this module uses a multiplexer in front of each flip-flop.
+
+With these marks you can read the rest of the module: the latch and flip-flop boxes, the register built from them, and the counters.
