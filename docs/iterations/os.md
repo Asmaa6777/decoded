@@ -23,8 +23,8 @@ Quizzes (`5- Exams/1- Quizzes`) and the assignment are not in scope for this pha
 
 - [x] 1. Skeleton (whole course): exam inventory, chapter mapping, placement headings in every lesson
 - [ ] 2. Source fidelity (exam questions transcribed verbatim, answer keys checked)
-  - [ ] Part 1, midterms
-  - [ ] Part 2, finals
+  - [x] Part 1, midterms (all 17 lessons; commit `f262403`). Still open: the 2022 midterm key (scan) and the 2014 and 2018 keys' other items, which are checked against our answers
+  - [~] Part 2, finals: first pass done (commit `c0b7eb2`). Done: 2015 and 2019 spring true/false (same statements), 2019 spring and fall written questions, 2019 fall true/false, 2016 and 2015 written questions, 2020 true/false and MCQ 67 to 75, 2017 Q7. Still open: 2020 MCQ 21 to 62 and the 2020 round-robin items 63 to 66 (no printed option matches our schedule); the 2017 true/false items and 2017 Q2 to Q6, Q8 (OCR text is too noisy to copy exact wording); the 2018, 2023, 2024 and undated finals (not yet read); the 2022 midterm key (scan, not yet read)
 - [ ] 3. Depth (coverage gaps and multi-concept questions identified)
 - [ ] 4. Plain language (explanations added, kept separate from the original questions)
 - [ ] 5. Visualizations (step-by-step tables and timelines where they help)
@@ -84,3 +84,23 @@ Inventoried every midterm and final in `OS/.../5- Exams`, read each one's text (
 **Not done yet:** the remaining finals (2017, 2018, the 2023 and 2024 finals, and the two undated finals) and the 2022 midterm key are scanned and not yet transcribed. The 2020 MCQ answers are not printed, so they will be worked out and marked as ours.
 
 **Not checked:** the existing lessons have no practice sections yet; placement headings are added in round 1 below.
+
+### Round 2, source fidelity (midterms and finals, first pass)
+
+Commits: `f262403` (midterms), `c0b7eb2` (finals).
+
+**Changed:** every midterm true/false, multiple-choice and written question is in its chapter's lesson with its exam label and year. Repeated statements are listed once with every year. The finals' true/false items, the scheduling, page-replacement, partition, address-bit and tree questions are in place.
+
+**Checked with scripts:** the 2014 and 2019 spring and fall scheduling tables, the page-replacement counts for every string (2015, 2016, 2019 spring and fall, 2020), the 2019 spring round-robin row, the 2020 partition and bit answers.
+
+**Source errors and disagreements:**
+- 2014 midterm, round robin: the printed Gantt chart and per-process values don't match the stated rules. The average (13.5) is right. Our values: P1 22, P2 3, P3 21, P4 8.
+- 2014 midterm, SJF: the printed values are each one unit too high. Ours: P1 8, P2 11, P3 16, P4 5, average 10.0.
+- 2020 final, items 63 to 66 (round robin): our schedule gives values that match none of the printed options, so they are not answered.
+- 2015 midterm: items 6 and 8, and 7 and 9, repeat the same statements.
+- 2018 midterm, true/false item 9: the printed key says false; we read it as true and say so.
+- 2015 and 2019 spring finals print the same true/false statements. The 2015 scan is read from the page images.
+
+**Found but not fixed:** the 2019 spring Q2 "system calls and system programs" pair has no separate final answer (it is covered by the midterm answers).
+
+**Not checked:** the 2022 midterm key (scan) and the 2018, 2023, 2024 and undated finals (scans not yet read); 2017 final true/false (OCR too noisy); 2020 MCQ 21 to 62; the 2016 final's true/false list (not read). Round 9 (real readers) has not started.
