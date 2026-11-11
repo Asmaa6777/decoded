@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   bitString, classifyDecimalVoltage, classifyLogicVoltage, computeBooleanDual, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
-  expandRadixToBinary, floatParts, fromGray, fullAdd, generateRealWaveform, groupBinaryBits, jkNext, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries,
-  minimizeKMap, minimizeSop, onesComplement, posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, signExtend, simulateAdc, simulateBcdAdder,
-  simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateParity, simulateSignedArithmetic, simulateStatic1Hazard, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
+  expandRadixToBinary, floatParts, fromGray, fullAdd, fullSubtractor, generateRealWaveform, groupBinaryBits, halfSubtractor, jkNext, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries,
+  minimizeKMap, minimizeSop, onesComplement, posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, signExtend, simulate7SegmentDecoder, simulateAdc, simulateAdderSubtractor, simulateBcdAdder,
+  simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateDecoder, simulateFastCarries, simulateMagnitudeComparator, simulateMuxFunction, simulateMuxTree16to1, simulateParity, simulatePriorityEncoder, simulateSignedArithmetic, simulateStatic1Hazard, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
   UNIVERSAL_CIRCUITS, type Bit, type NetGate,
 } from "@/lib/logic";
 
@@ -593,3 +593,168 @@ describe("signals and physical logic", () => {
     expect(fastBus.isReliable).toBe(false);
   });
 });
+
+describe("combinational building blocks (Module 3)", () => {
+  it("simulates 4-bit parallel adder-subtractor, flags, and overflow (m3-01 Problem 2)", () => {
+    // Case A: (+3) - (+6) = -3
+    // A = 0011 (3), B = 0110 (6), Mode = SUB (M=1)
+    const subCaseA = simulateAdderSubtractor(3, 6, "SUB", 4);
+    expect(subCaseA.m).toBe(1);
+    expect(subCaseA.bEffective).toEqual([1, 0, 0, 1]); // 0110 ^ 1111 = 1001
+    expect(subCaseA.sumBits).toEqual([1, 0, 1, 1]); // LSB first: 1101_2
+    expect(subCaseA.sumSigned).toBe(-3);
+    expect(subCaseA.flags.overflow).toBe(false);
+    expect(subCaseA.flags.carry).toBe(0); // C4 = 0
+
+    // Case B: (+5) - (-4) = +9 -> overflow -7 in 4-bit signed
+    // A = 0101 (5), B = 1100 (-4), Mode = SUB (M=1)
+    const subCaseB = simulateAdderSubtractor(5, 12, "SUB", 4);
+    expect(subCaseB.sumBits).toEqual([1, 0, 0, 1]); // 1001_2 = -7
+    expect(subCaseB.sumSigned).toBe(-7);
+    expect(subCaseB.flags.overflow).toBe(true);
+    expect(subCaseB.carries[3]).toBe(1); // C3 = 1
+    expect(subCaseB.carries[4]).toBe(0); // C4 = 0
+
+    // Addition positive overflow: +7 (0111) + +2 (0010) = +9 -> -7
+    const addOverflow = simulateAdderSubtractor(7, 2, "ADD", 4);
+    expect(addOverflow.sumSigned).toBe(-7);
+    expect(addOverflow.flags.overflow).toBe(true);
+
+    // Addition negative overflow: -6 (1010) + -5 (1011) = -11 -> +5
+    const addNegOverflow = simulateAdderSubtractor(10, 11, "ADD", 4);
+    expect(addNegOverflow.sumSigned).toBe(5);
+    expect(addNegOverflow.flags.overflow).toBe(true);
+    expect(addNegOverflow.flags.carry).toBe(1); // C4 = 1
+
+    // Zero flag test: 4 + 12 = 16 = 0 (mod 16)
+    const zeroTest = simulateAdderSubtractor(4, 12, "ADD", 4);
+    expect(zeroTest.flags.zero).toBe(true);
+  });
+
+  it("simulates half and full subtractors", () => {
+    // Half subtractor: D = A ^ B, Bout = A' B
+    expect(halfSubtractor(0, 0)).toEqual({ diff: 0, borrowOut: 0 });
+    expect(halfSubtractor(0, 1)).toEqual({ diff: 1, borrowOut: 1 });
+    expect(halfSubtractor(1, 0)).toEqual({ diff: 1, borrowOut: 0 });
+    expect(halfSubtractor(1, 1)).toEqual({ diff: 0, borrowOut: 0 });
+
+    // Full subtractor: D = A ^ B ^ Bin, Bout = A'B + (A^B)' Bin
+    expect(fullSubtractor(0, 1, 1)).toMatchObject({ diff: 0, borrowOut: 1 });
+    expect(fullSubtractor(1, 1, 1)).toMatchObject({ diff: 1, borrowOut: 1 });
+    expect(fullSubtractor(1, 0, 0)).toMatchObject({ diff: 1, borrowOut: 0 });
+  });
+
+  it("analyzes carry lookahead, generate/propagate, and carry skip bypass (m3-02)", () => {
+    // A = 1011 (11), B = 0111 (7), C0 = 1 (matching m3-02 Problem 2)
+    const cla = simulateFastCarries(11, 7, 1, 4);
+    expect(cla.generates).toEqual([1, 1, 0, 0]); // G0=1, G1=1, G2=0, G3=0
+    expect(cla.propagates).toEqual([0, 0, 1, 1]); // P0=0, P1=0, P2=1, P3=1
+    expect(cla.claCarries[1]).toBe(1); // C1 = G0 + P0*C0 = 1
+    expect(cla.claCarries[2]).toBe(1); // C2 = G1 + P1*G0 + ... = 1
+
+    // Carry Skip test: When all P_i = 1 (e.g. A = 1010, B = 0101 -> P = [1,1,1,1])
+    const skipTest = simulateFastCarries(10, 5, 1, 4);
+    expect(skipTest.blockPropagate).toBe(1);
+    expect(skipTest.skipAnalysis.canSkip).toBe(true);
+    expect(skipTest.skipAnalysis.skipDelaySteps).toBe(2); // bypasses 8 ripple delays!
+  });
+
+  it("simulates 4-bit magnitude comparator and cascading (m3-03)", () => {
+    // A = 13 (1101), B = 11 (1011): bit 2 decides (A2=1, B2=0)
+    const compA = simulateMagnitudeComparator(13, 11, 4);
+    expect(compA.gt).toBe(1);
+    expect(compA.eq).toBe(0);
+    expect(compA.lt).toBe(0);
+    expect(compA.decidingBit).toBe(2);
+
+    // Equality: A = B = 9 (1001)
+    const compEq = simulateMagnitudeComparator(9, 9, 4);
+    expect(compEq.eq).toBe(1);
+    expect(compEq.gt).toBe(0);
+    expect(compEq.lt).toBe(0);
+
+    // Cascaded tie-breaker: 4 bits match, but I(A<B)=1 from lower nibble
+    const compCascade = simulateMagnitudeComparator(9, 9, 4, { gt: 0, eq: 0, lt: 1 });
+    expect(compCascade.lt).toBe(1);
+    expect(compCascade.decidingBit).toBe("CASCADED");
+  });
+
+  it("simulates 74LS138 decoder, enable gating, and NAND logic synthesis (m3-03 Problem 1)", () => {
+    // CBA = 101 (5), enabled: Y5' = 0, others = 1
+    const decActive = simulateDecoder(5, 3, { g1: 1, g2a_n: 0, g2b_n: 0 }, true);
+    expect(decActive.enabled).toBe(true);
+    expect(decActive.outputs[5]).toBe(0);
+    expect(decActive.outputs[0]).toBe(1);
+    expect(decActive.outputs[4]).toBe(1);
+
+    // Disabled chip: G1 = 0 -> all active-LOW outputs forced to 1
+    const decDisabled = simulateDecoder(5, 3, { g1: 0, g2a_n: 0, g2b_n: 0 }, true);
+    expect(decDisabled.enabled).toBe(false);
+    expect(decDisabled.outputs.every((o) => o === 1)).toBe(true);
+
+    // Function synthesis: F = sum m(1, 2, 4, 7) via NAND gate (Difference of full subtractor)
+    const decSynth = simulateDecoder(1, 3, { g1: 1, g2a_n: 0, g2b_n: 0 }, true, [1, 2, 4, 7]);
+    expect(decSynth.synthesis?.output).toBe(1); // address 1 is in minterms -> output = 1
+    const decSynthOff = simulateDecoder(3, 3, { g1: 1, g2a_n: 0, g2b_n: 0 }, true, [1, 2, 4, 7]);
+    expect(decSynthOff.synthesis?.output).toBe(0); // address 3 not in minterms -> output = 0
+  });
+
+  it("simulates BCD to 7-segment decoder across common-cathode and common-anode", () => {
+    // Digit 0: common cathode -> a,b,c,d,e,f = 1, g = 0
+    const seg0 = simulate7SegmentDecoder(0, "common-cathode");
+    expect(seg0.isValidBcd).toBe(true);
+    expect(seg0.segments).toEqual({ a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 0 });
+
+    // Digit 8: all 7 segments illuminated
+    const seg8 = simulate7SegmentDecoder(8, "common-cathode");
+    expect(seg8.segments).toEqual({ a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1 });
+
+    // Common anode inverts logic levels: active-LOW illumination
+    const seg0Anode = simulate7SegmentDecoder(0, "common-anode");
+    expect(seg0Anode.segments.g).toBe(1); // unlit is HIGH (1)
+    expect(seg0Anode.segments.a).toBe(0); // lit is LOW (0)
+  });
+
+  it("simulates 8-to-3 priority encoder with cascading signals (74LS148)", () => {
+    // Inputs D7..D0. Active-LOW mode: inputs 0, 3, 5 are asserted (0).
+    // D5 is the highest active. Code should be 5 (101_2), inverted for active-LOW = 010_2.
+    const inputs: Bit[] = [0, 1, 1, 0, 1, 0, 1, 1]; // index 0, 3, 5 are 0
+    const enc = simulatePriorityEncoder(inputs, true, 0);
+    expect(enc.enabled).toBe(true);
+    expect(enc.highestActiveIndex).toBe(5);
+    expect(enc.valid).toBe(1);
+    expect(enc.gs_n).toBe(0); // Group Select active
+    expect(enc.eo_n).toBe(1); // EO inactive (it had data)
+
+    // All inputs inactive (all 1 in active-LOW)
+    const allIdle: Bit[] = [1, 1, 1, 1, 1, 1, 1, 1];
+    const encIdle = simulatePriorityEncoder(allIdle, true, 0);
+    expect(encIdle.highestActiveIndex).toBe(-1);
+    expect(encIdle.gs_n).toBe(1);
+    expect(encIdle.eo_n).toBe(0); // EO asserts (0) to wake up lower-priority cascaded chip!
+  });
+
+  it("synthesizes arbitrary Boolean functions using Shannon's expansion on a MUX (m3-04 Problem 1)", () => {
+    // Majority voter F = sum m(3, 5, 6, 7) decomposed around C
+    const muxMajority = simulateMuxFunction([3, 5, 6, 7], "C");
+    expect(muxMajority.allOutputsMatch).toBe(true);
+    expect(muxMajority.table[0].derivedInput).toBe("0"); // S1S0 = 00 -> 0
+    expect(muxMajority.table[1].derivedInput).toBe("C"); // S1S0 = 01 -> C
+    expect(muxMajority.table[2].derivedInput).toBe("C"); // S1S0 = 10 -> C
+    expect(muxMajority.table[3].derivedInput).toBe("1"); // S1S0 = 11 -> 1
+  });
+
+  it("simulates 16-to-1 MUX tree from five 4-to-1 MUXes (m3-04 Problem 3)", () => {
+    // 16 data inputs: let channel 13 be 1, all others 0
+    const inputs: Bit[] = Array.from({ length: 16 }, (_, i) => (i === 13 ? 1 : 0) as Bit);
+    // Select address 13 (S3S2S1S0 = 1101)
+    const tree = simulateMuxTree16to1(inputs, [1, 1, 0, 1]);
+    expect(tree.globalAddress).toBe(13);
+    expect(tree.output).toBe(1);
+    expect(tree.correct).toBe(true);
+    // Tier 1 MUX 3 selected channel 1 (I13), Tier 2 MUX selected channel 3 (MUX 3)
+    expect(tree.tier1[3].output).toBe(1);
+    expect(tree.tier2.selectedChannelIndex).toBe(3);
+  });
+});
+

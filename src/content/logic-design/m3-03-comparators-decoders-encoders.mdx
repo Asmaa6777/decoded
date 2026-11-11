@@ -1,6 +1,6 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { EqualityCircuit, DecoderCircuit } from "@/components/mdx/CircuitVisualizers";
-import { PriorityEncoder } from "@/components/mdx/LogicVisualizers";
+import { MagnitudeComparatorLab, DecoderLab, SevenSegmentLab, PriorityEncoder, PriorityEncoderLab } from "@/components/mdx/LogicVisualizers";
 
 # Comparators, Decoders and Encoders
 
@@ -90,6 +90,8 @@ Each chip features three cascading expansion inputs: $I_{A>B}, I_{A=B}, I_{A<B}$
 - If its 4 MSBs are unequal ($A > B$ or $A < B$), the higher chip drives the final outputs directly.
 - If its 4 MSBs are equal ($x_3 x_2 x_1 x_0 = 1$), the higher chip uses its cascading inputs, passing along the decision made by the lower-order comparator.
 - For the lowest-order chip in the chain, $I_{A=B}$ is tied to logic 1 ($V_{CC}$), and $I_{A>B}$ and $I_{A<B}$ are tied to logic 0 (GND).
+
+<MagnitudeComparatorLab />
 
 ## Decoders: pick exactly one
 
@@ -192,6 +194,8 @@ F = \sum m_i = \Big(\prod m_i'\Big)' = \Big(\prod \overline{Y_i}\Big)' = \text{N
 $$
 Connecting the active-LOW outputs of a 74LS138 directly to a NAND gate synthesizes the function with zero inverters.
 
+<DecoderLab />
+
 ### BCD-to-7-Segment decoder/driver
 
 A specialized decoder found in instruments, digital clocks, and calculators is the **BCD-to-7-segment decoder** (such as the **74LS47** or **74LS48**).
@@ -215,6 +219,8 @@ For example, to display decimal digit `0`, segments $a, b, c, d, e, f$ are illum
 - **Common Cathode:** All LED cathodes are tied together to ground (GND). To illuminate a segment, its anode pin must be driven high (logic 1). Common-cathode displays require an active-HIGH driver, such as the **74LS48**.
 
 Input combinations outside the BCD range ($1010_2$ through $1111_2$) are illegal decimal digits and are treated as don't-cares during simplification, or mapped to blank/special indicator patterns.
+
+<SevenSegmentLab />
 
 ## Encoders
 
@@ -286,6 +292,8 @@ It provides three status lines for cascading into 16-to-4 or 64-to-6 priority ne
 - **Enable Input ($\overline{EI}$):** When HIGH, disables all outputs (forces all outputs HIGH).
 - **Group Select ($\overline{GS}$):** Goes LOW when the chip is enabled and at least one input is asserted (equivalent to an active-LOW Valid flag).
 - **Enable Output ($\overline{EO}$):** Goes LOW when the chip is enabled but *none* of its inputs are active. In a cascaded network, $\overline{EO}$ connects to the $\overline{EI}$ of the next lower-priority encoder, waking it up only when the higher-priority chip has nothing to report.
+
+<PriorityEncoderLab />
 
 <Callout tone="neon" label="Interrupt Controllers">
 Priority encoders are the core of CPU [interrupt handling](/courses/microprocessors/interrupts). When multiple devices, such as a network card, keyboard, and disk controller, request CPU attention at once, a priority encoder (such as the 8259A PIC) arbitrates immediately. It sends the identifier of the highest-priority device to the processor.

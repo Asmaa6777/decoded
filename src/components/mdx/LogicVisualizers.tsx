@@ -7,9 +7,9 @@ import {
   computeNoiseMargins, counterStep, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
   expandRadixToBinary, floatParts, fractionBits, generateRealWaveform, groupBinaryBits, jkNext, kmapLayout, KMapImplicant, latchVersusFlipFlop,
   LOGIC_FAMILIES, lookaheadCarries, minimizeKMap, minimizeSop, onesComplement, placeValues, posFromMinterms, rippleAdd, sameFunction, shiftFrames,
-  signedValue, signExtend, simulateAdc, simulateBcdAdder, simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateParity,
+  signedValue, signExtend, simulate7SegmentDecoder, simulateAdc, simulateAdderSubtractor, simulateBcdAdder, simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateDecoder, simulateFastCarries, simulateMagnitudeComparator, simulateMuxFunction, simulateMuxTree16to1, simulateParity, simulatePriorityEncoder,
   simulateSignedArithmetic, simulateStatic1Hazard, sopFromMinterms, TargetOperation, toBase, toBcd, toExcess3, toGray, truthRows, twosComplement,
-  type Bit, type DriverMode, type DriverState, type LogicFamilyId, UNIVERSAL_CIRCUITS, UniversalGateFamily,
+  type Bit, type DriverMode, type DriverState, type LogicFamilyId, UNIVERSAL_CIRCUITS, UniversalGateFamily, fullSubtractor, halfSubtractor,
 } from "@/lib/logic";
 
 const BIT_ON: Record<string, string> = { mint: "border-mint bg-mint/20", neon: "border-neon bg-neon/20", sky: "border-sky bg-sky/20" };
@@ -3349,6 +3349,1598 @@ export function BubblePushingLab() {
 }
 
 /* --------------------------------- adders ------------------------------ */
+
+/** 4-Bit Controlled Adder-Subtractor with ALU Condition Flags (m3-01) */
+export function AdderSubtractorLab() {
+  const [a, setA] = useState(3);
+  const [b, setB] = useState(6);
+  const [mode, setMode] = useState<"ADD" | "SUB">("SUB");
+
+  const sim = useMemo(() => simulateAdderSubtractor(a, b, mode, 4), [a, b, mode]);
+
+  const toggleABit = (i: number) => {
+    const bit = (a >> i) & 1;
+    setA(bit ? a & ~(1 << i) : a | (1 << i));
+  };
+
+  const toggleBBit = (i: number) => {
+    const bit = (b >> i) & 1;
+    setB(bit ? b & ~(1 << i) : b | (1 << i));
+  };
+
+  const presets = [
+    { label: "(+3) - (+6) = -3 [Valid]", a: 3, b: 6, mode: "SUB" as const },
+    { label: "(+5) - (-4) = +9 [Overflow!]", a: 5, b: 12, mode: "SUB" as const },
+    { label: "(+7) + (+2) = +9 [Overflow!]", a: 7, b: 2, mode: "ADD" as const },
+    { label: "(-6) + (-5) = -11 [Overflow!]", a: 10, b: 11, mode: "ADD" as const },
+    { label: "(+4) + (+3) = +7 [Valid]", a: 4, b: 3, mode: "ADD" as const },
+    { label: "(12) + (6) = 18 [C=1, V=0]", a: 12, b: 6, mode: "ADD" as const },
+  ];
+
+  return (
+    <Panel title="4-Bit Controlled Adder-Subtractor & ALU Flags">
+      <div className="space-y-4">
+        {/* Preset selectors */}
+        <div>
+          <div className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground mb-1">
+            Exam Worked Examples & Overflow Cases:
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {presets.map((p, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setA(p.a);
+                  setB(p.b);
+                  setMode(p.mode);
+                }}
+                className={`text-[11px] px-2 py-1 rounded-[2px] font-mono border transition-colors ${
+                  a === p.a && b === p.b && mode === p.mode
+                    ? "border-mint bg-mint/20 text-foreground font-bold"
+                    : "border-border text-muted-foreground hover:bg-muted/30"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Mode & Operand Controls */}
+        <div className="flex flex-wrap gap-4 items-center justify-between border-y border-border/60 py-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] font-mono text-muted-foreground">Mode Control (M):</span>
+            <button
+              type="button"
+              onClick={() => setMode("ADD")}
+              className={`px-3 py-1 text-xs font-mono rounded-[2px] border ${
+                mode === "ADD" ? "border-mint bg-mint/25 font-bold" : "border-border text-muted-foreground"
+              }`}
+            >
+              M = 0 (ADD)
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("SUB")}
+              className={`px-3 py-1 text-xs font-mono rounded-[2px] border ${
+                mode === "SUB" ? "border-orange bg-orange/25 font-bold text-orange" : "border-border text-muted-foreground"
+              }`}
+            >
+              M = 1 (SUB: Invert B + 1)
+            </button>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-mono">
+            <div>
+              <span className="text-muted-foreground">Operand A: </span>
+              <span className="font-bold">{sim.aSigned}</span>
+              <span className="text-muted-foreground ml-1">({(a & 0xf).toString(2).padStart(4, "0")}₂)</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Operand B: </span>
+              <span className="font-bold">{sim.bSigned}</span>
+              <span className="text-muted-foreground ml-1">({(b & 0xf).toString(2).padStart(4, "0")}₂)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Interactive Bit Toggles */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
+          <div className="p-2 border border-border/60 rounded-[2px] bg-card/50">
+            <div className="text-muted-foreground mb-1.5 flex justify-between">
+              <span>Operand A (Minuend / Augend)</span>
+              <span>Decimal: {sim.aSigned}</span>
+            </div>
+            <div className="flex gap-1.5 justify-end">
+              {[3, 2, 1, 0].map((bitIdx) => {
+                const bitVal = (a >> bitIdx) & 1;
+                return (
+                  <button
+                    key={bitIdx}
+                    type="button"
+                    onClick={() => toggleABit(bitIdx)}
+                    className={`w-11 h-9 rounded-[2px] border flex flex-col items-center justify-center transition-colors ${
+                      bitVal ? "border-mint bg-mint/20 font-bold" : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    <span className="text-[10px] text-muted-foreground">A{bitIdx}</span>
+                    <span>{bitVal}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="p-2 border border-border/60 rounded-[2px] bg-card/50">
+            <div className="text-muted-foreground mb-1.5 flex justify-between">
+              <span>Operand B (Subtrahend / Addend)</span>
+              <span>Decimal: {sim.bSigned}</span>
+            </div>
+            <div className="flex gap-1.5 justify-end">
+              {[3, 2, 1, 0].map((bitIdx) => {
+                const bitVal = (b >> bitIdx) & 1;
+                return (
+                  <button
+                    key={bitIdx}
+                    type="button"
+                    onClick={() => toggleBBit(bitIdx)}
+                    className={`w-11 h-9 rounded-[2px] border flex flex-col items-center justify-center transition-colors ${
+                      bitVal ? "border-sky bg-sky/20 font-bold" : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    <span className="text-[10px] text-muted-foreground">B{bitIdx}</span>
+                    <span>{bitVal}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Parallel Adder-Subtractor Hardware Pipeline */}
+        <div className="p-3 border border-border rounded-[2px] bg-card">
+          <div className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground mb-2 flex justify-between">
+            <span>Ripple-Carry Hardware Architecture</span>
+            <span className="text-orange">Initial Carry C₀ = M = {sim.m}</span>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 font-mono">
+            {[3, 2, 1, 0].map((bitIdx) => {
+              const stage = sim.stages[bitIdx];
+              const isMsb = bitIdx === 3;
+              return (
+                <div
+                  key={bitIdx}
+                  className={`p-2 rounded-[2px] border flex flex-col gap-1.5 relative ${
+                    isMsb ? "border-violet/60 bg-violet/10" : "border-border bg-card/80"
+                  }`}
+                >
+                  <div className="flex justify-between items-center text-[10px] text-muted-foreground border-b border-border/40 pb-1">
+                    <span className="font-bold">{isMsb ? "MSB (Sign)" : `Stage ${bitIdx}`}</span>
+                    <span>FA {bitIdx}</span>
+                  </div>
+
+                  {/* Primary Inputs */}
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">A{bitIdx}:</span>
+                    <span className="font-bold text-mint">{stage.a}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">B{bitIdx}:</span>
+                    <span className="font-bold text-sky">{stage.b}</span>
+                  </div>
+
+                  {/* Controlled Inverter XOR */}
+                  <div className="p-1 rounded bg-muted/20 border border-border/40 text-[10px]">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>B{bitIdx} ⊕ M:</span>
+                      <span className={`font-bold ${stage.bEff !== stage.b ? "text-orange" : ""}`}>
+                        {stage.bEff}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Incoming Carry */}
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span>C{bitIdx} in:</span>
+                    <span className={`font-bold ${stage.cIn ? "text-orange" : ""}`}>{stage.cIn}</span>
+                  </div>
+
+                  {/* Full Adder Sum & Outgoing Carry */}
+                  <div className="pt-1 border-t border-border/40 flex justify-between text-xs font-bold">
+                    <span>S{bitIdx}: <span className="text-mint">{stage.sum}</span></span>
+                    <span>C{bitIdx + 1}: <span className={stage.cOut ? "text-orange" : "text-muted-foreground"}>{stage.cOut}</span></span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Results Bar */}
+          <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-4 items-center justify-between text-xs font-mono">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Carry Chain:</span>
+              <span className="text-orange font-bold">
+                C₄={sim.carries[4]} ← C₃={sim.carries[3]} ← C₂={sim.carries[2]} ← C₁={sim.carries[1]} ← C₀={sim.carries[0]}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div>
+                <span className="text-muted-foreground">Sum Vector (S₃S₂S₁S₀): </span>
+                <span className="font-bold text-mint">
+                  {sim.sumBits.slice().reverse().join("")}₂
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Signed Decimal: </span>
+                <span className="font-bold text-foreground">{sim.sumSigned}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ALU Condition Flags Panel */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-center">
+          <div className={`p-2.5 rounded-[2px] border ${sim.flags.zero ? "border-mint bg-mint/20" : "border-border bg-card"}`}>
+            <div className="text-[10px] text-muted-foreground uppercase">Zero Flag (Z)</div>
+            <div className="text-lg font-bold">{sim.flags.zero ? "1" : "0"}</div>
+            <div className="text-[9px] text-muted-foreground">All S = 0</div>
+          </div>
+
+          <div className={`p-2.5 rounded-[2px] border ${sim.flags.sign ? "border-violet bg-violet/20" : "border-border bg-card"}`}>
+            <div className="text-[10px] text-muted-foreground uppercase">Sign Flag (S/N)</div>
+            <div className="text-lg font-bold">{sim.flags.sign}</div>
+            <div className="text-[9px] text-muted-foreground">MSB S₃</div>
+          </div>
+
+          <div className={`p-2.5 rounded-[2px] border ${sim.flags.carry ? "border-sky bg-sky/20" : "border-border bg-card"}`}>
+            <div className="text-[10px] text-muted-foreground uppercase">Carry Flag (C)</div>
+            <div className="text-lg font-bold">{sim.flags.carry}</div>
+            <div className="text-[9px] text-muted-foreground">MSB Carry C₄</div>
+          </div>
+
+          <div className={`p-2.5 rounded-[2px] border ${sim.flags.overflow ? "border-orange bg-orange/25 text-orange animate-pulse" : "border-border bg-card"}`}>
+            <div className="text-[10px] uppercase font-bold">Overflow (V)</div>
+            <div className="text-lg font-bold">{sim.flags.overflow ? "1" : "0"}</div>
+            <div className="text-[9px]">C₄ ⊕ C₃</div>
+          </div>
+        </div>
+
+        {/* Explanation text */}
+        <div className="p-2.5 rounded-[2px] border border-border/80 bg-muted/15 font-mono text-xs">
+          <div className="font-bold text-foreground mb-1">Hardware Analysis:</div>
+          <div className="text-muted-foreground">{sim.explanation}</div>
+          <div className="mt-1 text-[11px] text-muted-foreground">
+            Carry Flag (C = {sim.flags.carry}) applies to unsigned arithmetic.
+            Signed Overflow (V = {sim.flags.overflow ? 1 : 0}) evaluates C₄ ⊕ C₃ ({sim.carries[4]} ⊕ {sim.carries[3]} = {sim.carries[4] ^ sim.carries[3]}).
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Half & Full Subtractor interactive derivation lab (m3-01) */
+export function SubtractorLab() {
+  const [a, setA] = useState<Bit>(0);
+  const [b, setB] = useState<Bit>(1);
+  const [bIn, setBIn] = useState<Bit>(1);
+
+  const half = halfSubtractor(a, b);
+  const full = fullSubtractor(a, b, bIn);
+
+  return (
+    <Panel title="Subtractor Lab: Borrow Logic & Inversion">
+      <div className="space-y-4 font-mono text-xs">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Minuend (A):</span>
+            <button
+              type="button"
+              onClick={() => setA((a ? 0 : 1) as Bit)}
+              className={`w-8 h-8 rounded border font-bold ${a ? "border-mint bg-mint/20" : "border-border text-muted-foreground"}`}
+            >
+              {a}
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Subtrahend (B):</span>
+            <button
+              type="button"
+              onClick={() => setB((b ? 0 : 1) as Bit)}
+              className={`w-8 h-8 rounded border font-bold ${b ? "border-sky bg-sky/20" : "border-border text-muted-foreground"}`}
+            >
+              {b}
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Borrow-in (B_in):</span>
+            <button
+              type="button"
+              onClick={() => setBIn((bIn ? 0 : 1) as Bit)}
+              className={`w-8 h-8 rounded border font-bold ${bIn ? "border-orange bg-orange/20" : "border-border text-muted-foreground"}`}
+            >
+              {bIn}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Half Subtractor */}
+          <div className="p-3 border border-border rounded-[2px] bg-card">
+            <div className="text-[11px] font-bold text-foreground uppercase border-b border-border/40 pb-1 mb-2">
+              Half Subtractor (A - B)
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Difference D = A ⊕ B:</span>
+                <span className="font-bold text-mint">{half.diff}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Borrow-out B_out = A'B:</span>
+                <span className={`font-bold ${half.borrowOut ? "text-orange" : "text-muted-foreground"}`}>
+                  {half.borrowOut}
+                </span>
+              </div>
+              <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                Notice: Difference is identical to half adder sum (A ⊕ B). Borrow-out requires inverting minuend A (A'B).
+              </div>
+            </div>
+          </div>
+
+          {/* Full Subtractor */}
+          <div className="p-3 border border-border rounded-[2px] bg-card">
+            <div className="text-[11px] font-bold text-foreground uppercase border-b border-border/40 pb-1 mb-2">
+              Full Subtractor (A - B - B_in)
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Intermediate D₁ = A ⊕ B:</span>
+                <span>{full.intermediate.d1}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Difference D = A ⊕ B ⊕ B_in:</span>
+                <span className="font-bold text-mint">{full.diff}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Final Borrow B_out:</span>
+                <span className={`font-bold ${full.borrowOut ? "text-orange" : "text-muted-foreground"}`}>
+                  {full.borrowOut}
+                </span>
+              </div>
+              <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                Equation: B_out = A'B + (A ⊕ B)'B_in = A'B + A'B_in + BB_in.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Fast Carry Architectures Lab: Lookahead, Skip, Select, and Delay Metrics (m3-02) */
+export function FastAdderLab() {
+  const [tab, setTab] = useState<"cla" | "multilevel" | "skip-select" | "scaling">("cla");
+  const [a, setA] = useState(11);
+  const [b, setB] = useState(7);
+  const [c0, setC0] = useState<Bit>(1);
+  const [selectedCarry, setSelectedCarry] = useState(4);
+
+  const cla = useMemo(() => simulateFastCarries(a, b, c0, 4), [a, b, c0]);
+
+  return (
+    <Panel title="Fast Carry Lab: CLA, Skip, Select & Tree Adders">
+      <div className="space-y-4">
+        {/* Navigation Tabs */}
+        <div className="flex flex-wrap gap-1 border-b border-border pb-2">
+          {([
+            { id: "cla", label: "4-Bit Lookahead (CLA)" },
+            { id: "multilevel", label: "16-Bit Multilevel (74182)" },
+            { id: "skip-select", label: "Carry-Skip & Select" },
+            { id: "scaling", label: "Delay & Complexity Scaling" },
+          ] as const).map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={`px-3 py-1 text-xs font-mono rounded-[2px] border transition-colors ${
+                tab === t.id
+                  ? "border-mint bg-mint/20 text-foreground font-bold"
+                  : "border-border text-muted-foreground hover:bg-muted/30"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab 1: 4-Bit CLA */}
+        {tab === "cla" && (
+          <div className="space-y-3 font-mono text-xs">
+            <div className="flex flex-wrap gap-4 items-center justify-between">
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">A:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={15}
+                    value={a}
+                    onChange={(e) => setA(Math.min(15, Math.max(0, Number(e.target.value) || 0)))}
+                    className={`${inputCls} w-16 text-center`}
+                  />
+                  <span className="text-muted-foreground">({a.toString(2).padStart(4, "0")}₂)</span>
+                </label>
+                <label className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">B:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={15}
+                    value={b}
+                    onChange={(e) => setB(Math.min(15, Math.max(0, Number(e.target.value) || 0)))}
+                    className={`${inputCls} w-16 text-center`}
+                  />
+                  <span className="text-muted-foreground">({b.toString(2).padStart(4, "0")}₂)</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setC0((c0 ? 0 : 1) as Bit)}
+                  className={`px-2 py-1 rounded border ${c0 ? "border-orange bg-orange/20 font-bold" : "border-border text-muted-foreground"}`}
+                >
+                  C₀ = {c0}
+                </button>
+              </div>
+
+              <div className="text-muted-foreground">
+                Sum: {a} + {b} + {c0} = <span className="text-mint font-bold">{a + b + c0}</span>
+              </div>
+            </div>
+
+            {/* Bit Generate and Propagate Matrix */}
+            <div className="grid grid-cols-4 gap-2">
+              {[3, 2, 1, 0].map((bitIdx) => {
+                const g = cla.generates[bitIdx];
+                const p = cla.propagates[bitIdx];
+                return (
+                  <div key={bitIdx} className="p-2 border border-border rounded-[2px] bg-card text-center">
+                    <div className="text-[10px] text-muted-foreground font-bold">Bit {bitIdx}</div>
+                    <div className="mt-1 flex justify-between text-[11px]">
+                      <span>G{bitIdx} = A{bitIdx}B{bitIdx}:</span>
+                      <span className={`font-bold ${g ? "text-orange" : "text-muted-foreground"}`}>{g}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px]">
+                      <span>P{bitIdx} = A{bitIdx}⊕B{bitIdx}:</span>
+                      <span className={`font-bold ${p ? "text-mint" : "text-muted-foreground"}`}>{p}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Carry Selector & Term-by-Term Inspector */}
+            <div className="p-3 border border-border rounded-[2px] bg-card">
+              <div className="text-[11px] font-bold text-foreground mb-2 flex justify-between">
+                <span>Unrolled Two-Level Carry Expressions:</span>
+                <span className="text-muted-foreground">Click a carry bit to inspect active terms</span>
+              </div>
+
+              <div className="flex gap-2 mb-3">
+                {[1, 2, 3, 4].map((cIdx) => {
+                  const val = cla.claCarries[cIdx];
+                  return (
+                    <button
+                      key={cIdx}
+                      type="button"
+                      onClick={() => setSelectedCarry(cIdx)}
+                      className={`flex-1 py-1.5 px-2 rounded-[2px] border text-center transition-colors ${
+                        selectedCarry === cIdx
+                          ? "border-mint bg-mint/20 font-bold"
+                          : "border-border text-muted-foreground hover:bg-muted/30"
+                      }`}
+                    >
+                      <div>C{cIdx}</div>
+                      <div className={`text-sm ${val ? "text-orange font-bold" : "text-muted-foreground"}`}>{val}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Inspected carry equation */}
+              {(() => {
+                const info = cla.claTerms[selectedCarry - 1];
+                return (
+                  <div className="space-y-2 p-2 bg-muted/20 border border-border/40 rounded-[2px]">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-foreground">
+                        C{selectedCarry} Logic: {info.resultingCarry ? "ASSERTED (1)" : "0"}
+                      </span>
+                      <span className="text-orange">{info.dominantReason}</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      {info.terms.map((t, idx) => (
+                        <div
+                          key={idx}
+                          className={`p-1.5 rounded flex justify-between items-center ${
+                            t.active ? "bg-orange/20 border border-orange/40 text-orange font-bold" : "text-muted-foreground"
+                          }`}
+                        >
+                          <span>{t.expr}</span>
+                          <span>{t.active ? "ACTIVE (1)" : "0"}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                      Fan-in required: {info.terms.length}-input OR gate, with up to {selectedCarry + 1}-input AND gate.
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Multilevel 16-Bit CLA */}
+        {tab === "multilevel" && (
+          <div className="space-y-3 font-mono text-xs">
+            <div className="text-muted-foreground">
+              To avoid gate fan-in limits on 16/32/64 bits, bits are grouped into 4-bit blocks. Each block computes Group Generate (G_G) and Group Propagate (P_G). A second-level lookahead generator (74182) computes block carries C₄, C₈, C₁₂, C₁₆ in O(log n) gate delays.
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { block: 0, bits: "Bits 3-0", pg: cla.blockPropagate, gg: cla.blockGenerate },
+                { block: 1, bits: "Bits 7-4", pg: 1, gg: 0 },
+                { block: 2, bits: "Bits 11-8", pg: 0, gg: 1 },
+                { block: 3, bits: "Bits 15-12", pg: 1, gg: 0 },
+              ].map((bInfo) => (
+                <div key={bInfo.block} className="p-2 border border-border rounded-[2px] bg-card text-center">
+                  <div className="font-bold text-foreground">Block {bInfo.block}</div>
+                  <div className="text-[10px] text-muted-foreground">{bInfo.bits}</div>
+                  <div className="mt-2 text-[11px] flex justify-between">
+                    <span className="text-muted-foreground">P_G:</span>
+                    <span className="font-bold text-mint">{bInfo.pg}</span>
+                  </div>
+                  <div className="text-[11px] flex justify-between">
+                    <span className="text-muted-foreground">G_G:</span>
+                    <span className="font-bold text-orange">{bInfo.gg}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-3 border border-border rounded-[2px] bg-card">
+              <div className="text-[11px] font-bold text-foreground mb-1">Second-Level Lookahead Unit (74182 IC):</div>
+              <div className="space-y-1 text-muted-foreground text-[11px]">
+                <div>• C₄ = G_G0 + P_G0 · C₀</div>
+                <div>• C₈ = G_G1 + P_G1 · G_G0 + P_G1 · P_G0 · C₀</div>
+                <div>• C₁₂ = G_G2 + P_G2 · G_G1 + P_G2 · P_G1 · G_G0 + P_G2 · P_G1 · P_G0 · C₀</div>
+                <div>• C₁₆ = G_G3 + P_G3 · G_G2 + ... + P_G3 · P_G2 · P_G1 · P_G0 · C₀</div>
+              </div>
+              <div className="mt-2 text-mint font-bold">
+                Total delay through 16-bit multilevel CLA: 10τ (vs 32τ in ripple-carry adder). 3.2x faster!
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Carry-Skip & Select */}
+        {tab === "skip-select" && (
+          <div className="space-y-3 font-mono text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="p-3 border border-border rounded-[2px] bg-card">
+                <div className="font-bold text-foreground mb-1">Carry-Skip (Carry-Bypass) Adder</div>
+                <div className="text-muted-foreground mb-2">
+                  Computes P_block = P₃P₂P₁P₀. If all 4 bits propagate (P_block = 1), incoming carry C₀ skips directly around the 4 ripple stages via a 2:1 multiplexer.
+                </div>
+                <div className="p-2 bg-muted/20 rounded border border-border/40">
+                  <div className="flex justify-between">
+                    <span>Block Propagate (P_block):</span>
+                    <span className={`font-bold ${cla.skipAnalysis.canSkip ? "text-mint" : "text-muted-foreground"}`}>
+                      {cla.blockPropagate}
+                    </span>
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    <span>Carry Propagation Path:</span>
+                    <span className="font-bold text-foreground">
+                      {cla.skipAnalysis.canSkip ? "BYPASS MUX (2τ delay)" : "RIPPLE CHAIN (8τ delay)"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 border border-border rounded-[2px] bg-card">
+                <div className="font-bold text-foreground mb-1">Carry-Select Adder (CSA)</div>
+                <div className="text-muted-foreground mb-2">
+                  Speculatively executes two additions in parallel for each 4-bit block: one assuming C_in = 0, and one assuming C_in = 1.
+                </div>
+                <div className="p-2 bg-muted/20 rounded border border-border/40">
+                  <div className="text-[11px] text-muted-foreground">
+                    When the real carry arrives from the preceding block, a 2:1 MUX instantly chooses the precomputed answer. Eliminates carry latency at the cost of ~100% duplicate hardware area.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Delay & Complexity Scaling */}
+        {tab === "scaling" && (
+          <div className="space-y-3 font-mono text-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-border text-muted-foreground text-[11px]">
+                    <th className="py-1.5 px-2">Architecture</th>
+                    <th className="py-1.5 px-2">Delay Formula</th>
+                    <th className="py-1.5 px-2">4-Bit</th>
+                    <th className="py-1.5 px-2">16-Bit</th>
+                    <th className="py-1.5 px-2">64-Bit</th>
+                    <th className="py-1.5 px-2">Silicon Area Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cla.latencyComparison.map((row, idx) => (
+                    <tr key={idx} className="border-b border-border/40 hover:bg-muted/10">
+                      <td className="py-1.5 px-2 font-bold text-foreground">{row.architecture}</td>
+                      <td className="py-1.5 px-2 text-muted-foreground">{row.delayFormula}</td>
+                      <td className="py-1.5 px-2">{row.delayTau4Bit}τ</td>
+                      <td className="py-1.5 px-2">{row.delayTau16Bit}τ</td>
+                      <td className="py-1.5 px-2 font-bold text-mint">{row.delayTau64Bit}τ</td>
+                      <td className="py-1.5 px-2 text-muted-foreground text-[10px]">{row.areaCost}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              At 64 bits, Kogge-Stone tree adders achieve 8τ latency (16x faster than 128τ in Ripple Carry), but consume extensive interconnect wiring.
+            </div>
+          </div>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
+/** 4-Bit Magnitude Comparator & Cascading Lab (m3-03) */
+export function MagnitudeComparatorLab() {
+  const [a, setA] = useState(13);
+  const [b, setB] = useState(11);
+  const [cascading, setCascading] = useState<{ gt: Bit; eq: Bit; lt: Bit }>({ gt: 0, eq: 1, lt: 0 });
+
+  const comp = useMemo(
+    () => simulateMagnitudeComparator(a, b, 4, cascading),
+    [a, b, cascading]
+  );
+
+  const presets = [
+    { label: "A > B (Bit 2 Decides: 1101 vs 1011)", a: 13, b: 11, c: { gt: 0 as Bit, eq: 1 as Bit, lt: 0 as Bit } },
+    { label: "A < B (Bit 3 Decides: 0111 vs 1000)", a: 7, b: 8, c: { gt: 0 as Bit, eq: 1 as Bit, lt: 0 as Bit } },
+    { label: "A = B (All 4 Bits Match)", a: 9, b: 9, c: { gt: 0 as Bit, eq: 1 as Bit, lt: 0 as Bit } },
+    { label: "Cascaded Tie-Breaker: I(A<B)=1", a: 9, b: 9, c: { gt: 0 as Bit, eq: 0 as Bit, lt: 1 as Bit } },
+  ];
+
+  return (
+    <Panel title="4-Bit Magnitude Comparator & Cascading (74LS85)">
+      <div className="space-y-4 font-mono text-xs">
+        {/* Presets */}
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Worked Presets:</div>
+          <div className="flex flex-wrap gap-1.5">
+            {presets.map((p, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setA(p.a);
+                  setB(p.b);
+                  setCascading(p.c);
+                }}
+                className={`text-[11px] px-2 py-1 rounded-[2px] border transition-colors ${
+                  a === p.a && b === p.b && cascading.eq === p.c.eq && cascading.lt === p.c.lt
+                    ? "border-mint bg-mint/20 text-foreground font-bold"
+                    : "border-border text-muted-foreground hover:bg-muted/30"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Inputs */}
+        <div className="flex flex-wrap gap-4 items-center justify-between border-y border-border/60 py-2.5">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">Word A:</span>
+              <input
+                type="number"
+                min={0}
+                max={15}
+                value={a}
+                onChange={(e) => setA(Math.min(15, Math.max(0, Number(e.target.value) || 0)))}
+                className={`${inputCls} w-16 text-center`}
+              />
+              <span>({a.toString(2).padStart(4, "0")}₂)</span>
+            </label>
+            <label className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">Word B:</span>
+              <input
+                type="number"
+                min={0}
+                max={15}
+                value={b}
+                onChange={(e) => setB(Math.min(15, Math.max(0, Number(e.target.value) || 0)))}
+                className={`${inputCls} w-16 text-center`}
+              />
+              <span>({b.toString(2).padStart(4, "0")}₂)</span>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Cascading Inputs:</span>
+            <button
+              type="button"
+              onClick={() => setCascading({ gt: 1, eq: 0, lt: 0 })}
+              className={`px-2 py-1 rounded border text-[11px] ${cascading.gt ? "border-mint bg-mint/20 font-bold" : "border-border text-muted-foreground"}`}
+            >
+              I(A&gt;B)
+            </button>
+            <button
+              type="button"
+              onClick={() => setCascading({ gt: 0, eq: 1, lt: 0 })}
+              className={`px-2 py-1 rounded border text-[11px] ${cascading.eq ? "border-violet bg-violet/20 font-bold" : "border-border text-muted-foreground"}`}
+            >
+              I(A=B)
+            </button>
+            <button
+              type="button"
+              onClick={() => setCascading({ gt: 0, eq: 0, lt: 1 })}
+              className={`px-2 py-1 rounded border text-[11px] ${cascading.lt ? "border-orange bg-orange/20 font-bold" : "border-border text-muted-foreground"}`}
+            >
+              I(A&lt;B)
+            </button>
+          </div>
+        </div>
+
+        {/* Bit-by-bit Equivalence Matrix */}
+        <div className="grid grid-cols-4 gap-2">
+          {[3, 2, 1, 0].map((bitIdx) => {
+            const ai = (a >> bitIdx) & 1;
+            const bi = (b >> bitIdx) & 1;
+            const xi = comp.xBits[bitIdx];
+            const isDeciding = comp.decidingBit === bitIdx;
+            return (
+              <div
+                key={bitIdx}
+                className={`p-2 rounded-[2px] border text-center ${
+                  isDeciding ? "border-orange bg-orange/20 font-bold" : "border-border bg-card"
+                }`}
+              >
+                <div className="text-[10px] text-muted-foreground">
+                  Bit {bitIdx} {isDeciding && "★ DECIDER"}
+                </div>
+                <div className="mt-1 flex justify-between">
+                  <span>A{bitIdx} / B{bitIdx}:</span>
+                  <span className="font-bold">{ai} vs {bi}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>x{bitIdx} (XNOR):</span>
+                  <span className={xi ? "text-mint font-bold" : "text-muted-foreground"}>{xi}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Outputs Bar */}
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className={`p-3 rounded-[2px] border ${comp.gt ? "border-mint bg-mint/25 text-mint font-bold" : "border-border bg-card text-muted-foreground"}`}>
+            <div className="text-xs uppercase">A &gt; B Output</div>
+            <div className="text-xl font-bold">{comp.gt}</div>
+          </div>
+          <div className={`p-3 rounded-[2px] border ${comp.eq ? "border-violet bg-violet/25 text-violet font-bold" : "border-border bg-card text-muted-foreground"}`}>
+            <div className="text-xs uppercase">A = B Output</div>
+            <div className="text-xl font-bold">{comp.eq}</div>
+          </div>
+          <div className={`p-3 rounded-[2px] border ${comp.lt ? "border-orange bg-orange/25 text-orange font-bold" : "border-border bg-card text-muted-foreground"}`}>
+            <div className="text-xs uppercase">A &lt; B Output</div>
+            <div className="text-xl font-bold">{comp.lt}</div>
+          </div>
+        </div>
+
+        <div className="p-2.5 rounded-[2px] border border-border/80 bg-muted/15">
+          <span className="font-bold text-foreground">Hierarchical Decision: </span>
+          <span className="text-muted-foreground">{comp.reason}</span>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** 3-to-8 Decoder (74LS138) and Arbitrary Function Synthesis Lab (m3-03) */
+export function DecoderLab() {
+  const [address, setAddress] = useState(5);
+  const [g1, setG1] = useState<Bit>(1);
+  const [g2a, setG2a] = useState<Bit>(0);
+  const [g2b, setG2b] = useState<Bit>(0);
+  const [activeLow, setActiveLow] = useState(true);
+  const [targetMinterms, setTargetMinterms] = useState<number[]>([1, 2, 4, 7]); // Full Subtractor Diff
+
+  const dec = useMemo(
+    () => simulateDecoder(address, 3, { g1, g2a_n: g2a, g2b_n: g2b }, activeLow, targetMinterms),
+    [address, g1, g2a, g2b, activeLow, targetMinterms]
+  );
+
+  const toggleMinterm = (m: number) => {
+    setTargetMinterms((prev) =>
+      prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m].sort((x, y) => x - y)
+    );
+  };
+
+  return (
+    <Panel title="3-to-8 Decoder (74LS138) & Logic Function Synthesis">
+      <div className="space-y-4 font-mono text-xs">
+        {/* Enable Pins & Polarity Controls */}
+        <div className="flex flex-wrap gap-4 items-center justify-between border-b border-border pb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Enable Pins:</span>
+            <button
+              type="button"
+              onClick={() => setG1((g1 ? 0 : 1) as Bit)}
+              className={`px-2 py-1 rounded border ${g1 ? "border-mint bg-mint/20 font-bold" : "border-border text-muted-foreground"}`}
+            >
+              G₁ (HIGH) = {g1}
+            </button>
+            <button
+              type="button"
+              onClick={() => setG2a((g2a ? 0 : 1) as Bit)}
+              className={`px-2 py-1 rounded border ${g2a === 0 ? "border-mint bg-mint/20 font-bold" : "border-orange bg-orange/20 text-orange"}`}
+            >
+              G₂A' (LOW) = {g2a}
+            </button>
+            <button
+              type="button"
+              onClick={() => setG2b((g2b ? 0 : 1) as Bit)}
+              className={`px-2 py-1 rounded border ${g2b === 0 ? "border-mint bg-mint/20 font-bold" : "border-orange bg-orange/20 text-orange"}`}
+            >
+              G₂B' (LOW) = {g2b}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Output Type:</span>
+            <button
+              type="button"
+              onClick={() => setActiveLow(!activeLow)}
+              className="px-2 py-1 rounded border border-border bg-card hover:bg-muted/30"
+            >
+              {activeLow ? "Active-LOW (Y₀'...Y₇' / 74LS138)" : "Active-HIGH (D₀...D₇)"}
+            </button>
+          </div>
+        </div>
+
+        {/* Address Inputs */}
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Binary Address (CBA):</span>
+            {[2, 1, 0].map((bitIdx) => {
+              const bitVal = (address >> bitIdx) & 1;
+              const bitName = bitIdx === 2 ? "C (MSB)" : bitIdx === 1 ? "B" : "A (LSB)";
+              return (
+                <button
+                  key={bitIdx}
+                  type="button"
+                  onClick={() => {
+                    const next = bitVal ? address & ~(1 << bitIdx) : address | (1 << bitIdx);
+                    setAddress(next);
+                  }}
+                  className={`px-2.5 py-1 rounded border ${bitVal ? "border-sky bg-sky/20 font-bold" : "border-border text-muted-foreground"}`}
+                >
+                  {bitName}: {bitVal}
+                </button>
+              );
+            })}
+            <span className="text-foreground font-bold ml-1">= Channel {address}</span>
+          </div>
+
+          <div>
+            Status:{" "}
+            {dec.enabled ? (
+              <span className="text-mint font-bold">CHIP ENABLED</span>
+            ) : (
+              <span className="text-orange font-bold">DISABLED (All outputs inactive)</span>
+            )}
+          </div>
+        </div>
+
+        {/* 8 Output Lines Matrix */}
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 text-center">
+          {dec.outputs.map((val, chIdx) => {
+            const isSelected = chIdx === dec.selectedMinterm;
+            return (
+              <div
+                key={chIdx}
+                className={`p-2 rounded-[2px] border ${
+                  isSelected
+                    ? activeLow
+                      ? "border-orange bg-orange/25 font-bold"
+                      : "border-mint bg-mint/25 font-bold"
+                    : "border-border bg-card text-muted-foreground"
+                }`}
+              >
+                <div className="text-[10px]">{activeLow ? `Y${chIdx}'` : `D${chIdx}`}</div>
+                <div className="text-base font-bold my-0.5">{val}</div>
+                <div className="text-[9px]">{isSelected ? "SELECTED" : "idle"}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Arbitrary Function Synthesis via NAND Gate */}
+        <div className="p-3 border border-border rounded-[2px] bg-card">
+          <div className="font-bold text-foreground mb-1.5 flex justify-between">
+            <span>Arbitrary Boolean Logic Synthesis (De Morgan NAND connection):</span>
+            <span className="text-mint font-bold">Output F = {dec.synthesis?.output}</span>
+          </div>
+
+          <div className="text-[11px] text-muted-foreground mb-2">
+            Select minterms to combine. By De Morgan's theorem, feeding active-LOW lines into a <strong>NAND gate</strong> computes the exact Sum-of-Products without external inverters:
+          </div>
+
+          <div className="flex flex-wrap gap-1 mb-2">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => toggleMinterm(m)}
+                className={`w-9 h-7 rounded-[2px] border font-mono ${
+                  targetMinterms.includes(m)
+                    ? "border-mint bg-mint/20 text-foreground font-bold"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                m{m}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-2 rounded bg-muted/20 border border-border/40 text-[11px] text-muted-foreground">
+            Synthesized Formula: <span className="text-foreground font-mono">{dec.synthesis?.equation}</span>
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** BCD-to-7-Segment Decoder & Interactive Display (m3-03) */
+export function SevenSegmentLab() {
+  const [bcd, setBcd] = useState(3);
+  const [displayType, setDisplayType] = useState<"common-cathode" | "common-anode">("common-cathode");
+
+  const sim = useMemo(() => simulate7SegmentDecoder(bcd, displayType), [bcd, displayType]);
+
+  // Segment SVG coordinates for a realistic 7-segment display
+  const segmentPaths: Record<string, string> = {
+    a: "M 25 15 L 75 15 L 68 23 L 32 23 Z",
+    b: "M 77 17 L 85 25 L 85 55 L 77 63 L 70 56 L 70 24 Z",
+    c: "M 77 67 L 85 75 L 85 105 L 77 113 L 70 106 L 70 74 Z",
+    d: "M 25 115 L 75 115 L 68 107 L 32 107 Z",
+    e: "M 23 67 L 30 74 L 30 106 L 23 113 L 15 105 L 15 75 Z",
+    f: "M 23 17 L 30 24 L 30 56 L 23 63 L 15 55 L 15 25 Z",
+    g: "M 25 65 L 75 65 L 68 70 L 32 70 L 25 65 L 32 60 L 68 60 Z",
+  };
+
+  return (
+    <Panel title="BCD to 7-Segment Decoder/Driver (74LS47 / 74LS48)">
+      <div className="space-y-4 font-mono text-xs">
+        {/* Top Controls */}
+        <div className="flex flex-wrap gap-4 items-center justify-between border-b border-border pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Display Hardware Type:</span>
+            <button
+              type="button"
+              onClick={() => setDisplayType("common-cathode")}
+              className={`px-2.5 py-1 rounded border ${
+                displayType === "common-cathode" ? "border-mint bg-mint/20 font-bold" : "border-border text-muted-foreground"
+              }`}
+            >
+              Common Cathode (74LS48: Active-HIGH)
+            </button>
+            <button
+              type="button"
+              onClick={() => setDisplayType("common-anode")}
+              className={`px-2.5 py-1 rounded border ${
+                displayType === "common-anode" ? "border-orange bg-orange/20 font-bold text-orange" : "border-border text-muted-foreground"
+              }`}
+            >
+              Common Anode (74LS47: Active-LOW)
+            </button>
+          </div>
+
+          <div className="text-muted-foreground">
+            Binary Input: <span className="font-bold text-foreground">{bcd.toString(2).padStart(4, "0")}₂</span>
+          </div>
+        </div>
+
+        {/* Digit Buttons: 0-9 and Don't Cares 10-15 */}
+        <div>
+          <div className="text-[11px] text-muted-foreground mb-1 flex justify-between">
+            <span>Valid BCD Digits (0 to 9):</span>
+            <span className="text-orange">Illegal Codes (10 to 15 / Don't Cares)</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {Array.from({ length: 16 }, (_, d) => {
+              const isIllegal = d >= 10;
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setBcd(d)}
+                  className={`w-9 h-8 rounded-[2px] border font-bold transition-colors ${
+                    bcd === d
+                      ? isIllegal
+                        ? "border-orange bg-orange/25 text-orange"
+                        : "border-mint bg-mint/25 text-mint"
+                      : isIllegal
+                        ? "border-border/60 text-muted-foreground/60 hover:bg-muted/20"
+                        : "border-border text-foreground hover:bg-muted/30"
+                  }`}
+                >
+                  {d}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Display Visualizer + Truth Table */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          {/* SVG 7-Segment Digit */}
+          <div className="p-4 border border-border rounded-[2px] bg-card flex flex-col items-center justify-center">
+            <svg viewBox="0 0 100 130" className="w-28 h-36" role="img" aria-label="7-segment LED display">
+              {sim.segmentList.map((seg) => {
+                const path = segmentPaths[seg.id];
+                return (
+                  <path
+                    key={seg.id}
+                    d={path}
+                    className={`transition-colors duration-150 ${
+                      seg.on
+                        ? displayType === "common-anode"
+                          ? "fill-orange drop-shadow-[0_0_8px_rgba(249,115,22,0.6)]"
+                          : "fill-mint drop-shadow-[0_0_8px_rgba(45,212,191,0.6)]"
+                        : "fill-muted/20 stroke-border/40"
+                    }`}
+                  />
+                );
+              })}
+            </svg>
+            <div className="mt-2 text-center text-[11px] text-muted-foreground">
+              {sim.isValidBcd ? `Digit '${bcd}' Illuminated` : `Illegal Code ${bcd}: Dash / Blank`}
+            </div>
+          </div>
+
+          {/* Segment Activation Matrix */}
+          <div className="md:col-span-2 space-y-1.5">
+            <div className="grid grid-cols-7 gap-1 text-center font-bold">
+              {sim.segmentList.map((seg) => (
+                <div
+                  key={seg.id}
+                  className={`p-2 rounded-[2px] border ${
+                    seg.on
+                      ? "border-mint bg-mint/20 text-foreground"
+                      : "border-border bg-card text-muted-foreground"
+                  }`}
+                >
+                  <div className="text-[10px] uppercase text-muted-foreground">Seg {seg.id}</div>
+                  <div className="text-base my-0.5">{seg.logicValue}</div>
+                  <div className="text-[9px]">{seg.on ? "ON" : "OFF"}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-2 bg-muted/20 rounded border border-border/40 text-[11px] text-muted-foreground">
+              <strong>Example SOP (Segment a): </strong> a = A + C + BD + B'D'
+            </div>
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** 8-to-3 Priority Encoder & Cascading Lab (m3-03) */
+export function PriorityEncoderLab() {
+  const [inputs, setInputs] = useState<Bit[]>([1, 1, 0, 1, 0, 1, 1, 1]); // Active-LOW: inputs 2 and 4 asserted (0)
+  const [activeLow, setActiveLow] = useState(true);
+  const [ei, setEi] = useState<Bit>(0); // 0 = enabled in active-LOW
+
+  const sim = useMemo(
+    () => simulatePriorityEncoder(inputs, activeLow, ei),
+    [inputs, activeLow, ei]
+  );
+
+  const toggleInput = (i: number) => {
+    setInputs((prev) => {
+      const copy = [...prev];
+      copy[i] = (copy[i] ? 0 : 1) as Bit;
+      return copy;
+    });
+  };
+
+  return (
+    <Panel title="8-to-3 Priority Encoder (74LS148) & Cascading">
+      <div className="space-y-4 font-mono text-xs">
+        {/* Controls */}
+        <div className="flex flex-wrap gap-4 items-center justify-between border-b border-border pb-2.5">
+          <div className="flex items-center gap-3">
+            <span className="text-muted-foreground">Enable Input (EI'):</span>
+            <button
+              type="button"
+              onClick={() => setEi((ei ? 0 : 1) as Bit)}
+              className={`px-2.5 py-1 rounded border ${ei === 0 ? "border-mint bg-mint/20 font-bold" : "border-orange bg-orange/20 text-orange"}`}
+            >
+              EI' = {ei} ({ei === 0 ? "ENABLED" : "DISABLED"})
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Polarity:</span>
+            <button
+              type="button"
+              onClick={() => setActiveLow(!activeLow)}
+              className="px-2.5 py-1 rounded border border-border bg-card hover:bg-muted/30"
+            >
+              {activeLow ? "Active-LOW (74LS148 Standard)" : "Active-HIGH"}
+            </button>
+          </div>
+        </div>
+
+        {/* 8 Inputs with Priority (D7 down to D0) */}
+        <div>
+          <div className="text-[11px] text-muted-foreground mb-1.5 flex justify-between">
+            <span className="text-orange">◄ Highest Priority (D₇)</span>
+            <span>Lowest Priority (D₀) ►</span>
+          </div>
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+            {[7, 6, 5, 4, 3, 2, 1, 0].map((idx) => {
+              const val = inputs[idx];
+              const isAsserted = activeLow ? val === 0 : val === 1;
+              const isWinner = sim.highestActiveIndex === idx;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => toggleInput(idx)}
+                  className={`p-2 rounded-[2px] border text-center transition-colors ${
+                    isWinner
+                      ? "border-mint bg-mint/25 text-mint font-bold ring-1 ring-mint"
+                      : isAsserted
+                        ? "border-sky bg-sky/20 text-foreground"
+                        : "border-border text-muted-foreground hover:bg-muted/20"
+                  }`}
+                >
+                  <div className="text-[10px]">D{idx}</div>
+                  <div className="text-base font-bold my-0.5">{val}</div>
+                  <div className="text-[9px]">{isWinner ? "WINNER" : isAsserted ? "active" : "idle"}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Encoded Outputs & Cascading Flags */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+          <div className="p-2.5 border border-border rounded-[2px] bg-card">
+            <div className="text-[10px] text-muted-foreground uppercase">Highest Active Key</div>
+            <div className="text-xl font-bold text-mint">
+              {sim.highestActiveIndex >= 0 ? sim.highestActiveIndex : "None"}
+            </div>
+          </div>
+
+          <div className="p-2.5 border border-border rounded-[2px] bg-card">
+            <div className="text-[10px] text-muted-foreground uppercase">Output Code (A₂A₁A₀)</div>
+            <div className="text-xl font-bold text-foreground">
+              {sim.codeBits.join("")}₂
+            </div>
+          </div>
+
+          <div className={`p-2.5 border rounded-[2px] ${sim.gs_n === 0 ? "border-mint bg-mint/20" : "border-border bg-card text-muted-foreground"}`}>
+            <div className="text-[10px] uppercase">Group Select (GS')</div>
+            <div className="text-xl font-bold">{sim.gs_n}</div>
+            <div className="text-[9px]">0 = Data Present</div>
+          </div>
+
+          <div className={`p-2.5 border rounded-[2px] ${sim.eo_n === 0 ? "border-orange bg-orange/20 text-orange" : "border-border bg-card text-muted-foreground"}`}>
+            <div className="text-[10px] uppercase font-bold">Enable Out (EO')</div>
+            <div className="text-xl font-bold">{sim.eo_n}</div>
+            <div className="text-[9px]">0 = Pass to Next Chip</div>
+          </div>
+        </div>
+
+        <div className="p-2.5 rounded-[2px] border border-border/80 bg-muted/15 text-[11px] text-muted-foreground">
+          <strong>Cascading Explanation: </strong>
+          When no inputs on this chip are asserted, EO' drops to 0, which connects to EI' of the lower-order 8-to-3 encoder to activate it. This arbitrates priority across 16 or 64 input lines seamlessly.
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Universal Function Generator via Shannon's Expansion on a MUX (m3-04) */
+export function MuxFunctionLab() {
+  const [minterms, setMinterms] = useState<number[]>([3, 5, 6, 7]); // Majority voter
+  const [decomposedVar, setDecomposedVar] = useState<"C" | "A" | "B">("C");
+  const [testA, setTestA] = useState<Bit>(1);
+  const [testB, setTestB] = useState<Bit>(0);
+  const [testC, setTestC] = useState<Bit>(1);
+
+  const mux = useMemo(
+    () => simulateMuxFunction(minterms, decomposedVar),
+    [minterms, decomposedVar]
+  );
+
+  const testResult = mux.evaluate(testA, testB, testC);
+
+  const presets = [
+    { label: "Majority Voter: ∑ m(3, 5, 6, 7)", m: [3, 5, 6, 7] },
+    { label: "Full Adder Sum: ∑ m(1, 2, 4, 7)", m: [1, 2, 4, 7] },
+    { label: "Full Adder Carry: ∑ m(3, 5, 6, 7)", m: [3, 5, 6, 7] },
+    { label: "Full Subtractor Borrow: ∑ m(1, 2, 3, 7)", m: [1, 2, 3, 7] },
+  ];
+
+  const toggleM = (idx: number) => {
+    setMinterms((prev) =>
+      prev.includes(idx) ? prev.filter((x) => x !== idx) : [...prev, idx].sort((x, y) => x - y)
+    );
+  };
+
+  return (
+    <Panel title="Universal Function Generator: Shannon's Expansion on a 4:1 MUX">
+      <div className="space-y-4 font-mono text-xs">
+        {/* Preset Function Selectors */}
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">Standard Logic Presets:</div>
+          <div className="flex flex-wrap gap-1.5">
+            {presets.map((p, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setMinterms(p.m)}
+                className="text-[11px] px-2 py-1 rounded-[2px] border border-border text-muted-foreground hover:bg-muted/30"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Minterm Toggles */}
+        <div>
+          <div className="text-[11px] text-muted-foreground mb-1">Target Function Minterm List:</div>
+          <div className="flex flex-wrap gap-1.5">
+            {[0, 1, 2, 3, 4, 5, 6, 7].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => toggleM(m)}
+                className={`w-9 h-8 rounded-[2px] border font-bold transition-colors ${
+                  minterms.includes(m)
+                    ? "border-mint bg-mint/25 text-mint"
+                    : "border-border text-muted-foreground hover:bg-muted/20"
+                }`}
+              >
+                m{m}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Decomposed Variable Selector */}
+        <div className="flex flex-wrap gap-4 items-center justify-between border-y border-border/60 py-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Decomposed Data Variable:</span>
+            {(["C", "A", "B"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setDecomposedVar(v)}
+                className={`px-2.5 py-1 rounded border ${
+                  decomposedVar === v ? "border-mint bg-mint/20 font-bold" : "border-border text-muted-foreground"
+                }`}
+              >
+                Variable {v} on Inputs
+              </button>
+            ))}
+          </div>
+
+          <div className="text-muted-foreground">
+            Select Lines: <span className="font-bold text-foreground">S₁={mux.selectVars[0]}, S₀={mux.selectVars[1]}</span>
+          </div>
+        </div>
+
+        {/* Shannon's Implementation Table */}
+        <div className="p-3 border border-border rounded-[2px] bg-card">
+          <div className="text-[11px] font-bold text-foreground mb-2 flex justify-between">
+            <span>Shannon's Implementation Table (4:1 MUX Inputs):</span>
+            <span className="text-mint font-bold">100% Function Equivalence Verified ✓</span>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 text-center">
+            {mux.table.map((row) => (
+              <div key={row.selectCode} className="p-2 border border-border rounded-[2px] bg-card/60">
+                <div className="text-[10px] text-muted-foreground font-bold">
+                  S₁S₀ = {row.selectCode}
+                </div>
+                <div className="text-[10px] text-muted-foreground my-1">
+                  m{row.mZero} ({row.valZero}) / m{row.mOne} ({row.valOne})
+                </div>
+                <div className="p-1 rounded bg-muted/20 border border-border/40 font-bold text-mint text-sm">
+                  I{parseInt(row.selectCode, 2)} = {row.derivedInput}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Live Interactive Test Circuit */}
+        <div className="p-3 border border-border rounded-[2px] bg-card space-y-2">
+          <div className="font-bold text-foreground mb-1">Live Multiplexer Evaluation:</div>
+          <div className="flex flex-wrap gap-4 items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setTestA((testA ? 0 : 1) as Bit)}
+                className={`px-2.5 py-1 rounded border ${testA ? "border-mint bg-mint/20 font-bold" : "border-border text-muted-foreground"}`}
+              >
+                A = {testA}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTestB((testB ? 0 : 1) as Bit)}
+                className={`px-2.5 py-1 rounded border ${testB ? "border-sky bg-sky/20 font-bold" : "border-border text-muted-foreground"}`}
+              >
+                B = {testB}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTestC((testC ? 0 : 1) as Bit)}
+                className={`px-2.5 py-1 rounded border ${testC ? "border-orange bg-orange/20 font-bold" : "border-border text-muted-foreground"}`}
+              >
+                C = {testC}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div>
+                Selected Channel: <span className="font-bold text-sky">I{testResult.channelIndex}</span> ({testResult.channelExpression})
+              </div>
+              <div>
+                MUX Output Y: <span className="font-bold text-mint">{testResult.output}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** 16-to-1 Multiplexer Tree from Five 4-to-1 MUXes (m3-04) */
+export function MuxTreeLab() {
+  const [selectAddress, setSelectAddress] = useState(13); // 1101_2
+  const [dataInputs, setDataInputs] = useState<Bit[]>(() =>
+    Array.from({ length: 16 }, (_, i) => (i === 13 ? 1 : 0) as Bit)
+  );
+
+  const s3 = ((selectAddress >> 3) & 1) as Bit;
+  const s2 = ((selectAddress >> 2) & 1) as Bit;
+  const s1 = ((selectAddress >> 1) & 1) as Bit;
+  const s0 = (selectAddress & 1) as Bit;
+
+  const tree = useMemo(
+    () => simulateMuxTree16to1(dataInputs, [s3, s2, s1, s0]),
+    [dataInputs, s3, s2, s1, s0]
+  );
+
+  const toggleInputBit = (idx: number) => {
+    setDataInputs((prev) => {
+      const copy = [...prev];
+      copy[idx] = (copy[idx] ? 0 : 1) as Bit;
+      return copy;
+    });
+  };
+
+  return (
+    <Panel title="Multiplexer Tree: 16-to-1 from Five 4-to-1 MUXes">
+      <div className="space-y-4 font-mono text-xs">
+        {/* Address Select Slider / Buttons */}
+        <div className="flex flex-wrap gap-4 items-center justify-between border-b border-border pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Select Address (S₃S₂S₁S₀):</span>
+            <input
+              type="number"
+              min={0}
+              max={15}
+              value={selectAddress}
+              onChange={(e) => setSelectAddress(Math.min(15, Math.max(0, Number(e.target.value) || 0)))}
+              className={`${inputCls} w-16 text-center`}
+            />
+            <span className="font-bold text-mint">
+              ({s3}{s2}{s1}{s0}₂ = Channel {selectAddress})
+            </span>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setDataInputs(Array.from({ length: 16 }, (_, i) => (i === selectAddress ? 1 : 0) as Bit))}
+              className="px-2 py-1 rounded border border-border text-[11px] text-muted-foreground hover:bg-muted/30"
+            >
+              Set Active Channel HIGH
+            </button>
+            <button
+              type="button"
+              onClick={() => setDataInputs(Array.from({ length: 16 }, () => 1 as Bit))}
+              className="px-2 py-1 rounded border border-border text-[11px] text-muted-foreground hover:bg-muted/30"
+            >
+              All HIGH
+            </button>
+          </div>
+        </div>
+
+        {/* 16 Data Inputs */}
+        <div>
+          <div className="text-[11px] text-muted-foreground mb-1">16 Primary Data Inputs (I₀ to I₁₅):</div>
+          <div className="grid grid-cols-8 sm:grid-cols-16 gap-1 text-center">
+            {dataInputs.map((val, idx) => {
+              const isSelected = idx === selectAddress;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => toggleInputBit(idx)}
+                  className={`p-1.5 rounded-[2px] border transition-colors ${
+                    isSelected
+                      ? "border-mint bg-mint/25 text-mint font-bold ring-1 ring-mint"
+                      : "border-border text-muted-foreground hover:bg-muted/20"
+                  }`}
+                >
+                  <div className="text-[9px]">I{idx}</div>
+                  <div className="font-bold">{val}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Two-Tier Tree Diagram */}
+        <div className="p-3 border border-border rounded-[2px] bg-card space-y-3">
+          <div className="text-[11px] font-bold text-foreground">Two-Tier Tree Architecture:</div>
+
+          {/* Tier 1: 4 MUXes */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {tree.tier1.map((muxInfo) => {
+              const isTier1ActiveMux = muxInfo.muxIndex === tree.tier2.selectedChannelIndex;
+              return (
+                <div
+                  key={muxInfo.muxIndex}
+                  className={`p-2 rounded-[2px] border ${
+                    isTier1ActiveMux ? "border-mint bg-mint/15" : "border-border bg-card/60"
+                  }`}
+                >
+                  <div className="text-[10px] text-muted-foreground font-bold flex justify-between">
+                    <span>Tier 1 MUX {muxInfo.muxIndex}</span>
+                    <span>S₁S₀ = {s1}{s0}</span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mt-1">
+                    Inputs: I{muxInfo.muxIndex * 4}..I{muxInfo.muxIndex * 4 + 3}
+                  </div>
+                  <div className="mt-1 pt-1 border-t border-border/40 flex justify-between font-bold">
+                    <span>Output D{muxInfo.muxIndex}:</span>
+                    <span className={isTier1ActiveMux ? "text-mint" : "text-muted-foreground"}>{muxInfo.output}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Tier 2: 1 Final MUX */}
+          <div className="p-2.5 rounded-[2px] border border-border bg-card/80 flex flex-wrap gap-4 items-center justify-between">
+            <div>
+              <span className="font-bold text-foreground">Tier 2 Final MUX: </span>
+              <span className="text-muted-foreground">Select lines S₃S₂ = {s3}{s2} choose input D{tree.tier2.selectedChannelIndex}</span>
+            </div>
+            <div className="text-base font-bold text-mint">
+              Final Output Y = {tree.output}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Demultiplexer & Time-Division Multiplexing (TDM) Lab (m3-04) */
+export function DemuxLab() {
+  const [data, setData] = useState<Bit>(1);
+  const [select, setSelect] = useState(2);
+  const [enable, setEnable] = useState<Bit>(1);
+
+  const outputs = Array.from({ length: 4 }, (_, i) => (enable && i === select ? data : 0) as Bit);
+
+  return (
+    <Panel title="Demultiplexer (Data Distributor) & TDM Bus Router">
+      <div className="space-y-4 font-mono text-xs">
+        <div className="flex flex-wrap gap-4 items-center justify-between border-b border-border pb-2.5">
+          <div className="flex items-center gap-3">
+            <span className="text-muted-foreground">Data Input (D):</span>
+            <button
+              type="button"
+              onClick={() => setData((data ? 0 : 1) as Bit)}
+              className={`w-8 h-8 rounded border font-bold ${data ? "border-mint bg-mint/20 text-mint" : "border-border text-muted-foreground"}`}
+            >
+              {data}
+            </button>
+            <span className="text-muted-foreground ml-2">Enable (E):</span>
+            <button
+              type="button"
+              onClick={() => setEnable((enable ? 0 : 1) as Bit)}
+              className={`px-2 py-1 rounded border ${enable ? "border-sky bg-sky/20 font-bold" : "border-border text-muted-foreground"}`}
+            >
+              E = {enable}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Select Line (S₁S₀):</span>
+            {[0, 1, 2, 3].map((ch) => (
+              <button
+                key={ch}
+                type="button"
+                onClick={() => setSelect(ch)}
+                className={`px-2 py-1 rounded border ${select === ch ? "border-mint bg-mint/20 font-bold" : "border-border text-muted-foreground"}`}
+              >
+                {ch.toString(2).padStart(2, "0")}₂ (Y{ch})
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Demux Outputs */}
+        <div className="grid grid-cols-4 gap-2 text-center">
+          {outputs.map((val, idx) => {
+            const isRouted = enable && idx === select;
+            return (
+              <div
+                key={idx}
+                className={`p-3 rounded-[2px] border ${
+                  isRouted ? "border-mint bg-mint/25 text-mint font-bold" : "border-border bg-card text-muted-foreground"
+                }`}
+              >
+                <div className="text-[10px]">Output Y{idx}</div>
+                <div className="text-lg font-bold my-1">{val}</div>
+                <div className="text-[9px]">{isRouted ? "DATA STREAM" : "idle (0)"}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="p-2.5 rounded-[2px] border border-border/80 bg-muted/15 text-[11px] text-muted-foreground">
+          <strong>Decoder Equivalence: </strong>
+          Setting Enable pin E = D turns a 2-to-4 decoder directly into a 1-to-4 demultiplexer! Data bit D is routed to Y_{select} while unselected lines remain grounded.
+        </div>
+      </div>
+    </Panel>
+  );
+}
 
 /** Ripple carry: each stage waits for the one before it. Look-ahead: all at once. */
 export function CarryRace() {

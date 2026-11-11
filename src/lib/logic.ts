@@ -1752,3 +1752,922 @@ export const UNIVERSAL_CIRCUITS: Record<UniversalGateFamily, Record<string, Univ
   },
 };
 
+/* ============================================================
+   Combinational Building Blocks (Module 3)
+   Adders, Fast Carries, Comparators, Decoders, Encoders, MUXes
+   ============================================================ */
+
+export interface AdderSubtractorResult {
+  width: number;
+  mode: "ADD" | "SUB";
+  m: Bit;
+  a: number;
+  b: number;
+  aBits: Bit[];
+  bBits: Bit[];
+  bEffective: Bit[];
+  carries: Bit[];
+  sumBits: Bit[];
+  stages: {
+    bit: number;
+    a: Bit;
+    b: Bit;
+    bEff: Bit;
+    cIn: Bit;
+    sum: Bit;
+    cOut: Bit;
+  }[];
+  sumUnsigned: number;
+  aSigned: number;
+  bSigned: number;
+  sumSigned: number;
+  flags: {
+    zero: boolean;
+    sign: Bit;
+    carry: Bit;
+    overflow: boolean;
+  };
+  explanation: string;
+}
+
+export function simulateAdderSubtractor(
+  a: number,
+  b: number,
+  mode: "ADD" | "SUB",
+  width: number = 4
+): AdderSubtractorResult {
+  const m: Bit = mode === "SUB" ? 1 : 0;
+  const aBits: Bit[] = Array.from({ length: width }, (_, i) => ((a >> i) & 1) as Bit);
+  const bBits: Bit[] = Array.from({ length: width }, (_, i) => ((b >> i) & 1) as Bit);
+  const bEffective: Bit[] = bBits.map((bit) => (bit ^ m) as Bit);
+
+  const carries: Bit[] = [m];
+  const sumBits: Bit[] = [];
+  const stages: AdderSubtractorResult["stages"] = [];
+
+  for (let i = 0; i < width; i++) {
+    const ai = aBits[i];
+    const biEff = bEffective[i];
+    const cIn = carries[i];
+    const sum = (ai ^ biEff ^ cIn) as Bit;
+    const cOut = ((ai & biEff) | (ai & cIn) | (biEff & cIn)) as Bit;
+    sumBits.push(sum);
+    carries.push(cOut);
+    stages.push({
+      bit: i,
+      a: ai,
+      b: bBits[i],
+      bEff: biEff,
+      cIn,
+      sum,
+      cOut,
+    });
+  }
+
+  let sumUnsigned = 0;
+  for (let i = 0; i < width; i++) {
+    sumUnsigned |= sumBits[i] << i;
+  }
+
+  const toSigned = (val: number, w: number) => {
+    const signMask = 1 << (w - 1);
+    const valueMask = (1 << w) - 1;
+    const masked = val & valueMask;
+    return masked & signMask ? masked - (1 << w) : masked;
+  };
+
+  const aSigned = toSigned(a, width);
+  const bSigned = toSigned(b, width);
+  const sumSigned = toSigned(sumUnsigned, width);
+
+  const cMSBIn = carries[width - 1];
+  const cMSBOut = carries[width];
+  const overflow = (cMSBIn ^ cMSBOut) === 1;
+  const zero = sumBits.every((bit) => bit === 0);
+  const sign = sumBits[width - 1];
+  const carry = cMSBOut;
+
+  let explanation = "";
+  if (mode === "ADD") {
+    explanation = `${aSigned} + ${bSigned} = ${aSigned + bSigned}. `;
+    if (overflow) {
+      explanation += `Signed overflow occurred (V=1)! Carry into sign bit (C${width - 1}=${cMSBIn}) != carry out (C${width}=${cMSBOut}). Result ${sumSigned} wrapped around.`;
+    } else {
+      explanation += `Normal addition: signed result ${sumSigned} is within [${-(1 << (width - 1))}, ${(1 << (width - 1)) - 1}].`;
+    }
+  } else {
+    explanation = `${aSigned} - ${bSigned} = ${aSigned - bSigned}. M=1 inverted operand B (${bBits.slice().reverse().join("")} -> ${bEffective.slice().reverse().join("")}) and set C0=1. `;
+    if (overflow) {
+      explanation += `Signed overflow occurred (V=1)! Result ${sumSigned} wrapped around.`;
+    } else {
+      explanation += `Valid two's complement subtraction: ${aSigned} + (-${bSigned}) = ${sumSigned}.`;
+    }
+  }
+
+  return {
+    width,
+    mode,
+    m,
+    a,
+    b,
+    aBits,
+    bBits,
+    bEffective,
+    carries,
+    sumBits,
+    stages,
+    sumUnsigned,
+    aSigned,
+    bSigned,
+    sumSigned,
+    flags: { zero, sign, carry, overflow },
+    explanation,
+  };
+}
+
+export function halfSubtractor(a: Bit, b: Bit) {
+  const diff = (a ^ b) as Bit;
+  const borrowOut = (!a && b ? 1 : 0) as Bit;
+  return { diff, borrowOut };
+}
+
+export function fullSubtractor(a: Bit, b: Bit, bIn: Bit) {
+  const d1 = (a ^ b) as Bit;
+  const b1 = (!a && b ? 1 : 0) as Bit;
+  const diff = (d1 ^ bIn) as Bit;
+  const b2 = (!d1 && bIn ? 1 : 0) as Bit;
+  const borrowOut = (b1 || b2 ? 1 : 0) as Bit;
+  return {
+    diff,
+    borrowOut,
+    intermediate: { d1, b1, b2 },
+  };
+}
+
+export interface FastCarryAnalysis {
+  width: number;
+  aBits: Bit[];
+  bBits: Bit[];
+  c0: Bit;
+  generates: Bit[];
+  propagates: Bit[];
+  claCarries: Bit[];
+  claTerms: {
+    carryIndex: number;
+    terms: { expr: string; active: boolean }[];
+    resultingCarry: Bit;
+    dominantReason: string;
+  }[];
+  blockPropagate: Bit;
+  blockGenerate: Bit;
+  skipAnalysis: {
+    canSkip: boolean;
+    rippleDelaySteps: number;
+    skipDelaySteps: number;
+  };
+  latencyComparison: {
+    architecture: string;
+    delayFormula: string;
+    delayTau4Bit: number;
+    delayTau16Bit: number;
+    delayTau64Bit: number;
+    areaCost: string;
+  }[];
+}
+
+export function simulateFastCarries(
+  a: number,
+  b: number,
+  c0: Bit = 0,
+  width: number = 4
+): FastCarryAnalysis {
+  const aBits: Bit[] = Array.from({ length: width }, (_, i) => ((a >> i) & 1) as Bit);
+  const bBits: Bit[] = Array.from({ length: width }, (_, i) => ((b >> i) & 1) as Bit);
+  const generates: Bit[] = aBits.map((ai, i) => (ai & bBits[i]) as Bit);
+  const propagates: Bit[] = aBits.map((ai, i) => (ai ^ bBits[i]) as Bit);
+
+  const claCarries: Bit[] = [c0];
+  const claTerms: FastCarryAnalysis["claTerms"] = [];
+
+  for (let i = 0; i < width; i++) {
+    const terms: { expr: string; active: boolean }[] = [];
+    terms.push({ expr: `G${i}`, active: generates[i] === 1 });
+
+    for (let k = i - 1; k >= 0; k--) {
+      const pChain = Array.from({ length: i - k }, (_, idx) => `P${i - idx}`).join("\u00B7");
+      let active = generates[k] === 1;
+      for (let pIdx = k + 1; pIdx <= i; pIdx++) {
+        if (propagates[pIdx] !== 1) active = false;
+      }
+      terms.push({ expr: `${pChain}\u00B7G${k}`, active });
+    }
+
+    const fullPChain = Array.from({ length: i + 1 }, (_, idx) => `P${i - idx}`).join("\u00B7");
+    let c0Active = c0 === 1;
+    for (let pIdx = 0; pIdx <= i; pIdx++) {
+      if (propagates[pIdx] !== 1) c0Active = false;
+    }
+    terms.push({ expr: `${fullPChain}\u00B7C0`, active: c0Active });
+
+    const resultingCarry = terms.some((t) => t.active) ? (1 as Bit) : (0 as Bit);
+    claCarries.push(resultingCarry);
+
+    const activeTerms = terms.filter((t) => t.active);
+    let dominantReason = "No carry";
+    if (activeTerms.length > 0) {
+      dominantReason = `Active by term(s): ${activeTerms.map((t) => t.expr).join(", ")}`;
+    }
+
+    claTerms.push({
+      carryIndex: i + 1,
+      terms,
+      resultingCarry,
+      dominantReason,
+    });
+  }
+
+  const blockPropagate = propagates.slice(0, 4).every((p) => p === 1) ? (1 as Bit) : (0 as Bit);
+  const g3 = generates[3] ?? 0;
+  const p3g2 = (propagates[3] && generates[2]) ?? 0;
+  const p3p2g1 = (propagates[3] && propagates[2] && generates[1]) ?? 0;
+  const p3p2p1g0 = (propagates[3] && propagates[2] && propagates[1] && generates[0]) ?? 0;
+  const blockGenerate = (g3 || p3g2 || p3p2g1 || p3p2p1g0 ? 1 : 0) as Bit;
+
+  const canSkip = blockPropagate === 1;
+  const rippleDelaySteps = width * 2;
+  const skipDelaySteps = canSkip ? 2 : rippleDelaySteps;
+
+  const latencyComparison = [
+    {
+      architecture: "Ripple-Carry Adder (RCA)",
+      delayFormula: "2n \u00B7 \u03C4",
+      delayTau4Bit: 8,
+      delayTau16Bit: 32,
+      delayTau64Bit: 128,
+      areaCost: "Minimal (O(n) gates, local routing)",
+    },
+    {
+      architecture: "Carry-Lookahead Adder (CLA)",
+      delayFormula: "O(log n) tree",
+      delayTau4Bit: 6,
+      delayTau16Bit: 10,
+      delayTau64Bit: 14,
+      areaCost: "Moderate (O(n log n) gates, limited fan-in)",
+    },
+    {
+      architecture: "Carry-Skip Adder (Bypass)",
+      delayFormula: "O(\u221An) \u00B7 \u03C4",
+      delayTau4Bit: 8,
+      delayTau16Bit: 16,
+      delayTau64Bit: 32,
+      areaCost: "Low (RCA + 1 AND + 1 MUX per block)",
+    },
+    {
+      architecture: "Carry-Select Adder (CSA)",
+      delayFormula: "O(\u221An) \u00B7 \u03C4",
+      delayTau4Bit: 8,
+      delayTau16Bit: 14,
+      delayTau64Bit: 24,
+      areaCost: "High (~2x area for duplicate dual adders)",
+    },
+    {
+      architecture: "Kogge-Stone Tree Adder",
+      delayFormula: "log\u2082(n) + 2",
+      delayTau4Bit: 4,
+      delayTau16Bit: 6,
+      delayTau64Bit: 8,
+      areaCost: "Highest (dense 2D wiring tree, high dynamic power)",
+    },
+  ];
+
+  return {
+    width,
+    aBits,
+    bBits,
+    c0,
+    generates,
+    propagates,
+    claCarries,
+    claTerms,
+    blockPropagate,
+    blockGenerate,
+    skipAnalysis: {
+      canSkip,
+      rippleDelaySteps,
+      skipDelaySteps,
+    },
+    latencyComparison,
+  };
+}
+
+export interface MagnitudeComparatorResult {
+  width: number;
+  a: number;
+  b: number;
+  aBits: Bit[];
+  bBits: Bit[];
+  xBits: Bit[];
+  gtTerms: { bit: number; expr: string; active: boolean }[];
+  ltTerms: { bit: number; expr: string; active: boolean }[];
+  eqTerm: { expr: string; active: boolean };
+  decidingBit: number | "EQUAL" | "CASCADED";
+  gt: Bit;
+  eq: Bit;
+  lt: Bit;
+  reason: string;
+}
+
+export function simulateMagnitudeComparator(
+  a: number,
+  b: number,
+  width: number = 4,
+  cascading: { gt?: Bit; eq?: Bit; lt?: Bit } = { gt: 0, eq: 1, lt: 0 }
+): MagnitudeComparatorResult {
+  const aBits: Bit[] = Array.from({ length: width }, (_, i) => ((a >> i) & 1) as Bit);
+  const bBits: Bit[] = Array.from({ length: width }, (_, i) => ((b >> i) & 1) as Bit);
+  const xBits: Bit[] = aBits.map((ai, i) => (ai === bBits[i] ? 1 : 0) as Bit);
+
+  const gtTerms: MagnitudeComparatorResult["gtTerms"] = [];
+  const ltTerms: MagnitudeComparatorResult["ltTerms"] = [];
+
+  let gtActive = false;
+  let ltActive = false;
+  let decidingBit: number | "EQUAL" | "CASCADED" = "EQUAL";
+
+  for (let i = width - 1; i >= 0; i--) {
+    let higherXActive = true;
+    for (let j = width - 1; j > i; j--) {
+      if (xBits[j] !== 1) higherXActive = false;
+    }
+
+    const ai = aBits[i];
+    const bi = bBits[i];
+
+    const gtCondition = higherXActive && ai === 1 && bi === 0;
+    const ltCondition = higherXActive && ai === 0 && bi === 1;
+
+    const xPrefix = i === width - 1 ? "" : Array.from({ length: width - 1 - i }, (_, idx) => `x${width - 1 - idx}`).join("\u00B7") + "\u00B7";
+    gtTerms.push({
+      bit: i,
+      expr: `${xPrefix}A${i}\u00B7B${i}'`,
+      active: gtCondition,
+    });
+    ltTerms.push({
+      bit: i,
+      expr: `${xPrefix}A${i}'\u00B7B${i}`,
+      active: ltCondition,
+    });
+
+    if (decidingBit === "EQUAL") {
+      if (ai > bi) {
+        decidingBit = i;
+        gtActive = true;
+      } else if (ai < bi) {
+        decidingBit = i;
+        ltActive = true;
+      }
+    }
+  }
+
+  const allEqual = xBits.every((x) => x === 1);
+  const eqTerm = {
+    expr: Array.from({ length: width }, (_, i) => `x${width - 1 - i}`).join("\u00B7"),
+    active: allEqual,
+  };
+
+  let gt: Bit = gtActive ? 1 : 0;
+  let eq: Bit = 0;
+  let lt: Bit = ltActive ? 1 : 0;
+
+  let reason = "";
+  if (!allEqual) {
+    if (gtActive) {
+      gt = 1;
+      eq = 0;
+      lt = 0;
+      reason = `A > B decided at bit position ${decidingBit} (A${decidingBit}=1, B${decidingBit}=0), higher bits matched.`;
+    } else {
+      gt = 0;
+      eq = 0;
+      lt = 1;
+      reason = `A < B decided at bit position ${decidingBit} (A${decidingBit}=0, B${decidingBit}=1), higher bits matched.`;
+    }
+  } else {
+    if (cascading.gt) {
+      gt = 1;
+      eq = 0;
+      lt = 0;
+      decidingBit = "CASCADED";
+      reason = `All 4 bits identical (A=B=0b${aBits.slice().reverse().join("")}). Decided by cascading input I(A>B)=1.`;
+    } else if (cascading.lt) {
+      gt = 0;
+      eq = 0;
+      lt = 1;
+      decidingBit = "CASCADED";
+      reason = `All 4 bits identical (A=B=0b${aBits.slice().reverse().join("")}). Decided by cascading input I(A<B)=1.`;
+    } else {
+      gt = 0;
+      eq = cascading.eq ?? 1;
+      lt = 0;
+      reason = `All 4 bits identical (A=B=0b${aBits.slice().reverse().join("")}). Output A=B is HIGH.`;
+    }
+  }
+
+  return {
+    width,
+    a,
+    b,
+    aBits,
+    bBits,
+    xBits,
+    gtTerms,
+    ltTerms,
+    eqTerm,
+    decidingBit,
+    gt,
+    eq,
+    lt,
+    reason,
+  };
+}
+
+export interface DecoderResult {
+  address: number;
+  numInputs: 2 | 3 | 4;
+  numOutputs: number;
+  enables: { g1: Bit; g2a_n: Bit; g2b_n: Bit };
+  enabled: boolean;
+  activeLow: boolean;
+  selectedMinterm: number;
+  outputs: Bit[];
+  synthesis?: {
+    targetMinterms: number[];
+    gateUsed: "OR" | "NAND";
+    output: Bit;
+    equation: string;
+  };
+}
+
+export function simulateDecoder(
+  address: number,
+  numInputs: 2 | 3 | 4 = 3,
+  enables: { g1?: Bit; g2a_n?: Bit; g2b_n?: Bit } = { g1: 1, g2a_n: 0, g2b_n: 0 },
+  activeLow: boolean = true,
+  targetMinterms?: number[]
+): DecoderResult {
+  const g1 = enables.g1 ?? 1;
+  const g2a_n = enables.g2a_n ?? 0;
+  const g2b_n = enables.g2b_n ?? 0;
+
+  const enabled = g1 === 1 && g2a_n === 0 && g2b_n === 0;
+  const numOutputs = 1 << numInputs;
+  const validAddress = address >= 0 && address < numOutputs;
+  const selectedMinterm = enabled && validAddress ? address : -1;
+
+  const outputs: Bit[] = Array.from({ length: numOutputs }, (_, i) => {
+    if (!enabled) {
+      return activeLow ? 1 : 0;
+    }
+    const isSelected = i === selectedMinterm;
+    if (activeLow) {
+      return isSelected ? 0 : 1;
+    }
+    return isSelected ? 1 : 0;
+  });
+
+  let synthesis: DecoderResult["synthesis"] = undefined;
+  if (targetMinterms && targetMinterms.length > 0) {
+    if (activeLow) {
+      const anyTargetAsserted = targetMinterms.some((m) => outputs[m] === 0);
+      const output = anyTargetAsserted ? 1 : 0;
+      synthesis = {
+        targetMinterms,
+        gateUsed: "NAND",
+        output: output as Bit,
+        equation: `F = (${targetMinterms.map((m) => `Y${m}'`).join(" \u00B7 ")})' = \u2211 m(${targetMinterms.join(", ")})`,
+      };
+    } else {
+      const anyTargetAsserted = targetMinterms.some((m) => outputs[m] === 1);
+      const output = anyTargetAsserted ? 1 : 0;
+      synthesis = {
+        targetMinterms,
+        gateUsed: "OR",
+        output: output as Bit,
+        equation: `F = ${targetMinterms.map((m) => `D${m}`).join(" + ")} = \u2211 m(${targetMinterms.join(", ")})`,
+      };
+    }
+  }
+
+  return {
+    address,
+    numInputs,
+    numOutputs,
+    enables: { g1, g2a_n, g2b_n },
+    enabled,
+    activeLow,
+    selectedMinterm,
+    outputs,
+    synthesis,
+  };
+}
+
+export interface SevenSegmentResult {
+  bcd: number;
+  displayType: "common-cathode" | "common-anode";
+  isValidBcd: boolean;
+  segments: {
+    a: Bit;
+    b: Bit;
+    c: Bit;
+    d: Bit;
+    e: Bit;
+    f: Bit;
+    g: Bit;
+  };
+  segmentList: {
+    id: "a" | "b" | "c" | "d" | "e" | "f" | "g";
+    on: boolean;
+    logicValue: Bit;
+    sopFormula: string;
+  }[];
+}
+
+export function simulate7SegmentDecoder(
+  bcd: number,
+  displayType: "common-cathode" | "common-anode" = "common-cathode"
+): SevenSegmentResult {
+  const isValidBcd = bcd >= 0 && bcd <= 9;
+
+  const patterns: Record<number, [number, number, number, number, number, number, number]> = {
+    0: [1, 1, 1, 1, 1, 1, 0],
+    1: [0, 1, 1, 0, 0, 0, 0],
+    2: [1, 1, 0, 1, 1, 0, 1],
+    3: [1, 1, 1, 1, 0, 0, 1],
+    4: [0, 1, 1, 0, 0, 1, 1],
+    5: [1, 0, 1, 1, 0, 1, 1],
+    6: [1, 0, 1, 1, 1, 1, 1],
+    7: [1, 1, 1, 0, 0, 0, 0],
+    8: [1, 1, 1, 1, 1, 1, 1],
+    9: [1, 1, 1, 1, 0, 1, 1],
+    10: [0, 0, 0, 0, 0, 0, 1],
+    11: [0, 0, 0, 0, 0, 0, 1],
+    12: [0, 0, 0, 0, 0, 0, 1],
+    13: [0, 0, 0, 0, 0, 0, 1],
+    14: [0, 0, 0, 0, 0, 0, 1],
+    15: [0, 0, 0, 0, 0, 0, 0],
+  };
+
+  const raw = patterns[bcd] ?? [0, 0, 0, 0, 0, 0, 0];
+  const [sa, sb, sc, sd, se, sf, sg] = raw;
+
+  const toDisplay = (val: number): Bit => {
+    if (displayType === "common-anode") {
+      return (val ? 0 : 1) as Bit;
+    }
+    return (val ? 1 : 0) as Bit;
+  };
+
+  const formulas = {
+    a: "A + C + BD + B'D'",
+    b: "B' + C'D' + CD",
+    c: "B + C' + D",
+    d: "A + B'D' + CD' + B'C + BC'D",
+    e: "B'D' + CD'",
+    f: "A + C'D' + BC' + BD'",
+    g: "A + BC' + B'C + CD'",
+  };
+
+  const segKeys = ["a", "b", "c", "d", "e", "f", "g"] as const;
+  const segmentList = segKeys.map((id, idx) => {
+    const illuminated = raw[idx] === 1;
+    return {
+      id,
+      on: illuminated,
+      logicValue: toDisplay(raw[idx]),
+      sopFormula: formulas[id],
+    };
+  });
+
+  return {
+    bcd,
+    displayType,
+    isValidBcd,
+    segments: {
+      a: toDisplay(sa),
+      b: toDisplay(sb),
+      c: toDisplay(sc),
+      d: toDisplay(sd),
+      e: toDisplay(se),
+      f: toDisplay(sf),
+      g: toDisplay(sg),
+    },
+    segmentList,
+  };
+}
+
+export interface PriorityEncoderResult {
+  inputs: Bit[];
+  activeLow: boolean;
+  enabled: boolean;
+  highestActiveIndex: number;
+  codeBits: Bit[];
+  codeNumber: number;
+  valid: Bit;
+  gs_n: Bit;
+  eo_n: Bit;
+  formulas: { output: string; derivation: string }[];
+}
+
+export function simulatePriorityEncoder(
+  inputs: Bit[],
+  activeLow: boolean = false,
+  ei_n: Bit = 0
+): PriorityEncoderResult {
+  const enabled = ei_n === 0;
+  const n = inputs.length;
+  const numCodeBits = Math.ceil(Math.log2(n));
+
+  const isInputAsserted = (val: Bit) => (activeLow ? val === 0 : val === 1);
+
+  let highestActiveIndex = -1;
+  if (enabled) {
+    for (let i = n - 1; i >= 0; i--) {
+      if (isInputAsserted(inputs[i])) {
+        highestActiveIndex = i;
+        break;
+      }
+    }
+  }
+
+  const valid: Bit = (enabled && highestActiveIndex >= 0 ? 1 : 0) as Bit;
+  const gs_n: Bit = (enabled && highestActiveIndex >= 0 ? 0 : 1) as Bit;
+  const eo_n: Bit = (enabled && highestActiveIndex < 0 ? 0 : 1) as Bit;
+
+  const codeNumber = highestActiveIndex >= 0 ? highestActiveIndex : 0;
+  const codeBits: Bit[] = Array.from({ length: numCodeBits }, (_, i) => {
+    const bitPos = numCodeBits - 1 - i;
+    const bitVal = ((codeNumber >> bitPos) & 1) as Bit;
+    if (activeLow) {
+      return (valid ? (bitVal ? 0 : 1) : 1) as Bit;
+    }
+    return (valid ? bitVal : 0) as Bit;
+  });
+
+  const formulas: PriorityEncoderResult["formulas"] = [];
+  if (n === 4) {
+    formulas.push({
+      output: "A1",
+      derivation: "D3 + D2",
+    });
+    formulas.push({
+      output: "A0",
+      derivation: "D3 + D2'·D1",
+    });
+    formulas.push({
+      output: "V",
+      derivation: "D3 + D2 + D1 + D0",
+    });
+  } else if (n === 8) {
+    formulas.push({
+      output: "A2",
+      derivation: "D7 + D6 + D5 + D4",
+    });
+    formulas.push({
+      output: "A1",
+      derivation: "D7 + D6 + D5'D4'·(D3 + D2)",
+    });
+    formulas.push({
+      output: "A0",
+      derivation: "D7 + D6'D5 + D6'D4'D3 + D6'D4'D2'D1",
+    });
+    formulas.push({
+      output: "GS' (Group Select)",
+      derivation: "EI' · (D0·D1·D2·D3·D4·D5·D6·D7)'",
+    });
+    formulas.push({
+      output: "EO' (Enable Output)",
+      derivation: "EI' · D0 · D1 · D2 · D3 · D4 · D5 · D6 · D7",
+    });
+  }
+
+  return {
+    inputs,
+    activeLow,
+    enabled,
+    highestActiveIndex,
+    codeBits,
+    codeNumber,
+    valid,
+    gs_n,
+    eo_n,
+    formulas,
+  };
+}
+
+export interface MuxFunctionResult {
+  minterms: number[];
+  decomposedVar: "A" | "B" | "C";
+  selectVars: [string, string];
+  table: {
+    selectCode: string;
+    mZero: number;
+    mOne: number;
+    valZero: Bit;
+    valOne: Bit;
+    derivedInput: "0" | "1" | string;
+  }[];
+  allOutputsMatch: boolean;
+  evaluate: (a: Bit, b: Bit, c: Bit) => {
+    selectCode: string;
+    channelIndex: number;
+    channelExpression: string;
+    output: Bit;
+    expectedFunctionOutput: Bit;
+  };
+}
+
+export function simulateMuxFunction(
+  minterms: number[],
+  decomposedVar: "A" | "B" | "C" = "C"
+): MuxFunctionResult {
+  const mintermSet = new Set(minterms);
+  const fnAt = (a: Bit, b: Bit, c: Bit): Bit => {
+    const idx = (a << 2) | (b << 1) | c;
+    return mintermSet.has(idx) ? 1 : 0;
+  };
+
+  const selectVars: [string, string] =
+    decomposedVar === "C" ? ["A", "B"] : decomposedVar === "A" ? ["B", "C"] : ["A", "C"];
+
+  const table: MuxFunctionResult["table"] = [];
+  const selectCodes = ["00", "01", "10", "11"] as const;
+
+  for (let sc = 0; sc < 4; sc++) {
+    const s1 = ((sc >> 1) & 1) as Bit;
+    const s0 = (sc & 1) as Bit;
+
+    let mZero = 0;
+    let mOne = 0;
+    let valZero: Bit = 0;
+    let valOne: Bit = 0;
+
+    if (decomposedVar === "C") {
+      mZero = (s1 << 2) | (s0 << 1) | 0;
+      mOne = (s1 << 2) | (s0 << 1) | 1;
+      valZero = fnAt(s1, s0, 0);
+      valOne = fnAt(s1, s0, 1);
+    } else if (decomposedVar === "A") {
+      mZero = (0 << 2) | (s1 << 1) | s0;
+      mOne = (1 << 2) | (s1 << 1) | s0;
+      valZero = fnAt(0, s1, s0);
+      valOne = fnAt(1, s1, s0);
+    } else {
+      mZero = (s1 << 2) | (0 << 1) | s0;
+      mOne = (s1 << 2) | (1 << 1) | s0;
+      valZero = fnAt(s1, 0, s0);
+      valOne = fnAt(s1, 1, s0);
+    }
+
+    let derivedInput: "0" | "1" | string = "0";
+    if (valZero === 0 && valOne === 0) derivedInput = "0";
+    else if (valZero === 1 && valOne === 1) derivedInput = "1";
+    else if (valZero === 0 && valOne === 1) derivedInput = decomposedVar;
+    else if (valZero === 1 && valOne === 0) derivedInput = `${decomposedVar}'`;
+
+    table.push({
+      selectCode: selectCodes[sc],
+      mZero,
+      mOne,
+      valZero,
+      valOne,
+      derivedInput,
+    });
+  }
+
+  const evaluate = (a: Bit, b: Bit, c: Bit) => {
+    let sc = 0;
+    if (decomposedVar === "C") {
+      sc = (a << 1) | b;
+    } else if (decomposedVar === "A") {
+      sc = (b << 1) | c;
+    } else {
+      sc = (a << 1) | c;
+    }
+
+    const row = table[sc];
+    let decompVal: Bit = 0;
+    if (decomposedVar === "C") decompVal = c;
+    else if (decomposedVar === "A") decompVal = a;
+    else decompVal = b;
+
+    let output: Bit = 0;
+    if (row.derivedInput === "0") output = 0;
+    else if (row.derivedInput === "1") output = 1;
+    else if (row.derivedInput === decomposedVar) output = decompVal;
+    else if (row.derivedInput === `${decomposedVar}'`) output = (decompVal ? 0 : 1) as Bit;
+
+    const expected = fnAt(a, b, c);
+
+    return {
+      selectCode: row.selectCode,
+      channelIndex: sc,
+      channelExpression: row.derivedInput,
+      output,
+      expectedFunctionOutput: expected,
+    };
+  };
+
+  let allOutputsMatch = true;
+  for (let m = 0; m < 8; m++) {
+    const a = ((m >> 2) & 1) as Bit;
+    const b = ((m >> 1) & 1) as Bit;
+    const c = (m & 1) as Bit;
+    if (evaluate(a, b, c).output !== fnAt(a, b, c)) {
+      allOutputsMatch = false;
+    }
+  }
+
+  return {
+    minterms,
+    decomposedVar,
+    selectVars,
+    table,
+    allOutputsMatch,
+    evaluate,
+  };
+}
+
+export interface MuxTree16Result {
+  inputs: Bit[];
+  selects: [Bit, Bit, Bit, Bit];
+  tier1: {
+    muxIndex: number;
+    inputs: [Bit, Bit, Bit, Bit];
+    selects: [Bit, Bit];
+    selectedInputIndex: number;
+    output: Bit;
+  }[];
+  tier2: {
+    inputs: [Bit, Bit, Bit, Bit];
+    selects: [Bit, Bit];
+    selectedChannelIndex: number;
+    output: Bit;
+  };
+  globalAddress: number;
+  output: Bit;
+  correct: boolean;
+}
+
+export function simulateMuxTree16to1(
+  inputs: Bit[],
+  selects: [Bit, Bit, Bit, Bit]
+): MuxTree16Result {
+  const [s3, s2, s1, s0] = selects;
+  const tier1Select = (s1 << 1) | s0;
+  const tier2Select = (s3 << 1) | s2;
+  const globalAddress = (s3 << 3) | (s2 << 2) | (s1 << 1) | s0;
+
+  const tier1: MuxTree16Result["tier1"] = [];
+  const tier1Outputs: Bit[] = [];
+
+  for (let m = 0; m < 4; m++) {
+    const startIdx = m * 4;
+    const muxInputs: [Bit, Bit, Bit, Bit] = [
+      inputs[startIdx] ?? 0,
+      inputs[startIdx + 1] ?? 0,
+      inputs[startIdx + 2] ?? 0,
+      inputs[startIdx + 3] ?? 0,
+    ];
+    const out = muxInputs[tier1Select];
+    tier1.push({
+      muxIndex: m,
+      inputs: muxInputs,
+      selects: [s1, s0],
+      selectedInputIndex: tier1Select,
+      output: out,
+    });
+    tier1Outputs.push(out);
+  }
+
+  const finalOutput = tier1Outputs[tier2Select];
+  const tier2: MuxTree16Result["tier2"] = {
+    inputs: [tier1Outputs[0], tier1Outputs[1], tier1Outputs[2], tier1Outputs[3]],
+    selects: [s3, s2],
+    selectedChannelIndex: tier2Select,
+    output: finalOutput,
+  };
+
+  const expected = inputs[globalAddress] ?? 0;
+
+  return {
+    inputs,
+    selects,
+    tier1,
+    tier2,
+    globalAddress,
+    output: finalOutput,
+    correct: finalOutput === expected,
+  };
+}
+
+

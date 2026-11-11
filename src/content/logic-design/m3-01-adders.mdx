@@ -1,5 +1,6 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { HalfAdderCircuit, FullAdderCircuit } from "@/components/mdx/CircuitVisualizers";
+import { AdderSubtractorLab, SubtractorLab } from "@/components/mdx/LogicVisualizers";
 
 # Adders: Teaching Gates to Count
 
@@ -198,6 +199,8 @@ $$
 
 Just as a full adder is formed from two half adders and an OR gate, a full subtractor is built from two half subtractors and an OR gate.
 
+<SubtractorLab />
+
 ## Parallel Binary Adders (Ripple-Carry Adder)
 
 To add two multi-bit binary numbers, full adders are cascaded in parallel. An $n$-bit **parallel adder** uses $n$ full adders, one for each bit position.
@@ -342,6 +345,8 @@ Digital system designers and programmers frequently confuse the **Carry Flag ($C
 | **Example with Both Active** | $1000_2 (-8) + 1000_2 (-8) = 10000_2 \to C=1, V=1$ | Unsigned $8+8=16 > 15$; Signed $-8 + -8 = -16 < -8$ |
 
 The carry flag indicates whether an extra bit is required to represent an unsigned sum. The overflow flag indicates whether the arithmetic result has wrapped around into the wrong algebraic sign.
+
+<AdderSubtractorLab />
 
 ## Commercial MSI Binary Adders
 

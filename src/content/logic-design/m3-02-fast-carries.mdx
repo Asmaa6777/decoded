@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
-import { CarryRace } from "@/components/mdx/LogicVisualizers";
+import { CarryRace, FastAdderLab } from "@/components/mdx/LogicVisualizers";
 
 # Ripple Carry and Look-Ahead
 
@@ -251,6 +251,8 @@ Modern high-frequency 64-bit processors (such as x86 and ARM Cortex-A) use paral
 <Callout tone="neon" label="The Cost of Speed">
 Faster adders always consume more silicon area and more dynamic power. Ripple-carry adders require $O(n)$ gates and minimum wiring; Carry-Lookahead adders require $O(n \log n)$ gates; Kogge-Stone adders require substantial interconnect area. In low-power IoT microcontrollers, ripple adders are often chosen specifically to save energy and chip area.
 </Callout>
+
+<FastAdderLab />
 
 ## Common exam pitfalls and student mistakes
 
