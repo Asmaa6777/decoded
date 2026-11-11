@@ -310,6 +310,49 @@ No midterm question is placed in this lesson. Past midterm questions on this top
 
 None.
 
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="page-replacement-and-thrashing"
+  practice
+  questions={[
+    {
+      id: "f2023-7",
+      prompt: "(Final 2023, Q1 item 7) Page replacement algorithms make use of a dirty bit to reduce the overhead of page transfer.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "A clean page need not be written to disk when evicted, because the copy on disk is still correct. (Our answer.)",
+    },
+    {
+      id: "f2023-8",
+      prompt: "(Final 2023, Q1 item 8) The frame allocation algorithm determines how many frames to be given for each process.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Frame allocation decides how many frames each process gets. Page replacement then chooses which frame to free. (Our answer.)",
+    },
+    {
+      id: "f2023-9",
+      prompt: "(Final 2023, Q1 item 9) LRU page replacement algorithm with a second chance if the page to be replaced has reference bit = 1, it will be left in memory and updated to 0.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "That is the second-chance (clock) rule: a page with its reference bit set gets a second chance and the bit is cleared. (Our answer.)",
+    },
+    {
+      id: "f2023-10",
+      prompt: "(Final 2023, Q1 item 10) If there are 100 frames and 5 processes, a fixed frame allocation algorithm will allocate 20 frames for each process.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Equal allocation gives each of the 5 processes 100 ÷ 5 = 20 frames. (Our answer.)",
+    },
+    {
+      id: "f2023-11",
+      prompt: "(Final 2023, Q1 item 11) The thrashing phenomenon occurs when a process has more frames than it needs.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Thrashing happens when a process has too few frames for its working set, so it faults constantly. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

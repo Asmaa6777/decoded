@@ -239,6 +239,49 @@ No midterm question is placed in this lesson. Past midterm questions on this top
 
 None.
 
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="memory-allocation"
+  practice
+  questions={[
+    {
+      id: "f2023-12",
+      prompt: "(Final 2023, Q1 item 12) If the request address Is less than the value within the base register, the CPU checks the value against the limit register to grant access.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A logical address is first checked against the limit register. If the address is below the base register, the access is invalid. (Our answer.)",
+    },
+    {
+      id: "f2023-13",
+      prompt: "(Final 2023, Q1 item 13) External fragmentation could be reduced by using Compaction techniques.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Compaction moves blocks together so the free holes merge into one, which reduces external fragmentation. (Our answer.)",
+    },
+    {
+      id: "f2023-15",
+      prompt: "(Final 2023, Q1 item 15) STLR register points to the segment table's location In memory.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The segment-table base register holds the address of the segment table in memory. (Our answer.)",
+    },
+    {
+      id: "f2023-16",
+      prompt: "(Final 2023, Q1 item 16) Segmentation is a memory-management scheme that supports the user view of memory, while paging is a memory-management scheme that supports the system view of memory.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Segments follow the program's parts; pages are fixed blocks that suit the system's view. (Our answer.)",
+    },
+    {
+      id: "f2023-18",
+      prompt: "(Final 2023, Q1 item 18) Paging eliminates external fragmentation, while segmentation eliminates internal fragmentation.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Paging removes external fragmentation but has internal fragmentation. Segmentation has external fragmentation, not internal. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

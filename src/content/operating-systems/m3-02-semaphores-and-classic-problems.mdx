@@ -339,6 +339,21 @@ A semaphore avoids it by blocking: a process that finds the value not positive j
 4. **Writer starvation:** **yes.** As long as new readers keep arriving before the last reader leaves, `read_count` never drops to 0, so `writeBlock` is never released and a writer can wait forever.
 </ModelAnswer>
 
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="semaphores-and-classic-problems"
+  practice
+  questions={[
+    {
+      id: "f2023-27",
+      prompt: "(Final 2023, Q1 item 27) Incorrect use of semaphore operations might lead to deadlock.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Wrong order or a missing wait or signal can leave processes waiting for each other forever. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

@@ -378,6 +378,42 @@ Peterson's solution uses two shared variables: `int turn`, which says whose turn
 Answer: **data inconsistency.** (Our answer, which matches the printed 2021 key.)
 </ModelAnswer>
 
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "f2023-23",
+      prompt: "(Final 2023, Q1 item 23) Within the context of the critical section problem, each process must ask permission to enter the critical section in the entry section.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The entry section is where a process asks for permission to enter. (Our answer.)",
+    },
+    {
+      id: "f2023-24",
+      prompt: "(Final 2023, Q1 item 24) The solution to the critical section problem should satisfy only bounded waiting.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A solution must satisfy all three requirements: mutual exclusion, progress and bounded waiting. (Our answer.)",
+    },
+    {
+      id: "f2023-25",
+      prompt: "(Final 2023, Q1 item 25) Peterson Algorithms for critical section problems guarantee mutual exclusion, progress, and bounded waiting.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Peterson's solution meets all three requirements, as the midterm answer above shows. (Our answer.)",
+    },
+    {
+      id: "f2023-26",
+      prompt: "(Final 2023, Q1 item 26) The compare and swap hardware instructions could be interruptible.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Hardware instructions such as compare-and-swap are atomic: they run to completion without interruption. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz
