@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { OsStructures, BootSequence } from "@/components/mdx/OsVisualizers";
 
 # System Programs, OS Design and Structure
@@ -232,10 +232,68 @@ OSs are designed to run on **any of a class of machines**. So each system must b
 
 ## Practice from past exams
 
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
 ### Part 1: Midterm questions
 
-*Questions from the midterm exams are added in the next round.*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-design-and-structure"
+  practice
+  questions={[
+    {
+      id: "m-system-programs",
+      prompt: "(Midterm 2014, Q1 item 9) Some of system programs are simply user interfaces to system calls; others are considerably more complex.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "A simple system program, such as a command that only calls one system call, is a user interface. Others, such as a compiler, do much more.",
+    },
+    {
+      id: "m-command-interpreter-api",
+      prompt: "(Midterm 2018, Q1 item 5) The function of the command interpreter is to provide the interface between the API and application program.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The command interpreter (the shell) takes commands typed by the user and runs them. It does not sit between an API and an application program.",
+    },
+    {
+      id: "m-cmd-in-kernel",
+      prompt: "(Midterm 2018 second version, Q1 item 6) All operating systems include the command interpreter in the kernel.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Some systems build the command interpreter into the kernel, and others run it as an ordinary program that starts when a job begins. The statement says \"all\", so it is false.",
+    },
+    {
+      id: "m-kernel-boot",
+      prompt: "(Midterm 2018, Q1 item 7) Kernel is the first part of operating system to load into memory during booting.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The bootstrap program loads the kernel first. The kernel then starts the rest of the system.",
+    },
+    {
+      id: "m-bootstrap",
+      prompt: "(Midterm 2018 second version, Q1 item 1) The bootstrap program must locate the operating-system kernel and load it into memory.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The bootstrap program is small and stored in firmware. Its job is to find the kernel on disk and load it.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2018 second version, Q3) Why is the separation of mechanism and policy a desirable property for an operating-system designer?**
+
+A **mechanism** says how to do something, such as the timer that stops a running process. A **policy** says what will be done, such as how long each process gets before the timer fires. Keeping them separate means the policy can be changed without rewriting the mechanism. A system can then use one timer mechanism with different scheduling policies for different users or workloads.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2019 second version, Q4) What is the difference between mechanism and policy in designing and implementing an OS? Why is the separation of them desirable?**
+
+- **Mechanism:** how something is done. **Policy:** what will be done.
+- The separation matters because it gives flexibility. If a policy needs to change later, only the policy changes, and the mechanism stays as it is.
+
+The printed key gives the same two points.
+</ModelAnswer>
 
 ### Part 2: Final exam questions
 
-*Questions from the final exams are added in the next round.*
+*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*

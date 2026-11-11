@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { ProcessMemory, ProcessStateDiagram, ContextSwitch, MultiprogrammingDemo, ForkTree, LinuxProcessTree } from "@/components/mdx/OsVisualizers";
 
 # Processes: The Program in Motion
@@ -214,10 +214,193 @@ Since both copies continue from the line after `fork()`, several `fork()` calls 
 
 ## Practice from past exams
 
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given. For the 2021 multiple-choice questions the paper prints no answer letters, so the answers below are ours.
+
 ### Part 1: Midterm questions
 
-*Questions from the midterm exams are added in the next round.*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "m-short-term-controls",
+      prompt: "(Midterm 2014, Q1 item 6) Short-term scheduler controls the degree of multiprogramming.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The long-term (job) scheduler decides how many programs enter memory, so it controls the degree of multiprogramming. The short-term scheduler picks which ready process runs next. The 2014 key marks this false.",
+    },
+    {
+      id: "m-long-term-controls",
+      prompt: "(Midterm 2018 second version, Q1 item 10) Long-term scheduler controls the degree of multiprogramming.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "This is the mirror image of the 2014 question: the long-term scheduler admits processes into memory and so sets how many run together.",
+    },
+    {
+      id: "m-degree-ready",
+      prompt: "(Midterm 2018, Q1 item 8; Midterm 2019, Q1 item 8) The degree of multiprogramming is the number of processes in the ready queue.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The degree of multiprogramming is the number of processes in memory, not only the ones in the ready queue. Processes waiting for I/O are also counted.",
+    },
+    {
+      id: "m-state-activity",
+      prompt: "(Midterm 2018, Q1 item 9) The state of a process is defined by the activity just executed by the process.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The state describes what the process is doing right now, so it is defined in part by its current activity. The 2018 key marks this false; we read it as true, and the key's reasoning is unclear.",
+    },
+    {
+      id: "m-ready-queue-all",
+      prompt: "(Midterm 2018 second version, Q1 item 8; Midterm 2019, Q1 item 9) As processes enter the system, they are put into a ready queue, which consists of all processes in the system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The ready queue holds only processes that are ready to run. Blocked processes wait in other queues, and terminated ones are gone.",
+    },
+    {
+      id: "m-ready-state-meaning",
+      prompt: "(Midterm 2022, Q1 item 8) The ready process state describes the process that is being waited for some events to occur.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A process waiting for an event is in the waiting (blocked) state. A ready process is one that could run now and is waiting only for the CPU.",
+    },
+    {
+      id: "m-2019sv-context-switch",
+      prompt: "(Midterm 2019 second version, Q2 item 2) Context-switch time is overhead; the system does no useful work while switching.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "During a switch the CPU saves and loads state and does no work for any program, so the time is pure overhead.",
+    },
+    {
+      id: "m-2019sv-exit",
+      prompt: "(Midterm 2019 second version, Q2 item 3) A parent process may terminate the execution of children processes using the exit() system call.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A parent ends a child with abort(), not exit(). exit() is what a process calls to end itself. The printed key says so.",
+    },
+    {
+      id: "m-2021-stack",
+      prompt: "(Midterm 2021, Q1 item 1) The _____ of a process contains temporary data such as function parameters, return addresses, and local variables: a. text section; b. data section; c. program counter; d. stack.",
+      options: [
+        { id: "a", text: "text section" },
+        { id: "b", text: "data section" },
+        { id: "c", text: "program counter" },
+        { id: "d", text: "stack" },
+      ],
+      correctOptionId: "d",
+      explanation: "The stack holds function parameters, return addresses and local variables. The text section holds code, the data section holds globals, and the program counter is one register.",
+    },
+    {
+      id: "m-2021-ready",
+      prompt: "(Midterm 2021, Q1 item 7) A process may transition to the Ready state by which of the following actions? a. Completion of an I/O event; b. Awaiting its turn on the CPU; c. Newly admitted process; d. All the choices.",
+      options: [
+        { id: "a", text: "Completion of an I/O event" },
+        { id: "b", text: "Awaiting its turn on the CPU" },
+        { id: "c", text: "Newly admitted process" },
+        { id: "d", text: "All the choices" },
+      ],
+      correctOptionId: "d",
+      explanation: "Each one moves a process into the ready queue: an I/O event finishes, a running process is preempted and waits its turn, or a new process is admitted.",
+    },
+    {
+      id: "m-2021-child",
+      prompt: "(Midterm 2021, Q1 item 5) When a child process is created, which of the following is a possibility in terms of execution or address space of the child process? a. The child process runs concurrently with the parent; b. The child process has a new program loaded into it; c. The child is a duplicate of the parent; d. All the choices.",
+      options: [
+        { id: "a", text: "The child process runs concurrently with the parent" },
+        { id: "b", text: "The child process has a new program loaded into it" },
+        { id: "c", text: "The child is a duplicate of the parent" },
+        { id: "d", text: "All the choices" },
+      ],
+      correctOptionId: "d",
+      explanation: "After fork() the child is a copy of the parent and can run alongside it. A call to exec() then loads a new program into the child.",
+    },
+    {
+      id: "m-2021-program-process",
+      prompt: "(Midterm 2021, Q1 item 11) The difference between a program and a process is that a program is a(n) _____ entity while a process is a _______ entity: a. passive, active; b. active, passive; c. dynamic, static; d. static, dynamic.",
+      options: [
+        { id: "a", text: "passive, active" },
+        { id: "b", text: "active, passive" },
+        { id: "c", text: "dynamic, static" },
+        { id: "d", text: "static, dynamic" },
+      ],
+      correctOptionId: "a",
+      explanation: "A program is a file sitting on disk, which is passive. A process is that program running, with a PC and resources, which is active.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2014, Q3) Describe the differences among short-term, medium-term, and long-term scheduling.**
+
+- **Long-term (job) scheduler:** decides which jobs are brought into memory. It runs rarely and controls the degree of multiprogramming.
+- **Short-term (CPU) scheduler:** picks, from the ready processes in memory, the one that runs next, and gives it the CPU. It runs very often.
+- **Medium-term scheduler:** swaps partly run programs out of memory and brings them back later. It is used mainly in time-sharing systems.
+
+The 2014 key gives the same three roles.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2017, Q3) What is a process? What is a process state and mention the various states of a process? What is a PCB?**
+
+A **process** is a program in execution: an active entity with a program counter and its own resources (stack, data and registers).
+
+A process **state** is its current situation. The states are **new**, **ready**, **running**, **waiting** and **terminated**.
+
+The **PCB** (process control block) is the record the OS keeps for each process. It holds the process state, program counter, CPU registers, CPU-scheduling information, memory-management information, accounting information and I/O status.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2019 second version, Q5) Illustrate using a diagram the different states of a process and what triggers the state of each state.**
+
+| From | To | What triggers it |
+| --- | --- | --- |
+| New | Ready | The process is admitted into memory |
+| Ready | Running | The scheduler dispatches it to the CPU |
+| Running | Ready | Its time slice ends or a higher-priority process arrives (interrupt) |
+| Running | Waiting | It requests I/O or waits for an event |
+| Waiting | Ready | The I/O or event finishes |
+| Running | Terminated | It finishes or is killed |
+
+Draw the five states as boxes, with arrows labelled by these triggers.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2019 second version, Q6) What is the difference between zombie and orphan processes?**
+
+- A **zombie** is a child that has finished, but its parent has not yet called `wait()`, so its exit status is still held.
+- An **orphan** is a child whose parent has terminated without calling `wait()`. The orphan is adopted by the init process.
+
+The printed key gives the same two definitions.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2019 second version, Q8) Including the initial parent process, how many processes are created by the program shown in the code below? Illustrate your answer using a tree.**
+
+The code has three `fork()` calls, one after another, in `main`.
+
+Each `fork()` doubles the number of processes, because every process that exists at that point forks a copy of itself:
+
+- Before any `fork()`: 1 process (the parent).
+- After the first `fork()`: 2.
+- After the second: 4.
+- After the third: 8.
+
+**Answer: 8 processes, including the initial parent.** The tree has the parent at the root, with a child added at each `fork()` for every process that already exists. The printed key says 8 as well.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2018, Q4) Describe the actions taken by a kernel to context-switch between processes.**
+
+The kernel saves the state of the running process into its PCB: the CPU registers, the program counter and the memory information. It then loads the state of the next process from that process's PCB into the CPU, so the new process resumes where it stopped. Some architectures also flush caches or the TLB at this point. The switch is pure overhead, because no useful work runs during it.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2018 second version, Q4) What is a PCB? Describe the actions taken by a kernel to context-switch between processes.**
+
+The **PCB** is the process control block, the kernel's record for one process (see the 2017 answer above). To context-switch, the kernel saves the running process's registers and program counter into its PCB, then restores the same fields from the next process's PCB and hands over the CPU.
+</ModelAnswer>
 
 ### Part 2: Final exam questions
 
-*Questions from the final exams are added in the next round.*
+*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*

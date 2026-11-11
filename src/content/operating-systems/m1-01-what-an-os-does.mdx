@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SystemLayers, InterruptTimeline, StorageHierarchy, MigrationOfA, DmaCounter } from "@/components/mdx/OsVisualizers";
 
 # What an Operating System Does
@@ -189,10 +189,108 @@ Put it all together and you get the **von Neumann architecture**: the CPU runs a
 
 ## Practice from past exams
 
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
 ### Part 1: Midterm questions
 
-*Questions from the midterm exams are added in the next round.*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="what-an-os-does"
+  practice
+  questions={[
+    {
+      id: "m-os-environment",
+      prompt: "(Midterm 2014, Q1 item 1; Midterm 2017, Q1 item 1) An operating system does not perform useful function by itself, but it provides an environment within which other programs can do useful work.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "An OS is the layer that other programs run on. Alone it does nothing useful for a user; it provides the services that make useful programs possible.",
+    },
+    {
+      id: "m-intermediary",
+      prompt: "(Midterm 2015, Q1 item 1; Midterm 2018, Q1 item 1) An operating system acts as an intermediary between the computer user and the computer hardware.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Users and programs never talk to the hardware directly. The OS sits in between and manages the hardware for them.",
+    },
+    {
+      id: "m-sync-io",
+      prompt: "(Midterm 2014, Q1 item 4; Midterm 2017, Q1 item 5) After synchronous I/O starts, control returns to user program without waiting for I/O completion.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The reverse is true for asynchronous I/O. With synchronous I/O the program waits until the transfer is complete, and only then continues.",
+    },
+    {
+      id: "m-hierarchy",
+      prompt: "(Midterm 2014, Q1 item 7; Midterm 2015, Q1 item 3) In a hierarchical storage structure, each data item appears at least in two levels of the storage system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "In a hierarchy each item is copied only in the levels where it's needed (for example, a copy in cache and a copy on disk). It doesn't have to be stored in two levels.",
+    },
+    {
+      id: "m-trap-device",
+      prompt: "(Midterm 2015, Q1 item 4) Device controller informs CPU that it has finished its operation by causing a trap.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A device controller finishes an operation by raising an interrupt. A trap is a software-generated interrupt, so the statement is false.",
+    },
+    {
+      id: "m-device-driver",
+      prompt: "(Midterm 2017, Q1 item 2) Operating systems have a specific device driver for each device controllers.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Each kind of controller has its own driver that knows its registers and commands. The OS talks to the device through that driver.",
+    },
+    {
+      id: "m-disk-speed",
+      prompt: "(Midterm 2018, Q1 item 2) Magnetic disks are nonvolatile and in general are faster than solid-state disks.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Both disk types keep data after power is off, so both are nonvolatile. Solid-state disks are generally faster than magnetic disks, not slower.",
+    },
+    {
+      id: "m-ssd-speed",
+      prompt: "(Midterm 2019, Q1 item 2) Solid-state disks are nonvolatile and in general are slower than magnetic disks.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The statement reverses the usual order: solid-state disks are generally faster than magnetic ones. (The 2019 answer key also marks this false.)",
+    },
+    {
+      id: "m-common-driver",
+      prompt: "(Midterm 2018 second version, Q1 item 2; Midterm 2019, Q1 item 1) Operating systems have a common device driver for all device controllers.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Each device type needs its own driver, which is why the answer in the earlier question is false.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2018, Q3) What is the purpose of interrupts? What are the differences between a trap and an interrupt? What is the purpose of traps?**
+
+An **interrupt** is a hardware signal that changes the flow of control, for example when a device finishes an I/O transfer. The CPU runs the matching handler and then returns to the interrupted work. Interrupts let the OS avoid polling devices.
+
+A **trap** is a software-generated interrupt, raised by an instruction, such as a system call or an error like division by zero. Traps let the OS run routines on request and catch arithmetic errors.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2022, Q3) Briefly define each of the following terms: operating system, process, caching.**
+
+- **Operating system:** the program that manages the computer's hardware and gives other programs an environment to run in.
+- **Process:** a program in execution, with its own program counter and resources.
+- **Caching:** keeping a copy of data in a smaller, faster store, so that later accesses are quicker.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2019, second version, Q1) Complete the following using the storage hierarchy diagram.**
+
+1. All devices above the **solid-state disk** are volatile, the rest are non-volatile.
+2. The storage size **decreases** as we move upwards.
+3. The cost of the storage device **increases** as we move upwards.
+4. The speed of the storage device **increases** as we move upwards.
+
+The hierarchy goes from slow, large, cheap, non-volatile storage at the bottom to fast, small, expensive, volatile storage at the top. Each step up trades size for speed. The answers match the printed key.
+</ModelAnswer>
 
 ### Part 2: Final exam questions
 
-*Questions from the final exams are added in the next round.*
+*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*

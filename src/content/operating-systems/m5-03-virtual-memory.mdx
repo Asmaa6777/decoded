@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { PageFaultSteps, DemandPagingCost, CopyOnWrite } from "@/components/mdx/OsVisualizers";
 
 # Virtual Memory and Demand Paging
@@ -211,10 +211,25 @@ That's the topic of the next lesson.
 
 ## Practice from past exams
 
+These questions are copied from the exam papers. The wording is unchanged. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
 ### Part 1: Midterm questions
 
-*Questions from the midterm exams are added in the next round.*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="virtual-memory"
+  practice
+  questions={[
+    {
+      id: "m-vm-whole-memory",
+      prompt: "(Midterm 2022, Q1 item 5) Virtual memory allows the execution of processes that are stored completely in memory.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The point of virtual memory is to run a process whose pages are not all in memory. Only the pages it is using need to be present, through demand paging.",
+    },
+  ]}
+/>
 
 ### Part 2: Final exam questions
 
-*Questions from the final exams are added in the next round.*
+*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*

@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { MultiprogrammingDemo, DualModeSwitch, TimerInterrupt } from "@/components/mdx/OsVisualizers";
 
 # Inside the OS: Architecture, Operations and Environments
@@ -257,10 +257,152 @@ A **real-time OS** has **well-defined, fixed time constraints**. Processing **mu
 
 ## Practice from past exams
 
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
 ### Part 1: Midterm questions
 
-*Questions from the midterm exams are added in the next round.*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-architecture-and-operations"
+  practice
+  questions={[
+    {
+      id: "m-multiprocessor",
+      prompt: "(Midterm 2014, Q1 item 2) Multiprocessor systems have two or more processors in close communication, sharing the computer bus with separate clock, memory, and peripheral devices.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Multiprocessor systems share the bus, the clock, and often memory and peripherals. The statement gives each processor its own clock and memory, which describes separate computers, not one multiprocessor system. The 2014 answer key marks it false.",
+    },
+    {
+      id: "m-dual-mode",
+      prompt: "(Midterm 2014, Q1 item 3; Midterm 2015, Q1 item 2) The dual mode of operation provides us with the means for protecting the operating system from errant users and errant users from one another.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Kernel mode and user mode keep user programs from touching the OS or each other's memory directly.",
+    },
+    {
+      id: "m-multiprog-util",
+      prompt: "(Midterm 2014, Q1 item 10) The objective of multiprogramming is to have some process running at all times, to minimize CPU utilization.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Multiprogramming aims to keep the CPU busy, which means maximizing CPU utilization, not minimizing it.",
+    },
+    {
+      id: "m-multiprog-wait",
+      prompt: "(Midterm 2017, Q1 item 8) The objective of multiprogramming is to have some process running at all times, to minimize CPU waiting time.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The goal is to keep some process running at all times (maximum CPU utilization). Reducing waiting time is a side effect of that, not the stated objective, and the 2017 answer key marks this false.",
+    },
+    {
+      id: "m-privileged-user",
+      prompt: "(Midterm 2017, Q1 item 3) The hardware allows privileged instructions to be executed only in user mode.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Privileged instructions run only in kernel mode. Running them in user mode would let any program bypass the OS.",
+    },
+    {
+      id: "m-real-time",
+      prompt: "(Midterm 2017, Q1 item 4) Processing of a real-time system must be done within the predefined time constraints, or the system will fail.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "A real-time system is judged by its deadlines. Missing one counts as a failure.",
+    },
+    {
+      id: "m-real-time-space",
+      prompt: "(Midterm 2018 second version, Q1 item 4; Midterm 2019, Q1 item 4) Processing of a real-time system must be done within the predefined space constraints, or the system will fail.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The constraint for a real-time system is time, not space. The version in the 2017 midterm says \"time constraints\" and is true.",
+    },
+    {
+      id: "m-virtual-machine",
+      prompt: "(Midterm 2017, Q1 item 7) The fundamental idea behind a virtual machine is to abstract the hardware of different computers into a single execution environment.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A virtual machine does the reverse: it gives each guest OS the same hardware interface on one machine. It does not merge different computers into one environment.",
+    },
+    {
+      id: "m-vm-difficult",
+      prompt: "(Midterm 2015, Q1 item 6; Midterm 2019, Q1 item 7) The virtual machine concept is difficult to implement due to the effort required to provide an exact duplicate to the underlying machine.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Building an exact copy of the hardware interface for each guest is the hard part, so the statement is true.",
+    },
+    {
+      id: "m-special-processors",
+      prompt: "(Midterm 2018, Q1 item 3; Midterm 2018 second version, Q1 item 3) Almost all single processor systems have other special-purpose processors as well.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Disk, keyboard and graphics controllers are special-purpose processors, so most single-processor systems have them too.",
+    },
+    {
+      id: "m-multicore",
+      prompt: "(Midterm 2018, Q1 item 4) Multicore can be less efficient than multiple chips with single cores because between-chip communication is faster than on-chip communication.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The reverse is true: on-chip communication is faster, which is why multicore chips are usually more efficient.",
+    },
+    {
+      id: "m-privileged-switch",
+      prompt: "(Midterm 2019, Q1 item 3) The instruction to switch to user mode is an example of a privileged instruction.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Only the kernel can switch the CPU back to user mode, so the instruction is privileged.",
+    },
+    {
+      id: "m-2022-interrupt",
+      prompt: "(Midterm 2022, Q1 item 1) An Operating system is considered an Interrupt Driven System.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The OS mostly waits for events: device completions, timers and traps. Each one interrupts the CPU to run the matching handler.",
+    },
+    {
+      id: "m-2022-mode-switch",
+      prompt: "(Midterm 2022, Q1 item 2) Switching from User mode to kernel mode is a non-privileged instruction.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Switching into kernel mode is done by a trap instruction that any program can execute, so it is not privileged. Switching back to user mode is the privileged one (see the 2019 question above).",
+    },
+    {
+      id: "m-2022-async",
+      prompt: "(Midterm 2022, Q1 item 3) In the asynchronous I/O method, the OS returns the control to the user program before the request is completed.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Asynchronous I/O returns control immediately. The program is told later, by an interrupt or a check, when the transfer is done.",
+    },
+    {
+      id: "m-2022-throughput",
+      prompt: "(Midterm 2022, Q1 item 4) Multiprocessor architecture increases the overall system throughput and decreases the system reliability.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Multiprocessors raise throughput and also raise reliability: if one processor fails, the others keep working.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2021, Q2) What is the difference between each of the following term pairs?** (a) multiprocessors and multi-core; (b) multiprogramming and multitasking.
+
+(a) A **multiprocessor** system has several separate processors, each usually with its own chip. A **multi-core** chip puts several processing cores on one chip, sharing that chip's cache and interconnect.
+
+(b) **Multiprogramming** keeps several programs in memory at once, so the CPU can switch to another when one waits for I/O. **Multitasking** is the same idea seen from the user's side: the system switches quickly between tasks so that several appear to run together.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2015, Q2) Which of the following instructions should be privileged? Explain your answer.** (a) set the value of the timer; (b) read the clock; (c) handle a trap; (d) clear memory; (e) turn off interrupts; (f) switch from user to kernel mode.
+
+Privileged instructions can change the system's control, so only the kernel may run them. Setting the timer, handling a trap, clearing memory, turning off interrupts and switching modes are all privileged. Reading the clock only reads a value and can't harm the system, so it is **not** privileged.
+
+The 2015 key gives the same answers.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2018 second version, Q2) How does the distinction between kernel mode and user mode function as a primary form of protection system?**
+
+The hardware has a mode bit. In kernel mode the CPU can run any instruction and touch any memory; in user mode it can't run privileged instructions or touch the OS's memory. A program that needs an OS service has to ask through a system call, which switches to kernel mode, checks the request, and returns. Programs therefore can't damage the OS or each other by accident or on purpose.
+</ModelAnswer>
 
 ### Part 2: Final exam questions
 
-*Questions from the final exams are added in the next round.*
+*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*

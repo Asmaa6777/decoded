@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { RaceCondition, PetersonDemo, SpinlockDemo, BoundedWaitingDemo } from "@/components/mdx/OsVisualizers";
 
 # Race Conditions and the Critical-Section Problem
@@ -304,10 +304,66 @@ Spinning wastes CPU while waiting. But it needs **no [context switch](/courses/o
 
 ## Practice from past exams
 
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
 ### Part 1: Midterm questions
 
-*Questions from the midterm exams are added in the next round.*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "m-cs-segment",
+      prompt: "(Midterm 2015, Q1 item 9) Each process has a segment of code, called a critical section, in which the process may be changing shared data.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "That is the definition of a critical section: the code where a process touches shared data.",
+    },
+    {
+      id: "m-cs-permission",
+      prompt: "(Midterm 2017, Q1 item 10) Each process must request permission to enter its critical section.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The entry section is where a process asks to enter. Only after permission is granted does it run its critical section.",
+    },
+    {
+      id: "m-cs-one-requirement",
+      prompt: "(Midterm 2015, Q1 item 10; Midterm 2019, Q1 item 10) Any solution to the critical-section problem must satisfy at least one of three requirements.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A valid solution must satisfy all three requirements (mutual exclusion, progress and bounded waiting), not just one of them.",
+    },
+    {
+      id: "m-atomic",
+      prompt: "(Midterm 2019 second version, Q2 item 6) An atomic instruction is a type of instructions that can be interrupted during its execution.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "An atomic instruction can't be interrupted part way. That is why it is useful for building locks. The printed key marks this false.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2019 second version, Q7) A solution to the critical section problem must satisfy three main requirements. Explain these requirements.**
+
+1. **Mutual exclusion:** if one process is in its critical section, no other process can be in its critical section.
+2. **Progress:** if no process is in its critical section and some want to enter, the choice of who enters next can't be postponed forever. Only the processes that want to enter take part in that choice.
+3. **Bounded waiting:** after a process asks to enter, there is a limit on how many times other processes can enter first.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2018, Q5; Midterm 2018 second version, Q5) How does Peterson's solution solve the critical section problem? Explain how it preserves the three requirements. What is its restriction?**
+
+Peterson's solution uses two shared variables: `int turn`, which says whose turn it is to enter, and `boolean flag[2]`, where `flag[i]` is true when process *i* wants to enter. A process sets its flag, gives the turn to the other process, and waits while the other process wants the turn and it is the other process's turn.
+
+- **Mutual exclusion:** both processes can't enter together. Each one sets `turn` to the other, and only one value can be stored last, so one of them must wait.
+- **Progress:** a process is held back only when the other process is also trying to enter. If the other is not interested, the process goes straight in.
+- **Bounded waiting:** once a process has given the turn away, the other process gets in next, so a process waits at most one entry by the other.
+
+**Restriction:** it works only for **two** processes.
+</ModelAnswer>
 
 ### Part 2: Final exam questions
 
-*Questions from the final exams are added in the next round.*
+*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*

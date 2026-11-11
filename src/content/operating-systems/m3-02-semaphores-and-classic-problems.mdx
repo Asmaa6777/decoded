@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SemaphoreQueue, SemaphoreDeadlock, SemaphoreBuffer, ReadersWriters, DiningPhilosophers } from "@/components/mdx/OsVisualizers";
 
 # Semaphores and the Classic Synchronization Problems
@@ -291,10 +291,54 @@ All of these lead to **deadlock** and **starvation**, and they're hard to find, 
 
 ## Practice from past exams
 
+These questions are copied from the exam papers. The wording is unchanged. Answers and explanations after them are ours, unless the exam's own answer key is given.
+
 ### Part 1: Midterm questions
 
-*Questions from the midterm exams are added in the next round.*
+<ModelAnswer>
+**(Midterm 2015, Q5; Midterm 2021, Q4; Midterm 2019, Q4) A semaphore does not suffer busy waiting. Explain how its implementation avoids this drawback and describe how it is used to solve the readers-writers problem.** *(The 2019 version asks for the code of the semaphore and the readers-writers solution.)*
+
+**Avoiding busy waiting.** A semaphore has a value and a queue of waiting processes. `wait(S)` decrements the value. If the value is then negative, the process is put in the queue and **blocked**, so it stops using the CPU. `signal(S)` increments the value. If a process is waiting, it removes one from the queue and **wakes** it, so it becomes ready again. A waiting process never loops on the CPU.
+
+```c
+typedef struct { int value; struct process *list; } semaphore;
+
+wait(S)   { S.value--; if (S.value < 0) { add this process to S.list; block(); } }
+signal(S) { S.value++; if (S.value <= 0) { remove a process P from S.list; wakeup(P); } }
+```
+
+**Readers-writers.** Three shared variables: `rw_mutex = 1` (lets a writer, or the first reader, lock out everyone else), `mutex = 1` (protects `read_count`), and `read_count = 0`.
+
+- A **writer** does `wait(rw_mutex)`, writes, then `signal(rw_mutex)`.
+- A **reader** does `wait(mutex)`, increments `read_count`, and if it is the **first** reader it does `wait(rw_mutex)`. It then does `signal(mutex)`, reads, does `wait(mutex)` again, decrements `read_count`, and if it is the **last** reader it does `signal(rw_mutex)`.
+
+Many readers can read together, but a writer can only write when no reader is inside.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2017, Q4) A semaphore does not suffer busy waiting. What is the meaning of the term busy waiting? Explain how the semaphore implementation can avoid busy waiting, and describe how it is used to solve the bounded buffer problem.**
+
+**Busy waiting** means a process keeps looping and testing a condition on the CPU while it waits for another process to leave its critical section. The CPU does nothing useful during that time.
+
+A semaphore avoids it by blocking: a process that finds the value not positive joins the semaphore's queue and sleeps. Another process's `signal()` wakes it up.
+
+**Bounded buffer** (n buffers, each holding one item): `mutex = 1`, `full = 0`, `empty = n`.
+
+- **Producer:** `wait(empty)`, `wait(mutex)`, add the item, `signal(mutex)`, `signal(full)`.
+- **Consumer:** `wait(full)`, `wait(mutex)`, remove the item, `signal(mutex)`, `signal(empty)`.
+
+`empty` counts free slots and `full` counts filled slots, so neither side writes into a full buffer or reads an empty one. `mutex` keeps the two from changing the buffer at the same time. The printed key uses the same three semaphores.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Midterm 2022, Q5) Regarding the readers-writers problem, with the shared variables `int readCount`, `FILE *sharedFile` and `semaphore mutex, writeBlock`.** *(The 2022 answer key is a scan that has not been checked yet; the answers below are ours.)*
+
+1. **Initial values:** `readCount = 0`, `mutex = 1`, `writeBlock = 1`. `mutex` protects `readCount`, and `writeBlock` is the lock that writers, and the first reader, take.
+2. **Three new readers while a writer is updating:** the first reader takes `mutex` and then blocks on `wait(writeBlock)`, because the writer holds it. It keeps `mutex` while it waits. The second and third readers block at `wait(mutex)`, which the first reader holds.
+3. **A new writer while some readers are reading:** the readers hold `writeBlock` (the first reader took it). The writer blocks at `wait(writeBlock)` until the last reader signals `writeBlock` on its way out.
+4. **Writer starvation:** **yes.** As long as new readers keep arriving before the last reader leaves, `read_count` never drops to 0, so `writeBlock` is never released and a writer can wait forever.
+</ModelAnswer>
 
 ### Part 2: Final exam questions
 
-*Questions from the final exams are added in the next round.*
+*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*

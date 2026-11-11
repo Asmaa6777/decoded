@@ -1,4 +1,4 @@
-import { Callout, PracticalApplication, ApplicationsGrid } from "@/components/mdx/MdxComponents";
+import { Callout, PracticalApplication, ApplicationsGrid, Quiz, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { BoundedBuffer, MessageBuffering, PipeDemo } from "@/components/mdx/OsVisualizers";
 
 # Interprocess Communication
@@ -271,10 +271,95 @@ An ordinary pipe is a **bounded buffer inside the kernel**, the same producer-co
 
 ## Practice from past exams
 
+These questions are copied from the exam papers. The wording is unchanged. Where two papers print the same statement, it appears once and both years are listed. Answers and explanations after them are ours, unless the exam's own answer key is given. For the 2021 multiple-choice questions the paper prints no answer letters, so the answers below are ours.
+
 ### Part 1: Midterm questions
 
-*Questions from the midterm exams are added in the next round.*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "m-comm-link",
+      prompt: "(Midterm 2017, Q1 item 9) If any two processes want to communicate with each other, a communication link must exist between them.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Two processes can't exchange messages unless some link exists between them, whether a direct link or one through a mailbox. The 2017 key marks it true.",
+    },
+    {
+      id: "m-direct-mailbox",
+      prompt: "(Midterm 2019, Q1 item 5) With direct communication, the messages are sent to and received from mailboxes, or ports.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Mailboxes and ports belong to indirect communication. Direct communication names the other process itself, with no mailbox in between.",
+    },
+    {
+      id: "m-rendezvous",
+      prompt: "(Midterm 2019 second version, Q2 item 4) In message passing, if both sender and receiver are synchronous, this is called rendezvous.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "When both sides wait for each other, the send and the receive happen together, which is called a rendezvous.",
+    },
+    {
+      id: "m-named-pipe",
+      prompt: "(Midterm 2019 second version, Q2 item 5) Named pipes must be accessed through a parent-child relationship.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Named pipes can be used by unrelated processes. The parent-child requirement applies to ordinary (unnamed) pipes. The printed key says the same.",
+    },
+    {
+      id: "m-2021-blocking",
+      prompt: "(Midterm 2021, Q1 item 9) A blocking send() and blocking receive() is known as a(n): a. synchronized message; b. rendezvous; c. blocked message; d. asynchronous message.",
+      options: [
+        { id: "a", text: "synchronized message" },
+        { id: "b", text: "rendezvous" },
+        { id: "c", text: "blocked message" },
+        { id: "d", text: "asynchronous message" },
+      ],
+      correctOptionId: "b",
+      explanation: "Both sides block until the message is passed, so they meet at the same point. That meeting is a rendezvous.",
+    },
+    {
+      id: "m-2021-indirect",
+      prompt: "(Midterm 2021, Q1 item 10) In indirect communication between processes P and Q _____: a. there is another process R to handle and pass on the messages between P and Q; b. there is another machine between the two processes to help communication; c. there is a mailbox to help communication between P and Q; d. none of the mentioned.",
+      options: [
+        { id: "a", text: "there is another process R to handle and pass on the messages between P and Q" },
+        { id: "b", text: "there is another machine between the two processes to help communication" },
+        { id: "c", text: "there is a mailbox to help communication between P and Q" },
+        { id: "d", text: "none of the mentioned" },
+      ],
+      correctOptionId: "c",
+      explanation: "Indirect communication goes through a mailbox (or port). The processes don't name each other directly.",
+    },
+    {
+      id: "m-2021-direct",
+      prompt: "(Midterm 2021, Q1 item 14) Which of the following are TRUE for direct communication? a. A communication link can be associated with N number of processes; b. A communication link is associated with exactly two processes; c. Exactly N/2 links exist between each pair of processes; d. Exactly two links exist between each pair of processes.",
+      options: [
+        { id: "a", text: "A communication link can be associated with N number of processes" },
+        { id: "b", text: "A communication link is associated with exactly two processes" },
+        { id: "c", text: "Exactly N/2 links exist between each pair of processes" },
+        { id: "d", text: "Exactly two links exist between each pair of processes" },
+      ],
+      correctOptionId: "b",
+      explanation: "In direct communication each link joins exactly two processes, and exactly one link exists between each pair. So only b is true.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Midterm 2022, Q4) Briefly explain the fundamental models of interprocess communication and the difference between direct and indirect communication.**
+
+There are two fundamental models:
+
+- **Shared memory:** the processes share a region of memory and read and write it. They must synchronize their access to it themselves.
+- **Message passing:** the processes send and receive messages through the OS. They don't share data directly, which makes it easier to use across machines.
+
+**Direct** communication names the other process: `send(P, message)` and `receive(Q, message)`. Each link joins exactly two processes.
+
+**Indirect** communication sends messages to a mailbox (or port). The processes don't need to know each other, and several processes can share one mailbox.
+</ModelAnswer>
 
 ### Part 2: Final exam questions
 
-*Questions from the final exams are added in the next round.*
+*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
