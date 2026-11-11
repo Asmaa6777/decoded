@@ -4,7 +4,7 @@ import { ClockExplorer } from "@/components/mdx/LogicVisualizers";
 
 # Control Inputs and the D Latch
 
-The unclocked [SR latch](/courses/logic-design/sr-latch) responds immediately to its inputs at all times. In a complex digital system containing millions of logic gates, this free-running behavior creates chaos. Combinational logic blocks produce transient electrical glitches as signals race through paths of different lengths. If memory elements reacted to every temporary intermediate voltage spike, data would be corrupted constantly.
+The unclocked [SR latch](/courses/logic-design/sr-latch) responds to its inputs at all times. In a system with many gates, this creates problems. Combinational logic produces temporary glitches as signals travel along paths of different lengths. If memory elements reacted to every glitch, data would corrupt constantly.
 
 To build predictable computing machines, state updates must be synchronized. Memory elements must only listen to their inputs when commanded by a dedicated control line. In digital electronics, this synchronization signal is called the **enable** input ($EN$) or the system **clock** ($C$ or $CLK$).
 
@@ -43,7 +43,7 @@ The two front-end NAND gates act as steering doors:
 
 Because this latch responds to the steady voltage **level** of the control line ($C = 1$), it is termed **level-sensitive** (or level-triggered).
 
-However, the fatal flaw of the SR latch remains: if an error causes $S = 1$ and $R = 1$ simultaneously while $C = 1$, both internal inputs become $\bar{S} = 0, \bar{R} = 0$, driving the circuit into the **forbidden state**.
+The main weakness of the SR latch remains: if an error causes $S = 1$ and $R = 1$ at the same time while $C = 1$, both internal inputs become $\bar{S} = 0, \bar{R} = 0$, driving the circuit into the **forbidden state**.
 
 ---
 
@@ -69,7 +69,7 @@ $$
                   +----[ NOT ]------------/
 ```
 
-With this single structural modification, $S$ and $R$ can never be 1 at the same time. The forbidden state is permanently engineered out of the circuit!
+With this design, $S$ and $R$ can never be 1 at the same time. This removes the forbidden state from the circuit.
 
 <DLatch />
 
@@ -83,7 +83,7 @@ The operation of the gated D latch is captured in its function table:
 | 1 | 0 | 0 | 1 | Transparent: Reset ($Q \to 0$) |
 | 1 | 1 | 1 | 0 | Transparent: Set ($Q \to 1$) |
 
-The symbol **X** represents a don't-care condition: as long as $C = 0$, the value on the data line $D$ has zero impact on the stored state.
+The symbol **X** represents a don't-care condition: while $C = 0$, the value on the data line $D$ does not affect the stored state.
 
 ### Derivation of the Characteristic Equation
 
@@ -119,7 +119,7 @@ Because $Q$ directly mirrors $D$ while $C = 1$, the latch is described as **tran
 
 ## The Clock Signal
 
-In synchronous systems, the control signal $C$ is driven by a periodic square wave called the system **clock** ($CLK$). The clock acts as the heartbeat of the digital processor, coordinating the movement of bits through arithmetic logic and memory.
+In synchronous systems, the control signal $C$ is driven by a periodic square wave called the system **clock** ($CLK$). The clock coordinates the movement of bits through logic and memory.
 
 <ClockExplorer />
 
@@ -179,11 +179,11 @@ Suppose the clock rises to $C = 1$:
 
 $$0 \longrightarrow 1 \longrightarrow 0 \longrightarrow 1 \longrightarrow 0 \dots$$
 
-The circuit oscillates uncontrollably at a frequency determined by its own gate delays. When the clock pulse finally falls back to 0 ($C \to 0$), the value frozen inside the latch is completely unpredictable—it depends on the exact picosecond the clock edge fell!
+The circuit oscillates at a frequency set by its own gate delays. When the clock pulse falls back to 0 ($C \to 0$), the value stored in the latch is unpredictable, depending on the exact instant the clock edge fell.
 
-This timing breakdown is known as the **race-around condition** (or feedback transparency hazard). A level-sensitive transparent latch cannot safely update its own state based on feedback.
+This timing problem is known as the **race-around condition** (or feedback transparency hazard). A level-sensitive transparent latch cannot safely update its own state based on feedback.
 
-To count, accumulate, or execute instructions reliably, a circuit needs a memory element that captures data at **one single infinitesimal instant** and then immediately seals itself shut. That requires moving from level sensitivity to true **edge triggering**, which is the subject of [flip-flops](/courses/logic-design/flip-flops).
+To count or execute instructions reliably, a circuit needs a memory element that captures data at one precise instant and seals itself shut. That requires moving from level sensitivity to **edge triggering**, which is the subject of [flip-flops](/courses/logic-design/flip-flops).
 
 ---
 
@@ -209,15 +209,15 @@ To guarantee that a latch captures data reliably without entering an indetermina
    - **$t_{pd}(C \to Q)$:** The delay from the rising edge of $C$ to the valid output on $Q$ when $D$ is already stable.
 4. **Minimum Pulse Width ($t_w$):** The minimum duration the control signal $C$ must remain high to allow internal steering nodes to fully charge and switch.
 
-If data changes within the setup or hold time aperture ($t_{su} + t_h$), the latch internal voltages may hover in the linear active region, causing **metastability**—a condition where the output lingers at an intermediate analog voltage or oscillates before resolving to a random state.
+If data changes within the setup or hold window ($t_{su} + t_h$), the internal voltages may hover between levels, causing **metastability**, a condition where the output lingers at an intermediate voltage or oscillates before settling into a random state.
 
 <Callout tone="orange" label="Latches vs Flip-Flops in Modern Design">
-Because transparent latches are smaller and faster than edge-triggered flip-flops, high-performance processors sometimes use two-phase non-overlapping clocking with latches. However, in standard ASIC and FPGA design, edge-triggered flip-flops are universally preferred because they make static timing analysis completely immune to transparency hazards.
+Because transparent latches are smaller and faster than edge-triggered flip-flops, high-performance processors sometimes use two-phase clocking with latches. In standard ASIC and FPGA design, edge-triggered flip-flops are preferred because they avoid transparency hazards during timing analysis.
 </Callout>
 
 ## Common exam pitfalls and student mistakes
 
-When analyzing and designing with gated latches and clock signals, students frequently make these six conceptual and timing errors:
+When working with gated latches and clock signals, students often make these six timing mistakes:
 
 1. **Confusing Level-Sensitivity (Transparency) with Edge-Triggering:** Assuming that a gated D latch only samples its data on the rising edge of enable $C$. In reality, whenever $C = 1$, the latch is completely transparent: any transient glitch, hazard, or data fluctuation on $D$ passes immediately through to $Q$.
 2. **Attempting State Feedback or Counters with Transparent Latches (Race-Around):** Connecting an inverted output $Q'$ back to $D$ on a transparent latch. Because the clock pulse high time $t_H$ is typically far longer than the internal loop delay ($t_H \gg t_{loop}$), the output oscillates continuously back and forth between 0 and 1 until $C$ falls, freezing a random value.
@@ -327,9 +327,9 @@ An engineer attempts to build a frequency divider using a transparent gated D la
 
 3. **Impracticality in Digital Design:**
    Maintaining a clock pulse width strictly narrower than $2.0\text{ ns}$ across varying temperature, power supply voltage, and semiconductor fabrication corners is virtually impossible. A small drift in clock pulse width or ambient temperature would cause the counter to corrupt its data.
-   This proves that robust sequential circuits require **edge-triggered flip-flops**, which isolate input from output regardless of how long the clock stays high.
+   This shows that reliable sequential circuits require **edge-triggered flip-flops**, which isolate input from output regardless of how long the clock stays high.
 </ModelAnswer>
 
 ---
 
-To make circuits robust against transparency hazards, we must sample inputs at an edge rather than during a level. The [next lesson](/courses/logic-design/flip-flops) explores how edge-triggered flip-flops achieve this timing isolation.
+To protect circuits against transparency hazards, we sample inputs at an edge rather than across a whole clock level. The [next lesson](/courses/logic-design/flip-flops) explores how edge-triggered flip-flops achieve this timing isolation.

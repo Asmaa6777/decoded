@@ -91,7 +91,7 @@ Ten questions on latches, flip-flops, registers, counters, and computer memory. 
         { id: "d", text: "Multiplexers automatically double the operating clock frequency" },
       ],
       correctOptionId: "b",
-      explanation: "Option (b) is correct: Inserting an AND gate into the clock tree adds propagation delay (clock skew) relative to ungated registers across the chip, and any transition on Load while CLK = 1 generates runt clock glitches that cause false clocking. Recirculating multiplexers keep the pure clock line wired directly to all flip-flops, implementing control safely in the data path (D_i = Load · I_i + Load' · Q_i). Option (a) is incorrect because a multiplexer requires 4–6 transistors compared to a simple gate. Option (c) is incorrect because recirculating registers still require a continuous clock. Option (d) is incorrect because multiplexers do not modify clock frequency.",
+      explanation: "Option (b) is correct: Inserting an AND gate into the clock tree adds propagation delay (clock skew) relative to ungated registers across the chip, and any transition on Load while CLK = 1 generates runt clock glitches that cause false clocking. Recirculating multiplexers keep the pure clock line wired directly to all flip-flops, implementing control safely in the data path (D_i = Load · I_i + Load' · Q_i). Option (a) is incorrect because a multiplexer requires 4 to 6 transistors compared to a simple gate. Option (c) is incorrect because recirculating registers still require a continuous clock. Option (d) is incorrect because multiplexers do not modify clock frequency.",
     },
     {
       id: "q8",

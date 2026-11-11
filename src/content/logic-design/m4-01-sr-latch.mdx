@@ -3,9 +3,9 @@ import { SrLatchNor, SrLatchNand } from "@/components/mdx/CircuitVisualizers";
 
 # The SR Latch: How a Circuit Remembers
 
-Every circuit studied in combinational logic has had zero memory. Change the inputs, and within a few nanoseconds of propagation delay, the old output is completely gone. But a computer must store data, hold intermediate calculations, and track its location in a program. At some fundamental point, a digital circuit must remember a bit long after the electrical input pulse that created it has vanished.
+Every circuit studied in combinational logic has no memory. Change the inputs, and within a few nanoseconds, the old output is gone. But a computer needs to store data, hold intermediate results, and track its place in a program. A digital circuit must remember a bit long after the input pulse that set it has vanished.
 
-How can a network of simple logic gates hold onto a value without any moving parts? The answer lies in one foundational concept: **feedback**.
+How can a network of simple logic gates hold onto a value without any moving parts? The answer is **feedback**.
 
 ## The Bistable Element: Two Inverters in a Loop
 
@@ -25,9 +25,9 @@ This configuration is called a **bistable element** (or bistable multivibrator) 
 1. **State 1 ($Q = 1$):** If $Q = 1$, the input to NOT 1 is 1. NOT 1 outputs $Q' = 0$. That 0 feeds into NOT 2, which outputs $Q = 1$. The circuit reinforces itself indefinitely.
 2. **State 2 ($Q = 0$):** If $Q = 0$, the input to NOT 1 is 0. NOT 1 outputs $Q' = 1$. That 1 feeds into NOT 2, which outputs $Q = 0$. Again, the state holds indefinitely.
 
-Between these two stable states lies a third theoretical point: the **metastable** state. If both inverters sit exactly at their switching threshold voltage ($V_{th} \approx V_{DD}/2$), the loop has high analog gain. Any infinitesimal thermal noise or electrical fluctuation will immediately tip the circuit into either State 1 or State 2.
+Between these two stable states lies a third theoretical point: the **metastable** state. If both inverters sit exactly at their switching threshold voltage ($V_{th} \approx V_{DD}/2$), the loop has high analog gain. Any tiny electrical noise will tip the circuit into either State 1 or State 2.
 
-While a cross-coupled inverter loop can retain a bit indefinitely as long as power is applied, it suffers from a fatal limitation: **it has no external inputs**. Once powered on, there is no way for external circuitry to alter the stored bit without shorting internal nodes to power or ground. To make memory useful, we must replace the simple inverters with gates that accept external control signals.
+A cross-coupled inverter loop holds a bit as long as power is on, but it has a limitation: **it has no external inputs**. Once powered on, external circuits cannot change the stored bit without shorting internal nodes to power or ground. To make memory useful, we replace the inverters with gates that accept external control signals.
 
 ## The NOR SR Latch (Active-HIGH)
 
@@ -135,17 +135,17 @@ The don't-care conditions ($\text{X}$) allow logic minimization when designing s
 
 ### The Forbidden Input and Metastability
 
-What happens if both $S = 1$ and $R = 1$ are applied simultaneously?
+What happens if both $S = 1$ and $R = 1$ are applied at the same time?
 
-1. While both inputs remain high, the 1 on $S$ forces $Q' = 0$, and the 1 on $R$ forces $Q = 0$. This violates the fundamental definition that $Q$ and $Q'$ must be logical complements of each other.
-2. The catastrophic failure occurs when both inputs are **released simultaneously** ($S: 1 \to 0$ and $R: 1 \to 0$).
+1. While both inputs remain high, the 1 on $S$ forces $Q' = 0$, and the 1 on $R$ forces $Q = 0$. This breaks the rule that $Q$ and $Q'$ must be complements of each other.
+2. A failure occurs when both inputs are **released simultaneously** ($S: 1 \to 0$ and $R: 1 \to 0$).
    - Both NOR gates simultaneously see all 0s at their inputs.
    - Both outputs switch from 0 to 1 after one gate delay ($t_{pd}$).
    - Now both gates see 1s on their cross-coupled inputs and switch their outputs back to 0.
    - Both outputs oscillate between 0 and 1 continuously until internal electrical noise or physical component asymmetry causes one gate to switch slightly ahead of the other.
    - The latch eventually falls into either State 1 or State 2, but the resulting state is entirely unpredictable.
 
-Because unpredictable digital memory violates the determinism required by computer systems, the input combination $S = R = 1$ is strictly **forbidden**.
+Because digital circuits need predictable behavior, the input combination $S = R = 1$ is **forbidden**.
 
 ---
 
@@ -223,7 +223,7 @@ The standard industrial solution is the **SR latch switch debouncer**:
 5. All subsequent mechanical bounces on terminal A toggle the latch between Set ($\bar{S} = 0$) and Hold ($\bar{S} = 1$). In both states, $Q = 1$.
 6. The latch will never reset to 0 until the switch travels all the way across to make contact with terminal B, pulling $\bar{R} \to 0$.
 
-The output $Q$ produces a pristine, bounce-free digital step that can safely drive high-speed digital logic.
+The output $Q$ produces a clean, bounce-free signal that can safely drive digital logic.
 
 <Callout tone="neon" label="Hardware Foundation">
 Cross-coupled storage is the foundation of high-speed processor registers and on-chip caches. The 6-transistor (6T) [SRAM](/courses/computer-organization/ram-and-rom) cell used in modern L1 and L2 caches is a microscopic CMOS implementation of this cross-coupled loop, holding billions of bits simultaneously.
@@ -231,14 +231,14 @@ Cross-coupled storage is the foundation of high-speed processor registers and on
 
 ## Common exam pitfalls and student mistakes
 
-When analyzing and synthesizing basic latches and bistable memory elements, students frequently encounter these six pitfalls:
+When working with latches and memory elements, students often make these six mistakes:
 
 1. **Confusing Active-HIGH (NOR) and Active-LOW (NAND) Hold and Trigger Polarities:** Writing $S = 0, R = 0$ as the quiescent hold state for a cross-coupled NAND latch, or expecting a high pulse ($1$) to trigger it. A NOR latch rests at $(0, 0)$ and sets on $(1, 0)$; a NAND latch rests at $(1, 1)$ and sets on active-LOW signals $(\bar{S} = 0, \bar{R} = 1)$.
 2. **Assuming $Q$ and $Q'$ are Always Inverses in the Forbidden State:** Stating that if $Q = 0$, $Q'$ must equal $1$ even when the forbidden input is applied. In a NOR SR latch with $S = 1, R = 1$, *both* NOR outputs are simultaneously pulled low ($Q = 0$ and $Q' = 0$). In a NAND latch with $\bar{S} = 0, \bar{R} = 0$, *both* NAND outputs are driven high ($Q = 1$ and $Q' = 1$). In both cases, complementary behavior is destroyed.
 3. **Overlooking the Simultaneous Release Hazard:** Neglecting what happens when returning from the forbidden state back to the hold state. If inputs transition simultaneously from $(1, 1) \to (0, 0)$ in a NOR latch (or $(0, 0) \to (1, 1)$ in a NAND latch), both gates enter a race condition. Because both gates attempt to switch at the same time, the outputs oscillate or settle into an unpredictable state governed by microscopic transistor imbalances and thermal noise (metastability).
 4. **Violating Minimum Pulse Width ($t_{w(min)}$):** Applying an input pulse shorter than the loop propagation delay ($t_w < 2t_{pd}$). A narrow pulse terminates before feedback can reinforce the new state, leaving the latch in its original state or inducing analog metastability.
 5. **Confusing Transparent Latches with Edge-Triggered Flip-Flops:** Assuming that an SR latch only changes state on a clock transition. Latches are level-sensitive: they react continuously to their inputs as long as the inputs are asserted.
-6. **Misinterpreting Don't-Care ($\text{X}$) Entries in Excitation Tables:** Believing that an $\text{X}$ in an excitation table means the physical pin may float or be disconnected. In digital logic synthesis, $\text{X}$ signifies a degree of freedom for Karnaugh map optimization; in the physical circuit, the input must still be tied to a valid logic 0 or logic 1 voltage level.
+6. **Misinterpreting Don't-Care ($\text{X}$) Entries in Excitation Tables:** Believing that an $\text{X}$ in an excitation table means the pin may float. In logic design, $\text{X}$ gives a choice during Karnaugh map simplification. In a real circuit, the input pin must still connect to logic 0 or logic 1.
 
 ---
 
@@ -265,7 +265,7 @@ An active-HIGH NOR SR latch has identical gates, each with a propagation delay o
    - Once $Q = 1$, that 1 feeds back to NOR 2, locking $Q' = 0$ independently of $S$.
    - Therefore, the minimum input pulse width must equal at least one gate delay, and safely two gate delays:
      $$t_{w(min)} \ge 2 \times t_{pd} = 2 \times 2\text{ ns} = 4\text{ ns}$$
-     (In physical design, $t_{w(min)}$ must strictly exceed the loop loop-closure time to avoid entering a metastable state).
+     (In physical design, $t_{w(min)}$ must strictly exceed the loop closure time to avoid entering a metastable state).
 </ModelAnswer>
 
 ### Problem 2: NAND Debouncer Logic Verification

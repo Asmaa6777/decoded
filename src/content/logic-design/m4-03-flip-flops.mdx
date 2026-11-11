@@ -3,9 +3,9 @@ import { EdgeLab, MasterSlave, JkLab } from "@/components/mdx/LogicVisualizers";
 
 # Flip-Flops: Changing Only on the Edge
 
-A [latch](/courses/logic-design/d-latch-and-clock) is level-sensitive: as long as its enable line remains high, its window is open, allowing any input fluctuation to pass directly to the output. In contrast, an **edge-triggered flip-flop** acts like a high-speed camera shutter: it samples its input at one precise, infinitesimal transition—the clock edge—and ignores the input during the entire remainder of the clock cycle.
+A [latch](/courses/logic-design/d-latch-and-clock) is level-sensitive: as long as its enable line remains high, its window is open, allowing input fluctuations to pass directly to the output. An **edge-triggered flip-flop** acts like a camera shutter: it samples its input at one precise transition, the clock edge, and ignores the input during the rest of the clock cycle.
 
-By sampling only on transitions, flip-flops eliminate transparency hazards and make it possible to build complex, reliable sequential networks.
+By sampling only on transitions, flip-flops eliminate transparency hazards and make it possible to build complex, reliable sequential circuits.
 
 Below, compare how a level-sensitive latch and an edge-triggered flip-flop respond to the identical clock and data signals. Click data cells to change $D$ while the clock is high, and observe how only the latch reflects those mid-pulse changes:
 
@@ -78,7 +78,7 @@ The circuit acts as an electronic **airlock**: there are two sequential doors, a
    - The slave latch disables first, locking output $Q$ in place.
    - The master latch then re-enables, opening its window to begin tracking the next data bit on $D$ in preparation for the next cycle.
 
-Because data never has an unobstructed combinational path from primary input $D$ to primary output $Q$, **race-around feedback oscillations are physically impossible**.
+Because data never has an open path from primary input $D$ to primary output $Q$, **race-around feedback oscillations cannot occur**.
 
 ---
 
@@ -88,7 +88,7 @@ Digital systems rely on four standard flip-flop varieties: **D**, **T**, **JK**,
 
 ### 1. The D Flip-Flop (Data / Delay)
 
-The **D flip-flop** is the undisputed workhorse of modern digital design, used in registers, pipeline stages, and CPU datapaths. Whatever logic value is present on $D$ at the active clock edge appears at output $Q$:
+The **D flip-flop** is the standard storage element in digital design, used in registers, pipeline stages, and CPU datapaths. Whatever logic value is present on $D$ at the active clock edge appears at output $Q$:
 
 $$
 Q(t+1) = D
@@ -165,7 +165,7 @@ Reading this equation logically: "the next state will be 1 if $J$ commands a set
 
 #### JK Flip-Flop Excitation Table
 
-The excitation table is a vital tool for sequential state machine synthesis because it contains generous don't-care conditions ($\text{X}$):
+The excitation table is useful for state machine synthesis because it provides don't-care conditions ($\text{X}$):
 
 | $Q(t) \to Q(t+1)$ | Desired Transition | Required $J$ | Required $K$ | Reason |
 |:---:|:---:|:---:|:---:|:---|
@@ -327,7 +327,7 @@ $$
 
 ## Common exam pitfalls and student mistakes
 
-When analyzing and designing sequential circuits with flip-flops, students frequently make these six errors:
+When working with flip-flops, students often make these six mistakes:
 
 1. **Attempting to Fix Hold Time Violations by Lowering Clock Frequency:** Assuming that if a sequential path has a hold time violation ($t_{c-q(min)} + t_{comb(min)} < t_h$), running the system at a lower clock frequency (e.g. 10 MHz instead of 100 MHz) will fix the problem. The clock period $T_c$ does not appear in the hold inequality; hold violations represent a localized race between back-to-back flip-flops on the exact same clock edge. Only physical delay buffers inserted into the data line can resolve hold violations.
 2. **Confusing Synchronous Clocked Inputs with Asynchronous Direct Inputs:** Believing that asserting active-LOW direct Clear (/CLR) or direct Preset (/PRE) waits for the next active clock edge. Asynchronous inputs bypass the internal master-slave steering gates and force state changes immediately (within nanoseconds). Conversely, synchronous inputs ($D, T, J, K$) have no effect until the active clock transition occurs.

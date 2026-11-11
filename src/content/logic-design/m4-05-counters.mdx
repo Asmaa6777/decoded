@@ -3,7 +3,7 @@ import { CounterLab } from "@/components/mdx/LogicVisualizers";
 
 # Binary Counters
 
-Binary counting is the fundamental mechanism by which a digital computer measures time, steps through sequential instruction addresses, and divides high-speed clock frequencies.
+Digital computers use binary counters to measure time, step through instruction addresses, and divide clock frequencies.
 
 Examine the lowest four bits of a standard binary counting sequence:
 
@@ -20,7 +20,7 @@ Decimal    Binary (Q3 Q2 Q1 Q0)
   8             1  0  0  0
 ```
 
-Notice the rhythmic mathematical pattern:
+Notice the pattern:
 - Bit $Q_0$ toggles on **every single step**.
 - Bit $Q_1$ toggles every **2 steps** (whenever $Q_0$ was 1 and rolls over to 0).
 - Bit $Q_2$ toggles every **4 steps** (whenever both $Q_1$ and $Q_0$ were 1).
@@ -121,7 +121,7 @@ To make each stage toggle only at the correct moment in the binary sequence:
 - Stage 3 ($Q_3$) toggles whenever $Q_0 = 1, Q_1 = 1$, and $Q_2 = 1$:
   $$T_3 = Q_0 \cdot Q_1 \cdot Q_2$$
 
-In general, flip-flop $i$ must toggle if and only if **all lower-order bits are 1**:
+In general, flip-flop $i$ toggles only when **all lower-order bits are 1**:
 
 $$
 T_i = \prod_{j=0}^{i-1} Q_j
@@ -202,13 +202,13 @@ To design a counter for an arbitrary sequence (e.g. $0 \to 2 \to 5 \to 1 \to 0$)
 
 ## Common exam pitfalls and student mistakes
 
-When designing and analyzing binary counters, students frequently encounter these six pitfalls:
+When working with binary counters, students often make these six mistakes:
 
 1. **Using Asynchronous Clear to Truncate Counters by Decoding State $N$:** Decoding state $N$ (e.g. state 10 for a BCD counter) with a NAND gate driving an asynchronous /CLR pin. The instant the fastest flip-flop clears, the NAND output returns to 1, producing a sub-nanosecond runt reset pulse that can fail to reset slower flip-flops, leaving the counter in an erratic, partially cleared state. Synchronous truncation should decode state $N - 1$ and drive a synchronous clear pin.
 2. **Confusing Trigger Edges and Driving Outputs in Ripple Counters:** Assuming that connecting stage $i$'s clock to $Q_{i-1}$ always counts UP. For negative-edge triggered flip-flops ($\downarrow$), clocking from $Q_{i-1}$ counts UP, while clocking from $Q'_{i-1}$ counts DOWN. For positive-edge triggered flip-flops ($\uparrow$), clocking from $Q'_{i-1}$ counts UP, and clocking from $Q_{i-1}$ counts DOWN. Swapping the trigger edge or output pin reverses the counting direction.
 3. **Underestimating Accumulated Delay in Ripple Counters ($T_{CLK} > n \cdot t_{pd}$):** Overlooking that in an $n$-bit ripple counter, delays accumulate sequentially through all $n$ flip-flops ($n \cdot t_{pd}$). At high frequencies, a new clock pulse arrives before the carry has finished rippling to the MSB, causing the counter to output incorrect binary words.
 4. **Attaching Combinational Decoders to Unstrobed Ripple Counter Outputs:** In an asynchronous ripple counter, multi-bit transitions (such as $0111_2 \to 1000_2$) pass through transient intermediate states ($0110_2, 0100_2, 0000_2$) during the ripple interval. Any combinational decoder attached directly to the outputs will generate spurious output spikes (glitches) that can falsely trigger downstream logic.
-5. **Incomplete Toggle Conditions in Synchronous Counters:** Assuming flip-flop $i$ toggles when only the immediately preceding bit is 1 ($T_i = Q_{i-1}$). In a true binary synchronous counter, stage $i$ must toggle if and only if **all** lower-order bits are 1 ($T_i = \prod_{j=0}^{i-1} Q_j = Q_{i-1} Q_{i-2} \dots Q_0$).
+5. **Incomplete Toggle Conditions in Synchronous Counters:** Assuming flip-flop $i$ toggles when only the immediately preceding bit is 1 ($T_i = Q_{i-1}$). In a true binary synchronous counter, stage $i$ toggles only when **all** lower-order bits are 1 ($T_i = \prod_{j=0}^{i-1} Q_j = Q_{i-1} Q_{i-2} \dots Q_0$).
 6. **Neglecting Self-Starting Verification in Truncated State Machines:** Designing a counter using don't-care conditions ($\text{X}$) for unused states without evaluating where those unused states lead. If an unused state transitions into another unused state, a transient glitch can trap the counter in an endless illegal cycle from which it cannot escape without an external power-on reset.
 
 ---
@@ -320,7 +320,7 @@ Compare the maximum operating frequency of a 6-bit ripple counter against a 6-bi
    $$T_{CLK(min)} \ge t_{pd} + 4 \times t_{AND} + t_{su} = 4\text{ ns} + (4 \times 1.5\text{ ns}) + 2\text{ ns} = 12\text{ ns}$$
    $$f_{max(sync)} = 1 / (12\text{ ns}) \approx 83.33\text{ MHz}$$
 
-The synchronous counter runs more than **twice as fast**, and does so with complete immunity to intermediate decoding glitches.
+The synchronous counter runs more than **twice as fast**, without intermediate decoding glitches.
 </ModelAnswer>
 
 ---

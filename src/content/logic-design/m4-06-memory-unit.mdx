@@ -125,7 +125,7 @@ For a 1024-word memory ($k = 10$ address lines):
 1. The 10 address bits are split into two 5-bit halves:
    - 5 bits ($A_4 \dots A_0$) drive a **Row Decoder** ($5$-to-$32$), activating one of 32 horizontal word lines.
    - 5 bits ($A_9 \dots A_5$) drive a **Column Decoder** ($5$-to-$32$), activating one of 32 vertical bit lines.
-2. A binary storage cell is selected if and only if **both its row line and column line are active simultaneously** (coincidence selection).
+2. A binary storage cell is selected only when **both its row line and column line are active simultaneously** (coincidence selection).
 3. **Massive Gate Reduction:**
    - 1D Decoding: 1,024 AND gates (each with 10 inputs).
    - 2D Decoding: $32 + 32 = \mathbf{64}$ AND gates (each with only 5 inputs)!
@@ -250,7 +250,7 @@ Engineers routinely combine standard commercial memory ICs to build memory modul
 ```
 
 <Callout tone="neon" label="The Complete Computer Hierarchy">
-You have reached the summit of digital logic design. Every computer processor is built from these exact building blocks:
+Every computer processor is built from these building blocks:
 - **ALU:** [Adders](/courses/logic-design/adders) and logic gates performing math.
 - **Registers:** [Flip-flops](/courses/logic-design/flip-flops) and [multiplexers](/courses/logic-design/multiplexers) holding active operands.
 - **Control Unit:** [Counters](/courses/logic-design/counters) and [decoders](/courses/logic-design/comparators-decoders-encoders) stepping through instructions.
@@ -260,7 +260,7 @@ The [Microprocessors course](/courses/microprocessors/inside-the-8086) explores 
 
 ## Common exam pitfalls and student mistakes
 
-When analyzing and designing computer memory systems, students frequently encounter these six pitfalls:
+When working with computer memory systems, students often make these six mistakes:
 
 1. **Confusing Address Lines ($k$) with Data Lines ($n$) in Capacity Calculations:** Mistaking the number of address lines for total storage capacity. An address bus of $k$ lines addresses $2^k$ distinct memory words, each containing $n$ bits (total capacity $= 2^k \times n$ bits $= \frac{1}{8} \cdot 2^k \times n$ bytes). Confusing bits and bytes is another frequent exam calculation error.
 2. **Bus Contention from Overlapping Active Tri-State Drivers:** Failing to guarantee that only one memory chip or peripheral asserts its tri-state drivers onto the shared system data bus at any given instant. If two devices attempt to drive the bus simultaneously with conflicting logic levels (one driving $V_{CC}$ and the other driving GND), a low-impedance short circuit forms, causing heavy shoot-through currents, noise spikes, and hardware damage.
