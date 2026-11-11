@@ -463,6 +463,49 @@ There are two fundamental models:
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-49",
+      prompt: "(Final 2024, MCQ item 49) Which of the following two operations are provided by the IPC facility?",
+      options: [{ id: "a", text: "write & send a message" }, { id: "b", text: "send & receive a message" }, { id: "c", text: "send & read a message" }, { id: "d", text: "receive & read a message" }],
+      correctOptionId: "b",
+      explanation: "The IPC facility provides send and receive. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-50",
+      prompt: "(Final 2024, MCQ item 50) In indirect communication between processes P and Q",
+      options: [{ id: "a", text: "there is another process R to pass the messages between P and Q" }, { id: "b", text: "there is another machine between the two processes to help communication" }, { id: "c", text: "there is a mailbox to help communication between P and Q" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "Indirect communication goes through a mailbox. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-51",
+      prompt: "(Final 2024, MCQ item 51) In the zero capacity queue",
+      options: [{ id: "a", text: "the queue can store at least one message" }, { id: "b", text: "the sender blocks until the receiver receives the message" }, { id: "c", text: "the sender keeps sending and the messages don't wait in the queue" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "With no buffer the sender waits for the receiver. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-52",
+      prompt: "(Final 2024, MCQ item 52) What is a client-side stub?",
+      options: [{ id: "a", text: "transmits the message to the server-side stub to invoke a remote procedure" }, { id: "b", text: "packs the parameters into a form transmittable over the network" }, { id: "c", text: "locates the port on the server" }, { id: "d", text: "all the mentioned" }],
+      correctOptionId: "d",
+      explanation: "A client stub does all three jobs: it packs parameters, finds the server port, and sends the message. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-53",
+      prompt: "(Final 2024, MCQ item 53) What is the full form of RMI?",
+      options: [{ id: "a", text: "Remote Memory Installation" }, { id: "b", text: "Remote Memory Invocation" }, { id: "c", text: "Remote Method Invocation" }, { id: "d", text: "Remote Method Installation" }],
+      correctOptionId: "c",
+      explanation: "RMI stands for Remote Method Invocation. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

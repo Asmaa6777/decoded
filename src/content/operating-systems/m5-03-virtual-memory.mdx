@@ -309,6 +309,49 @@ These questions are copied from the exam papers. The wording is unchanged. Answe
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="virtual-memory"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-25",
+      prompt: "(Final 2024, MCQ item 25) What is the main benefit of Copy-On-Write (COW)?",
+      options: [{ id: "a", text: "Improved security" }, { id: "b", text: "Efficient memory usage during process creation" }, { id: "c", text: "Faster swapping" }, { id: "d", text: "Reduced process priority" }],
+      correctOptionId: "b",
+      explanation: "COW lets parent and child share pages until one of them writes. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-29",
+      prompt: "(Final 2024, MCQ item 29) What is the purpose of the swap space in a virtual memory system?",
+      options: [{ id: "a", text: "To store temporary files" }, { id: "b", text: "To back up main memory in case of power failure" }, { id: "c", text: "To hold pages that are not in main memory" }, { id: "d", text: "None of the answers" }],
+      correctOptionId: "c",
+      explanation: "Swap space holds pages that have been moved out of main memory. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-30",
+      prompt: "(Final 2024, MCQ item 30) In demand paging, what is a lazy swapper?",
+      options: [{ id: "a", text: "A swapper that preloads all pages before execution" }, { id: "b", text: "A swapper that only swaps when memory is full" }, { id: "c", text: "A swapper that brings pages into memory only when needed" }, { id: "d", text: "A swapper that prioritizes large processes" }],
+      correctOptionId: "c",
+      explanation: "A lazy swapper never swaps a page in until it is needed. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-32",
+      prompt: "(Final 2024, MCQ item 32) What is the effective access time in demand paging?",
+      options: [{ id: "a", text: "The time to retrieve a page from disk" }, { id: "b", text: "The average time to access memory considering page faults" }, { id: "c", text: "The time to swap a page into memory" }, { id: "d", text: "The time to execute a process from start to finish" }],
+      correctOptionId: "b",
+      explanation: "Effective access time averages the memory access time over the page-fault rate. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-36",
+      prompt: "(Final 2024, MCQ item 36) How does Copy-On-Write (COW) improve process creation performance?",
+      options: [{ id: "a", text: "By copying all memory pages at the time of process creation" }, { id: "b", text: "By sharing pages between parent and child processes until a write occurs" }, { id: "c", text: "By sharing pages between parent and child processes" }, { id: "d", text: "By reducing the size of the page table" }],
+      correctOptionId: "b",
+      explanation: "Pages are copied only when one process writes to them. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

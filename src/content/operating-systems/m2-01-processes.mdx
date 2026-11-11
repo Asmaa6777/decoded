@@ -568,6 +568,56 @@ Answer: **context switch.** (Our answer, which matches the printed 2021 key.)
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-39",
+      prompt: "(Final 2024, MCQ item 39) In Unix, which system call creates the new process?",
+      options: [{ id: "a", text: "new" }, { id: "b", text: "fork" }, { id: "c", text: "create" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "fork() creates a new process in UNIX. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-41",
+      prompt: "(Final 2024, MCQ item 41) What is the waiting state of a process?",
+      options: [{ id: "a", text: "When the process is scheduled to run after some execution" }, { id: "b", text: "When the process is unable to run until some tasks have been completed" }, { id: "c", text: "When the process is performing an I/O operation" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "A waiting process is blocked, usually for I/O. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-42",
+      prompt: "(Final 2024, MCQ item 42) A process stack does not contain",
+      options: [{ id: "a", text: "Function parameters" }, { id: "b", text: "Local variables" }, { id: "c", text: "Return addresses" }, { id: "d", text: "Global variables" }],
+      correctOptionId: "d",
+      explanation: "Globals live in the data section, not the stack. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-43",
+      prompt: "(Final 2024, MCQ item 43) The primary distinction between the short-term scheduler and the long-term scheduler is the",
+      options: [{ id: "a", text: "length of their queues" }, { id: "b", text: "type of processes they schedule" }, { id: "c", text: "frequency of their execution" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "The short-term scheduler runs often and the long-term scheduler runs rarely. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-46",
+      prompt: "(Final 2024, MCQ item 46) Which of the following must be saved on a context switch between processes?",
+      options: [{ id: "a", text: "Contents of registers" }, { id: "b", text: "Program counter" }, { id: "c", text: "Both (a) and (b)" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "The registers and the program counter must be saved and restored. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-47",
+      prompt: "(Final 2024, MCQ item 47) What is the degree of multiprogramming?",
+      options: [{ id: "a", text: "The number of processes executed per unit of time" }, { id: "b", text: "The number of processes in the ready queue" }, { id: "c", text: "The number of processes in the I/O queue" }, { id: "d", text: "The number of processes in memory" }],
+      correctOptionId: "d",
+      explanation: "The degree of multiprogramming is the number of processes in memory. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

@@ -404,6 +404,70 @@ None.
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="page-replacement-and-thrashing"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-26",
+      prompt: "(Final 2024, MCQ item 26) Which page replacement algorithm suffers from Belady's Anomaly?",
+      options: [{ id: "a", text: "FIFO" }, { id: "b", text: "LRU" }, { id: "c", text: "Optimal" }, { id: "d", text: "Clock" }],
+      correctOptionId: "a",
+      explanation: "FIFO can fault more with more frames on some strings. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-27",
+      prompt: "(Final 2024, MCQ item 27) What is the working set model in memory management?",
+      options: [{ id: "a", text: "A model for optimal frame allocation" }, { id: "b", text: "A set of pages that a process uses frequently" }, { id: "c", text: "A scheduling technique for real-time systems" }, { id: "d", text: "A method to reduce internal fragmentation" }],
+      correctOptionId: "b",
+      explanation: "The working set is the set of pages a process is actively using. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-28",
+      prompt: "(Final 2024, MCQ item 28) How does the second chance page replacement algorithm work?",
+      options: [{ id: "a", text: "It removes the oldest page in memory" }, { id: "b", text: "It gives priority to modified pages" }, { id: "c", text: "It uses a reference bit to decide if a page gets a second chance" }, { id: "d", text: "It always replaces the least recently used page" }],
+      correctOptionId: "c",
+      explanation: "A page with its reference bit set is spared once and the bit is cleared. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-31",
+      prompt: "(Final 2024, MCQ item 31) What is thrashing in a virtual memory system?",
+      options: [{ id: "a", text: "Frequent swapping of processes in and out of memory" }, { id: "b", text: "Allocation of too many frames to a single process" }, { id: "c", text: "High CPU utilization with low memory usage" }, { id: "d", text: "Low CPU utilization due to excessive page faults" }],
+      correctOptionId: "d",
+      explanation: "Thrashing wastes the CPU on page faults, so utilization falls. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-33",
+      prompt: "(Final 2024, MCQ item 33) What is the primary difference between global and local page replacement algorithms?",
+      options: [{ id: "a", text: "Global replacement selects from all frames; local replacement selects from a process's own frames" }, { id: "b", text: "Global replacement is faster; local replacement is more secure" }, { id: "c", text: "Global replacement works with segmentation; local replacement works with paging" }, { id: "d", text: "Global replacement uses the working set model; local replacement does not" }],
+      correctOptionId: "a",
+      explanation: "Global replacement can take any frame; local replacement only uses the process's own frames. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-34",
+      prompt: "(Final 2024, MCQ item 34) Which algorithm uses the reference bit and modify bit in concert as an improved algorithm?",
+      options: [{ id: "a", text: "Clock algorithm" }, { id: "b", text: "Second chance" }, { id: "c", text: "Enhanced second chance" }, { id: "d", text: "Enhanced clock algorithm" }],
+      correctOptionId: "c",
+      explanation: "The enhanced second-chance algorithm uses both bits, so it prefers unmodified pages. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-35",
+      prompt: "(Final 2024, MCQ item 35) Which of the following algorithms uses a circular buffer to approximate LRU?",
+      options: [{ id: "a", text: "FIFO" }, { id: "b", text: "Clock (second chance)" }, { id: "c", text: "Optimal" }, { id: "d", text: "LRU" }],
+      correctOptionId: "b",
+      explanation: "The clock algorithm walks a circular list of frames, giving each a second chance. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-37",
+      prompt: "(Final 2024, MCQ item 37) In proportional allocation with m = 128, s1 = 30 and s2 = 215, what are the frames allocated to process 1 and process 2?",
+      options: [{ id: "a", text: "a1 = 16, a2 = 112" }, { id: "b", text: "a1 = 17, a2 = 114" }, { id: "c", text: "a1 = 18, a2 = 112" }, { id: "d", text: "a1 = 16, a2 = 114" }],
+      correctOptionId: "a",
+      explanation: "S = 245. a1 = 30/245 × 128 ≈ 15.7, rounded to 16. a2 = 215/245 × 128 ≈ 112.3, rounded to 112. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

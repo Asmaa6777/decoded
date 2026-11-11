@@ -459,6 +459,28 @@ Answer: **data inconsistency.** (Our answer, which matches the printed 2021 key.
   ]}
 />
 
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-38",
+      prompt: "(Final 2024, MCQ item 38) When several processes access the same data concurrently and the outcome depends on the order of access, this is called",
+      options: [{ id: "a", text: "dynamic condition" }, { id: "b", text: "race condition" }, { id: "c", text: "essential condition" }, { id: "d", text: "critical condition" }],
+      correctOptionId: "b",
+      explanation: "This is a race condition. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-48",
+      prompt: "(Final 2024, MCQ item 48) Which of the following is NOT a requirement for solving the critical-section problem?",
+      options: [{ id: "a", text: "Mutual exclusion" }, { id: "b", text: "Progress" }, { id: "c", text: "Bounded waiting" }, { id: "d", text: "Priority inversion" }],
+      correctOptionId: "d",
+      explanation: "The three requirements are mutual exclusion, progress and bounded waiting. Priority inversion is a scheduling problem, not a requirement. The paper labels it e; here it is option d. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz
