@@ -3772,5 +3772,304 @@ export function simulateMemoryExpansion(
   };
 }
 
+export interface CarrySkipBlockAnalysis {
+  blockIndex: number;
+  bitStart: number;
+  bitEnd: number;
+  blockPropagate: Bit;
+  blockGenerate: Bit;
+  canSkip: boolean;
+}
+
+export interface CarrySkipAdderResult {
+  a: number;
+  b: number;
+  cin: Bit;
+  wordSize: number;
+  blockSize: number;
+  blocks: CarrySkipBlockAnalysis[];
+  criticalPathDelayNs: number;
+  rippleCarryEquivalentDelayNs: number;
+  speedup: number;
+}
+
+export function simulateCarrySkipAdder(
+  a: number,
+  b: number,
+  cin: Bit = 0,
+  wordSize = 16,
+  blockSize = 4
+): CarrySkipAdderResult {
+  const numBlocks = Math.ceil(wordSize / blockSize);
+  const blocks: CarrySkipBlockAnalysis[] = [];
+
+  for (let blk = 0; blk < numBlocks; blk++) {
+    const bitStart = blk * blockSize;
+    const bitEnd = Math.min(wordSize - 1, bitStart + blockSize - 1);
+    let bp: Bit = 1;
+    let bg: Bit = 0;
+
+    for (let i = bitEnd; i >= bitStart; i--) {
+      const ai = ((a >> i) & 1) as Bit;
+      const bi = ((b >> i) & 1) as Bit;
+      const pi = (ai ^ bi) as Bit;
+      const gi = (ai & bi) as Bit;
+      if (pi === 0) bp = 0;
+      if (gi === 1 && bg === 0) {
+        let propagatesOut: Bit = 1;
+        for (let j = i + 1; j <= bitEnd; j++) {
+          const pj = (((a >> j) & 1) ^ ((b >> j) & 1)) as Bit;
+          if (pj === 0) propagatesOut = 0;
+        }
+        if (propagatesOut === 1) bg = 1;
+      }
+    }
+
+    blocks.push({
+      blockIndex: blk,
+      bitStart,
+      bitEnd,
+      blockPropagate: bp,
+      blockGenerate: bg,
+      canSkip: bp === 1,
+    });
+  }
+
+  const tCarry = 1.0;
+  const tSkip = 1.2;
+  const tXor = 1.8;
+  const worstCaseDelay = blockSize * tCarry + (numBlocks - 2) * tSkip + (blockSize - 1) * tCarry + tXor;
+  const rcaDelay = (wordSize - 1) * tCarry + tXor;
+  const speedup = parseFloat((rcaDelay / worstCaseDelay).toFixed(2));
+
+  return {
+    a,
+    b,
+    cin,
+    wordSize,
+    blockSize,
+    blocks,
+    criticalPathDelayNs: worstCaseDelay,
+    rippleCarryEquivalentDelayNs: rcaDelay,
+    speedup,
+  };
+}
+
+export interface ParallelPrefixResult {
+  a: number;
+  b: number;
+  cin: Bit;
+  bits: number;
+  generates: Bit[];
+  propagates: Bit[];
+  prefixCarries: Bit[];
+  sumBits: Bit[];
+  sum: number;
+}
+
+export function prefixOperator(
+  b: { g: Bit; p: Bit },
+  a: { g: Bit; p: Bit }
+): { g: Bit; p: Bit } {
+  return {
+    g: (b.g | (b.p & a.g)) as Bit,
+    p: (b.p & a.p) as Bit,
+  };
+}
+
+export function simulateParallelPrefix(
+  a: number,
+  b: number,
+  cin: Bit = 0,
+  bits = 4
+): ParallelPrefixResult {
+  const generates: Bit[] = [];
+  const propagates: Bit[] = [];
+  for (let i = 0; i < bits; i++) {
+    const ai = ((a >> i) & 1) as Bit;
+    const bi = ((b >> i) & 1) as Bit;
+    generates.push((ai & bi) as Bit);
+    propagates.push((ai ^ bi) as Bit);
+  }
+
+  const prefixPairs: Array<{ g: Bit; p: Bit }> = [];
+  prefixPairs[0] = { g: generates[0], p: propagates[0] };
+
+  for (let i = 1; i < bits; i++) {
+    prefixPairs[i] = prefixOperator({ g: generates[i], p: propagates[i] }, prefixPairs[i - 1]);
+  }
+
+  const prefixCarries: Bit[] = [cin];
+  for (let i = 0; i < bits; i++) {
+    const cout = (prefixPairs[i].g | (prefixPairs[i].p & cin)) as Bit;
+    prefixCarries.push(cout);
+  }
+
+  const sumBits: Bit[] = [];
+  let sum = 0;
+  for (let i = 0; i < bits; i++) {
+    const s = (propagates[i] ^ prefixCarries[i]) as Bit;
+    sumBits.push(s);
+    if (s) sum |= (1 << i);
+  }
+  if (prefixCarries[bits]) sum |= (1 << bits);
+
+  return {
+    a,
+    b,
+    cin,
+    bits,
+    generates,
+    propagates,
+    prefixCarries,
+    sumBits,
+    sum,
+  };
+}
+
+export interface PriorityEncoder16to4Result {
+  inputs: Bit[];
+  masterEI: Bit;
+  chipHigh: {
+    inputs: Bit[];
+    aOutputs: [Bit, Bit, Bit];
+    gs: Bit;
+    eo: Bit;
+  };
+  chipLow: {
+    inputs: Bit[];
+    aOutputs: [Bit, Bit, Bit];
+    gs: Bit;
+    eo: Bit;
+  };
+  finalOutputs: [Bit, Bit, Bit, Bit];
+  finalEncodedValue: number;
+  systemGS: Bit;
+  systemEO: Bit;
+}
+
+export function simulate74LS148Cascade16to4(
+  inputs16: Bit[],
+  masterEI: Bit = 0
+): PriorityEncoder16to4Result {
+  const inputs = [...inputs16];
+  while (inputs.length < 16) inputs.push(1);
+
+  const highInputs: Bit[] = [];
+  for (let i = 8; i <= 15; i++) highInputs.push(inputs[i]);
+
+  const sim74148 = (pins: Bit[], ei: Bit) => {
+    if (ei === 1) {
+      return {
+        aOutputs: [1, 1, 1] as [Bit, Bit, Bit],
+        gs: 1 as Bit,
+        eo: 1 as Bit,
+        highestActive: -1,
+      };
+    }
+    let highestActive = -1;
+    for (let i = 7; i >= 0; i--) {
+      if (pins[i] === 0) {
+        highestActive = i;
+        break;
+      }
+    }
+    if (highestActive === -1) {
+      return {
+        aOutputs: [1, 1, 1] as [Bit, Bit, Bit],
+        gs: 1 as Bit,
+        eo: 0 as Bit,
+        highestActive: -1,
+      };
+    }
+    const code = highestActive;
+    const a2: Bit = ((code >> 2) & 1 ? 0 : 1) as Bit;
+    const a1: Bit = ((code >> 1) & 1 ? 0 : 1) as Bit;
+    const a0: Bit = (code & 1 ? 0 : 1) as Bit;
+    return {
+      aOutputs: [a2, a1, a0] as [Bit, Bit, Bit],
+      gs: 0 as Bit,
+      eo: 1 as Bit,
+      highestActive,
+    };
+  };
+
+  const highRes = sim74148(highInputs, masterEI);
+  const lowEI = highRes.eo;
+  const lowInputs: Bit[] = inputs.slice(0, 8);
+  const lowRes = sim74148(lowInputs, lowEI);
+
+  const a3: Bit = highRes.gs;
+  const a2: Bit = (highRes.aOutputs[0] & lowRes.aOutputs[0]) as Bit;
+  const a1: Bit = (highRes.aOutputs[1] & lowRes.aOutputs[1]) as Bit;
+  const a0: Bit = (highRes.aOutputs[2] & lowRes.aOutputs[2]) as Bit;
+
+  const systemGS: Bit = (highRes.gs & lowRes.gs) as Bit;
+  const systemEO: Bit = lowRes.eo;
+
+  let finalEncodedValue = -1;
+  if (systemGS === 0) {
+    const val3 = a3 === 0 ? 8 : 0;
+    const val2 = a2 === 0 ? 4 : 0;
+    const val1 = a1 === 0 ? 2 : 0;
+    const val0 = a0 === 0 ? 1 : 0;
+    finalEncodedValue = val3 + val2 + val1 + val0;
+  }
+
+  return {
+    inputs,
+    masterEI,
+    chipHigh: {
+      inputs: highInputs,
+      aOutputs: highRes.aOutputs,
+      gs: highRes.gs,
+      eo: highRes.eo,
+    },
+    chipLow: {
+      inputs: lowInputs,
+      aOutputs: lowRes.aOutputs,
+      gs: lowRes.gs,
+      eo: lowRes.eo,
+    },
+    finalOutputs: [a3, a2, a1, a0],
+    finalEncodedValue,
+    systemGS,
+    systemEO,
+  };
+}
+
+export function simulateTransmissionGateMux2to1(
+  i0: Bit,
+  i1: Bit,
+  s: Bit
+): { y: Bit; tg0On: boolean; tg1On: boolean } {
+  const tg0On = s === 0;
+  const tg1On = s === 1;
+  const y = tg0On ? i0 : i1;
+  return { y, tg0On, tg1On };
+}
+
+export function simulateBarrelShifter4Bit(
+  data: number,
+  shiftAmount: number,
+  mode: "rotate-left" | "rotate-right" = "rotate-right"
+): { inputWord: number; shiftedWord: number; bitTrace: [Bit, Bit, Bit, Bit] } {
+  const d = data & 0xf;
+  const k = ((shiftAmount % 4) + 4) % 4;
+  let res = 0;
+  if (mode === "rotate-right") {
+    res = ((d >> k) | (d << (4 - k))) & 0xf;
+  } else {
+    res = ((d << k) | (d >> (4 - k))) & 0xf;
+  }
+  const bits: [Bit, Bit, Bit, Bit] = [
+    ((res >> 3) & 1) as Bit,
+    ((res >> 2) & 1) as Bit,
+    ((res >> 1) & 1) as Bit,
+    (res & 1) as Bit,
+  ];
+  return { inputWord: d, shiftedWord: res, bitTrace: bits };
+}
+
 
 

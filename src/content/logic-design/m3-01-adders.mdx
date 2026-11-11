@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { HalfAdderCircuit, FullAdderCircuit } from "@/components/mdx/CircuitVisualizers";
 import { AdderSubtractorLab, SubtractorLab } from "@/components/mdx/LogicVisualizers";
 
@@ -502,3 +502,211 @@ Prove that the condition $V = C_n \oplus C_{n-1}$ accurately flags signed two's 
 
 Across all possible input combinations, $C_n \oplus C_{n-1}$ produces 1 only when signed arithmetic overflow occurs.
 </ModelAnswer>
+
+### Problem 5: 16-bit Ripple-Carry Adder datapath timing and flag analysis
+
+A 16-bit ripple-carry adder is constructed from 16 cascaded full adders. In each full adder, the internal gate delays are:
+- $t_{XOR} = 1.8\text{ ns}$ (delay from inputs $A_i, B_i, C_i$ to Sum $S_i$)
+- $t_{carry} = 1.2\text{ ns}$ (delay from carry-in $C_i$ to carry-out $C_{i+1}$)
+- Primary operand inputs $A$ and $B$ are stable at the inputs at $t = 0\text{ ns}$, and the initial carry-in $C_0$ is 0.
+
+1. Calculate the worst-case propagation delay $t_{p(\max)}$ required for all 16 sum bits ($S_{15}\dots S_0$) and the final carry $C_{16}$ to stabilize.
+2. The adder is placed between edge-triggered registers clocked by a system clock. The registers have setup time $t_{\text{setup}} = 0.5\text{ ns}$ and clock-to-Q delay $t_{cq} = 0.6\text{ ns}$. What is the maximum allowable clock frequency ($f_{\max}$) for reliable single-cycle addition?
+3. The adder executes a signed addition on 16-bit two's complement numbers $A = \text{0x7FFF}$ ($+32767_{10}$) and $B = \text{0x0001}$ ($+1_{10}$). Determine the 16-bit hexadecimal sum output, evaluate the four status flags ($Z, N, C, V$), and explain whether a hardware overflow exception occurs.
+
+<ModelAnswer>
+1. **Worst-Case Propagation Delay:**
+   - In stage 0, carry $C_1$ is generated after $t_{C1} = 1.2\text{ ns}$ (via $A_0 B_0$ AND-OR path).
+   - The carry ripples through stages 1 to 15, adding $1.2\text{ ns}$ per stage:
+     $$t_{C16} = 16 \times t_{carry} = 16 \times 1.2\text{ ns} = 19.2\text{ ns}$$
+   - The most critical sum bit is the MSB sum bit $S_{15}$. It cannot be computed until $C_{15}$ arrives, which takes $15 \times t_{carry} = 15 \times 1.2 = 18.0\text{ ns}$. Then, computing $S_{15} = A_{15} \oplus B_{15} \oplus C_{15}$ requires an XOR delay of $t_{XOR} = 1.8\text{ ns}$:
+     $$t_{S15} = 15 \times t_{carry} + t_{XOR} = 18.0\text{ ns} + 1.8\text{ ns} = 19.8\text{ ns}$$
+   - The overall worst-case settling delay is constrained by the MSB sum:
+     $$t_{p(\max)} = \max(t_{C16}, t_{S15}) = \max(19.2\text{ ns}, 19.8\text{ ns}) = 19.8\text{ ns}$$
+
+2. **Maximum Operating Clock Frequency:**
+   The minimum clock period $T_{\min}$ must accommodate register clock-to-Q delay, datapath propagation delay, and register setup time:
+   $$T_{\min} = t_{cq} + t_{p(\max)} + t_{\text{setup}} = 0.6\text{ ns} + 19.8\text{ ns} + 0.5\text{ ns} = 20.9\text{ ns}$$
+   The maximum operating frequency is:
+   $$f_{\max} = \frac{1}{T_{\min}} = \frac{1}{20.9 \times 10^{-9}\text{ s}} \approx 47.85\text{ MHz}$$
+
+3. **Signed Addition and Flag Evaluation:**
+   - Operands in binary:
+     $$A = \text{0x7FFF} = 0111\,1111\,1111\,1111_2 \quad (+32767_{10})$$
+     $$B = \text{0x0001} = 0000\,0000\,0000\,0001_2 \quad (+1_{10})$$
+   - Adding $A + B$:
+     - Bit 0: $1 + 1 + 0 = 0$ with carry $C_1 = 1$.
+     - Every bit $i$ from 1 through 14 has $A_i=1, B_i=0, C_i=1 \implies S_i=0$ and $C_{i+1}=1$.
+     - At bit 14: $C_{15} = 1$ propagates into the sign stage (stage 15).
+     - At sign bit 15: $A_{15} = 0, B_{15} = 0, C_{15} = 1 \implies S_{15} = 0 \oplus 0 \oplus 1 = 1$.
+     - Carry out of stage 15: $C_{16} = 0\cdot 0 + (0\oplus 0)\cdot 1 = 0$.
+   - Output sum:
+     $$S = 1000\,0000\,0000\,0000_2 = \text{0x8000} \quad (-32768_{10})$$
+   - Flag calculation:
+     - **Zero Flag ($Z$):** $S \ne 0 \implies Z = 0$.
+     - **Sign Flag ($N$):** $S_{15} = 1 \implies N = 1$ (result is negative).
+     - **Carry Flag ($C$):** $C_{16} = 0 \implies C = 0$ (no unsigned overflow; in unsigned math, $32767 + 1 = 32768 \le 65535$).
+     - **Overflow Flag ($V$):** $V = C_{16} \oplus C_{15} = 0 \oplus 1 = 1$.
+   - **Conclusion:** Two positive numbers produced a negative sum ($-32768$). Because $+32768$ cannot fit in a 16-bit signed two's complement integer (valid range is $-32768$ to $+32767$), the overflow flag $V = 1$ triggers a hardware arithmetic overflow exception trap.
+
+<Callout tone="orange" label="Common exam pitfall">
+A frequent error on exams is asserting that the carry flag $C = 1$ because overflow occurred. Carry $C$ checks unsigned wraparound ($> 2^{16}-1$), while $V$ checks signed sign-bit corruption ($C_{16} \oplus C_{15}$). Here, unsigned addition did not wrap around ($C = 0$), but signed addition wrapped into the negative range ($V = 1$).
+</Callout>
+</ModelAnswer>
+
+### Problem 6: Decimal (BCD) adder architecture and correction logic
+
+In digital telephony and financial calculation processors, arithmetic is performed in Binary Coded Decimal (BCD), where decimal digits $0$ to $9$ are represented by 4-bit codes $0000_2$ to $1001_2$. Codes $1010_2$ to $1111_2$ are invalid.
+When two BCD digits ($A, B$) and an incoming carry ($K_{in}$) are added using a standard 4-bit binary adder:
+1. Identify the range of possible decimal sums and explain why sums exceeding $9_{10}$ produce an invalid BCD digit.
+2. Derive the Boolean logic equation for the BCD correction signal $C_{\text{BCD}}$ using the binary adder carry-out $K_4$ and sum bits $Z_3, Z_2, Z_1, Z_0$.
+3. Explain why adding $+6$ ($0110_2$) using a second 4-bit binary adder corrects the decimal digit. Trace the addition $8_{\text{BCD}} + 7_{\text{BCD}}$ with $K_{in} = 0$.
+
+<ModelAnswer>
+1. **Sum Range and Invalid Codes:**
+   Adding two single BCD digits plus carry yields:
+   $$\text{Sum} = A + B + K_{in} \in [0 + 0 + 0, 9 + 9 + 1] = [0, 19_{10}]$$
+   - For sums $0$ to $9$, the 4-bit binary adder produces valid BCD digits ($0000_2$ to $1001_2$) with binary carry $K_4 = 0$.
+   - For sums $10$ to $15$, the adder produces invalid binary bit patterns $1010_2$ ($10_{10}$) through $1111_2$ ($15_{10}$) with $K_4 = 0$.
+   - For sums $16$ to $19$, the adder produces binary carry $K_4 = 1$ and sum bits $0000_2$ ($0_{10}$) through $0011_2$ ($3_{10}$), which represent erroneous decimal values (differing from the correct decimal remainder by $6$).
+
+2. **Derivation of the Correction Condition ($C_{\text{BCD}}$):**
+   A correction is needed whenever the sum exceeds $9_{10}$. This happens in two cases:
+   - Case 1: The binary sum is $\ge 16$, which forces binary carry $K_4 = 1$.
+   - Case 2: The binary sum is between $10$ and $15$ ($K_4 = 0$, but bits $Z_3 Z_2 Z_1 Z_0 \in [1010_2, 1111_2]$).
+     - In this range, $Z_3$ is always 1 ($8_{10}$).
+     - The sum is $\ge 10$ if either $Z_2 = 1$ (values $12, 13, 14, 15$) or $Z_1 = 1$ (values $10, 11, 14, 15$).
+     - Combining these with AND/OR logic gives:
+       $$Z_3 Z_2 + Z_3 Z_1 = Z_3(Z_2 + Z_1)$$
+   Combining Case 1 and Case 2:
+   $$C_{\text{BCD}} = K_4 + Z_3 Z_2 + Z_3 Z_1$$
+   When $C_{\text{BCD}} = 1$, the decimal carry-out of the BCD digit stage is asserted HIGH, and $+6$ ($0110_2$) must be added to $Z$.
+
+3. **Correction by Adding $+6$ ($0110_2$):**
+   A 4-bit binary adder counts modulo-16 ($2^4 = 16$), while decimal arithmetic counts modulo-10. Adding $+6$ ($16 - 10 = 6$) skips the 6 invalid states ($1010_2$ to $1111_2$), advancing the modulo-16 accumulator so that its lower nibble corresponds exactly to the decimal units digit ($(\text{Sum} + 6) \pmod{16} = \text{Sum} - 10$).
+
+   **Worked trace for $8_{\text{BCD}} + 7_{\text{BCD}}$:**
+   - Primary addition: $A = 1000_2$ ($8_{10}$), $B = 0111_2$ ($7_{10}$), $K_{in} = 0$.
+   - Binary adder output:
+     $$Z = A + B = 1000_2 + 0111_2 = 1111_2 \quad (15_{10}), \qquad K_4 = 0$$
+   - Evaluate correction equation:
+     $$C_{\text{BCD}} = K_4 + Z_3 Z_2 + Z_3 Z_1 = 0 + (1 \cdot 1) + (1 \cdot 1) = 1$$
+     Correction is required!
+   - Second adder adds $+6$ ($0110_2$) to $Z$:
+     $$\text{Final Sum} = 1111_2 + 0110_2 = 1\,0101_2$$
+   - The lower 4 bits are $0101_2 = 5_{\text{BCD}}$.
+   - The decimal carry-out is $C_{\text{BCD}} = 1$.
+   - Combined decimal output: $15_{10}$ ($1$ tens digit, $5$ units digit). The arithmetic is exact.
+
+<Callout tone="orange" label="Common exam pitfall">
+Students often connect the primary binary carry $K_4$ directly as the decimal carry-out. When adding $8 + 7 = 15$, the primary carry is $K_4 = 0$. Using $K_4$ as the stage carry drops the decimal tens digit entirely, reporting $8 + 7 = 5$. The decimal carry must be taken from $C_{\text{BCD}} = K_4 + Z_3 Z_2 + Z_3 Z_1$.
+</Callout>
+</ModelAnswer>
+
+---
+
+### Part 2: In-lesson interactive practice
+
+<Quiz
+  practice
+  courseSlug="logic-design"
+  lessonSlug="adders"
+  questions={[
+    {
+      id: "add-p1",
+      prompt: "How many 2-input NAND gates are required to construct a complete half adder producing both Sum (A ⊕ B) and Carry (AB) outputs, and why?",
+      options: [
+        { id: "a", text: "5 NAND gates, because the intermediate NAND output (AB)' used to synthesize XOR is inverted by a fifth NAND gate to produce Carry" },
+        { id: "b", text: "8 NAND gates, requiring 4 NAND gates for Sum and 4 independent NAND gates for Carry" },
+        { id: "c", text: "2 NAND gates, by wiring inputs directly to open-collector outputs" },
+        { id: "d", text: "6 NAND gates, because Carry requires two stages of De Morgan inversion" },
+      ],
+      correctOptionId: "a",
+      explanation: "A minimal 2-input NAND XOR gate uses 4 NAND gates where the first gate computes (AB)'. Inverting this exact intermediate signal with a fifth NAND gate yields ((AB)')' = AB = Carry. Sharing this term saves 3 gates compared to building separate circuits. Option b builds separate circuits without sharing terms; option c violates Boolean logic; option d adds an unnecessary inverter.",
+    },
+    {
+      id: "add-p2",
+      prompt: "When combining the two intermediate carries (C1 = AB and C2 = (A ⊕ B)Cin) in a full adder built from two half adders, why is an OR gate mathematically identical to an XOR gate?",
+      options: [
+        { id: "a", text: "Because C1 and C2 are mutually exclusive (C1 · C2 = 0), so the condition C1 = C2 = 1 never occurs" },
+        { id: "b", text: "Because XOR gates consume higher static leakage power than OR gates" },
+        { id: "c", text: "Because C1 is always strictly greater than C2" },
+        { id: "d", text: "Because full adders operate exclusively on positive two's complement numbers" },
+      ],
+      correctOptionId: "a",
+      explanation: "Evaluating C1 · C2 = (AB) · ((A'B + AB')Cin) = (ABA'B + ABAB')Cin = 0. Because C1 = 1 requires A = B = 1, which forces A ⊕ B = 0, C2 is guaranteed to be 0 whenever C1 = 1. Since C1 and C2 are mutually exclusive, C1 + C2 and C1 ⊕ C2 produce identical truth tables. Option b discusses physical power rather than logical equivalence; option c is false because either carry can be 1; option d is irrelevant to bit-level full adder truth tables.",
+    },
+    {
+      id: "add-p3",
+      prompt: "In a 4-bit controlled adder-subtractor, what mathematical operation is performed if the mode control line M = 1 is connected to the operand B XOR gates, but the initial carry-in C0 is mistakenly grounded (C0 = 0)?",
+      options: [
+        { id: "a", text: "One's complement subtraction: A + B' = A - B - 1, producing a result that is 1 less than the true difference" },
+        { id: "b", text: "Standard addition: A + B" },
+        { id: "c", text: "Exact two's complement subtraction: A - B" },
+        { id: "d", text: "Bitwise logical XOR between registers A and B" },
+      ],
+      correctOptionId: "a",
+      explanation: "Two's complement subtraction requires A - B = A + B' + 1. If C0 is grounded to 0 while M = 1 inverts B, the adder computes A + B' + 0 = A + B' = A - B - 1 (one's complement subtraction). The result is off by 1 for all operand combinations. Option b would require M = 0; option c requires C0 = 1; option d describes a bitwise XOR register without carries.",
+    },
+    {
+      id: "add-p4",
+      prompt: "A 4-bit parallel adder computes the sum of negative signed numbers A = 1010₂ (-6₁₀) and B = 1011₂ (-5₁₀) with C0 = 0. What are the carry flags and overflow state?",
+      options: [
+        { id: "a", text: "C3 = 0, C4 = 1, and V = 1 (negative signed overflow occurred, producing +5₁₀ instead of -11₁₀)" },
+        { id: "b", text: "C3 = 1, C4 = 1, and V = 0 because two negative numbers always produce a negative sum" },
+        { id: "c", text: "C3 = 0, C4 = 0, and V = 0 because no end-around carry was generated" },
+        { id: "d", text: "C3 = 1, C4 = 0, and V = 1 because unsigned carry was lost" },
+      ],
+      correctOptionId: "a",
+      explanation: "Adding 1010₂ and 1011₂: bit 0: 0+1=1, C1=0; bit 1: 1+1=0, C2=1; bit 2: 0+0+1=1, carry into sign bit C3 = 0. At sign bit 3: 1 + 1 + 0 = 0 with carry-out C4 = 1. Sum is 0101₂ (+5₁₀). Overflow flag V = C4 ⊕ C3 = 1 ⊕ 0 = 1. The sum -11 falls outside the 4-bit signed range [-8, +7], corrupting the sign bit. Option b fails to compute the carries; option c misses C4 = 1; option d inverts C3 and C4.",
+    },
+    {
+      id: "add-p5",
+      prompt: "In an n-bit ripple-carry adder where each full adder has carry propagation delay t_carry and sum delay t_sum (with t_sum > t_carry), what is the formula for the worst-case propagation delay to compute the final sum bit S_(n-1)?",
+      options: [
+        { id: "a", text: "t_delay = (n - 1) · t_carry + t_sum" },
+        { id: "b", text: "t_delay = n · (t_carry + t_sum)" },
+        { id: "c", text: "t_delay = n · t_carry" },
+        { id: "d", text: "t_delay = t_sum + log₂(n) · t_carry" },
+      ],
+      correctOptionId: "a",
+      explanation: "The carry signal must ripple through the first n-1 full adder stages sequentially, taking (n - 1) · t_carry. Once carry C_(n-1) reaches the final stage (n-1), that stage takes t_sum to generate the final sum bit S_(n-1). Total time is (n - 1) · t_carry + t_sum. Option b erroneously sums both delays at every stage; option c calculates only carry-out delay, ignoring the slower sum XOR path; option d describes lookahead adders.",
+    },
+    {
+      id: "add-p6",
+      prompt: "When extending a 4-bit signed two's complement integer (such as 1011₂ = -5₁₀) into an 8-bit integer before performing addition in an 8-bit adder, how must the upper 4 bits be filled?",
+      options: [
+        { id: "a", text: "Sign extension: replicate the MSB (sign bit) into all upper positions, producing 1111 1011₂" },
+        { id: "b", text: "Zero extension: fill all upper positions with 0s, producing 0000 1011₂" },
+        { id: "c", text: "One's complement extension: invert the 4 lower bits into the upper positions" },
+        { id: "d", text: "Parity extension: set the MSB to ensure odd parity across the 8-bit word" },
+      ],
+      correctOptionId: "a",
+      explanation: "In two's complement, the MSB has weight -2^(n-1). To preserve numerical value when expanding word width, the sign bit must be replicated into all newly added higher bit positions (sign extension): 1111 1011₂ = -128 + 64 + 32 + 16 + 8 + 2 + 1 = -5₁₀. Option b (zero extension) turns -5 into +11₁₀, corrupting signed arithmetic; options c and d are mathematically incorrect for numeric representation.",
+    },
+    {
+      id: "add-p7",
+      prompt: "If an ALU subtracts two identical non-zero numbers (A - A) using an adder-subtractor circuit (A + A' + 1), what are the values of condition code flags Zero (Z), Sign (N), Carry (C), and Overflow (V)?",
+      options: [
+        { id: "a", text: "Z = 1, N = 0, C = 1, V = 0" },
+        { id: "b", text: "Z = 1, N = 0, C = 0, V = 0" },
+        { id: "c", text: "Z = 0, N = 1, C = 1, V = 1" },
+        { id: "d", text: "Z = 1, N = 1, C = 0, V = 1" },
+      ],
+      correctOptionId: "a",
+      explanation: "A - A = 0, so Z = 1 (result is zero) and N = 0 (MSB is 0). In two's complement subtraction A + A' + 1, adding a number to its one's complement always produces all 1s (e.g. 1010 + 0101 = 1111). Adding the initial carry C0 = 1 produces 1 0000, which generates a carry-out of the MSB stage (C = 1, indicating 'no borrow' in two's complement subtraction). Signed overflow cannot occur when subtracting identical numbers (V = 0). Option b fails to recognize that no-borrow in two's complement subtraction generates C = 1; options c and d incorrectly report non-zero and overflow.",
+    },
+    {
+      id: "add-p8",
+      prompt: "The commercial 74LS283 is a 4-bit binary full adder. How are multiple 74LS283 ICs cascaded to build a 12-bit binary adder?",
+      options: [
+        { id: "a", text: "Connect C4 of chip 0 to C0 of chip 1, and C4 of chip 1 to C0 of chip 2, with C0 of chip 0 tied to GND for standard addition" },
+        { id: "b", text: "Connect all C0 and C4 pins together in parallel to a shared carry bus" },
+        { id: "c", text: "Connect the sum outputs S3..S0 of chip 0 into operand inputs A3..A0 of chip 1" },
+        { id: "d", text: "Invert C4 of chip 0 using an external NOT gate before feeding C0 of chip 1 because carries are active-LOW" },
+      ],
+      correctOptionId: "a",
+      explanation: "The 74LS283 provides active-HIGH carry-in (C0) and active-HIGH carry-out (C4). Cascading requires directly connecting C4 of the lower 4-bit adder to C0 of the next higher 4-bit adder. For standard addition, C0 of the lowest chip is tied to logic 0 (GND). Option b causes electrical bus contention; option c destroys the parallel operand structure; option d is false because the 74LS283 uses active-HIGH carry polarities, unlike the older 7483.",
+    },
+  ]}
+/>
