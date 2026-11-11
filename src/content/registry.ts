@@ -793,7 +793,7 @@ export const courses: Course[] = [
     authors: [asmaaFarouq],
     modules: [
       {
-        title: "Meet the Operating System",
+        title: "Introduction and OS Structures",
         blurb: "What an OS is, how the hardware underneath it works, and how the OS is built.",
         lessons: [
           { slug: "what-an-os-does", title: "What an Operating System Does", duration: "18 min", Component: OsWhatAnOsDoes },
@@ -804,7 +804,7 @@ export const courses: Course[] = [
         ],
       },
       {
-        title: "Processes and Threads",
+        title: "Processes",
         blurb: "A program in motion: its states, how the OS switches between processes, how they talk, and threads.",
         lessons: [
           { slug: "processes", title: "Processes: The Program in Motion", duration: "22 min", Component: OsProcesses },
@@ -830,7 +830,7 @@ export const courses: Course[] = [
         ],
       },
       {
-        title: "Memory Management",
+        title: "Main Memory and Virtual Memory",
         blurb: "Sharing RAM safely: addresses and the MMU, swapping, allocation, segmentation, paging and virtual memory.",
         lessons: [
           { slug: "memory-allocation", title: "Main Memory: Addresses, Swapping and Allocation", duration: "26 min", Component: OsMemoryAllocation },
