@@ -233,4 +233,26 @@ A **system call** lets a running user program ask the operating system for a ser
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="services-and-system-calls"
+  practice
+  questions={[
+    {
+      id: "f-cli-service",
+      prompt: "(Final 2015, Q1 item 4; Final 2019 spring, Q1 item 4) Command line interpreter is one of the OS services applied to system users.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The command interpreter (shell) is a user-facing service: it reads commands and runs them for the user.",
+    },
+    {
+      id: "f-param-methods",
+      prompt: "(Final 2019 fall, Q1 item 5) There are three general methods to pass parameters to the operating system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The three methods are registers, a block in memory whose address goes in a register, and the stack. See the midterm answer above for details.",
+    },
+  ]}
+/>
+
+*The 2017 final (Q2) asks for the purpose of system calls, the purpose of system programs, and the three parameter-passing methods. The answers are the same as the midterm answers above.*

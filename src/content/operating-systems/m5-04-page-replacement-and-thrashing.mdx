@@ -312,4 +312,110 @@ None.
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="page-replacement-and-thrashing"
+  practice
+  questions={[
+    {
+      id: "f-local-replacement",
+      prompt: "(Final 2019 fall, Q1 item 15) Local page replacement requires that each process select from only its own set of allocated frames.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "With local replacement a process can only replace its own frames, so one process can't take frames from another.",
+    },
+    {
+      id: "f-thrashing-cpu",
+      prompt: "(Final 2019 fall, Q1 item 16) Thrashing decrease the CPU utilization as a result of increasing the degree of multiprogramming.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Past a point, each process has too few frames, so it spends its time paging. The CPU sits idle while the disk works, so utilization falls.",
+    },
+    {
+      id: "f-belady",
+      prompt: "(Final 2020, Q1 item 20) With FIFO page replacement, adding more frames can cause more page faults.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "That is Belady's anomaly. Some reference strings produce more faults with more frames under FIFO.",
+    },
+    {
+      id: "f-2020-fifo-3",
+      prompt: "(Final 2020, MCQ item 72) A process refers to 5 pages, in order: A, B, C, D, A, B, E, A, B, C, D, E. If the page replacement algorithm is FIFO, the number of page faults with an empty internal store of 3 frames is: 6, 7, 9, or 10.",
+      options: [
+        { id: "a", text: "6" },
+        { id: "b", text: "7" },
+        { id: "c", text: "9" },
+        { id: "d", text: "10" },
+      ],
+      correctOptionId: "c",
+      explanation: "We simulated it: FIFO with 3 frames faults 9 times. (Our answer; the 2020 paper prints no answer letters.)",
+    },
+    {
+      id: "f-2020-lru-3",
+      prompt: "(Final 2020, MCQ item 73) The same reference string (A, B, C, D, A, B, E, A, B, C, D, E). If the page replacement algorithm is LRU, the number of page faults with 3 frames is: 6, 7, 9, or 10.",
+      options: [
+        { id: "a", text: "6" },
+        { id: "b", text: "7" },
+        { id: "c", text: "9" },
+        { id: "d", text: "10" },
+      ],
+      correctOptionId: "d",
+      explanation: "We simulated it: LRU with 3 frames faults 10 times. (Our answer.)",
+    },
+    {
+      id: "f-2020-opt-3",
+      prompt: "(Final 2020, MCQ item 74) The same reference string. If the optimal page replacement algorithm is used, the number of page faults with 3 frames is: 6, 7, 9, or 10.",
+      options: [
+        { id: "a", text: "6" },
+        { id: "b", text: "7" },
+        { id: "c", text: "9" },
+        { id: "d", text: "10" },
+      ],
+      correctOptionId: "b",
+      explanation: "We simulated it: optimal with 3 frames faults 7 times. (Our answer.)",
+    },
+    {
+      id: "f-2020-fifo-4",
+      prompt: "(Final 2020, MCQ item 75) The same reference string. If the page replacement algorithm is FIFO, the number of page faults with 4 frames is: 6, 7, 9, or 10.",
+      options: [
+        { id: "a", text: "6" },
+        { id: "b", text: "7" },
+        { id: "c", text: "9" },
+        { id: "d", text: "10" },
+      ],
+      correctOptionId: "d",
+      explanation: "We simulated it: FIFO with 4 frames faults 10 times, more than with 3 frames, which is Belady's anomaly. (Our answer.)",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 spring, Q8) Consider the reference string 7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1. How many page faults occur with three frames under LRU, FIFO and optimal replacement?**
+
+**LRU: 12. FIFO: 15. Optimal: 9.** We simulated all three, and the printed key agrees. The 2015 final asks the same question with the same string, so its answers are identical.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2019 fall, Q8) Consider the reference string 1, 2, 3, 4, 7, 6, 3, 2, 1, 2, 3, 6, 2, 1, 5, 6, 2, 1, 2, 3. How many page faults and page replacements occur with four frames under FIFO, LRU and optimal replacement?**
+
+| | FIFO | LRU | Optimal |
+| --- | --- | --- | --- |
+| Page faults | 14 | 10 | 8 |
+| Page replacements | 10 | 6 | 4 |
+
+Replacements are the faults beyond the first four (the frames fill up first). We simulated all three, and they match the printed key.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2016, last question) Consider the reference string 1, 2, 3, 4, 2, 1, 5, 6, 2, 1, 2, 3, 7, 6, 3, 2, 1, 2, 3, 6. How many page faults occur with five frames under FIFO, optimal and LRU?**
+
+**FIFO: 10. Optimal: 7. LRU: 8.** We simulated this string, which is a different order from the 2019 fall string.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2017, Q7) What is the cause of thrashing? How does the system detect thrashing? Once it detects thrashing, what can the system do to eliminate this problem?**
+
+- **Cause:** the processes together need more frames than memory has. Each one keeps losing pages it still needs, so it faults again and again.
+- **Detection:** CPU utilization drops while the paging disk is busy. More processes are added, and utilization falls further.
+- **Fix:** lower the degree of multiprogramming (suspend some processes), or use local replacement with a working-set or page-fault-frequency policy, so each process gets the frames it needs.
+</ModelAnswer>

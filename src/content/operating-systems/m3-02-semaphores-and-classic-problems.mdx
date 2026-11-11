@@ -341,4 +341,52 @@ A semaphore avoids it by blocking: a process that finds the value not positive j
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="semaphores-and-classic-problems"
+  practice
+  questions={[
+    {
+      id: "f-producer-consumer-sync",
+      prompt: "(Final 2019 spring, Q1 item 14) The producer-consumer problem is an example that illustrates the need for synchronization.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Producers and consumers share a buffer, so they must coordinate when the buffer is full or empty. That is synchronization.",
+    },
+    {
+      id: "f-semaphore-busy-wait",
+      prompt: "(Final 2020, Q1 item 17) Semaphore is a synchronization tool that requires busy waiting.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A semaphore blocks waiting processes instead of spinning on the CPU, which is its main advantage.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 spring, Q5) Explain the problems of using semaphores as a synchronization tool. Describe how the Dining Philosophers problem is solved using semaphores.**
+
+**Problems with semaphores:**
+
+- **Wrong use:** `signal(mutex) ... wait(mutex)`, `wait(mutex) ... wait(mutex)`, or leaving out a `wait` or a `signal` (or both).
+- **Deadlock:** two or more processes wait forever for events only the waiting processes can cause. For example, P0 does `wait(S); wait(Q)` while P1 does `wait(Q); wait(S)`.
+- **Starvation:** a process can be blocked on the semaphore's queue forever.
+- **Priority inversion:** a low-priority process holds a lock that a high-priority process needs.
+
+**Dining philosophers:** five philosophers share five chopsticks, each represented by a semaphore `chopstick[i] = 1`. Philosopher *i* does `wait(chopstick[i])`, then `wait(chopstick[(i+1) % 5])`, eats, and signals both. This solution can **deadlock**: if all five pick up their left chopstick at once, each waits for the right one forever. The printed key gives only the basic solution; the deadlock risk is our note.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2019 fall, Q5) Semaphores are a synchronization tool that does not require busy waiting. What are the different types of semaphore usage? Show using code the definition of a semaphore and its standard operations. Explain the problems of using semaphores.**
+
+A **counting** semaphore can take any value; a **binary** semaphore takes only 0 or 1.
+
+```c
+typedef struct { int value; struct process *list; } semaphore;
+
+wait(semaphore S)   { S.value--; if (S.value < 0) { add this process to S.list; block(); } }
+signal(semaphore S) { S.value++; if (S.value <= 0) { remove a process P from S.list; wakeup(P); } }
+```
+
+The problems are the same as in the spring final above: wrong use of `wait` and `signal`, deadlock, starvation and priority inversion.
+</ModelAnswer>

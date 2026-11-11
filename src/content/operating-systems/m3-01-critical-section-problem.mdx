@@ -366,4 +366,39 @@ Peterson's solution uses two shared variables: `int turn`, which says whose turn
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "f-mutual-exclusion-essential",
+      prompt: "(Final 2019 spring, Q1 item 15) Mutual Exclusion is essential to solve the critical section problem.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Mutual exclusion is the first requirement: only one process may be in its critical section at a time.",
+    },
+    {
+      id: "f-peterson-busy-wait",
+      prompt: "(Final 2019 spring, Q1 item 16) Peterson solution is used to avoid Busy waiting problem in software solution.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Peterson's solution is a software solution that does busy waiting: a waiting process loops until its turn comes. It avoids a different problem, not busy waiting.",
+    },
+    {
+      id: "f-concurrent-inconsistency",
+      prompt: "(Final 2020, Q1 item 16) Concurrent access to shared data may result in data inconsistency.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "When two processes update the same data without coordination, the result can be wrong. That is why the critical section exists.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2016, Q6) What is the critical-section problem? Prove that Peterson's solution satisfies all three requirements for the critical-section problem.**
+
+The **critical-section problem** is how to design a protocol so that processes sharing data can each enter their critical section without corrupting that data. A solution must give mutual exclusion, progress and bounded waiting.
+
+Peterson's solution uses `turn` and `flag[2]`. For **mutual exclusion**: if both processes were in their critical sections, both flags would be true and each would have set `turn` to the other, but `turn` holds one value, so one of them must still be waiting. For **progress**: a process waits only while the other has its flag set and the turn is the other's, so if the other process isn't trying, the waiting process goes straight in. For **bounded waiting**: once a process gives the turn away, the other process gets in next, so a process waits at most one entry by the other.
+</ModelAnswer>

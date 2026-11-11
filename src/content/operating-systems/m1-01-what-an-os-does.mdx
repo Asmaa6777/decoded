@@ -293,4 +293,57 @@ The hierarchy goes from slow, large, cheap, non-volatile storage at the bottom t
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+The 2015 and 2019 spring finals print the same true/false statements (the 2019 spring paper has its answers filled in). The 2015 list was read from the scanned page; both papers give the same answers.
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="what-an-os-does"
+  practice
+  questions={[
+    {
+      id: "f-os-interface",
+      prompt: "(Final 2015, Q1 item 1; Final 2019 spring, Q1 item 1) The main function of the operating system is to provide an interface between hardware and application programs used by users.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The OS sits between the hardware and the programs and gives programs and users a way to use the hardware.",
+    },
+    {
+      id: "f-secondary-storage",
+      prompt: "(Final 2015, Q1 item 3; Final 2019 spring, Q1 item 3) The Secondary storage is considered as an extension of main memory that provides large volatile storage capacity.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Secondary storage is an extension of main memory, but it is non-volatile: data stays there when the power goes off.",
+    },
+    {
+      id: "f-disable-interrupts",
+      prompt: "(Final 2015, Q1 item 5; Final 2019 spring, Q1 item 5) One approach to dealing with multiple interrupts is to disable all interrupts while an interrupt is being processed.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Disabling interrupts during a handler is one simple approach. It has a cost, because interrupts that arrive meanwhile wait.",
+    },
+    {
+      id: "f-caching",
+      prompt: "(Final 2015, Q1 item 17; Final 2019 spring, Q1 item 17) Caching is copying information into inexpensive storage system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Caching copies data into a faster (and smaller, more expensive) store so it can be reached quickly. \"Inexpensive\" is the wrong word.",
+    },
+    {
+      id: "f-main-memory-direct",
+      prompt: "(Final 2020, Q1 item 5) Main memory is the only large storage area that the processor can access directly.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The CPU can access only main memory and registers directly. Disks must be read into memory first.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 spring, Q2, part 1) Explain the difference between interrupts and traps.**
+
+An **interrupt** is a hardware-generated change of flow. The CPU runs an interrupt handler for its cause and then returns to the interrupted instruction. It is used, for example, to signal that an I/O transfer has finished, so the OS doesn't have to poll the device.
+
+A **trap** is a software-generated interrupt. It is used to call an OS routine (a system call) or to catch an error, such as an arithmetic fault.
+</ModelAnswer>
+
+*The 2019 spring Q2 pairs (system calls and system programs, policy and mechanism, logical and physical addresses, internal and external fragmentation) are placed in the lessons that teach them.*

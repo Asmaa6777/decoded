@@ -403,4 +403,39 @@ The **PCB** is the process control block, the kernel's record for one process (s
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f-process-passive",
+      prompt: "(Final 2019 spring, Q1 item 9) Process is considered as a passive entity while program is considered as an active entity.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "It is the other way round: a program is passive (a file on disk) and a process is active (a program running).",
+    },
+    {
+      id: "f-long-term-exit",
+      prompt: "(Final 2020, Q1 item 11) The long-term scheduler may need to be invoked only when a process leaves the system.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "The long-term scheduler only needs to act when a process leaves and frees a slot for a new one, so it runs infrequently.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 spring, Q4) Describe the actions taken by a kernel to context-switch between processes.**
+
+The OS saves the state of the running process (the CPU registers, plus its memory information) and restores the state of the process to run next. On many architectures it also flushes caches. The midterm answer above gives the same steps.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2019 fall, Q4) During the course of execution, a process may create several new processes. What are the possible options of execution and of resource sharing between the parent and the children? What are the reasons a parent may terminate its child? What are the possible options for process termination?**
+
+- **Execution:** the parent continues to run concurrently with its children, or it waits until some or all of them have terminated.
+- **Resource sharing:** the parent and children share all resources; the children share a subset of the parent's resources; or they share none.
+- **Reasons a parent terminates a child:** the child has exceeded its resources, the task given to the child is no longer needed, or the parent is exiting.
+- **Termination options:** some systems don't let a child continue after its parent terminates, and in cascading termination all children are terminated when the parent is.
+</ModelAnswer>

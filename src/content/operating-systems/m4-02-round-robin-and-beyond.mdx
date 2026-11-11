@@ -286,4 +286,39 @@ Finish times: P1 8, P4 10, P2 13, P3 19. Turnaround: **P1 = 8, P2 = 11, P3 = 16,
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="round-robin-and-beyond"
+  practice
+  questions={[
+    {
+      id: "f-quantum-expiry",
+      prompt: "(Final 2019 spring, Q1 item 8) One of the reasons to transfer the process from CPU is the expiration of a quantum of CPU time allocated to that process.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "When a quantum runs out, round robin preempts the process and moves it to the back of the queue.",
+    },
+    {
+      id: "f-small-quantum-efficiency",
+      prompt: "(Final 2019 spring, Q1 item 13) The decrease of time quantum in RR algorithm increases the system efficiency.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A smaller quantum means more context switches, and each switch is overhead. Efficiency goes down, though response time improves.",
+    },
+    {
+      id: "f-mlfq-moves",
+      prompt: "(Final 2019 fall, Q1 item 10) The multilevel feedback queue scheduling algorithm allows a process to move between queues.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Moving between queues is the feature that makes it a feedback queue: a process that uses a lot of CPU is moved down.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2016, Q5) What advantage is there in having different time-quantum sizes at different levels of a multilevel queuing system?**
+
+Interactive, I/O-bound processes need quick turns, so the top queue gets a short quantum: they start fast and leave the CPU soon. CPU-bound processes gain little from frequent switches, so the lower queues get longer quanta, which means fewer context switches and less overhead for them. The levels balance response time against overhead.
+</ModelAnswer>
+
+*The 2019 spring Q6 round-robin row and its other rows are in the scheduling answer above. The 2016 final's scheduling question is the same as the 2014 midterm's Q4 (see that answer).*

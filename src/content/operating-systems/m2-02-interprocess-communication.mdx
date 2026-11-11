@@ -362,4 +362,19 @@ There are two fundamental models:
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "f-cooperating-children",
+      prompt: "(Final 2019 fall, Q1 item 8) A process is a cooperating process if it has a set of child processes.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "A cooperating process is one that can affect, or be affected by, other processes, usually by sharing data or messages. Having children is not the test.",
+    },
+  ]}
+/>
+
+*The 2020 final's multiple-choice questions 33 to 37 cover the IPC facility, direct communication, the zero-capacity queue, RPC and RMI. Those are placed here in a later pass.*

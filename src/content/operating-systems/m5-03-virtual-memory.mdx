@@ -232,4 +232,19 @@ These questions are copied from the exam papers. The wording is unchanged. Answe
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="virtual-memory"
+  practice
+  questions={[
+    {
+      id: "f-vm-separation",
+      prompt: "(Final 2019 fall, Q1 item 14) Virtual memory involves the separation of logical memory as perceived by users from physical memory.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Users see a large, continuous logical memory. The OS maps it onto physical memory, which may be smaller.",
+    },
+  ]}
+/>
+
+*The 2017 final's question on the cause of thrashing and how to detect and fix it is answered with the page-replacement lesson.*

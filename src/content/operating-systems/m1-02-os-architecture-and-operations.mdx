@@ -405,4 +405,46 @@ The hardware has a mode bit. In kernel mode the CPU can run any instruction and 
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-architecture-and-operations"
+  practice
+  questions={[
+    {
+      id: "f-time-sharing-response",
+      prompt: "(Final 2019 fall, Q1 item 1) The response time must be long in time-sharing systems.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Time-sharing is built to keep response time short, so each user gets quick turns. A long response time would defeat its purpose.",
+    },
+    {
+      id: "f-kernel-user-privileged",
+      prompt: "(Final 2019 fall, Q1 item 2) The hardware allows privileged instructions to be executed in kernel and user modes.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "Privileged instructions run only in kernel mode. Allowing them in user mode would let any program bypass the OS.",
+    },
+    {
+      id: "f-mode-bit-interrupted",
+      prompt: "(Final 2019 spring, Q1 item 6) A mode bit added to computer hardware to indicate if the current process has been interrupted.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The mode bit says whether the CPU is in user mode or kernel mode. It does not record whether a process was interrupted.",
+    },
+    {
+      id: "f-os-file-abstraction",
+      prompt: "(Final 2020, Q1 item 4) The operating system implements the abstract concept of a file by managing mass storage media and the devices that control them.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "A file is an abstraction. The OS turns the raw blocks of a disk into named files.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 fall, Q2) What are the advantages of using multiprocessors? What are the main types of multiprocessor systems? What is the difference between multiprocessor and multicore systems? Which of them are more efficient?**
+
+- **Advantages:** more throughput (more work done in less time), economy of scale (they can share peripherals, storage and power), and reliability (if one processor fails, the rest keep the system running, more slowly).
+- **Types:** in **asymmetric** multiprocessing, a boss processor assigns work to worker processors. In **symmetric** multiprocessing (SMP), every processor is a peer and runs the whole OS.
+- **Multicore** means several processing cores on one chip, while a **multiprocessor** system has several processors, usually on separate chips. Multicore can be more efficient, because communication on one chip is faster than between chips.
+</ModelAnswer>

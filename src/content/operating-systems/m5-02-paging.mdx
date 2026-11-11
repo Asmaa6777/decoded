@@ -210,4 +210,67 @@ None.
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="paging"
+  practice
+  questions={[
+    {
+      id: "f-page-table-memory",
+      prompt: "(Final 2020, Q1 item 19) Most computers allow the page table to be very large; therefore, the page table is kept in main memory.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Page tables are too big for registers, so they live in main memory. A register called the page-table base register points to them.",
+    },
+    {
+      id: "f-logical-bits",
+      prompt: "(Final 2020, MCQ item 67) Consider a logical address space of eight pages of 2KB each, mapped onto a physical memory of 64 frames. How many bits are there in the logical address? (4 bits, 7 bits, 14 bits, 17 bits)",
+      options: [
+        { id: "a", text: "4 bits" },
+        { id: "b", text: "7 bits" },
+        { id: "c", text: "14 bits" },
+        { id: "d", text: "17 bits" },
+      ],
+      correctOptionId: "c",
+      explanation: "8 pages = 3 bits for the page number. 2 KB = 2,048 = 2¹¹, so 11 bits for the offset. 3 + 11 = 14 bits.",
+    },
+    {
+      id: "f-physical-bits",
+      prompt: "(Final 2020, MCQ item 68) Consider a logical address space of eight pages of 2KB each, mapped onto a physical memory of 64 frames. How many bits are there in the physical address? (4 bits, 7 bits, 14 bits, 17 bits)",
+      options: [
+        { id: "a", text: "4 bits" },
+        { id: "b", text: "7 bits" },
+        { id: "c", text: "14 bits" },
+        { id: "d", text: "17 bits" },
+      ],
+      correctOptionId: "d",
+      explanation: "64 frames = 6 bits for the frame number. Plus the 11-bit offset: 6 + 11 = 17 bits.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2015, Q7) Consider a logical address space of eight pages of 1024 words each, mapped onto a physical memory of 32 frames. (a) How many bits are there in the logical address? (b) How many bits are there in the physical address?**
+
+(a) 8 pages need 3 bits, and 1024 words need 10 bits for the offset: **13 bits.**
+
+(b) 32 frames need 5 bits, and the 10-bit offset is the same: **15 bits.**
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2020, Q4) Why can a process on a paging system not access memory it does not own? Why is it easier to share a reentrant module with segmentation than with paging? Why is it easier to apply virtual memory with paging than with segmentation?**
+
+- A process can only name addresses through its own page table, so it can't refer to another process's frames unless the OS puts those frames in its table.
+- A segment is one named, relocatable unit, so sharing a segment means sharing one descriptor. With paging, the shared code must sit on the same pages in every process's table.
+- Paging uses fixed-size pages, so virtual memory can swap single pages in and out, with no need to fit variable-size segments.
+
+The printed key gives the protection and segmentation points.
+</ModelAnswer>
+
+<ModelAnswer>
+**(Final 2020, Q5) Memory structures for paging can get huge using straightforward methods. Explain alternative methods for structuring page tables.**
+
+- **Hierarchical (multi-level) page tables:** split the page table into pages, and keep an outer table that points to them. Only the parts in use need to be in memory.
+- **Hashed page tables:** for large address spaces, hash the page number to a chain of entries.
+- **Inverted page tables:** one entry per physical frame, holding the process and page it contains. This is compact, but a lookup may need a search.
+</ModelAnswer>

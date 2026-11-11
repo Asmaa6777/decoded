@@ -296,4 +296,43 @@ The printed key gives the same two points.
 
 ### Part 2: Final exam questions
 
-*Final exam questions for this lesson are added once the final papers are transcribed (round 2, part 2).*
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-design-and-structure"
+  practice
+  questions={[
+    {
+      id: "f-bootstrap-ram",
+      prompt: "(Final 2015, Q1 item 2; Final 2019 spring, Q1 item 2) The bootstrap program needed for computer start up is stored in RAM.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "The bootstrap program is stored in ROM or flash memory, which keeps it when power is off. RAM is empty at power-on.",
+    },
+    {
+      id: "f-layers-no-interact",
+      prompt: "(Final 2019 spring, Q1 item 7) In layer structured approach of operating system, it is divided into a number of layers that doesn't interact with each other.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "f",
+      explanation: "In a layered design each layer uses only the layer below it, so the layers do interact. That is the point of the design.",
+    },
+    {
+      id: "f-bootstrap-locate",
+      prompt: "(Final 2019 fall, Q1 item 4) The bootstrap program must locate the operating-system kernel to load it into memory.",
+      options: [{ id: "t", text: "True" }, { id: "f", text: "False" }],
+      correctOptionId: "t",
+      explanation: "Finding the kernel and loading it is the bootstrap program's main job.",
+    },
+  ]}
+/>
+
+<ModelAnswer>
+**(Final 2019 fall, Q3 and Final 2019 spring, Q3) Explain the different structures of operating systems.**
+
+1. **Simple structure:** no well-defined structure, often a small system that grew (MS-DOS is the example).
+2. **Layered:** the OS is split into layers. Layer 0 is the hardware and the top layer is the user interface, and each layer uses only the one below.
+3. **Microkernel:** only the essential parts (minimal process and memory management, and communication) stay in the kernel. Other services run as user programs, which communicate by message passing.
+4. **Modules:** the kernel is made of loadable modules with protected interfaces. Any module can call another directly, which is faster than message passing.
+5. **Hybrid:** real systems combine several of these structures for performance, security and usability.
+
+*(Final 2016 also asks what SYSGEN is: system generation, the process of configuring the OS for a particular computer's hardware.)*
+</ModelAnswer>
