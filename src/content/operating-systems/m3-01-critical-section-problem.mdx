@@ -481,6 +481,29 @@ Answer: **data inconsistency.** (Our answer, which matches the printed 2021 key.
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="critical-section-problem"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-57",
+      prompt: "(Final 2024, MCQ item 57) All processes share a semaphore variable mutex, initialized to 1. Suppose a process executes signal(mutex), then its critical section, then wait(mutex). In this situation: a) a deadlock will occur; b) processes will starve to enter the critical section; c) several processes may be executing in their critical section; d) all of the mentioned",
+      options: [{ id: "a", text: "a deadlock will occur" }, { id: "b", text: "processes will starve to enter the critical section" }, { id: "c", text: "several processes may be executing in their critical section" }, { id: "d", text: "all of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "signal before the critical section lets a second process in at the same time. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-58",
+      prompt: "(Final 2024, MCQ item 58) Suppose a process executes wait(mutex) twice, then its critical section. In this situation: a) a deadlock will occur; b) processes will starve to enter the critical section; c) several processes may be executing in their critical section; d) all of the mentioned",
+      options: [{ id: "a", text: "a deadlock will occur" }, { id: "b", text: "processes will starve to enter the critical section" }, { id: "c", text: "several processes may be executing in their critical section" }, { id: "d", text: "all of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "The second wait(mutex) blocks forever, so the process deadlocks. (Our answer.)",
+    },
+  ]}
+/>
+
 ### Part 2: Final exam questions
 
 <Quiz

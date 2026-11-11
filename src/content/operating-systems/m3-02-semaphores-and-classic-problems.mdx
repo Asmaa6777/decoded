@@ -369,6 +369,29 @@ A semaphore avoids it by blocking: a process that finds the value not positive j
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="semaphores-and-classic-problems"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-59",
+      prompt: "(Final 2024, MCQ item 59) In the Readers-Writers Problem, which of the following statements is true regarding the first variation of the problem? a) Writers are given priority over readers, and no reader is allowed to read while a writer is waiting; b) Readers are given priority over writers, and no writer is allowed to write while a reader is reading; c) Both readers and writers are given equal priority, and they can access the shared data simultaneously; d) Writers are given priority, but readers can still read if no writer is waiting",
+      options: [{ id: "a", text: "Writers are given priority over readers" }, { id: "b", text: "Readers are given priority over writers" }, { id: "c", text: "Equal priority and simultaneous access" }, { id: "d", text: "Writers have priority, but readers can read when no writer waits" }],
+      correctOptionId: "b",
+      explanation: "The first readers-writers problem gives readers priority: a writer waits while any reader is reading. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-60",
+      prompt: "(Final 2024, MCQ item 60) In the context of semaphore implementation, what is the primary disadvantage of using busy waiting? a) It increases the complexity of the code; b) It wastes CPU cycles while waiting for a resource to become available; c) It can lead to deadlock if not implemented correctly; d) It violates the bounded waiting requirement",
+      options: [{ id: "a", text: "It increases the complexity of the code" }, { id: "b", text: "It wastes CPU cycles while waiting for a resource to become available" }, { id: "c", text: "It can lead to deadlock if not implemented correctly" }, { id: "d", text: "It violates the bounded waiting requirement" }],
+      correctOptionId: "b",
+      explanation: "A busy-waiting process spins on the CPU instead of sleeping. (Our answer.)",
+    },
+  ]}
+/>
+
 ### Part 2: Final exam questions
 
 <Quiz

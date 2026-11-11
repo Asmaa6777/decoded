@@ -446,6 +446,14 @@ None.
     },
   ]}
 />
+
+<ModelAnswer>
+**(Final 2024, Question two, 2a and 2c) Draw the logical-to-physical address translation for contiguous allocation and for segmentation.**
+
+- **Contiguous:** the logical address is compared with the limit register, then added to the base (relocation) register: physical = base + logical.
+- **Segmentation:** the logical address is a pair (segment s, offset d). The segment table gives the base and limit of segment s. If d is less than the limit, physical = base + d; otherwise the access traps.
+</ModelAnswer>
+
 ### Part 2: Final exam questions
 
 <Quiz

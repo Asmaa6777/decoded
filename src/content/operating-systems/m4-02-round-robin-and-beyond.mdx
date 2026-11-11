@@ -379,6 +379,16 @@ Our schedule gives waiting times P1 6, P2 11, P3 12 and P4 9 (average 9.5), and 
     },
   ]}
 />
+
+<ModelAnswer>
+**(Final 2024, Question two, 1) Briefly describe the different evaluation methods for selecting a CPU scheduling algorithm, with the advantages and disadvantages of each.**
+
+- **Deterministic (analytic) modeling:** run the algorithm on one fixed workload and compute the exact values. Advantage: exact and quick. Disadvantage: the answer only holds for that workload.
+- **Queueing models:** describe arrivals and service with probability distributions and solve the model mathematically. Advantage: general results. Disadvantage: the assumptions must be simplified to make the maths work.
+- **Simulation:** run a model of the system on a trace or random workload. Advantage: realistic and flexible. Disadvantage: slow and costly to build.
+- **Implementation:** build the algorithm into a real OS and measure it. Advantage: the most accurate. Disadvantage: expensive, and users may behave differently in practice.
+</ModelAnswer>
+
 ### Part 2: Final exam questions
 
 <Quiz
