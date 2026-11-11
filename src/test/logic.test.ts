@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
-  bitString, calculateAdcSpecs, calculatePullUpConstraints, classifyDecimalVoltage, classifyLogicVoltage, computeBooleanDual, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
+  bitsOf, bitString, calculateAdcSpecs, calculatePullUpConstraints, classifyDecimalVoltage, classifyLogicVoltage, computeBooleanDual, computeNoiseMargins, counterStep, decodeIeee754Hex, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
   expandRadixToBinary, floatParts, fromGray, fullAdd, fullSubtractor, generateRealWaveform, groupBinaryBits, halfSubtractor, jkNext, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries,
   minimizeKMap, minimizeSop, onesComplement, posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, signExtend, simulate7SegmentDecoder, simulateAdc, simulateAdderSubtractor, simulateBcdAdder,
-  simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateDecoder, simulateFastCarries, simulateMagnitudeComparator, simulateMuxFunction, simulateMuxTree16to1, simulateParity, simulatePriorityEncoder, simulateSignedArithmetic, simulateStatic1Hazard, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
+  simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateDecoder, simulateFastCarries, simulateHamming74, simulateMagnitudeComparator, simulateMuxFunction, simulateMuxTree16to1, simulateParity, simulatePriorityEncoder, simulateSaturatedArithmetic, simulateSignedArithmetic, simulateStatic1Hazard, solveRadixAddition, solveRadixProduct, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
   calculateTimingBudget, simulate74LS163, simulateCoincidentMemory, simulateCounterGlitch, simulateDebouncer, simulateFlipFlopConversion, simulateMemoryExpansion, simulateRaceAround, simulateRingJohnson, simulateUniversalShiftRegister,
   UNIVERSAL_CIRCUITS, type Bit, type NetGate,
 } from "@/lib/logic";
@@ -742,6 +742,352 @@ describe("signals and physical logic", () => {
     });
   });
 });
+
+  describe("Module 1 Numbers and Codes practice & exam calculations", () => {
+    describe("Lesson 1: Number Systems (m1-01)", () => {
+      it("verifies Problem 1: mixed base conversions of 73.3125_10", () => {
+        // Integer part: 73 / 2
+        const div = divisionSteps(73, 2);
+        const intBin = div.map((s) => s.digit).reverse().join("");
+        expect(intBin).toBe("1001001");
+        expect(parseInt(intBin, 2)).toBe(73);
+
+        // Fractional part: 0.3125 * 2
+        // 0.3125 -> 0.625 (0) -> 1.25 (1) -> 0.5 (0) -> 1.0 (1)
+        const fracBin = "0101";
+        const fullBin = `${intBin}.${fracBin}`;
+        expect(fullBin).toBe("1001001.0101");
+
+        // Group into octal (3 bits): 001 001 001 . 010 100 -> 111.24_8
+        const oct = groupBinaryBits(fullBin, 3);
+        expect(oct.resultString).toBe("111.24");
+
+        // Group into hex (4 bits): 0100 1001 . 0101 -> 49.5_16
+        const hex = groupBinaryBits(fullBin, 4);
+        expect(hex.resultString).toBe("49.5");
+      });
+
+      it("verifies Problem 2: arbitrary base evaluation of (342.13)_5 and min radix for (7B2)_r", () => {
+        // 3(25) + 4(5) + 2(1) + 1/5 + 3/25 = 75 + 20 + 2 + 0.2 + 0.12 = 97.32_10
+        const val = 3 * 25 + 4 * 5 + 2 * 1 + 1 / 5 + 3 / 25;
+        expect(val).toBeCloseTo(97.32, 4);
+
+        // Digit B = 11 -> min radix is 12
+        const bVal = parseInt("B", 36);
+        expect(bVal).toBe(11);
+        expect(bVal + 1).toBe(12);
+      });
+
+      it("verifies Problem 3: octal to hex direct conversion of (653.42)_8 -> (1AB.88)_16", () => {
+        const binExpansion = expandRadixToBinary("653.42", 3);
+        expect(binExpansion.fullBinary).toBe("110101011.100010");
+
+        // Regroup into hex: 0001 1010 1011 . 1000 1000 -> 1AB.88
+        const hexGroup = groupBinaryBits(binExpansion.fullBinary, 4);
+        expect(hexGroup.resultString).toBe("1AB.88");
+      });
+
+      it("verifies Problem 4: truncation error analysis of 0.2_10 to 8 bits", () => {
+        // 8-bit binary: 0.00110011_2
+        const bin8 = 1 / 8 + 1 / 16 + 1 / 128 + 1 / 256;
+        expect(bin8).toBe(0.19921875);
+
+        const absError = Number(Math.abs(0.2 - bin8).toFixed(8));
+        expect(absError).toBe(0.00078125);
+        expect(absError).toBe(1 / 1280);
+
+        const relErrorPercent = (absError / 0.2) * 100;
+        expect(relErrorPercent).toBe(0.390625);
+      });
+
+      it("verifies Problem 5: solving equations in unknown radices", () => {
+        // (24)_r + (17)_r = (43)_r -> r = 8
+        const addSol = solveRadixAddition("24", "17", "43");
+        expect(addSol.isValid).toBe(true);
+        expect(addSol.radix).toBe(8);
+        expect(addSol.minRadix).toBe(8);
+
+        // (13)_r * (15)_r = (217)_r -> r = 8
+        const prodSol = solveRadixProduct("13", "15", "217");
+        expect(prodSol.isValid).toBe(true);
+        expect(prodSol.radix).toBe(8);
+        expect(prodSol.minRadix).toBe(8);
+      });
+
+      it("verifies Problem 6: terminating fractions and round-to-nearest vs truncation", () => {
+        // 0.1875 = 3/16 -> 0.0011_2
+        const bin = 0 / 2 + 0 / 4 + 1 / 8 + 1 / 16;
+        expect(bin).toBe(0.1875);
+
+        // Octal: .001 100 -> .14_8
+        expect(1 / 8 + 4 / 64).toBe(0.1875);
+
+        // Hex: .0011 -> .3_16
+        expect(3 / 16).toBe(0.1875);
+
+        // 0.6_10 truncated to 6 bits: 0.100110_2
+        const trunc6 = 1 / 2 + 1 / 16 + 1 / 32;
+        expect(trunc6).toBe(0.59375);
+        expect(Math.abs(0.6 - trunc6)).toBeCloseTo(0.00625, 6);
+        expect(0.00625).toBe(1 / 160);
+      });
+
+      it("verifies interactive MCQ practice calculations in Lesson 1", () => {
+        // ns-q1: (4E7)_r requires r >= 15
+        expect(parseInt("E", 36) + 1).toBe(15);
+
+        // ns-q2: 0.375_10 = 0.011_2
+        expect(1 / 4 + 1 / 8).toBe(0.375);
+
+        // ns-q3: (725.3)_8 -> (1D5.6)_16
+        const q3Bin = expandRadixToBinary("725.3", 3);
+        const q3Hex = groupBinaryBits(q3Bin.fullBinary, 4);
+        expect(q3Hex.resultString).toBe("1D5.6");
+
+        // ns-q5: (33)_r = 27_10 -> 3r + 3 = 27 -> r = 8
+        expect((27 - 3) / 3).toBe(8);
+
+        // ns-q8: 1101 1010 1111 0000 -> 0xDAF0
+        expect(parseInt("1101101011110000", 2).toString(16).toUpperCase()).toBe("DAF0");
+      });
+    });
+
+    describe("Lesson 2: Binary Arithmetic (m1-02)", () => {
+      it("verifies Problem 1: two's complement addition and overflow diagnosis", () => {
+        // 1. (+68) + (+75) -> -113 (overflow)
+        const op1 = simulateSignedArithmetic(68, 75, 8, "add");
+        expect(op1.signedResult).toBe(-113);
+        expect(op1.overflow).toBe(true);
+        expect(op1.carryInMsb).toBe(1);
+        expect(op1.carryOut).toBe(0);
+
+        // 2. (-80) + (-60) -> +116 (overflow)
+        const op2 = simulateSignedArithmetic(-80, -60, 8, "add");
+        expect(op2.signedResult).toBe(116);
+        expect(op2.overflow).toBe(true);
+        expect(op2.carryInMsb).toBe(0);
+        expect(op2.carryOut).toBe(1);
+
+        // 3. (+68) + (-60) -> +8 (no overflow, C8 = 1 discarded)
+        const op3 = simulateSignedArithmetic(68, -60, 8, "add");
+        expect(op3.signedResult).toBe(8);
+        expect(op3.overflow).toBe(false);
+        expect(op3.carryInMsb).toBe(1);
+        expect(op3.carryOut).toBe(1);
+      });
+
+      it("verifies Problem 2: 2's complement subtraction (-35) - (-50) = +15", () => {
+        const subRes = simulateSignedArithmetic(-35, -50, 8, "sub");
+        expect(subRes.signedResult).toBe(15);
+        expect(subRes.overflow).toBe(false);
+        expect(subRes.carryOut).toBe(1); // C8 = 1 is normal
+      });
+
+      it("verifies Problem 3: sign extension of 101101_2 (-19) to 10 bits", () => {
+        const ext = signExtend(-19, 6, 10);
+        expect(ext.originalValue).toBe(-19);
+        expect(ext.signedValExtended).toBe(-19);
+        expect(ext.signExtendedBits.join("")).toBe("1111101101");
+        expect(ext.zeroExtendedVal).toBe(45); // zero extension corrupts sign
+      });
+
+      it("verifies Problem 4: 1's complement end-around carry modulo (2^n - 1)", () => {
+        // (+5) + (-2) in 4-bit 1's complement
+        // +5 = 0101, -2 = 1101 (ones complement of 0010)
+        // 0101 + 1101 = 1 0010_2
+        // End-around carry: 0010 + 1 = 0011_2 (+3)
+        const p5 = 0b0101;
+        const m2 = 0b1101;
+        const rawSum = p5 + m2; // 0b10010 (18)
+        const carryOut = (rawSum >> 4) & 1;
+        expect(carryOut).toBe(1);
+        const endAroundSum = (rawSum & 0xf) + carryOut;
+        expect(endAroundSum).toBe(0b0011);
+        expect(endAroundSum).toBe(3);
+      });
+
+      it("verifies Problem 5: Boolean overflow logic equivalence V = C_n ^ C_{n-1}", () => {
+        // Exhaustively verify V = C_n ^ C_{n-1} matches V = ~A*~B*S + A*B*~S
+        for (let a7 = 0; a7 <= 1; a7++) {
+          for (let b7 = 0; b7 <= 1; b7++) {
+            for (let c7 = 0; c7 <= 1; c7++) {
+              const s7 = (a7 ^ b7 ^ c7) as Bit;
+              const c8 = ((a7 & b7) | (c7 & (a7 ^ b7))) as Bit;
+              const vXor = c8 ^ c7;
+              const vBool = (!a7 && !b7 && s7) || (a7 && b7 && !s7) ? 1 : 0;
+              expect(vXor).toBe(vBool);
+            }
+          }
+        }
+      });
+
+      it("verifies Problem 6: saturating arithmetic vs modular wraparound", () => {
+        // Case 1: (+110) + (+45) = +155 -> wraparound -101 vs saturation +127
+        const satPos = simulateSaturatedArithmetic(110, 45, 8, "add");
+        expect(satPos.rawSum).toBe(155);
+        expect(satPos.overflow).toBe(true);
+        expect(satPos.wrappedSum).toBe(-101);
+        expect(satPos.saturatedSum).toBe(127);
+
+        // Case 2: (-90) + (-60) = -150 -> wraparound +106 vs saturation -128
+        const satNeg = simulateSaturatedArithmetic(-90, -60, 8, "add");
+        expect(satNeg.rawSum).toBe(-150);
+        expect(satNeg.overflow).toBe(true);
+        expect(satNeg.wrappedSum).toBe(106);
+        expect(satNeg.saturatedSum).toBe(-128);
+      });
+
+      it("verifies interactive MCQ practice calculations in Lesson 2", () => {
+        // ba-q1: negate -128 in 8 bits
+        const neg128 = twosComplement(-128, 8);
+        expect(neg128).toBe(128); // bit pattern 10000000
+        expect(signedValue(neg128, 8)).toBe(-128);
+
+        // ba-q3: sign extend 6-bit 110100 (-12) to 8 bits
+        const q3Ext = signExtend(-12, 6, 8);
+        expect(q3Ext.originalValue).toBe(-12);
+        expect(q3Ext.signedValExtended).toBe(-12);
+        expect(q3Ext.signExtendedBits.join("")).toBe("11110100");
+      });
+    });
+
+    describe("Lesson 3: Codes and Floating Point (m1-03)", () => {
+      it("verifies Problem 1: multi-digit BCD addition 86 + 79 = 165", () => {
+        // Units: 6 + 9 = 15 (>9 -> add 6 -> sum 5, carry 1)
+        const units = simulateBcdAdder(6, 9, 0);
+        expect(units.stage1Sum).toBe(15);
+        expect(units.needsCorrection).toBe(true);
+        expect(units.finalBcdDigit).toBe(5);
+        expect(units.bcdCarryOut).toBe(1);
+
+        // Tens: 8 + 7 + 1 = 16 (K=1 -> add 6 -> sum 6, carry 1)
+        const tens = simulateBcdAdder(8, 7, 1);
+        expect(units.stage1Sum).toBe(15);
+        expect(tens.binaryCarryK).toBe(1);
+        expect(tens.needsCorrection).toBe(true);
+        expect(tens.finalBcdDigit).toBe(6);
+        expect(tens.bcdCarryOut).toBe(1);
+
+        const total = tens.bcdCarryOut * 100 + tens.finalBcdDigit * 10 + units.finalBcdDigit;
+        expect(total).toBe(165);
+      });
+
+      it("verifies Problem 2: Gray code encoder (11_10 -> 1110_Gray) and unit distance", () => {
+        expect(toGray(11)).toBe(0b1110);
+        expect(bitString(toGray(11), 4)).toBe("1110");
+
+        // Transition 7 (0111_2) to 8 (1000_2): all 4 bits toggle in binary!
+        const b7 = 0b0111;
+        const b8 = 0b1000;
+        const binDiff = bitsOf(b7 ^ b8, 4).filter(Boolean).length;
+        expect(binDiff).toBe(4);
+
+        // In Gray code: 7 is 0100, 8 is 1100 -> only 1 bit toggles!
+        const g7 = toGray(7);
+        const g8 = toGray(8);
+        expect(bitString(g7, 4)).toBe("0100");
+        expect(bitString(g8, 4)).toBe("1100");
+        const grayDiff = bitsOf(g7 ^ g8, 4).filter(Boolean).length;
+        expect(grayDiff).toBe(1);
+      });
+
+      it("verifies Problem 3: self-complementing property of Excess-3 and 2421", () => {
+        for (let d = 0; d <= 9; d++) {
+          // Excess-3: bitwise NOT of XS-3(d) equals XS-3(9 - d)
+          const xs3 = d + 3;
+          const xs3Comp = ~xs3 & 0xf;
+          const xs3Nine = (9 - d) + 3;
+          expect(xs3Comp).toBe(xs3Nine);
+        }
+      });
+
+      it("verifies Problem 4: IEEE 754 decoding of 0x42A60000 -> +83.0", () => {
+        const dec = decodeIeee754Hex("42A60000");
+        expect(dec.sign).toBe(0);
+        expect(dec.exponentRaw).toBe(133);
+        expect(dec.trueExponent).toBe(6);
+        expect(dec.fractionVal).toBe(0.296875);
+        expect(dec.significand).toBe(1.296875);
+        expect(dec.decimalValue).toBe(83.0);
+        expect(dec.classification).toBe("normal");
+      });
+
+      it("verifies Problem 5: Hamming (7,4) code generation, syndrome detection, and correction", () => {
+        // Data nibble D = (1, 0, 1, 1)
+        const d: [Bit, Bit, Bit, Bit] = [1, 0, 1, 1];
+        const h74 = simulateHamming74(d);
+        expect(h74.p1).toBe(0);
+        expect(h74.p2).toBe(1);
+        expect(h74.p4).toBe(0);
+        expect(h74.codeword).toEqual([0, 1, 1, 0, 0, 1, 1]);
+
+        // Clean reception
+        const clean = h74.checkSyndrome(h74.codeword);
+        expect(clean.hasError).toBe(false);
+        expect(clean.syndromeInt).toBe(0);
+        expect(clean.correctedData).toEqual(d);
+
+        // Noise flips bit 5 (index 4 in 0-indexed array) -> [0, 1, 1, 0, 1, 1, 1]
+        const noisy = [...h74.codeword];
+        noisy[4] = 1;
+        const corrected = h74.checkSyndrome(noisy);
+        expect(corrected.hasError).toBe(true);
+        expect(corrected.errorBitPos).toBe(5);
+        expect(corrected.syndromeBits).toEqual([1, 0, 1]);
+        expect(corrected.syndromeInt).toBe(5);
+        expect(corrected.correctedCodeword).toEqual(h74.codeword);
+        expect(corrected.correctedData).toEqual(d);
+      });
+
+      it("verifies Problem 6: IEEE 754 encoding of -19.375_10, subnormal numbers, and special states", () => {
+        // -19.375 -> 0xC19B0000
+        const fp = floatParts(-19.375);
+        expect(fp.sign).toBe(1);
+        expect(fp.exponent).toBe(131); // 4 + 127
+        expect(fp.value).toBe(-19.375);
+        expect(parseInt(fp.bits, 2).toString(16).toUpperCase()).toBe("C19B0000");
+
+        // Subnormal number: 0x00000001 (smallest positive subnormal)
+        const sub = decodeIeee754Hex("00000001");
+        expect(sub.classification).toBe("subnormal");
+        expect(sub.trueExponent).toBe(-126);
+        expect(sub.decimalValue).toBeCloseTo(1.401298e-45, 50);
+
+        // Special representations
+        expect(decodeIeee754Hex("00000000").classification).toBe("zero");
+        expect(decodeIeee754Hex("80000000").classification).toBe("zero");
+        expect(decodeIeee754Hex("7F800000").classification).toBe("infinity");
+        expect(decodeIeee754Hex("FF800000").classification).toBe("infinity");
+        expect(decodeIeee754Hex("7FC00000").classification).toBe("nan");
+      });
+    });
+
+    describe("Lesson 4: Module Quiz (m1-04-numbers-quiz)", () => {
+      it("verifies all module quiz calculation questions (q1, q3, q6, q8)", () => {
+        // q1: (243.12)_5 = 73.28_10, min radix for (9C4)_r is 13
+        const q1Val = 2 * 25 + 4 * 5 + 3 * 1 + 1 / 5 + 2 / 25;
+        expect(q1Val).toBe(73.28);
+        expect(parseInt("C", 36) + 1).toBe(13);
+
+        // q3: (375.4)_8 direct to hex -> (FD.8)_16
+        const q3Bin = expandRadixToBinary("375.4", 3);
+        const q3Hex = groupBinaryBits(q3Bin.fullBinary, 4);
+        expect(q3Hex.resultString).toBe("0FD.8");
+        expect(q3Hex.resultString.replace(/^0/, "")).toBe("FD.8");
+
+        // q6: (+80) + (+70) in 8-bit signed
+        const q6Op = simulateSignedArithmetic(80, 70, 8, "add");
+        expect(q6Op.signedResult).toBe(-106);
+        expect(q6Op.overflow).toBe(true);
+        expect(q6Op.carryInMsb).toBe(1);
+        expect(q6Op.carryOut).toBe(0);
+
+        // q8: 10110_2 -> 11101_Gray
+        expect(bitString(toGray(0b10110), 5)).toBe("11101");
+      });
+    });
+  });
+
 
 describe("combinational building blocks (Module 3)", () => {
   it("simulates 4-bit parallel adder-subtractor, flags, and overflow (m3-01 Problem 2)", () => {

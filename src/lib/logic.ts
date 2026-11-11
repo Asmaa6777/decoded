@@ -854,6 +854,248 @@ export function simulateParity(
   };
 }
 
+/* ------------------------------ Module 1 simulation helpers ----------------------------- */
+
+/** Parses an unsigned string in base r to decimal integer. */
+function parseBaseR(str: string, r: number): number {
+  let val = 0;
+  for (const ch of str.toUpperCase()) {
+    const d = parseInt(ch, 36);
+    if (isNaN(d) || d >= r) return NaN;
+    val = val * r + d;
+  }
+  return val;
+}
+
+/** Finds the maximum digit in a string across all allowed alphanumeric digits. */
+function maxDigitValue(str: string): number {
+  let maxD = 0;
+  for (const ch of str.toUpperCase()) {
+    const d = parseInt(ch, 36);
+    if (!isNaN(d) && d > maxD) maxD = d;
+  }
+  return maxD;
+}
+
+/**
+ * Solves an addition equation in an unknown radix: (a)_r + (b)_r = (sum)_r.
+ * Evaluates candidates where r > max(digits), returning the valid integer radix.
+ */
+export function solveRadixAddition(aStr: string, bStr: string, sumStr: string): { radix: number; minRadix: number; isValid: boolean } {
+  const minRadix = Math.max(maxDigitValue(aStr), maxDigitValue(bStr), maxDigitValue(sumStr)) + 1;
+  for (let r = Math.max(2, minRadix); r <= 36; r++) {
+    const aVal = parseBaseR(aStr, r);
+    const bVal = parseBaseR(bStr, r);
+    const sumVal = parseBaseR(sumStr, r);
+    if (!isNaN(aVal) && !isNaN(bVal) && !isNaN(sumVal) && aVal + bVal === sumVal) {
+      return { radix: r, minRadix, isValid: true };
+    }
+  }
+  return { radix: -1, minRadix, isValid: false };
+}
+
+/**
+ * Solves a multiplication equation in an unknown radix: (a)_r * (b)_r = (prod)_r.
+ * Evaluates candidates where r > max(digits), returning the valid integer radix.
+ */
+export function solveRadixProduct(aStr: string, bStr: string, prodStr: string): { radix: number; minRadix: number; isValid: boolean } {
+  const minRadix = Math.max(maxDigitValue(aStr), maxDigitValue(bStr), maxDigitValue(prodStr)) + 1;
+  for (let r = Math.max(2, minRadix); r <= 36; r++) {
+    const aVal = parseBaseR(aStr, r);
+    const bVal = parseBaseR(bStr, r);
+    const prodVal = parseBaseR(prodStr, r);
+    if (!isNaN(aVal) && !isNaN(bVal) && !isNaN(prodVal) && aVal * bVal === prodVal) {
+      return { radix: r, minRadix, isValid: true };
+    }
+  }
+  return { radix: -1, minRadix, isValid: false };
+}
+
+export type Hamming74Result = {
+  dataBits: [Bit, Bit, Bit, Bit];
+  p1: Bit;
+  p2: Bit;
+  p4: Bit;
+  codeword: Bit[]; // 1-indexed layout: [p1, p2, d1, p4, d2, d3, d4]
+  checkSyndrome: (received: Bit[]) => {
+    syndromeInt: number;
+    syndromeBits: [Bit, Bit, Bit];
+    correctedCodeword: Bit[];
+    correctedData: [Bit, Bit, Bit, Bit];
+    errorBitPos: number | null;
+    hasError: boolean;
+  };
+};
+
+/**
+ * Simulates a single-error-correcting Hamming (7,4) code with even parity.
+ * Data bits d = [d1, d2, d3, d4] are mapped to positions [3, 5, 6, 7],
+ * with parity bits at positions 1 (p1), 2 (p2), and 4 (p4).
+ */
+export function simulateHamming74(d: [Bit, Bit, Bit, Bit]): Hamming74Result {
+  const [d1, d2, d3, d4] = d;
+  const p1 = (d1 ^ d2 ^ d4) as Bit;
+  const p2 = (d1 ^ d3 ^ d4) as Bit;
+  const p4 = (d2 ^ d3 ^ d4) as Bit;
+
+  const codeword: Bit[] = [p1, p2, d1, p4, d2, d3, d4];
+
+  const checkSyndrome = (received: Bit[]) => {
+    const rx = received.slice(0, 7) as Bit[];
+    while (rx.length < 7) rx.push(0);
+
+    const [r1, r2, r3, r4, r5, r6, r7] = rx;
+    const s1 = (r1 ^ r3 ^ r5 ^ r7) as Bit;
+    const s2 = (r2 ^ r3 ^ r6 ^ r7) as Bit;
+    const s4 = (r4 ^ r5 ^ r6 ^ r7) as Bit;
+
+    const syndromeInt = s4 * 4 + s2 * 2 + s1;
+    const hasError = syndromeInt !== 0;
+    const errorBitPos = hasError ? syndromeInt : null;
+
+    const correctedCodeword = [...rx];
+    if (hasError && syndromeInt >= 1 && syndromeInt <= 7) {
+      correctedCodeword[syndromeInt - 1] = (correctedCodeword[syndromeInt - 1] ? 0 : 1) as Bit;
+    }
+
+    const correctedData: [Bit, Bit, Bit, Bit] = [
+      correctedCodeword[2], // bit 3 (d1)
+      correctedCodeword[4], // bit 5 (d2)
+      correctedCodeword[5], // bit 6 (d3)
+      correctedCodeword[6], // bit 7 (d4)
+    ];
+
+    return {
+      syndromeInt,
+      syndromeBits: [s4, s2, s1] as [Bit, Bit, Bit],
+      correctedCodeword,
+      correctedData,
+      errorBitPos,
+      hasError,
+    };
+  };
+
+  return {
+    dataBits: d,
+    p1,
+    p2,
+    p4,
+    codeword,
+    checkSyndrome,
+  };
+}
+
+export type SaturatedArithmeticResult = {
+  a: number;
+  b: number;
+  width: number;
+  op: "add" | "sub";
+  rawSum: number;
+  wrappedSum: number;
+  saturatedSum: number;
+  overflow: boolean;
+  minLimit: number;
+  maxLimit: number;
+};
+
+/**
+ * Simulates signed integer arithmetic with saturation clamp vs modular wraparound.
+ * Clamps to [-2^(n-1), 2^(n-1)-1] on overflow (as in audio/DSP/graphics processors).
+ */
+export function simulateSaturatedArithmetic(
+  a: number,
+  b: number,
+  width: number = 8,
+  op: "add" | "sub" = "add",
+): SaturatedArithmeticResult {
+  const minLimit = -(2 ** (width - 1));
+  const maxLimit = 2 ** (width - 1) - 1;
+
+  const rawSum = op === "add" ? a + b : a - b;
+  const overflow = rawSum > maxLimit || rawSum < minLimit;
+  const saturatedSum = Math.max(minLimit, Math.min(maxLimit, rawSum));
+
+  const mod = 2 ** width;
+  let wrappedUnsigned = rawSum % mod;
+  if (wrappedUnsigned < 0) wrappedUnsigned += mod;
+  const wrappedSum = signedValue(wrappedUnsigned, width);
+
+  return {
+    a,
+    b,
+    width,
+    op,
+    rawSum,
+    wrappedSum,
+    saturatedSum,
+    overflow,
+    minLimit,
+    maxLimit,
+  };
+}
+
+export type Ieee754DecodeResult = {
+  hex: string;
+  sign: Bit;
+  exponentRaw: number;
+  trueExponent: number;
+  fractionHex: string;
+  fractionVal: number;
+  significand: number;
+  decimalValue: number;
+  classification: "zero" | "normal" | "subnormal" | "infinity" | "nan";
+};
+
+/**
+ * Decodes a 32-bit hexadecimal word according to IEEE 754 single-precision format.
+ */
+export function decodeIeee754Hex(hex: string): Ieee754DecodeResult {
+  const cleanHex = hex.replace(/^0x/i, "").padStart(8, "0");
+  const u = parseInt(cleanHex, 16) >>> 0;
+  const sign = ((u >>> 31) & 1) as Bit;
+  const exponentRaw = (u >>> 23) & 0xff;
+  const fractionRaw = u & 0x7fffff;
+  const fractionHex = fractionRaw.toString(16).toUpperCase().padStart(6, "0");
+  const fractionVal = fractionRaw / 2 ** 23;
+
+  let classification: Ieee754DecodeResult["classification"] = "normal";
+  let trueExponent = exponentRaw - 127;
+  let significand = 1 + fractionVal;
+  let decimalValue = (sign ? -1 : 1) * significand * 2 ** trueExponent;
+
+  if (exponentRaw === 255) {
+    if (fractionRaw !== 0) {
+      classification = "nan";
+      decimalValue = NaN;
+    } else {
+      classification = "infinity";
+      decimalValue = sign ? -Infinity : Infinity;
+    }
+  } else if (exponentRaw === 0) {
+    if (fractionRaw === 0) {
+      classification = "zero";
+      decimalValue = sign ? -0 : 0;
+    } else {
+      classification = "subnormal";
+      trueExponent = -126;
+      significand = fractionVal;
+      decimalValue = (sign ? -1 : 1) * significand * 2 ** trueExponent;
+    }
+  }
+
+  return {
+    hex: cleanHex,
+    sign,
+    exponentRaw,
+    trueExponent,
+    fractionHex,
+    fractionVal,
+    significand,
+    decimalValue,
+    classification,
+  };
+}
+
 /* ------------------------------ arithmetic ----------------------------- */
 
 export type AddColumn = { index: number; a: Bit; b: Bit; carryIn: Bit; sum: Bit; carryOut: Bit };

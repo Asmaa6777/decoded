@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { PlaceValueBits, BaseConverter, FractionConverter, BitGroupingVisualizer } from "@/components/mdx/LogicVisualizers";
 
 # Number Systems
@@ -349,9 +349,13 @@ Similarly, decimal $0.1_{10} = 0.0001100110011\dots_2 = 0.0\overline{0011}_2$.
 **Assuming finite decimal numbers can always be represented exactly in computer memory.** Many programmers assume numbers like $0.1$ or $0.2$ are stored with exact precision. Because 10 has prime factor 5, $0.1_{10}$ never terminates in base 2. In IEEE 754 binary floating point, it rounds to a finite register width (23 or 52 fraction bits). This truncation causes quirks like `0.1 + 0.2 == 0.3` evaluating to `false`.
 </Callout>
 
-## Practice problems
+## Practice from past exams
 
-### Problem 1: Mixed base conversions
+Review these hand-worked problems and practice questions to reinforce your grasp of positional radices, base conversions, fraction representations, and numerical precision.
+
+### Part 1: Written exam & lab problems
+
+#### Problem 1: Mixed base conversions
 
 Convert the decimal number $73.3125_{10}$ into:
 1. Binary
@@ -398,7 +402,7 @@ When converting fractional binary to octal, students frequently group $.0101_2$ 
 </Callout>
 </ModelAnswer>
 
-### Problem 2: Arbitrary base evaluation
+#### Problem 2: Arbitrary base evaluation
 
 Determine the decimal equivalent of the number $(342.13)_5$, and state the minimum radix required for the number $(7\text{B}2)_r$ to be valid.
 
@@ -424,7 +428,7 @@ Students often answer $r = 11$ because $\text{B} = 11$. Remember that in base 11
 </Callout>
 </ModelAnswer>
 
-### Problem 3: Octal to hexadecimal direct conversion
+#### Problem 3: Octal to hexadecimal direct conversion
 
 Convert $(653.42)_8$ directly to hexadecimal without converting to decimal first.
 
@@ -464,7 +468,7 @@ Converting through decimal ($653.42_8 \to \text{decimal} \to \text{hex}$) is slo
 </Callout>
 </ModelAnswer>
 
-### Problem 4: Truncation error analysis
+#### Problem 4: Truncation error analysis
 
 Convert decimal $0.2_{10}$ to an 8-bit fractional binary number, and calculate the absolute truncation error between the true decimal value and its 8-bit binary representation.
 
@@ -508,3 +512,214 @@ $$
 Students sometimes confuse truncation (chopping off bits after the eighth bit) with rounding. Rounding examines the ninth bit ($a_{-9} = 0$), so round-to-nearest gives the same bit pattern here. When the next bit is 1, round-to-nearest adds 1 to the least significant bit, while truncation discards the rest.
 </Callout>
 </ModelAnswer>
+
+#### Problem 5: Solving equations in unknown radices
+
+Find the integer radix $r$ that satisfies each of the following arithmetic equations:
+1. $(24)_r + (17)_r = (43)_r$
+2. $(13)_r \times (15)_r = (217)_r$
+
+State the minimum possible radix for each equation before solving, and verify that the algebraic solution meets the digit constraints.
+
+<ModelAnswer>
+**1. Equation $(24)_r + (17)_r = (43)_r$:**
+- **Digit constraint:** The digits appearing in the equation are $\{1, 2, 3, 4, 7\}$. The highest digit is $7$. Since every digit must satisfy $\text{digit} < r$, the minimum radix is $r > 7$, so $r \ge 8$.
+- **Polynomial expansion in radix $r$:**
+  $$
+  (2r + 4) + (r + 7) = 4r + 3
+  $$
+- **Solve for $r$:**
+  $$
+  3r + 11 = 4r + 3 \implies 4r - 3r = 11 - 3 \implies r = 8
+  $$
+- **Verification:** Since $r = 8 \ge 8$, the equation is valid in octal (base 8). In octal arithmetic: $4_8 + 7_8 = 11_{10} = 13_8$ (write 3, carry 1); $1 + 2 + 1 = 4_8$. Result: $(43)_8$.
+
+**2. Equation $(13)_r \times (15)_r = (217)_r$:**
+- **Digit constraint:** The digits present are $\{1, 2, 3, 5, 7\}$. The maximum digit is $7$, requiring $r \ge 8$.
+- **Polynomial expansion in radix $r$:**
+  $$
+  (r + 3)(r + 5) = 2r^2 + r + 7
+  $$
+  $$
+  r^2 + 8r + 15 = 2r^2 + r + 7
+  $$
+- **Rearrange to standard quadratic form:**
+  $$
+  2r^2 - r^2 + r - 8r + 7 - 15 = 0 \implies r^2 - 7r - 8 = 0
+  $$
+- **Factor the quadratic:**
+  $$
+  (r - 8)(r + 1) = 0 \implies r = 8 \quad \text{or} \quad r = -1
+  $$
+- **Select the physically meaningful root:** A radix must be a positive integer greater than 7. Therefore, $r = 8$.
+- **Verification:** In decimal, $(13)_8 = 8 + 3 = 11_{10}$ and $(15)_8 = 8 + 5 = 13_{10}$. Product: $11 \times 13 = 143_{10}$. Expanding $(217)_8 = 2(8^2) + 1(8^1) + 7 = 128 + 8 + 7 = 143_{10}$. The solution holds.
+
+<Callout tone="orange" label="Common exam pitfall">
+Always check the minimum radix constraint first. If an algebraic solution gives $r = 6$ for an equation that contains digit symbol 7, that root is mathematically extraneous and physically invalid in digital hardware.
+</Callout>
+</ModelAnswer>
+
+#### Problem 6: Terminating fractions and round-to-nearest vs truncation
+
+A digital signal processor represents fractional filter coefficients using fixed-point binary words.
+1. State the prime factorization criterion that determines whether a reduced rational fraction $p/q$ terminates in a given radix $r$.
+2. Determine whether $0.1875_{10}$ and $0.6_{10}$ terminate or repeat in binary, octal, and hexadecimal.
+3. Convert $0.1875_{10}$ exactly into binary, octal, and hexadecimal.
+4. Convert $0.6_{10}$ to 6 binary fractional bits using both truncation and round-to-nearest (ties-to-even), and compute the absolute numerical error for both representations.
+
+<ModelAnswer>
+**1. Prime factorization criterion:**
+A reduced fraction $p/q$ (where $\gcd(p, q) = 1$) terminates in radix $r$ if and only if every prime factor of the denominator $q$ divides $r$. In binary ($r = 2$), octal ($r = 2^3$), and hexadecimal ($r = 2^4$), the only prime factor of the base is $2$. Therefore, a reduced decimal fraction terminates in binary, octal, or hex if and only if its denominator is a pure power of two ($q = 2^k$).
+
+**2. Evaluating $0.1875_{10}$ and $0.6_{10}$:**
+- $0.1875_{10} = \frac{1875}{10000} = \frac{3}{16} = \frac{3}{2^4}$. The denominator has prime factors $\{2\}$ only. Because 2 divides 2, 8, and 16, $0.1875_{10}$ **terminates** in binary, octal, and hex.
+- $0.6_{10} = \frac{6}{10} = \frac{3}{5}$. The denominator has prime factor $5$. Because 5 does not divide 2, $0.6_{10}$ **repeats infinitely** in binary, octal, and hex ($0.\overline{1001}_2$).
+
+**3. Converting $0.1875_{10}$:**
+- Binary:
+  - $0.1875 \times 2 = \mathbf{0}.375 \implies 0$
+  - $0.375 \times 2 = \mathbf{0}.75 \implies 0$
+  - $0.75 \times 2 = \mathbf{1}.5 \implies 1$
+  - $0.5 \times 2 = \mathbf{1}.0 \implies 1$
+  - Result: $0.0011_2$.
+- Octal: Group in 3s outward: $.001\ 100_2 = 0.14_8$. Check: $\frac{1}{8} + \frac{4}{64} = 0.125 + 0.0625 = 0.1875_{10}$.
+- Hexadecimal: Group in 4s: $.0011_2 = 0.3_{16}$. Check: $\frac{3}{16} = 0.1875_{10}$.
+
+**4. Converting $0.6_{10}$ to 6 fractional bits:**
+Successive multiplication by 2:
+- $0.6 \times 2 = \mathbf{1}.2 \implies 1$ ($a_{-1}$)
+- $0.2 \times 2 = \mathbf{0}.4 \implies 0$ ($a_{-2}$)
+- $0.4 \times 2 = \mathbf{0}.8 \implies 0$ ($a_{-3}$)
+- $0.8 \times 2 = \mathbf{1}.6 \implies 1$ ($a_{-4}$)
+- $0.6 \times 2 = \mathbf{1}.2 \implies 1$ ($a_{-5}$)
+- $0.2 \times 2 = \mathbf{0}.4 \implies 0$ ($a_{-6}$)
+- $0.4 \times 2 = \mathbf{0}.8 \implies 0$ ($a_{-7}$, test bit for rounding)
+
+- **Truncation (6 bits):**
+  Chopping off after bit 6 gives $0.100110_2$.
+  Decimal value:
+  $$
+  2^{-1} + 2^{-4} + 2^{-5} = 0.5 + 0.0625 + 0.03125 = 0.59375_{10}
+  $$
+  Absolute truncation error:
+  $$
+  |0.6 - 0.59375| = 0.00625_{10} = \frac{1}{160}_{10}
+  $$
+
+- **Round-to-nearest (6 bits):**
+  Inspect the 7th bit ($a_{-7} = 0$). Because the guard bit is $0$ ($< 0.5$ of the LSB weight), we round down (truncate).
+  The 6-bit rounded result is $0.100110_2$, giving the same value $0.59375_{10}$ and error $0.00625_{10}$.
+  (If instead we rounded to 4 fractional bits, $0.1001_2$ with 5th bit $a_{-5} = 1$ would round up to $0.1010_2 = 0.625_{10}$, cutting the error from $0.0375$ down to $0.025$).
+
+<Callout tone="orange" label="Common exam pitfall">
+Truncation always underestimates a positive number, producing a one-sided negative bias in repeated digital signal processing computations. Round-to-nearest eliminates this systematic DC bias and halves the worst-case quantization noise amplitude.
+</Callout>
+</ModelAnswer>
+
+---
+
+### Part 2: In-lesson interactive practice
+
+<Quiz
+  practice
+  courseSlug="logic-design"
+  lessonSlug="number-systems"
+  questions={[
+    {
+      id: "ns-q1",
+      prompt: "What is the minimum integer radix r required for the number (4E7)_r to be valid in positional notation?",
+      options: [
+        { id: "a", text: "Radix r = 15, because digit symbol E represents decimal 14, and all digits must satisfy digit < r" },
+        { id: "b", text: "Radix r = 14, because the highest digit symbol is E which has value 14" },
+        { id: "c", text: "Radix r = 16, because letter digits are only allowed in hexadecimal" },
+        { id: "d", text: "Radix r = 8, because 7 is the highest numeric digit" },
+      ],
+      correctOptionId: "a",
+      explanation: "In any positional base r, the allowable digit set consists of integers 0 through r - 1. The letter symbol E stands for decimal 14. Therefore, the radix must satisfy r > 14, which means the smallest permissible integer radix is r = 15. Option b is a common trap confusing the maximum digit value with the base count; option c is wrong because letters can designate digits in any base up to 36; option d fails to account for the symbol E.",
+    },
+    {
+      id: "ns-q2",
+      prompt: "What is the exact binary representation of the decimal fraction 0.375₁₀?",
+      options: [
+        { id: "a", text: "0.011₂" },
+        { id: "b", text: "0.0101₂" },
+        { id: "c", text: "0.110₂" },
+        { id: "d", text: "0.0011₂" },
+      ],
+      correctOptionId: "a",
+      explanation: "0.375 = 3/8 = 1/4 + 1/8 = 2⁻² + 2⁻³, which corresponds directly to 0.011₂. Performing successive multiplication: 0.375 × 2 = 0.75 (0), 0.75 × 2 = 1.5 (1), 0.5 × 2 = 1.0 (1) yields 0.011₂. Option b represents 0.3125₁₀ (5/16); option c equals 0.75₁₀ (3/4); option d equals 0.1875₁₀ (3/16).",
+    },
+    {
+      id: "ns-q3",
+      prompt: "Convert the octal number (725.3)₈ directly to hexadecimal without converting through decimal.",
+      options: [
+        { id: "a", text: "(1D5.6)₁₆" },
+        { id: "b", text: "(1D5.3)₁₆" },
+        { id: "c", text: "(D5.6)₁₆" },
+        { id: "d", text: "(1D5.06)₁₆" },
+      ],
+      correctOptionId: "a",
+      explanation: "Expand each octal digit into 3 binary bits: 7₈ = 111, 2₈ = 010, 5₈ = 101, .3₈ = .011 → 111010101.011₂. Regroup outward into 4-bit nibbles: Integer: 0001 1101 0101₂ = 1D5₁₆; Fractional: .0110₂ (padded on the right with one trailing zero) = .6₁₆. The hexadecimal equivalent is (1D5.6)₁₆. Option b failed to pad the fraction on the right and left .3 unchanged; option c dropped the leading 1; option d incorrectly inserted a leading zero into the fraction nibble.",
+    },
+    {
+      id: "ns-q4",
+      prompt: "Under what exact mathematical condition does a reduced rational fraction p/q terminate as a finite representation in radix r?",
+      options: [
+        { id: "a", text: "Every prime factor of the reduced denominator q must divide the radix r" },
+        { id: "b", text: "The numerator p must be an even integer" },
+        { id: "c", text: "The denominator q must be strictly greater than the radix r" },
+        { id: "d", text: "The fraction terminates only if q is an odd prime" },
+      ],
+      correctOptionId: "a",
+      explanation: "A fraction in lowest terms p/q terminates in base r if and only if all prime factors of q divide r. In binary (r = 2), only denominators with prime factor 2 terminate (such as 1/2, 1/4, 1/8). Option b is incorrect because the numerator does not govern termination; option c is false because denominators smaller than r (e.g. 1/2 in base 10) terminate cleanly; option d is incorrect because odd primes like 3, 5, 7 produce repeating fractions in binary.",
+    },
+    {
+      id: "ns-q5",
+      prompt: "Solve for the unknown integer radix r in the equation (33)_r = (27)₁₀.",
+      options: [
+        { id: "a", text: "r = 8" },
+        { id: "b", text: "r = 9" },
+        { id: "c", text: "r = 7" },
+        { id: "d", text: "r = 6" },
+      ],
+      correctOptionId: "a",
+      explanation: "Expand (33)_r in powers of r: 3r¹ + 3r⁰ = 3r + 3. Setting equal to decimal 27 gives 3r + 3 = 27 → 3r = 24 → r = 8. In octal, 3(8) + 3 = 27₁₀. Option b gives 3(9) + 3 = 30₁₀; option c gives 3(7) + 3 = 24₁₀; option d gives 3(6) + 3 = 21₁₀.",
+    },
+    {
+      id: "ns-q6",
+      prompt: "What is the maximum unsigned integer value that can be represented in an n-bit digital register?",
+      options: [
+        { id: "a", text: "2ⁿ - 1" },
+        { id: "b", text: "2ⁿ" },
+        { id: "c", text: "2ⁿ⁻¹ - 1" },
+        { id: "d", text: "2ⁿ⁺¹ - 1" },
+      ],
+      correctOptionId: "a",
+      explanation: "An n-bit register can represent 2ⁿ distinct binary patterns. Since unsigned counting starts at 0, the integers range from 0 to 2ⁿ - 1. When all n bits are 1, the geometric sum is ∑_{i=0}^{n-1} 2ⁱ = 2ⁿ - 1. Option b confuses the total count of distinct values with the maximum numerical value; option c is the positive limit of signed two's complement; option d corresponds to an (n+1)-bit register.",
+    },
+    {
+      id: "ns-q7",
+      prompt: "In fixed-point binary hardware, how do truncation and round-to-nearest (ties-to-even) differ in how they handle fractional bits?",
+      options: [
+        { id: "a", text: "Truncation discards bits beyond position n, while round-to-nearest inspects bit n+1 and increments the LSB when the discarded fraction exceeds half the LSB weight" },
+        { id: "b", text: "Truncation guarantees zero error, whereas round-to-nearest adds quantization noise" },
+        { id: "c", text: "Truncation requires a multi-bit ripple adder, while rounding requires no logic gates" },
+        { id: "d", text: "Round-to-nearest is only defined for unsigned integers, not binary fractions" },
+      ],
+      correctOptionId: "a",
+      explanation: "Truncation simply drops all bits past the register width, requiring no logic but producing a negative DC bias and a maximum error equal to 1 LSB. Round-to-nearest examines the first discarded bit (bit n+1, weight 0.5 LSB): if 1 (with subsequent bits non-zero), it increments the LSB, centering the error distribution around 0 and cutting the maximum error to 0.5 LSB. Option b is false because truncation produces larger error; option c is backwards because truncation is free in hardware while rounding requires an incrementer; option d is false because rounding is central to floating-point and fixed-point arithmetic.",
+    },
+    {
+      id: "ns-q8",
+      prompt: "What is the hexadecimal representation of the 16-bit binary pattern 1101 1010 1111 0000₂?",
+      options: [
+        { id: "a", text: "0xDAF0" },
+        { id: "b", text: "0xAD0F" },
+        { id: "c", text: "0xCBF0" },
+        { id: "d", text: "0xDA0F" },
+      ],
+      correctOptionId: "a",
+      explanation: "Convert each 4-bit nibble from left to right: 1101₂ = 13₁₀ = D₁₆; 1010₂ = 10₁₀ = A₁₆; 1111₂ = 15₁₀ = F₁₆; 0000₂ = 0₁₆. The hex value is 0xDAF0. Option b reverses the nibble order; option c makes arithmetic conversion errors on the high nibbles; option d swaps the positions of the low nibbles.",
+    },
+  ]}
+/>
