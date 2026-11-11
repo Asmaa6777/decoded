@@ -3,8 +3,10 @@ import { btn, inputCls, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers
 import { Panel } from "@/components/mdx/MatrixVisualizers";
 import type { Frame } from "@/lib/algorithms";
 import {
-  bitString, bitsOf, bitsToNumber, counterStep, divisionSteps, evalExpr, floatParts, fractionBits, jkNext, kmapLayout, latchVersusFlipFlop,
-  lookaheadCarries, minimizeSop, onesComplement, placeValues, posFromMinterms, rippleAdd, sameFunction, shiftFrames, signedValue, sopFromMinterms, toBase, toBcd, toExcess3, toGray, truthRows, twosComplement, type Bit,
+  bitString, bitsOf, bitsToNumber, classifyDecimalVoltage, classifyLogicVoltage, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evaluateParallelSkew, floatParts, fractionBits,
+  generateRealWaveform, jkNext, kmapLayout, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries, minimizeSop, onesComplement, placeValues, posFromMinterms, rippleAdd, sameFunction,
+  shiftFrames, signedValue, simulateAdc, simulateBusDrivers, sopFromMinterms, toBase, toBcd, toExcess3, toGray, truthRows, twosComplement, type Bit, type DriverMode, type DriverState,
+  type LogicFamilyId,
 } from "@/lib/logic";
 
 const BIT_ON: Record<string, string> = { mint: "border-mint bg-mint/20", neon: "border-neon bg-neon/20", sky: "border-sky bg-sky/20" };
@@ -19,92 +21,800 @@ const Bits = ({ value, tone = "mint" }: { value: string; tone?: string }) => (
 
 /* ------------------------------- signals ------------------------------- */
 
-/** A wobbling real voltage and what a digital input decides it means. */
-export function VoltageBands() {
-  const [noise, setNoise] = useState(0.25);
-  const clean = [0, 0, 3.3, 3.3, 0, 3.3, 0, 0, 3.3, 3.3];
-  // deterministic wobble, so the picture is stable from one render to the next
-  const wobble = [0.3, -0.5, -0.7, 0.4, 0.8, -0.9, 0.5, 0.1, 0.6, -0.4];
-  const v = clean.map((c, i) => Math.min(3.3, Math.max(0, c + wobble[i] * noise * 3.3)));
-  const read = (x: number) => (x >= 2 ? "1" : x <= 0.8 ? "0" : "?");
-  const W = 480, H = 170;
-  const sy = (x: number) => H - (x / 3.3) * H;
+const adcSignal = (t: number, type: string) => {
+  if (type === "sine") return 2.5 + 2.0 * Math.sin(t * 2 * Math.PI * 1.5);
+  return 0.5 + 4.0 * (t % 1.0);
+};
+
+const NOISE_WOBBLE = [-0.4, 0.7, -0.8, 0.3, 0.9, -0.6, 0.5, -0.7];
+
+/** Visualizes continuous analog voltages converted to discrete binary levels (ADC). */
+export function AdcSampler() {
+  const [bitDepth, setBitDepth] = useState<number>(1);
+  const [sampleRate, setSampleRate] = useState<number>(16);
+  const [signalType] = useState<string>("sine");
+
+  const { samples, levels, stepVoltage } = useMemo(
+    () => simulateAdc((t) => adcSignal(t, signalType), 1.0, sampleRate, bitDepth, 5.0),
+    [signalType, sampleRate, bitDepth],
+  );
+
+  const W = 480;
+  const H = 190;
+  const padL = 36;
+  const padR = 12;
+  const padT = 16;
+  const padB = 24;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const toX = (t: number) => padL + t * plotW;
+  const toY = (v: number) => padT + (1 - v / 5.0) * plotH;
+
+  // Generate smooth analog path
+  const analogPoints: string[] = [];
+  for (let i = 0; i <= 100; i++) {
+    const t = i / 100;
+    const v = adcSignal(t, signalType);
+    analogPoints.push(`${toX(t).toFixed(1)},${toY(v).toFixed(1)}`);
+  }
+
+  // Generate quantized staircase path
+  const stairPoints: string[] = [];
+  samples.forEach((s, i) => {
+    const x = toX(s.timeSec);
+    const y = toY(s.quantizedVoltage);
+    const nextX = i < samples.length - 1 ? toX(samples[i + 1].timeSec) : toX(1.0);
+    if (i === 0) stairPoints.push(`M${x.toFixed(1)},${y.toFixed(1)}`);
+    stairPoints.push(`H${nextX.toFixed(1)}`);
+    if (i < samples.length - 1) {
+      const nextY = toY(samples[i + 1].quantizedVoltage);
+      stairPoints.push(`V${nextY.toFixed(1)}`);
+    }
+  });
+
   return (
-    <Panel title="Why two levels survive noise">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-sm border border-border bg-background/60">
-        <rect x={0} y={0} width={W} height={sy(2)} className="fill-mint/10" />
-        <rect x={0} y={sy(2)} width={W} height={sy(0.8) - sy(2)} className="fill-orange/15" />
-        <rect x={0} y={sy(0.8)} width={W} height={H - sy(0.8)} className="fill-sky/10" />
-        <text x={6} y={16} className="fill-mint font-mono text-[11px]">HIGH: 2 V to 3.3 V reads as 1</text>
-        <text x={6} y={sy(1.4) + 4} className="fill-orange font-mono text-[11px]">0.8 V to 2 V: not allowed</text>
-        <text x={6} y={H - 6} className="fill-sky font-mono text-[11px]">LOW: 0 V to 0.8 V reads as 0</text>
-        <polyline fill="none" strokeWidth={2.2} className="stroke-foreground" points={v.map((x, i) => `${24 + i * 48},${sy(x)}`).join(" ")} />
-        {v.map((x, i) => <circle key={i} cx={24 + i * 48} cy={sy(x)} r={4} className="fill-foreground" />)}
-      </svg>
-      <div className="flex flex-wrap gap-1 font-mono text-[13px]">
-        <span className="text-muted-foreground mr-2">sent {clean.map((c) => (c ? 1 : 0)).join(" ")}</span>
-        <span className="text-muted-foreground">read</span>
-        {v.map((x, i) => <span key={i} className={read(x) === "?" ? "text-orange font-bold" : read(x) === String(clean[i] ? 1 : 0) ? "text-mint" : "text-orange font-bold"}>{read(x)}</span>)}
+    <Panel title="Analog to digital: sampling and quantization">
+      <div className="flex flex-wrap items-center justify-between gap-3 font-mono text-[12px]">
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">depth</span>
+          <Toggle
+            value={String(bitDepth)}
+            options={[
+              ["1", "1-bit (2 levels)"],
+              ["2", "2-bit (4 levels)"],
+              ["3", "3-bit (8 levels)"],
+              ["4", "4-bit (16 levels)"],
+            ]}
+            onChange={(v) => setBitDepth(Number(v))}
+          />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">rate</span>
+          <Toggle
+            value={String(sampleRate)}
+            options={[
+              ["8", "8 Hz"],
+              ["16", "16 Hz"],
+              ["32", "32 Hz"],
+            ]}
+            onChange={(v) => setSampleRate(Number(v))}
+          />
+        </div>
       </div>
-      <label className="flex items-center gap-3 font-mono text-[12px] text-muted-foreground">
-        noise
-        <input type="range" min={0} max={0.7} step={0.05} value={noise} onChange={(e) => setNoise(Number(e.target.value))} aria-label="Noise level" className="flex-1 accent-[hsl(var(--orange))]" />
-        <span className="w-12 text-right text-foreground">±{(noise * 3.3).toFixed(1)} V</span>
-      </label>
+
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-sm border border-border bg-background/60" aria-label="ADC Sampling and Quantization Diagram">
+        {/* Horizontal voltage / quantization grid lines */}
+        {Array.from({ length: Math.min(17, levels + 1) }, (_, i) => {
+          const v = i * stepVoltage;
+          if (v > 5.0) return null;
+          const y = toY(v);
+          return (
+            <g key={i}>
+              <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="currentColor" strokeDasharray="2,3" className="text-border/60" strokeWidth={1} />
+              <text x={padL - 4} y={y + 3} textAnchor="end" className="fill-muted-foreground font-mono text-[9px]">{v.toFixed(1)}V</text>
+            </g>
+          );
+        })}
+
+        {/* Continuous analog curve */}
+        <polyline fill="none" strokeWidth={2} className="stroke-sky/60" points={analogPoints.join(" ")} />
+
+        {/* Quantized staircase curve */}
+        <path d={stairPoints.join(" ")} fill="none" strokeWidth={2.2} className="stroke-mint" />
+
+        {/* Sample points */}
+        {samples.map((s, i) => (
+          <circle key={i} cx={toX(s.timeSec)} cy={toY(s.quantizedVoltage)} r={3.2} className="fill-mint stroke-background stroke-[1.5]" />
+        ))}
+
+        {/* Axis labels */}
+        <text x={padL + 4} y={padT + 12} className="fill-sky font-mono text-[10px]">smooth analog signal</text>
+        <text x={padL + 4} y={padT + 24} className="fill-mint font-mono text-[10px]">quantized digital output ({levels} levels, step = {stepVoltage.toFixed(2)} V)</text>
+      </svg>
+
+      <div className="space-y-1.5 font-mono text-[12px]">
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="text-muted-foreground mr-1">binary stream:</span>
+          <div className="flex flex-wrap gap-1">
+            {samples.slice(0, 16).map((s, i) => (
+              <span key={i} className="px-1.5 py-0.5 rounded-[2px] border border-mint/40 bg-mint/10 text-mint text-[11px] font-bold">
+                {s.binaryCode}
+              </span>
+            ))}
+            {samples.length > 16 && <span className="text-muted-foreground text-[11px]">+{samples.length - 16} more</span>}
+          </div>
+        </div>
+        <p className="text-muted-foreground text-[12px] leading-relaxed">
+          {bitDepth === 1
+            ? "1-bit binary uses just two wide zones separated by a single threshold at 2.5 V. Noise can fluctuate by over 2 V without flipping the bit."
+            : `${bitDepth}-bit encoding packs ${levels} levels only ${stepVoltage.toFixed(2)} V apart. A tiny noise spike of ±${(stepVoltage / 2).toFixed(2)} V alters the reading, requiring shielded analog circuitry.`}
+        </p>
+      </div>
     </Panel>
   );
 }
 
-/** A clock's period, frequency and duty cycle, dragged live. */
+/** Interactive noise margins and logic family thresholds. */
+export function VoltageBands() {
+  const [family, setFamily] = useState<LogicFamilyId>("lvcmos");
+  const [noise, setNoise] = useState(0.25);
+  const [pattern] = useState<"alt" | "high" | "low">("alt");
+
+  const spec = LOGIC_FAMILIES[family];
+  const margins = useMemo(() => computeNoiseMargins(spec), [spec]);
+
+  const cleanBits = useMemo(() => {
+    if (pattern === "high") return [1, 1, 1, 1, 1, 1, 1, 1];
+    if (pattern === "low") return [0, 0, 0, 0, 0, 0, 0, 0];
+    return [0, 1, 0, 1, 1, 0, 1, 0];
+  }, [pattern]);
+
+  const samples = useMemo(() => {
+    if (family === "decimal") {
+      return cleanBits.map((_, i) => {
+        const nominal = i * 0.5;
+        const noisy = Math.max(0, Math.min(5.0, nominal + NOISE_WOBBLE[i] * noise * 2.0));
+        const res = classifyDecimalVoltage(noisy);
+        return {
+          sent: String(i),
+          noisy,
+          read: String(res.readDigit),
+          status: res.readDigit === i ? "correct" : "flipped",
+        };
+      });
+    }
+
+    return cleanBits.map((b, i) => {
+      const vTransmitted = b === 1 ? spec.voh : spec.vol;
+      const noisy = Math.max(0, Math.min(spec.vcc, vTransmitted + NOISE_WOBBLE[i] * noise * spec.vcc * 0.6));
+      const readVal = classifyLogicVoltage(noisy, spec.vih, spec.vil);
+      let status: "correct" | "forbidden" | "flipped" = "correct";
+      if (readVal === "?") status = "forbidden";
+      else if (readVal !== String(b)) status = "flipped";
+      return {
+        sent: String(b),
+        noisy,
+        read: readVal,
+        status,
+      };
+    });
+  }, [family, spec, cleanBits, noise]);
+
+  const W = 480;
+  const H = 190;
+  const vMax = spec.vcc;
+  const sy = (x: number) => H - (x / vMax) * (H - 24) - 12;
+
+  return (
+    <Panel title="Logic levels, noise margins, and threshold bands">
+      <div className="flex flex-wrap items-center gap-2 font-mono text-[12px]">
+        <span className="text-muted-foreground">family</span>
+        <Toggle
+          value={family}
+          options={[
+            ["lvcmos", "3.3V LVCMOS"],
+            ["ttl", "5V TTL"],
+            ["cmos", "5V CMOS"],
+            ["mismatched", "TTL → CMOS Mismatch"],
+            ["decimal", "10-Level Decimal"],
+          ]}
+          onChange={(v) => setFamily(v as LogicFamilyId)}
+        />
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-sm border border-border bg-background/60" aria-label="Voltage bands and noise margin diagram">
+        {family !== "decimal" ? (
+          <>
+            {/* Valid HIGH band */}
+            <rect x={0} y={sy(vMax)} width={W} height={sy(spec.vih) - sy(vMax)} className="fill-mint/10" />
+            {/* Forbidden / Indeterminate band */}
+            <rect x={0} y={sy(spec.vih)} width={W} height={sy(spec.vil) - sy(spec.vih)} className="fill-orange/15" />
+            {/* Valid LOW band */}
+            <rect x={0} y={sy(spec.vil)} width={W} height={H - 12 - sy(spec.vil)} className="fill-sky/10" />
+
+            {/* Threshold boundary lines */}
+            <line x1={0} y1={sy(spec.vih)} x2={W} y2={sy(spec.vih)} stroke="currentColor" strokeDasharray="3,3" className="text-orange" strokeWidth={1.2} />
+            <line x1={0} y1={sy(spec.vil)} x2={W} y2={sy(spec.vil)} stroke="currentColor" strokeDasharray="3,3" className="text-orange" strokeWidth={1.2} />
+
+            {/* Labels */}
+            <text x={8} y={sy(vMax) + 14} className="fill-mint font-mono text-[10px] font-bold">
+              HIGH: ≥ {spec.vih} V (reads 1) · V_OH(min) = {spec.voh} V
+            </text>
+            <text x={8} y={sy((spec.vih + spec.vil) / 2) + 4} className="fill-orange font-mono text-[10px] font-bold">
+              Forbidden region ({spec.vil} V to {spec.vih} V)
+            </text>
+            <text x={8} y={H - 16} className="fill-sky font-mono text-[10px] font-bold">
+              LOW: ≤ {spec.vil} V (reads 0) · V_OL(max) = {spec.vol} V
+            </text>
+          </>
+        ) : (
+          <>
+            {/* 10 Decimal bands */}
+            {Array.from({ length: 10 }, (_, i) => {
+              const yNom = sy(i * 0.5);
+              return (
+                <g key={i}>
+                  <rect x={0} y={sy((i + 0.5) * 0.5)} width={W} height={sy(Math.max(0, (i - 0.5) * 0.5)) - sy((i + 0.5) * 0.5)} className={i % 2 === 0 ? "fill-sky/5" : "fill-mint/5"} />
+                  <line x1={0} y1={yNom} x2={W} y2={yNom} stroke="currentColor" strokeDasharray="2,3" className="text-border" strokeWidth={1} />
+                  <text x={8} y={yNom + 3} className="fill-foreground font-mono text-[9px]">Digit {i}: {(i * 0.5).toFixed(1)} V (margin ±0.25 V)</text>
+                </g>
+              );
+            })}
+          </>
+        )}
+
+        {/* Voltage trace */}
+        <polyline
+          fill="none"
+          strokeWidth={2.2}
+          className="stroke-foreground"
+          points={samples.map((s, i) => `${36 + i * 54},${sy(s.noisy)}`).join(" ")}
+        />
+
+        {/* Sample dots */}
+        {samples.map((s, i) => {
+          const cx = 36 + i * 54;
+          const cy = sy(s.noisy);
+          const fill = s.status === "correct" ? "fill-mint" : s.status === "forbidden" ? "fill-orange" : "fill-orange stroke-red-500 stroke-2";
+          return (
+            <g key={i}>
+              <circle cx={cx} cy={cy} r={4.5} className={fill} />
+              <text x={cx} y={cy - 8} textAnchor="middle" className="fill-foreground font-mono text-[10px] font-bold">{s.noisy.toFixed(2)}V</text>
+            </g>
+          );
+        })}
+      </svg>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 font-mono text-[12px]">
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground mr-1">sent</span>
+          <div className="flex gap-1.5">
+            {samples.map((s, i) => (
+              <span key={i} className="w-6 text-center text-muted-foreground">{s.sent}</span>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground mr-1">received</span>
+          <div className="flex gap-1.5">
+            {samples.map((s, i) => {
+              const cls = s.status === "correct" ? "text-mint font-bold" : s.status === "forbidden" ? "text-orange font-bold" : "text-destructive font-bold";
+              return (
+                <span key={i} className={`w-6 text-center ${cls}`}>{s.read}</span>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="flex items-center gap-3 font-mono text-[12px] text-muted-foreground">
+          <span>noise level</span>
+          <input
+            type="range"
+            min={0}
+            max={family === "decimal" ? 0.35 : 0.8}
+            step={0.02}
+            value={noise}
+            onChange={(e) => setNoise(Number(e.target.value))}
+            aria-label="Noise level"
+            className="flex-1 accent-[hsl(var(--orange))]"
+          />
+          <span className="w-16 text-right text-foreground">±{(noise * (family === "decimal" ? 2.0 : spec.vcc * 0.6)).toFixed(2)} V</span>
+        </label>
+
+        {family !== "decimal" ? (
+          <div className="flex flex-wrap gap-x-6 gap-y-1 font-mono text-[12px]">
+            <span>V_NH = V_OH - V_IH = <strong className={margins.vnh < 0 ? "text-orange" : "text-mint"}>{margins.vnh.toFixed(2)} V</strong></span>
+            <span>V_NL = V_IL - V_OL = <strong className="text-mint">{margins.vnl.toFixed(2)} V</strong></span>
+            <span>Overall Margin V_N = <strong className={margins.vn < 0 ? "text-orange" : "text-mint"}>{margins.vn.toFixed(2)} V</strong></span>
+          </div>
+        ) : (
+          <div className="font-mono text-[12px] text-orange">
+            Decimal margin is only ±0.25 V between adjacent digits! Any noise spike exceeding 0.25 V instantly flips a digit.
+          </div>
+        )}
+
+        {family === "mismatched" && (
+          <div className="p-2 rounded border border-orange/40 bg-orange/10 font-mono text-[11px] text-orange">
+            Warning: Standard 5V TTL driver guarantees V_OH(min) = 2.4 V, but 74HC CMOS receiver requires V_IH(min) = 3.5 V. Transmitted logic 1 falls squarely into the CMOS forbidden zone without a 74HCT interface chip!
+          </div>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
+/** Interactive demonstration of Push-Pull bus contention vs Open-Drain wired-AND. */
+export function BusContentionVisualizer() {
+  const [mode, setMode] = useState<DriverMode>("push-pull");
+  const [driverA, setDriverA] = useState<DriverState>("HIGH");
+  const [driverB, setDriverB] = useState<DriverState>("LOW");
+
+  const sim = useMemo(
+    () => simulateBusDrivers(mode, driverA, driverB, 10000, 5.0),
+    [mode, driverA, driverB],
+  );
+
+  const W = 480;
+  const H = 160;
+
+  return (
+    <Panel title="Push-pull bus contention vs open-drain wired-AND">
+      <div className="flex flex-wrap items-center justify-between gap-3 font-mono text-[12px]">
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">architecture</span>
+          <Toggle
+            value={mode}
+            options={[
+              ["push-pull", "Push-Pull (Totem Pole)"],
+              ["open-drain", "Open-Drain with Pull-Up"],
+            ]}
+            onChange={(v) => {
+              setMode(v as DriverMode);
+              if (v === "open-drain") {
+                setDriverA("Hi-Z");
+                setDriverB("Hi-Z");
+              } else {
+                setDriverA("HIGH");
+                setDriverB("LOW");
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 font-mono text-[12px]">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground">Driver A:</span>
+          {mode === "push-pull" ? (
+            <Toggle
+              value={driverA}
+              options={[
+                ["HIGH", "HIGH (5V)"],
+                ["LOW", "LOW (0V)"],
+              ]}
+              onChange={(v) => setDriverA(v as DriverState)}
+            />
+          ) : (
+            <Toggle
+              value={driverA}
+              options={[
+                ["Hi-Z", "Idle (Hi-Z)"],
+                ["LOW", "Active LOW (0V)"],
+              ]}
+              onChange={(v) => setDriverA(v as DriverState)}
+            />
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground">Driver B:</span>
+          {mode === "push-pull" ? (
+            <Toggle
+              value={driverB}
+              options={[
+                ["HIGH", "HIGH (5V)"],
+                ["LOW", "LOW (0V)"],
+              ]}
+              onChange={(v) => setDriverB(v as DriverState)}
+            />
+          ) : (
+            <Toggle
+              value={driverB}
+              options={[
+                ["Hi-Z", "Idle (Hi-Z)"],
+                ["LOW", "Active LOW (0V)"],
+              ]}
+              onChange={(v) => setDriverB(v as DriverState)}
+            />
+          )}
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-sm border border-border bg-background/60" aria-label="Circuit schematic of bus drivers">
+        {/* V_CC Rail */}
+        <line x1={40} y1={20} x2={440} y2={20} stroke="currentColor" strokeWidth={2.5} className="text-mint" />
+        <text x={445} y={24} className="fill-mint font-mono text-[11px] font-bold">V_CC (5V)</text>
+
+        {/* GND Rail */}
+        <line x1={40} y1={140} x2={440} y2={140} stroke="currentColor" strokeWidth={2.5} className="text-sky" />
+        <text x={445} y={144} className="fill-sky font-mono text-[11px] font-bold">GND (0V)</text>
+
+        {/* Bus Wire (Middle) */}
+        <line
+          x1={60}
+          y1={80}
+          x2={420}
+          y2={80}
+          strokeWidth={sim.hasContention ? 3.5 : 2.5}
+          className={sim.hasContention ? "stroke-orange animate-pulse" : sim.busLogic === "HIGH" ? "stroke-mint" : "stroke-sky"}
+        />
+        <text x={425} y={84} className={`font-mono text-[11px] font-bold ${sim.hasContention ? "fill-orange" : sim.busLogic === "HIGH" ? "fill-mint" : "fill-sky"}`}>
+          Bus: {sim.busVoltage.toFixed(1)}V ({sim.busLogic})
+        </text>
+
+        {/* Driver A Box */}
+        <rect x={70} y={35} width={90} height={90} rx={4} className="fill-background/80 stroke-border" strokeWidth={1.5} />
+        <text x={115} y={50} textAnchor="middle" className="fill-foreground font-mono text-[10px] font-bold">Driver A</text>
+        <text x={115} y={64} textAnchor="middle" className="fill-muted-foreground font-mono text-[9px]">{driverA}</text>
+
+        {/* Driver A connections */}
+        {mode === "push-pull" ? (
+          <>
+            <line x1={115} y1={20} x2={115} y2={35} stroke="currentColor" className={driverA === "HIGH" ? "text-mint" : "text-border"} strokeWidth={2} />
+            <line x1={115} y1={125} x2={115} y2={140} stroke="currentColor" className={driverA === "LOW" ? "text-sky" : "text-border"} strokeWidth={2} />
+            <line x1={160} y1={80} x2={175} y2={80} stroke="currentColor" className="text-foreground" strokeWidth={2} />
+          </>
+        ) : (
+          <>
+            <line x1={115} y1={125} x2={115} y2={140} stroke="currentColor" className={driverA === "LOW" ? "text-sky" : "text-border"} strokeWidth={2} />
+            <line x1={160} y1={80} x2={175} y2={80} stroke="currentColor" className="text-foreground" strokeWidth={2} />
+          </>
+        )}
+
+        {/* Driver B Box */}
+        <rect x={310} y={35} width={90} height={90} rx={4} className="fill-background/80 stroke-border" strokeWidth={1.5} />
+        <text x={355} y={50} textAnchor="middle" className="fill-foreground font-mono text-[10px] font-bold">Driver B</text>
+        <text x={355} y={64} textAnchor="middle" className="fill-muted-foreground font-mono text-[9px]">{driverB}</text>
+
+        {/* Driver B connections */}
+        {mode === "push-pull" ? (
+          <>
+            <line x1={355} y1={20} x2={355} y2={35} stroke="currentColor" className={driverB === "HIGH" ? "text-mint" : "text-border"} strokeWidth={2} />
+            <line x1={355} y1={125} x2={355} y2={140} stroke="currentColor" className={driverB === "LOW" ? "text-sky" : "text-border"} strokeWidth={2} />
+            <line x1={295} y1={80} x2={310} y2={80} stroke="currentColor" className="text-foreground" strokeWidth={2} />
+          </>
+        ) : (
+          <>
+            <line x1={355} y1={125} x2={355} y2={140} stroke="currentColor" className={driverB === "LOW" ? "text-sky" : "text-border"} strokeWidth={2} />
+            <line x1={295} y1={80} x2={310} y2={80} stroke="currentColor" className="text-foreground" strokeWidth={2} />
+          </>
+        )}
+
+        {/* Pull-Up Resistor in Open-Drain Mode */}
+        {mode === "open-drain" && (
+          <g>
+            <line x1={235} y1={20} x2={235} y2={45} stroke="currentColor" className="text-mint" strokeWidth={1.5} />
+            <rect x={223} y={45} width={24} height={22} rx={2} className="fill-mint/20 stroke-mint" strokeWidth={1.5} />
+            <text x={235} y={60} textAnchor="middle" className="fill-mint font-mono text-[9px] font-bold">10kΩ</text>
+            <line x1={235} y1={67} x2={235} y2={80} stroke="currentColor" className="text-mint" strokeWidth={1.5} />
+            <circle cx={235} cy={80} r={3} className="fill-mint" />
+          </g>
+        )}
+
+        {/* Contention short-circuit current arrow */}
+        {sim.hasContention && (
+          <g className="animate-pulse">
+            <path
+              d={driverA === "HIGH" ? "M115,20 L115,80 L355,80 L355,140" : "M355,20 L355,80 L115,80 L115,140"}
+              fill="none"
+              stroke="#f97316"
+              strokeWidth={3}
+              strokeDasharray="6,4"
+            />
+            <text x={235} y={105} textAnchor="middle" className="fill-orange font-mono text-[11px] font-bold">
+              ⚡ SHORT CIRCUIT: 125 mA
+            </text>
+          </g>
+        )}
+      </svg>
+
+      <div className={`p-2.5 rounded border font-mono text-[12px] ${sim.hasContention ? "border-orange/50 bg-orange/10 text-orange" : "border-border bg-background/50 text-foreground"}`}>
+        <div className="font-bold">{sim.summary}</div>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {mode === "push-pull"
+            ? "Push-pull drivers must never share a wire without tri-state enable logic. Conflicting outputs short V_CC directly to GND."
+            : "In open-drain, drivers only pull down or release (Hi-Z). Multiple chips can safely share a single wire with a pull-up resistor (wired-AND reset bus, I2C)."}
+        </p>
+      </div>
+    </Panel>
+  );
+}
+
+/** A clock's period, frequency, duty cycle, and real-world rise/fall times. */
 export function ClockExplorer() {
+  const [tab, setTab] = useState<"ideal" | "real">("ideal");
   const [period, setPeriod] = useState(10);
   const [width, setWidth] = useState(50);
-  const W = 480, H = 90;
-  const px = 480 / 48;
+  const [riseTime, setRiseTime] = useState(1.5);
+
+  const W = 480;
+  const H = 100;
+  const px = W / 48;
   const high = (period * width) / 100;
-  const pts: string[] = [];
-  for (let t = 0; t < 48; t += period) pts.push(`${t * px},${H - 15} ${t * px},18 ${(t + high) * px},18 ${(t + high) * px},${H - 15} ${(t + period) * px},${H - 15}`);
+
+  // Ideal square wave points
+  const idealPts: string[] = [];
+  for (let t = 0; t < 48; t += period) {
+    idealPts.push(`${t * px},${H - 18} ${t * px},18 ${(t + high) * px},18 ${(t + high) * px},${H - 18} ${(t + period) * px},${H - 18}`);
+  }
+
+  // Real waveform points
+  const realPts = useMemo(() => {
+    return generateRealWaveform(period, width, riseTime, riseTime, 0.12, 3.3, 3, 60);
+  }, [period, width, riseTime]);
+
+  const sy = (v: number) => H - 18 - (v / 3.3) * (H - 36);
+  const sx = (t: number) => (t / (3 * period)) * W;
+
   return (
-    <Panel title="Period, frequency, duty cycle">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-sm border border-border bg-background/60">
-        <polyline fill="none" strokeWidth={2.4} className="stroke-mint" points={pts.join(" ")} />
-        <path d={`M0,8H${period * px}`} strokeWidth={1.5} className="stroke-sky" />
-        <text x={4} y={7} className="fill-sky font-mono text-[9px]">T</text>
+    <Panel title="Period, frequency, duty cycle, and real edges">
+      <div className="flex flex-wrap items-center justify-between gap-3 font-mono text-[12px]">
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">waveform</span>
+          <Toggle
+            value={tab}
+            options={[
+              ["ideal", "Ideal Square Wave"],
+              ["real", "Real-World Waveform"],
+            ]}
+            onChange={(v) => setTab(v as "ideal" | "real")}
+          />
+        </div>
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full rounded-sm border border-border bg-background/60" aria-label="Clock signal waveform diagram">
+        {tab === "ideal" ? (
+          <>
+            <polyline fill="none" strokeWidth={2.4} className="stroke-mint" points={idealPts.join(" ")} />
+            <path d={`M0,8H${period * px}`} strokeWidth={1.5} className="stroke-sky" />
+            <text x={4} y={7} className="fill-sky font-mono text-[9px]">T = {period} ns</text>
+          </>
+        ) : (
+          <>
+            {/* 10% and 90% reference lines */}
+            <line x1={0} y1={sy(3.3 * 0.9)} x2={W} y2={sy(3.3 * 0.9)} stroke="currentColor" strokeDasharray="2,3" className="text-border" strokeWidth={1} />
+            <line x1={0} y1={sy(3.3 * 0.1)} x2={W} y2={sy(3.3 * 0.1)} stroke="currentColor" strokeDasharray="2,3" className="text-border" strokeWidth={1} />
+            <text x={6} y={sy(3.3 * 0.9) - 3} className="fill-muted-foreground font-mono text-[8px]">90%</text>
+            <text x={6} y={sy(3.3 * 0.1) - 3} className="fill-muted-foreground font-mono text-[8px]">10%</text>
+
+            <polyline
+              fill="none"
+              strokeWidth={2.4}
+              className="stroke-mint"
+              points={realPts.map((p) => `${sx(p.t).toFixed(1)},${sy(p.v).toFixed(1)}`).join(" ")}
+            />
+
+            <text x={W - 6} y={14} textAnchor="end" className="fill-orange font-mono text-[9px]">
+              overshoot & ringing
+            </text>
+          </>
+        )}
       </svg>
-      <label className="flex items-center gap-3 font-mono text-[12px] text-muted-foreground">period
-        <input type="range" min={4} max={24} value={period} onChange={(e) => setPeriod(Number(e.target.value))} aria-label="Period in nanoseconds" className="flex-1 accent-[hsl(var(--sky))]" />
-      </label>
-      <label className="flex items-center gap-3 font-mono text-[12px] text-muted-foreground">HIGH time
-        <input type="range" min={10} max={90} step={5} value={width} onChange={(e) => setWidth(Number(e.target.value))} aria-label="Duty cycle percent" className="flex-1 accent-[hsl(var(--mint))]" />
-      </label>
-      <div className="font-mono text-[13px] flex flex-wrap gap-x-6">
-        <span>T = {period} ns</span><span>f = 1/T = {(1000 / period).toFixed(0)} MHz</span><span>duty cycle = {width}%</span>
+
+      <div className="space-y-2">
+        <label className="flex items-center gap-3 font-mono text-[12px] text-muted-foreground">
+          <span>period (T)</span>
+          <input
+            type="range"
+            min={4}
+            max={24}
+            value={period}
+            onChange={(e) => setPeriod(Number(e.target.value))}
+            aria-label="Period in nanoseconds"
+            className="flex-1 accent-[hsl(var(--sky))]"
+          />
+          <span className="w-16 text-right text-foreground">{period} ns</span>
+        </label>
+
+        <label className="flex items-center gap-3 font-mono text-[12px] text-muted-foreground">
+          <span>HIGH time (t_w)</span>
+          <input
+            type="range"
+            min={10}
+            max={90}
+            step={5}
+            value={width}
+            onChange={(e) => setWidth(Number(e.target.value))}
+            aria-label="Duty cycle percent"
+            className="flex-1 accent-[hsl(var(--mint))]"
+          />
+          <span className="w-16 text-right text-foreground">{width}%</span>
+        </label>
+
+        {tab === "real" && (
+          <label className="flex items-center gap-3 font-mono text-[12px] text-muted-foreground">
+            <span>rise time (t_r, 10% to 90%)</span>
+            <input
+              type="range"
+              min={0.5}
+              max={Math.min(4.0, (period * width) / 100)}
+              step={0.1}
+              value={riseTime}
+              onChange={(e) => setRiseTime(Number(e.target.value))}
+              aria-label="Rise time in nanoseconds"
+              className="flex-1 accent-[hsl(var(--orange))]"
+            />
+            <span className="w-16 text-right text-foreground">{riseTime.toFixed(1)} ns</span>
+          </label>
+        )}
+
+        <div className="font-mono text-[12px] flex flex-wrap gap-x-6 gap-y-1">
+          <span>T = <strong>{period} ns</strong></span>
+          <span>f = 1/T = <strong>{(1000 / period).toFixed(0)} MHz</strong></span>
+          <span>t_w = <strong>{((period * width) / 100).toFixed(1)} ns</strong></span>
+          <span>duty cycle = <strong>{width}%</strong></span>
+          {tab === "real" && (
+            <span>t_r / T = <strong>{((riseTime / period) * 100).toFixed(0)}%</strong></span>
+          )}
+        </div>
       </div>
     </Panel>
   );
 }
 
-/** Serial sends one bit per tick on one wire; parallel sends them all at once on eight. */
+/** Serial transmission vs parallel transmission, and the clock skew frequency wall. */
 export function SerialParallel() {
+  const [tab, setTab] = useState<"live" | "skew">("live");
   const byte = "01000111";
   const [t, setT] = useState(0);
+  const [playing, setPlaying] = useState(true);
+
+  // Skew simulator state
+  const [freqMhz, setFreqMhz] = useState(33);
+  const [deltaMm, setDeltaMm] = useState(30);
+
   useEffect(() => {
+    if (!playing || tab !== "live") return;
     const id = setInterval(() => setT((x) => (x + 1) % 10), 800);
     return () => clearInterval(id);
-  }, []);
+  }, [playing, tab]);
+
+  const skew = useMemo(
+    () => evaluateParallelSkew(freqMhz, deltaMm),
+    [freqMhz, deltaMm],
+  );
+
   return (
-    <Panel title="The same byte, two ways">
-      <div className="grid md:grid-cols-2 gap-6 font-mono text-[12px]">
-        <div>
-          <div className="text-muted-foreground mb-2">Serial: one wire, 8 ticks</div>
-          <div className="flex gap-1">{[...byte].map((b, i) => <span key={i} className={`w-7 h-7 flex items-center justify-center border rounded-[2px] ${i < t ? "border-mint bg-mint/20" : i === t ? "border-neon bg-neon/20" : "border-border text-muted-foreground"}`}>{b}</span>)}</div>
-          <div className="mt-2 text-muted-foreground">tick {Math.min(t + 1, 8)} of 8 {t >= 8 && "· done"}</div>
-        </div>
-        <div>
-          <div className="text-muted-foreground mb-2">Parallel: eight wires, 1 tick</div>
-          <div className="flex flex-col gap-0.5">{[...byte].map((b, i) => <div key={i} className="flex items-center gap-2"><span className="w-3">{b}</span><span className={`h-1 flex-1 ${b === "1" ? "bg-mint" : "bg-border"}`} /></div>)}</div>
-        </div>
+    <Panel title="Serial vs parallel transmission, and the clock skew bottleneck">
+      <div className="flex flex-wrap items-center justify-between gap-3 font-mono text-[12px]">
+        <Toggle
+          value={tab}
+          options={[
+            ["live", "Transmission Comparison"],
+            ["skew", "Parallel Skew & Frequency Limit"],
+          ]}
+          onChange={(v) => setTab(v as "live" | "skew")}
+        />
+        {tab === "live" && (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPlaying(!playing)}
+              className={`${btn} py-0.5 px-2 text-[11px]`}
+            >
+              {playing ? "pause" : "play"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setT((x) => (x + 1) % 10)}
+              className={`${btn} py-0.5 px-2 text-[11px]`}
+            >
+              step
+            </button>
+            <button
+              type="button"
+              onClick={() => setT(0)}
+              className={`${btn} py-0.5 px-2 text-[11px]`}
+            >
+              reset
+            </button>
+          </div>
+        )}
       </div>
+
+      {tab === "live" ? (
+        <div className="grid md:grid-cols-2 gap-6 font-mono text-[12px]">
+          <div className="p-3 rounded border border-border bg-background/50">
+            <div className="text-muted-foreground mb-2 font-bold">Serial: 1 wire, 8 clock ticks</div>
+            <div className="flex gap-1">
+              {[...byte].map((b, i) => (
+                <span
+                  key={i}
+                  className={`w-7 h-7 flex items-center justify-center border rounded-[2px] ${
+                    i < t ? "border-mint bg-mint/20 font-bold" : i === t ? "border-neon bg-neon/20 font-bold animate-pulse" : "border-border text-muted-foreground"
+                  }`}
+                >
+                  {b}
+                </span>
+              ))}
+            </div>
+            <div className="mt-2 text-muted-foreground text-[11px]">
+              Tick {Math.min(t + 1, 8)} of 8 {t >= 8 && "· byte complete"}
+            </div>
+            <p className="mt-2 text-muted-foreground text-[11px] leading-relaxed">
+              Bits stream sequentially across one wire. Low pin count, compact connectors, zero inter-wire skew.
+            </p>
+          </div>
+
+          <div className="p-3 rounded border border-border bg-background/50">
+            <div className="text-muted-foreground mb-2 font-bold">Parallel: 8 wires, 1 clock tick</div>
+            <div className="flex flex-col gap-1">
+              {[...byte].map((b, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="w-4 text-muted-foreground text-[10px]">d{i}</span>
+                  <span className={`w-5 h-5 flex items-center justify-center rounded-[2px] border ${b === "1" ? "border-mint bg-mint/20 text-mint font-bold" : "border-border text-muted-foreground"}`}>
+                    {b}
+                  </span>
+                  <span className={`h-1 flex-1 ${b === "1" ? "bg-mint" : "bg-border"}`} />
+                  <span className="text-[10px] text-muted-foreground">wire {i}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 text-muted-foreground text-[11px]">All 8 bits transfer in a single clock tick.</div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3 font-mono text-[12px]">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">clock frequency:</span>
+            <Toggle
+              value={String(freqMhz)}
+              options={[
+                ["33", "33 MHz (PCI)"],
+                ["100", "100 MHz (IDE)"],
+                ["500", "500 MHz"],
+                ["2500", "2.5 GHz (PCIe Gen 1)"],
+              ]}
+              onChange={(v) => setFreqMhz(Number(v))}
+            />
+          </div>
+
+          <label className="flex items-center gap-3 text-muted-foreground">
+            <span>trace length difference (ΔL):</span>
+            <input
+              type="range"
+              min={0}
+              max={50}
+              value={deltaMm}
+              onChange={(e) => setDeltaMm(Number(e.target.value))}
+              aria-label="Trace length difference in millimeters"
+              className="flex-1 accent-[hsl(var(--orange))]"
+            />
+            <span className="w-16 text-right text-foreground">{deltaMm} mm</span>
+          </label>
+
+          <div className="p-3 rounded border bg-background/60 space-y-2">
+            <div className="flex flex-wrap gap-x-6 gap-y-1">
+              <span>Clock Period: <strong>{skew.periodPs >= 1000 ? `${(skew.periodPs / 1000).toFixed(1)} ns` : `${skew.periodPs} ps`}</strong></span>
+              <span>Propagation Skew (Δt): <strong>{skew.skewPs.toFixed(0)} ps</strong></span>
+              <span>Skew / Period: <strong className={skew.isReliable ? "text-mint" : "text-destructive"}>{(skew.skewFraction * 100).toFixed(1)}%</strong></span>
+            </div>
+
+            <div className={`p-2 rounded text-[11px] font-bold ${skew.isReliable ? "bg-mint/10 text-mint border border-mint/30" : "bg-destructive/10 text-destructive border border-destructive/30"}`}>
+              {skew.isReliable
+                ? `✓ RELIABLE: Skew consumes only ${(skew.skewFraction * 100).toFixed(1)}% of clock cycle. Bits settle well within register setup time.`
+                : `⚡ BUS FAILURE: Skew consumes ${(skew.skewFraction * 100).toFixed(1)}% of clock cycle! Bits launched in cycle N collide with cycle N+1 at receiving flip-flops.`}
+            </div>
+
+            <p className="text-muted-foreground text-[11px] leading-relaxed">
+              Signals in circuit board copper travel at 15 cm/ns (6.67 ps/mm). A small 30 mm routing difference produces a 200 ps arrival gap. At 33 MHz (30.3 ns cycle) this is harmless (&lt;1%), but at 2.5 GHz (400 ps cycle) it eats 50% of the entire cycle, making wide parallel buses physically impossible at modern speeds.
+            </p>
+          </div>
+        </div>
+      )}
     </Panel>
   );
 }

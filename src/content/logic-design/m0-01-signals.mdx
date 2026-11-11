@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
-import { VoltageBands, ClockExplorer, SerialParallel } from "@/components/mdx/LogicVisualizers";
+import { AdcSampler, VoltageBands, BusContentionVisualizer, ClockExplorer, SerialParallel } from "@/components/mdx/LogicVisualizers";
 
 # Signals: Why Computers Use Only Two Values
 
@@ -36,6 +36,8 @@ Most electronic systems move between both realms:
 - An **ADC** (analog-to-digital converter) converts continuous analog voltages into digital numbers in two steps:
   1. **Sampling:** Measuring the analog voltage at regular time intervals. You can explore how audio signals are converted in [sampling](/courses/computational-mathematics/sound-and-sampling#sampling-what-44100-per-second-means).
   2. **Quantization:** Rounding each measured analog voltage to the nearest allowable binary value.
+
+<AdcSampler />
 
 <Callout tone="orange" label="Mistake students make">
 **Assuming digital signals are ideal square waves with zero noise.** In real circuits, the voltage along a copper wire is always an analog waveform with rounded edges and electrical noise. Digital circuits do not remove noise from the wire. Instead, they ignore it by grouping continuous voltage ranges into two logical states.
@@ -223,7 +225,7 @@ Consider a standard 5V TTL driver connected to a receiving gate over a circuit b
 **Inverting the low-level noise margin formula.** Students often write $V_{NL} = V_{OL(max)} - V_{IL(max)}$, which gives a negative number like $0.4\text{ V} - 0.8\text{ V} = -0.4\text{ V}$. Noise margins are always positive tolerances: subtract the driver limit from the receiver threshold ($V_{NL} = V_{IL(max)} - V_{OL(max)} > 0$). Calculating $V_{OH} - V_{OL}$ is also a mistake; that measures the total output voltage swing, not the noise margin.
 </Callout>
 
-Drag the noise slider in the interactive diagram below to observe how noise affects the signal line before a reading flips into the forbidden band:
+Compare logic families, threshold boundaries, and noise margins in the interactive diagram below to observe how noise affects incoming signals before entering the forbidden region:
 
 <VoltageBands />
 
@@ -264,6 +266,8 @@ Output ---+                            Output ----+--------- Bus Wire
    - If any chip on the bus acts, it turns its NMOS transistor ON, pulling the wire down to $0\text{ V}$ (active-LOW).
 
 This hardware configuration creates a **wired-AND** (or wired-OR) connection. Multiple chips, such as a CPU, a manual push button, and a power monitor, can all drive the same $\overline{\text{RESET}}$ line without damaging each other.
+
+<BusContentionVisualizer />
 
 <Callout tone="mint" label="Fail-safe power-on property">
 Active-LOW reset lines provide a natural physical fail-safe. When a computer turns on, power supply voltages take milliseconds to ramp up, and unpowered chips sit near $0\text{ V}$. An active-LOW reset line holds the CPU in reset until $V_{CC}$ stabilizes and the pull-up resistor lifts the line to HIGH, preventing accidental instruction execution during power brownouts.

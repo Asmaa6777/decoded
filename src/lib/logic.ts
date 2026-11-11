@@ -45,6 +45,298 @@ export function settle(gates: NetGate[], inputs: Signals, start: Signals, limit 
   return { frames, stable: false };
 }
 
+/* ------------------------------- signals ------------------------------- */
+
+export type LogicFamilyId = "ttl" | "cmos" | "lvcmos" | "mismatched" | "decimal";
+
+export type LogicFamilySpec = {
+  id: LogicFamilyId;
+  name: string;
+  vcc: number;
+  voh: number;
+  vol: number;
+  vih: number;
+  vil: number;
+  description: string;
+};
+
+export const LOGIC_FAMILIES: Record<LogicFamilyId, LogicFamilySpec> = {
+  ttl: {
+    id: "ttl",
+    name: "5V Standard TTL",
+    vcc: 5.0,
+    voh: 2.4,
+    vol: 0.4,
+    vih: 2.0,
+    vil: 0.8,
+    description: "Bipolar transistors. V_OH limited to 2.4 V by internal drops. V_N = 0.4 V.",
+  },
+  cmos: {
+    id: "cmos",
+    name: "5V CMOS (74HC)",
+    vcc: 5.0,
+    voh: 4.4,
+    vol: 0.1,
+    vih: 3.5,
+    vil: 1.5,
+    description: "Rail-to-rail CMOS outputs. High noise margins: V_NH = 0.9 V, V_NL = 1.4 V.",
+  },
+  lvcmos: {
+    id: "lvcmos",
+    name: "3.3V LVCMOS",
+    vcc: 3.3,
+    voh: 2.4,
+    vol: 0.4,
+    vih: 2.0,
+    vil: 0.8,
+    description: "Low-voltage 3.3 V logic for modern lower power chips. V_N = 0.4 V.",
+  },
+  mismatched: {
+    id: "mismatched",
+    name: "TTL Driver → 74HC CMOS Receiver",
+    vcc: 5.0,
+    voh: 2.4,
+    vol: 0.4,
+    vih: 3.5,
+    vil: 1.5,
+    description: "TTL V_OH(2.4 V) < CMOS V_IH(3.5 V)! HIGH signal falls into forbidden region.",
+  },
+  decimal: {
+    id: "decimal",
+    name: "10-Level Decimal (0.5 V steps)",
+    vcc: 5.0,
+    voh: 4.5,
+    vol: 0.0,
+    vih: 2.75,
+    vil: 2.25,
+    description: "10 fragile voltage levels (0.5 V spacing). Noise margin is only 0.25 V.",
+  },
+};
+
+/** Calculates high-level (V_NH), low-level (V_NL), and overall (V_N) noise margins. */
+export function computeNoiseMargins(spec: Pick<LogicFamilySpec, "voh" | "vol" | "vih" | "vil">) {
+  const vnh = Number((spec.voh - spec.vih).toFixed(3));
+  const vnl = Number((spec.vil - spec.vol).toFixed(3));
+  const vn = Math.min(vnh, vnl);
+  return { vnh, vnl, vn };
+}
+
+/** Classifies an incoming receiver voltage as valid 1, valid 0, or forbidden (?). */
+export function classifyLogicVoltage(v: number, vih: number, vil: number): "1" | "0" | "?" {
+  if (v >= vih) return "1";
+  if (v <= vil) return "0";
+  return "?";
+}
+
+/** For 10-level decimal: checks if a voltage is within the ±0.25 V decision boundary of a digit. */
+export function classifyDecimalVoltage(v: number) {
+  const clamped = Math.max(0, Math.min(5.0, v));
+  const digit = Math.max(0, Math.min(9, Math.round(clamped / 0.5)));
+  const nominal = Number((digit * 0.5).toFixed(2));
+  const delta = Number(Math.abs(clamped - nominal).toFixed(3));
+  const error = delta > 0.25;
+  return { digit, nominal, delta, error };
+}
+
+export type DriverMode = "push-pull" | "open-drain";
+export type DriverState = "HIGH" | "LOW" | "Hi-Z";
+
+export type BusContentionResult = {
+  busVoltage: number;
+  busLogic: "HIGH" | "LOW" | "Hi-Z" | "CONTENTION";
+  hasContention: boolean;
+  currentMa: number;
+  summary: string;
+};
+
+/** Simulates two output stages tied to a shared bus wire. */
+export function simulateBusDrivers(
+  mode: DriverMode,
+  driverA: DriverState,
+  driverB: DriverState,
+  pullUpOhms = 10000,
+  vcc = 5.0,
+): BusContentionResult {
+  if (mode === "push-pull") {
+    const a = driverA === "Hi-Z" ? "LOW" : driverA;
+    const b = driverB === "Hi-Z" ? "LOW" : driverB;
+    if ((a === "HIGH" && b === "LOW") || (a === "LOW" && b === "HIGH")) {
+      const rRon = 40; // ~20 ohms PMOS + ~20 ohms NMOS
+      const currentMa = Number(((vcc / rRon) * 1000).toFixed(0)); // 125 mA
+      const busVoltage = Number((vcc / 2).toFixed(1)); // 2.5 V
+      return {
+        busVoltage,
+        busLogic: "CONTENTION",
+        hasContention: true,
+        currentMa,
+        summary: `Bus Contention! Driver A (${a}) and Driver B (${b}) fight. ${currentMa} mA short-circuit current heats transistors!`,
+      };
+    }
+    if (a === "HIGH" && b === "HIGH") {
+      return {
+        busVoltage: vcc,
+        busLogic: "HIGH",
+        hasContention: false,
+        currentMa: 0,
+        summary: "Both push-pull drivers output HIGH (5.0 V). Bus is clean logic 1.",
+      };
+    }
+    return {
+      busVoltage: 0.0,
+      busLogic: "LOW",
+      hasContention: false,
+      currentMa: 0,
+      summary: "Both push-pull drivers output LOW (0.0 V). Bus is clean logic 0.",
+    };
+  }
+
+  // Open-drain mode
+  const aPulls = driverA === "LOW";
+  const bPulls = driverB === "LOW";
+
+  if (aPulls || bPulls) {
+    const currentMa = Number(((vcc / pullUpOhms) * 1000).toFixed(2)); // 0.50 mA
+    const who = aPulls && bPulls ? "Both drivers" : aPulls ? "Driver A" : "Driver B";
+    return {
+      busVoltage: 0.0,
+      busLogic: "LOW",
+      hasContention: false,
+      currentMa,
+      summary: `${who} pulling LOW to GND. Bus = 0.0 V. Safe pull-up resistor current: ${currentMa} mA.`,
+    };
+  }
+
+  return {
+    busVoltage: vcc,
+    busLogic: "HIGH",
+    hasContention: false,
+    currentMa: 0,
+    summary: "Both drivers idle (Hi-Z). External pull-up resistor pulls bus to V_CC (5.0 V, HIGH).",
+  };
+}
+
+export type AdcSample = {
+  timeSec: number;
+  analogVoltage: number;
+  quantizedLevel: number;
+  quantizedVoltage: number;
+  binaryCode: string;
+  error: number;
+};
+
+/** Samples and quantizes an analog signal over time into discrete digital steps. */
+export function simulateAdc(
+  signalFn: (t: number) => number,
+  durationSec: number,
+  sampleRateHz: number,
+  bitDepth: number,
+  vMax = 5.0,
+): { samples: AdcSample[]; levels: number; stepVoltage: number } {
+  const levels = Math.pow(2, bitDepth);
+  const stepVoltage = vMax / levels;
+  const numSamples = Math.floor(durationSec * sampleRateHz);
+  const dt = 1 / sampleRateHz;
+  const samples: AdcSample[] = [];
+
+  for (let i = 0; i <= numSamples; i++) {
+    const t = Number((i * dt).toFixed(4));
+    const vRaw = signalFn(t);
+    const analogVoltage = Number(Math.max(0, Math.min(vMax, vRaw)).toFixed(3));
+    const rawLevel = Math.round(analogVoltage / stepVoltage);
+    const quantizedLevel = Math.max(0, Math.min(levels - 1, rawLevel));
+    const quantizedVoltage = Number((quantizedLevel * stepVoltage).toFixed(3));
+    const binaryCode = quantizedLevel.toString(2).padStart(bitDepth, "0");
+    const error = Number((analogVoltage - quantizedVoltage).toFixed(3));
+    samples.push({
+      timeSec: t,
+      analogVoltage,
+      quantizedLevel,
+      quantizedVoltage,
+      binaryCode,
+      error,
+    });
+  }
+
+  return { samples, levels, stepVoltage };
+}
+
+export type RealPulsePoint = { t: number; v: number };
+
+/** Generates points for a real-world clock waveform with finite rise/fall times and ringing. */
+export function generateRealWaveform(
+  periodNs: number,
+  dutyCyclePercent: number,
+  riseTimeNs: number,
+  fallTimeNs: number,
+  ringingAmplitude = 0.15,
+  vcc = 3.3,
+  numCycles = 2,
+  stepsPerCycle = 80,
+): RealPulsePoint[] {
+  const highNs = (periodNs * dutyCyclePercent) / 100;
+  const points: RealPulsePoint[] = [];
+  const totalTime = numCycles * periodNs;
+  const dt = periodNs / stepsPerCycle;
+
+  for (let t = 0; t <= totalTime; t += dt) {
+    const cycleTime = t % periodNs;
+    let v = 0;
+    if (cycleTime < highNs) {
+      if (cycleTime < riseTimeNs) {
+        const p = cycleTime / riseTimeNs;
+        const s = p * p * (3 - 2 * p);
+        v = vcc * s;
+      } else {
+        const ringTime = cycleTime - riseTimeNs;
+        const decay = Math.exp(-ringTime / Math.max(0.5, riseTimeNs * 0.8));
+        const ring = Math.sin((ringTime * 2 * Math.PI) / Math.max(0.5, riseTimeNs * 0.9)) * ringingAmplitude * vcc * decay;
+        v = Math.min(vcc * 1.25, vcc + ring);
+      }
+    } else {
+      const fallElapsed = cycleTime - highNs;
+      if (fallElapsed < fallTimeNs) {
+        const p = fallElapsed / fallTimeNs;
+        const s = p * p * (3 - 2 * p);
+        v = vcc * (1 - s);
+      } else {
+        const ringTime = fallElapsed - fallTimeNs;
+        const decay = Math.exp(-ringTime / Math.max(0.5, fallTimeNs * 0.8));
+        const under = Math.sin((ringTime * 2 * Math.PI) / Math.max(0.5, fallTimeNs * 0.9)) * ringingAmplitude * vcc * decay;
+        v = Math.max(-0.2 * vcc, 0 - under);
+      }
+    }
+    points.push({ t: Number(t.toFixed(3)), v: Number(v.toFixed(3)) });
+  }
+  return points;
+}
+
+/** Evaluates clock skew across parallel traces at a given clock frequency. */
+export function evaluateParallelSkew(
+  freqMhz: number,
+  lengthDiffMm: number,
+  velocityCmPerNs = 15,
+  setupTimePs = 80,
+) {
+  const periodNs = 1000 / freqMhz;
+  const periodPs = periodNs * 1000;
+  // velocity: 15 cm/ns = 150 mm/ns = 0.15 mm/ps
+  const vMmPerPs = velocityCmPerNs / 100;
+  const skewPs = Number((lengthDiffMm / vMmPerPs).toFixed(1));
+  const skewFraction = Number((skewPs / periodPs).toFixed(4));
+  const isReliable = skewPs + setupTimePs < periodPs * 0.25;
+  const arrivesNextCycle = skewPs > periodPs * 0.5;
+
+  return {
+    freqMhz,
+    periodPs,
+    periodNs,
+    skewPs,
+    skewFraction,
+    isReliable,
+    arrivesNextCycle,
+  };
+}
+
 /* ---------------------------- number systems --------------------------- */
 
 const DIGITS = "0123456789ABCDEF";

@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
-  bitString, counterStep, divisionSteps, evalExpr, evalGate, floatParts, fromGray, fullAdd, jkNext, latchVersusFlipFlop, lookaheadCarries, minimizeSop, onesComplement,
-  posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement, type Bit, type NetGate,
+  bitString, classifyDecimalVoltage, classifyLogicVoltage, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
+  floatParts, fromGray, fullAdd, generateRealWaveform, jkNext, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries, minimizeSop, onesComplement,
+  posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, simulateAdc, simulateBusDrivers, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
+  type Bit, type NetGate,
 } from "@/lib/logic";
 
 const srNor: NetGate[] = [
@@ -151,5 +153,123 @@ describe("storage", () => {
     for (let i = 0; i < 5; i++) b = counterStep(b).next;
     expect(b).toEqual([1, 0, 1]);
     expect(counterStep([1, 1, 1]).next).toEqual([0, 0, 0]);
+  });
+});
+
+describe("signals and physical logic", () => {
+  it("computes noise margins matching standard logic family specifications", () => {
+    const ttl = computeNoiseMargins(LOGIC_FAMILIES.ttl);
+    expect(ttl.vnh).toBe(0.4);
+    expect(ttl.vnl).toBe(0.4);
+    expect(ttl.vn).toBe(0.4);
+
+    const cmos = computeNoiseMargins(LOGIC_FAMILIES.cmos);
+    expect(cmos.vnh).toBe(0.9);
+    expect(cmos.vnl).toBe(1.4);
+    expect(cmos.vn).toBe(0.9);
+
+    const lvcmos = computeNoiseMargins(LOGIC_FAMILIES.lvcmos);
+    expect(lvcmos.vnh).toBe(0.4);
+    expect(lvcmos.vnl).toBe(0.4);
+    expect(lvcmos.vn).toBe(0.4);
+
+    // Mismatched: TTL output directly driving CMOS input
+    const mismatched = computeNoiseMargins(LOGIC_FAMILIES.mismatched);
+    expect(mismatched.vnh).toBe(-1.1); // 2.4 - 3.5 = -1.1 V (fails into forbidden zone)
+    expect(mismatched.vn).toBe(-1.1);
+  });
+
+  it("classifies input voltages across valid and forbidden regions", () => {
+    // 5V TTL thresholds: VIH = 2.0 V, VIL = 0.8 V
+    expect(classifyLogicVoltage(2.5, 2.0, 0.8)).toBe("1");
+    expect(classifyLogicVoltage(2.0, 2.0, 0.8)).toBe("1");
+    expect(classifyLogicVoltage(0.4, 2.0, 0.8)).toBe("0");
+    expect(classifyLogicVoltage(0.8, 2.0, 0.8)).toBe("0");
+    expect(classifyLogicVoltage(1.4, 2.0, 0.8)).toBe("?");
+  });
+
+  it("checks 10-level decimal fragility", () => {
+    // Digit 3 nominal voltage is 1.5 V
+    const nominal3 = classifyDecimalVoltage(1.5);
+    expect(nominal3.digit).toBe(3);
+    expect(nominal3.error).toBe(false);
+
+    // Small spike within margin (0.24 V -> 1.74 V) stays digit 3
+    const smallSpike = classifyDecimalVoltage(1.74);
+    expect(smallSpike.digit).toBe(3);
+    expect(smallSpike.error).toBe(false);
+
+    // Spike of 0.26 V crosses the 1.75 V threshold into digit 4!
+    const flipSpike = classifyDecimalVoltage(1.76);
+    expect(flipSpike.digit).toBe(4);
+  });
+
+  it("simulates bus contention and open-drain wired-AND connections", () => {
+    // Push-pull fighting causes bus contention and 125 mA surge
+    const contention = simulateBusDrivers("push-pull", "HIGH", "LOW");
+    expect(contention.hasContention).toBe(true);
+    expect(contention.busLogic).toBe("CONTENTION");
+    expect(contention.currentMa).toBe(125);
+
+    // Push-pull agreeing works cleanly
+    const pushPullHigh = simulateBusDrivers("push-pull", "HIGH", "HIGH");
+    expect(pushPullHigh.hasContention).toBe(false);
+    expect(pushPullHigh.busLogic).toBe("HIGH");
+    expect(pushPullHigh.currentMa).toBe(0);
+
+    // Open-drain wired-AND: either driver pulling LOW safely pulls bus LOW without contention
+    const openDrainPull = simulateBusDrivers("open-drain", "LOW", "Hi-Z");
+    expect(openDrainPull.hasContention).toBe(false);
+    expect(openDrainPull.busLogic).toBe("LOW");
+    expect(openDrainPull.busVoltage).toBe(0);
+    expect(openDrainPull.currentMa).toBe(0.5);
+
+    // Open-drain idle: pull-up resistor pulls bus to V_CC (HIGH)
+    const openDrainIdle = simulateBusDrivers("open-drain", "Hi-Z", "Hi-Z");
+    expect(openDrainIdle.hasContention).toBe(false);
+    expect(openDrainIdle.busLogic).toBe("HIGH");
+    expect(openDrainIdle.busVoltage).toBe(5.0);
+    expect(openDrainIdle.currentMa).toBe(0);
+  });
+
+  it("simulates ADC sampling and quantization", () => {
+    // 1-bit ADC (2 levels, step = 2.5 V)
+    const adc1 = simulateAdc((t) => (t < 0.5 ? 1.0 : 4.0), 1.0, 2, 1, 5.0);
+    expect(adc1.levels).toBe(2);
+    expect(adc1.stepVoltage).toBe(2.5);
+    expect(adc1.samples[0].binaryCode).toBe("0");
+    expect(adc1.samples[1].binaryCode).toBe("1");
+
+    // 3-bit ADC (8 levels, step = 0.625 V)
+    const adc3 = simulateAdc(() => 2.5, 0.5, 4, 3, 5.0);
+    expect(adc3.levels).toBe(8);
+    expect(adc3.stepVoltage).toBe(0.625);
+    expect(adc3.samples[0].quantizedLevel).toBe(4);
+    expect(adc3.samples[0].binaryCode).toBe("100");
+  });
+
+  it("generates real clock waveforms with finite rise/fall times", () => {
+    const pts = generateRealWaveform(10, 50, 1.5, 1.5, 0.1, 3.3, 1, 40);
+    expect(pts.length).toBeGreaterThan(30);
+    expect(pts[0].v).toBe(0);
+    // At t=0.5, voltage is rising
+    const risingPt = pts.find((p) => p.t >= 0.75 && p.t <= 1.5);
+    expect(risingPt?.v).toBeGreaterThan(0);
+  });
+
+  it("evaluates parallel bus clock skew matching exam problem 3", () => {
+    // 33 MHz, 30 mm difference: 200 ps skew is <1% of 30.3 ns period
+    const slowBus = evaluateParallelSkew(33, 30);
+    expect(slowBus.skewPs).toBe(200);
+    expect(slowBus.periodNs).toBeCloseTo(30.3, 1);
+    expect(slowBus.skewFraction).toBeLessThan(0.01);
+    expect(slowBus.isReliable).toBe(true);
+
+    // 2500 MHz (2.5 GHz), 30 mm difference: 200 ps skew is 50% of 400 ps period!
+    const fastBus = evaluateParallelSkew(2500, 30);
+    expect(fastBus.skewPs).toBe(200);
+    expect(fastBus.periodPs).toBe(400);
+    expect(fastBus.skewFraction).toBe(0.5);
+    expect(fastBus.isReliable).toBe(false);
   });
 });
