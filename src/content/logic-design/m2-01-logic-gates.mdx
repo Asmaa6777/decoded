@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { GatePlayground } from "@/components/mdx/CircuitVisualizers";
 import { CmosSwitchVisualizer, PropagationDelayLab } from "@/components/mdx/LogicVisualizers";
 
@@ -299,6 +299,8 @@ When working with basic logic gates in hardware and exams, students frequently e
 
 ## Practice problems
 
+### Part 1: Written exam practice
+
 ### Problem 1: Cascaded gate propagation delay
 
 A signal path consists of an inverter ($t_{pHL} = 3\,\text{ns}$, $t_{pLH} = 4\,\text{ns}$) driving a 2-input AND gate ($t_{pHL} = 6\,\text{ns}$, $t_{pLH} = 8\,\text{ns}$), which in turn drives a 2-input NOR gate ($t_{pHL} = 5\,\text{ns}$, $t_{pLH} = 7\,\text{ns}$). 
@@ -334,7 +336,9 @@ $$
 t_{\text{total}} = t_{pHL(\text{INV})} + t_{pHL(\text{AND})} + t_{pLH(\text{NOR})} = 3\,\text{ns} + 6\,\text{ns} + 7\,\text{ns} = 16\,\text{ns}
 $$
 
-*Exam pitfall note:* If a student simply added all $t_{pLH}$ values ($4 + 8 + 7 = 19\,\text{ns}$) or all $t_{pHL}$ values ($3 + 6 + 5 = 14\,\text{ns}$), the answer would be wrong. Each gate's transition direction must be evaluated individually based on the preceding gate's output.
+<Callout tone="orange" label="Common exam pitfall">
+Never blindly sum all $t_{pLH}$ values ($4 + 8 + 7 = 19\,\text{ns}$) or all $t_{pHL}$ values ($3 + 6 + 5 = 14\,\text{ns}$). The delay subscript always characterizes the *output* transition of each individual gate, which alternates polarity depending on gate type and inputs.
+</Callout>
 </ModelAnswer>
 
 ### Problem 2: Parity generation and controllable inversion
@@ -379,6 +383,10 @@ Given three data bits $A$, $B$, and $C$, an even-parity bit $P$ is generated suc
    \end{aligned}
    $$
    Because $E = 1$, the receiver detects that an odd number of bit-flips occurred. If no bit flipped ($B_{\text{rx}} = B$), $E = 0 \oplus 0 = 0$.
+
+<Callout tone="orange" label="Common exam pitfall">
+Parity checking detects only an odd number of bit errors (1, 3, 5). If noise flips two bits simultaneously (e.g. both $A$ and $B$), the syndrome $E = (1 \oplus 1) = 0$ passes undetected. Detecting or correcting double-bit errors requires Hamming or Reed-Solomon block codes.
+</Callout>
 </ModelAnswer>
 
 ### Problem 3: Fan-out and noise margin calculation
@@ -418,7 +426,10 @@ A manufacturer data sheet for a high-speed logic gate specifies:
    $$
    \text{Fan-out} = \min(100, 20) = 20
    $$
-   *Exam pitfall note:* If a designer connected 25 gate inputs because $100 \ge 25$, the circuit would fail in the LOW state: the output driver would be forced to sink $25 \times 0.8\,\text{mA} = 20.0\,\text{mA}$, exceeding $I_{OL(\max)}$ and pulling $V_{OL}$ above $V_{IL(\max)} = 1.1\,\text{V}$, causing false logic 1 readings.
+
+<Callout tone="orange" label="Common exam pitfall">
+If a designer connected 25 gate inputs because $100 \ge 25$, the circuit would fail in the LOW state: the output driver would be forced to sink $25 \times 0.8\,\text{mA} = 20.0\,\text{mA}$, exceeding $I_{OL(\max)}$ and pulling $V_{OL}$ above $V_{IL(\max)} = 1.1\,\text{V}$, causing false logic 1 readings.
+</Callout>
 </ModelAnswer>
 
 ### Problem 4: Active-low enable steering logic
@@ -459,4 +470,198 @@ Write the Boolean equation for $\overline{\text{CS}}$ in terms of $A_{15}$, $A_{
      \overline{\text{CS}} = A_{15}' + A_{14} + \overline{\text{REQ}}
      $$
      Notice that $\overline{\text{CS}} = 0$ only when all three OR inputs are simultaneously 0 ($A_{15}'=0 \implies A_{15}=1$; $A_{14}=0$; $\overline{\text{REQ}}=0$), matching the required enabling conditions.
+
+<Callout tone="orange" label="Common exam pitfall">
+Do not confuse the physical voltage on an active-low line with mathematical logic. An active-low enable is satisfied when the pin is pulled to 0V. Writing $E = A_{15} \cdot A_{14}' \cdot \overline{\text{REQ}}$ without inverting the active-low strobe $\overline{\text{REQ}}$ would enable the chip only when the strobe is deasserted.
+</Callout>
 </ModelAnswer>
+
+### Problem 5: CMOS dynamic power dissipation and voltage scaling
+
+A 32-bit arithmetic logic unit executes on a processor clocked at frequency $f = 2.5\,\text{GHz}$ with a supply voltage $V_{DD} = 1.0\,\text{V}$. The total equivalent load capacitance switched by the internal nodes is $C_L = 1.6\,\text{nF}$, with an average switching activity factor $\alpha = 0.25$. The static leakage current of the entire core is $I_{\text{leak}} = 80\,\text{mA}$.
+
+1. Calculate the dynamic switching power dissipation $P_{\text{dyn}}$.
+2. Calculate the static leakage power dissipation $P_{\text{stat}}$ and the total power dissipation $P_{\text{total}}$.
+3. To reduce power under mobile operation, dynamic voltage and frequency scaling (DVFS) reduces the supply voltage by $20\%$ to $V_{DD}' = 0.8\,\text{V}$ and lowers the clock frequency to $f' = 2.0\,\text{GHz}$. Assuming $\alpha$ and $C_L$ remain constant, calculate the new dynamic power dissipation $P_{\text{dyn}}'$ and the percentage reduction achieved.
+
+<ModelAnswer>
+1. **Dynamic switching power dissipation:**
+   Each clock cycle, capacitive nodes charge and discharge, dissipating energy $E_{\text{cycle}} = \alpha C_L V_{DD}^2$.
+   $$
+   \begin{aligned}
+   P_{\text{dyn}} &= \alpha \cdot C_L \cdot V_{DD}^2 \cdot f \\
+   &= 0.25 \times (1.6 \times 10^{-9}\,\text{F}) \times (1.0\,\text{V})^2 \times (2.5 \times 10^9\,\text{s}^{-1}) \\
+   &= 0.40 \times 10^{-9} \times 1.0 \times 2.5 \times 10^9 = 1.0\,\text{W}
+   \end{aligned}
+   $$
+
+2. **Static leakage power and total power:**
+   $$
+   P_{\text{stat}} = V_{DD} \cdot I_{\text{leak}} = 1.0\,\text{V} \times 0.080\,\text{A} = 0.080\,\text{W} = 80\,\text{mW}
+   $$
+   $$
+   P_{\text{total}} = P_{\text{dyn}} + P_{\text{stat}} = 1.000\,\text{W} + 0.080\,\text{W} = 1.080\,\text{W}
+   $$
+
+3. **DVFS voltage and frequency scaling:**
+   With $V_{DD}' = 0.8\,\text{V}$ and $f' = 2.0\,\text{GHz}$:
+   $$
+   \begin{aligned}
+   P_{\text{dyn}}' &= \alpha \cdot C_L \cdot (V_{DD}')^2 \cdot f' \\
+   &= 0.25 \times (1.6 \times 10^{-9}) \times (0.8)^2 \times (2.0 \times 10^9) \\
+   &= 0.40 \times 0.64 \times 2.0 = 0.512\,\text{W}
+   \end{aligned}
+   $$
+   Percentage reduction in dynamic power:
+   $$
+   \text{Reduction} = \frac{P_{\text{dyn}} - P_{\text{dyn}}'}{P_{\text{dyn}}} \times 100\% = \frac{1.0 - 0.512}{1.0} \times 100\% = 48.8\%
+   $$
+   A modest $20\%$ cut in voltage combined with a $20\%$ drop in clock frequency cuts the dynamic heat output by nearly half ($48.8\%$), demonstrating why DVFS is the cornerstone of energy management in modern silicon.
+
+<Callout tone="orange" label="Common exam pitfall">
+Students frequently overlook the square term in $V_{DD}^2$, erroneously calculating dynamic power scaling as linear with voltage ($0.8 \times 0.8 = 0.64$ power ratio vs actual $0.8^2 \times 0.8 = 0.512$). Dynamic power scales with the *cube* of scaling when frequency scales proportionally with supply voltage.
+</Callout>
+</ModelAnswer>
+
+### Problem 6: Schmitt trigger hysteresis and noisy signal recovery
+
+A sensor wire in an industrial environment carries a slowly rising signal contaminated with high-frequency noise of peak-to-peak amplitude $V_{n(p-p)} = 0.45\,\text{V}$. The signal feeds into a standard CMOS inverter with switching threshold $V_M = 1.65\,\text{V}$ ($V_{DD} = 3.3\,\text{V}$).
+
+1. Explain the mechanism that causes the standard inverter to produce multiple spurious output transitions (chatter or false clocks) during a single slow input edge.
+2. The standard gate is replaced by a Schmitt trigger inverter featuring hysteresis switching thresholds $V_{T+} = 2.10\,\text{V}$ (positive-going threshold) and $V_{T-} = 1.30\,\text{V}$ (negative-going threshold). Calculate the hysteresis voltage width $V_H$ and explain why it completely prevents chatter.
+3. What is the maximum peak-to-peak noise voltage $V_{n(\max)}$ that this Schmitt trigger can tolerate while guaranteeing glitch-free switching?
+
+<ModelAnswer>
+1. **Chatter in standard inverters:**
+   A standard inverter has a single static switching threshold $V_M = 1.65\,\text{V}$ with very high voltage gain $A_v = \frac{dV_{\text{out}}}{dV_{\text{in}}} \gg 10$. When a slow ramp passes through $V_M$, each superimposed noise oscillation of $\pm 0.225\,\text{V}$ crosses $V_M$ repeatedly. Because the amplifier is in its high-gain linear region, every upward crossing forces $V_{\text{out}} \to 0$ and every downward crossing forces $V_{\text{out}} \to V_{DD}$, turning a single slow transition into an erratic burst of dozens of false clock edges that can corrupt downstream counters and state machines.
+
+2. **Hysteresis action:**
+   The hysteresis voltage width $V_H$ is:
+   $$
+   V_H = V_{T+} - V_{T-} = 2.10\,\text{V} - 1.30\,\text{V} = 0.80\,\text{V}
+   $$
+   During a rising transition:
+   - When the signal first crosses $V_{T+} = 2.10\,\text{V}$, the output snaps sharply to logic 0.
+   - Internal positive feedback instantly shifts the input switching threshold down to $V_{T-} = 1.30\,\text{V}$.
+   - Subsequent noise dips of $0.45\,\text{V}$ pull the voltage down to only $2.10\,\text{V} - 0.45\,\text{V} = 1.65\,\text{V}$, which is safely above the new release threshold ($1.65\,\text{V} > 1.30\,\text{V}$).
+   - The output remains rock-solid at logic 0 without a single glitch.
+
+3. **Maximum noise tolerance:**
+   To prevent spurious re-triggering, the peak-to-peak noise amplitude must not exceed the hysteresis window:
+   $$
+   V_{n(p-p,\max)} < V_H = V_{T+} - V_{T-} = 0.80\,\text{V}
+   $$
+   Any noise ripple smaller than $0.80\,\text{V}$ is completely rejected.
+
+<Callout tone="orange" label="Common exam pitfall">
+A passive RC low-pass filter alone cannot substitute for a Schmitt trigger on slow signals: while an RC filter attenuates high-frequency noise, it further flattens the signal rise time, prolonging the time the input spends in the high-current shoot-through region where both PMOS and NMOS conduct simultaneously.
+</Callout>
+</ModelAnswer>
+
+---
+
+### Part 2: In-lesson interactive practice
+
+<Quiz
+  practice
+  courseSlug="logic-design"
+  lessonSlug="logic-gates"
+  questions={[
+    {
+      id: "lg-p1",
+      prompt: "What is the output of a 3-input XOR gate when all three inputs are held at logic 1 (A = 1, B = 1, C = 1)?",
+      options: [
+        { id: "a", text: "1, because multi-input XOR evaluates modulo-2 addition: (1 ⊕ 1) ⊕ 1 = 0 ⊕ 1 = 1" },
+        { id: "b", text: "0, because XOR outputs 1 only when strictly one single input is 1" },
+        { id: "c", text: "0, because identical input signals cancel each other out in pairs" },
+        { id: "d", text: "1, because an XOR gate outputs 1 whenever any input is high" },
+      ],
+      correctOptionId: "a",
+      explanation: "Multi-input XOR computes the modulo-2 sum (an odd-parity generator): (1 ⊕ 1) ⊕ 1 = 0 ⊕ 1 = 1. Option b confuses the 2-input conversational definition ('one or the other but not both') with the rigorous n-input associative definition; option c incorrectly assumes pairwise cancellation resets the entire multi-input gate; option d describes an inclusive OR gate.",
+    },
+    {
+      id: "lg-p2",
+      prompt: "How is the high-state noise margin (NM_H) of a digital logic family defined?",
+      options: [
+        { id: "a", text: "NM_H = V_OH(min) - V_IH(min)" },
+        { id: "b", text: "NM_H = V_IH(min) - V_OH(min)" },
+        { id: "c", text: "NM_H = V_OH(min) - V_OL(max)" },
+        { id: "d", text: "NM_H = V_DD - V_IH(min)" },
+      ],
+      correctOptionId: "a",
+      explanation: "NM_H is the difference between the minimum high voltage guaranteed by the transmitting driver (V_OH(min)) and the minimum high voltage demanded by the receiving gate (V_IH(min)): NM_H = V_OH(min) - V_IH(min). Option b inverts driver and receiver, yielding a negative value; option c is the maximum output voltage swing, not a noise margin; option d ignores driver output limits.",
+    },
+    {
+      id: "lg-p3",
+      prompt: "In a manufacturer timing data sheet, what does the propagation delay symbol t_pHL signify?",
+      options: [
+        { id: "a", text: "The time elapsed for the output terminal to transition from High to Low" },
+        { id: "b", text: "The time elapsed for the input terminal to transition from High to Low" },
+        { id: "c", text: "The time required for both input and output to fall simultaneously" },
+        { id: "d", text: "The duration of shoot-through current during an input transition" },
+      ],
+      correctOptionId: "a",
+      explanation: "In semiconductor device characterization, subscripts on t_pHL always specify the direction of the output signal transition: High-to-Low. Option b is the most common exam trap confusing input and output labels; option c fails to recognize propagation delay is a causal delay between input trigger and output response; option d refers to dynamic short-circuit conduction.",
+    },
+    {
+      id: "lg-p4",
+      prompt: "A driver specifies I_OH(max) = -3.2 mA, I_OL(max) = 12.8 mA. Downstream gates specify I_IH(max) = 40 µA, I_IL(max) = -0.8 mA. What is the rated DC fan-out?",
+      options: [
+        { id: "a", text: "16 gates, constrained by the LOW state sinking limit" },
+        { id: "b", text: "80 gates, constrained by the HIGH state sourcing limit" },
+        { id: "c", text: "48 gates, by averaging HIGH and LOW fan-out capacities" },
+        { id: "d", text: "96 gates, by summing HIGH and LOW capacities" },
+      ],
+      correctOptionId: "a",
+      explanation: "Fan-out(High) = floor(3.2 mA / 0.040 mA) = 80. Fan-out(Low) = floor(12.8 mA / 0.8 mA) = 16. The total permissible fan-out is min(80, 16) = 16. Option b exceeds the low-state sinking limit by 5×, pulling V_OL above V_IL(max); options c and d are physically meaningless arithmetic operations that destroy noise immunity.",
+    },
+    {
+      id: "lg-p5",
+      prompt: "What logical operation is realized when several open-drain (or open-collector) outputs are tied to a common pull-up resistor (wired logic)?",
+      options: [
+        { id: "a", text: "Wired-AND: the line stays HIGH only if all driver transistors are OFF; if any transistor turns ON, it pulls the line LOW" },
+        { id: "b", text: "Wired-OR: the line stays HIGH if any driver transistor turns ON" },
+        { id: "c", text: "Wired-XOR: the line is HIGH only if an odd number of drivers turn ON" },
+        { id: "d", text: "Destructive contention that damages the chips due to short-circuit shoot-through" },
+      ],
+      correctOptionId: "a",
+      explanation: "In open-drain configuration, drivers have only pull-down nMOS transistors. The bus floats to V_DD through the pull-up resistor only when ALL drivers are turned off (logic 1). If any driver conducts (logic 0), it sinks current and pulls the line to ground (active-low assertion). This realizes a wired-AND (or active-low wired-OR). Option b is incorrect because conducting pulls LOW, not HIGH; option c is false because open-drain cannot count active drivers; option d applies to push-pull drivers, not open-drain.",
+    },
+    {
+      id: "lg-p6",
+      prompt: "Why is it forbidden in digital circuit assembly to leave unused CMOS gate inputs floating (unconnected)?",
+      options: [
+        { id: "a", text: "Stray electrostatic charges float the gate voltage into the forbidden middle band, turning on both PMOS and NMOS networks and causing excessive shoot-through heating" },
+        { id: "b", text: "Floating inputs permanently short-circuit the power supply rail directly to ground" },
+        { id: "c", text: "A floating input automatically latches the gate into permanent logic 0 without consuming power" },
+        { id: "d", text: "Floating CMOS inputs act as non-volatile memory bits storing previous states indefinitely" },
+      ],
+      correctOptionId: "a",
+      explanation: "CMOS inputs present near-infinite DC gate resistance (SiO2 dielectric). Floating pins accumulate ambient static charge and hover near V_DD / 2. In this intermediate region, both the PMOS pull-up network and NMOS pull-down network conduct simultaneously, establishing a direct low-impedance shoot-through path from V_DD to GND that draws destructive DC power. Option b is inaccurate because the short occurs through channel conduction rather than an instantaneous physical short; option c describes TTL behavior, not CMOS; option d confuses a floating pin with a floating-gate EPROM.",
+    },
+    {
+      id: "lg-p7",
+      prompt: "If a digital chip's supply voltage V_DD is reduced by 50% (factor of 2) while maintaining the same clock frequency, how does the dynamic switching power change?",
+      options: [
+        { id: "a", text: "Dynamic power is reduced to 25% (decreases by a factor of 4) because P_dyn ∝ V_DD²" },
+        { id: "b", text: "Dynamic power is reduced to 50% (decreases by a factor of 2) because P = V · I" },
+        { id: "c", text: "Dynamic power is reduced to 12.5% (decreases by a factor of 8) because frequency also drops" },
+        { id: "d", text: "Dynamic power remains unchanged because load capacitance is constant" },
+      ],
+      correctOptionId: "a",
+      explanation: "Dynamic switching power is given by P_dyn = α · C_L · V_DD² · f. Because power is proportional to the square of supply voltage, reducing V_DD by 2× reduces P_dyn by 2² = 4× (to 25% of original). Option b wrongly assumes linear scaling; option c includes frequency reduction when the prompt specified constant frequency; option d ignores voltage dependence.",
+    },
+    {
+      id: "lg-p8",
+      prompt: "What is the primary function of a Schmitt trigger input stage on a logic gate?",
+      options: [
+        { id: "a", text: "To provide input voltage hysteresis (V_T+ > V_T-), preventing erratic chatter and spurious switching on slow or noisy analog edges" },
+        { id: "b", text: "To boost high-frequency signal gain above 10 GHz" },
+        { id: "c", text: "To increase gate DC fan-out from 10 to over 1000 gates" },
+        { id: "d", text: "To convert digital square waves into smooth analog sine waves" },
+      ],
+      correctOptionId: "a",
+      explanation: "A Schmitt trigger uses positive internal feedback to produce two separate switching thresholds: V_T+ for rising signals and V_T- for falling signals. The resulting hysteresis width V_H = V_T+ - V_T- suppresses chatter and false triggering caused by noise on slow-rising inputs. Option b is false because Schmitt triggers are not RF amplifiers; option c is false because fan-out is set by output driver sizing; option d describes a DAC or low-pass filter.",
+    },
+  ]}
+/>

@@ -2026,6 +2026,132 @@ export const UNIVERSAL_CIRCUITS: Record<UniversalGateFamily, Record<string, Univ
 };
 
 /* ============================================================
+   Module 2: Gates & Boolean Algebra Practice Helpers
+   ============================================================ */
+
+export interface DynamicPowerResult {
+  pDynWatts: number;
+  pStatWatts: number;
+  pTotalWatts: number;
+}
+
+export function simulateDynamicPower(
+  cLoadFarads: number,
+  vddVolts: number,
+  freqHz: number,
+  alpha = 0.25,
+  iLeakAmperes = 0,
+): DynamicPowerResult {
+  const pDynWatts = alpha * cLoadFarads * vddVolts * vddVolts * freqHz;
+  const pStatWatts = vddVolts * iLeakAmperes;
+  return {
+    pDynWatts,
+    pStatWatts,
+    pTotalWatts: pDynWatts + pStatWatts,
+  };
+}
+
+export interface FanOutAndNoiseMarginResult {
+  nmH: number;
+  nmL: number;
+  fanOutHigh: number;
+  fanOutLow: number;
+  ratedFanOut: number;
+}
+
+export function simulateFanOutAndNoiseMargins(spec: {
+  voh: number;
+  vol: number;
+  vih: number;
+  vil: number;
+  ioh: number; // e.g. -4.0 mA
+  iol: number; // e.g. 16.0 mA
+  iih: number; // e.g. 0.040 mA
+  iil: number; // e.g. -0.8 mA
+}): FanOutAndNoiseMarginResult {
+  const nmH = +(spec.voh - spec.vih).toFixed(4);
+  const nmL = +(spec.vil - spec.vol).toFixed(4);
+  const fanOutHigh = Math.floor(Math.abs(spec.ioh) / Math.abs(spec.iih));
+  const fanOutLow = Math.floor(Math.abs(spec.iol) / Math.abs(spec.iil));
+  const ratedFanOut = Math.min(fanOutHigh, fanOutLow);
+  return { nmH, nmL, fanOutHigh, fanOutLow, ratedFanOut };
+}
+
+export interface SchmittTriggerResult {
+  vH: number;
+  canRejectNoise: boolean;
+  maxTolerableVpp: number;
+}
+
+export function simulateSchmittTrigger(
+  vtPlus: number,
+  vtMinus: number,
+  noiseVpp: number,
+): SchmittTriggerResult {
+  const vH = +(vtPlus - vtMinus).toFixed(4);
+  return {
+    vH,
+    canRejectNoise: noiseVpp < vH,
+    maxTolerableVpp: vH,
+  };
+}
+
+export interface FourNorXnorResult {
+  n1: Bit;
+  n2: Bit;
+  n3: Bit;
+  y: Bit;
+}
+
+export function simulate4NorXnor(a: Bit, b: Bit): FourNorXnorResult {
+  const n1 = (a || b ? 0 : 1) as Bit;
+  const n2 = (a || n1 ? 0 : 1) as Bit;
+  const n3 = (b || n1 ? 0 : 1) as Bit;
+  const y = (n2 || n3 ? 0 : 1) as Bit;
+  return { n1, n2, n3, y };
+}
+
+export interface ComplexCmosGateResult {
+  type: "AOI-22" | "OAI-22";
+  output: Bit;
+  pdnConducting: boolean;
+  punConducting: boolean;
+  transistorCount: number;
+}
+
+export function simulateAoi22(a: Bit, b: Bit, c: Bit, d: Bit): ComplexCmosGateResult {
+  // AOI-22: Output = ((A * B) + (C * D))'
+  const branch1 = a === 1 && b === 1;
+  const branch2 = c === 1 && d === 1;
+  const pdnConducting = branch1 || branch2;
+  const punConducting = !pdnConducting;
+  const output: Bit = pdnConducting ? 0 : 1;
+  return {
+    type: "AOI-22",
+    output,
+    pdnConducting,
+    punConducting,
+    transistorCount: 8,
+  };
+}
+
+export function simulateOai22(a: Bit, b: Bit, c: Bit, d: Bit): ComplexCmosGateResult {
+  // OAI-22: Output = ((A + B) * (C + D))'
+  const sum1 = a === 1 || b === 1;
+  const sum2 = c === 1 || d === 1;
+  const pdnConducting = sum1 && sum2;
+  const punConducting = !pdnConducting;
+  const output: Bit = pdnConducting ? 0 : 1;
+  return {
+    type: "OAI-22",
+    output,
+    pdnConducting,
+    punConducting,
+    transistorCount: 8,
+  };
+}
+
+/* ============================================================
    Combinational Building Blocks (Module 3)
    Adders, Fast Carries, Comparators, Decoders, Encoders, MUXes
    ============================================================ */

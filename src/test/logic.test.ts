@@ -5,6 +5,7 @@ import {
   minimizeKMap, minimizeSop, onesComplement, posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, signExtend, simulate7SegmentDecoder, simulateAdc, simulateAdderSubtractor, simulateBcdAdder,
   simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateDecoder, simulateFastCarries, simulateHamming74, simulateMagnitudeComparator, simulateMuxFunction, simulateMuxTree16to1, simulateParity, simulatePriorityEncoder, simulateSaturatedArithmetic, simulateSignedArithmetic, simulateStatic1Hazard, solveRadixAddition, solveRadixProduct, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
   calculateTimingBudget, simulate74LS163, simulateCoincidentMemory, simulateCounterGlitch, simulateDebouncer, simulateFlipFlopConversion, simulateMemoryExpansion, simulateRaceAround, simulateRingJohnson, simulateUniversalShiftRegister,
+  simulate4NorXnor, simulateAoi22, simulateDynamicPower, simulateFanOutAndNoiseMargins, simulateOai22, simulateSchmittTrigger,
   UNIVERSAL_CIRCUITS, type Bit, type NetGate,
 } from "@/lib/logic";
 
@@ -1084,6 +1085,318 @@ describe("signals and physical logic", () => {
 
         // q8: 10110_2 -> 11101_Gray
         expect(bitString(toGray(0b10110), 5)).toBe("11101");
+      });
+    });
+  });
+
+  describe("Module 2 Gates and Boolean Algebra practice & exam calculations", () => {
+    describe("Lesson 1: Logic Gates (m2-01)", () => {
+      it("verifies Problem 1: cascaded propagation delay with alternating edge polarities", () => {
+        // Stage 1: INV (input 0->1 => output 1->0: tpHL = 3ns)
+        // Stage 2: AND (input 1->0, second input 1 => output 1->0: tpHL = 6ns)
+        // Stage 3: NOR (input 1->0, second input 0 => output 0->1: tpLH = 7ns)
+        const totalDelay = 3 + 6 + 7;
+        expect(totalDelay).toBe(16);
+      });
+
+      it("verifies Problem 2: 3-bit parity generation P = A ^ B ^ C and single-bit error syndrome", () => {
+        // P = A ^ B ^ C
+        const a = 1, b = 0, c = 1;
+        const p = a ^ b ^ c; // 0
+        expect(p).toBe(0);
+        // Error flips b: bRx = b ^ 1 = 1
+        const bRx = b ^ 1;
+        const syndrome = a ^ bRx ^ c ^ p;
+        expect(syndrome).toBe(1); // Error detected
+      });
+
+      it("verifies Problem 3: noise margins and DC fan-out calculation", () => {
+        const result = simulateFanOutAndNoiseMargins({
+          voh: 4.3,
+          vol: 0.35,
+          vih: 3.1,
+          vil: 1.1,
+          ioh: -4.0,
+          iol: 16.0,
+          iih: 0.040,
+          iil: -0.8,
+        });
+        expect(result.nmH).toBe(1.2);
+        expect(result.nmL).toBe(0.75);
+        expect(result.fanOutHigh).toBe(100);
+        expect(result.fanOutLow).toBe(20);
+        expect(result.ratedFanOut).toBe(20);
+      });
+
+      it("verifies Problem 4: active-low enable CS_bar = A15' + A14 + REQ_bar", () => {
+        // Active condition: A15=1, A14=0, REQ_bar=0 -> CS_bar=0
+        const cs = (a15: Bit, a14: Bit, reqBar: Bit) => ((a15 ? 0 : 1) || a14 || reqBar ? 1 : 0) as Bit;
+        expect(cs(1, 0, 0)).toBe(0); // enabled
+        expect(cs(0, 0, 0)).toBe(1); // disabled
+        expect(cs(1, 1, 0)).toBe(1); // disabled
+        expect(cs(1, 0, 1)).toBe(1); // disabled
+      });
+
+      it("verifies Problem 5: CMOS dynamic power dissipation and DVFS scaling", () => {
+        const full = simulateDynamicPower(1.6e-9, 1.0, 2.5e9, 0.25, 0.080);
+        expect(full.pDynWatts).toBeCloseTo(1.0, 4);
+        expect(full.pStatWatts).toBeCloseTo(0.08, 4);
+        expect(full.pTotalWatts).toBeCloseTo(1.08, 4);
+
+        const scaled = simulateDynamicPower(1.6e-9, 0.8, 2.0e9, 0.25, 0.080);
+        expect(scaled.pDynWatts).toBeCloseTo(0.512, 4);
+        const reductionPct = ((full.pDynWatts - scaled.pDynWatts) / full.pDynWatts) * 100;
+        expect(reductionPct).toBeCloseTo(48.8, 1);
+      });
+
+      it("verifies Problem 6: Schmitt trigger hysteresis width and noise tolerance", () => {
+        const schmitt = simulateSchmittTrigger(2.10, 1.30, 0.45);
+        expect(schmitt.vH).toBe(0.80);
+        expect(schmitt.canRejectNoise).toBe(true);
+      });
+
+      it("verifies interactive MCQ practice in Lesson 1", () => {
+        // lg-p1: 3-input XOR (1, 1, 1) -> 1
+        expect(evalGate("XOR", [1, 1])).toBe(0);
+        expect(1 ^ 1 ^ 1).toBe(1);
+        // lg-p4: fan-out min(80, 16) = 16
+        expect(Math.min(Math.floor(3.2 / 0.04), Math.floor(12.8 / 0.8))).toBe(16);
+      });
+    });
+
+    describe("Lesson 2: Boolean Algebra (m2-02)", () => {
+      it("verifies Problem 1: absorption law x + xy = x", () => {
+        for (const x of [0, 1] as Bit[]) {
+          for (const y of [0, 1] as Bit[]) {
+            expect((x || (x && y) ? 1 : 0)).toBe(x);
+          }
+        }
+      });
+
+      it("verifies Problem 2: consensus theorem reduction AB + A'C + BC + A'BD = AB + BD + A'C", () => {
+        const vars = ["A", "B", "C", "D"];
+        const orig = "AB + A'C + BC + A'BD";
+        const simplified = "AB + BD + A'C";
+        expect(sameFunction(orig, simplified, vars)).toBe(true);
+      });
+
+      it("verifies Problem 3: dual vs complement of (A + B')(C'D + E)'", () => {
+        // Complement: A'B + C'D + E
+        const vars = ["A", "B", "C", "D", "E"];
+        const orig = "(A + B')(C'D + E)'";
+        const comp = "A'B + C'D + E";
+        for (const { env } of truthRows(vars)) {
+          expect(evalExpr(comp, env)).toBe((evalExpr(orig, env) ? 0 : 1) as Bit);
+        }
+      });
+
+      it("verifies Problem 4: multi-variable reduction to G = AB + AC' + BC'", () => {
+        const vars = ["A", "B", "C"];
+        // m2(010), m4(100), m6(110), m7(111)
+        const orig = "A'BC' + AB'C' + ABC' + ABC";
+        const simplified = "AB + AC' + BC'";
+        expect(sameFunction(orig, simplified, vars)).toBe(true);
+      });
+
+      it("verifies Problem 5: second distributive law on (A + B + C')(A + B + C)(A + B' + C') = (A + B)(A + C')", () => {
+        const vars = ["A", "B", "C"];
+        const orig = "(A + B + C')(A + B + C)(A + B' + C')";
+        const simplified = "(A + B)(A + C')";
+        expect(sameFunction(orig, simplified, vars)).toBe(true);
+      });
+
+      it("verifies Problem 6: XOR identities A ^ B ^ AB = A + B and (A ^ B)' = AB + A'B'", () => {
+        for (const a of [0, 1] as Bit[]) {
+          for (const b of [0, 1] as Bit[]) {
+            const xorVal = a ^ b;
+            const lhs1 = (xorVal ^ (a & b)) as Bit;
+            const rhs1 = (a || b ? 1 : 0) as Bit;
+            expect(lhs1).toBe(rhs1);
+
+            const xnorVal = (xorVal ? 0 : 1) as Bit;
+            const rhs2 = ((a && b) || (!a && !b) ? 1 : 0) as Bit;
+            expect(xnorVal).toBe(rhs2);
+          }
+        }
+      });
+    });
+
+    describe("Lesson 3: SOP and POS (m2-03)", () => {
+      it("verifies Problem 1: majority voter sum of minterms and product of maxterms", () => {
+        const vars = ["A", "B", "C"];
+        const sop = sopFromMinterms([3, 5, 6, 7], vars);
+        const pos = posFromMinterms([3, 5, 6, 7], vars);
+        for (const { env } of truthRows(vars)) {
+          const count = env.A + env.B + env.C;
+          const expected = count >= 2 ? 1 : 0;
+          expect(evalExpr(sop, env)).toBe(expected);
+          expect(evalExpr(pos, env)).toBe(expected);
+        }
+      });
+
+      it("verifies Problem 2: algebraic POS expansion (A' + B)(B' + C) = prod M(2, 4, 5, 6)", () => {
+        const vars = ["A", "B", "C"];
+        const orig = "(A' + B)(B' + C)";
+        const pos = posFromMinterms([0, 1, 3, 7], vars); // 0-rows are 2, 4, 5, 6 -> 1-rows are 0, 1, 3, 7
+        expect(sameFunction(orig, pos, vars)).toBe(true);
+      });
+
+      it("verifies Problem 3: complement minterm and maxterm index duality", () => {
+        const fMinterms = [0, 2, 5, 7, 8, 10, 12, 13, 15];
+        const allIndices = Array.from({ length: 16 }, (_, i) => i);
+        const compMinterms = allIndices.filter((i) => !fMinterms.includes(i));
+        expect(compMinterms).toEqual([1, 3, 4, 6, 9, 11, 14]);
+      });
+
+      it("verifies Problem 4: SOP and POS equivalence for F = sum m(1, 2, 3, 7)", () => {
+        const vars = ["A", "B", "C"];
+        const sop = "A'B + A'C + BC";
+        const pos = "(B + C)(A' + B)(A' + C)";
+        expect(sameFunction(sop, pos, vars)).toBe(true);
+      });
+
+      it("verifies Problem 5: non-canonical expansion w'z + x'y' + wxz' = sum m(0,1,3,5,7,8,9,12,14)", () => {
+        const vars = ["w", "x", "y", "z"];
+        const orig = "w'z + x'y' + wxz'";
+        const minterms = [0, 1, 3, 5, 7, 8, 9, 12, 14];
+        const sop = sopFromMinterms(minterms, vars);
+        expect(sameFunction(orig, sop, vars)).toBe(true);
+      });
+
+      it("verifies Problem 6: Shannon expansion cofactors of 3-input parity function", () => {
+        const vars = ["A", "B", "C"];
+        // F(A,B,C) = A ^ B ^ C = A'*(B ^ C) + A*(B ^ C)'
+        for (const { env } of truthRows(vars)) {
+          const parity = (env.A ^ env.B ^ env.C) as Bit;
+          const cofactor0 = (env.B ^ env.C) as Bit;
+          const cofactor1 = (cofactor0 ? 0 : 1) as Bit;
+          const shannon = env.A === 0 ? cofactor0 : cofactor1;
+          expect(shannon).toBe(parity);
+        }
+      });
+    });
+
+    describe("Lesson 4: Karnaugh Maps (m2-04)", () => {
+      it("verifies Problem 1: 4-variable K-map minimization F = B'D' + A'BD + ABC", () => {
+        const minterms = [0, 2, 5, 7, 8, 10, 14, 15];
+        const vars = ["A", "B", "C", "D"];
+        for (const { m, env } of truthRows(vars)) {
+          const valExpected = minterms.includes(m) ? 1 : 0;
+          expect(evalExpr("B'D' + A'BD + ABC", env)).toBe(valExpected);
+        }
+      });
+
+      it("verifies Problem 2: K-map with don't-cares SOP w'x' + yz and POS z(w' + y)", () => {
+        const vars = ["w", "x", "y", "z"];
+        const sop = "w'x' + yz";
+        const pos = "z(w' + y)";
+        const careMinterms = [1, 3, 7, 11, 15];
+        const careZeroes = [4, 6, 8, 9, 10, 12, 13, 14];
+        for (const { m, env } of truthRows(vars)) {
+          if (careMinterms.includes(m)) {
+            expect(evalExpr(sop, env)).toBe(1);
+            expect(evalExpr(pos, env)).toBe(1);
+          } else if (careZeroes.includes(m)) {
+            expect(evalExpr(sop, env)).toBe(0);
+            expect(evalExpr(pos, env)).toBe(0);
+          }
+        }
+      });
+
+      it("verifies Problem 5: larger prime implicant BD is redundant when 4 EPIs cover all minterms", () => {
+        const minterms = [1, 5, 6, 7, 11, 12, 13, 15];
+        const vars = ["A", "B", "C", "D"];
+        const fourEpis = "A'C'D + A'BC + ABC' + ACD";
+        for (const { m, env } of truthRows(vars)) {
+          const expected = minterms.includes(m) ? 1 : 0;
+          expect(evalExpr(fourEpis, env)).toBe(expected);
+        }
+      });
+
+      it("verifies Problem 6: static-0 hazard in POS (A + B)(A' + C) eliminated by consensus (B + C)", () => {
+        const vars = ["A", "B", "C"];
+        const orig = "(A + B)(A' + C)";
+        const hazardFree = "(A + B)(A' + C)(B + C)";
+        expect(sameFunction(orig, hazardFree, vars)).toBe(true);
+      });
+    });
+
+    describe("Lesson 5: Universal Gates (m2-05)", () => {
+      it("verifies Problem 1: bubble pushing all-NAND conversion of (AB + C)D + E'F", () => {
+        const vars = ["A", "B", "C", "D", "E", "F"];
+        const orig = "(AB + C)D + E'F";
+        for (const { env } of truthRows(vars)) {
+          const n1 = !(env.A && env.B) ? 1 : 0;
+          const n2 = !(n1 && (env.C ? 0 : 1)) ? 1 : 0; // NAND(n1, C')
+          const n3 = !(n2 && env.D) ? 1 : 0;
+          const n4 = !((env.E ? 0 : 1) && env.F) ? 1 : 0;
+          const n5 = !(n3 && n4) ? 1 : 0;
+          expect(n5).toBe(evalExpr(orig, env));
+        }
+      });
+
+      it("verifies Problem 2: 4-NAND minimal XOR", () => {
+        for (const a of [0, 1] as Bit[]) {
+          for (const b of [0, 1] as Bit[]) {
+            const n1 = !(a && b) ? 1 : 0;
+            const n2 = !(a && n1) ? 1 : 0;
+            const n3 = !(b && n1) ? 1 : 0;
+            const xorOut = !(n2 && n3) ? 1 : 0;
+            expect(xorOut).toBe(a ^ b);
+          }
+        }
+      });
+
+      it("verifies Problem 5: 4-NOR minimal XNOR equivalence", () => {
+        for (const a of [0, 1] as Bit[]) {
+          for (const b of [0, 1] as Bit[]) {
+            const res = simulate4NorXnor(a, b);
+            const expectedXnor = (a ^ b ? 0 : 1) as Bit;
+            expect(res.y).toBe(expectedXnor);
+          }
+        }
+      });
+
+      it("verifies Problem 6: complex static CMOS AOI-22 and OAI-22 gates", () => {
+        for (const a of [0, 1] as Bit[]) {
+          for (const b of [0, 1] as Bit[]) {
+            for (const c of [0, 1] as Bit[]) {
+              for (const d of [0, 1] as Bit[]) {
+                // AOI-22: ((A*B) + (C*D))'
+                const aoi = simulateAoi22(a, b, c, d);
+                const expectedAoi = ((a && b) || (c && d) ? 0 : 1) as Bit;
+                expect(aoi.output).toBe(expectedAoi);
+                expect(aoi.transistorCount).toBe(8);
+
+                // OAI-22: ((A+B) * (C+D))'
+                const oai = simulateOai22(a, b, c, d);
+                const expectedOai = ((a || b) && (c || d) ? 0 : 1) as Bit;
+                expect(oai.output).toBe(expectedOai);
+                expect(oai.transistorCount).toBe(8);
+              }
+            }
+          }
+        }
+      });
+    });
+
+    describe("Lesson 6: Gates Quiz (m2-06)", () => {
+      it("verifies all module quiz logic properties", () => {
+        // q1: 3-input XOR (1, 1, 1) = 1
+        expect(1 ^ 1 ^ 1).toBe(1);
+        // q2: consensus theorem xy + x'z + yz = xy + x'z
+        expect(sameFunction("xy + x'z + yz", "xy + x'z", ["x", "y", "z"])).toBe(true);
+        // q3: complement of A(B'C + D) is A' + (B + C')D'
+        expect(sameFunction("A' + (B + C')D'", "(A(B'C + D))'", ["A", "B", "C", "D"])).toBe(true);
+        // q4: M9 for 4 variables is A' + B + C + D'
+        // Row 9 is 1001_2: A=1, B=0, C=0, D=1 -> A' + B + C + D' = 0 on row 9
+        const m9 = (a: Bit, b: Bit, c: Bit, d: Bit) => (!a || b || c || !d ? 1 : 0) as Bit;
+        expect(m9(1, 0, 0, 1)).toBe(0);
+        expect(m9(0, 0, 0, 0)).toBe(1);
+        // q5: sum m(0,2,4,6) -> prod M(1,3,5,7)
+        const evens = [0, 2, 4, 6];
+        const odds = [1, 3, 5, 7];
+        expect(odds).toEqual([0, 1, 2, 3, 4, 5, 6, 7].filter((i) => !evens.includes(i)));
       });
     });
   });

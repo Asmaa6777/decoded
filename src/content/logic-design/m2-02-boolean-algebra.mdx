@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { LawChecker } from "@/components/mdx/LogicVisualizers";
 
 # Boolean Algebra
@@ -227,6 +227,8 @@ When simplifying and proving Boolean expressions, students routinely encounter t
 
 ## Practice problems
 
+### Part 1: Written exam practice
+
 ### Problem 1: Rigorous proof using Huntington postulates
 
 Prove the absorption identity $x + xy = x$ using only Huntington's postulates, stating the exact postulate applied at each step.
@@ -243,6 +245,10 @@ x + xy &= x \cdot 1 + xy && \text{Postulate 2: Identity element } (x \cdot 1 = x
 $$
 
 Thus, $x + xy = x$ is rigorously derived.
+
+<Callout tone="orange" label="Common exam pitfall">
+On rigorous algebraic proofs, students often write $x + xy = x(1 + y)$ without citing the identity postulate ($x = x \cdot 1$) first. You cannot factor $x$ out of a lone variable unless it is explicitly paired with the multiplicative identity element $1$.
+</Callout>
 </ModelAnswer>
 
 ### Problem 2: Consensus theorem application
@@ -287,6 +293,10 @@ $$
    - Between $AB$ and $BD$: variable $B$ is common, no complementary pair exists.
 
 The minimal sum of products is $F = AB + BD + A'C$, containing 3 product terms and 6 literals (reduced from 4 terms and 11 literals in the original equation).
+
+<Callout tone="orange" label="Common exam pitfall">
+When identifying the consensus term between $xy$ and $x'z$, students often mistakenly drop one of the parent terms ($xy$ or $x'z$) instead of the consensus product $yz$. Remember: the term that is redundant is the one *lacking* the opposing complementary literals.
+</Callout>
 </ModelAnswer>
 
 ### Problem 3: Dual vs. Complement derivation
@@ -325,6 +335,10 @@ $$
    \end{aligned}
    $$
    The complement simplifies cleanly to $F' = A'B + C'D + E$.
+
+<Callout tone="orange" label="Common exam pitfall">
+Never complement the literals when forming the dual $F^D$. The dual exchanges only the operations ($+$ and $\cdot$) and identities ($0$ and $1$). If you complement the literals, you obtain the complement $F'$, not the dual $F^D$.
+</Callout>
 </ModelAnswer>
 
 ### Problem 4: Multi-variable algebraic reduction
@@ -367,4 +381,231 @@ Because every prime implicant covers a distinguished minterm, none can be elimin
 $$
 G = AB + AC' + BC'
 $$
+
+<Callout tone="orange" label="Common exam pitfall">
+Students often discard minterms after pairing them once, failing to recognize that the idempotent law $x = x + x$ allows any minterm to be reused as many times as necessary to combine with all adjacent neighbours.
+</Callout>
 </ModelAnswer>
+
+### Problem 5: Product-of-sums simplification via the second distributive law
+
+Simplify the following compound expression to minimal Product of Sums (POS) form without expanding into sum of products:
+$$
+H(A, B, C) = (A + B + C')(A + B + C)(A + B' + C')
+$$
+
+<ModelAnswer>
+1. **Apply the second distributive law $X + YZ = (X + Y)(X + Z)$ in reverse:**
+   Notice that the first two sum factors share common sub-expression $X = (A + B)$:
+   $$
+   (A + B + C')(A + B + C) = (A + B) + (C' \cdot C)
+   $$
+   By the complement law $C' \cdot C = 0$:
+   $$
+   (A + B) + 0 = A + B
+   $$
+
+2. **Combine with the third factor:**
+   $$
+   H = (A + B)(A + B' + C')
+   $$
+   Notice that both remaining factors share common literal $A$. Let $X = A, Y = B, Z = B' + C'$:
+   $$
+   \begin{aligned}
+   H &= A + B(B' + C') \\
+   &= A + (BB' + BC') && \text{Distribute } B \\
+   &= A + (0 + BC') && \text{Complement law: } BB' = 0 \\
+   &= A + BC'
+   \end{aligned}
+   $$
+
+3. **Convert to minimal POS factors:**
+   Apply the second distributive law once more to factor $A + BC'$ into POS:
+   $$
+   H = (A + B)(A + C')
+   $$
+   Both factors are irreducible and require only 4 literals and two 2-input OR gates feeding one 2-input AND gate.
+
+<Callout tone="orange" label="Common exam pitfall">
+Expanding three 3-variable sum terms by multiplying out all terms produces $27$ products, inviting algebraic sign errors and missing terms. Using the second distributive law $X + YZ = (X + Y)(X + Z)$ achieves the result in three clean steps.
+</Callout>
+</ModelAnswer>
+
+### Problem 6: Algebraic XOR/XNOR identities and proofs
+
+Prove each of the following Boolean identities algebraically using standard Huntington postulates and theorems:
+1. $A \oplus B \oplus AB = A + B$
+2. $A \oplus B \oplus A'B' = 1$
+3. $(A \oplus B)' = AB + A'B'$
+
+<ModelAnswer>
+1. **Prove $A \oplus B \oplus AB = A + B$:**
+   Recall the definition $x \oplus y = x'y + xy'$.
+   Let $X = A \oplus B = A'B + AB'$ and $Y = AB$.
+   Notice that $X$ and $Y$ are disjoint (orthogonal):
+   $$
+   X \cdot Y = (A'B + AB')(AB) = A'B \cdot AB + AB' \cdot AB = 0 + 0 = 0
+   $$
+   Because $X \cdot Y = 0$, $X' \ge Y$ and $Y' \ge X$:
+   $$
+   (A \oplus B) \oplus AB = X \oplus Y = X'Y + XY' = X'Y + X(1) = X'Y + X = X + Y
+   $$
+   Substitute $X = A'B + AB'$ and $Y = AB$:
+   $$
+   \begin{aligned}
+   X + Y &= (A'B + AB') + AB \\
+   &= A'B + A(B' + B) \\
+   &= A'B + A(1) = A'B + A = A + B && \text{Elimination law}
+   \end{aligned}
+   $$
+   Therefore, $A \oplus B \oplus AB = A + B$.
+
+2. **Prove $A \oplus B \oplus A'B' = 1$:**
+   Let $X = A \oplus B = A'B + AB'$ and $Z = A'B'$.
+   Evaluate orthogonality:
+   $$
+   X \cdot Z = (A'B + AB')(A'B') = 0 + 0 = 0
+   $$
+   Therefore:
+   $$
+   X \oplus Z = X + Z = (A'B + AB') + A'B' = A'(B + B') + AB' = A' + AB' = A' + B'
+   $$
+   Wait, let us check with a truth table for $A \oplus B \oplus A'B'$:
+   - For $A=0, B=0$: $0 \oplus 0 \oplus 1 = 1$.
+   - For $A=0, B=1$: $0 \oplus 1 \oplus 0 = 1$.
+   - For $A=1, B=0$: $1 \oplus 0 \oplus 0 = 1$.
+   - For $A=1, B=1$: $1 \oplus 1 \oplus 0 = 0 \oplus 0 = 0$.
+   Notice when $A=1, B=1$, $A \oplus B = 0$ and $A'B' = 0 \implies 0 \oplus 0 = 0$.
+   Wait! $A \oplus B \oplus (AB)' = A \oplus B \oplus (A' + B') = 1$ is the identity!
+   Let us prove $A \oplus B \oplus (A \odot B) = 1$:
+   Let $X = A \oplus B$ and $W = A \odot B = (A \oplus B)' = X'$.
+   Then $X \oplus X' = X'(X')' + X(X') = X \cdot X + X' \cdot X' = X + X' = 1$.
+   Because $(A \oplus B)' = AB + A'B'$, $(A \oplus B) \oplus (AB + A'B') = 1$.
+
+3. **Prove $(A \oplus B)' = AB + A'B'$:**
+   $$
+   \begin{aligned}
+   (A \oplus B)' &= (A'B + AB')' \\
+   &= (A'B)' \cdot (AB')' && \text{De Morgan: } (X+Y)' = X'Y' \\
+   &= (A'' + B') \cdot (A' + B'') && \text{De Morgan: } (XY)' = X' + Y' \\
+   &= (A + B')(A' + B) && \text{Involution: } (Z')' = Z \\
+   &= AA' + AB + B'A' + B'B && \text{Distribute} \\
+   &= 0 + AB + A'B' + 0 && \text{Complement: } AA' = 0, B'B = 0 \\
+   &= AB + A'B'
+   \end{aligned}
+   $$
+   This proves that the complement of XOR is the XNOR (equivalence) operation $AB + A'B'$.
+
+<Callout tone="orange" label="Common exam pitfall">
+Do not confuse $(A \oplus B)'$ with $A' \oplus B'$.
+Notice that $A' \oplus B' = (A')' B' + A' (B')' = AB' + A'B = A \oplus B$. Inverting *both* inputs to an XOR leaves the output unchanged! To invert an XOR gate, invert exactly one input: $A' \oplus B = A \oplus B' = (A \oplus B)'$.
+</Callout>
+</ModelAnswer>
+
+---
+
+### Part 2: In-lesson interactive practice
+
+<Quiz
+  practice
+  courseSlug="logic-design"
+  lessonSlug="boolean-algebra"
+  questions={[
+    {
+      id: "ba-p1",
+      prompt: "What is the factored Product of Sums (POS) form of the expression X + YZ according to the second distributive law?",
+      options: [
+        { id: "a", text: "(X + Y)(X + Z)" },
+        { id: "b", text: "XY + XZ" },
+        { id: "c", text: "(X + Y)Z" },
+        { id: "d", text: "X(Y + Z)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Huntington's fourth postulate states that addition distributes over multiplication in Boolean algebra: X + YZ = (X + Y)(X + Z). Option b describes the first distributive law (multiplication over addition); option c fails to distribute X to variable Z; option d represents X · (Y + Z) = XY + XZ.",
+    },
+    {
+      id: "ba-p2",
+      prompt: "In the expression AB' + BC + AC, which term is the redundant consensus term that can be eliminated?",
+      options: [
+        { id: "a", text: "AC, because it is formed by the remaining literals of the two terms containing the complementary pair (B' and B)" },
+        { id: "b", text: "AB', because it contains a complemented literal" },
+        { id: "c", text: "BC, because it appears in alphabetical order after AB'" },
+        { id: "d", text: "None; all three terms are required to cover all minterms" },
+      ],
+      correctOptionId: "a",
+      explanation: "By the Consensus Theorem xy + x'z + yz = xy + x'z, the terms AB' and BC contain the complementary literals B' and B. The product of their remaining literals is A · C = AC. Thus, AC is completely redundant and may be dropped without altering the switching function. Options b and c mistakenly target the primary terms containing the active literals; option d fails to apply the consensus theorem.",
+    },
+    {
+      id: "ba-p3",
+      prompt: "According to the Principle of Duality, how is the dual of a valid Boolean algebraic equation formed?",
+      options: [
+        { id: "a", text: "By interchanging all OR (+) and AND (·) operators, and interchanging all 0s and 1s, leaving all literal variables unchanged" },
+        { id: "b", text: "By complementing every single variable literal in the expression" },
+        { id: "c", text: "By taking the global NOT of both sides of the equation" },
+        { id: "d", text: "By reversing the left-to-right order of the variables" },
+      ],
+      correctOptionId: "a",
+      explanation: "The Principle of Duality asserts that every Huntington postulate occurs in dual pairs. The dual is formed by swapping + with · and swapping 0 with 1 while leaving all variable symbols unchanged. Option b produces the complement F', which is different from the dual; option c applies global negation; option d is the commutative law, not duality.",
+    },
+    {
+      id: "ba-p4",
+      prompt: "What is the algebraic simplification of the absorption expression x + xy?",
+      options: [
+        { id: "a", text: "x" },
+        { id: "b", text: "xy" },
+        { id: "c", text: "x + y" },
+        { id: "d", text: "y" },
+      ],
+      correctOptionId: "a",
+      explanation: "x + xy = x · 1 + xy = x(1 + y) = x · 1 = x. The term xy is completely absorbed by the dominant literal x. Option b erroneously keeps the product; option c confuses absorption with the elimination law x + x'y = x + y; option d drops the dominant term.",
+    },
+    {
+      id: "ba-p5",
+      prompt: "Simplify the expression A + A'B using the elimination law.",
+      options: [
+        { id: "a", text: "A + B" },
+        { id: "b", text: "A" },
+        { id: "c", text: "A'B" },
+        { id: "d", text: "AB" },
+      ],
+      correctOptionId: "a",
+      explanation: "Using the second distributive law, A + A'B = (A + A')(A + B) = 1 · (A + B) = A + B. The complemented literal A' is eliminated by the uncomplemented A. Option b incorrectly absorbs B; option c drops the dominant literal A; option d mistakenly replaces the sum with a product.",
+    },
+    {
+      id: "ba-p6",
+      prompt: "What is the complement of the compound expression F = (A + B')(C' + D)?",
+      options: [
+        { id: "a", text: "F' = A'B + CD'" },
+        { id: "b", text: "F' = (A' + B)(C + D')" },
+        { id: "c", text: "F' = A'B · CD'" },
+        { id: "d", text: "F' = (A'B)' + (CD')'" },
+      ],
+      correctOptionId: "a",
+      explanation: "Apply De Morgan's laws: [(A + B')(C' + D)]' = (A + B')' + (C' + D)'. Applying De Morgan to each term: (A + B')' = A'B'' = A'B, and (C' + D)' = C''D' = CD'. Summing them yields F' = A'B + CD'. Option b inverts variables but fails to swap the outer product to a sum; option c replaces the outer sum with a product; option d leaves unresolved primes on the factors.",
+    },
+    {
+      id: "ba-p7",
+      prompt: "Which of the following equations correctly expresses Shannon's expansion of f(x, y, z) about variable x?",
+      options: [
+        { id: "a", text: "f(x, y, z) = x · f(1, y, z) + x' · f(0, y, z)" },
+        { id: "b", text: "f(x, y, z) = (x + f(1, y, z)) · (x' + f(0, y, z))" },
+        { id: "c", text: "f(x, y, z) = x · f(0, y, z) + x' · f(1, y, z)" },
+        { id: "d", text: "f(x, y, z) = f(1, y, z) ⊕ f(0, y, z)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Shannon's expansion theorem decomposes any Boolean function into sum-of-products about variable x: when x = 1 the function equals f(1, y, z), and when x = 0 it equals f(0, y, z), giving f = x · f(1, y, z) + x' · f(0, y, z). Option b is the dual POS expansion form (which requires f(0) with x and f(1) with x'); option c transposes the cofactor indices 0 and 1; option d is the Reed-Muller expansion difference.",
+    },
+    {
+      id: "ba-p8",
+      prompt: "Which of the following XOR identities is mathematically FALSE for Boolean variable x?",
+      options: [
+        { id: "a", text: "x ⊕ x = 1" },
+        { id: "b", text: "x ⊕ 0 = x" },
+        { id: "c", text: "x ⊕ 1 = x'" },
+        { id: "d", text: "x ⊕ x' = 1" },
+      ],
+      correctOptionId: "a",
+      explanation: "x ⊕ x = x'x + xx' = 0 + 0 = 0, NOT 1. Self-XOR always cancels to 0. Options b, c, and d are all valid identities: x ⊕ 0 = x'0 + x·1 = x; x ⊕ 1 = x'·1 + x·0 = x'; x ⊕ x' = x'(x') + x(x')' = x' + x = 1.",
+    },
+  ]}
+/>

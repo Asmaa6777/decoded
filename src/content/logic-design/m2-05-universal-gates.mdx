@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { BubblePushingLab, UniversalGateLab } from "@/components/mdx/LogicVisualizers";
 
 # Universal Gates: Everything from NAND
@@ -231,6 +231,8 @@ When synthesizing circuits with universal gates, students commonly make these fi
 
 ## Practice problems
 
+### Part 1: Written exam practice
+
 ### Problem 1: Multi-level circuit conversion to all-NAND gates
 
 Convert the multi-level Boolean function:
@@ -278,6 +280,10 @@ into an all-NAND gate network using the bubble-pushing technique. Assume complem
    \end{aligned}
    $$
    The output identically reconstructs the original function using five 2-input NAND gates and zero extra inverters.
+
+<Callout tone="orange" label="Common exam pitfall">
+When converting multi-level circuits with bubble pushing, always ensure every introduced bubble is canceled either by an opposing bubble on the same wire or by complementing a primary input. Leaving an uncanceled bubble inverts the logic function.
+</Callout>
 </ModelAnswer>
 
 ### Problem 2: Minimal 4-NAND XOR verification
@@ -299,6 +305,10 @@ Evaluate step-by-step for all four valuations of $(A, B)$:
 | 1 | 1 | 0 | $(1 \cdot 0)' = 1$ | $(1 \cdot 0)' = 1$ | 1 | **0** | 0 |
 
 In every row, the output $X$ exactly matches $A \oplus B$. The 4-NAND implementation is verified.
+
+<Callout tone="orange" label="Common exam pitfall">
+Notice the role of intermediate gate $N_1$: when $A=1, B=1$, $N_1 = 0$, which forces both $N_2$ and $N_3$ high simultaneously ($N_2 = (1 \cdot 0)' = 1, N_3 = (1 \cdot 0)' = 1$). That drives the output gate $X = (1 \cdot 1)' = 0$. This shared gate is why 4 NANDs suffice instead of 5.
+</Callout>
 </ModelAnswer>
 
 ### Problem 3: Two-level POS to all-NOR gate conversion
@@ -329,6 +339,10 @@ $$
    - One 3-input NOR gate: $1 \times (2 \times 3) = 6$ transistors.
    - Inverters for $B'$ and $D'$: $2 \times 2 = 4$ transistors.
    - Total transistor count: $12 + 6 + 4 = 22$ transistors.
+
+<Callout tone="orange" label="Common exam pitfall">
+A standard mistake is assuming POS circuits convert to NAND gates. SOP expressions (AND-OR) naturally convert to all-NAND networks; POS expressions (OR-AND) naturally convert to all-NOR networks. Attempting to force POS into NAND gates requires extra inverter layers.
+</Callout>
 </ModelAnswer>
 
 ### Problem 4: CMOS transistor layout analysis: NAND vs NOR
@@ -351,4 +365,217 @@ Explain why a 3-input CMOS NAND gate is physically smaller and faster than a 3-i
 3. **Consequences:**
    - The NOR gate requires vastly larger silicon surface area due to the oversized series pMOS transistors.
    - The larger transistor widths create significantly higher parasitic input capacitance ($C_{\text{in}} \propto W$), which increases switching delay and dynamic power consumption throughout the driving stage.
+
+<Callout tone="orange" label="Common exam pitfall">
+Do not confuse transistor count with physical silicon area. Both a 3-input NAND and a 3-input NOR contain exactly 6 transistors. However, the NOR gate requires 2× to 3× the physical silicon area because its series pMOS channels must be widened to overcome low hole mobility.
+</Callout>
 </ModelAnswer>
+
+### Problem 5: Minimal 4-NOR XNOR circuit verification and duality
+
+The circuit dual of the 4-NAND XOR is a 4-NOR XNOR circuit:
+$$
+M_1 = (A + B)', \quad M_2 = (A + M_1)', \quad M_3 = (B + M_1)', \quad Y = (M_2 + M_3)'
+$$
+
+1. Verify by truth table that output $Y$ computes the XNOR equivalence function $A \odot B = (A \oplus B)' = AB + A'B'$.
+2. State the principle of duality that maps the 4-NAND XOR architecture directly to the 4-NOR XNOR architecture.
+3. Compare the total transistor count of this 4-NOR XNOR circuit with a discrete two-level AND-OR realization ($AB + A'B'$).
+
+<ModelAnswer>
+1. **Truth Table Verification:**
+
+| $A$ | $B$ | $M_1 = (A+B)'$ | $M_2 = (A + M_1)'$ | $M_3 = (B + M_1)'$ | $M_2 + M_3$ | $Y = (M_2 + M_3)'$ | $A \odot B$ |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 0 | 0 | $(0+0)' = 1$ | $(0+1)' = 0$ | $(0+1)' = 0$ | 0 | **1** | 1 |
+| 0 | 1 | $(0+1)' = 0$ | $(0+0)' = 1$ | $(1+0)' = 0$ | 1 | **0** | 0 |
+| 1 | 0 | $(1+0)' = 0$ | $(1+0)' = 0$ | $(0+0)' = 1$ | 1 | **0** | 0 |
+| 1 | 1 | $(1+1)' = 0$ | $(1+0)' = 0$ | $(1+0)' = 0$ | 0 | **1** | 1 |
+
+The output column $Y$ evaluates to $[1, 0, 0, 1]$, which is the exact truth table of the XNOR operation ($AB + A'B'$).
+
+2. **Duality Mapping:**
+   Replacing every NAND operation with NOR and replacing all AND operations with OR maps any functional network to its Boolean dual. Because the dual of XOR ($A'B + AB'$) is XNOR ($AB + A'B'$), replacing all four NAND gates in the minimal XOR with NOR gates directly synthesizes the minimal XNOR function.
+
+3. **Transistor Count Comparison:**
+   - **4-NOR implementation:** Four 2-input NOR gates require $4 \times 4 = 16$ transistors.
+   - **Discrete standard gate implementation ($AB + A'B'$):**
+     - Two inverters for $A'$ and $B'$: $2 \times 2 = 4$ transistors.
+     - Two 2-input AND gates: $2 \times 6 = 12$ transistors.
+     - One 2-input OR gate: $1 \times 6 = 6$ transistors.
+     - Total: $4 + 12 + 6 = 22$ transistors.
+   The 4-NOR architecture saves 6 transistors ($27\%$ reduction) and requires only a single standard cell layout type in library generation.
+
+<Callout tone="orange" label="Common exam pitfall">
+Remember that $A \odot B$ (XNOR) outputs 1 when the inputs are *equal* ($00$ or $11$), whereas XOR outputs 1 when the inputs are *different* ($01$ or $10$). In 4-NOR XNOR, when $A=0, B=0$, $M_1 = 1$, which forces both $M_2$ and $M_3$ to 0, driving output $Y = (0+0)' = 1$.
+</Callout>
+</ModelAnswer>
+
+### Problem 6: Complex static CMOS AOI (AND-OR-Invert) gate synthesis
+
+Synthesize the switching function:
+$$
+F = \big((A \cdot B) + (C \cdot D)\big)'
+$$
+(an AOI-22 gate) as a single complex static CMOS stage.
+
+1. Construct the pull-down network (PDN) using nMOS transistors.
+2. Construct the pull-up network (PUN) using pMOS transistors.
+3. Compare the total transistor count and propagation delay of this complex gate against assembling the function from discrete standard library gates (two AND gates feeding a NOR gate).
+
+<ModelAnswer>
+1. **Pull-Down Network (PDN):**
+   The PDN conducts when the output must be pulled to ground ($F = 0$, meaning $F' = 1$):
+   $$
+   F' = AB + CD
+   $$
+   In the nMOS PDN:
+   - AND corresponds to transistors in **series**.
+   - OR corresponds to transistor branches in **parallel**.
+   - Transistors $A$ and $B$ are connected in series.
+   - Transistors $C$ and $D$ are connected in series.
+   - The two series branches are wired in parallel between the output node and GND:
+     $$
+     \text{PDN} = (A \text{ series } B) \parallel (C \text{ series } D)
+     $$
+   Total nMOS count: 4 transistors.
+
+2. **Pull-Up Network (PUN):**
+   The PUN conducts when the output must be pulled to $V_{DD}$ ($F = 1$):
+   $$
+   F = (AB + CD)' = (AB)' \cdot (CD)' = (A' + B') \cdot (C' + D')
+   $$
+   Because pMOS transistors turn ON with logic 0 (gate low), the PUN topology is the exact geometric **dual** of the PDN:
+   - Series branches in PDN become **parallel** in PUN.
+   - Parallel branches in PDN become **series** in PUN.
+   - Transistors $A$ and $B$ are wired in parallel: $(A \parallel B)$.
+   - Transistors $C$ and $D$ are wired in parallel: $(C \parallel D)$.
+   - These two parallel pairs are wired in series between $V_{DD}$ and the output node:
+     $$
+     \text{PUN} = (A \parallel B) \text{ series } (C \parallel D)
+     $$
+   Total pMOS count: 4 transistors.
+
+3. **Comparison with Discrete Gate Architecture:**
+
+| Metric | Complex CMOS AOI-22 Gate | Discrete Library Gates (Two ANDs + One NOR) |
+|---|---|---|
+| **Total Transistors** | **8 transistors** (4 nMOS + 4 pMOS) | **16 transistors** (Two 6-T ANDs + One 4-T NOR) |
+| **Logic Stages** | **1 stage** (single inversion) | **2 stages** (AND followed by NOR) |
+| **Propagation Delay** | $1 \cdot t_{pd}$ | $2 \cdot t_{pd}$ |
+| **Intermediate Wires** | None (internal node capacitance only) | 2 inter-gate routing wires with parasitic load |
+
+Synthesizing $(AB + CD)'$ as a single complex CMOS gate cuts silicon area in half ($8$ vs $16$ transistors) and halves the propagation delay by eliminating the intermediate logic stage.
+
+<Callout tone="orange" label="Common exam pitfall">
+Students often attempt to invert literals when designing the PUN, forgetting that pMOS transistors are *already* active-low switches. The dual topology alone handles the inversion. Simply replace PDN series connections with PUN parallel connections, and PDN parallel connections with PUN series connections.
+</Callout>
+</ModelAnswer>
+
+---
+
+### Part 2: In-lesson interactive practice
+
+<Quiz
+  practice
+  courseSlug="logic-design"
+  lessonSlug="universal-gates"
+  questions={[
+    {
+      id: "ug-p1",
+      prompt: "Why are NAND and NOR classified as 'universal' logic gates?",
+      options: [
+        { id: "a", text: "Because either gate alone can synthesize all three fundamental Boolean operations {NOT, AND, OR}, enabling the construction of any digital system" },
+        { id: "b", text: "Because they can operate at any power supply voltage without damage" },
+        { id: "c", text: "Because they have an infinite fan-out capability in CMOS fabrication" },
+        { id: "d", text: "Because they automatically eliminate all static and dynamic timing hazards" },
+      ],
+      correctOptionId: "a",
+      explanation: "A gate set is functionally complete (universal) if it can implement NOT, AND, and OR. Since both NAND and NOR individually synthesize all three operations, entire microprocessors can be built using exclusively NAND or exclusively NOR gates. Options b, c, and d attribute unrealistic electrical or timing properties to basic logic gates.",
+    },
+    {
+      id: "ug-p2",
+      prompt: "How can a NOT gate (inverter) be implemented using a 2-input NAND gate?",
+      options: [
+        { id: "a", text: "Either by tying both inputs together, or by connecting the unused input to logic 1 (V_DD)" },
+        { id: "b", text: "By tying the unused input to logic 0 (GND)" },
+        { id: "c", text: "By leaving the unused input unconnected (floating)" },
+        { id: "d", text: "A NAND gate cannot implement an inverter without external resistors" },
+      ],
+      correctOptionId: "a",
+      explanation: "(x · x)' = x' (tying inputs together), and (x · 1)' = x' (tying unused input to 1). Option b is wrong because (x · 0)' = 0' = 1, which holds the output permanently high; option c violates CMOS design rules by leaving pins floating; option d is false because NAND gates are active semiconductor switches.",
+    },
+    {
+      id: "ug-p3",
+      prompt: "How can a NOT gate (inverter) be implemented using a 2-input NOR gate?",
+      options: [
+        { id: "a", text: "Either by tying both inputs together, or by connecting the unused input to logic 0 (GND)" },
+        { id: "b", text: "By tying the unused input to logic 1 (V_DD)" },
+        { id: "c", text: "By connecting a pull-up resistor to the output terminal" },
+        { id: "d", text: "By reversing the polarity of the power supply connections" },
+      ],
+      correctOptionId: "a",
+      explanation: "(x + x)' = x' (tying inputs together), and (x + 0)' = x' (tying unused input to 0). Option b is wrong because (x + 1)' = 1' = 0, clamping the output permanently low; option c relates to open-drain pull-ups, not NOR synthesis; option d damages the semiconductor chip.",
+    },
+    {
+      id: "ug-p4",
+      prompt: "According to the bubble-pushing technique (De Morgan's theorem), what happens when an inversion bubble is moved from the output of an AND gate to its inputs?",
+      options: [
+        { id: "a", text: "The gate shape changes from AND to OR, producing an Invert-OR equivalent gate" },
+        { id: "b", text: "The gate shape remains an AND gate with input bubbles" },
+        { id: "c", text: "The gate converts into an XOR gate" },
+        { id: "d", text: "The gate function is inverted twice, turning into a buffer" },
+      ],
+      correctOptionId: "a",
+      explanation: "De Morgan's law states that (AB)' = A' + B'. Pushing the output bubble of a NAND gate (AND with output bubble) backward to the inputs changes the gate shape to OR, yielding an Invert-OR gate. Option b violates De Morgan's theorem; option c introduces parity; option d confuses bubble pushing with double cancellation.",
+    },
+    {
+      id: "ug-p5",
+      prompt: "Why can any standard two-level AND-OR (SOP) circuit be converted directly into an all-NAND circuit without changing primary input polarities?",
+      options: [
+        { id: "a", text: "Because output bubbles on the first-level NAND gates cancel directly with the input bubbles of the second-level Invert-OR (NAND) gate" },
+        { id: "b", text: "Because AND and OR gates have identical truth tables in binary" },
+        { id: "c", text: "Because inverters are automatically inserted by the printed circuit board" },
+        { id: "d", text: "Because the circuit output is automatically complemented twice by the power supply" },
+      ],
+      correctOptionId: "a",
+      explanation: "Replacing the first-level AND gates with NANDs adds bubbles to the intermediate wires. Replacing the second-level OR gate with an Invert-OR (NAND) puts bubbles on its inputs. Because two bubbles on the same wire cancel each other out ((x')' = x), the logic function remains completely unchanged. Option b is false; options c and d are physically erroneous.",
+    },
+    {
+      id: "ug-p6",
+      prompt: "What is the absolute minimum number of 2-input NAND gates required to synthesize a 2-input XOR function (assuming only uncomplemented inputs are available)?",
+      options: [
+        { id: "a", text: "4 NAND gates, by sharing a central cross-coupled NAND gate" },
+        { id: "b", text: "5 NAND gates" },
+        { id: "c", text: "3 NAND gates" },
+        { id: "d", text: "6 NAND gates" },
+      ],
+      correctOptionId: "a",
+      explanation: "A 2-input XOR can be implemented with exactly 4 NAND gates: N₁ = (AB)', N₂ = (A·N₁)', N₃ = (B·N₁)', Output = (N₂·N₃)'. The first gate N₁ is shared between the two branches, cutting the count from 5 down to 4. Options b, c, and d miscount the minimal gate topology.",
+    },
+    {
+      id: "ug-p7",
+      prompt: "Why is a 3-input CMOS NAND gate physically superior to a 3-input CMOS NOR gate in silicon fabrication?",
+      options: [
+        { id: "a", text: "Because higher electron mobility in nMOS allows compact series pull-down transistors in NAND, whereas low hole mobility forces huge series pull-up pMOS in NOR" },
+        { id: "b", text: "Because a 3-input NAND gate uses fewer transistors than a 3-input NOR gate" },
+        { id: "c", text: "Because NAND gates produce zero dynamic power dissipation" },
+        { id: "d", text: "Because NOR gates cannot be fabricated on silicon substrates" },
+      ],
+      correctOptionId: "a",
+      explanation: "In CMOS, μₙ ≈ 2 to 3 μₚ. In a NAND gate, the series transistors are nMOS (high mobility), while the pMOS transistors are in parallel. In a NOR gate, the series transistors are pMOS, requiring channel widths to be scaled up 3× to achieve equal drive current, which balloons gate area and input capacitance. Both use 2n = 6 transistors (option b is false); dynamic power exists in both (option c is false); NOR is readily fabricated (option d is false).",
+    },
+    {
+      id: "ug-p8",
+      prompt: "What is the primary architectural advantage of synthesizing F = ((AB) + (CD))' as a single complex static CMOS AOI-22 gate?",
+      options: [
+        { id: "a", text: "It requires only 8 transistors and 1 stage of propagation delay, compared to 16 transistors and 2 gate delays for discrete gates" },
+        { id: "b", text: "It completely eliminates the need for power and ground rails" },
+        { id: "c", text: "It allows the circuit to operate without a system clock" },
+        { id: "d", text: "It eliminates all static leakage currents in the sub-threshold region" },
+      ],
+      correctOptionId: "a",
+      explanation: "A complex CMOS AOI-22 gate builds the pull-down network from 4 nMOS and the pull-up network from 4 pMOS, totaling 8 transistors and a single inverter-like stage delay. In contrast, separate discrete library gates require two 2-input ANDs (12 T) and one 2-input NOR (4 T), totaling 16 transistors and two stages of delay. Options b, c, and d are physically impossible claims.",
+    },
+  ]}
+/>
