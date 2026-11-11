@@ -354,6 +354,21 @@ A semaphore avoids it by blocking: a process that finds the value not positive j
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="semaphores-and-classic-problems"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-39",
+      prompt: "(Final 2023, MCQ item 39) How can a semaphore be used to solve the producer-consumer problem?",
+      options: [{ id: "a", text: "By using two semaphores: one to lock the buffer when the producer is writing and one to lock the buffer when the consumer is reading" }, { id: "b", text: "By using one semaphore: to count the number of items in the buffer, and block the producer or the consumer when the buffer is full or empty" }, { id: "c", text: "By using one semaphore: to signal the producer or the consumer when the buffer is ready for writing or reading" }, { id: "d", text: "By using two semaphores: one to count the number of empty buffers, and one to count the number of full buffers" }],
+      correctOptionId: "d",
+      explanation: "Two counting semaphores track empty and full slots, as in the bounded-buffer solution. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

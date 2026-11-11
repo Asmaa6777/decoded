@@ -291,6 +291,43 @@ Neither type alone is best. If every process is I/O-bound, the ready queue is al
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-42",
+      prompt: "(Final 2023, MCQ item 42) What is the main objective of CPU scheduling?",
+      options: [{ id: "a", text: "To minimize CPU utilization" }, { id: "b", text: "To maximize turnaround time" }, { id: "c", text: "To balance the load among different processes" }, { id: "d", text: "To allocate CPU time according to some criteria" }],
+      correctOptionId: "d",
+      explanation: "The scheduler chooses which process gets the CPU, according to criteria such as waiting time and fairness. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-43",
+      prompt: "(Final 2023, MCQ item 43) What is the disadvantage of using the first-come, first-served (FCFS) scheduling algorithm?",
+      options: [{ id: "a", text: "It may cause starvation, where low-priority processes never get the CPU" }, { id: "b", text: "It may cause the convoy effect, where short processes wait behind long processes" }, { id: "c", text: "It may cause thrashing, where processes switch between ready and waiting states frequently" }, { id: "d", text: "All of the above" }],
+      correctOptionId: "b",
+      explanation: "FCFS causes the convoy effect. Starvation is not an FCFS problem, and thrashing is a memory problem. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-46",
+      prompt: "(Final 2023, MCQ item 46) What is the difference between preemptive and non-preemptive scheduling?",
+      options: [{ id: "a", text: "Preemptive scheduling allows a process to be interrupted by the scheduler, while non-preemptive scheduling does not" }, { id: "b", text: "Preemptive scheduling requires a timer interrupt, while non-preemptive scheduling does not" }, { id: "c", text: "Preemptive scheduling is more responsive, while non-preemptive scheduling is more predictable" }, { id: "d", text: "All of the above" }],
+      correctOptionId: "d",
+      explanation: "The first statement gives the definition. The other two describe what usually follows from it. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

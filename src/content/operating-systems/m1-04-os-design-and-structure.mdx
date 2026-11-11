@@ -322,6 +322,28 @@ The printed key gives the same two points.
 Answer: the **bootstrap program** (also called the bootstrap loader). It finds the kernel and loads it into memory.
 </ModelAnswer>
 
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="os-design-and-structure"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-31",
+      prompt: "(Final 2023, MCQ item 31) Which one of the following is not true?",
+      options: [{ id: "a", text: "The kernel is the program that constitutes the central core of the operating system" }, { id: "b", text: "The kernel is the first part of the operating system to load into memory during booting" }, { id: "c", text: "The kernel is made of various modules which cannot be loaded into the running operating system" }, { id: "d", text: "The kernel remains in the memory during the entire computer session" }],
+      correctOptionId: "c",
+      explanation: "Kernel modules can be loaded into a running OS, so c is the false statement. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-41",
+      prompt: "(Final 2023, MCQ item 41) Which of the following is a process that loads the operating system into the main memory and starts its execution?",
+      options: [{ id: "a", text: "System boot" }, { id: "b", text: "System generation" }, { id: "c", text: "System initialization" }, { id: "d", text: "System termination" }],
+      correctOptionId: "a",
+      explanation: "System boot (bootstrapping) loads the kernel and starts it. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

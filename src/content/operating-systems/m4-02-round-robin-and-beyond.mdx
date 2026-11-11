@@ -306,6 +306,28 @@ Finish times: P1 8, P4 10, P2 13, P3 19. Turnaround: **P1 = 8, P2 = 11, P3 = 16,
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="round-robin-and-beyond"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-44",
+      prompt: "(Final 2023, MCQ item 44) What is one reason to use a multilevel queue over a single queue for CPU scheduling?",
+      options: [{ id: "a", text: "It allows processes to be grouped by priority, memory size, or other attributes" }, { id: "b", text: "It allows processes to move between queues based on their changing characteristics" }, { id: "c", text: "It allows processes to have different time quanta for round-robin scheduling" }, { id: "d", text: "It allows different scheduling algorithms to be used for different queues" }],
+      correctOptionId: "a",
+      explanation: "Grouping processes into queues by attributes is the point of a multilevel queue. Moving between queues is the multilevel feedback queue. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-45",
+      prompt: "(Final 2023, MCQ item 45) What is one challenge of scheduling processes in a multiprocessor system?",
+      options: [{ id: "a", text: "Load balancing" }, { id: "b", text: "Processor affinity" }, { id: "c", text: "Cache coherence" }, { id: "d", text: "Synchronization" }],
+      correctOptionId: "a",
+      explanation: "Keeping every processor busy with an even share of work is the main challenge. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

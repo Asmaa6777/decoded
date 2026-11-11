@@ -230,6 +230,21 @@ None.
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="paging"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-51",
+      prompt: "(Final 2023, MCQ item 51) What is the purpose of a translation look-aside buffer (TLB)?",
+      options: [{ id: "a", text: "It caches the translations of physical addresses to logical addresses" }, { id: "b", text: "It caches the translations of segment numbers to page numbers" }, { id: "c", text: "It caches the translations of logical addresses to physical addresses" }, { id: "d", text: "It caches the translations of page numbers to segment numbers" }],
+      correctOptionId: "c",
+      explanation: "The TLB caches recent logical-to-physical translations, so most accesses skip the page table. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

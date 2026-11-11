@@ -353,6 +353,42 @@ None.
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="page-replacement-and-thrashing"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-50",
+      prompt: "(Final 2023, MCQ item 50) What is the difference between global and local page replacement policies?",
+      options: [{ id: "a", text: "Global policy selects a victim frame from the frames allocated to the process that caused the page fault, local policy selects from the set of all frames" }, { id: "b", text: "Global policy selects a victim frame from the set of all frames, local policy selects from the frames allocated to the process that caused the page fault" }, { id: "c", text: "Global policy selects a victim frame from the set of all frames, local policy selects from the frames allocated to the process that caused the page fault" }, { id: "d", text: "Global policy selects a victim frame based on the local page reference string, local policy selects based on the global page reference string" }],
+      correctOptionId: "b",
+      explanation: "Global replacement can take any frame; local replacement only takes frames from the process that faulted. Options b and c are worded the same, so the answer is b either way. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-52",
+      prompt: "(Final 2023, MCQ item 52) What is the difference between thrashing and swapping?",
+      options: [{ id: "a", text: "Thrashing is moving a process from memory to disk, and swapping is moving a process from disk to memory" }, { id: "b", text: "Thrashing is moving a process from disk to memory, and swapping is moving a process from memory to disk" }, { id: "c", text: "Thrashing is the phenomenon of excessive page faults due to insufficient memory, and swapping is the technique of moving processes in and out of memory to increase multiprogramming level" }, { id: "d", text: "Thrashing is the technique of moving processes in and out of memory to increase multiprogramming level, and swapping is the phenomenon of excessive page faults due to insufficient memory" }],
+      correctOptionId: "c",
+      explanation: "Thrashing is a failure mode (too many faults); swapping is a technique (moving whole processes). (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-56",
+      prompt: "(Final 2023, MCQ item 56) Which of the following page-replacement algorithms suffers from Belady's anomaly?",
+      options: [{ id: "a", text: "LRU (Least Recently Used)" }, { id: "b", text: "LFU (Least Frequently Used)" }, { id: "c", text: "OPT (Optimal)" }, { id: "d", text: "FIFO (First-In, First-Out)" }],
+      correctOptionId: "d",
+      explanation: "FIFO can fault more with more frames on some strings. LRU and optimal do not suffer from it. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-57",
+      prompt: "(Final 2023, MCQ item 57) What is the working set of a process?",
+      options: [{ id: "a", text: "The set of pages that the process is currently using" }, { id: "b", text: "The set of pages that the process will use in the future" }, { id: "c", text: "The set of pages that the process has used in the past" }, { id: "d", text: "The set of pages that the process may use at some point" }],
+      correctOptionId: "a",
+      explanation: "The working set is the set of pages the process has used recently, which is the set it is using now. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

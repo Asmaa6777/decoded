@@ -437,6 +437,57 @@ Answer: **context switch.** (Our answer, which matches the printed 2021 key.)
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-32",
+      prompt: "(Final 2023, MCQ item 32) A process can be terminated due to ___",
+      options: [{ id: "a", text: "normal exit" }, { id: "b", text: "fatal error" }, { id: "c", text: "killed by another process" }, { id: "d", text: "all of the mentioned" }],
+      correctOptionId: "d",
+      explanation: "A process can end normally, fail with a fatal error, or be killed by another process. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-33",
+      prompt: "(Final 2023, MCQ item 33) The primary distinction between the short-term scheduler and the long-term scheduler is ___",
+      options: [{ id: "a", text: "the length of their queues" }, { id: "b", text: "the type of processes they schedule" }, { id: "c", text: "the frequency of their execution" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "The short-term scheduler runs very often and the long-term scheduler runs rarely. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-35",
+      prompt: "(Final 2023, MCQ item 35) What is the purpose of a process control block (PCB)?",
+      options: [{ id: "a", text: "To control the execution of a process by issuing commands to the CPU, memory, and I/O devices" }, { id: "b", text: "To allocate and deallocate the resources needed by a process" }, { id: "c", text: "To store the information about the process state, program counter, CPU registers, and other attributes of a process" }, { id: "d", text: "To communicate with other processes by sending and receiving messages" }],
+      correctOptionId: "c",
+      explanation: "The PCB is the record of everything the OS needs to know about one process. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-37",
+      prompt: "(Final 2023, MCQ item 37) What are the system calls used to create and terminate a process in UNIX?",
+      options: [{ id: "a", text: "create() and terminate()" }, { id: "b", text: "fork() and exit()" }, { id: "c", text: "spawn() and kill()" }, { id: "d", text: "exec() and wait()" }],
+      correctOptionId: "b",
+      explanation: "UNIX creates a process with fork() and ends it with exit(). (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-60",
+      prompt: "(Final 2023, MCQ item 60) A process is selected from the ___ queue by the ___ scheduler, to be executed.",
+      options: [{ id: "a", text: "blocked, short term" }, { id: "b", text: "wait, long term" }, { id: "c", text: "ready, short term" }, { id: "d", text: "ready, long term" }],
+      correctOptionId: "c",
+      explanation: "The short-term scheduler picks a process from the ready queue to run. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

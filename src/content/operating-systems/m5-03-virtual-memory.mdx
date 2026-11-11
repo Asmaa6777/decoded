@@ -280,6 +280,35 @@ These questions are copied from the exam papers. The wording is unchanged. Answe
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="virtual-memory"
+  practice
+  questions={[
+    {
+      id: "f2023-mcq-53",
+      prompt: "(Final 2023, MCQ item 53) What is the main advantage of virtual memory over contiguous memory allocation?",
+      options: [{ id: "a", text: "It reduces external fragmentation" }, { id: "b", text: "It reduces internal fragmentation" }, { id: "c", text: "It allows programs to be larger than physical memory" }, { id: "d", text: "It simplifies memory management" }],
+      correctOptionId: "c",
+      explanation: "Virtual memory runs programs bigger than physical memory, using demand paging. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-54",
+      prompt: "(Final 2023, MCQ item 54) What is the difference between a valid bit and a dirty bit in a page table entry?",
+      options: [{ id: "a", text: "Valid bit indicates whether the page is writable or not, dirty bit indicates whether the page is accessible or not" }, { id: "b", text: "Valid bit indicates whether the page is accessible or not, dirty bit indicates whether the page is writable or not" }, { id: "c", text: "Valid bit indicates whether the page has been modified or not, dirty bit indicates whether the page is in memory or not" }, { id: "d", text: "Valid bit indicates whether the page is in memory or not, dirty bit indicates whether the page has been modified or not" }],
+      correctOptionId: "d",
+      explanation: "The valid bit says whether the page is in memory; the dirty bit says whether it has been changed. (Our answer.)",
+    },
+    {
+      id: "f2023-mcq-55",
+      prompt: "(Final 2023, MCQ item 55) What is the basic idea of demand paging?",
+      options: [{ id: "a", text: "To replace a page that is no longer needed by the process" }, { id: "b", text: "To bring a page into memory only when it is needed by the process" }, { id: "c", text: "To allocate a fixed number of pages to each process" }, { id: "d", text: "To divide the virtual address space into equal-sized pages" }],
+      correctOptionId: "b",
+      explanation: "Demand paging loads a page only on first use. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz
