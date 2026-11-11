@@ -274,3 +274,32 @@ The printed key gives the protection and segmentation points.
 - **Hashed page tables:** for large address spaces, hash the page number to a chain of entries.
 - **Inverted page tables:** one entry per physical frame, holding the process and page it contains. This is compact, but a lookup may need a search.
 </ModelAnswer>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="paging"
+  practice
+  questions={[
+    {
+      id: "f2023-page-size",
+      prompt: "(Final 2023, MCQ item 65) A system with paging has 64 KB of physical memory partitioned into 16 frames. What is the size of each page? a. 1 KB; b. 2 KB; c. 4 KB; d. 8 KB",
+      options: [{ id: "a", text: "1 KB" }, { id: "b", text: "2 KB" }, { id: "c", text: "4 KB" }, { id: "d", text: "8 KB" }],
+      correctOptionId: "c",
+      explanation: "A frame is the same size as a page. 64 KB ÷ 16 frames = 4 KB. (Our answer.)",
+    },
+    {
+      id: "f2023-offset-bits",
+      prompt: "(Final 2023, MCQ item 66) In that system, how many bits are there for the offset in any logical address? a. 9 bits; b. 12 bits; c. 14 bits; d. 16 bits",
+      options: [{ id: "a", text: "9 bits" }, { id: "b", text: "12 bits" }, { id: "c", text: "14 bits" }, { id: "d", text: "16 bits" }],
+      correctOptionId: "b",
+      explanation: "A 4 KB page holds 4,096 = 2¹² bytes, so the offset needs 12 bits. (Our answer.)",
+    },
+    {
+      id: "f2023-max-pages",
+      prompt: "(Final 2023, MCQ item 67) In that system, what is the maximum number of pages a process can take, assuming the kernel is 12 KB? a. 9; b. 10; c. 12; d. 13",
+      options: [{ id: "a", text: "9" }, { id: "b", text: "10" }, { id: "c", text: "12" }, { id: "d", text: "13" }],
+      correctOptionId: "d",
+      explanation: "The 12 KB kernel takes 3 of the 16 frames (12 ÷ 4). That leaves 13 frames for one process. (Our answer.)",
+    },
+  ]}
+/>

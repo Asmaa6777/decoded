@@ -419,3 +419,32 @@ Replacements are the faults beyond the first four (the frames fill up first). We
 - **Detection:** CPU utilization drops while the paging disk is busy. More processes are added, and utilization falls further.
 - **Fix:** lower the degree of multiprogramming (suspend some processes), or use local replacement with a working-set or page-fault-frequency policy, so each process gets the frames it needs.
 </ModelAnswer>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="page-replacement-and-thrashing"
+  practice
+  questions={[
+    {
+      id: "f2023-lru-faults",
+      prompt: "(Final 2023, MCQ item 68) Reference string 7,0,1,2,0,3,0,4,2,3,0,3,0,3,2,1,2,0,1,7,0,1 with 3 frames. LRU page replacement will result in ___ page faults. a. 6; b. 9; c. 12; d. 15",
+      options: [{ id: "a", text: "6" }, { id: "b", text: "9" }, { id: "c", text: "12" }, { id: "d", text: "15" }],
+      correctOptionId: "c",
+      explanation: "We simulated it: LRU faults 12 times. (Our answer.)",
+    },
+    {
+      id: "f2023-fifo-replacements",
+      prompt: "(Final 2023, MCQ item 69) The same reference string with 3 frames. FIFO page replacement will result in ___ page replacements. a. 6; b. 9; c. 12; d. 15",
+      options: [{ id: "a", text: "6" }, { id: "b", text: "9" }, { id: "c", text: "12" }, { id: "d", text: "15" }],
+      correctOptionId: "c",
+      explanation: "FIFO causes 15 faults. The first 3 faults fill empty frames and are not replacements, so 15 − 3 = 12 replacements. (Our answer.)",
+    },
+    {
+      id: "f2023-opt-faults",
+      prompt: "(Final 2023, MCQ item 70) The same reference string with 3 frames. Optimal page replacement will result in ___ page faults. a. 6; b. 9; c. 12; d. 15",
+      options: [{ id: "a", text: "6" }, { id: "b", text: "9" }, { id: "c", text: "12" }, { id: "d", text: "15" }],
+      correctOptionId: "b",
+      explanation: "We simulated it: optimal faults 9 times. (Our answer.)",
+    },
+  ]}
+/>
