@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  bitString, classifyDecimalVoltage, classifyLogicVoltage, computeBooleanDual, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
+  bitString, calculateAdcSpecs, calculatePullUpConstraints, classifyDecimalVoltage, classifyLogicVoltage, computeBooleanDual, computeNoiseMargins, counterStep, divisionSteps, evalExpr, evalGate, evaluateParallelSkew,
   expandRadixToBinary, floatParts, fromGray, fullAdd, fullSubtractor, generateRealWaveform, groupBinaryBits, halfSubtractor, jkNext, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries,
   minimizeKMap, minimizeSop, onesComplement, posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, signExtend, simulate7SegmentDecoder, simulateAdc, simulateAdderSubtractor, simulateBcdAdder,
   simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateDecoder, simulateFastCarries, simulateMagnitudeComparator, simulateMuxFunction, simulateMuxTree16to1, simulateParity, simulatePriorityEncoder, simulateSignedArithmetic, simulateStatic1Hazard, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
@@ -592,6 +592,154 @@ describe("signals and physical logic", () => {
     expect(fastBus.periodPs).toBe(400);
     expect(fastBus.skewFraction).toBe(0.5);
     expect(fastBus.isReliable).toBe(false);
+  });
+
+  describe("Module 0 Signals practice & exam calculations", () => {
+    it("verifies Problem 1: noise margins and spike tolerance on LOW line", () => {
+      // Experimental 3.3V LVCMOS: VOH = 2.8 V, VOL = 0.3 V, VIH = 2.0 V, VIL = 0.8 V
+      const margins = computeNoiseMargins({ voh: 2.8, vol: 0.3, vih: 2.0, vil: 0.8 });
+      expect(margins.vnh).toBe(0.8);
+      expect(margins.vnl).toBe(0.5);
+      expect(margins.vn).toBe(0.5);
+
+      // Positive noise spike of +0.65 V on VOL = 0.25 V
+      const vin = Number((0.25 + 0.65).toFixed(2)); // 0.90 V
+      expect(vin).toBe(0.9);
+      expect(classifyLogicVoltage(vin, 2.0, 0.8)).toBe("?"); // in forbidden zone
+
+      // Maximum tolerable noise spike on line with VOL = 0.25 V: VIL(max) - VOL
+      const maxSpike = Number((0.8 - 0.25).toFixed(2));
+      expect(maxSpike).toBe(0.55);
+    });
+
+    it("verifies Problem 2: oscilloscope waveform timing and 200 MHz scaling", () => {
+      // Period T = 12.5 ns -> f = 80 MHz
+      const periodNs = 12.5;
+      const pulseWidthNs = 3.75;
+      const freqMhz = 1000 / periodNs;
+      expect(freqMhz).toBe(80);
+
+      const dutyCycle = (pulseWidthNs / periodNs) * 100;
+      expect(dutyCycle).toBe(30);
+
+      // Scaled to 200 MHz with 30% duty cycle
+      const newFreqMhz = 200;
+      const newPeriodNs = 1000 / newFreqMhz;
+      expect(newPeriodNs).toBe(5.0);
+      const newPulseWidthNs = newPeriodNs * (dutyCycle / 100);
+      expect(newPulseWidthNs).toBe(1.5);
+    });
+
+    it("verifies Problem 3: parallel bus clock skew vs serial links", () => {
+      // 30 mm difference at 15 cm/ns (0.15 mm/ps) -> 200 ps skew
+      const deltaL = 30; // mm
+      const v = 0.15; // mm/ps
+      const deltaT = deltaL / v;
+      expect(deltaT).toBe(200);
+
+      // At 33 MHz (T ~ 30.303 ns)
+      const bus33 = evaluateParallelSkew(33, 30);
+      expect(bus33.skewPs).toBe(200);
+      expect(bus33.periodNs).toBeCloseTo(30.3, 1);
+      expect(bus33.skewFraction).toBeLessThan(0.01);
+      expect(bus33.isReliable).toBe(true);
+
+      // At 2.5 GHz (T = 400 ps)
+      const bus2500 = evaluateParallelSkew(2500, 30);
+      expect(bus2500.skewPs).toBe(200);
+      expect(bus2500.periodPs).toBe(400);
+      expect(bus2500.skewFraction).toBe(0.5);
+      expect(bus2500.isReliable).toBe(false);
+    });
+
+    it("verifies Problem 4: active-LOW pull-up resistor sizing trade-offs", () => {
+      const vdd = 3.3;
+      // Small R = 20 ohms: excessive sink current and power
+      const rSmall = 20;
+      const iSmall = vdd / rSmall; // 0.165 A = 165 mA
+      expect(iSmall).toBeCloseTo(0.165, 4);
+      const pSmall = vdd * iSmall;
+      expect(pSmall).toBeCloseTo(0.5445, 4);
+
+      // Large R = 1 MOhm with C_bus = 50 pF: slow rise time
+      const rLarge = 1e6;
+      const cBus = 50e-12;
+      const tauLarge = rLarge * cBus; // 50 us
+      expect(tauLarge).toBe(0.00005);
+      const trLarge = 2.2 * tauLarge; // 110 us
+      expect(trLarge).toBeCloseTo(0.00011, 5);
+
+      // Standard R = 10 kOhm: clean rise time and safe low current
+      const rStd = 10000;
+      const tauStd = rStd * cBus; // 0.5 us
+      expect(tauStd).toBe(0.0000005);
+      const trStd = 2.2 * tauStd; // 1.1 us
+      expect(trStd).toBeCloseTo(0.0000011, 7);
+      const iStd = (vdd / rStd) * 1000; // 0.33 mA
+      expect(iStd).toBeCloseTo(0.33, 2);
+    });
+
+    it("verifies Problem 5: TTL to 74HC CMOS interfacing and pull-up constraints", () => {
+      // TTL VOH = 2.4 V vs CMOS VIH = 3.5 V -> deficit -1.1 V
+      const mismatch = computeNoiseMargins({ voh: 2.4, vol: 0.4, vih: 3.5, vil: 1.5 });
+      expect(mismatch.vnh).toBe(-1.1);
+
+      // Pull-up resistor constraints: VCC = 5.0 V, VOL = 0.4 V, IOL = 16 mA, VIH = 3.5 V, I_leak = 41 uA
+      const constraints = calculatePullUpConstraints(5.0, 0.4, 16.0, 3.5, 41.0);
+      expect(constraints.rMinOhms).toBe(287.5);
+      expect(constraints.rMaxOhms).toBeCloseTo(36585.4, 1);
+
+      // With 74HCT CMOS (VIH = 2.0 V): positive noise margin without pull-up
+      const hct = computeNoiseMargins({ voh: 2.4, vol: 0.4, vih: 2.0, vil: 0.8 });
+      expect(hct.vnh).toBe(0.4);
+      expect(hct.vnl).toBe(0.4);
+      expect(hct.vn).toBe(0.4);
+    });
+
+    it("verifies Problem 6: ADC Nyquist sampling, quantization error, and SQNR", () => {
+      // Signal bandwidth f_max = 24 kHz -> Nyquist rate = 48 kS/s
+      // 8-bit ADC with V_FS = 4.096 V
+      const adc8 = calculateAdcSpecs(4.096, 8, 24000);
+      expect(adc8.nyquistRateHz).toBe(48000);
+      expect(adc8.levels).toBe(256);
+      expect(adc8.stepVoltage).toBe(0.016); // 16 mV
+      expect(adc8.maxQuantizationError).toBe(0.008); // ±8 mV
+
+      // 12-bit ADC with V_FS = 4.096 V
+      const adc12 = calculateAdcSpecs(4.096, 12, 24000);
+      expect(adc12.levels).toBe(4096);
+      expect(adc12.stepVoltage).toBe(0.001); // 1.0 mV
+      expect(adc12.maxQuantizationError).toBe(0.0005); // ±0.5 mV
+
+      // Resolution error reduction factor
+      const reductionFactor = adc8.stepVoltage / adc12.stepVoltage;
+      expect(reductionFactor).toBe(16);
+
+      // Theoretical SQNR improvement: 6.02 * (12 - 8) = 24.08 dB
+      const sqnrDelta = Number((adc12.sqnrDb - adc8.sqnrDb).toFixed(2));
+      expect(sqnrDelta).toBe(24.08);
+    });
+
+    it("verifies MCQ practice calculations (q1, q2, q5)", () => {
+      // q1: 10-bit ADC, 0 to 5.0 V span
+      const q1Adc = calculateAdcSpecs(5.0, 10, 1000);
+      expect(q1Adc.levels).toBe(1024);
+      expect(q1Adc.stepVoltage * 1000).toBeCloseTo(4.88, 2); // ~4.88 mV
+      expect(q1Adc.maxQuantizationError * 1000).toBeCloseTo(2.44, 2); // ±2.44 mV
+
+      // q2: VOH = 4.2 V, VOL = 0.5 V, VIH = 3.2 V, VIL = 1.2 V
+      const q2Margins = computeNoiseMargins({ voh: 4.2, vol: 0.5, vih: 3.2, vil: 1.2 });
+      expect(q2Margins.vnh).toBe(1.0);
+      expect(q2Margins.vnl).toBe(0.7);
+      expect(q2Margins.vn).toBe(0.7);
+
+      // q5: t_w = 4.0 ns, t_low = 12.0 ns -> T = 16.0 ns
+      const tTotal = 4.0 + 12.0; // 16.0 ns
+      const freq = 1000 / tTotal; // 62.5 MHz
+      const duty = (4.0 / tTotal) * 100; // 25%
+      expect(freq).toBe(62.5);
+      expect(duty).toBe(25);
+    });
   });
 });
 

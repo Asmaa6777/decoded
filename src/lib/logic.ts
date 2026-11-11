@@ -337,6 +337,37 @@ export function evaluateParallelSkew(
   };
 }
 
+/** Computes pull-up resistor constraints (R_min to prevent sinking overload, R_max to satisfy V_IH). */
+export function calculatePullUpConstraints(
+  vcc = 5.0,
+  volMax = 0.4,
+  iolMaxMa = 16.0,
+  vihMin = 3.5,
+  leakageCurrentUa = 41.0,
+) {
+  // When driver pulls LOW: (V_CC - V_OL) / R <= I_OL(max) -> R >= (V_CC - V_OL) / I_OL(max)
+  const rMinOhms = Number(((vcc - volMax) / (iolMaxMa / 1000)).toFixed(1));
+  // When driver is HIGH: (V_CC - V_IH) / R >= I_leakage -> R <= (V_CC - V_IH) / I_leakage
+  const rMaxOhms = Number(((vcc - vihMin) / (leakageCurrentUa * 1e-6)).toFixed(1));
+  return { rMinOhms, rMaxOhms };
+}
+
+/** Computes ADC specifications: Nyquist rate, quantization step size, and SQNR. */
+export function calculateAdcSpecs(vFs: number, bitDepth: number, fMaxHz: number) {
+  const levels = Math.pow(2, bitDepth);
+  const nyquistRateHz = 2 * fMaxHz;
+  const stepVoltage = Number((vFs / levels).toFixed(6));
+  const maxQuantizationError = Number((stepVoltage / 2).toFixed(6));
+  const sqnrDb = Number((6.02 * bitDepth + 1.76).toFixed(2));
+  return {
+    levels,
+    nyquistRateHz,
+    stepVoltage,
+    maxQuantizationError,
+    sqnrDb,
+  };
+}
+
 /* ---------------------------- number systems --------------------------- */
 
 const DIGITS = "0123456789ABCDEF";

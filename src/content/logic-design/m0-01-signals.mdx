@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { AdcSampler, VoltageBands, BusContentionVisualizer, ClockExplorer, SerialParallel } from "@/components/mdx/LogicVisualizers";
 
 # Signals: Why Computers Use Only Two Values
@@ -482,11 +482,13 @@ Data moves inside the CPU along internal [buses](/courses/computer-organization/
 
 ---
 
-## Practice: exam-style problems
+## Practice from past exams
 
-Review these hand-worked problems to reinforce your grasp of signal levels, noise margins, timing parameters, and transmission methods.
+Review these hand-worked problems and practice questions to reinforce your grasp of signal levels, noise margins, timing parameters, and transmission methods.
 
-### Problem 1: Noise margin calculation
+### Part 1: Written exam & lab problems
+
+#### Problem 1: Noise margin calculation and voltage tolerances
 
 An engineer is evaluating an experimental $3.3\text{ V}$ low-voltage CMOS logic family. The component datasheet provides the following threshold voltage specifications:
 - $V_{OH(min)} = 2.8\text{ V}$
@@ -523,7 +525,7 @@ An engineer is evaluating an experimental $3.3\text{ V}$ low-voltage CMOS logic 
 Remember that the general low-level noise margin formula uses the guaranteed worst-case output $V_{OL(max)}$ ($V_{NL} = V_{IL(max)} - V_{OL(max)} = 0.5\text{ V}$). However, when analyzing a specific circuit instance with a measured output voltage ($0.25\text{ V}$), the margin on that specific physical wire is measured from that operating point ($0.80\text{ V} - 0.25\text{ V} = 0.55\text{ V}$). Never subtract $V_{OL} - V_{IL}$ to get a negative value.
 </Callout>
 
-### Problem 2: Oscilloscope waveform analysis
+#### Problem 2: Oscilloscope waveform analysis
 
 An oscilloscope probe connected to a digital system's clock line displays a periodic square-wave signal. The horizontal time scale shows that one complete repeating cycle occupies $12.5\text{ ns}$. During each cycle, the signal remains at the logic HIGH voltage level for $3.75\text{ ns}$.
 
@@ -553,7 +555,7 @@ An oscilloscope probe connected to a digital system's clock line displays a peri
 Pay careful attention to metric units and powers of 10. A common mistake is writing $1 / (12.5\text{ ns}) = 0.08\text{ MHz}$ instead of $80\text{ MHz}$. Remember that nanoseconds ($10^{-9}\text{ s}$) invert directly to gigahertz ($10^9\text{ Hz}$): $\frac{1}{12.5\text{ ns}} = \frac{1,000}{12.5}\text{ MHz} = 80\text{ MHz}$.
 </Callout>
 
-### Problem 3: Parallel vs serial transmission bottlenecks
+#### Problem 3: Parallel vs serial transmission bottlenecks
 
 Two integrated circuits on a printed circuit board are connected by an 8-bit parallel bus. Electrical signals travel through the board's copper traces at a propagation speed of $v = 15\text{ cm/ns}$ (which corresponds to a propagation delay of $t_{pd} = \frac{1}{v} \approx 6.67\text{ ps/mm}$). Due to routing around other components on the board, trace 7 is $30\text{ mm}$ longer than trace 0.
 
@@ -585,7 +587,7 @@ Two integrated circuits on a printed circuit board are connected by an 8-bit par
 Do not confuse clock skew (arrival time discrepancy across different parallel wires) with propagation delay (the time required for a signal to travel from sender to receiver). Propagation delay merely delays when data arrives; clock skew corrupts the alignment between bits of the same word.
 </Callout>
 
-### Problem 4: Active-LOW vs active-HIGH signals
+#### Problem 4: Active-LOW vs active-HIGH signals
 
 A microcontroller pin labeled $\overline{\text{RESET}}$ (or `nRESET`) connects to a $+3.3\text{ V}$ power supply through a $10\text{ k}\Omega$ pull-up resistor. An external manual push button connects between the pin and ground ($\text{GND}$, $0\text{ V}$).
 
@@ -615,3 +617,200 @@ A microcontroller pin labeled $\overline{\text{RESET}}$ (or `nRESET`) connects t
 <Callout tone="orange" label="Common exam pitfall">
 Remember that while an open-drain transistor pulls a line LOW very quickly (low transistor ON-resistance $R_{on} \approx 10\ \Omega$), the rising edge depends entirely on the passive pull-up resistor charging the bus capacitance ($t_r \approx 2.2 \times R_{pullup} \times C_{bus}$). Choosing too large a resistor produces slow rising edges that can cause glitches.
 </Callout>
+
+#### Problem 5: Interfacing mismatched logic families (TTL to CMOS)
+
+An embedded systems engineer is interfacing a $5\text{ V}$ standard TTL output with a high-speed CMOS ($74\text{HC}$) peripheral input. The component datasheets specify:
+- Standard TTL driver: $V_{OH(min)} = 2.4\text{ V}$, $V_{OL(max)} = 0.4\text{ V}$, $I_{OL(max)} = 16\text{ mA}$, off-state HIGH leakage $I_{OH(leakage)} \le 40\ \mu\text{A}$.
+- 74HC CMOS input: $V_{IH(min)} = 3.5\text{ V}$ ($0.7 \times V_{CC}$), $V_{IL(max)} = 1.5\text{ V}$ ($0.3 \times V_{CC}$), input leakage $I_{IH} \le 1\ \mu\text{A}$.
+
+1. Explain why a direct connection fails when transmitting a logic 1. Identify which operating region the voltage lands in, and state the physical failure mechanism inside the CMOS gate.
+2. The engineer adds an external pull-up resistor $R_{pullup}$ connected to $+5.0\text{ V}$ ($V_{CC}$) to pull the line up to $5\text{ V}$ during logic HIGH. Calculate the absolute minimum allowable resistance $R_{pullup(min)}$ so the TTL driver's output transistor does not exceed its maximum sinking rating ($I_{OL(max)} = 16\text{ mA}$) when pulling LOW ($V_{OL} = 0.4\text{ V}$).
+3. When the TTL output is HIGH, the total combined leakage current drawn by the TTL output stage and the CMOS input is $I_{leakage} = 40\ \mu\text{A} + 1\ \mu\text{A} = 41\ \mu\text{A}$. Calculate the maximum allowable pull-up resistance $R_{pullup(max)}$ that guarantees the node voltage does not fall below $V_{IH(min)} = 3.5\text{ V}$.
+4. State why replacing the $74\text{HC}$ peripheral with a $74\text{HCT}$ peripheral completely eliminates the need for an external pull-up resistor.
+
+<ModelAnswer>
+1. **Direct Connection Failure on Logic 1:**
+   - **Threshold mismatch:** The standard TTL output guarantees a minimum HIGH voltage of only $V_{OH(min)} = 2.4\text{ V}$. However, the $74\text{HC}$ CMOS input requires at least $V_{IH(min)} = 3.5\text{ V}$ to recognize a valid logic 1.
+   - **Indeterminate region:** Because $2.4\text{ V} < 3.5\text{ V}$ (a shortfall of $1.1\text{ V}$), the TTL output voltage of $2.4\text{ V}$ to $2.7\text{ V}$ falls squarely inside the $74\text{HC}$ forbidden indeterminate region ($1.5\text{ V} \text{ to } 3.5\text{ V}$).
+   - **Physical failure mechanism:** In this middle region, both the PMOS pull-up and NMOS pull-down transistors in the CMOS input buffer turn partially ON at the same time. This creates a low-resistance path from $V_{CC}$ to $\text{GND}$, inducing continuous shoot-through current, excessive thermal dissipation, and indeterminate or oscillating internal logic states. Note that LOW transmission operates reliably because $V_{OL(max)} = 0.4\text{ V} \le V_{IL(max)} = 1.5\text{ V}$ with a healthy noise margin of $1.5\text{ V} - 0.4\text{ V} = 1.1\text{ V}$.
+
+2. **Minimum Pull-Up Resistance ($R_{pullup(min)}$):**
+   - When the TTL driver outputs logic LOW, its internal pull-down transistor connects the line to ground, holding the node at $V_{OL(max)} = 0.4\text{ V}$.
+   - Current flows from the $+5.0\text{ V}$ rail through $R_{pullup}$ into the TTL output pin. The TTL driver can sink at most $I_{OL(max)} = 16\text{ mA} = 0.016\text{ A}$.
+   - By Ohm's law, to ensure the sink current does not exceed $16\text{ mA}$:
+     $$R_{pullup(min)} = \frac{V_{CC} - V_{OL(max)}}{I_{OL(max)}} = \frac{5.0\text{ V} - 0.4\text{ V}}{0.016\text{ A}} = \frac{4.6\text{ V}}{0.016\text{ A}} = 287.5\ \Omega$$
+   - Any pull-up resistance smaller than $287.5\ \Omega$ causes the TTL output to sink more than $16\text{ mA}$, elevating $V_{OL}$ above $0.4\text{ V}$ and overheating the driver transistor.
+
+3. **Maximum Pull-Up Resistance ($R_{pullup(max)}$):**
+   - When the TTL driver outputs logic HIGH, its internal pull-up turns off, and the line is pulled up toward $+5.0\text{ V}$ by $R_{pullup}$.
+   - The total off-state leakage current pulled from the node is:
+     $$I_{leakage} = I_{OH(leakage)} + I_{IH} = 40\ \mu\text{A} + 1\ \mu\text{A} = 41\ \mu\text{A} = 41 \times 10^{-6}\text{ A}$$
+   - The voltage drop across $R_{pullup}$ must not pull the input node below $V_{IH(min)} = 3.5\text{ V}$:
+     $$\Delta V_{drop(max)} = V_{CC} - V_{IH(min)} = 5.0\text{ V} - 3.5\text{ V} = 1.5\text{ V}$$
+   - Therefore:
+     $$R_{pullup(max)} = \frac{\Delta V_{drop(max)}}{I_{leakage}} = \frac{1.5\text{ V}}{41 \times 10^{-6}\text{ A}} \approx 36,585\ \Omega \approx 36.6\text{ k}\Omega$$
+   - In practice, engineers choose a standard value between $1\text{ k}\Omega$ and $4.7\text{ k}\Omega$, safely above $287.5\ \Omega$ (limiting sink current to $1\text{ to }4.6\text{ mA}$) and well below $36.6\text{ k}\Omega$ to provide sharp rising edges.
+
+4. **The 74HCT Alternative:**
+   - The $74\text{HCT}$ logic family uses high-speed CMOS internal architecture but incorporates input transistors sized to match bipolar TTL voltage thresholds ($V_{IH(min)} = 2.0\text{ V}$ and $V_{IL(max)} = 0.8\text{ V}$).
+   - Since $V_{OH(min)} = 2.4\text{ V} \ge 2.0\text{ V}$, the TTL HIGH output drives the $74\text{HCT}$ input with a guaranteed $0.4\text{ V}$ noise margin ($2.4\text{ V} - 2.0\text{ V} = 0.4\text{ V}$), eliminating the need for external pull-up resistors, saving board space, and eliminating static power draw.
+</ModelAnswer>
+
+<Callout tone="orange" label="Common exam pitfall">
+Remember that CMOS inputs draw virtually zero DC current ($1\ \mu\text{A}$), meaning CMOS can never overload a TTL output's current capacity. The incompatibility is purely a voltage threshold mismatch ($V_{OH} < V_{IH}$). Do not state that the TTL output burns out the CMOS gate from excessive current.
+</Callout>
+
+#### Problem 6: ADC resolution, Nyquist sampling, and quantization error
+
+An environmental monitoring station uses an analog vibration sensor. The sensor outputs a continuous signal with frequency content from DC ($0\text{ Hz}$) up to a maximum cutoff frequency of $f_{max} = 24\text{ kHz}$. An analog-to-digital converter (ADC) samples this signal over a full-scale voltage span of $0.0\text{ V}$ to $4.096\text{ V}$ ($V_{FS} = 4.096\text{ V}$).
+
+1. According to the Nyquist-Shannon sampling theorem, what is the absolute minimum sampling frequency $f_s$ required to digitize this signal without aliasing distortion?
+2. If the station uses an 8-bit ADC ($N = 8$), calculate:
+   - The total number of discrete quantization levels.
+   - The quantization step size (voltage resolution $Q$) in millivolts ($\text{mV}$).
+   - The maximum quantization error $\Delta V_{error(max)}$ in millivolts ($\text{mV}$), assuming mid-tread rounding to the nearest discrete code.
+3. To improve precision, the station replaces the 8-bit digitizer with a 12-bit ADC ($N = 12$) operating across the same $4.096\text{ V}$ input range.
+   - Calculate the new quantization step size $Q_{12}$ in millivolts.
+   - By what factor is the quantization voltage error reduced?
+   - What is the theoretical improvement in Signal-to-Quantization-Noise Ratio ($\Delta\text{SQNR}$) in decibels ($\text{dB}$)?
+
+<ModelAnswer>
+1. **Minimum Nyquist Sampling Rate:**
+   - The Nyquist-Shannon sampling theorem requires that the sampling rate $f_s$ be at least twice the highest frequency component present in the band-limited signal ($f_s \ge 2 f_{max}$).
+   - With $f_{max} = 24\text{ kHz}$:
+     $$f_{s(Nyquist)} = 2 \times 24\text{ kHz} = 48\text{ kS/s} \text{ (or } 48\text{ kHz)}$$
+   - Any sampling frequency below $48\text{ kS/s}$ causes high-frequency vibrations to fold back across $f_s/2$ (the Nyquist folding frequency), creating false low-frequency phantom components (aliasing) that cannot be filtered out after sampling.
+
+2. **8-Bit ADC Quantization Metrics ($N = 8$):**
+   - **Discrete levels:**
+     $$\text{Levels} = 2^N = 2^8 = 256\text{ levels}$$
+   - **Quantization step size ($Q$):**
+     $$Q = \frac{V_{FS}}{2^N} = \frac{4.096\text{ V}}{256} = 0.016\text{ V} = 16\text{ mV}$$
+   - **Maximum quantization error ($\Delta V_{error(max)}$):**
+     Assuming the ADC assigns each continuous sample to the nearest discrete quantization code, the maximum error sits exactly halfway between adjacent levels:
+     $$\Delta V_{error(max)} = \pm \frac{Q}{2} = \pm \frac{16\text{ mV}}{2} = \pm 8\text{ mV}$$
+
+3. **12-Bit ADC Upgrade Metrics ($N = 12$):**
+   - **New quantization step size ($Q_{12}$):**
+     $$Q_{12} = \frac{V_{FS}}{2^{12}} = \frac{4.096\text{ V}}{4096} = 0.001\text{ V} = 1.0\text{ mV}$$
+   - **Error reduction factor:**
+     $$\text{Reduction Factor} = \frac{Q_8}{Q_{12}} = \frac{16\text{ mV}}{1\text{ mV}} = 16\times = 2^{12 - 8} = 2^4$$
+     The voltage quantization error drops by a factor of 16.
+   - **Theoretical SQNR Improvement ($\Delta\text{SQNR}$):**
+     Each additional bit of ADC resolution adds approximately $6.02\text{ dB}$ of dynamic range ($\approx 20 \log_{10}(2) \approx 6.0206\text{ dB}$):
+     $$\Delta\text{SQNR} \approx 6.02 \times \Delta N = 6.02 \times (12 - 8) = 6.02 \times 4 = 24.08\text{ dB}$$
+     The 12-bit ADC delivers a $24.08\text{ dB}$ cleaner signal, cutting quantization noise power by a factor of $256$ ($16^2$).
+</ModelAnswer>
+
+<Callout tone="orange" label="Common exam pitfall">
+Do not confuse sampling rate (how often you measure in time, measured in samples per second or Hz) with bit resolution (how finely you measure voltage, measured in bits or mV). Increasing the sampling rate avoids aliasing in time, but does not reduce quantization noise. Increasing the bit depth reduces quantization noise in voltage, but does not allow capturing higher frequency vibrations.
+</Callout>
+
+---
+
+### Part 2: Multiple-choice practice questions
+
+<Quiz
+  courseSlug="logic-design"
+  lessonSlug="signals"
+  practice
+  questions={[
+    {
+      id: "q1",
+      prompt: "An analog temperature sensor outputs a continuous voltage between 0.0 V and 5.0 V. A 10-bit analog-to-digital converter (ADC) digitizes this signal. What is the voltage resolution (quantization step size Q) of this ADC, and what is the maximum quantization error introduced when rounding an analog sample to the nearest discrete digital level?",
+      options: [
+        { id: "a", text: "Q ≈ 4.88 mV, and maximum quantization error is ±2.44 mV" },
+        { id: "b", text: "Q ≈ 9.77 mV, and maximum quantization error is ±4.88 mV" },
+        { id: "c", text: "Q ≈ 4.88 mV, and maximum quantization error is ±4.88 mV" },
+        { id: "d", text: "Q ≈ 5.00 mV, and maximum quantization error is ±2.50 mV" },
+      ],
+      correctOptionId: "a",
+      explanation: "A 10-bit ADC provides 2¹⁰ = 1024 discrete quantization steps. Across a 5.0 V full-scale span, the step size is Q = 5.0 V / 1024 ≈ 0.0048828 V ≈ 4.88 mV. When samples are rounded to the nearest integer level, the maximum distance between any continuous voltage and its assigned code is half of one step: ±Q / 2 ≈ ±4.88 mV / 2 = ±2.44 mV. Option (b) mistakenly uses 2⁹ = 512 levels. Option (c) confuses peak error (±Q/2) with the full step size Q. Option (d) incorrectly approximates 2¹⁰ as 1000 instead of 1024.",
+    },
+    {
+      id: "q2",
+      prompt: "A 5V digital logic family specifies V_OH(min) = 4.2 V, V_OL(max) = 0.5 V, V_IH(min) = 3.2 V, and V_IL(max) = 1.2 V. What are the high-level noise margin (V_NH), low-level noise margin (V_NL), and overall noise margin (V_N) of this logic family?",
+      options: [
+        { id: "a", text: "V_NH = 1.0 V, V_NL = 0.7 V, and overall V_N = 0.7 V" },
+        { id: "b", text: "V_NH = 0.7 V, V_NL = 1.0 V, and overall V_N = 0.7 V" },
+        { id: "c", text: "V_NH = 1.0 V, V_NL = 0.7 V, and overall V_N = 1.0 V" },
+        { id: "d", text: "V_NH = 2.7 V, V_NL = 0.7 V, and overall V_N = 0.7 V" },
+      ],
+      correctOptionId: "a",
+      explanation: "The high-level noise margin is V_NH = V_OH(min) - V_IH(min) = 4.2 V - 3.2 V = 1.0 V. The low-level noise margin is V_NL = V_IL(max) - V_OL(max) = 1.2 V - 0.5 V = 0.7 V. The overall noise margin is the smaller of the two: V_N = min(V_NH, V_NL) = min(1.0 V, 0.7 V) = 0.7 V. Option (b) inverts the definitions of V_NH and V_NL. Option (c) takes the maximum margin instead of the limiting minimum. Option (d) erroneously calculates V_NH as V_OH - V_IL = 4.2 - 1.2 = 3.0 V.",
+    },
+    {
+      id: "q3",
+      prompt: "What physical consequence occurs inside a CMOS logic gate when an unused input pin is left floating (unconnected) and drifts to an intermediate voltage near V_DD / 2?",
+      options: [
+        { id: "a", text: "Both the PMOS pull-up and NMOS pull-down transistors turn partially ON simultaneously, establishing a low-resistance path between V_DD and GND that causes excessive shoot-through current and overheating" },
+        { id: "b", text: "Both PMOS and NMOS transistors shut completely OFF, placing the output pin into a permanent high-impedance (Hi-Z) state" },
+        { id: "c", text: "The logic gate detects the indeterminate input voltage and asserts an internal fault flag on its power rail" },
+        { id: "d", text: "The output settles cleanly at exactly V_DD / 2 without drawing any DC current from the power supply" },
+      ],
+      correctOptionId: "a",
+      explanation: "In CMOS gates, the PMOS conducts when the gate is LOW and NMOS conducts when the gate is HIGH. Under normal operation, only one network is active at a time, drawing negligible static DC current. When an input sits midway in the forbidden region near V_DD / 2, the gate-to-source voltages of both transistors exceed their conduction thresholds, turning both ON simultaneously. This creates a low-resistance crowbar path straight from V_DD to GND, producing heavy shoot-through current that overheats the silicon and drains power. Gates have no fault detection circuitry, making option (c) incorrect.",
+    },
+    {
+      id: "q4",
+      prompt: "Why cannot a 5V standard TTL driver directly drive a 5V 74HC CMOS input without an external pull-up resistor or level shifter?",
+      options: [
+        { id: "a", text: "The TTL guaranteed high output V_OH(min) = 2.4 V is lower than the 74HC required input threshold V_IH(min) = 3.5 V, stranding the HIGH signal in the CMOS indeterminate region" },
+        { id: "b", text: "The TTL low output V_OL(max) = 0.4 V exceeds the 74HC maximum low input threshold V_IL(max) = 0.2 V" },
+        { id: "c", text: "TTL outputs source excessive DC current that destroys the insulated gate oxide of the CMOS input buffer" },
+        { id: "d", text: "TTL uses negative logic conventions while 74HC CMOS exclusively uses positive logic" },
+      ],
+      correctOptionId: "a",
+      explanation: "5V 74HC CMOS gates require an input voltage of at least V_IH(min) = 0.7 × V_CC = 3.5 V to guarantee recognition of a logic 1. However, standard 5V TTL outputs guarantee only V_OH(min) = 2.4 V (due to internal bipolar transistor voltage drops). Because 2.4 V is well below 3.5 V, a TTL HIGH lands directly in the 74HC indeterminate transition region (1.5 V to 3.5 V), causing erratic switching or oscillations. On the LOW side, TTL V_OL(max) = 0.4 V easily satisfies the 74HC V_IL(max) = 1.5 V requirement. Option (c) is wrong because CMOS inputs draw virtually no current (high input impedance).",
+    },
+    {
+      id: "q5",
+      prompt: "An oscilloscope measurement of a periodic digital clock signal indicates that the pulse remains HIGH for t_w = 4.0 ns and remains LOW for 12.0 ns during each cycle. What are the frequency and duty cycle of this clock signal?",
+      options: [
+        { id: "a", text: "Frequency = 62.5 MHz, and duty cycle = 25%" },
+        { id: "b", text: "Frequency = 62.5 MHz, and duty cycle = 50%" },
+        { id: "c", text: "Frequency = 16.0 MHz, and duty cycle = 25%" },
+        { id: "d", text: "Frequency = 250.0 MHz, and duty cycle = 25%" },
+      ],
+      correctOptionId: "a",
+      explanation: "The total period is T = t_HIGH + t_LOW = 4.0 ns + 12.0 ns = 16.0 ns = 16.0 × 10⁻⁹ s. The clock frequency is f = 1 / T = 1 / (16.0 × 10⁻⁹ s) = 62.5 × 10⁶ Hz = 62.5 MHz. The duty cycle is (t_HIGH / T) × 100% = (4.0 ns / 16.0 ns) × 100% = 25%. Option (b) mistakenly assumes all digital clocks have a 50% duty cycle. Option (c) inverts units improperly. Option (d) computes frequency using the pulse width alone (1 / 4.0 ns = 250 MHz) instead of the full repeating period T.",
+    },
+    {
+      id: "q6",
+      prompt: "How are the rise time (t_r) and fall time (t_f) of a physical digital signal formally measured on an oscilloscope according to standard IEEE/JEDEC engineering conventions?",
+      options: [
+        { id: "a", text: "The time required for the signal edge to transition between the 10% and 90% points of the steady-state voltage amplitude" },
+        { id: "b", text: "The time required for the signal to transition between exactly 0.0 V and the supply rail V_CC (0% to 100%)" },
+        { id: "c", text: "The time delay between the 50% midpoint of the input transition and the 50% midpoint of the output transition" },
+        { id: "d", text: "The total duration of damped ringing oscillations following an edge transition" },
+      ],
+      correctOptionId: "a",
+      explanation: "Physical voltage transitions on circuit traces are exponential RC curves that approach 0% and 100% asymptotically, making the exact 0% and 100% boundary points noisy and difficult to measure consistently. Industry standards therefore define rise time (t_r) and fall time (t_f) between the 10% and 90% steady-state voltage points. Option (c) describes gate propagation delay (t_pdLH or t_pdHL), not edge transition time. Option (d) describes settling time.",
+    },
+    {
+      id: "q7",
+      prompt: "Why did modern high-speed computer architectures transition from wide parallel buses (such as 32-bit PCI and 80-conductor IDE/PATA) to point-to-point differential serial links (such as PCIe, SATA, and USB 3.0)?",
+      options: [
+        { id: "a", text: "Microscopic PCB trace length discrepancies cause clock skew across parallel lines that consumes a catastrophic fraction of the clock period at high frequencies, whereas serial links embed the clock in the data stream" },
+        { id: "b", text: "Serial links require far fewer silicon transistors inside the microprocessor die than parallel bus interfaces" },
+        { id: "c", text: "Parallel buses cannot transmit binary 0s at frequencies above 100 MHz" },
+        { id: "d", text: "Copper traces can only carry high-frequency AC signals, which parallel interfaces are incapable of generating" },
+      ],
+      correctOptionId: "a",
+      explanation: "On a printed circuit board, signals travel at roughly 15 cm/ns (6.67 ps/mm). A tiny routing length difference of 15 mm causes 100 ps of clock skew. At 33 MHz (period ~30.3 ns), 100 ps represents less than 0.5% of the cycle, which is easily tolerated. At 2.5 GHz (period = 400 ps), that same 100 ps skew consumes 25% of the entire clock cycle, violating setup times and corrupting multi-bit words. High-speed serial links transmit along a single differential pair and embed the clock directly into the bitstream, eliminating inter-line skew entirely and allowing multi-gigahertz clocking. Option (b) is incorrect because high-speed SerDes (Serializer/Deserializer) transceivers and PLL clock recovery circuits actually require substantial transistor complexity.",
+    },
+    {
+      id: "q8",
+      prompt: "What is the primary operational advantage of configuring reset lines (such as nRESET) as active-LOW signals driven by open-drain outputs with a shared pull-up resistor rather than standard active-HIGH push-pull drivers?",
+      options: [
+        { id: "a", text: "Multiple reset sources can connect to the shared line in a wired-OR configuration without bus contention, and unpowered devices naturally hold the system safely in reset" },
+        { id: "b", text: "Open-drain circuits achieve zero rise time (t_r = 0 ns), enabling reset signals to toggle at microwave frequencies" },
+        { id: "c", text: "Active-LOW open-drain logic eliminates the requirement for power supply rails (V_DD) on the circuit board" },
+        { id: "d", text: "Active-LOW signals operate with negative voltage relative to ground, reducing energy consumption" },
+      ],
+      correctOptionId: "a",
+      explanation: "In push-pull circuits, connecting two outputs together leads to destructive bus contention if one drives HIGH while the other drives LOW. In open-drain (or open-collector) configurations, drivers can only pull the wire LOW (to GND) or float in high-impedance (Hi-Z). Multiple devices (manual reset button, watchdog timer, power supervisor) can safely share one wire: if any single device asserts LOW, the bus is safely pulled LOW (wired-OR / wired-AND). When all release, the pull-up resistor restores HIGH. Furthermore, during power-up before supply voltages stabilize, unpowered devices naturally sit near 0 V, safely holding the CPU in reset until power is clean. Option (b) is wrong because open-drain rising edges are actually slower, limited by the RC time constant.",
+    },
+  ]}
+/>
