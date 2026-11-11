@@ -2670,4 +2670,708 @@ export function simulateMuxTree16to1(
   };
 }
 
+/* ------------------------------- Sequential Logic (Module 4) ------------------------------- */
+
+export interface DebouncerResult {
+  switchPosition: "A" | "B" | "in-flight";
+  rawSwitchA: Bit;
+  rawSwitchB: Bit;
+  s_n: Bit;
+  r_n: Bit;
+  q: Bit;
+  q_n: Bit;
+  bounces: { timeUs: number; rawA: Bit; rawB: Bit; q: Bit }[];
+  explanation: string;
+}
+
+export function simulateDebouncer(
+  position: "A" | "B" | "in-flight",
+  includeBounces: boolean = true
+): DebouncerResult {
+  const bounces: { timeUs: number; rawA: Bit; rawB: Bit; q: Bit }[] = [];
+  let s_n: Bit = 1;
+  let r_n: Bit = 1;
+  let q: Bit = 0;
+  let q_n: Bit = 1;
+
+  if (position === "A") {
+    s_n = 0;
+    r_n = 1;
+    q = 1;
+    q_n = 0;
+    if (includeBounces) {
+      bounces.push({ timeUs: 100, rawA: 1, rawB: 1, q: 0 });
+      bounces.push({ timeUs: 500, rawA: 0, rawB: 1, q: 1 });
+      bounces.push({ timeUs: 700, rawA: 1, rawB: 1, q: 1 });
+      bounces.push({ timeUs: 900, rawA: 0, rawB: 1, q: 1 });
+      bounces.push({ timeUs: 1100, rawA: 1, rawB: 1, q: 1 });
+      bounces.push({ timeUs: 1500, rawA: 0, rawB: 1, q: 1 });
+    }
+  } else if (position === "B") {
+    s_n = 1;
+    r_n = 0;
+    q = 0;
+    q_n = 1;
+    if (includeBounces) {
+      bounces.push({ timeUs: 100, rawA: 1, rawB: 1, q: 1 });
+      bounces.push({ timeUs: 500, rawA: 1, rawB: 0, q: 0 });
+      bounces.push({ timeUs: 700, rawA: 1, rawB: 1, q: 0 });
+      bounces.push({ timeUs: 900, rawA: 1, rawB: 0, q: 0 });
+      bounces.push({ timeUs: 1100, rawA: 1, rawB: 1, q: 0 });
+      bounces.push({ timeUs: 1500, rawA: 1, rawB: 0, q: 0 });
+    }
+  } else {
+    s_n = 1;
+    r_n = 1;
+    q = 0;
+    q_n = 1;
+  }
+
+  const explanation =
+    position === "A"
+      ? "Position A: Wiper connects /S to GND (0). Output Q sets to 1 on the very first contact. Subsequent mechanical bounces pull /S back to 1 via pull-up resistor R1, putting the latch in Hold mode (/S=1, /R=1), keeping Q=1 completely glitch-free."
+      : position === "B"
+      ? "Position B: Wiper connects /R to GND (0). Output Q resets to 0 on the very first contact. Subsequent mechanical bounces alternate between Reset and Hold, keeping Q=0 rock solid."
+      : "In Flight: Switch is between contacts. Both pull-up resistors hold /S=1 and /R=1 (Hold mode). Output Q retains its previous state.";
+
+  return {
+    switchPosition: position,
+    rawSwitchA: position === "A" ? 0 : 1,
+    rawSwitchB: position === "B" ? 0 : 1,
+    s_n,
+    r_n,
+    q,
+    q_n,
+    bounces,
+    explanation,
+  };
+}
+
+export interface RaceAroundResult {
+  clockHighNs: number;
+  loopDelayNs: number;
+  latchToggles: number;
+  latchHistory: Bit[];
+  latchFinal: Bit;
+  latchOscillated: boolean;
+  flopFinal: Bit;
+  explanation: string;
+}
+
+export function simulateRaceAround(
+  clockHighNs: number,
+  loopDelayNs: number = 2.0
+): RaceAroundResult {
+  let q: Bit = 0;
+  const history: Bit[] = [0];
+  const toggles = Math.floor(clockHighNs / loopDelayNs);
+
+  for (let i = 0; i < toggles; i++) {
+    q = (q === 0 ? 1 : 0) as Bit;
+    history.push(q);
+  }
+
+  const latchOscillated = toggles > 1;
+  const flopFinal: Bit = 1;
+
+  const explanation =
+    toggles === 0
+      ? `Clock high pulse (${clockHighNs}ns) is shorter than loop delay (${loopDelayNs}ns). Latch never finishes switching.`
+      : toggles === 1
+      ? `Clock high pulse (${clockHighNs}ns) permits exactly one state toggle. Latch sets to Q=1.`
+      : `Race-Around Hazard! Clock pulse (${clockHighNs}ns) exceeds loop delay (${loopDelayNs}ns). Signal toggles ${toggles} times back and forth while clock is high, locking in Q=${q} when clock falls.`;
+
+  return {
+    clockHighNs,
+    loopDelayNs,
+    latchToggles: toggles,
+    latchHistory: history,
+    latchFinal: q,
+    latchOscillated,
+    flopFinal,
+    explanation,
+  };
+}
+
+export type FlipFlopType = "D" | "JK" | "T" | "SR";
+
+export interface FlipFlopConversionResult {
+  available: FlipFlopType;
+  desired: FlipFlopType;
+  table: {
+    inputs: Record<string, Bit>;
+    qPresent: Bit;
+    qNext: Bit;
+    requiredAvailableInputs: Record<string, Bit | "X">;
+  }[];
+  equation: string;
+  isFullyVerified: boolean;
+}
+
+export function simulateFlipFlopConversion(
+  available: FlipFlopType,
+  desired: FlipFlopType
+): FlipFlopConversionResult {
+  let equation = "";
+  if (available === "D" && desired === "JK") equation = "D = J·Q' + K'·Q";
+  else if (available === "D" && desired === "T") equation = "D = T ⊕ Q";
+  else if (available === "D" && desired === "SR") equation = "D = S + R'·Q (S·R = 0)";
+  else if (available === "D" && desired === "D") equation = "D = D";
+  else if (available === "JK" && desired === "D") equation = "J = D, K = D'";
+  else if (available === "JK" && desired === "T") equation = "J = T, K = T";
+  else if (available === "JK" && desired === "SR") equation = "J = S, K = R";
+  else if (available === "JK" && desired === "JK") equation = "J = J, K = K";
+  else if (available === "T" && desired === "D") equation = "T = D ⊕ Q";
+  else if (available === "T" && desired === "JK") equation = "T = J·Q' + K·Q";
+  else if (available === "T" && desired === "SR") equation = "T = S·Q' + R·Q";
+  else if (available === "T" && desired === "T") equation = "T = T";
+  else if (available === "SR" && desired === "D") equation = "S = D, R = D'";
+  else if (available === "SR" && desired === "JK") equation = "S = J·Q', R = K·Q";
+  else if (available === "SR" && desired === "T") equation = "S = T·Q', R = T·Q";
+  else if (available === "SR" && desired === "SR") equation = "S = S, R = R";
+
+  const table: FlipFlopConversionResult["table"] = [];
+  const desiredInputNames =
+    desired === "D" ? ["D"] : desired === "T" ? ["T"] : desired === "JK" ? ["J", "K"] : ["S", "R"];
+
+  const numInputCombinations = 1 << desiredInputNames.length;
+  for (let c = 0; c < numInputCombinations; c++) {
+    const inputVals: Record<string, Bit> = {};
+    for (let idx = 0; idx < desiredInputNames.length; idx++) {
+      const bitVal = ((c >> (desiredInputNames.length - 1 - idx)) & 1) as Bit;
+      inputVals[desiredInputNames[idx]] = bitVal;
+    }
+
+    if (desired === "SR" && inputVals["S"] === 1 && inputVals["R"] === 1) {
+      continue;
+    }
+
+    for (const qPresent of [0, 1] as Bit[]) {
+      let qNext: Bit = qPresent;
+      if (desired === "D") {
+        qNext = inputVals["D"];
+      } else if (desired === "T") {
+        qNext = inputVals["T"] ? ((1 - qPresent) as Bit) : qPresent;
+      } else if (desired === "JK") {
+        const j = inputVals["J"], k = inputVals["K"];
+        if (j && k) qNext = (1 - qPresent) as Bit;
+        else if (j) qNext = 1;
+        else if (k) qNext = 0;
+        else qNext = qPresent;
+      } else if (desired === "SR") {
+        const s = inputVals["S"], r = inputVals["R"];
+        if (s) qNext = 1;
+        else if (r) qNext = 0;
+        else qNext = qPresent;
+      }
+
+      const req: Record<string, Bit | "X"> = {};
+      if (available === "D") {
+        req["D"] = qNext;
+      } else if (available === "T") {
+        req["T"] = (qPresent ^ qNext) as Bit;
+      } else if (available === "JK") {
+        if (qPresent === 0 && qNext === 0) { req["J"] = 0; req["K"] = "X"; }
+        else if (qPresent === 0 && qNext === 1) { req["J"] = 1; req["K"] = "X"; }
+        else if (qPresent === 1 && qNext === 0) { req["J"] = "X"; req["K"] = 1; }
+        else { req["J"] = "X"; req["K"] = 0; }
+      } else if (available === "SR") {
+        if (qPresent === 0 && qNext === 0) { req["S"] = 0; req["R"] = "X"; }
+        else if (qPresent === 0 && qNext === 1) { req["S"] = 1; req["R"] = 0; }
+        else if (qPresent === 1 && qNext === 0) { req["S"] = 0; req["R"] = 1; }
+        else { req["S"] = "X"; req["R"] = 0; }
+      }
+
+      table.push({
+        inputs: inputVals,
+        qPresent,
+        qNext,
+        requiredAvailableInputs: req,
+      });
+    }
+  }
+
+  return {
+    available,
+    desired,
+    table,
+    equation,
+    isFullyVerified: true,
+  };
+}
+
+export interface TimingBudgetResult {
+  t_cq: number;
+  t_comb_max: number;
+  t_comb_min: number;
+  t_su: number;
+  t_h: number;
+  t_skew: number;
+  t_clk: number;
+  f_clk_MHz: number;
+  t_min: number;
+  f_max_MHz: number;
+  setupSlack: number;
+  setupPass: boolean;
+  holdSlack: number;
+  holdPass: boolean;
+  status: "pass" | "setup-violation" | "hold-violation" | "both-violation";
+}
+
+export function calculateTimingBudget(params: {
+  t_cq: number;
+  t_comb_max: number;
+  t_comb_min: number;
+  t_su: number;
+  t_h: number;
+  t_skew?: number;
+  clockFreqMHz?: number;
+}): TimingBudgetResult {
+  const t_skew = params.t_skew ?? 0;
+  const t_min = params.t_cq + params.t_comb_max + params.t_su - t_skew;
+  const f_max_MHz = Math.max(0, 1000 / t_min);
+
+  const f_clk_MHz = params.clockFreqMHz ?? Math.min(100, Math.floor(f_max_MHz));
+  const t_clk = 1000 / f_clk_MHz;
+
+  const setupSlack = t_clk - (params.t_cq + params.t_comb_max + params.t_su - t_skew);
+  const setupPass = setupSlack >= 0;
+
+  const holdSlack = (params.t_cq + params.t_comb_min) - (params.t_h + t_skew);
+  const holdPass = holdSlack >= 0;
+
+  let status: TimingBudgetResult["status"] = "pass";
+  if (!setupPass && !holdPass) status = "both-violation";
+  else if (!setupPass) status = "setup-violation";
+  else if (!holdPass) status = "hold-violation";
+
+  return {
+    t_cq: params.t_cq,
+    t_comb_max: params.t_comb_max,
+    t_comb_min: params.t_comb_min,
+    t_su: params.t_su,
+    t_h: params.t_h,
+    t_skew,
+    t_clk: parseFloat(t_clk.toFixed(2)),
+    f_clk_MHz,
+    t_min: parseFloat(t_min.toFixed(2)),
+    f_max_MHz: parseFloat(f_max_MHz.toFixed(2)),
+    setupSlack: parseFloat(setupSlack.toFixed(2)),
+    setupPass,
+    holdSlack: parseFloat(holdSlack.toFixed(2)),
+    holdPass,
+    status,
+  };
+}
+
+export interface UniversalShiftRegisterResult {
+  previousState: [Bit, Bit, Bit, Bit];
+  nextState: [Bit, Bit, Bit, Bit];
+  mode: "Hold" | "Shift Right" | "Shift Left" | "Parallel Load" | "Clear";
+  s1: Bit;
+  s0: Bit;
+  sir: Bit;
+  sil: Bit;
+  arithmeticEffect?: string;
+}
+
+export function simulateUniversalShiftRegister(
+  state: [Bit, Bit, Bit, Bit],
+  control: {
+    s1: Bit;
+    s0: Bit;
+    sir: Bit;
+    sil: Bit;
+    parallelIn: [Bit, Bit, Bit, Bit];
+    clr_n?: Bit;
+    arithmeticMode?: "none" | "lsl" | "lsr" | "asr";
+  }
+): UniversalShiftRegisterResult {
+  if (control.clr_n === 0) {
+    return {
+      previousState: state,
+      nextState: [0, 0, 0, 0],
+      mode: "Clear",
+      s1: control.s1,
+      s0: control.s0,
+      sir: control.sir,
+      sil: control.sil,
+      arithmeticEffect: "Asynchronous master reset: all flip-flops cleared to 0",
+    };
+  }
+
+  const modeCode = (control.s1 << 1) | control.s0;
+  let nextState: [Bit, Bit, Bit, Bit] = [...state];
+  let mode: UniversalShiftRegisterResult["mode"] = "Hold";
+  let arithmeticEffect = "";
+
+  if (modeCode === 0b00) {
+    mode = "Hold";
+    nextState = [...state];
+    arithmeticEffect = "State preserved (no change)";
+  } else if (modeCode === 0b01) {
+    mode = "Shift Right";
+    const inBit = control.arithmeticMode === "asr" ? state[0] : control.sir;
+    nextState = [inBit, state[0], state[1], state[2]];
+    arithmeticEffect =
+      control.arithmeticMode === "asr"
+        ? "Arithmetic Shift Right (ASR): replicates MSB to preserve sign, dividing signed value by 2"
+        : `Logical Shift Right (LSR): shifts in SIR=${inBit}, dividing unsigned value by 2`;
+  } else if (modeCode === 0b10) {
+    mode = "Shift Left";
+    nextState = [state[1], state[2], state[3], control.sil];
+    arithmeticEffect = `Logical Shift Left (LSL): shifts in SIL=${control.sil}, multiplying value by 2`;
+  } else if (modeCode === 0b11) {
+    mode = "Parallel Load";
+    nextState = [...control.parallelIn];
+    arithmeticEffect = "Parallel load: inputs I3..I0 latched simultaneously";
+  }
+
+  return {
+    previousState: state,
+    nextState,
+    mode,
+    s1: control.s1,
+    s0: control.s0,
+    sir: control.sir,
+    sil: control.sil,
+    arithmeticEffect,
+  };
+}
+
+export interface RingJohnsonResult {
+  type: "ring" | "johnson";
+  previousState: [Bit, Bit, Bit, Bit];
+  nextState: [Bit, Bit, Bit, Bit];
+  feedbackBit: Bit;
+  isValidState: boolean;
+  stateIndex: number;
+  decodedExpression: string;
+  isSelfCorrecting: boolean;
+  validCycleLength: number;
+}
+
+export function simulateRingJohnson(
+  type: "ring" | "johnson",
+  state: [Bit, Bit, Bit, Bit],
+  withSelfCorrection: boolean = true
+): RingJohnsonResult {
+  const [q0, q1, q2, q3] = state;
+
+  if (type === "ring") {
+    const validRingStates = ["1000", "0100", "0010", "0001"];
+    const stateStr = `${q0}${q1}${q2}${q3}`;
+    const stateIdx = validRingStates.indexOf(stateStr);
+    const isValid = stateIdx !== -1;
+
+    let feedback: Bit = q3;
+    if (withSelfCorrection) {
+      // Self-correcting ring feedback: D0 = (Q0 + Q1 + Q2)' = Q0' · Q1' · Q2'
+      feedback = (q0 === 0 && q1 === 0 && q2 === 0 ? 1 : 0) as Bit;
+    }
+
+    const nextState: [Bit, Bit, Bit, Bit] = [feedback, q0, q1, q2];
+    const decodedExpression = isValid ? `State ${stateIdx}: Q${stateIdx}` : "Invalid / Unused State";
+
+    return {
+      type: "ring",
+      previousState: state,
+      nextState,
+      feedbackBit: feedback,
+      isValidState: isValid,
+      stateIndex: stateIdx,
+      decodedExpression,
+      isSelfCorrecting: withSelfCorrection,
+      validCycleLength: 4,
+    };
+  } else {
+    const validJohnsonStates = [
+      "0000", "1000", "1100", "1110",
+      "1111", "0111", "0011", "0001"
+    ];
+    const decodings = [
+      "Q0' · Q3'", "Q0 · Q1'", "Q1 · Q2'", "Q2 · Q3'",
+      "Q0 · Q3", "Q0' · Q1", "Q1' · Q2", "Q2' · Q3"
+    ];
+    const stateStr = `${q0}${q1}${q2}${q3}`;
+    const stateIdx = validJohnsonStates.indexOf(stateStr);
+    const isValid = stateIdx !== -1;
+
+    let feedback: Bit = (q3 === 0 ? 1 : 0) as Bit;
+    if (withSelfCorrection && !isValid) {
+      feedback = (q3 === 0 && (q1 === 0 || q2 === 1) ? 1 : 0) as Bit;
+    }
+
+    const nextState: [Bit, Bit, Bit, Bit] = [feedback, q0, q1, q2];
+    const decodedExpression = isValid ? `State ${stateIdx}: ${decodings[stateIdx]}` : "Invalid State (trapped without correction)";
+
+    return {
+      type: "johnson",
+      previousState: state,
+      nextState,
+      feedbackBit: feedback,
+      isValidState: isValid,
+      stateIndex: stateIdx,
+      decodedExpression,
+      isSelfCorrecting: withSelfCorrection,
+      validCycleLength: 8,
+    };
+  }
+}
+
+export interface CounterGlitchResult {
+  fromState: number;
+  toState: number;
+  bitDelayNs: number;
+  intermediateSteps: { timeNs: number; state: number; bits: Bit[]; isFalseState: boolean }[];
+  rippleMaxDelayNs: number;
+  syncDelayNs: number;
+  glitchDetectedOnDecoder: boolean;
+  glitchDurationNs: number;
+  glitchDescription: string;
+}
+
+export function simulateCounterGlitch(
+  fromState: number,
+  toState: number,
+  bitDelayNs: number = 2
+): CounterGlitchResult {
+  const steps: CounterGlitchResult["intermediateSteps"] = [];
+  let currentBits: Bit[] = [
+    ((fromState >> 3) & 1) as Bit,
+    ((fromState >> 2) & 1) as Bit,
+    ((fromState >> 1) & 1) as Bit,
+    (fromState & 1) as Bit,
+  ];
+
+  steps.push({
+    timeNs: 0,
+    state: fromState,
+    bits: [...currentBits],
+    isFalseState: false,
+  });
+
+  let currentTime = 0;
+  let glitchDetected = false;
+  let glitchDuration = 0;
+
+  for (let bitIdx = 3; bitIdx >= 0; bitIdx--) {
+    const bitBefore = currentBits[bitIdx];
+    const targetBit = ((toState >> (3 - bitIdx)) & 1) as Bit;
+
+    if (bitBefore !== targetBit) {
+      currentTime += bitDelayNs;
+      currentBits = [...currentBits];
+      currentBits[bitIdx] = targetBit;
+      const intermediateNum = (currentBits[0] << 3) | (currentBits[1] << 2) | (currentBits[2] << 1) | currentBits[3];
+      const isFinal = intermediateNum === toState;
+
+      steps.push({
+        timeNs: currentTime,
+        state: intermediateNum,
+        bits: [...currentBits],
+        isFalseState: !isFinal,
+      });
+
+      if (intermediateNum === 0 && !isFinal) {
+        glitchDetected = true;
+        glitchDuration += bitDelayNs;
+      }
+    }
+  }
+
+  const rippleMaxDelayNs = currentTime;
+  const syncDelayNs = bitDelayNs;
+
+  const glitchDescription = glitchDetected
+    ? `Hazard Detected! During transition ${fromState} -> ${toState}, the ripple chain passes through false intermediate state 0 for ${glitchDuration}ns, firing a spurious spike (glitch) on connected combinational decoders.`
+    : `Transition ${fromState} -> ${toState} settles across ${rippleMaxDelayNs}ns without triggering false zero decoder.`;
+
+  return {
+    fromState,
+    toState,
+    bitDelayNs,
+    intermediateSteps: steps,
+    rippleMaxDelayNs,
+    syncDelayNs,
+    glitchDetectedOnDecoder: glitchDetected,
+    glitchDurationNs: glitchDuration,
+    glitchDescription,
+  };
+}
+
+export interface Counter74LS163Result {
+  currentState: number;
+  nextState: number;
+  rco: Bit;
+  action: "Clear" | "Load" | "Count Up" | "Count Down" | "Hold";
+  truncatedReset: boolean;
+  decodingConditionMet: boolean;
+}
+
+export function simulate74LS163(
+  state: number,
+  control: {
+    clr_n: Bit;
+    load_n: Bit;
+    enp: Bit;
+    ent: Bit;
+    parallelIn?: number;
+    upDown?: Bit;
+    modN?: number;
+    truncationMode?: "sync-clear" | "async-clear";
+  }
+): Counter74LS163Result {
+  const modN = control.modN ?? 16;
+  const isUp = control.upDown !== 0;
+  const parallelVal = (control.parallelIn ?? 0) & 0xf;
+
+  const isTerminalState = state === modN - 1;
+  const autoClearAsserted = control.truncationMode === "sync-clear" && isTerminalState;
+  const effectiveClrN: Bit = autoClearAsserted ? 0 : control.clr_n;
+
+  let nextState = state;
+  let action: Counter74LS163Result["action"] = "Hold";
+  let truncatedReset = false;
+
+  if (effectiveClrN === 0) {
+    nextState = 0;
+    action = "Clear";
+    if (autoClearAsserted) truncatedReset = true;
+  } else if (control.load_n === 0) {
+    nextState = parallelVal;
+    action = "Load";
+  } else if (control.enp === 1 && control.ent === 1) {
+    if (isUp) {
+      nextState = (state + 1) % 16;
+      action = "Count Up";
+    } else {
+      nextState = (state - 1 + 16) % 16;
+      action = "Count Down";
+    }
+  }
+
+  const rco: Bit = (state === 15 && control.ent === 1 ? 1 : 0) as Bit;
+
+  return {
+    currentState: state,
+    nextState,
+    rco,
+    action,
+    truncatedReset,
+    decodingConditionMet: isTerminalState,
+  };
+}
+
+export interface CoincidentMemoryResult {
+  rowAddress: number;
+  colAddress: number;
+  linearAddress: number;
+  selectedCell: { row: number; col: number };
+  matrix: Bit[][];
+  readData: Bit;
+  gateCount1D: number;
+  gateCount2D: number;
+  gateReductionPercent: number;
+}
+
+export function simulateCoincidentMemory(
+  matrix: Bit[][],
+  op: {
+    rowAddr: number;
+    colAddr: number;
+    writeEnable?: Bit;
+    dataIn?: Bit;
+  }
+): CoincidentMemoryResult {
+  const rows = matrix.length;
+  const cols = matrix[0]?.length ?? 4;
+  const totalCells = rows * cols;
+
+  const row = Math.max(0, Math.min(rows - 1, op.rowAddr));
+  const col = Math.max(0, Math.min(cols - 1, op.colAddr));
+  const linearAddress = row * cols + col;
+
+  const newMatrix = matrix.map((r) => [...r]);
+  if (op.writeEnable === 1 && op.dataIn !== undefined) {
+    newMatrix[row][col] = op.dataIn;
+  }
+
+  const readData = newMatrix[row][col];
+
+  const gateCount1D = totalCells;
+  const gateCount2D = rows + cols;
+  const gateReductionPercent = parseFloat(
+    (((gateCount1D - gateCount2D) / gateCount1D) * 100).toFixed(1)
+  );
+
+  return {
+    rowAddress: row,
+    colAddress: col,
+    linearAddress,
+    selectedCell: { row, col },
+    matrix: newMatrix,
+    readData,
+    gateCount1D,
+    gateCount2D,
+    gateReductionPercent,
+  };
+}
+
+export interface MemoryExpansionResult {
+  address12Bit: number;
+  hexAddress: string;
+  bankIndex: number;
+  internalChipAddress: number;
+  chipSelects: [Bit, Bit, Bit, Bit];
+  busOutputs: [string, string, string, string];
+  sharedBusValue: number;
+  hasContention: boolean;
+}
+
+export function simulateMemoryExpansion(
+  addr: number,
+  op: "read" | "write" = "read",
+  dataIn: number = 0,
+  memoryChips: number[][] = [
+    [0x12, 0x34],
+    [0x56, 0x78],
+    [0x9a, 0xbc],
+    [0xde, 0xf0],
+  ]
+): MemoryExpansionResult {
+  const address12Bit = addr & 0xfff;
+  const hexAddress = `0x${address12Bit.toString(16).padStart(3, "0").toUpperCase()}`;
+
+  const bankIndex = (address12Bit >> 10) & 0x3;
+  const internalChipAddress = address12Bit & 0x3ff;
+
+  const chipSelects: [Bit, Bit, Bit, Bit] = [
+    bankIndex === 0 ? 0 : 1,
+    bankIndex === 1 ? 0 : 1,
+    bankIndex === 2 ? 0 : 1,
+    bankIndex === 3 ? 0 : 1,
+  ];
+
+  const chipVal = memoryChips[bankIndex]?.[internalChipAddress % (memoryChips[bankIndex]?.length || 1)] ?? 0xaa;
+  const busOutputs: [string, string, string, string] = [
+    chipSelects[0] === 0 ? `0x${chipVal.toString(16).padStart(2, "0").toUpperCase()}` : "Hi-Z",
+    chipSelects[1] === 0 ? `0x${chipVal.toString(16).padStart(2, "0").toUpperCase()}` : "Hi-Z",
+    chipSelects[2] === 0 ? `0x${chipVal.toString(16).padStart(2, "0").toUpperCase()}` : "Hi-Z",
+    chipSelects[3] === 0 ? `0x${chipVal.toString(16).padStart(2, "0").toUpperCase()}` : "Hi-Z",
+  ];
+
+  return {
+    address12Bit,
+    hexAddress,
+    bankIndex,
+    internalChipAddress,
+    chipSelects,
+    busOutputs,
+    sharedBusValue: chipVal,
+    hasContention: false,
+  };
+}
+
+
 

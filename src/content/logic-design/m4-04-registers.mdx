@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
-import { RegisterLab, ShiftRegisterLab } from "@/components/mdx/LogicVisualizers";
+import { RegisterLab, ShiftRegisterLab, UniversalShiftRegisterLab, RingJohnsonLab } from "@/components/mdx/LogicVisualizers";
 
 # Registers and Shift Registers
 
@@ -133,6 +133,8 @@ Two mode-control lines, $S_1$ and $S_0$, select the operational mode using a 4-t
 
 By driving the mode lines $(S_1, S_0)$, a processor or controller can dynamically reconfigure the register on a cycle-by-cycle basis.
 
+<UniversalShiftRegisterLab />
+
 ---
 
 ## Shift Register Counters: Ring and Johnson Counters
@@ -192,6 +194,8 @@ Starting from an initial cleared state (`0000`), the sequence of states for a 4-
   - State 5: $Q_0' Q_1$
   - State 6: $Q_1' Q_2$
   - State 7: $Q_2' Q_3$
+
+<RingJohnsonLab />
 
 ---
 

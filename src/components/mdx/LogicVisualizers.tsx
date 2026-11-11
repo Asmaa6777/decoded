@@ -10,6 +10,7 @@ import {
   signedValue, signExtend, simulate7SegmentDecoder, simulateAdc, simulateAdderSubtractor, simulateBcdAdder, simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateDecoder, simulateFastCarries, simulateMagnitudeComparator, simulateMuxFunction, simulateMuxTree16to1, simulateParity, simulatePriorityEncoder,
   simulateSignedArithmetic, simulateStatic1Hazard, sopFromMinterms, TargetOperation, toBase, toBcd, toExcess3, toGray, truthRows, twosComplement,
   type Bit, type DriverMode, type DriverState, type LogicFamilyId, UNIVERSAL_CIRCUITS, UniversalGateFamily, fullSubtractor, halfSubtractor,
+  calculateTimingBudget, simulate74LS163, simulateCoincidentMemory, simulateCounterGlitch, simulateDebouncer, simulateFlipFlopConversion, simulateMemoryExpansion, simulateRaceAround, simulateRingJohnson, simulateUniversalShiftRegister, type FlipFlopType,
 } from "@/lib/logic";
 
 const BIT_ON: Record<string, string> = { mint: "border-mint bg-mint/20", neon: "border-neon bg-neon/20", sky: "border-sky bg-sky/20" };
@@ -5258,3 +5259,1269 @@ export function MemoryUnit() {
     </Panel>
   );
 }
+
+/* ------------------------------- Sequential & Memory Labs (Module 4) ------------------------------- */
+
+/** Interactive SPDT mechanical switch debouncing with cross-coupled NAND latch. */
+export function DebouncerLab() {
+  const [pos, setPos] = useState<"A" | "B">("A");
+  const [simulateBounce, setSimulateBounce] = useState<boolean>(true);
+  const [inFlight, setInFlight] = useState<boolean>(false);
+
+  const flip = (target: "A" | "B") => {
+    if (target === pos && !inFlight) return;
+    setInFlight(true);
+    setTimeout(() => {
+      setPos(target);
+      setInFlight(false);
+    }, 200);
+  };
+
+  const currentPos = inFlight ? "in-flight" : pos;
+  const result = useMemo(
+    () => simulateDebouncer(currentPos, simulateBounce),
+    [currentPos, simulateBounce]
+  );
+
+  return (
+    <Panel
+      title="Interactive Switch Debouncer: Cross-Coupled NAND Latch"
+      legend={[
+        ["bg-orange", "Raw Contact Chatter"],
+        ["bg-mint", "Debounced Q (Clean)"],
+        ["bg-sky", "Hold State (/S=1, /R=1)"],
+      ]}
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded bg-card/40">
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Switch Wiper:</span>
+            <button
+              type="button"
+              className={`${btn} ${pos === "A" && !inFlight ? "border-mint bg-mint/20 font-bold" : ""}`}
+              onClick={() => flip("A")}
+            >
+              Position A (Set Q=1)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${pos === "B" && !inFlight ? "border-orange bg-orange/20 font-bold" : ""}`}
+              onClick={() => flip("B")}
+            >
+              Position B (Reset Q=0)
+            </button>
+            {inFlight && <span className="text-xs font-mono text-sky animate-pulse font-bold">Wiper In Flight...</span>}
+          </div>
+          <label className="flex items-center gap-2 font-mono text-xs cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={simulateBounce}
+              onChange={(e) => setSimulateBounce(e.target.checked)}
+              className="accent-mint"
+            />
+            Simulate Mechanical Bounce
+          </label>
+        </div>
+
+        {/* Visual Schematic Diagram */}
+        <div className="p-4 border rounded bg-background/50 flex flex-col md:flex-row items-center justify-around gap-6">
+          <div className="flex flex-col items-center gap-2">
+            <span className="font-mono text-xs text-muted-foreground">SPDT Mechanical Switch</span>
+            <svg viewBox="0 0 180 120" className="w-44 h-28 text-foreground stroke-current fill-none">
+              <circle cx="140" cy="30" r="5" className={pos === "A" && !inFlight ? "fill-mint" : "fill-border"} />
+              <text x="155" y="34" className="font-mono text-[11px] fill-current">A (/S)</text>
+              <circle cx="140" cy="90" r="5" className={pos === "B" && !inFlight ? "fill-orange" : "fill-border"} />
+              <text x="155" y="94" className="font-mono text-[11px] fill-current">B (/R)</text>
+              <circle cx="30" cy="60" r="5" className="fill-foreground" />
+              <text x="15" y="64" className="font-mono text-[11px] fill-current text-right">GND</text>
+              <line
+                x1="30"
+                y1="60"
+                x2="138"
+                y2={inFlight ? 60 : pos === "A" ? 32 : 88}
+                strokeWidth="3"
+                className={inFlight ? "stroke-sky stroke-dashed" : pos === "A" ? "stroke-mint" : "stroke-orange"}
+              />
+            </svg>
+          </div>
+
+          <div className="flex flex-col gap-2 font-mono text-xs">
+            <div className="p-2 border rounded bg-card/60 flex items-center justify-between gap-4">
+              <span>Terminal A (/S Input):</span>
+              <span className={`font-bold px-2 py-0.5 rounded ${result.s_n === 0 ? "bg-mint/30 text-mint" : "bg-muted text-muted-foreground"}`}>
+                /S = {result.s_n}
+              </span>
+            </div>
+            <div className="p-2 border rounded bg-card/60 flex items-center justify-between gap-4">
+              <span>Terminal B (/R Input):</span>
+              <span className={`font-bold px-2 py-0.5 rounded ${result.r_n === 0 ? "bg-orange/30 text-orange" : "bg-muted text-muted-foreground"}`}>
+                /R = {result.r_n}
+              </span>
+            </div>
+            <div className="p-2 border-2 border-mint/50 rounded bg-mint/10 flex items-center justify-between gap-4">
+              <span>Clean Debounced Output Q:</span>
+              <span className="text-xl font-bold text-mint">{result.q}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Oscilloscope Waveform Display */}
+        <div className="p-4 border rounded bg-card/20 flex flex-col gap-2">
+          <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">
+            Oscilloscope Voltage Traces (Microsecond Resolution):
+          </span>
+          <svg viewBox="0 0 600 130" className="w-full h-32 bg-background border rounded font-mono text-[10px]">
+            <line x1="0" y1="65" x2="600" y2="65" stroke="currentColor" strokeOpacity="0.1" />
+            <line x1="150" y1="0" x2="150" y2="130" stroke="currentColor" strokeOpacity="0.1" strokeDasharray="3 3" />
+            <line x1="300" y1="0" x2="300" y2="130" stroke="currentColor" strokeOpacity="0.1" strokeDasharray="3 3" />
+            <line x1="450" y1="0" x2="450" y2="130" stroke="currentColor" strokeOpacity="0.1" strokeDasharray="3 3" />
+
+            <text x="10" y="24" className="fill-orange font-bold">Raw Switch Contact (Noisy)</text>
+            <text x="10" y="88" className="fill-mint font-bold">Debounced Output Q (Pristine)</text>
+
+            {simulateBounce && pos === "A" ? (
+              <path
+                d="M 10 45 L 180 45 L 180 15 L 200 15 L 200 45 L 220 45 L 220 15 L 240 15 L 240 45 L 260 45 L 260 15 L 590 15"
+                fill="none"
+                stroke="currentColor"
+                className="stroke-orange"
+                strokeWidth="2"
+              />
+            ) : simulateBounce && pos === "B" ? (
+              <path
+                d="M 10 15 L 180 15 L 180 45 L 200 45 L 200 15 L 220 15 L 220 45 L 240 45 L 240 15 L 260 15 L 260 45 L 590 45"
+                fill="none"
+                stroke="currentColor"
+                className="stroke-orange"
+                strokeWidth="2"
+              />
+            ) : (
+              <path
+                d={pos === "A" ? "M 10 45 L 200 45 L 200 15 L 590 15" : "M 10 15 L 200 15 L 200 45 L 590 45"}
+                fill="none"
+                stroke="currentColor"
+                className="stroke-orange"
+                strokeWidth="2"
+              />
+            )}
+
+            <path
+              d={pos === "A" ? "M 10 115 L 180 115 L 180 75 L 590 75" : "M 10 75 L 180 75 L 180 115 L 590 115"}
+              fill="none"
+              stroke="currentColor"
+              className="stroke-mint"
+              strokeWidth="2.5"
+            />
+          </svg>
+        </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed">{result.explanation}</p>
+      </div>
+    </Panel>
+  );
+}
+
+/** Race-Around hazard in transparent latches vs clean frequency division in edge-triggered flip-flops. */
+export function RaceAroundLab() {
+  const [pulseWidth, setPulseWidth] = useState<number>(6.0);
+  const loopDelay = 2.0;
+  const [clockPulses, setClockPulses] = useState<number>(1);
+
+  const result = useMemo(
+    () => simulateRaceAround(pulseWidth, loopDelay),
+    [pulseWidth, loopDelay]
+  );
+
+  return (
+    <Panel
+      title="The Race-Around Hazard: Transparent Latch vs Flip-Flop"
+      legend={[
+        ["bg-orange", "Transparent Latch Q (Oscillating)"],
+        ["bg-mint", "Edge-Triggered Flip-Flop Q (f/2 Divider)"],
+        ["bg-sky", "Clock High Interval (t_H)"],
+      ]}
+    >
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-3 border rounded bg-card/40">
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-xs text-muted-foreground">Clock High Pulse (t_H):</span>
+            <input
+              type="range"
+              min="1"
+              max="10"
+              step="0.5"
+              value={pulseWidth}
+              onChange={(e) => setPulseWidth(parseFloat(e.target.value))}
+              className="w-36 accent-neon"
+            />
+            <span className="font-mono text-xs font-bold w-16">{pulseWidth} ns</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className={`${btn} border-neon`}
+              onClick={() => setClockPulses((p) => p + 1)}
+            >
+              ⇧ Pulse Clock ({clockPulses} cycles)
+            </button>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setClockPulses(1)}
+            >
+              ⟲ Reset
+            </button>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="p-3 border rounded flex flex-col gap-2 bg-background/50">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-xs font-bold text-orange">Level-Sensitive D Latch (Q' → D)</span>
+              <span className={`text-[11px] font-mono px-2 py-0.5 rounded ${result.latchOscillated ? "bg-orange/20 text-orange font-bold animate-pulse" : "bg-muted text-muted-foreground"}`}>
+                {result.latchOscillated ? `Hazard! ${result.latchToggles} Toggles` : "Stable"}
+              </span>
+            </div>
+            <div className="font-mono text-xs text-muted-foreground">
+              Loop Delay = {loopDelay} ns · Toggles during t_H: {result.latchToggles}
+            </div>
+            <div className="h-10 border rounded flex items-center px-3 bg-card/40 font-mono text-sm">
+              Final Output Q = <span className="font-bold text-orange text-lg ml-2">{result.latchFinal}</span>
+              <span className="text-xs text-muted-foreground ml-auto">({result.latchOscillated ? "Indeterminate cutoff" : "Latched"})</span>
+            </div>
+          </div>
+
+          <div className="p-3 border rounded flex flex-col gap-2 bg-background/50">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-xs font-bold text-mint">Edge-Triggered D Flip-Flop (Q' → D)</span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-mint/20 text-mint font-bold">
+                Glitch-Free
+              </span>
+            </div>
+            <div className="font-mono text-xs text-muted-foreground">
+              Samples only at rising edge · Exactly 1 toggle per cycle
+            </div>
+            <div className="h-10 border rounded flex items-center px-3 bg-card/40 font-mono text-sm">
+              Final Output Q = <span className="font-bold text-mint text-lg ml-2">{result.flopFinal}</span>
+              <span className="text-xs text-mint/80 ml-auto">(Perfect f_clk / 2 Frequency Divider)</span>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed">{result.explanation}</p>
+      </div>
+    </Panel>
+  );
+}
+
+/** Universal flip-flop conversion workbench with verified driving logic. */
+export function FlipFlopConversionLab() {
+  const [available, setAvailable] = useState<FlipFlopType>("D");
+  const [desired, setDesired] = useState<FlipFlopType>("JK");
+  const [qState, setQState] = useState<Bit>(0);
+  const [inputs, setInputs] = useState<Record<string, Bit>>({ J: 1, K: 1 });
+
+  const result = useMemo(
+    () => simulateFlipFlopConversion(available, desired),
+    [available, desired]
+  );
+
+  const desiredInputNames =
+    desired === "D" ? ["D"] : desired === "T" ? ["T"] : desired === "JK" ? ["J", "K"] : ["S", "R"];
+
+  const toggleInput = (name: string) => {
+    setInputs((prev) => ({
+      ...prev,
+      [name]: (prev[name] ? 0 : 1) as Bit,
+    }));
+  };
+
+  const clockEdge = () => {
+    const match = result.table.find((row) => {
+      if (row.qPresent !== qState) return false;
+      for (const k of desiredInputNames) {
+        if ((row.inputs[k] ?? 0) !== (inputs[k] ?? 0)) return false;
+      }
+      return true;
+    });
+    if (match) {
+      setQState(match.qNext);
+    }
+  };
+
+  return (
+    <Panel
+      title="Universal Flip-Flop Conversion Workbench"
+      legend={[
+        ["bg-sky", "Available Hardware FF"],
+        ["bg-mint", "Synthesized Desired FF"],
+        ["bg-neon", "Active Driving Logic"],
+      ]}
+    >
+      <div className="flex flex-col gap-5">
+        <div className="grid md:grid-cols-2 gap-4 p-3 border rounded bg-card/40">
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mono text-xs text-muted-foreground">Available Flip-Flop:</span>
+            <div className="flex gap-2">
+              {(["D", "JK", "T", "SR"] as FlipFlopType[]).map((ff) => (
+                <button
+                  key={ff}
+                  type="button"
+                  className={`${btn} ${available === ff ? "border-sky bg-sky/20 font-bold" : ""}`}
+                  onClick={() => setAvailable(ff)}
+                >
+                  {ff} FF
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mono text-xs text-muted-foreground">Target / Desired Flip-Flop:</span>
+            <div className="flex gap-2">
+              {(["D", "JK", "T", "SR"] as FlipFlopType[]).map((ff) => (
+                <button
+                  key={ff}
+                  type="button"
+                  className={`${btn} ${desired === ff ? "border-mint bg-mint/20 font-bold" : ""}`}
+                  onClick={() => {
+                    setDesired(ff);
+                    if (ff === "D") setInputs({ D: 1 });
+                    else if (ff === "T") setInputs({ T: 1 });
+                    else if (ff === "JK") setInputs({ J: 1, K: 1 });
+                    else setInputs({ S: 1, R: 0 });
+                  }}
+                >
+                  {ff} FF
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Synthesized Boolean Expression */}
+        <div className="p-3 border rounded bg-background/60 flex items-center justify-between gap-4 flex-wrap">
+          <span className="font-mono text-xs text-muted-foreground">Synthesized Driving Equation:</span>
+          <span className="font-mono text-base font-bold text-neon">{result.equation}</span>
+          <span className="text-[11px] font-mono text-mint px-2 py-0.5 rounded bg-mint/20">
+            ✓ 100% Truth-Table Verified
+          </span>
+        </div>
+
+        {/* Interactive Circuit Verification */}
+        <div className="p-4 border rounded bg-card/20 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col gap-2">
+            <span className="font-mono text-xs text-muted-foreground">Desired Inputs:</span>
+            <div className="flex gap-2">
+              {desiredInputNames.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={`${btn} ${inputs[name] ? "border-orange bg-orange/20 font-bold" : ""}`}
+                  onClick={() => toggleInput(name)}
+                >
+                  {name} = {inputs[name] ?? 0}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className={`${btn} border-neon text-sm`}
+              onClick={clockEdge}
+            >
+              ⇧ Clock Edge
+            </button>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setQState(0)}
+            >
+              ⟲ Reset Q
+            </button>
+          </div>
+
+          <div className="flex items-center gap-4 font-mono">
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] text-muted-foreground">Stored State Q</span>
+              <span className="text-3xl font-bold text-mint">{qState}</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] text-muted-foreground">Complement Q'</span>
+              <span className="text-3xl font-bold text-muted-foreground">{1 - qState}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Next-State Conversion Table */}
+        <div className="overflow-x-auto border rounded">
+          <table className="w-full text-xs font-mono">
+            <thead className="bg-muted/40 border-b">
+              <tr>
+                {desiredInputNames.map((n) => <th key={n} className="px-3 py-1.5 text-center">{n}</th>)}
+                <th className="px-3 py-1.5 text-center">Q(t)</th>
+                <th className="px-3 py-1.5 text-center text-mint font-bold">Q(t+1)</th>
+                <th className="px-3 py-1.5 text-left text-sky font-bold">Required {available} Input</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.table.map((row, i) => (
+                <tr key={i} className="border-b last:border-0 hover:bg-muted/20">
+                  {desiredInputNames.map((n) => (
+                    <td key={n} className="px-3 py-1 text-center">{row.inputs[n]}</td>
+                  ))}
+                  <td className="px-3 py-1 text-center">{row.qPresent}</td>
+                  <td className="px-3 py-1 text-center text-mint font-bold">{row.qNext}</td>
+                  <td className="px-3 py-1 text-left text-sky">
+                    {Object.entries(row.requiredAvailableInputs).map(([k, v]) => `${k}=${v}`).join(", ")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Dynamic timing constraints, setup/hold slack, and clock skew calculator. */
+export function SystemTimingLab() {
+  const [tCq, setTCq] = useState<number>(3.0);
+  const [tComb, setTComb] = useState<number>(5.0);
+  const [tSu, setTSu] = useState<number>(2.0);
+  const [tHold, setTHold] = useState<number>(1.5);
+  const [tSkew, setTSkew] = useState<number>(0.0);
+  const [fClk, setFClk] = useState<number>(100);
+
+  const result = useMemo(
+    () =>
+      calculateTimingBudget({
+        t_cq: tCq,
+        t_comb_max: tComb,
+        t_comb_min: Math.max(0.5, tComb * 0.3),
+        t_su: tSu,
+        t_h: tHold,
+        t_skew: tSkew,
+        clockFreqMHz: fClk,
+      }),
+    [tCq, tComb, tSu, tHold, tSkew, fClk]
+  );
+
+  return (
+    <Panel
+      title="Synchronous Datapath Timing Budget & Clock Skew Analyzer"
+      legend={[
+        ["bg-mint", "Safe Setup/Hold Slack"],
+        ["bg-orange", "Timing Violation Hazard"],
+        ["bg-sky", "Clock Period (T_clk)"],
+      ]}
+    >
+      <div className="flex flex-col gap-5">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 p-3 border rounded bg-card/40 font-mono text-xs">
+          <div>
+            <div className="flex justify-between mb-1">
+              <span>Clock-to-Q (t_cq):</span>
+              <span className="font-bold">{tCq} ns</span>
+            </div>
+            <input type="range" min="1" max="5" step="0.5" value={tCq} onChange={(e) => setTCq(parseFloat(e.target.value))} className="w-full accent-neon" />
+          </div>
+          <div>
+            <div className="flex justify-between mb-1">
+              <span>Max Logic (t_comb):</span>
+              <span className="font-bold">{tComb} ns</span>
+            </div>
+            <input type="range" min="1" max="10" step="0.5" value={tComb} onChange={(e) => setTComb(parseFloat(e.target.value))} className="w-full accent-neon" />
+          </div>
+          <div>
+            <div className="flex justify-between mb-1">
+              <span>Setup Time (t_su):</span>
+              <span className="font-bold">{tSu} ns</span>
+            </div>
+            <input type="range" min="0.5" max="4" step="0.5" value={tSu} onChange={(e) => setTSu(parseFloat(e.target.value))} className="w-full accent-neon" />
+          </div>
+          <div>
+            <div className="flex justify-between mb-1">
+              <span>Hold Time (t_h):</span>
+              <span className="font-bold">{tHold} ns</span>
+            </div>
+            <input type="range" min="0.5" max="3" step="0.25" value={tHold} onChange={(e) => setTHold(parseFloat(e.target.value))} className="w-full accent-neon" />
+          </div>
+          <div>
+            <div className="flex justify-between mb-1">
+              <span>Clock Skew (t_skew):</span>
+              <span className="font-bold">{tSkew} ns</span>
+            </div>
+            <input type="range" min="-2" max="2" step="0.25" value={tSkew} onChange={(e) => setTSkew(parseFloat(e.target.value))} className="w-full accent-neon" />
+          </div>
+          <div>
+            <div className="flex justify-between mb-1">
+              <span>Clock Freq (f_clk):</span>
+              <span className="font-bold">{fClk} MHz</span>
+            </div>
+            <input type="range" min="20" max="160" step="5" value={fClk} onChange={(e) => setFClk(parseInt(e.target.value, 10))} className="w-full accent-neon" />
+          </div>
+        </div>
+
+        {/* Quantitative Results */}
+        <div className="grid sm:grid-cols-4 gap-3 font-mono text-xs">
+          <div className="p-3 border rounded bg-card/60 flex flex-col gap-1">
+            <span className="text-muted-foreground text-[10px]">Min Clock Period (T_min):</span>
+            <span className="text-lg font-bold">{result.t_min} ns</span>
+            <span className="text-muted-foreground text-[10px]">= t_cq + t_comb + t_su - skew</span>
+          </div>
+          <div className="p-3 border rounded bg-card/60 flex flex-col gap-1">
+            <span className="text-muted-foreground text-[10px]">Max Frequency (f_max):</span>
+            <span className="text-lg font-bold text-sky">{result.f_max_MHz} MHz</span>
+            <span className="text-muted-foreground text-[10px]">= 1000 / T_min</span>
+          </div>
+          <div className={`p-3 border rounded flex flex-col gap-1 ${result.setupPass ? "bg-mint/10 border-mint/40" : "bg-orange/10 border-orange/40"}`}>
+            <span className="text-muted-foreground text-[10px]">Setup Slack:</span>
+            <span className={`text-lg font-bold ${result.setupPass ? "text-mint" : "text-orange"}`}>
+              {result.setupSlack} ns
+            </span>
+            <span className="text-[10px]">{result.setupPass ? "✓ Setup Met" : "✗ Setup Violation"}</span>
+          </div>
+          <div className={`p-3 border rounded flex flex-col gap-1 ${result.holdPass ? "bg-mint/10 border-mint/40" : "bg-orange/10 border-orange/40"}`}>
+            <span className="text-muted-foreground text-[10px]">Hold Slack:</span>
+            <span className={`text-lg font-bold ${result.holdPass ? "text-mint" : "text-orange"}`}>
+              {result.holdSlack} ns
+            </span>
+            <span className="text-[10px]">{result.holdPass ? "✓ Hold Met" : "✗ Hold Violation"}</span>
+          </div>
+        </div>
+
+        {/* Visual Timeline SVG */}
+        <div className="p-3 border rounded bg-background/50 flex flex-col gap-2">
+          <span className="font-mono text-xs text-muted-foreground">Datapath Waveform Budget (T_clk = {result.t_clk} ns):</span>
+          <svg viewBox="0 0 600 100" className="w-full h-24 bg-card/30 border rounded font-mono text-[10px]">
+            <line x1="40" y1="10" x2="40" y2="90" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="2 2" />
+            <text x="35" y="98" className="fill-muted-foreground">Edge 1</text>
+            <line x1="520" y1="10" x2="520" y2="90" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="2 2" />
+            <text x="505" y="98" className="fill-muted-foreground">Edge 2</text>
+
+            <rect x="40" y="30" width={Math.max(10, (tCq / result.t_clk) * 480)} height="24" className="fill-sky/30 stroke-sky" strokeWidth="1" />
+            <text x="45" y="46" className="fill-sky font-bold">t_cq</text>
+
+            <rect
+              x={40 + (tCq / result.t_clk) * 480}
+              y="30"
+              width={Math.max(10, (tComb / result.t_clk) * 480)}
+              height="24"
+              className="fill-neon/30 stroke-neon"
+              strokeWidth="1"
+            />
+            <text x={45 + (tCq / result.t_clk) * 480} y="46" className="fill-neon font-bold">t_comb</text>
+
+            <rect
+              x={520 - (tSu / result.t_clk) * 480}
+              y="20"
+              width={Math.max(8, (tSu / result.t_clk) * 480)}
+              height="44"
+              className="fill-orange/20 stroke-orange"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+            />
+            <text x={522 - (tSu / result.t_clk) * 480} y="16" className="fill-orange text-[9px]">t_su window</text>
+          </svg>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** 74LS194 4-bit Universal Shift Register with modes and arithmetic operations. */
+export function UniversalShiftRegisterLab() {
+  const [state, setState] = useState<[Bit, Bit, Bit, Bit]>([1, 0, 1, 0]);
+  const [s1, setS1] = useState<Bit>(0);
+  const [s0, setS0] = useState<Bit>(1);
+  const [sir, setSir] = useState<Bit>(1);
+  const [sil, setSil] = useState<Bit>(0);
+  const [parallelIn, setParallelIn] = useState<[Bit, Bit, Bit, Bit]>([0, 1, 1, 1]);
+
+  const clockEdge = (arithmetic?: "none" | "lsl" | "lsr" | "asr") => {
+    const res = simulateUniversalShiftRegister(state, {
+      s1,
+      s0,
+      sir,
+      sil,
+      parallelIn,
+      clr_n: 1,
+      arithmeticMode: arithmetic,
+    });
+    setState(res.nextState);
+  };
+
+  const clearAll = () => {
+    const res = simulateUniversalShiftRegister(state, {
+      s1: 0, s0: 0, sir: 0, sil: 0, parallelIn: [0, 0, 0, 0], clr_n: 0,
+    });
+    setState(res.nextState);
+  };
+
+  const decVal = (state[0] << 3) | (state[1] << 2) | (state[2] << 1) | state[3];
+  const signedVal = state[0] ? decVal - 16 : decVal;
+
+  return (
+    <Panel
+      title="Commercial 74LS194 4-Bit Universal Shift Register"
+      legend={[
+        ["bg-mint", "Stored Bits (Q3..Q0)"],
+        ["bg-neon", "Mode Select (S1, S0)"],
+        ["bg-orange", "Serial/Parallel Inputs"],
+      ]}
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded bg-card/40">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-muted-foreground">Mode Select (S1, S0):</span>
+            <button
+              type="button"
+              className={`${btn} ${s1 === 0 && s0 === 0 ? "border-neon bg-neon/20 font-bold" : ""}`}
+              onClick={() => { setS1(0); setS0(0); }}
+            >
+              [00] Hold
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${s1 === 0 && s0 === 1 ? "border-neon bg-neon/20 font-bold" : ""}`}
+              onClick={() => { setS1(0); setS0(1); }}
+            >
+              [01] Shift Right →
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${s1 === 1 && s0 === 0 ? "border-neon bg-neon/20 font-bold" : ""}`}
+              onClick={() => { setS1(1); setS0(0); }}
+            >
+              [10] ← Shift Left
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${s1 === 1 && s0 === 1 ? "border-neon bg-neon/20 font-bold" : ""}`}
+              onClick={() => { setS1(1); setS0(1); }}
+            >
+              [11] Parallel Load
+            </button>
+          </div>
+          <button type="button" className={`${btn} border-destructive text-destructive`} onClick={clearAll}>
+            /CLR (Reset)
+          </button>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4 p-3 border rounded bg-background/50 font-mono text-xs">
+          <div className="flex items-center gap-4">
+            <span className="text-muted-foreground">Serial Inputs:</span>
+            <button
+              type="button"
+              className={`${btn} ${sir ? "border-orange bg-orange/20" : ""}`}
+              onClick={() => setSir(sir ? 0 : 1)}
+            >
+              SIR (Right) = {sir}
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${sil ? "border-orange bg-orange/20" : ""}`}
+              onClick={() => setSil(sil ? 0 : 1)}
+            >
+              SIL (Left) = {sil}
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Parallel In (I3..I0):</span>
+            {parallelIn.map((b, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`w-8 h-8 border rounded font-bold ${b ? "border-orange bg-orange/20" : "border-border"}`}
+                onClick={() => {
+                  const copy = [...parallelIn] as [Bit, Bit, Bit, Bit];
+                  copy[i] = copy[i] ? 0 : 1;
+                  setParallelIn(copy);
+                }}
+              >
+                {b}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-4 border rounded bg-card/20 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3 font-mono">
+            {state.map((b, i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <span className="text-[10px] text-muted-foreground">Q{3 - i}</span>
+                <span className={`w-14 h-14 border-2 rounded flex items-center justify-center text-2xl font-bold transition-all ${b ? "border-mint bg-mint/20 text-mint" : "border-border text-foreground"}`}>
+                  {b}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button type="button" className={`${btn} border-neon text-sm`} onClick={() => clockEdge()}>
+              ⇧ Clock Edge
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-1 font-mono text-xs">
+            <div>Unsigned Decimal: <span className="font-bold text-mint">{decVal}</span></div>
+            <div>Signed Two's Comp: <span className="font-bold text-sky">{signedVal}</span></div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+          <span className="text-muted-foreground">Arithmetic Shortcuts:</span>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => { setS1(1); setS0(0); setSil(0); clockEdge("lsl"); }}
+          >
+            LSL (× 2)
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => { setS1(0); setS0(1); setSir(0); clockEdge("lsr"); }}
+          >
+            LSR (Unsigned ÷ 2)
+          </button>
+          <button
+            type="button"
+            className={btn}
+            onClick={() => { setS1(0); setS0(1); clockEdge("asr"); }}
+          >
+            ASR (Signed ÷ 2)
+          </button>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Ring vs Johnson (twisted-ring) counter with single-bit Gray transitions and lock-up recovery. */
+export function RingJohnsonLab() {
+  const [type, setType] = useState<"ring" | "johnson">("johnson");
+  const [state, setState] = useState<[Bit, Bit, Bit, Bit]>([0, 0, 0, 0]);
+  const [selfCorrect, setSelfCorrect] = useState<boolean>(true);
+  const [history, setHistory] = useState<string[]>(["0000"]);
+
+  const result = useMemo(
+    () => simulateRingJohnson(type, state, selfCorrect),
+    [type, state, selfCorrect]
+  );
+
+  const tick = () => {
+    setState(result.nextState);
+    setHistory((prev) => [...prev.slice(-15), result.nextState.join("")]);
+  };
+
+  const injectFault = () => {
+    const fault: [Bit, Bit, Bit, Bit] = type === "ring" ? [1, 0, 1, 0] : [0, 1, 0, 1];
+    setState(fault);
+    setHistory((prev) => [...prev.slice(-15), fault.join("")]);
+  };
+
+  const reset = () => {
+    const init: [Bit, Bit, Bit, Bit] = type === "ring" ? [1, 0, 0, 0] : [0, 0, 0, 0];
+    setState(init);
+    setHistory([init.join("")]);
+  };
+
+  return (
+    <Panel
+      title="Shift Register Counters: Ring vs Johnson Counter"
+      legend={[
+        ["bg-mint", "Valid State Sequence"],
+        ["bg-orange", "Illegal Lock-Up State"],
+        ["bg-sky", "Self-Correcting Steering"],
+      ]}
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded bg-card/40">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className={`${btn} ${type === "ring" ? "border-mint bg-mint/20 font-bold" : ""}`}
+              onClick={() => { setType("ring"); setState([1, 0, 0, 0]); setHistory(["1000"]); }}
+            >
+              Ring Counter (4 States, One-Hot)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${type === "johnson" ? "border-mint bg-mint/20 font-bold" : ""}`}
+              onClick={() => { setType("johnson"); setState([0, 0, 0, 0]); setHistory(["0000"]); }}
+            >
+              Johnson Counter (8 States, 2n Capacity)
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1.5 font-mono text-xs cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={selfCorrect}
+                onChange={(e) => setSelfCorrect(e.target.checked)}
+                className="accent-mint"
+              />
+              Self-Correcting Logic
+            </label>
+          </div>
+        </div>
+
+        <div className="p-4 border rounded bg-background/50 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3 font-mono">
+            {state.map((b, i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <span className="text-[10px] text-muted-foreground">Q{i}</span>
+                <span className={`w-14 h-14 border-2 rounded flex items-center justify-center text-2xl font-bold transition-all ${b ? "border-mint bg-mint/20 text-mint" : "border-border text-foreground"}`}>
+                  {b}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button type="button" className={`${btn} border-neon text-sm`} onClick={tick}>
+              ⇧ Clock Edge
+            </button>
+            <button type="button" className={`${btn} border-orange text-orange`} onClick={injectFault}>
+              ⚡ Inject Fault
+            </button>
+            <button type="button" className={btn} onClick={reset}>
+              ⟲ Reset
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-1 font-mono text-xs">
+            <div className="flex items-center gap-2">
+              <span>Status:</span>
+              <span className={`px-2 py-0.5 rounded font-bold ${result.isValidState ? "bg-mint/20 text-mint" : "bg-orange/20 text-orange animate-pulse"}`}>
+                {result.isValidState ? "Valid Sequence" : "Illegal State!"}
+              </span>
+            </div>
+            <div>Decoded: <span className="font-bold text-sky">{result.decodedExpression}</span></div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1 font-mono text-xs">
+          <span className="text-muted-foreground">Sequence History:</span>
+          <div className="flex gap-1.5 flex-wrap">
+            {history.map((h, i) => (
+              <span key={i} className="px-2 py-1 border rounded bg-card/60">
+                {h}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Asynchronous ripple counter delays & glitches vs rock-solid synchronous counter. */
+export function CounterComparisonLab() {
+  const [transition, setTransition] = useState<"7to8" | "15to0">("7to8");
+  const fromVal = transition === "7to8" ? 7 : 15;
+  const toVal = transition === "7to8" ? 8 : 0;
+  const bitDelay = 2;
+
+  const result = useMemo(
+    () => simulateCounterGlitch(fromVal, toVal, bitDelay),
+    [fromVal, toVal, bitDelay]
+  );
+
+  const [stepIdx, setStepIdx] = useState<number>(0);
+
+  return (
+    <Panel
+      title="Ripple vs Synchronous Counter: The Transient Glitch Hazard"
+      legend={[
+        ["bg-orange", "Spurious Decoder Glitch"],
+        ["bg-mint", "Synchronous Settled State"],
+        ["bg-sky", "Ripple Transition Propagation"],
+      ]}
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded bg-card/40">
+          <div className="flex items-center gap-2 font-mono text-xs">
+            <span className="text-muted-foreground">Critical Transition:</span>
+            <button
+              type="button"
+              className={`${btn} ${transition === "7to8" ? "border-orange bg-orange/20 font-bold" : ""}`}
+              onClick={() => { setTransition("7to8"); setStepIdx(0); }}
+            >
+              7 → 8 (0111 → 1000)
+            </button>
+            <button
+              type="button"
+              className={`${btn} ${transition === "15to0" ? "border-orange bg-orange/20 font-bold" : ""}`}
+              onClick={() => { setTransition("15to0"); setStepIdx(0); }}
+            >
+              15 → 0 (1111 → 0000)
+            </button>
+          </div>
+          <div className="flex items-center gap-2 font-mono text-xs">
+            <span>Ripple Step:</span>
+            <button
+              type="button"
+              className={btn}
+              onClick={() => setStepIdx((s) => Math.min(result.intermediateSteps.length - 1, s + 1))}
+            >
+              Step Forward →
+            </button>
+            <button type="button" className={btn} onClick={() => setStepIdx(0)}>
+              ⟲ Reset Time
+            </button>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="p-3 border rounded bg-background/50 flex flex-col gap-2">
+            <span className="font-mono text-xs font-bold text-orange">Asynchronous Ripple Counter (Series Clock)</span>
+            <div className="font-mono text-xs text-muted-foreground">
+              Total Ripple Delay: <span className="font-bold text-foreground">{result.rippleMaxDelayNs} ns</span> ({result.intermediateSteps.length - 1} gate delays)
+            </div>
+            <div className="p-2 border rounded bg-card/60 flex items-center justify-between font-mono text-sm">
+              <span>Time: t = {result.intermediateSteps[stepIdx].timeNs} ns</span>
+              <span className="font-bold text-lg text-orange">
+                State: {result.intermediateSteps[stepIdx].state} ({result.intermediateSteps[stepIdx].bits.join("")})
+              </span>
+            </div>
+            {result.intermediateSteps[stepIdx].isFalseState && (
+              <span className="font-mono text-xs text-orange font-bold animate-pulse">
+                ⚠ False intermediate state! Decoder fires false glitch!
+              </span>
+            )}
+          </div>
+
+          <div className="p-3 border rounded bg-background/50 flex flex-col gap-2">
+            <span className="font-mono text-xs font-bold text-mint">Synchronous Counter (Common Clock)</span>
+            <div className="font-mono text-xs text-muted-foreground">
+              Total Settling Delay: <span className="font-bold text-foreground">{result.syncDelayNs} ns</span> (1 gate delay)
+            </div>
+            <div className="p-2 border rounded bg-card/60 flex items-center justify-between font-mono text-sm">
+              <span>Time: t = {result.syncDelayNs} ns</span>
+              <span className="font-bold text-lg text-mint">State: {toVal}</span>
+            </div>
+            <span className="font-mono text-xs text-mint">
+              ✓ All flip-flops trigger simultaneously. Zero intermediate false states.
+            </span>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed">{result.glitchDescription}</p>
+      </div>
+    </Panel>
+  );
+}
+
+/** 74LS161/163 Synchronous Counter with Modulo-N Truncation. */
+export function ModCounterLab() {
+  const [modN, setModN] = useState<number>(10);
+  const [count, setCount] = useState<number>(0);
+  const [mode] = useState<"sync-clear" | "async-clear">("sync-clear");
+  const [upDown, setUpDown] = useState<Bit>(1);
+
+  const result = useMemo(
+    () =>
+      simulate74LS163(count, {
+        clr_n: 1,
+        load_n: 1,
+        enp: 1,
+        ent: 1,
+        upDown,
+        modN,
+        truncationMode: mode,
+      }),
+    [count, upDown, modN, mode]
+  );
+
+  const tick = () => {
+    setCount(result.nextState);
+  };
+
+  const bits = bitsOf(count, 4);
+
+  return (
+    <Panel
+      title="Commercial 74LS163 Synchronous Counter & Modulo-N Truncation"
+      legend={[
+        ["bg-mint", "Valid Count Cycle"],
+        ["bg-neon", "Active-LOW Synchronous Clear (/CLR)"],
+        ["bg-sky", "Ripple Carry Output (RCO)"],
+      ]}
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded bg-card/40">
+          <div className="flex items-center gap-2 font-mono text-xs">
+            <span className="text-muted-foreground">Preset Sequence:</span>
+            {[16, 12, 10, 6].map((n) => (
+              <button
+                key={n}
+                type="button"
+                className={`${btn} ${modN === n ? "border-mint bg-mint/20 font-bold" : ""}`}
+                onClick={() => { setModN(n); setCount(0); }}
+              >
+                Mod-{n} {n === 10 ? "(BCD)" : ""}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className={`${btn} ${upDown ? "border-sky bg-sky/20" : ""}`}
+              onClick={() => setUpDown(upDown ? 0 : 1)}
+            >
+              {upDown ? "Counting UP" : "Counting DOWN"}
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4 border rounded bg-background/50 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3 font-mono">
+            {bits.map((b, i) => (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <span className="text-[10px] text-muted-foreground">Q{3 - i}</span>
+                <span className={`w-14 h-14 border-2 rounded flex items-center justify-center text-2xl font-bold ${b ? "border-mint bg-mint/20 text-mint" : "border-border text-foreground"}`}>
+                  {b}
+                </span>
+              </div>
+            ))}
+            <span className="text-3xl font-bold text-mint ml-4">= {count}</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button type="button" className={`${btn} border-neon text-sm`} onClick={tick}>
+              ⇧ Clock Edge
+            </button>
+            <button type="button" className={btn} onClick={() => setCount(0)}>
+              ⟲ Reset
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-1 font-mono text-xs">
+            <div>Modulo: <span className="font-bold text-foreground">Mod-{modN}</span> (0 to {modN - 1})</div>
+            <div>RCO: <span className={`font-bold ${result.rco ? "text-sky" : "text-muted-foreground"}`}>{result.rco}</span></div>
+            <div>Clear Detect: <span className={`font-bold ${result.decodingConditionMet ? "text-neon font-bold" : "text-muted-foreground"}`}>
+              {result.decodingConditionMet ? `State ${modN - 1} Active` : "Inactive"}
+            </span></div>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {modN === 10
+            ? "BCD Decade Counter: Counts from 0 through 9 (1001_2). At count 9, decoding gate (Q3·Q0) asserts /CLR synchronously so the 10th clock edge rolls over cleanly to 0000_2 without glitches."
+            : `Mod-${modN} Counter: Counts from 0 through ${modN - 1}. State ${modN - 1} triggers synchronous clear for the next clock edge.`}
+        </p>
+      </div>
+    </Panel>
+  );
+}
+
+/** 2D Coincident Decoding Matrix in RAM. */
+export function CoincidentMemoryLab() {
+  const [matrix, setMatrix] = useState<Bit[][]>([
+    [0, 1, 0, 0],
+    [1, 1, 0, 1],
+    [0, 0, 1, 0],
+    [1, 0, 0, 1],
+  ]);
+  const [rowAddr, setRowAddr] = useState<number>(1);
+  const [colAddr, setColAddr] = useState<number>(3);
+  const [dataIn, setDataIn] = useState<Bit>(1);
+
+  const result = useMemo(
+    () => simulateCoincidentMemory(matrix, { rowAddr, colAddr, writeEnable: 0, dataIn }),
+    [matrix, rowAddr, colAddr, dataIn]
+  );
+
+  const executeWrite = () => {
+    const res = simulateCoincidentMemory(matrix, { rowAddr, colAddr, writeEnable: 1, dataIn });
+    setMatrix(res.matrix);
+  };
+
+  return (
+    <Panel
+      title="2D Coincident Decoding Matrix (RAM Architecture)"
+      legend={[
+        ["bg-neon", "Active Row & Column Decoded Lines"],
+        ["bg-mint", "Selected Coincident Binary Cell"],
+        ["bg-sky", "Tri-State Data Out"],
+      ]}
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded bg-card/40 font-mono text-xs">
+          <div className="flex items-center gap-3">
+            <span>Row Address (A1..A0):</span>
+            <div className="flex gap-1">
+              {[0, 1, 2, 3].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  className={`${btn} ${rowAddr === r ? "border-neon bg-neon/20 font-bold" : ""}`}
+                  onClick={() => setRowAddr(r)}
+                >
+                  Row {r} ({bitString(r, 2)})
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span>Column Address (A3..A2):</span>
+            <div className="flex gap-1">
+              {[0, 1, 2, 3].map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`${btn} ${colAddr === c ? "border-neon bg-neon/20 font-bold" : ""}`}
+                  onClick={() => setColAddr(c)}
+                >
+                  Col {c} ({bitString(c, 2)})
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 border rounded bg-background/50 flex flex-col md:flex-row items-center justify-around gap-6">
+          <div className="grid grid-cols-4 gap-2 font-mono">
+            {matrix.map((row, r) =>
+              row.map((val, c) => {
+                const isSelected = r === rowAddr && c === colAddr;
+                const isRowActive = r === rowAddr;
+                const isColActive = c === colAddr;
+                return (
+                  <button
+                    key={`${r}-${c}`}
+                    type="button"
+                    onClick={() => { setRowAddr(r); setColAddr(c); }}
+                    className={`w-12 h-12 border-2 rounded flex flex-col items-center justify-center transition-all ${
+                      isSelected
+                        ? "border-mint bg-mint/30 ring-2 ring-mint font-bold text-lg text-mint"
+                        : isRowActive || isColActive
+                        ? "border-neon/50 bg-neon/10 text-foreground"
+                        : "border-border bg-card/40 text-muted-foreground"
+                    }`}
+                  >
+                    <span className="text-[9px] text-muted-foreground">({r},{c})</span>
+                    <span>{val}</span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 font-mono text-xs">
+            <div className="p-3 border rounded bg-card/60 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span>Data In:</span>
+                <button
+                  type="button"
+                  className={`${btn} ${dataIn ? "border-orange bg-orange/20" : ""}`}
+                  onClick={() => setDataIn(dataIn ? 0 : 1)}
+                >
+                  I = {dataIn}
+                </button>
+              </div>
+              <button type="button" className={`${btn} border-orange`} onClick={executeWrite}>
+                Write to Cell ({rowAddr}, {colAddr})
+              </button>
+            </div>
+
+            <div className="p-3 border rounded bg-mint/10 border-mint/40 flex items-center justify-between">
+              <span>Data Out (Y):</span>
+              <span className="text-2xl font-bold text-mint">{result.readData}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-3 border rounded bg-card/30 flex items-center justify-between flex-wrap gap-3 font-mono text-xs">
+          <span>1D Linear Decoding: {result.gateCount1D} gates</span>
+          <span>2D Coincident Decoding: {result.gateCount2D} gates</span>
+          <span className="text-mint font-bold">Reduction: {result.gateReductionPercent}% fewer gates</span>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+/** Modular Memory Expansion: 4K x 8 RAM built from four 1K x 8 chips with chip selects. */
+export function MemoryExpansionLab() {
+  const [addr, setAddr] = useState<number>(0x680);
+
+  const result = useMemo(
+    () => simulateMemoryExpansion(addr),
+    [addr]
+  );
+
+  return (
+    <Panel
+      title="Modular Memory Expansion: 4K × 8 from Four 1K × 8 Chips"
+      legend={[
+        ["bg-mint", "Active Selected Chip (/CS = 0)"],
+        ["bg-muted", "Unselected Standby Chips (/CS = 1, Hi-Z)"],
+        ["bg-sky", "Shared 8-Bit System Data Bus"],
+      ]}
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 border rounded bg-card/40 font-mono text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Select Address:</span>
+            {[0x150, 0x520, 0x930, 0xD40].map((a, i) => (
+              <button
+                key={a}
+                type="button"
+                className={`${btn} ${result.bankIndex === i ? "border-mint bg-mint/20 font-bold" : ""}`}
+                onClick={() => setAddr(a)}
+              >
+                Bank {i} (0x{a.toString(16).toUpperCase()})
+              </button>
+            ))}
+          </div>
+          <div>
+            <span>Address: </span>
+            <span className="font-bold text-foreground text-sm">{result.hexAddress}</span>
+            <span className="text-muted-foreground ml-2">({result.address12Bit})</span>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
+          {[0, 1, 2, 3].map((bank) => {
+            const isSelected = result.bankIndex === bank;
+            return (
+              <div
+                key={bank}
+                className={`p-3 border-2 rounded flex flex-col gap-2 transition-all ${
+                  isSelected ? "border-mint bg-mint/10 shadow-sm" : "border-border bg-card/20 opacity-70"
+                }`}
+              >
+                <div className="flex items-center justify-between font-bold">
+                  <span>RAM {bank} (1K × 8)</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${isSelected ? "bg-mint text-black font-bold" : "bg-muted text-muted-foreground"}`}>
+                    /CS = {result.chipSelects[bank]}
+                  </span>
+                </div>
+                <div className="text-[10px] text-muted-foreground">
+                  Range: 0x{(bank * 0x400).toString(16).toUpperCase()} - 0x{(bank * 0x400 + 0x3FF).toString(16).toUpperCase()}
+                </div>
+                <div className="p-1.5 border rounded bg-background flex justify-between items-center text-[11px]">
+                  <span>Bus Output:</span>
+                  <span className={`font-bold ${isSelected ? "text-mint font-mono" : "text-muted-foreground"}`}>
+                    {result.busOutputs[bank]}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="p-3 border rounded bg-card/50 flex items-center justify-between flex-wrap gap-2 font-mono text-xs">
+          <div>Shared Data Bus (D7..D0): <span className="font-bold text-sky">0x{result.sharedBusValue.toString(16).toUpperCase()}</span></div>
+          <div className="text-mint font-bold">✓ Exactly 1 Chip Driving, 3 Chips in Hi-Z (Zero Contention)</div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+

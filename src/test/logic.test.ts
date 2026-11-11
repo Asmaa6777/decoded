@@ -4,6 +4,7 @@ import {
   expandRadixToBinary, floatParts, fromGray, fullAdd, fullSubtractor, generateRealWaveform, groupBinaryBits, halfSubtractor, jkNext, latchVersusFlipFlop, LOGIC_FAMILIES, lookaheadCarries,
   minimizeKMap, minimizeSop, onesComplement, posFromMinterms, rippleAdd, sameFunction, settle, shiftFrames, signedValue, signExtend, simulate7SegmentDecoder, simulateAdc, simulateAdderSubtractor, simulateBcdAdder,
   simulateBusDrivers, simulateCascadeDelay, simulateCmosGate, simulateDecoder, simulateFastCarries, simulateMagnitudeComparator, simulateMuxFunction, simulateMuxTree16to1, simulateParity, simulatePriorityEncoder, simulateSignedArithmetic, simulateStatic1Hazard, sopFromMinterms, toBase, toExcess3, toGray, truthRows, twosComplement,
+  calculateTimingBudget, simulate74LS163, simulateCoincidentMemory, simulateCounterGlitch, simulateDebouncer, simulateFlipFlopConversion, simulateMemoryExpansion, simulateRaceAround, simulateRingJohnson, simulateUniversalShiftRegister,
   UNIVERSAL_CIRCUITS, type Bit, type NetGate,
 } from "@/lib/logic";
 
@@ -756,5 +757,257 @@ describe("combinational building blocks (Module 3)", () => {
     expect(tree.tier1[3].output).toBe(1);
     expect(tree.tier2.selectedChannelIndex).toBe(3);
   });
+
+  describe("sequential logic and memory (Module 4)", () => {
+    it("simulates switch debouncing with cross-coupled NAND latch", () => {
+      // Position A: /S = 0, /R = 1 -> Q = 1
+      const debA = simulateDebouncer("A", true);
+      expect(debA.s_n).toBe(0);
+      expect(debA.r_n).toBe(1);
+      expect(debA.q).toBe(1);
+      expect(debA.q_n).toBe(0);
+      // All bounces retain Q = 1
+      debA.bounces.slice(1).forEach((b) => expect(b.q).toBe(1));
+
+      // Position B: /S = 1, /R = 0 -> Q = 0
+      const debB = simulateDebouncer("B", true);
+      expect(debB.s_n).toBe(1);
+      expect(debB.r_n).toBe(0);
+      expect(debB.q).toBe(0);
+      expect(debB.q_n).toBe(1);
+      debB.bounces.slice(1).forEach((b) => expect(b.q).toBe(0));
+
+      // In-flight: both pull-up to 1
+      const inFlight = simulateDebouncer("in-flight", false);
+      expect(inFlight.s_n).toBe(1);
+      expect(inFlight.r_n).toBe(1);
+    });
+
+    it("simulates race-around feedback oscillation in transparent latches", () => {
+      // Narrow pulse (1ns < 2ns loop): no toggle
+      const narrow = simulateRaceAround(1.0, 2.0);
+      expect(narrow.latchToggles).toBe(0);
+      expect(narrow.latchFinal).toBe(0);
+      expect(narrow.latchOscillated).toBe(false);
+
+      // Single toggle window (2ns = 1 * 2ns): 1 toggle
+      const single = simulateRaceAround(2.0, 2.0);
+      expect(single.latchToggles).toBe(1);
+      expect(single.latchFinal).toBe(1);
+      expect(single.latchOscillated).toBe(false);
+
+      // Wide pulse (7ns = 3 toggles: 0 -> 1 -> 0 -> 1)
+      const wide = simulateRaceAround(7.0, 2.0);
+      expect(wide.latchToggles).toBe(3);
+      expect(wide.latchFinal).toBe(1);
+      expect(wide.latchOscillated).toBe(true);
+
+      // Edge-triggered flip-flop triggers once regardless of pulse width
+      expect(wide.flopFinal).toBe(1);
+    });
+
+    it("synthesizes and verifies flip-flop conversions (m4-03)", () => {
+      // D to JK: D = J Q' + K' Q
+      const dToJk = simulateFlipFlopConversion("D", "JK");
+      expect(dToJk.equation).toBe("D = J·Q' + K'·Q");
+      expect(dToJk.isFullyVerified).toBe(true);
+
+      // D to T: D = T ^ Q
+      const dToT = simulateFlipFlopConversion("D", "T");
+      expect(dToT.equation).toBe("D = T ⊕ Q");
+
+      // JK to D: J = D, K = D'
+      const jkToD = simulateFlipFlopConversion("JK", "D");
+      expect(jkToD.equation).toBe("J = D, K = D'");
+
+      // T to D: T = D ^ Q
+      const tToD = simulateFlipFlopConversion("T", "D");
+      expect(tToD.equation).toBe("T = D ⊕ Q");
+    });
+
+    it("evaluates synchronous datapath timing constraints, setup/hold slack, and clock frequency", () => {
+      // Problem 6 from m4-03: t_cq = 3ns, t_comb = 5ns, t_su = 2ns, t_h = 1.5ns
+      const timing = calculateTimingBudget({
+        t_cq: 3,
+        t_comb_max: 5,
+        t_comb_min: 1,
+        t_su: 2,
+        t_h: 1.5,
+        clockFreqMHz: 100, // T = 10ns
+      });
+      expect(timing.t_min).toBe(10);
+      expect(timing.f_max_MHz).toBe(100);
+      expect(timing.setupSlack).toBe(0);
+      expect(timing.setupPass).toBe(true);
+      expect(timing.holdSlack).toBe(2.5); // (3 + 1) - 1.5 = 2.5ns
+      expect(timing.holdPass).toBe(true);
+      expect(timing.status).toBe("pass");
+
+      // Too fast clock (125 MHz = 8ns period): violates setup time
+      const fast = calculateTimingBudget({
+        t_cq: 3,
+        t_comb_max: 5,
+        t_comb_min: 1,
+        t_su: 2,
+        t_h: 1.5,
+        clockFreqMHz: 125,
+      });
+      expect(fast.setupPass).toBe(false);
+      expect(fast.status).toBe("setup-violation");
+    });
+
+    it("simulates 74LS194 universal shift register across all four modes (m4-04)", () => {
+      // Hold mode: S1S0 = 00
+      const hold = simulateUniversalShiftRegister([1, 0, 1, 0], {
+        s1: 0, s0: 0, sir: 1, sil: 0, parallelIn: [0, 1, 1, 1], clr_n: 1,
+      });
+      expect(hold.nextState).toEqual([1, 0, 1, 0]);
+
+      // Shift Right: S1S0 = 01 with SIR = 1 -> [1, 1, 0, 1]
+      const shiftRight = simulateUniversalShiftRegister([1, 0, 1, 0], {
+        s1: 0, s0: 1, sir: 1, sil: 0, parallelIn: [0, 1, 1, 1], clr_n: 1,
+      });
+      expect(shiftRight.nextState).toEqual([1, 1, 0, 1]);
+
+      // Shift Left: S1S0 = 10 with SIL = 0 -> [0, 1, 0, 0]
+      const shiftLeft = simulateUniversalShiftRegister([1, 0, 1, 0], {
+        s1: 1, s0: 0, sir: 1, sil: 0, parallelIn: [0, 1, 1, 1], clr_n: 1,
+      });
+      expect(shiftLeft.nextState).toEqual([0, 1, 0, 0]);
+
+      // Parallel Load: S1S0 = 11 -> [0, 1, 1, 1]
+      const load = simulateUniversalShiftRegister([1, 0, 1, 0], {
+        s1: 1, s0: 1, sir: 1, sil: 0, parallelIn: [0, 1, 1, 1], clr_n: 1,
+      });
+      expect(load.nextState).toEqual([0, 1, 1, 1]);
+
+      // Active-LOW Clear forces [0, 0, 0, 0]
+      const clear = simulateUniversalShiftRegister([1, 1, 1, 1], {
+        s1: 0, s0: 0, sir: 0, sil: 0, parallelIn: [1, 1, 1, 1], clr_n: 0,
+      });
+      expect(clear.nextState).toEqual([0, 0, 0, 0]);
+    });
+
+    it("simulates Ring and Johnson counters, Gray code single-bit transitions, and self-correction (m4-04 Problem 2)", () => {
+      // Ring counter: 1000 -> 0100 -> 0010 -> 0001 -> 1000
+      let ringState: [Bit, Bit, Bit, Bit] = [1, 0, 0, 0];
+      const ringStates: string[] = [];
+      for (let i = 0; i < 4; i++) {
+        const res = simulateRingJohnson("ring", ringState);
+        expect(res.isValidState).toBe(true);
+        ringStates.push(ringState.join(""));
+        ringState = res.nextState;
+      }
+      expect(ringStates).toEqual(["1000", "0100", "0010", "0001"]);
+      expect(ringState).toEqual([1, 0, 0, 0]);
+
+      // Johnson counter: 8 valid states, single-bit Gray transition between each
+      let jState: [Bit, Bit, Bit, Bit] = [0, 0, 0, 0];
+      const jStates: string[] = [];
+      for (let i = 0; i < 8; i++) {
+        const res = simulateRingJohnson("johnson", jState);
+        expect(res.isValidState).toBe(true);
+        expect(res.stateIndex).toBe(i);
+        jStates.push(jState.join(""));
+        // Check single-bit change
+        const diffBits = res.previousState.filter((b, idx) => b !== res.nextState[idx]).length;
+        expect(diffBits).toBe(1);
+        jState = res.nextState;
+      }
+      expect(jState).toEqual([0, 0, 0, 0]); // returns to start
+
+      // Invalid state 0101 self-correction
+      const illegal = simulateRingJohnson("johnson", [0, 1, 0, 1], true);
+      expect(illegal.isValidState).toBe(false);
+      // Advances toward recovery
+      expect(illegal.nextState).toBeDefined();
+    });
+
+    it("simulates ripple counter propagation delays and transient decoding glitches (m4-05)", () => {
+      // Transition 7 (0111) -> 8 (1000)
+      const glitch = simulateCounterGlitch(7, 8, 2);
+      expect(glitch.intermediateSteps.length).toBe(5); // 7 -> 6 -> 4 -> 0 -> 8
+      expect(glitch.intermediateSteps[1].state).toBe(6);
+      expect(glitch.intermediateSteps[2].state).toBe(4);
+      expect(glitch.intermediateSteps[3].state).toBe(0);
+      expect(glitch.intermediateSteps[4].state).toBe(8);
+      // Glitch detected on state 0 decoder
+      expect(glitch.glitchDetectedOnDecoder).toBe(true);
+      expect(glitch.glitchDurationNs).toBe(2);
+      expect(glitch.rippleMaxDelayNs).toBe(8); // 4 bits * 2ns
+      expect(glitch.syncDelayNs).toBe(2); // synchronous switches in 1 * t_pd
+    });
+
+    it("simulates 74LS163 synchronous counter and Modulo-N truncated reset (m4-05 Problem 2)", () => {
+      // Normal counting: 0 -> 1 -> 2
+      const step1 = simulate74LS163(0, { clr_n: 1, load_n: 1, enp: 1, ent: 1 });
+      expect(step1.nextState).toBe(1);
+
+      // Modulo-12 counter: state 11 (1011_2) triggers synchronous clear -> next is 0
+      const mod12At11 = simulate74LS163(11, {
+        clr_n: 1, load_n: 1, enp: 1, ent: 1, modN: 12, truncationMode: "sync-clear",
+      });
+      expect(mod12At11.decodingConditionMet).toBe(true);
+      expect(mod12At11.nextState).toBe(0);
+      expect(mod12At11.truncatedReset).toBe(true);
+
+      // Max count 15 with ENT=1 asserts RCO
+      const at15 = simulate74LS163(15, { clr_n: 1, load_n: 1, enp: 1, ent: 1 });
+      expect(at15.rco).toBe(1);
+    });
+
+    it("simulates 2D coincident memory matrix and gate count reduction (m4-06)", () => {
+      const initialMatrix: Bit[][] = [
+        [0, 1, 0, 0],
+        [1, 1, 0, 1],
+        [0, 0, 1, 0],
+        [1, 0, 0, 1],
+      ];
+      // Read cell (row 1, col 3) -> should be 1
+      const readRes = simulateCoincidentMemory(initialMatrix, { rowAddr: 1, colAddr: 3 });
+      expect(readRes.readData).toBe(1);
+      expect(readRes.linearAddress).toBe(7); // 1 * 4 + 3
+
+      // Write cell (row 2, col 1) with data 1
+      const writeRes = simulateCoincidentMemory(initialMatrix, {
+        rowAddr: 2, colAddr: 1, writeEnable: 1, dataIn: 1,
+      });
+      expect(writeRes.readData).toBe(1);
+      expect(writeRes.matrix[2][1]).toBe(1);
+
+      // Gate reduction: 16 cells in 1D needs 16 gates; 2D needs 4+4=8 gates (50% reduction)
+      expect(readRes.gateCount1D).toBe(16);
+      expect(readRes.gateCount2D).toBe(8);
+      expect(readRes.gateReductionPercent).toBe(50);
+    });
+
+    it("simulates modular memory expansion across 4K address space (m4-06 Problem 1)", () => {
+      // 4K x 8 built from four 1K x 8 chips
+      // Address 0x250 (Bank 0): /CS0 = 0, others 1
+      const bank0 = simulateMemoryExpansion(0x250);
+      expect(bank0.bankIndex).toBe(0);
+      expect(bank0.chipSelects).toEqual([0, 1, 1, 1]);
+      expect(bank0.busOutputs[0]).not.toBe("Hi-Z");
+      expect(bank0.busOutputs[1]).toBe("Hi-Z");
+      expect(bank0.busOutputs[2]).toBe("Hi-Z");
+      expect(bank0.busOutputs[3]).toBe("Hi-Z");
+
+      // Address 0x680 (Bank 1: 0x400-0x7FF): /CS1 = 0
+      const bank1 = simulateMemoryExpansion(0x680);
+      expect(bank1.bankIndex).toBe(1);
+      expect(bank1.chipSelects).toEqual([1, 0, 1, 1]);
+
+      // Address 0xA20 (Bank 2: 0x800-0xBFF): /CS2 = 0
+      const bank2 = simulateMemoryExpansion(0xA20);
+      expect(bank2.bankIndex).toBe(2);
+      expect(bank2.chipSelects).toEqual([1, 1, 0, 1]);
+
+      // Address 0xF10 (Bank 3: 0xC00-0xFFF): /CS3 = 0
+      const bank3 = simulateMemoryExpansion(0xF10);
+      expect(bank3.bankIndex).toBe(3);
+      expect(bank3.chipSelects).toEqual([1, 1, 1, 0]);
+    });
+  });
 });
+
 

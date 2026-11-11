@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
-import { MemoryUnit } from "@/components/mdx/LogicVisualizers";
+import { MemoryUnit, CoincidentMemoryLab, MemoryExpansionLab } from "@/components/mdx/LogicVisualizers";
 
 # The Memory Unit: Putting It All Together
 
@@ -131,6 +131,8 @@ For a 1024-word memory ($k = 10$ address lines):
    - 2D Decoding: $32 + 32 = \mathbf{64}$ AND gates (each with only 5 inputs)!
    The gate count is reduced by over $93\%$.
 
+<CoincidentMemoryLab />
+
 ---
 
 ## Tri-State Logic and Shared System Buses
@@ -248,6 +250,8 @@ Engineers routinely combine standard commercial memory ICs to build memory modul
                        |
      A9..A0 -----------+ (Parallel to All Chips)
 ```
+
+<MemoryExpansionLab />
 
 <Callout tone="neon" label="The Complete Computer Hierarchy">
 Every computer processor is built from these building blocks:

@@ -1,6 +1,6 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { GatedSrLatch, DLatch } from "@/components/mdx/CircuitVisualizers";
-import { ClockExplorer } from "@/components/mdx/LogicVisualizers";
+import { ClockExplorer, RaceAroundLab } from "@/components/mdx/LogicVisualizers";
 
 # Control Inputs and the D Latch
 
@@ -182,6 +182,8 @@ $$0 \longrightarrow 1 \longrightarrow 0 \longrightarrow 1 \longrightarrow 0 \dot
 The circuit oscillates at a frequency set by its own gate delays. When the clock pulse falls back to 0 ($C \to 0$), the value stored in the latch is unpredictable, depending on the exact instant the clock edge fell.
 
 This timing problem is known as the **race-around condition** (or feedback transparency hazard). A level-sensitive transparent latch cannot safely update its own state based on feedback.
+
+<RaceAroundLab />
 
 To count or execute instructions reliably, a circuit needs a memory element that captures data at one precise instant and seals itself shut. That requires moving from level sensitivity to **edge triggering**, which is the subject of [flip-flops](/courses/logic-design/flip-flops).
 

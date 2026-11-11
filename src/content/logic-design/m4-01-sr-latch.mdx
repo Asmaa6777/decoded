@@ -1,5 +1,6 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { SrLatchNor, SrLatchNand } from "@/components/mdx/CircuitVisualizers";
+import { DebouncerLab } from "@/components/mdx/LogicVisualizers";
 
 # The SR Latch: How a Circuit Remembers
 
@@ -224,6 +225,8 @@ The standard industrial solution is the **SR latch switch debouncer**:
 6. The latch will never reset to 0 until the switch travels all the way across to make contact with terminal B, pulling $\bar{R} \to 0$.
 
 The output $Q$ produces a clean, bounce-free signal that can safely drive digital logic.
+
+<DebouncerLab />
 
 <Callout tone="neon" label="Hardware Foundation">
 Cross-coupled storage is the foundation of high-speed processor registers and on-chip caches. The 6-transistor (6T) [SRAM](/courses/computer-organization/ram-and-rom) cell used in modern L1 and L2 caches is a microscopic CMOS implementation of this cross-coupled loop, holding billions of bits simultaneously.

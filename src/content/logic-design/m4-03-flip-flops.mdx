@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
-import { EdgeLab, MasterSlave, JkLab } from "@/components/mdx/LogicVisualizers";
+import { EdgeLab, MasterSlave, JkLab, FlipFlopConversionLab, SystemTimingLab } from "@/components/mdx/LogicVisualizers";
 
 # Flip-Flops: Changing Only on the Edge
 
@@ -227,6 +227,8 @@ $$
 
 A standard D flip-flop combined with two AND gates, one OR gate, and one inverter functions as a full-featured JK flip-flop!
 
+<FlipFlopConversionLab />
+
 ---
 
 ## Asynchronous Inputs: Preset and Clear
@@ -324,6 +326,8 @@ $$
 
 - **Positive Skew ($\delta > 0$):** The clock arrives at FF 2 *later* than FF 1. This gives data more time to propagate, relaxing the setup constraint ($T_{c(min)} \ge t_{c-q} + t_{comb(max)} + t_{su} - \delta$). However, it makes the hold condition harder to satisfy: $t_{c-q(min)} + t_{comb(min)} \ge t_h + \delta$, increasing susceptibility to race-through errors.
 - **Negative Skew ($\delta < 0$):** The clock arrives at FF 2 *earlier* than FF 1. This improves hold margins but directly steals time from the available clock period, reducing $f_{max}$.
+
+<SystemTimingLab />
 
 ## Common exam pitfalls and student mistakes
 

@@ -1,5 +1,5 @@
 import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
-import { CounterLab } from "@/components/mdx/LogicVisualizers";
+import { CounterLab, CounterComparisonLab, ModCounterLab } from "@/components/mdx/LogicVisualizers";
 
 # Binary Counters
 
@@ -101,6 +101,8 @@ Consider an asynchronous counter transitioning from state $7$ (`0111`) to state 
 
 While rippling, the counter briefly outputs the intermediate false states `0110`, `0100`, and `0000`. If combinational decoding logic is attached to detect state `0000` (e.g., to trigger a memory write or an interrupt), the decoder will produce a spurious voltage spike (a **glitch**), causing unpredictable system malfunction.
 
+<CounterComparisonLab />
+
 ---
 
 ## Synchronous Binary Counters
@@ -192,6 +194,8 @@ When using a 4-bit synchronous counter IC:
 
 > [!WARNING]
 > Never use an asynchronous reset to truncate a counter by decoding state $N$ (e.g. decoding state 10 with a NAND gate driving asynchronous /CLR). The instant the first internal flip-flop clears, the NAND output returns to 1, causing an infinitesimal runt pulse that can leave other flip-flops unreset!
+
+<ModCounterLab />
 
 #### Method 2: Synthesizing Arbitrary State Machines from Scratch
 To design a counter for an arbitrary sequence (e.g. $0 \to 2 \to 5 \to 1 \to 0$):
