@@ -420,6 +420,49 @@ There are two fundamental models:
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="interprocess-communication"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-33",
+      prompt: "(Final 2020, MCQ item 33) Which of the following two operations are provided by the IPC facility?",
+      options: [{ id: "a", text: "write & delete message" }, { id: "b", text: "delete & receive message" }, { id: "c", text: "send & delete message" }, { id: "d", text: "receive & send message" }],
+      correctOptionId: "d",
+      explanation: "The IPC facility provides send and receive. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-34",
+      prompt: "(Final 2020, MCQ item 34) Which of the following are TRUE for direct communication?",
+      options: [{ id: "a", text: "A communication link can be associated with any number of processes" }, { id: "b", text: "A communication link can be associated with exactly two processes" }, { id: "c", text: "Multiple communication links exist between each pair of processes" }, { id: "d", text: "Exactly two communication links exist between each pair of processes" }],
+      correctOptionId: "b",
+      explanation: "In direct communication each link joins exactly two processes, and one link exists per pair. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-35",
+      prompt: "(Final 2020, MCQ item 35) The zero capacity queue",
+      options: [{ id: "a", text: "is referred to as a message system with buffering" }, { id: "b", text: "is referred to as a message system with no buffering" }, { id: "c", text: "is referred to as a link" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "A zero-capacity queue is a message system with no buffering. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-36",
+      prompt: "(Final 2020, MCQ item 36) Remote Procedure Calls are used",
+      options: [{ id: "a", text: "For communication between two processes remotely different from each other on same system" }, { id: "b", text: "For communication between two processes on the same systems" }, { id: "c", text: "For communication between two processes on separate systems" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "RPC lets a process call a procedure on another system. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-37",
+      prompt: "(Final 2020, MCQ item 37) What is the full form of RMI?",
+      options: [{ id: "a", text: "Remote Memory installation" }, { id: "b", text: "Remote Memory invocation" }, { id: "c", text: "Remote Method installation" }, { id: "d", text: "Remote Method invocation" }],
+      correctOptionId: "d",
+      explanation: "RMI stands for Remote Method Invocation. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

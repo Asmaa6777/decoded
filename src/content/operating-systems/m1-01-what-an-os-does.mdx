@@ -291,6 +291,28 @@ A **trap** is a software-generated interrupt, raised by an instruction, such as 
 The hierarchy goes from slow, large, cheap, non-volatile storage at the bottom to fast, small, expensive, volatile storage at the top. Each step up trades size for speed. The answers match the printed key.
 </ModelAnswer>
 
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="what-an-os-does"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-39",
+      prompt: "(Final 2020, MCQ item 39) What is a trap/exception?",
+      options: [{ id: "a", text: "Hardware generated interrupt caused by an error" }, { id: "b", text: "Software generated interrupt caused by an error" }, { id: "c", text: "User generated interrupt caused by an error" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "A trap is a software-generated interrupt, often caused by an error. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-40",
+      prompt: "(Final 2020, MCQ item 40) DMA is used for",
+      options: [{ id: "a", text: "High speed devices" }, { id: "b", text: "Low speed devices" }, { id: "c", text: "Utilizing CPU cycles" }, { id: "d", text: "All of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "DMA moves data for high-speed devices, one block per interrupt. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 The 2015 and 2019 spring finals print the same true/false statements. The 2019 spring paper has its answers filled in, and the answers shown here are that key. The 2015 scan has teacher marks that we did not check against it.

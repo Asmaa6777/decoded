@@ -488,6 +488,71 @@ Answer: **context switch.** (Our answer, which matches the printed 2021 key.)
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-23",
+      prompt: "(Final 2020, MCQ item 23) In Unix, which system call creates the new process?",
+      options: [{ id: "a", text: "Fork" }, { id: "b", text: "Create" }, { id: "c", text: "New" }, { id: "d", text: "None of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "UNIX creates a new process with fork(). (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-24",
+      prompt: "(Final 2020, MCQ item 24) What is the ready state of a process?",
+      options: [{ id: "a", text: "when process is scheduled to run after some execution" }, { id: "b", text: "when process is unable to run until some task has been completed" }, { id: "c", text: "when process is using the CPU" }, { id: "d", text: "none of the mentioned" }],
+      correctOptionId: "a",
+      explanation: "A ready process can run and waits only for the CPU. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-25",
+      prompt: "(Final 2020, MCQ item 25) A process stack does not contain",
+      options: [{ id: "a", text: "Function parameters" }, { id: "b", text: "Local variables" }, { id: "c", text: "Return addresses" }, { id: "d", text: "PID of child process" }],
+      correctOptionId: "d",
+      explanation: "The stack holds parameters, locals and return addresses. The PID of a child is not stored there. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-26",
+      prompt: "(Final 2020, MCQ item 26) What is a process Control Block?",
+      options: [{ id: "a", text: "Process type variable" }, { id: "b", text: "Data Structure" }, { id: "c", text: "A secondary storage section" }, { id: "d", text: "A Block in memory" }],
+      correctOptionId: "b",
+      explanation: "The PCB is a data structure the kernel keeps for each process. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-27",
+      prompt: "(Final 2020, MCQ item 27) What is the degree of multiprogramming?",
+      options: [{ id: "a", text: "the number of processes executed per unit time" }, { id: "b", text: "the number of processes in the ready queue" }, { id: "c", text: "the number of processes in the I/O queue" }, { id: "d", text: "the number of processes in memory" }],
+      correctOptionId: "d",
+      explanation: "The degree of multiprogramming is how many processes are in memory. (Our answer.)",
+    },
+    {
+      id: "f2020-mcq-30",
+      prompt: "(Final 2020, MCQ item 30) Which of the following need not necessarily be saved on a context switch between processes?",
+      options: [{ id: "a", text: "General purpose registers" }, { id: "b", text: "Translation lookaside buffer" }, { id: "c", text: "Program counter" }, { id: "d", text: "All of the mentioned" }],
+      correctOptionId: "b",
+      explanation: "The TLB is a cache and need not be saved, since it can be reloaded. (Our answer.)",
+    },
+  ]}
+/>
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="processes"
+  practice
+  questions={[
+    {
+      id: "f2020-mcq-44",
+      prompt: "(Final 2020, MCQ item 44) The switching of the CPU from one process or thread to another is called",
+      options: [{ id: "a", text: "process switch" }, { id: "b", text: "task switch" }, { id: "c", text: "context switch" }, { id: "d", text: "all of the mentioned" }],
+      correctOptionId: "c",
+      explanation: "This is a context switch. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz
