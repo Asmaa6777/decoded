@@ -350,6 +350,35 @@ Finish times: P1 8, P4 10, P2 13, P3 19. Turnaround: **P1 = 8, P2 = 11, P3 = 16,
 Our schedule gives waiting times P1 6, P2 11, P3 12 and P4 9 (average 9.5), and turnaround times P1 12, P2 19, P3 19 and P4 12 (average 15.5). Item 63 (P1 waiting) lists 9, 13, 15 and 21. Item 64 (P2 turnaround) lists 13, 15, 21 and 23. Item 65 (P4 waiting) lists 2, 3, 5 and 12. Item 66 (average turnaround) lists 7, 9, 15 and 25. The closest option is 15 for item 66, but that does not match our 15.5.
 </ModelAnswer>
 
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="round-robin-and-beyond"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-4",
+      prompt: "(Final 2024, MCQ item 4) What scheduling algorithm is used in a time-sharing system?",
+      options: [{ id: "a", text: "Priority scheduling" }, { id: "b", text: "Round Robin" }, { id: "c", text: "FCFS" }, { id: "d", text: "SJF" }],
+      correctOptionId: "b",
+      explanation: "Round robin gives each user's process a fixed slice in turn. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-7",
+      prompt: "(Final 2024, MCQ item 7) In the Round Robin algorithm, what happens if the time quantum is too large?",
+      options: [{ id: "a", text: "It behaves like SJF" }, { id: "b", text: "It behaves like FCFS" }, { id: "c", text: "Processes experience starvation" }, { id: "d", text: "CPU utilization decreases" }],
+      correctOptionId: "b",
+      explanation: "With a very large quantum no process is preempted, so the schedule is FCFS. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-8",
+      prompt: "(Final 2024, MCQ item 8) Which scheduling algorithm minimizes the response time for interactive users?",
+      options: [{ id: "a", text: "SJF" }, { id: "b", text: "Round Robin" }, { id: "c", text: "FCFS" }, { id: "d", text: "Priority Scheduling" }],
+      correctOptionId: "b",
+      explanation: "Round robin gives every process a quick turn, so interactive users see fast responses. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

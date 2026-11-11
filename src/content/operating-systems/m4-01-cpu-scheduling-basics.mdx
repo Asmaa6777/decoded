@@ -400,6 +400,42 @@ Neither type alone is best. If every process is I/O-bound, the ready queue is al
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="cpu-scheduling-basics"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-1",
+      prompt: "(Final 2024, MCQ item 1) What is the main objective of CPU scheduling?",
+      options: [{ id: "a", text: "Minimize throughput" }, { id: "b", text: "Minimize waiting time" }, { id: "c", text: "Maximize CPU utilization" }, { id: "d", text: "Maximize turnaround time" }],
+      correctOptionId: "c",
+      explanation: "The scheduler keeps the CPU busy, which is the usual main objective. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-2",
+      prompt: "(Final 2024, MCQ item 2) Which CPU scheduling algorithm can result in a convoy effect?",
+      options: [{ id: "a", text: "SJF" }, { id: "b", text: "Round Robin" }, { id: "c", text: "FCFS" }, { id: "d", text: "Priority Scheduling" }],
+      correctOptionId: "c",
+      explanation: "A long job at the front of an FCFS queue makes short jobs wait. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-3",
+      prompt: "(Final 2024, MCQ item 3) What is the key advantage of the Shortest Job First (SJF) algorithm?",
+      options: [{ id: "a", text: "Simplifies process execution" }, { id: "b", text: "Minimizes average waiting time" }, { id: "c", text: "Ensures equal priority for all processes" }, { id: "d", text: "Improves throughput for longer processes" }],
+      correctOptionId: "b",
+      explanation: "SJF gives the minimum average waiting time for a set of processes. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-6",
+      prompt: "(Final 2024, MCQ item 6) In Priority Scheduling, what solution is used to prevent starvation?",
+      options: [{ id: "a", text: "Round Robin scheduling" }, { id: "b", text: "Aging" }, { id: "c", text: "Increasing time quantum" }, { id: "d", text: "None of the above" }],
+      correctOptionId: "b",
+      explanation: "Aging raises the priority of a waiting process over time. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz

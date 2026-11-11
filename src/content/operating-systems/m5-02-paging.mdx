@@ -274,6 +274,42 @@ None.
     },
   ]}
 />
+
+<Quiz
+  courseSlug="operating-systems"
+  lessonSlug="paging"
+  practice
+  questions={[
+    {
+      id: "f2024-mcq-11",
+      prompt: "(Final 2024, MCQ item 11) Paging avoids which type of memory fragmentation?",
+      options: [{ id: "a", text: "Internal fragmentation" }, { id: "b", text: "External fragmentation" }, { id: "c", text: "Both internal and external" }, { id: "d", text: "Logical fragmentation" }],
+      correctOptionId: "b",
+      explanation: "Paging removes external fragmentation, but it can still cause internal fragmentation. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-13",
+      prompt: "(Final 2024, MCQ item 13) Which memory management scheme divides memory into fixed-sized blocks?",
+      options: [{ id: "a", text: "Segmentation" }, { id: "b", text: "Paging" }, { id: "c", text: "Contiguous allocation" }, { id: "d", text: "Dynamic partitioning" }],
+      correctOptionId: "b",
+      explanation: "Paging uses fixed-size frames and pages. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-15",
+      prompt: "(Final 2024, MCQ item 15) How is internal fragmentation calculated in paging systems?",
+      options: [{ id: "a", text: "Difference between total memory and allocated memory" }, { id: "b", text: "Sum of unused space within allocated frames" }, { id: "c", text: "Memory lost due to external fragmentation" }, { id: "d", text: "None of the above" }],
+      correctOptionId: "b",
+      explanation: "Internal fragmentation is the unused space inside the frames that are allocated. (Our answer.)",
+    },
+    {
+      id: "f2024-mcq-17",
+      prompt: "(Final 2024, MCQ item 17) How does a translation lookaside buffer (TLB) improve paging performance?",
+      options: [{ id: "a", text: "By storing frequently used pages in disk" }, { id: "b", text: "By caching recently translated page table entries" }, { id: "c", text: "By reducing internal fragmentation" }, { id: "d", text: "By increasing the size of the page table" }],
+      correctOptionId: "b",
+      explanation: "The TLB caches recent translations, so the page table is not read every time. (Our answer.)",
+    },
+  ]}
+/>
 ### Part 2: Final exam questions
 
 <Quiz
