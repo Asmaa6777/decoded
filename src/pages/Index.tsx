@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { ContinueLearning } from "@/components/ContinueLearning";
-import CourseCard from "@/components/CourseCard";
+import { TrackPicker } from "@/components/TrackPicker";
 import { courses } from "@/content/registry";
 import { CourseGlyph } from "@/components/brand/Glyphs";
 
@@ -105,11 +105,7 @@ export default function Index() {
             </span>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {courses.map((c) => (
-              <CourseCard key={c.slug} slug={c.slug} />
-            ))}
-          </div>
+          <TrackPicker />
         </div>
       </section>
 
