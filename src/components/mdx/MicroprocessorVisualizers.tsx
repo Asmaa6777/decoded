@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { btn, inputCls, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { Panel } from "@/components/mdx/MatrixVisualizers";
+import { Panel, Stepper, Toggle, btn, inputCls } from "@/components/mdx/vizKit";
 import { TimingDiagram } from "@/components/mdx/LogicVisualizers";
 import type { Frame } from "@/lib/algorithms";
 import { bitString, type Bit } from "@/lib/logic";

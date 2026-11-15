@@ -127,7 +127,7 @@ print(secret)  # 23
 <Callout tone="orange" label="Common errors">
 - **Seeking an inverse when $\gcd(a, n) \ne 1$:** An inverse exists *only* when $a$ and $n$ are coprime. For instance, $6$ has no inverse modulo $26$ because $\gcd(6, 26) = 2 \ne 1$. In Python, `pow(6, -1, 26)` raises a `ValueError: base is not invertible for the given modulus`.
 - **Sign slips during back-substitution:** When substituting expressions into parentheses, take care with double negatives. For example, $17 - 1(61 - 3 \cdot 17) = 17 - 61 + 3 \cdot 17 = -1(61) + 4(17)$, not $+2(17)$.
-- **Using floating-point division:** Writing `1 / a % n` computes float division first and destroys integer precision. Always use the extended Euclidean algorithm or `pow(a, -1, n)`.
+- **Using floating-point division:** Writing `1 / a % n` computes [floating-point](/courses/logic-design/codes-and-floating-point#floating-point-very-large-and-very-small-numbers) division first and destroys integer precision. Always use the extended Euclidean algorithm or `pow(a, -1, n)`.
 </Callout>
 
 ## Where you'll meet this

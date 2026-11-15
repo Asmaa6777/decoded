@@ -7,8 +7,10 @@
 // home and /courses into dist/og/. Lessons reuse their course's image. Every
 // route it writes also goes into dist/sitemap.xml.
 //
-// GitHub Pages serves dist/courses/<slug>/index.html for /courses/<slug>,
+// GitHub Pages serves dist/courses/<slug>/index.html for /courses/<slug>/,
 // and the SPA boots from it exactly as it does from the root index.html.
+// A copy at dist/courses/<slug>.html answers /courses/<slug> (the form the
+// app's own links use) directly, instead of a redirect to the slash form.
 
 import { build } from "esbuild";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -148,7 +150,7 @@ function homeCard(mod) {
     h(
       "div",
       { flexDirection: "column", gap: 22 },
-      h("div", mono(18, C.neon), "CS theory · real-world tools"),
+      h("div", mono(18, C.neon), "CS theory · in depth, connected"),
       h(
         "div",
         { flexDirection: "column", fontFamily: "Syne", fontWeight: 800, fontSize: 70, lineHeight: 1.0, color: C.fg, letterSpacing: -2.5 },
@@ -201,6 +203,26 @@ function courseCard(mod, course) {
         h("div", { fontFamily: "Lora", fontStyle: "italic", fontSize: 30, lineHeight: 1.35, color: C.soft, maxWidth: 940 }, course.tagline.replace(/\.+$/, ".")),
       ),
       footer(mod, h("div", mono(16, C.muted), "Theory, mapped to the tools it powers")),
+    ],
+    accent,
+  );
+}
+
+/** The preview for a companion invite to this course. The Worker names who sent it in the page title. */
+function inviteCard(mod, course) {
+  const accent = C[course.accent];
+  const titleSize = course.title.length > 24 ? 70 : 84;
+  return frame(
+    [
+      header(),
+      h(
+        "div",
+        { flexDirection: "column", gap: 22 },
+        h("div", { alignItems: "center", gap: 20 }, glyph(mod, course.slug, accent, 52), h("div", mono(18, accent), "You're invited to study together")),
+        h("div", { fontFamily: "Syne", fontWeight: 800, fontSize: titleSize, lineHeight: 1.0, color: C.fg, letterSpacing: -2.5, maxWidth: 1000 }, course.title),
+        h("div", { fontFamily: "Lora", fontStyle: "italic", fontSize: 30, lineHeight: 1.35, color: C.soft, maxWidth: 940 }, "See each other's progress in this course, and nothing else."),
+      ),
+      footer(mod, h("div", mono(16, C.muted), "One link, one companion")),
     ],
     accent,
   );
@@ -261,9 +283,11 @@ async function writeRoute(template, route, meta) {
   routes.push(url);
   if (!SEO_BLOCK.test(template)) throw new Error("seo markers not found in dist/index.html");
   const html = template.replace(SEO_BLOCK, seoBlock({ ...meta, url }));
-  const file = route === "/" ? path.join(DIST, "index.html") : path.join(DIST, route, "index.html");
+  if (route === "/") return writeFile(path.join(DIST, "index.html"), html);
+  const file = path.join(DIST, route, "index.html");
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, html);
+  await writeFile(path.join(DIST, `${route}.html`), html);
 }
 
 /* ---------- main ---------- */
@@ -277,8 +301,8 @@ await renderPng(homeCard(mod), fonts, path.join(DIST, "og/home.png"));
 await renderPng(coursesCard(mod), fonts, path.join(DIST, "og/courses.png"));
 
 await writeRoute(template, "/", {
-  title: "Decoded — CS Theory to Real-World Skills",
-  description: "Computer science courses decoded into the practical skills engineers actually use. Bridge the gap between abstract theory and modern tools.",
+  title: "Decoded — Computer Science, In Depth and Connected",
+  description: "CS courses that explain each idea in plain words, let you step through it in a simulation, and show the software it runs in.",
   url: `${SITE}/`,
   image: img("home"),
 });
@@ -308,9 +332,16 @@ await writeRoute(template, "/privacy", {
   image: img("home"),
 });
 
+// The Worker reads course titles from here when it writes previews for shared profile and invite links.
+await writeFile(
+  path.join(DIST, "og/courses.json"),
+  JSON.stringify(Object.fromEntries(mod.courses.map((c) => [c.slug, { title: c.title, available: c.status === "available" }]))),
+);
+
 let pages = 5;
 for (const course of mod.courses) {
   await renderPng(courseCard(mod, course), fonts, path.join(DIST, `og/${course.slug}.png`));
+  if (course.status === "available") await renderPng(inviteCard(mod, course), fonts, path.join(DIST, `og/invite-${course.slug}.png`));
   await writeRoute(template, `/courses/${course.slug}`, {
     title: `${course.title} — Decoded`,
     description: course.description,
@@ -352,6 +383,21 @@ function plainText(mdx) {
     .trim();
 }
 
+/** Quiz questions live in src/content/<course>/questions.ts, not in the quiz's MDX; index their prompts and explanations with the quiz. */
+async function quizText(courseSlug, quizSlug) {
+  let bank;
+  try {
+    bank = await readFile(path.join(ROOT, "src/content", courseSlug, "questions.ts"), "utf8");
+  } catch {
+    return "";
+  }
+  const parts = [];
+  for (const m of bank.matchAll(/quiz: "([^"]+)",\n\s*prompt: ("(?:[^"\\]|\\.)*"),[\s\S]*?explanation: ("(?:[^"\\]|\\.)*"),/g)) {
+    if (m[1] === quizSlug) parts.push(JSON.parse(m[2]), JSON.parse(m[3]));
+  }
+  return parts.join(" ");
+}
+
 const files = await lessonFiles();
 const searchIndex = [];
 for (const course of mod.courses) {
@@ -360,7 +406,8 @@ for (const course of mod.courses) {
     if (!match) throw new Error(`no MDX file found for ${course.slug}/${lesson.slug}`);
     const mdx = await readFile(path.join(ROOT, "src", match.file), "utf8");
     const headings = [...mdx.matchAll(/^#{2,3} (.+)$/gm)].map((m) => plainText(m[1]));
-    searchIndex.push({ course: course.slug, lesson: lesson.slug, headings, text: plainText(mdx).slice(0, SEARCH_TEXT_LIMIT) });
+    const quiz = lesson.kind === "quiz" ? await quizText(course.slug, lesson.slug) : "";
+    searchIndex.push({ course: course.slug, lesson: lesson.slug, headings, text: plainText(`${mdx}\n${quiz}`).slice(0, SEARCH_TEXT_LIMIT) });
   }
 }
 await writeFile(path.join(DIST, "search-index.json"), JSON.stringify(searchIndex));
@@ -372,4 +419,5 @@ ${routes.map((url) => `  <url><loc>${esc(url)}</loc></url>`).join("\n")}
 `;
 await writeFile(path.join(DIST, "sitemap.xml"), sitemap);
 
-console.log(`og: ${mod.courses.length + 2} images, ${pages} pages`);
+const invites = mod.courses.filter((c) => c.status === "available").length;
+console.log(`og: ${mod.courses.length + 2 + invites} images, ${pages} pages`);

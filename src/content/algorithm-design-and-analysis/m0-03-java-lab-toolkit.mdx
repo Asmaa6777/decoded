@@ -288,7 +288,7 @@ $$
 
 Because $5{,}000{,}000{,}000 > 2{,}147{,}483{,}647$, the sum overflows the 32-bit integer range. In Java, integer arithmetic wraps around modulo $2^{32}$ without throwing an exception or warning.
 
-In two's complement arithmetic, adding values past $2^{31} - 1$ flips into negative values and wraps around by subtracting $2^{32} = 4{,}294{,}967{,}296$:
+In [two's complement](/courses/logic-design/binary-arithmetic#3-signed-twos-complement) arithmetic, adding values past $2^{31} - 1$ flips into negative values and wraps around by subtracting $2^{32} = 4{,}294{,}967{,}296$:
 $$
 5{,}000{,}000{,}000 - 4{,}294{,}967{,}296 = \mathbf{705{,}032{,}704}
 $$

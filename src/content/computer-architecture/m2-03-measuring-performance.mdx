@@ -1,68 +1,228 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { CpiCalculator, ClockTrap } from "@/components/mdx/ArchitectureVisualizers";
 
 # Measuring Performance
 
-Before making a computer faster, you have to know what "faster" means. The only true measure is how long a program takes. Three things decide that:
+Before you can make a computer faster, you must define what "faster" means. A common assumption is that a processor running at 4.0 GHz must outperform one running at 2.5 GHz. In practice, clock rate alone tells you almost nothing about how quickly an application will complete.
+
+The only definitive measure of computer performance is execution time: the wall-clock time required to execute a specific workload from start to finish.
+
+## The iron law of processor performance
+
+Three fundamental factors govern how long a program takes to execute on a central processing unit. Their relationship is known as the **CPU performance equation**:
 
 $$
-\text{CPU time} = \text{instruction count} \times \text{CPI} \times \text{clock period}
+\text{CPU Execution Time} = \text{Instruction Count} \times \text{CPI} \times \text{Clock Period}
 $$
 
-Because the clock period is 1 ÷ clock rate, you can also write:
+Because the clock period $\tau$ is the reciprocal of the clock frequency ($f_{\text{clk}} = 1 / \tau$), the equation can also be written as:
 
 $$
-\text{CPU time} = \frac{\text{instruction count} \times \text{CPI}}{\text{clock rate}}
+\text{CPU Execution Time} = \frac{\text{Instruction Count} \times \text{CPI}}{f_{\text{clk}}}
 $$
 
-- **Instruction count**: how many instructions the program runs.
-- **CPI** (cycles per instruction): the average number of clock ticks per instruction.
-- **Clock rate**: ticks per second.
+Each factor reflects a distinct layer of the computer system:
 
-IPC (instructions per cycle) is just CPI upside down. It's the number you'll usually see in chip reviews.
+1. **Instruction Count** ($IC$): The total number of machine instructions executed by the program. This is determined by the algorithm, the efficiency of the optimizing compiler, and the expressiveness of the [instruction set architecture](/courses/computer-architecture/instruction-formats).
+2. **Cycles Per Instruction** ($\text{CPI}$): The average number of clock cycles required to execute one instruction. This is determined by the processor microarchitecture (pipelining depth, branch prediction, superscalar issue width) and the latency of the memory hierarchy.
+3. **Clock Cycle Time** ($\tau$ or $1 / f_{\text{clk}}$): The duration of a single clock tick in seconds (or ticks per second in gigahertz). This is determined by hardware datapath design, critical path propagation delay through logic gates, and silicon fabrication technology.
 
-The clock period comes from the same [clock](/courses/logic-design/signals#the-clock) signal that drives every flip-flop in the chip.
+The inverse of CPI is **Instructions Per Cycle** ($\text{IPC} = 1 / \text{CPI}$). High-performance modern processors execute multiple instructions simultaneously, achieving an IPC greater than 1.0 (or a CPI well below 1.0).
 
-## Clock speed isn't everything
+## The clock speed trap
+
+Comparing processors solely by clock frequency is known as the **megahertz myth**.
 
 <ClockTrap />
 
-A chip with a higher clock rate but a higher CPI can lose, which is why you can't compare two chips by GHz alone.
-
-## Working out CPI
-
-Different kinds of instruction take different numbers of cycles, so CPI is an average, weighted by how often each kind occurs:
+Consider Processor A running at 4.0 GHz with an average CPI of 2.0, and Processor B running at 2.5 GHz with an average CPI of 1.0. For a program of 10 billion instructions:
 
 $$
-\text{CPI} = \frac{\sum_i \text{CPI}_i \times I_i}{\text{instruction count}}
+\text{Time}_A = \frac{10 \times 10^9 \times 2.0}{4.0 \times 10^9} = 5.0\text{ seconds}
 $$
 
-Here $I_i$ is how many times type $i$ runs, and $\text{CPI}_i$ is the cycles it takes.
-
-## MIPS
-
-**MIPS** (million instructions per second) puts the rate as a single number:
-
 $$
-\text{MIPS} = \frac{\text{clock rate}}{\text{CPI} \times 10^6}
+\text{Time}_B = \frac{10 \times 10^9 \times 1.0}{2.5 \times 10^9} = 4.0\text{ seconds}
 $$
 
-Here is a comparison of two machines at 200 MHz. You can edit any number.
+Processor B finishes a full second faster despite having a clock speed that is 37.5% lower.
+
+## Working out weighted CPI
+
+Different instruction classes require different numbers of clock cycles. A simple integer register addition may execute in 1 cycle, a conditional branch in 3 cycles, and a floating-point division in 20 cycles.
+
+The overall CPI is the weighted average across all instruction types based on their execution frequency:
+
+$$
+\text{CPI} = \sum_{i=1}^n \left( \frac{IC_i}{IC} \times \text{CPI}_i \right) = \frac{\sum_{i=1}^n (IC_i \times \text{CPI}_i)}{IC}
+$$
+
+where $IC_i$ is the number of times instruction class $i$ is executed, and $\text{CPI}_i$ is the cycle count for that class.
+
+## MIPS and MFLOPS pitfalls
+
+Two popular shorthand metrics attempt to capture processor speed in a single number:
+
+**MIPS** (Million Instructions Per Second) measures the raw rate of instruction execution:
+
+$$
+\text{MIPS} = \frac{IC}{\text{CPU Time} \times 10^6} = \frac{f_{\text{clk}}}{\text{CPI} \times 10^6}
+$$
+
+Here is a comparison of two processors running at 200 MHz on an identical instruction mix:
 
 <CpiCalculator />
 
-The starting numbers work out like this:
+The starting baseline numbers evaluate as follows:
 
 $$
 \text{CPI}_A = \frac{38(1) + 15(3) + 42(4) + 5(5)}{100} = 2.76 \qquad \text{MIPS}_A = \frac{200}{2.76} = 72.46
 $$
 
 $$
-\text{CPI}_B = \frac{35(1) + 30(2) + 15(3) + 20(5)}{100} = 2.4 \qquad \text{MIPS}_B = \frac{200}{2.4} = 83.33
+\text{CPI}_B = \frac{35(1) + 30(2) + 15(3) + 20(5)}{100} = 2.40 \qquad \text{MIPS}_B = \frac{200}{2.40} = 83.33
 $$
 
-Notice the coloured bars in the calculator. Branches are a big slice of Machine A's time, so improving branches would help most. That's called the **common case** rule: spend your effort on what happens most often.
+While MIPS appears straightforward, comparing MIPS across different architectures is unreliable:
 
-<Callout tone="violet" label="MIPS can mislead">
-MIPS only counts instructions, not how much each one achieves. A RISC chip can post a higher MIPS than a CISC chip while running the same program no faster, because it needs more instructions for the same work. Comparing MIPS is fair only between machines with the same instruction set.
+1. A [RISC processor](/courses/computer-architecture/risc-and-cisc) might execute 5 million simple instructions to accomplish a task at 500 MIPS.
+2. A CISC processor might accomplish the exact same task using only 2 million complex instructions at 250 MIPS.
+3. Both machines take the exact same wall-clock time, but the RISC processor posts twice the MIPS score.
+4. If an inefficient compiler emits redundant instructions that do no useful work, the processor's MIPS score actually increases because CPI drops, even though total execution time worsens.
+
+For scientific, graphics, and machine learning workloads, **MFLOPS** (Million Floating-Point Operations Per Second) or **TFLOPS** ($10^{12}$ FLOPS) measures the rate of actual arithmetic operations (multiplications and additions) rather than raw machine instructions.
+
+## Amdahl's law
+
+When architects seek to speed up a computer, they often enhance a specific component, such as adding a dedicated vector unit or hardware floating-point multiplier.
+
+**Amdahl's law** defines the maximum speedup achievable when only a fraction of a program can take advantage of an improvement:
+
+$$
+\text{Speedup}_{\text{overall}} = \frac{\text{Execution Time}_{\text{old}}}{\text{Execution Time}_{\text{new}}} = \frac{1}{(1 - f) + \dfrac{f}{s}}
+$$
+
+where:
+- $f$ is the fraction of total execution time spent running the portion of the program that benefits from the improvement ($0 \le f \le 1$).
+- $s$ is the speedup factor applied strictly to that fraction.
+
+As the enhancement becomes infinitely fast ($s \to \infty$), the execution time of that component drops to zero, yielding an asymptotic upper bound:
+
+$$
+\text{Speedup}_{\max} = \frac{1}{1 - f}
+$$
+
+If a task spends 80% of its time on memory transfers ($f = 0.8$), making the CPU core infinitely fast ($s = \infty$) can yield at most:
+
+$$
+\text{Speedup}_{\max} = \frac{1}{1 - 0.8} = \frac{1}{0.2} = 5.0\times
+$$
+
+The remaining 80% of unaccelerated time sets a hard ceiling on overall system gains. This principle is why architects focus on the **common case**: optimizing what runs most frequently yields far greater returns than perfecting rare edge cases.
+
+<Callout tone="orange" label="Trap: Applying Amdahl's law to code size rather than runtime">
+The fraction $f$ in Amdahl's law represents the fraction of total execution time, not the percentage of code lines written in source files. An encryption loop that occupies only 2% of the codebase might consume 90% of execution time. Accelerating that 2% of code provides massive system gains.
 </Callout>
+
+## Benchmarks and the geometric mean
+
+To evaluate processors fairly, the computing industry relies on standardized benchmark suites such as **SPEC CPU** (Standard Performance Evaluation Corporation). These suites run real, non-synthetic applications including compilers, chess engines, ray tracers, and fluid dynamics simulators.
+
+When benchmark runtimes are normalized against a baseline reference machine, computing the standard arithmetic mean produces deceptive results that depend on which machine is chosen as the baseline. To preserve consistent relative rankings, architects use the **geometric mean**:
+
+$$
+\text{Geometric Mean} = \sqrt[n]{\prod_{i=1}^n \text{Execution Time Ratio}_i}
+$$
+
+The geometric mean guarantees that the performance ratio between any two computers remains identical regardless of the baseline chosen for normalization.
+
+## Practice
+
+<ModelAnswer title="Problem 1: Evaluating compiler optimization tradeoffs">
+A software benchmark executes on a 2.0 GHz processor with the following instruction distribution and cycle costs:
+
+| Instruction class | Instruction count ($IC_i$) | Clock cycles per instruction ($\text{CPI}_i$) |
+|---|---|---|
+| Arithmetic / Logic | $60 \times 10^6$ | 1 |
+| Data Transfer (Load/Store) | $30 \times 10^6$ | 2 |
+| Branch | $10 \times 10^6$ | 2 |
+
+An optimizing compiler is applied to the codebase. It eliminates 20% of the arithmetic instructions and 10% of the data transfer instructions without changing branch instructions. However, scheduling changes increase the average CPI of branches to 3 cycles.
+
+1. Calculate the initial average CPI and execution time before optimization.
+2. Calculate the new average CPI and execution time after optimization.
+3. Determine the overall speedup achieved by the compiler.
+
+---
+
+**Solution:**
+
+**Part 1: Initial performance:**
+Total initial instruction count:
+$$IC_{\text{initial}} = (60 + 30 + 10) \times 10^6 = 100 \times 10^6\text{ instructions}$$
+
+Total initial clock cycles:
+$$\text{Cycles}_{\text{initial}} = (60 \times 1) + (30 \times 2) + (10 \times 2) = 60 + 60 + 20 = 140 \times 10^6\text{ cycles}$$
+
+Initial average CPI:
+$$\text{CPI}_{\text{initial}} = \frac{140 \times 10^6}{100 \times 10^6} = 1.40$$
+
+Initial CPU execution time at 2.0 GHz ($2.0 \times 10^9$ cycles/second):
+$$\text{Time}_{\text{initial}} = \frac{140 \times 10^6}{2.0 \times 10^9} = 0.070\text{ seconds} = 70.0\text{ ms}$$
+
+**Part 2: Performance after optimization:**
+New instruction counts:
+- Arithmetic: $60 \times 10^6 \times (1 - 0.20) = 48 \times 10^6$
+- Data Transfer: $30 \times 10^6 \times (1 - 0.10) = 27 \times 10^6$
+- Branch: $10 \times 10^6$ (unchanged)
+
+New total instruction count:
+$$IC_{\text{new}} = (48 + 27 + 10) \times 10^6 = 85 \times 10^6\text{ instructions}$$
+
+New total clock cycles:
+$$\text{Cycles}_{\text{new}} = (48 \times 1) + (27 \times 2) + (10 \times 3) = 48 + 54 + 30 = 132 \times 10^6\text{ cycles}$$
+
+New average CPI:
+$$\text{CPI}_{\text{new}} = \frac{132 \times 10^6}{85 \times 10^6} \approx 1.553$$
+
+New CPU execution time:
+$$\text{Time}_{\text{new}} = \frac{132 \times 10^6}{2.0 \times 10^9} = 0.066\text{ seconds} = 66.0\text{ ms}$$
+
+**Part 3: Overall speedup:**
+$$\text{Speedup} = \frac{\text{Time}_{\text{initial}}}{\text{Time}_{\text{new}}} = \frac{0.070}{0.066} \approx 1.061\times$$
+
+The optimized program executes 6.1% faster. Notice that average CPI worsened (increased from 1.40 to 1.55), but overall execution time improved because the total instruction count dropped significantly from 100 million to 85 million.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 2: Amdahl's law hardware design target">
+A web server spends 60% of its execution time processing database queries and 40% running web server logic.
+
+Engineering proposes adding a dedicated hardware coprocessor that accelerates database queries by a factor of $k$.
+
+1. What overall speedup is achieved if the coprocessor accelerates database queries by $k = 4$?
+2. What is the maximum theoretical speedup possible if database query execution time is reduced to zero?
+3. What query speedup factor $k$ is required to achieve an overall system speedup of exactly $2.0\times$?
+
+---
+
+**Solution:**
+
+**Part 1: Overall speedup for $k = 4$:**
+Here, $f = 0.60$ and $s = 4$.
+Applying Amdahl's law:
+$$\text{Speedup} = \frac{1}{(1 - 0.60) + \dfrac{0.60}{4}} = \frac{1}{0.40 + 0.15} = \frac{1}{0.55} \approx 1.818\times$$
+
+**Part 2: Maximum theoretical speedup ($k \to \infty$):**
+$$\text{Speedup}_{\max} = \frac{1}{1 - f} = \frac{1}{1 - 0.60} = \frac{1}{0.40} = 2.50\times$$
+
+Even if the database coprocessor runs infinitely fast, the overall web server cannot exceed a $2.5\times$ speedup because the remaining 40% of unaccelerated logic sets a baseline bound.
+
+**Part 3: Required speedup $k$ for overall $2.0\times$ speedup:**
+Set $\text{Speedup} = 2.0$:
+$$2.0 = \frac{1}{(1 - 0.60) + \dfrac{0.60}{k}}$$
+$$2.0 \times \left( 0.40 + \frac{0.60}{k} \right) = 1.0$$
+$$0.80 + \frac{1.20}{k} = 1.0$$
+$$\frac{1.20}{k} = 0.20 \implies k = \frac{1.20}{0.20} = 6$$
+
+The database query coprocessor must achieve a $6\times$ speedup to deliver a $2.0\times$ overall system performance gain.
+</ModelAnswer>

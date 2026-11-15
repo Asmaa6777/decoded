@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
-import { btn, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { MatrixStage, matCells, Op, Panel, useTween, type CellTone, type StageCell } from "@/components/mdx/MatrixVisualizers";
+import { Panel, Stepper, Toggle, btn, useTween } from "@/components/mdx/vizKit";
+import { MatrixStage, matCells, Op, type CellTone, type StageCell } from "@/components/mdx/MatrixVisualizers";
 import { convFrames, coverUpFrames, divisionFrames, MATLAB_DECONV, fitQuality, MATLAB_CONV, MATLAB_RESIDUE, polyder, polyfit, polyText, polyval, roots, sumSquaredError, type Poly } from "@/lib/polynomial";
 
 /* ------------------------------- plotting ------------------------------ */

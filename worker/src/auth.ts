@@ -9,7 +9,7 @@ function base64url(bytes: Uint8Array): string {
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function randomToken(): string {
+export function randomToken(): string {
   return base64url(crypto.getRandomValues(new Uint8Array(32)));
 }
 
@@ -17,7 +17,7 @@ async function sha256(text: string): Promise<Uint8Array> {
   return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)));
 }
 
-async function hashToken(token: string): Promise<string> {
+export async function hashToken(token: string): Promise<string> {
   return [...(await sha256(token))].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 

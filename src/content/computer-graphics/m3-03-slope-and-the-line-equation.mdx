@@ -115,6 +115,6 @@ The line rises 8 rows but only crosses 3 columns. The algorithm lights exactly o
 
 Enter `3 1 3 6` for a vertical line, and the algorithm can't even start, because $\Delta x = 0$ makes the slope a division by zero.
 
-There's a second, quieter problem: **speed**. Every pixel costs a **floating-point** multiplication ($m \times x$) and an addition, plus a rounding. Floating-point numbers are the ones with a fractional part, like 0.667, and processors handle them more slowly than whole numbers. Multiplication used to be expensive, and a screen draws an enormous number of line pixels.
+There's a second, quieter problem: **speed**. Every pixel costs a [floating-point](/courses/logic-design/codes-and-floating-point#floating-point-very-large-and-very-small-numbers) multiplication ($m \times x$) and an addition, plus a rounding. Floating-point numbers are the ones with a fractional part, like 0.667, and processors handle them more slowly than whole numbers. Multiplication used to be expensive, and a screen draws an enormous number of line pixels.
 
 The [next lesson](/courses/computer-graphics/dda) fixes both problems with one idea.

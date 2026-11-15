@@ -7,11 +7,11 @@ In early computing systems, building a machine required stocking dozens of disti
 
 Could a complete, general-purpose computer be constructed from only a **single type of logic gate**?
 
-Yes, if that gate is **NAND**, or **NOR**. These two gates are known as **universal gates** because either gate alone can synthesize all three fundamental Boolean operations: NOT, AND, and OR. Because any combinational or sequential circuit can be expressed in terms of NOT, AND, and OR, a single universal gate type is sufficient to build arithmetic logic units, registers, control units, and complete microprocessors.
+Yes, if that gate is **NAND**, or **NOR**. These two gates are known as **universal gates** because either gate alone can synthesize all three fundamental Boolean operations: NOT, AND, and OR. Because any combinational or sequential circuit can be expressed in terms of NOT, AND, and OR, a single universal gate type is sufficient to build [arithmetic logic units](/courses/computer-organization/inside-the-cpu), registers, control units, and complete microprocessors.
 
 ## Functional completeness and Emil Post's criterion
 
-A set of logic gates is **functionally complete** if every possible Boolean switching function can be realized using only gates from that set.
+A set of logic gates is **functionally complete** if every possible Boolean switching function can be realized using only gates from that set, a property shared with [logical equivalences](/courses/discrete-mathematics/equivalence-and-laws#the-laws) in formal logic.
 
 The standard reference set is $\{\text{AND}, \text{OR}, \text{NOT}\}$, which directly maps to Huntington's postulates. However, this set contains redundancy:
 - By De Morgan's law, $A + B = (A'B')'$. Thus, the set $\{\text{AND}, \text{NOT}\}$ is functionally complete without OR.
@@ -26,8 +26,8 @@ In 1941, mathematician Emil Post proved that a set of Boolean functions is funct
    - For NAND: $f(0, 1) = (0 \cdot 1)' = 1$, but increasing the first input to 1 gives $f(1, 1) = (1 \cdot 1)' = 0$ (the output dropped) $\implies$ NAND is **non-monotonic**.
 4. **Self-duality ($S$):** Functions that equal their own dual: $f(x_1', x_2', \dots, x_n') = f'(x_1, x_2, \dots, x_n)$.
    - For NAND: $f(0', 1') = f(1, 0) = (1 \cdot 0)' = 1$, whereas $f'(0, 1) = [(0 \cdot 1)']' = 1' = 0$. Since $1 \ne 0$, NAND is **non-self-dual**.
-5. **Linearity ($L$):** Functions whose Reed-Muller algebraic normal form consists strictly of XOR additions of single variables with an optional affine constant ($a_0 \oplus a_1 x_1 \oplus \dots \oplus a_n x_n$), containing zero non-linear products.
-   - For NAND: $(AB)' = 1 \oplus AB$. The presence of the product $AB$ means NAND is **non-linear**.
+5. **Linearity ($L$):** Functions that consist strictly of XOR additions of single variables with an optional affine constant ($a_0 \oplus a_1 x_1 \oplus \dots \oplus a_n x_n$), containing zero non-linear products. In plain terms, in a linear function, toggling any input always flips the output regardless of other input values (like parity).
+   - For NAND: $(AB)' = 1 \oplus AB$. Toggling input $A$ changes the output only when $B=1$; if $B=0$, changing $A$ has no effect. The presence of the conditional product $AB$ means NAND is **non-linear**.
 
 Because the set $\{\text{NAND}\}$ violates all five closure properties, it is functionally complete. The same proof applies to the set $\{\text{NOR}\}$. Either gate alone can build any digital circuit.
 
@@ -210,11 +210,12 @@ In silicon chips, NAND gates are preferred over NOR gates for combinational logi
    - A 2-input **NAND** gate places its high-mobility nMOS transistors in **series** between output and ground (pull-down network), and its lower-mobility pMOS transistors in **parallel** between $V_{DD}$ and output (pull-up network).
    - A 2-input **NOR** gate places its lower-mobility pMOS transistors in **series** in the pull-up network, and its nMOS transistors in **parallel** in the pull-down network.
 3. **Silicon area and speed impact:**
-   - Placing two or three high-resistance pMOS transistors in series in a NOR gate severely limits charging current. To match rise and fall times, the series pMOS channel widths must be enlarged:
+   - Placing two or three high-resistance pMOS transistors in series in a NOR gate severely limits charging current. Connecting $n$ transistors in series multiplies the pull-up resistance by $n$. To match the switching speed of the pull-down network, each series pMOS channel width must be enlarged proportionally:
      $$
      \frac{W_p}{W_n} \approx n \times \frac{\mu_n}{\mu_p} \approx 2 \times 2.5 = 5
      $$
-   - This transistor enlargement increases total silicon area, increases gate capacitance ($C_{\text{gate}} \propto W \cdot L$), degrades switching speed, and increases dynamic power consumption ($P = C V^2 f$).
+     For a 2-input NOR, each pMOS must be 5 times the width of an nMOS; for a 3-input NOR, each pMOS must be $3 \times 2.5 = 7.5$ times wider.
+   - This transistor enlargement balloons total silicon area, increases parasitic gate capacitance ($C_{\text{gate}} \propto W \cdot L$), degrades switching speed, and increases dynamic power consumption ($P = C V^2 f$).
    - For an $n$-input NAND gate, the series transistors are fast nMOS, requiring minimal sizing adjustments ($W_n \approx 2 W_{\min}$, $W_p \approx 2 W_{\min}$).
 
 As a result, computer architects and automated logic synthesizers map high-speed combinational paths into NAND trees wherever possible, reserving NOR gates primarily for specialized structures such as wired-OR decoders and ROM arrays.
@@ -407,7 +408,7 @@ The output column $Y$ evaluates to $[1, 0, 0, 1]$, which is the exact truth tabl
    The 4-NOR architecture saves 6 transistors ($27\%$ reduction) and requires only a single standard cell layout type in library generation.
 
 <Callout tone="orange" label="Common exam pitfall">
-Remember that $A \odot B$ (XNOR) outputs 1 when the inputs are *equal* ($00$ or $11$), whereas XOR outputs 1 when the inputs are *different* ($01$ or $10$). In 4-NOR XNOR, when $A=0, B=0$, $M_1 = 1$, which forces both $M_2$ and $M_3$ to 0, driving output $Y = (0+0)' = 1$.
+Remember that $A \odot B$ (XNOR) outputs 1 when the inputs are *equal* ($00$ or $11$), whereas XOR outputs 1 when the inputs are *different* ($01$ or $10$). In 4-NOR XNOR, when $A=0, B=0$, $M_1 = 1$, which forces both $M_2$ and $M_3$ to 0, driving output $Y = (0+0)' = 1$. When $A=1, B=1$, inputs $A$ and $B$ directly force $M_2 = (1+0)' = 0$ and $M_3 = (1+0)' = 0$, which also drives output $Y = (0+0)' = 1$.
 </Callout>
 </ModelAnswer>
 

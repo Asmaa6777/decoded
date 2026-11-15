@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type CSSProperties } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getCourse, flattenLessons, lessonKind } from "@/content/registry";
@@ -7,6 +7,11 @@ import { useQuizScores } from "@/hooks/useQuizScores";
 import { CoursePrerequisites, CourseRegistration } from "@/components/CourseRegistration";
 import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 import { CourseAuthors } from "@/components/CourseAuthors";
+import { CourseMaturity } from "@/components/CourseMaturity";
+import { CourseLearners } from "@/components/LearnerCounts";
+import { CourseCompanions } from "@/components/Companions";
+import { coursesWithBanks } from "@/content/questionBanks";
+import { readAttempts } from "@/lib/exams";
 
 const accentText: Record<string, string> = {
   neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
@@ -40,13 +45,15 @@ export default function CoursePage() {
               <span className={accentText[course.accent]}>{course.title}</span>
             </div>
 
-            <CourseGlyph slug={course.slug} className={`h-10 w-10 mb-5 ${accentText[course.accent]}`} />
-            <h1 className="font-display text-4xl md:text-6xl font-extrabold leading-[1.02] tracking-tight mb-4">
+            <CourseGlyph slug={course.slug} className={`rise-in h-10 w-10 mb-5 ${accentText[course.accent]}`} />
+            <h1 style={{ "--d": "60ms" } as CSSProperties} className="rise-in font-display text-4xl md:text-6xl font-extrabold leading-[1.02] tracking-tight mb-4">
               {course.title}
             </h1>
-            <p className="font-body text-xl italic text-muted-foreground max-w-2xl mb-6 leading-relaxed">
+            <p style={{ "--d": "140ms" } as CSSProperties} className="rise-in font-body text-xl italic text-muted-foreground max-w-2xl mb-6 leading-relaxed">
               {course.tagline}
             </p>
+            {course.status === "available" && <CourseMaturity rounds={course.rounds} className="mb-6" />}
+            <CourseLearners course={course.slug} className="-mt-3 mb-6" />
             <p className="font-body text-base leading-relaxed text-foreground/80 max-w-2xl">
               {course.description}
             </p>
@@ -56,6 +63,8 @@ export default function CoursePage() {
               <CoursePrerequisites courseSlug={course.slug} />
             </div>
             {total > 0 && <CourseRegistration course={course} />}
+            {total > 0 && <CourseCompanions course={course} />}
+            {coursesWithBanks.has(course.slug) && <ExamEntry slug={course.slug} />}
           </div>
         </header>
 
@@ -127,6 +136,25 @@ export default function CoursePage() {
       </main>
 
       <SiteFooter />
+    </div>
+  );
+}
+
+/** Link to the course exam, with the best score on this device if there is one. */
+function ExamEntry({ slug }: { slug: string }) {
+  const attempts = readAttempts(slug);
+  const best = attempts.reduce<(typeof attempts)[number] | null>((b, a) => (!b || a.right / a.total > b.right / b.total ? a : b), null);
+  return (
+    <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2">
+      <Link
+        to={`/courses/${slug}/exam`}
+        className="font-mono text-[11px] uppercase tracking-widest px-5 py-2.5 border border-foreground hover:bg-foreground hover:text-background transition rounded-sm"
+      >
+        Take a course exam
+      </Link>
+      <span className="font-mono text-[11px] text-muted-foreground">
+        {best ? `Best so far: ${best.right}/${best.total}` : "Mixed questions from every module, scored by module"}
+      </span>
     </div>
   );
 }

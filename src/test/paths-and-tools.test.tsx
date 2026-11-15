@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { CoursePrerequisites } from "@/components/CourseRegistration";
 import { LearningPaths } from "@/components/LearningPaths";
-import { learningPaths, prerequisites } from "@/content/paths";
+import { learningPaths, prerequisites, trackGroups } from "@/content/paths";
 import { courses, getCourse, getLesson } from "@/content/registry";
 import { tools } from "@/content/tools";
 
@@ -63,6 +63,13 @@ describe("learning paths", () => {
     );
     expect(screen.getByRole("region", { name: "Suggested paths" })).toBeTruthy();
     expect(screen.getAllByRole("link", { name: /Logic Design/ })[0].getAttribute("href")).toBe("/courses/logic-design");
+  });
+});
+
+describe("track groups", () => {
+  it("put every course in exactly one group", () => {
+    const grouped = trackGroups.flatMap((g) => g.courses);
+    expect([...grouped].sort()).toEqual(courses.map((c) => c.slug).sort());
   });
 });
 

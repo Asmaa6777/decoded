@@ -4,7 +4,7 @@ import { QuicksortVisualizer, RecursionTreeDiagram } from "@/components/mdx/Adva
 
 # Quicksort and Randomized Quicksort
 
-Quicksort was proposed by C.A.R. Hoare in 1962. It's a divide-and-conquer algorithm that:
+Quicksort was proposed by C.A.R. Hoare in 1962. It's a [divide-and-conquer](/courses/advanced-algorithms/divide-and-conquer) algorithm that:
 
 - sorts **in place**, like [insertion sort](/courses/advanced-algorithms/analysis-of-algorithms#insertion-sort) but unlike [merge sort](/courses/advanced-algorithms/analysis-of-algorithms#merge-sort-recursion-first), so it needs no extra array,
 - is **very practical**, once it's tuned.
@@ -100,7 +100,8 @@ Run this PARTITION on `5 5 5 5 5`. Every `A[j] ≤ x` is true, so every element 
 Step through it and count the comparisons: every pass ends with the pivot at the far right and nothing on its right side.
 
 <QuicksortVisualizer initial={[5, 5, 5, 5, 5, 5, 5, 5]} />
-- Let $T(n)$ be the **worst-case** running time on an array of $n$ elements.
+
+- Let $T(n)$ be the **worst-case** running time on an array of $n$ elements. Each case below is a [recurrence](/courses/advanced-algorithms/solving-recurrences) for $T(n)$.
 
 ### Worst case
 

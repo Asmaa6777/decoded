@@ -41,6 +41,6 @@ Because program code and runtime data share the same physical bus between the CP
 Every von Neumann processor executes instructions through a repeating hardware cycle:
 
 * The **instruction fetch**: The control unit retrieves the next instruction word from working storage using the address held in the [program counter](/courses/computer-organization/machine-cycle).
-* The **instruction decode**: Logic decoders translate the instruction's operation code into physical electrical signals.
+* The **instruction decode**: Logic [decoders](/courses/logic-design/comparators-decoders-encoders#decoders-pick-exactly-one) translate the instruction's operation code into physical electrical signals.
 * The **operand read**: The CPU reads required operands from internal registers or memory addresses.
 * The **execute and write-back**: The arithmetic logic unit executes the command, and the hardware stores the outcome in a destination register or writes it back across the system bus to memory.

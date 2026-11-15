@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { ArrayCells, btn, FocusPanel, inputCls, Stepper, Toggle, vizCard, vizHeader } from "@/components/mdx/AlgoVisualizers";
+import { FocusPanel, Stepper, Toggle, btn, inputCls, vizCard, vizHeader } from "@/components/mdx/vizKit";
+import { ArrayCells } from "@/components/mdx/AlgoVisualizers";
 import { bitOp, cliqueGraph, cnfVars, findClique, litText, parseCNF, truthTable, DIJKSTRA_CODE, dijkstraFrames, type WEdge, ACTIVITY_CODE, activityFrames, CLRS_ACTIVITIES, countCoins, greedyChange, HUFFMAN_CODE, huffmanFrames, optimalChange, scheduleInOrder, scheduleOptimal, type Activity, type HuffNode, binomialFrames, coinRowFrames, DP_CODE, lcsFrames, robotFrames, type Cell, perfectHeights, SKIP_CODE, skipFrames, type SkipOp, INTERVAL_SEARCH_CODE, INTERVAL_TREE, intervalSearchFrames, layoutAug, OS_SELECT_CODE, OS_TREE, osSelectFrames, type AugNode, type PathState, CPP_RB, rbFrames, type RBOp, type RBSnapshot, CHAIN_PSEUDO, DELETED, doublingCosts, HASH_PSEUDO, hashDivision, hashFolding, hashFrames, hashMidSquare, hashMultiplication, probeText, type HashConfig, type HashMode, type HashOp, type Second, CPP_SELECT, medianOfMedians, selectFrames, countingSortFrames, CPP_COUNTING_SORT, CPP_RADIX, decisionPath, DECISION_TREE_3, radixSortFrames, type DNode, CPP_QUICKSORT, quicksortFrames, type QuickState, fibByMatrix, fracLabel, gaussFrames, strassen, unevenLevels, CPP_COUNT_ONES, CPP_GAUSS, type Frac, CPP_FAST_POWER, CPP_MIN_MAX, CPP_MIN_MAX_MERGE, fastPowerFrames, minMaxFrames, minMaxMergeFrames, hTreeLayout, plainTreeLayout, type Seg, expectedProbes, fibCalls, firstViolation, isPowerOfTwo, popcountFrames, toBits, type BitOp, fText, fmtExp, masterMethod, powN, recursionLevels, termShares, type BoundKind } from "@/lib/advancedAlgorithms";
 import { humanTime, formatOps } from "@/lib/algorithms";
 
@@ -249,32 +250,34 @@ export function RecurrenceExplorer({ a: a0 = 2, b: b0 = 2, k: k0 = 1, p: p0 = 0 
       <div className="font-display text-xl md:text-2xl font-semibold">{recText}</div>
 
       <div className="overflow-x-auto">
-        <table className="w-full font-mono text-xs border-collapse min-w-[460px]">
+        <table className="w-full font-mono text-xs border-collapse sm:min-w-[460px]">
           <thead>
             <tr className="text-xs text-muted-foreground border-b border-border">
-              <th className="text-left py-2 pr-3 font-normal">level</th>
-              <th className="text-left py-2 pr-3 font-normal">subproblems</th>
-              <th className="text-left py-2 pr-3 font-normal">each of size</th>
+              <th className="text-left py-2 pr-2 sm:pr-3 font-normal">level</th>
+              <th className="text-left py-2 pr-2 sm:pr-3 font-normal">subproblems</th>
+              <th className="text-left py-2 pr-2 sm:pr-3 font-normal">each of size</th>
               <th className="text-left py-2 font-normal">level cost (× root)</th>
             </tr>
           </thead>
           <tbody>
             {shown.map((l) => (
               <tr key={l.depth} className="border-b border-border/50">
-                <td className="py-2 pr-3">{l.depth}</td>
-                <td className="py-2 pr-3">
-                  <span className="inline-flex flex-wrap gap-[3px] max-w-[160px] align-middle">
+                <td className="py-2 pr-2 sm:pr-3">{l.depth}</td>
+                <td className="py-2 pr-2 sm:pr-3">
+                  <span className="inline-flex flex-wrap gap-[3px] max-w-[70px] sm:max-w-[160px] align-middle">
                     {Array.from({ length: Math.min(l.nodes, 27) }, (_, i) => (
                       <span key={i} className="inline-block h-2.5 w-2.5 rounded-full border border-violet bg-violet/20" />
                     ))}
                     {l.nodes > 27 && <span className="text-muted-foreground">…</span>}
                   </span>
-                  <span className="ml-2">{formatOps(l.nodes)}</span>
+                  <span className="block sm:inline sm:ml-2">{formatOps(l.nodes)}</span>
                 </td>
-                <td className="py-2 pr-3">{l.depth === 0 ? "n" : `n/${formatOps(Math.pow(v.b, l.depth))}`}</td>
+                <td className="py-2 pr-2 sm:pr-3">{l.depth === 0 ? "n" : `n/${formatOps(Math.pow(v.b, l.depth))}`}</td>
                 <td className="py-2">
-                  <span className="inline-flex items-center gap-2 w-full">
-                    <span className="h-2.5 bg-violet rounded-full transition-all" style={{ width: `${Math.max(2, (l.cost / maxCost) * 100)}px` }} />
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 w-full">
+                    <span className="w-[50px] sm:w-[100px] shrink-0">
+                      <span className="block h-2.5 bg-violet rounded-full transition-all" style={{ width: `${Math.max(2, (l.cost / maxCost) * 100)}%` }} />
+                    </span>
                     {fmtExp(l.cost)}
                   </span>
                 </td>
@@ -1644,10 +1647,11 @@ export function SkipListVisualizer({ ops: ops0 = SKIP_DEFAULT_OPS, layout: layou
         const onPath = (c: number, lv: number) => s.path.some(([pc, pl]) => pc === c && pl === lv);
         return (
           <div className="overflow-x-auto">
-            <div className="inline-grid gap-x-1 gap-y-1.5 font-mono text-xs" style={{ gridTemplateColumns: `auto repeat(${cols}, 38px)` }}>
+            {/* Columns are 24px on phones and 38px from the sm breakpoint up, so a ten-key list fits a 390px screen. */}
+            <div className="inline-grid gap-x-0.5 sm:gap-x-1 gap-y-1.5 font-mono text-[11px] sm:text-xs [--skip-col:24px] sm:[--skip-col:38px]" style={{ gridTemplateColumns: `auto repeat(${cols}, var(--skip-col))` }}>
               {Array.from({ length: levels }, (_, r) => levels - 1 - r).map((lv) => (
                 <div key={lv} className="contents">
-                  <span className="pr-2 self-center text-right text-xs text-muted-foreground">L{lv}</span>
+                  <span className="pr-1 sm:pr-2 self-center text-right text-xs text-muted-foreground">L{lv}</span>
                   {Array.from({ length: cols }, (_, c) => {
                     const col = c - 1; // -1 header, towers.length sentinel
                     const isHeader = col === -1;
@@ -1867,7 +1871,11 @@ export function HashTableVisualizer({
             </div>
 
             <div className="overflow-x-auto pb-1">
-              <div className="grid gap-1.5 font-mono min-w-fit" style={{ gridTemplateColumns: `repeat(${m}, minmax(3.25rem, 1fr))` }}>
+              {/* one row from sm up; on phones the slots wrap into even rows of at most 6 */}
+              <div
+                className="grid gap-1.5 font-mono [grid-template-columns:repeat(var(--cols-phone),minmax(2.5rem,1fr))] sm:[grid-template-columns:repeat(var(--cols),minmax(2.5rem,1fr))] sm:min-w-fit"
+                style={{ "--cols": m, "--cols-phone": Math.ceil(m / Math.ceil(m / 6)) } as React.CSSProperties}
+              >
                 {s.slots.map((v, idx) => {
                   const isHit = idx === s.hit;
                   const isBad = idx === s.bad;
@@ -1927,10 +1935,10 @@ export function HashFunctions({ initial = 12345678 }: { initial?: number }) {
   const fold = hashFolding(k, 2);
   const row = (name: string, how: React.ReactNode, value: React.ReactNode) => (
     <tr className="border-b border-border/40 align-middle">
-      <td className="py-3 pr-4 font-medium whitespace-nowrap">{name}</td>
-      <td className="py-3 pr-4 text-muted-foreground">{how}</td>
+      <td className="py-3 pr-2 sm:pr-4 font-medium align-top sm:align-middle">{name}</td>
+      <td className="py-3 pr-2 sm:pr-4 text-muted-foreground [overflow-wrap:anywhere]">{how}</td>
       <td className="py-3 text-right">
-        <span className="inline-block min-w-[3rem] text-center rounded-full bg-mint/15 text-mint px-3 py-1 text-base tabular-nums">{value}</span>
+        <span className="inline-block min-w-[2.5rem] sm:min-w-[3rem] text-center rounded-full bg-mint/15 text-mint px-2 sm:px-3 py-1 text-sm sm:text-base tabular-nums">{value}</span>
       </td>
     </tr>
   );
@@ -1942,7 +1950,7 @@ export function HashFunctions({ initial = 12345678 }: { initial?: number }) {
         <span className="text-muted-foreground">table size n = 100</span>
       </label>
       <div className="overflow-x-auto">
-        <table className="w-full font-mono text-sm border-collapse min-w-[480px]">
+        <table className="w-full font-mono text-xs sm:text-sm border-collapse sm:min-w-[480px]">
           <tbody>
             {row("Division", `${k} mod 97 (a prime near 100)`, hashDivision(k, 97))}
             {row("Multiplication", `⌊100 · (${k} × 0.618033 mod 1)⌋`, hashMultiplication(k, 100))}

@@ -80,7 +80,7 @@ src/
 | tailwind.config.ts  | Tailwind config, fonts, accent colors        |
 | tsconfig.app.json   | TypeScript config (loose mode)               |
 | components.json     | shadcn/ui config                             |
-| index.html          | Google Fonts for Syne, IBM Plex Mono, Lora   |
+| src/index.css       | Self-hosted Syne, IBM Plex Mono, Lora        |
 
 ---
 

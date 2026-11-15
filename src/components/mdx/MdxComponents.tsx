@@ -1,15 +1,8 @@
 import { Children, ReactNode, isValidElement, useId, useMemo, useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
-import {
-  ReactFlow,
-  Handle,
-  MarkerType,
-  Position,
-  type Edge as RFEdge,
-  type Node as RFNode,
-} from "@xyflow/react";
-import dagre from "@dagrejs/dagre";
+import { recordAnswers } from "@/lib/review";
 import { useProgress } from "@/hooks/useProgress";
 import { recordQuizScore } from "@/lib/progressSync";
+import { QuizAverage } from "@/components/LearnerCounts";
 
 type Tone = "neon" | "orange" | "sky" | "violet" | "mint";
 
@@ -185,6 +178,23 @@ export function Callout({
   );
 }
 
+/* Epigraph: a short quote under a course's or lesson's title, the way books
+   open a chapter. The quote is a prop, not children, so it stays on one JSX
+   line and link previews (src/lib/lessonPreview.ts) never pick it as the
+   lesson's opening paragraph. */
+export function Epigraph({ quote, by, source }: { quote: string; by: string; source?: string }) {
+  return (
+    <figure className="not-prose my-10 max-w-xl">
+      <div aria-hidden className="mb-4 h-px w-10 bg-neon" />
+      <blockquote className="font-body text-xl italic leading-snug text-foreground/90">{quote}</blockquote>
+      <figcaption className="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+        {by}
+        {source && <span className="mt-1 block font-body text-sm normal-case italic tracking-normal">{source}</span>}
+      </figcaption>
+    </figure>
+  );
+}
+
 export function PracticalApplication({
   title,
   tool,
@@ -296,8 +306,22 @@ export function AutomatonDiagram({
 
   /* ---------- layout ---------- */
   const r = 28;
-  const stateGapX = 140;
-  const sidePadding = 50;
+  // Roomy on wide screens. When the diagram is wider than its box (a phone), states
+  // move closer together, down to 96px apart, and the SVG scales to fit the rest;
+  // text inside it grows to make up for the scaling, so labels stay readable.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [avail, setAvail] = useState<number | null>(null);
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(([e]) => setAvail(e.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const roomyWidth = 50 * 2 + Math.max(0, (states.length - 1) * 140) + r * 2;
+  const tight = avail !== null && avail > 0 && roomyWidth > avail;
+  const stateGapX = tight && states.length > 1 ? Math.max(96, Math.min(140, (avail! - 40 * 2 - r * 2) / (states.length - 1))) : 140;
+  const sidePadding = tight ? 40 : 50;
 
   // Longest |fromIdx - toIdx| across non-self edges. Drives extra vertical
   // room so "skip" edges (e.g. q2 → q0 jumping over q1) can curve clear of
@@ -331,6 +355,8 @@ export function AutomatonDiagram({
   const bottomPadding = Math.max(60, skipPad);
   const stateY = topPadding + r;
   const svgWidth = sidePadding * 2 + Math.max(0, (states.length - 1) * stateGapX) + r * 2;
+  const fitScale = avail ? Math.min(1, avail / svgWidth) : 1;
+  const textBoost = Math.min(1.35, 1 / fitScale);
   const svgHeight = topPadding + r * 2 + bottomPadding;
   const stateX = (i: number) => sidePadding + r + i * stateGapX;
 
@@ -487,8 +513,8 @@ export function AutomatonDiagram({
             x={x1}
             y={y1 - r - 42}
             textAnchor="middle"
-            className="font-mono fill-current"
-            fontSize={11}
+            className="font-mono fill-current stroke-card" paintOrder="stroke" strokeWidth={3} strokeLinejoin="round"
+            fontSize={11 * textBoost}
           >
             {labels}
           </text>
@@ -514,6 +540,11 @@ export function AutomatonDiagram({
       const ey = y2 - r * uy;
       const mx = (sx + ex) / 2;
       const my = (sy + ey) / 2 - 8;
+      // A label wider than the gap between the circles (e.g. "$5, $10, $25" on a phone)
+      // is stacked one symbol per line, growing upwards, so it stays clear of the states.
+      const fontSize = 11 * textBoost;
+      const lineH = fontSize * 1.15;
+      const lines = labels.length * fontSize * 0.6 > Math.abs(ex - sx) - 4 && g.labels.length > 1 ? g.labels.map((l, i) => (i < g.labels.length - 1 ? `${l},` : l)) : [labels];
       return (
         <g key={key}>
           <line
@@ -527,12 +558,16 @@ export function AutomatonDiagram({
           />
           <text
             x={mx}
-            y={my}
+            y={my - (lines.length - 1) * lineH}
             textAnchor="middle"
-            className="font-mono fill-current"
-            fontSize={11}
+            className="font-mono fill-current stroke-card" paintOrder="stroke" strokeWidth={3} strokeLinejoin="round"
+            fontSize={fontSize}
           >
-            {labels}
+            {lines.map((l, i) => (
+              <tspan key={i} x={mx} dy={i === 0 ? 0 : lineH}>
+                {l}
+              </tspan>
+            ))}
           </text>
         </g>
       );
@@ -608,8 +643,8 @@ export function AutomatonDiagram({
           y={labelY}
           textAnchor="middle"
           dominantBaseline="middle"
-          className="font-mono fill-current"
-          fontSize={11}
+          className="font-mono fill-current stroke-card" paintOrder="stroke" strokeWidth={3} strokeLinejoin="round"
+          fontSize={11 * textBoost}
         >
           {labels}
         </text>
@@ -622,12 +657,12 @@ export function AutomatonDiagram({
 
   return (
     <div className="not-prose my-8 border border-border bg-card rounded-sm">
-      <div className="overflow-x-auto p-5">
+      <div ref={wrapRef} className="overflow-x-auto p-5">
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          width={svgWidth}
-          height={svgHeight}
-          className="block mx-auto text-foreground"
+          width="100%"
+          style={{ maxWidth: svgWidth }}
+          className="block mx-auto h-auto text-foreground"
           role="img"
           aria-label="Finite automaton diagram"
         >
@@ -644,7 +679,6 @@ export function AutomatonDiagram({
             </marker>
           </defs>
 
-          {groupedTransitions.map(renderEdge)}
 
           {initialIdx !== undefined && (
             <line
@@ -687,13 +721,15 @@ export function AutomatonDiagram({
                   textAnchor="middle"
                   dominantBaseline="central"
                   className="font-mono fill-current"
-                  fontSize={13}
+                  fontSize={13 * textBoost}
                 >
                   {s}
                 </text>
               </g>
             );
           })}
+          {/* Transitions after states, so their labels sit on top of the circles. */}
+          {groupedTransitions.map(renderEdge)}
         </svg>
       </div>
 
@@ -776,169 +812,6 @@ export function AutomatonDiagram({
             )}
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   Diagram — static educational diagrams (pipelines, flowcharts).
-   Wraps ReactFlow with dagre auto-layout, brand-tokened nodes
-   and edges, and all interactivity stripped. Use this for any
-   non-stateful conceptual graph; use AutomatonDiagram for actual
-   state machines the reader needs to step through.
-   ============================================================ */
-
-type DiagramNodeKind = "source" | "sink" | "default";
-
-type DiagramNode = {
-  id: string;
-  label: string;
-  type?: "source" | "sink";
-};
-
-type DiagramEdge = {
-  from: string;
-  to: string;
-  label?: string;
-  back?: boolean;
-  // Back edges loop around the right side unless told otherwise; give
-  // two loops on the same side different offsets so they don't overlap.
-  side?: "left" | "right";
-  offset?: number;
-};
-
-type DiagramProps = {
-  nodes: DiagramNode[];
-  edges: DiagramEdge[];
-  direction?: "LR" | "TB";
-};
-
-const DIAGRAM_NODE_W = 220;
-const DIAGRAM_NODE_H = 52;
-
-function DiagramBaseNode({
-  data,
-}: {
-  data: { label: string; kind: DiagramNodeKind; direction: "LR" | "TB" };
-}) {
-  const target = data.direction === "TB" ? Position.Top : Position.Left;
-  const source = data.direction === "TB" ? Position.Bottom : Position.Right;
-
-  const tintClass =
-    data.kind === "source"
-      ? "border-neon"
-      : data.kind === "sink"
-        ? "border-mint"
-        : "border-border";
-
-  return (
-    <div
-      style={{ width: DIAGRAM_NODE_W, height: DIAGRAM_NODE_H }}
-      className={`flex items-center justify-center border ${tintClass} bg-card rounded-sm px-4 py-2 font-mono text-sm text-foreground tracking-wide whitespace-nowrap`}
-    >
-      <Handle type="target" position={target} />
-      {data.label}
-      <Handle type="source" position={source} />
-      {data.direction === "TB" && (
-        <>
-          <Handle id="loop-out" type="source" position={Position.Right} />
-          <Handle id="loop-in" type="target" position={Position.Right} />
-          <Handle id="loop-out-left" type="source" position={Position.Left} />
-          <Handle id="loop-in-left" type="target" position={Position.Left} />
-        </>
-      )}
-    </div>
-  );
-}
-
-const diagramNodeTypes = { base: DiagramBaseNode };
-
-function layoutDiagram(
-  nodes: DiagramNode[],
-  edges: DiagramEdge[],
-  direction: "LR" | "TB"
-) {
-  const g = new dagre.graphlib.Graph();
-  g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: direction, ranksep: 80, nodesep: 40 });
-
-  nodes.forEach((n) =>
-    g.setNode(n.id, { width: DIAGRAM_NODE_W, height: DIAGRAM_NODE_H })
-  );
-  // Back edges loop around the side, so they don't affect the layout.
-  edges.filter((e) => !e.back).forEach((e) => g.setEdge(e.from, e.to));
-  dagre.layout(g);
-
-  return nodes.map((n) => {
-    const pos = g.node(n.id);
-    return {
-      ...n,
-      position: {
-        x: pos.x - DIAGRAM_NODE_W / 2,
-        y: pos.y - DIAGRAM_NODE_H / 2,
-      },
-    };
-  });
-}
-
-export function Diagram({ nodes, edges, direction = "LR" }: DiagramProps) {
-  const layouted = useMemo(
-    () => layoutDiagram(nodes, edges, direction),
-    [nodes, edges, direction]
-  );
-
-  const rfNodes: RFNode[] = layouted.map((n) => ({
-    id: n.id,
-    position: n.position,
-    type: "base",
-    data: { label: n.label, kind: n.type ?? "default", direction },
-    draggable: false,
-    selectable: false,
-  }));
-
-  const rfEdges: RFEdge[] = edges.map((e) => ({
-    id: `${e.from}->${e.to}`,
-    source: e.from,
-    target: e.to,
-    label: e.label,
-    type: e.back ? "smoothstep" : "default",
-    sourceHandle: e.back ? (e.side === "left" ? "loop-out-left" : "loop-out") : undefined,
-    targetHandle: e.back ? (e.side === "left" ? "loop-in-left" : "loop-in") : undefined,
-    ...(e.back ? { pathOptions: { offset: e.offset ?? 60 } } : {}),
-    markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--foreground))" },
-    labelBgPadding: [6, 3],
-    labelBgBorderRadius: 2,
-  }));
-
-  // Auto-fit container height from the laid-out bounding box.
-  const padding = 40;
-  const containerHeight = layouted.reduce(
-    (max, n) => Math.max(max, n.position.y + DIAGRAM_NODE_H),
-    0
-  ) + padding;
-
-  return (
-    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
-      <div style={{ height: containerHeight, width: "100%" }}>
-        <ReactFlow
-          nodes={rfNodes}
-          edges={rfEdges}
-          nodeTypes={diagramNodeTypes}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable={false}
-          panOnDrag={false}
-          zoomOnScroll={false}
-          zoomOnPinch={false}
-          zoomOnDoubleClick={false}
-          preventScrolling={false}
-          proOptions={{ hideAttribution: true }}
-          fitView
-          fitViewOptions={{ padding: 0.15 }}
-          minZoom={0.4}
-          maxZoom={1}
-        />
       </div>
     </div>
   );
@@ -1151,8 +1024,11 @@ export function Quiz(props: QuizProps) {
       if (submitted[questionId]) return; // Lock after first answer
       setAnswers((a) => ({ ...a, [questionId]: optionId }));
       setSubmitted((s) => ({ ...s, [questionId]: true }));
+      // Every answer becomes (or updates) a card in the review queue.
+      const q = questions.find((x) => x.id === questionId);
+      if (q) recordAnswers([{ id: q.id, correct: optionId === q.correctOptionId }]);
     },
-    [submitted]
+    [submitted, questions]
   );
 
   const answeredCount = Object.keys(submitted).length;
@@ -1257,6 +1133,8 @@ export function Quiz(props: QuizProps) {
           {correctCount}/{questions.length} correct — {passed ? "PASSED" : `NEED ${Math.ceil(questions.length * passThreshold)}/${questions.length}`}
         </div>
       )}
+
+      {allAnswered && !practice && <QuizAverage course={courseSlug} lesson={lessonSlug} />}
 
       {allAnswered && (practice || !passed) && (
         <button

@@ -18,29 +18,18 @@ How Decoded courses get made, what you need before you start, how to improve a c
 1. **Read all the source material.** Note what it teaches, and where it only lists a topic without explaining it.
 2. **Set the scope.** Decide how many courses the material makes, and compare the topics with a recognized curriculum such as [ACM/IEEE CS2023](https://csed.acm.org/). Fill the gaps the curriculum expects.
 3. **Cut what doesn't help someone learn.** History, product model numbers, prices and long reference lists usually go.
-4. **Connect it to the rest of the site.** If another course already teaches a topic, link to that lesson instead of teaching it again. Put a topic in the course where it fits best, even if your class taught it elsewhere. Then follow [Linking between lessons](#linking-between-lessons) as you write.
+4. **Connect it to the rest of the site.** If another course already teaches a topic, link to that lesson instead of teaching it again. Put a topic in the course where it fits best, even if your class taught it elsewhere. Then follow [Linking between lessons](writing-lessons.md#linking-between-lessons) as you write.
 5. **Plan the modules and lessons.** For each idea that is hard to picture, decide what the reader will click, step through or change to understand it.
 6. **Build the simulations.** Put the logic in `src/lib/` with its own tests, then the interface in `src/components/mdx/<Topic>Visualizers.tsx`. Reuse `Stepper` and `Panel` where they fit.
-7. **Write the lessons.** Use plain language, start from something the reader already knows, and name the real tools each idea powers. End each module or the course with a `Quiz`.
+7. **Write the lessons** by [writing-lessons.md](writing-lessons.md). End each module or the course with a `Quiz`.
 8. **Check the facts.** Class notes contain mistakes. Work every example again and run every code sample instead of copying it. If a course shows code in more than one language, put each example in one `<CodeTabs>` with a block per language, and run them with `python3 scripts/check-code-samples.py`.
    Applications, such as where an idea shows up in machine learning or AI, belong in the explanation of the idea itself, not in a separate section at the end.
 9. **Register the course.** See the checklist below.
 10. **Verify it and open a pull request.** Say what you tested, and list any source errors you corrected.
 
-## Linking between lessons
+## Writing the lessons
 
-**Whenever a lesson uses an idea it doesn't explain, link to the lesson that does.** A reader who meets "dot product" in the middle of convolution should be one click from the lesson that teaches it, not left to search.
-
-- **Link the first use in each lesson.** One link per idea per lesson is enough. Link the words themselves, inside the sentence: "multiply the pairs and add, which is a [dot product](/courses/computational-mathematics/transpose-and-products#the-dot-product)". Avoid "see also" lists and bare "click here".
-- **Link to the section, not just the lesson,** when the idea has its own heading. Headings get ids automatically: lowercase, spaces become hyphens and punctuation is dropped, so `## The dot product` becomes `#the-dot-product`.
-- **Link across courses as well as within one.** XOR lives in Logic Design, Big-O in Algorithm Design and Analysis. Look in `src/content/` before you assume something isn't covered.
-- **Link forward too.** If a lesson uses an idea before the lesson that teaches it, link ahead ("the [next lesson](...) is all about it") rather than leaving it unexplained.
-- **If no lesson teaches it,** explain it in a sentence where it's used, or say plainly that it's outside this course. Never promise a lesson that doesn't exist yet, such as "later in this course" for something no lesson covers.
-- **Link back when you add a lesson.** Search the other courses for places that use your new lesson's ideas without explaining them, and link them to it.
-
-Write links as ordinary markdown, `[words](/courses/<course>/<lesson>#<section>)`. The lesson page follows them without reloading the site.
-
-**Hovering a link shows a preview** of how the linked lesson defines the idea, like a dictionary entry, so readers can check a term without leaving the page. The preview is read from the lesson itself: within the linked section (or the whole lesson, if the link has no section) it picks the paragraph where the link's words appear in **bold**, then one that mentions them, then the first paragraph. So **bold a term where you define it**, as in "the **dot product** multiplies matching entries", and the preview will find that sentence. A paragraph ending in a colon brings along the formula or list after it. `src/test/lesson-preview.test.ts` checks that every link on the site produces one. `src/test/lesson-links.test.ts` checks that every link on the site points at a real lesson and a real heading, so a renamed lesson or heading fails the tests instead of leaving a dead link.
+Every rule for the words inside a lesson (voice, plain language, lesson shape, callouts, visuals, code and linking between lessons) is in [writing-lessons.md](writing-lessons.md). Read it before step 7.
 
 ## Registration checklist
 
@@ -84,7 +73,7 @@ Three rules keep the rounds honest:
 | 1 | **Skeleton** | whole course | Every lesson exists, the course is registered, every hard idea has one visualization, and lint, tests and build pass. It is allowed to be thin. |
 | 2 | **Source fidelity** | one module | Every topic, term, worked example and exercise in the notes is covered. Where the notes use a different name for something, the lesson gives both names. Source errors are listed and corrected. |
 | 3 | **Depth** | one module | Every term is defined in plain words before it's used, every example is worked step by step, and each lesson names the mistake students usually make. |
-| 4 | **Plain language** | one module | No unexplained jargon, short sentences, nothing a non-native speaker would have to look up twice. Run the text through the humanizer. |
+| 4 | **Plain language** | one module | The lessons meet [Plain language](writing-lessons.md#plain-language) and [Never](writing-lessons.md#never) in writing-lessons.md, and the text has been through the humanizer. |
 | 5 | **Visualizations** | one module | Every idea that's still only text has been judged: does a reader need something to drag or step through? Every visualization works at phone width, in light and dark themes, and with reduced motion. |
 | 6 | **Practice** | one module | The quiz covers every lesson and asks the kinds of questions the source's exams ask. Hand calculations have answers to check against. |
 | 7 | **Connections** | whole course | Every idea used but not taught links to the lesson that teaches it, older lessons link back, and paths, prerequisites and tools are set. |
@@ -101,6 +90,7 @@ Each course has one GitHub issue that tracks its rounds, labelled [`course-itera
 - **Post each round's report as a comment** on the issue, so what was found but not fixed isn't lost in a chat.
 - **Say `Part of #N` in each round's commits or pull request,** and tick the box when the round's bar is met. The change that finishes the last round says `Fixes #N`.
 - **See where every course stands** with `gh issue list --label course-iteration`.
+- **Update the course's `rounds` in `src/content/registry.ts`** when a round is finished for every module. It counts rounds in order, so a round done for only some modules doesn't count yet. Readers see it as a maturity badge on the course card and page: First draft (rounds 1–2), Checked (3–5), Polished (6–7), Refined (8) and Student-tested (9). The wording they see, in `src/lib/maturity.ts`, describes what the course has been through without the round names.
 
 Some rounds a course may also need:
 
@@ -124,7 +114,8 @@ Build a new Decoded course on [SUBJECT]. My source material is in
 _sources/[COURSE-SLUG]/. The readers are [WHO THEY ARE AND WHAT THEY ALREADY
 KNOW]. Credit the course to [NAME] (github.com/[USERNAME]).
 
-Before planning, read CLAUDE.md, docs/brand.md and docs/building-a-course.md.
+Before planning, read CLAUDE.md, docs/building-a-course.md and
+docs/writing-lessons.md.
 Then read these as the standard to match:
 - src/content/logic-design/m4-01-sr-latch.mdx
 - src/components/mdx/CircuitVisualizers.tsx
@@ -142,14 +133,13 @@ Follow the steps in docs/building-a-course.md, and:
    instead of teaching them again. Whenever a lesson uses an idea it doesn't
    explain, link its first use to the lesson (and #section) that does, in this
    course or another, following "Linking between lessons" in
-   docs/building-a-course.md. Also link older lessons to the new ones where
+   docs/writing-lessons.md. Also link older lessons to the new ones where
    they use these ideas.
 4. Make visualizations the center of the course. Wherever a static slide would
    leave someone unable to picture what's happening, build something they can
    step through or change. Keep the logic in src/lib/ with tests.
-5. Write in simple language and your own words. Introduce an idea in plain terms
-   before its notation, and name the real tools it powers. Never copy passages
-   from the sources.
+5. Write every lesson by docs/writing-lessons.md: simple language, your own
+   words, plain terms before notation, and the real tools each idea powers.
 6. Treat the sources as possibly wrong. Recalculate every example and check every
    code sample. Keep a list of the errors you find. Where the sources only
    outline a topic, use a standard textbook and tell me which lessons you wrote
@@ -178,7 +168,7 @@ not to confirm it is good. Assume there are problems until you have looked.
 
 [THE ROUND'S INSTRUCTIONS, BELOW]
 
-Fix what you find, keeping the site's style (CLAUDE.md, docs/brand.md). Run
+Fix what you find, following docs/writing-lessons.md and CLAUDE.md. Run
 lint, tests and the build. End with a report: what you changed, what you found
 but didn't fix, what you couldn't check, and which iteration this module
 needs next. Commit and push directly.
@@ -188,7 +178,7 @@ The middle part for each round:
 
 - **2, Source fidelity:** "Go through the source section by section. For each topic, term, worked example and exercise, say where the course covers it. Where the source calls something by a different name than the course does, give both names in the lesson. Rework every example the source works, and list each source error you find."
 - **3, Depth:** "Read each lesson as if you'd never met the subject. Find every term used before it's defined, every step skipped in an example and every claim with no reason given. Add the missing definitions, steps and reasons, and add the mistake students usually make on each idea."
-- **4, Plain language:** "Find jargon, long sentences and words a non-native English speaker would struggle with. Use the simplest word that is still accurate, and keep a technical term only when it is the right name, explained the first time. Then run the prose through the humanizer skill."
+- **4, Plain language:** "Find jargon, long sentences and words a non-native English speaker would struggle with. Use the simplest word that is still accurate, and keep a technical term only when it is the right name, explained the first time. Check every rule under Plain language and Never in docs/writing-lessons.md. Then run the prose through the humanizer skill."
 - **5, Visualizations:** "List every idea that is still only explained in text, and decide for each whether a reader needs something to drag, click or step through. Build the ones that do, with logic and tests in src/lib/. Then check every visualization in a browser at phone width, in light and dark themes, and with reduced motion."
 - **6, Practice:** "Check the quiz covers every lesson. Add questions in the style of the source's exams and exercises, including hand calculations, and make sure each explanation says why the wrong answers are wrong."
 - **7, Connections:** "Find every idea a lesson uses but doesn't teach, and link it to the lesson that does, in this course or another. Search the other courses for places that should link to this one. Check the learning paths, prerequisites and tools entries."

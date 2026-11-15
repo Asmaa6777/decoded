@@ -3,13 +3,13 @@ import { AdcSampler, VoltageBands, BusContentionVisualizer, ClockExplorer, Seria
 
 # Signals: Why Computers Use Only Two Values
 
-In electronic hardware, an electric **signal** is a physical quantity, specifically an electric voltage or current, that varies over time to carry data or instructions through a [circuit](/courses/logic-design/signals).
+In electronic hardware, an electric **signal** is a physical quantity, specifically an electric voltage or current, that varies over time to carry data or instructions through a [circuit](/courses/computer-architecture/demystifying-circuit-schematics).
 
-**Voltage** (measured in volts, $\text{V}$) is the electrical potential difference between two conductors. It acts like electrical pressure pushing electrons through a wire. In digital systems, every voltage is measured relative to a common zero-volt reference line called **ground** ($\text{GND}$, $0\text{ V}$).
+**Voltage** (measured in volts, $\text{V}$) is the electrical potential difference between two conductors, which is the difference in electric charge concentration that creates electrical pressure pushing electrons through a wire. In digital systems, every voltage is measured relative to a common zero-volt reference line called **ground** ($\text{GND}$, $0\text{ V}$). While electrical power grids connect to the physical earth for lightning protection, inside a battery-powered device like a smartphone or laptop, "ground" simply means the shared negative return wire that serves as the agreed zero-volt baseline for every measurement.
 
 A dimmer switch moves smoothly across a continuous range of brightness levels, from completely off to fully bright. A standard wall switch has only two stable positions: ON and OFF.
 
-An **analog** signal works like the dimmer switch: it changes continuously over time and can take any value within a range. When sound waves hit a microphone diaphragm, the microphone produces a smooth, changing voltage that follows the air pressure.
+An **analog** signal works like the dimmer switch: it changes continuously over time and can take any value within a range. When sound waves hit a microphone, its flexible membrane (diaphragm) vibrates, producing a smooth, changing voltage that mirrors the continuous air pressure waves.
 
 A **digital** signal works like the standard switch: it uses a separate set of values. In binary digital systems, the signal uses only two states, labeled **HIGH** and **LOW**, **1** and **0**, or **TRUE** and **FALSE**.
 
@@ -35,7 +35,7 @@ Most electronic systems move between both realms:
 - A **DAC** (digital-to-analog converter) turns stored bits into a smooth voltage that drives headphones or a loudspeaker.
 - An **ADC** (analog-to-digital converter) converts continuous analog voltages into digital numbers in two steps:
   1. **Sampling:** Measuring the analog voltage at regular time intervals. You can explore how audio signals are converted in [sampling](/courses/computational-mathematics/sound-and-sampling#sampling-what-44100-per-second-means).
-  2. **Quantization:** Rounding each measured analog voltage to the nearest allowable binary value.
+  2. **Quantization:** Rounding each measured analog voltage to the nearest allowable binary value. An $N$-bit converter divides the voltage range into $2^N$ discrete steps (such as $2^3 = 8$ levels for a 3-bit ADC), so the bit resolution determines how finely the converter slices the voltage.
 
 <AdcSampler />
 
@@ -50,7 +50,7 @@ Why did computer engineers build computing machines out of only two values inste
 Electricity in real circuits is noisy. In electronics, **noise** is an unwanted electrical fluctuation added to a signal. Real circuits suffer from several physical noise sources:
 - **Thermal noise (Johnson-Nyquist noise):** Random movement of electrons inside copper wires and silicon resistors caused by heat.
 - **Electromagnetic interference (EMI):** Wires act as antennas, picking up electromagnetic radiation from $50\text{ Hz}$ or $60\text{ Hz}$ AC power lines, radio signals, electric motors, and power supplies.
-- **Capacitive and inductive coupling:** Rapidly changing signals on neighboring copper traces on a **printed circuit board** (PCB), an insulating board with copper pathways connecting components, couple energy into adjacent lines.
+- **Capacitive and inductive coupling (crosstalk):** Electric and magnetic fields from rapidly switching signals on neighboring copper traces on a **printed circuit board** (PCB), an insulating board with copper pathways connecting components, induce unwanted voltage spikes in adjacent signal lines.
 
 Because of this interference, the voltage arriving at the receiving end of a wire rarely matches the exact voltage sent by the transmitter.
 
@@ -77,13 +77,12 @@ A small voltage spike of $+0.26\text{ V}$ lifts the wire to $1.76\text{ V}$, pas
 
 ```
 10 Decimal Voltage Levels (Fragile):
-   5.0 V -- [ 9 ]
-   4.5 V -- [ 8 ]
-   4.0 V -- [ 7 ]   <-- A small 0.26 V noise spike flips a 3 into a 4
-   3.5 V -- [ 6 ]
-   3.0 V -- [ 5 ]
-   2.5 V -- [ 4 ]
-   2.0 V -- [ 4 ]
+   4.5 V -- [ 9 ]
+   4.0 V -- [ 8 ]
+   3.5 V -- [ 7 ]
+   3.0 V -- [ 6 ]
+   2.5 V -- [ 5 ]
+   2.0 V -- [ 4 ]   <-- A small 0.26 V noise spike flips a 3 into a 4
    1.75V ---------------- Threshold between 3 and 4
    1.5 V -- [ 3 ]
    1.0 V -- [ 2 ]
@@ -103,7 +102,7 @@ A small voltage spike of $+0.26\text{ V}$ lifts the wire to $1.76\text{ V}$, pas
 By restricting the system to only two values, engineers establish wide buffer zones called **logic levels**. A circuit does not have to measure an exact voltage; it only needs to detect whether a voltage falls into the upper band or the lower band.
 
 <Callout tone="orange" label="Mistake students make">
-**Assuming binary was chosen because base-2 math is mathematically superior.** Ternary (base-3) arithmetic is slightly more efficient in theory, and working decimal computers have existed. Binary became standard because of transistor physics. Building a transistor that acts as a simple ON/OFF switch is much simpler, cheaper, and less sensitive to heat or manufacturing differences than building a switch with three or ten distinct levels.
+**Assuming binary was chosen because base-2 math is mathematically superior.** Ternary (base-3) arithmetic is slightly more efficient in theory, and working decimal computers have existed. Binary became standard because of transistor physics. Building a [transistor](/courses/computer-organization/whats-inside#the-idea-that-makes-it-all-work) that acts as a simple ON/OFF switch is much simpler, cheaper, and less sensitive to heat or manufacturing differences than building a switch with three or ten distinct levels.
 </Callout>
 
 ## Logic levels and threshold voltages
@@ -117,7 +116,7 @@ Four standard parameters govern these boundaries:
 3. **$V_{IH(min)}$ (Voltage Input High Minimum):** The lowest input voltage guaranteed to be recognized as a valid logic 1 by a receiving gate.
 4. **$V_{IL(max)}$ (Voltage Input Low Maximum):** The highest input voltage guaranteed to be recognized as a valid logic 0 by a receiving gate.
 
-The positive power supply connected to the chip is labeled $V_{CC}$ (in bipolar and TTL circuits) or $V_{DD}$ (in CMOS circuits). The zero-volt reference is labeled $\text{GND}$ ($0\text{ V}$).
+The positive power supply connected to the chip is labeled $V_{CC}$ (in bipolar and TTL circuits) or $V_{DD}$ (in CMOS circuits). The repeated letters identify the transistor terminal receiving the supply voltage: $V_{CC}$ connects to the **C**ollector of bipolar transistors, while $V_{DD}$ connects to the **D**rain of field-effect transistors. A single-letter subscript such as $V_C$ or $V_D$ refers to the voltage measured at that specific pin on a single transistor, whereas the doubled letter denotes the overall power supply rail feeding that terminal across the entire chip. Similarly, the zero-volt reference line is labeled $\text{GND}$ ($0\text{ V}$), or sometimes $V_{EE}$ (**E**mitter) in bipolar logic and $V_{SS}$ (**S**ource) in CMOS.
 
 ```
 Logic Level Boundaries:
@@ -141,10 +140,10 @@ V_OL --+------------------+                   |   Valid LOW      |
 The gap between $V_{IL(max)}$ and $V_{IH(min)}$ is called the **transition region**, **indeterminate region**, or **forbidden region**. If an input voltage sits in this zone, the gate's behavior is electrically undefined.
 
 In **CMOS** (Complementary Metal-Oxide-Semiconductor) chips, logic gates are built from pairs of transistors acting as electrical switches:
-- A **PMOS** pull-up transistor connects the output to the positive supply rail ($V_{DD}$) when the input is LOW.
-- An **NMOS** pull-down transistor connects the output to ground ($\text{GND}$) when the input is HIGH.
+- A **PMOS** pull-up transistor connects the output to the positive supply rail ($V_{DD}$) when the input is LOW. Because PMOS gates conduct when their gate voltage is pulled low relative to their source, a LOW input turns the switch ON.
+- An **NMOS** pull-down transistor connects the output to ground ($\text{GND}$) when the input is HIGH. An NMOS transistor needs a positive gate voltage to attract electrons into its channel and turn ON, so a HIGH input pulls the output to $0\text{ V}$.
 
-Under normal operation, one transistor is ON while the other is completely OFF, drawing almost no DC current from the power supply.
+Under normal operation, the two types work in lockstep as complements: exactly one transistor is ON while the other is completely OFF, drawing almost no DC current from the power supply.
 
 If an input signal sits in the forbidden middle region near $V_{DD}/2$, both the PMOS and NMOS transistors turn partly on at once. This creates a low-resistance path straight from $V_{DD}$ to $\text{GND}$. The resulting surge of current is called **shoot-through current** (or crowbar current). It drains power, drops the supply voltage, and heats the silicon chip enough to damage it permanently.
 
@@ -214,12 +213,12 @@ Consider a standard 5V TTL driver connected to a receiving gate over a circuit b
 2. Inductive coupling induces a positive noise spike of $\Delta V = +0.35\text{ V}$.
 3. Voltage arriving at the receiver:
    $$V_{in} = V_{OL} + \Delta V = 0.3\text{ V} + 0.35\text{ V} = 0.65\text{ V}$$
-4. Result: Because $0.65\text{ V} \le V_{IL(max)} = 0.8\text{ V}$, the receiver reads a clean logic 0.
+4. Result: The guaranteed worst-case low noise margin is $V_{NL} = 0.8\text{ V} - 0.4\text{ V} = 0.4\text{ V}$. Because this specific driver outputs $0.3\text{ V}$ (better than the $0.4\text{ V}$ maximum limit), this trace has $0.8\text{ V} - 0.3\text{ V} = 0.5\text{ V}$ of real headroom. The $+0.35\text{ V}$ spike stays inside that budget, and because $0.65\text{ V} \le V_{IL(max)} = 0.8\text{ V}$, the receiver reads a clean logic 0.
 
 **Case 3: Excessive noise causing failure**
 1. If the positive noise spike on the LOW line increases to $\Delta V = +0.65\text{ V}$:
    $$V_{in} = 0.3\text{ V} + 0.65\text{ V} = 0.95\text{ V}$$
-2. Result: Because $0.95\text{ V} > V_{IL(max)} = 0.8\text{ V}$, the voltage enters the forbidden region ($0.8\text{ V} < 0.95\text{ V} < 2.0\text{ V}$). The receiver output is unpredictable, and data is corrupted.
+2. Result: The $+0.65\text{ V}$ spike exceeds the line's $0.5\text{ V}$ headroom. Because $0.95\text{ V} > V_{IL(max)} = 0.8\text{ V}$, the voltage enters the forbidden region ($0.8\text{ V} < 0.95\text{ V} < 2.0\text{ V}$). The receiver output is unpredictable, and data is corrupted.
 
 <Callout tone="orange" label="Mistake students make">
 **Inverting the low-level noise margin formula.** Students often write $V_{NL} = V_{OL(max)} - V_{IL(max)}$, which gives a negative number like $0.4\text{ V} - 0.8\text{ V} = -0.4\text{ V}$. Noise margins are always positive tolerances: subtract the driver limit from the receiver threshold ($V_{NL} = V_{IL(max)} - V_{OL(max)} > 0$). Calculating $V_{OH} - V_{OL}$ is also a mistake; that measures the total output voltage swing, not the noise margin.
@@ -240,6 +239,8 @@ In digital electronics, the relationship between electrical voltages and binary 
   - $\text{LOW voltage} \to \text{Logic } 1$ ($\text{TRUE}$, asserted)
   - $\text{HIGH voltage} \to \text{Logic } 0$ ($\text{FALSE}$, unasserted)
 
+Here **asserted** means the signal is actively doing its job (such as commanding a reset or enabling a write), while **unasserted** (or deasserted) means the line is idle. In positive logic, asserting a line means driving it HIGH; in negative logic, asserting it means pulling it LOW.
+
 Digital design defaults to positive logic unless stated otherwise. However, active-LOW signals are common for control lines such as system resets ($\overline{\text{RESET}}$ or `RESET_N`), chip selects ($\overline{\text{CS}}$ or `CS#`), and write enables ($\overline{\text{WE}}$). On circuit schematic diagrams, an active-LOW pin is marked by an **inversion bubble** (a small circle) on the gate input or chip pin.
 
 ### Push-pull vs open-drain outputs and pull-up resistors
@@ -259,13 +260,13 @@ Output ---+                            Output ----+--------- Bus Wire
          GND                                     GND
 ```
 
-1. **Push-pull outputs (totem pole):** Use an active pull-up transistor and an active pull-down transistor. Connecting two push-pull outputs directly together is forbidden. If Gate A outputs HIGH ($5\text{ V}$) while Gate B outputs LOW ($0\text{ V}$), current flows directly from $V_{CC}$ to $\text{GND}$ through the chips. This short circuit is called **bus contention**, and it burns out the transistors.
-2. **Open-drain outputs:** Omit the upper pull-up transistor entirely. The chip can only pull the wire to $\text{GND}$ (LOW) or turn OFF completely, entering a high-impedance state (Hi-Z).
+1. **Push-pull outputs (totem pole):** Use an active pull-up transistor and an active pull-down transistor, stacked vertically like a totem pole between power and ground. Connecting two push-pull outputs directly together is forbidden. If Gate A outputs HIGH ($5\text{ V}$) while Gate B outputs LOW ($0\text{ V}$), current flows directly from $V_{CC}$ to $\text{GND}$ through the chips. This short circuit is called **bus contention**, and it burns out the transistors.
+2. **Open-drain outputs:** Omit the upper pull-up transistor entirely. The chip can only pull the wire to $\text{GND}$ (LOW) or turn OFF completely, entering a **high-impedance state (Hi-Z)**. In Hi-Z, the output switch is open: it neither drives voltage nor sinks current, acting like a disconnected wire so other chips can safely control the line.
 3. **Pull-up resistor:** A single external resistor (typically $2.2\text{ k}\Omega$ to $10\text{ k}\Omega$) connects the shared wire to $V_{CC}$.
-   - When all chips on the bus are idle (switches open), the resistor pulls the wire up to $V_{CC}$ (inactive state).
+   - When all chips on the bus are idle (switches open in Hi-Z), the resistor gently pulls the wire up to $V_{CC}$ (inactive state).
    - If any chip on the bus acts, it turns its NMOS transistor ON, pulling the wire down to $0\text{ V}$ (active-LOW).
 
-This hardware configuration creates a **wired-AND** (or wired-OR) connection. Multiple chips, such as a CPU, a manual push button, and a power monitor, can all drive the same $\overline{\text{RESET}}$ line without damaging each other.
+This hardware configuration creates a **wired-AND** (or wired-OR) connection. Engineers call it wired-AND from a voltage perspective because the wire stays HIGH only if Gate 1 AND Gate 2 AND Gate 3 all release it. From a functional active-LOW perspective, it acts as a wired-OR because Device 1 OR Device 2 can pull the line LOW to trigger the action. Multiple chips, such as a CPU, a manual push button, and a power monitor, can all drive the same $\overline{\text{RESET}}$ line without damaging each other.
 
 <BusContentionVisualizer />
 
@@ -283,7 +284,7 @@ A single binary digit is called a **bit** (short for *binary digit*), coined by 
 
 - **Bit:** 1 binary digit ($0$ or $1$). Can represent $2^1 = 2$ states.
 - **Nibble:** A group of 4 bits. Can represent $2^4 = 16$ states ($0$ through $15$), which corresponds to one hexadecimal digit ($0\text{ to }\text{F}$).
-- **Byte (or octet):** A group of 8 bits. Can represent $2^8 = 256$ states ($0$ through $255$). The byte is the standard addressable unit of memory in modern computer architectures.
+- **Byte (or octet):** A group of 8 bits. Can represent $2^8 = 256$ states ($0$ through $255$). The byte became the universal standard because 256 combinations provide enough room to encode the full [ASCII](/courses/computer-organization/bits-and-bytes#letters-are-numbers) character set (letters, digits, punctuation, and control symbols) with room for international characters or error-detecting parity bits, while conveniently aligning to powers of two ($2^3 = 8$). The byte is the standard addressable unit of memory in modern computer architectures.
 - **Word:** The natural data unit processed by a computer CPU **datapath** (the internal network of registers, ALU, and buses) in a single instruction cycle. On an older 16-bit processor, a word is 16 bits (2 bytes). On a 32-bit processor, a word is 32 bits (4 bytes). On 64-bit architectures, a quadword is 64 bits (8 bytes).
 
 ### Positional notation: MSB and LSB
@@ -349,13 +350,15 @@ Working with digital hardware requires fast, fluent conversion between clock fre
 *Worked conversion:* If a CPU core operates at $2.5\text{ GHz}$, what is its clock period in picoseconds?
 $$T = \frac{1}{2.5 \times 10^9\text{ Hz}} = 0.4 \times 10^{-9}\text{ s} = 0.4\text{ ns} = 400\text{ ps}$$
 
+A quick mental rule pairs reciprocal metric prefixes: $\frac{1}{\text{kHz}} = \text{ms}$, $\frac{1}{\text{MHz}} = \mu\text{s}$, and $\frac{1}{\text{GHz}} = \text{ns}$. Picoseconds ($\text{ps}$) are thousandths of a nanosecond ($1\text{ ns} = 1,000\text{ ps}$), so $0.4\text{ ns} = 400\text{ ps}$.
+
 <ClockExplorer />
 
 ### Real edges: rise time and fall time
 
 In circuit diagrams, clock transitions look like vertical lines. In physical hardware, voltages cannot change instantly because wires, connector pins, and transistor gates carry parasitic capacitance and inductance that resist sudden changes:
-- **Parasitic capacitance ($C$):** Charges and discharges through wire resistance, creating a sloped voltage ramp governed by time constant $\tau = RC$.
-- **Parasitic inductance ($L$):** Generates an opposing voltage whenever current changes rapidly ($\Delta V = L \frac{di}{dt}$).
+- **Parasitic capacitance ($C$):** Unintended capacitance between wires and ground charges and discharges through line resistance $R$, producing a sloped exponential ramp governed by time constant $\tau = RC$ (where resistance in ohms multiplied by capacitance in farads gives seconds: $\Omega \times \text{F} = \text{s}$).
+- **Parasitic inductance ($L$):** Stray magnetic loops in wires and chip leads generate an opposing voltage whenever electric current switches rapidly ($\Delta V = L \frac{di}{dt}$, where $\frac{di}{dt}$ is the rate of change of current over time), producing sudden voltage spikes called inductive kickback or ground bounce.
 
 ```
 Real-World Pulse Transitions:
@@ -387,12 +390,12 @@ Transitions are categorized by direction:
 These fast transitions govern edge-triggered circuits. In sequential logic, [flip-flops](/courses/logic-design/flip-flops#clock-edge-terminology-and-circuit-symbols) sample their inputs exclusively during one of these edges.
 
 High-speed signals that transition in fractions of a nanosecond can run into signal integrity issues:
-- **Overshoot:** The signal surges beyond the steady-state HIGH voltage before settling.
-- **Undershoot:** The signal dips below ground ($0\text{ V}$) upon falling.
-- **Ringing:** Damped oscillatory voltage ripples following a transition, caused by transmission line impedance mismatches where traveling voltage waves bounce between driver and receiver.
+- **Overshoot:** The signal surges beyond the steady-state HIGH voltage before settling. Excessive overshoot can puncture the thin gate oxide layer of nanoscale MOSFET transistors or trigger parasitic thyristors in CMOS silicon, causing a destructive short circuit called latch-up.
+- **Undershoot:** The signal dips below ground ($0\text{ V}$) upon falling. Severe undershoot forward-biases silicon substrate junctions, injecting spurious charge that can corrupt neighboring memory cells or registers.
+- **Ringing:** Damped oscillatory voltage ripples following a transition. Much like a water surge reflecting backwards when slamming into a closed canal gate, fast electrical pulses travel down wires as high-frequency electromagnetic waves. If the receiver's electrical resistance (impedance) does not match the wire's characteristic impedance, part of the wave energy reflects back toward the sender, producing ripples that can falsely cross logic thresholds.
 
 <Callout tone="orange" label="Mistake students make">
-**Prefix errors in frequency and period calculations.** Students frequently invert frequency incorrectly, writing $T = 1 / (50\text{ MHz}) = 20\ \mu\text{s}$ instead of $20\text{ ns}$ ($1 / (50 \times 10^6) = 2 \times 10^{-8}\text{ s} = 20\text{ ns}$). Another common error is calculating duty cycle as $t_{low} / T$, or forgetting that period $T$ is the sum of HIGH time and LOW time ($T = t_{high} + t_{low}$).
+**Prefix errors in frequency and period calculations.** Students frequently invert frequency incorrectly, writing $T = 1 / (50\text{ MHz}) = 20\ \mu\text{s}$ instead of $20\text{ ns}$ ($1 / (50 \times 10^6) = 2 \times 10^{-8}\text{ s} = 20\text{ ns}$). Another common error is calculating duty cycle as $t_{low} / T$, or forgetting that period $T$ is the sum of HIGH time and LOW time ($T = t_w + t_{low} = t_{high} + t_{low}$).
 </Callout>
 
 ## Moving bits: serial and parallel transmission
@@ -421,13 +424,13 @@ Serial Transmission (8 bits in 8 clock cycles):
 ### Serial transmission
 Bits are sent sequentially, one after another, over a single conductor (plus a shared ground reference line).
 - **Advantages:** Requires only one signal wire (or one differential pair), keeping cables thin, connectors compact, pin counts low, and circuit boards uncrowded.
-- **Disadvantages:** At equal clock rates, transmitting an 8-bit byte requires eight sequential clock cycles.
+- **Disadvantages:** At equal clock rates, transmitting an 8-bit byte requires eight sequential [clock cycles](/courses/computer-organization/machine-cycle).
 
 ### Parallel transmission
 All bits of a byte or word are sent simultaneously across multiple physical conductors, with one bit assigned to each wire.
 - **Advantages:** A full byte or word transfers in a single clock cycle, providing high throughput at modest clock rates.
 - **Disadvantages:** Requires many physical wires, large connectors, and runs into two physical bottlenecks at higher frequencies:
-  1. **Clock skew:** Light and electrical signals in circuit board copper travel at roughly $15\text{ cm/ns}$ (about $6.7\text{ ps/mm}$). Microscopic differences in trace lengths cause bits launched at the same instant to arrive at receiving registers at slightly different times.
+  1. **Clock skew:** Light travels at $30\text{ cm/ns}$ in a vacuum, but in standard fiberglass circuit boards (FR-4 material), electrical signals slow down to roughly $15\text{ cm/ns}$ (about $6.7\text{ ps/mm}$). Microscopic differences in trace lengths cause bits launched at the same instant to arrive at receiving registers at slightly different times.
   2. **Crosstalk:** Rapid current pulses on one parallel trace induce capacitive and inductive voltage spikes on adjacent wires.
 
 <SerialParallel />
@@ -442,9 +445,9 @@ When clock speeds passed $100\text{ MHz}$, clock skew and crosstalk made wide pa
 
 Modern serial interfaces rely on two techniques:
 1. **Differential signaling:** Bits are sent over a twisted pair of complementary wires ($D+$ and $D-$). The receiver measures the voltage difference $(V_{D+} - V_{D-})$. External noise hits both wires equally (common-mode noise) and cancels out completely upon subtraction.
-2. **Clock recovery:** The clock is embedded directly into the data stream using line encodings (such as 8b/10b or 128b/130b), eliminating the need for a separate clock wire and removing inter-line skew entirely.
+2. **Clock recovery:** The clock is embedded directly into the data stream using line encodings (such as 8b/10b or 128b/130b). Line encodings map groups of bits into larger symbols that guarantee frequent voltage transitions, allowing the receiver to lock onto the incoming pulse train without needing a separate clock wire, removing inter-line skew entirely.
 
-Because serial links carry data over a single lane without inter-line clock skew, they can run at tens of gigahertz (such as PCIe 5.0 at 32 GT/s), delivering vastly higher total bandwidth than wide parallel ribbons ever achieved.
+Because serial links carry data over a single lane without inter-line clock skew, they can run at tens of gigahertz (such as PCIe 5.0 at 32 GT/s, meaning 32 billion transfers per second before line-coding overhead), delivering vastly higher total bandwidth than wide parallel ribbons ever achieved.
 </Callout>
 
 ### Worked example: comparing transfer durations
@@ -566,9 +569,12 @@ Two integrated circuits on a printed circuit board are connected by an 8-bit par
 <ModelAnswer>
 1. **Clock skew calculation:**
    - Length difference $\Delta L = 30\text{ mm}$.
-   - Propagation velocity $v = 15\text{ cm/ns} = 150\text{ mm/ns} = 0.15\text{ mm/ps}$.
+   - Propagation velocity:
+     $$v = 15\text{ cm/ns} = 150\text{ mm/ns} = \frac{150\text{ mm}}{1,000\text{ ps}} = 0.15\text{ mm/ps}$$
+   - Delay per unit length:
+     $$t_{pd} = \frac{1}{v} = \frac{1}{0.15\text{ mm/ps}} \approx 6.67\text{ ps/mm}$$
    - Skew formula:
-     $$\Delta t = \frac{\Delta L}{v} = \frac{30\text{ mm}}{0.15\text{ mm/ps}} = 200\text{ ps} = 0.20\text{ ns}$$
+     $$\Delta t = \frac{\Delta L}{v} = \Delta L \times t_{pd} = 30\text{ mm} \times 6.67\text{ ps/mm} = 200\text{ ps} = 0.20\text{ ns}$$
 
 2. **Skew impact at $33\text{ MHz}$:**
    - Clock period $T = \frac{1}{33 \times 10^6\text{ Hz}} \approx 30.3\text{ ns} = 30,300\text{ ps}$.
@@ -611,7 +617,9 @@ A microcontroller pin labeled $\overline{\text{RESET}}$ (or `nRESET`) connects t
      Power dissipated: $P = V \times I = 3.3\text{ V} \times 0.165\text{ A} \approx 0.54\text{ W}$. This heavy current wastes power and can overheat the resistor or exceed the maximum current sinking rating of the open-drain transistor.
    - **If $R$ is too large (such as $1\text{ M}\Omega$):** When the button is released, the line must charge the bus parasitic capacitance $C_{bus} = 50\text{ pF}$ through $R$. The $RC$ time constant is:
      $$\tau = R \times C_{bus} = 10^6\ \Omega \times 50 \times 10^{-12}\text{ F} = 50\ \mu\text{s}$$
-     The rise time ($10\%$ to $90\%$) takes $t_r \approx 2.2 \tau = 110\ \mu\text{s}$. During this long interval, the voltage lingers inside the forbidden indeterminate region, causing shoot-through current and false re-triggering. A moderate value like $4.7\text{ k}\Omega$ to $10\text{ k}\Omega$ provides the ideal balance between low power dissipation and fast rise time.
+     From the capacitor charging equation $V(t) = V_{DD}(1 - e^{-t/\tau})$, rising from $10\%$ to $90\%$ of $V_{DD}$ spans:
+     $$t_r = t_{90\%} - t_{10\%} = -\tau \ln(0.10) - (-\tau \ln(0.90)) = \tau \ln\left(\frac{0.90}{0.10}\right) = \tau \ln(9) \approx 2.197 \tau \approx 2.2 \tau$$
+     For $\tau = 50\ \mu\text{s}$, the rise time takes $t_r \approx 2.2 \times 50\ \mu\text{s} = 110\ \mu\text{s}$. During this long interval, the voltage lingers inside the forbidden indeterminate region, causing shoot-through current and false re-triggering. A moderate value like $4.7\text{ k}\Omega$ to $10\text{ k}\Omega$ provides the ideal balance between low power dissipation and fast rise time.
 </ModelAnswer>
 
 <Callout tone="orange" label="Common exam pitfall">
@@ -698,7 +706,7 @@ An environmental monitoring station uses an analog vibration sensor. The sensor 
      $$\text{Reduction Factor} = \frac{Q_8}{Q_{12}} = \frac{16\text{ mV}}{1\text{ mV}} = 16\times = 2^{12 - 8} = 2^4$$
      The voltage quantization error drops by a factor of 16.
    - **Theoretical SQNR Improvement ($\Delta\text{SQNR}$):**
-     Each additional bit of ADC resolution adds approximately $6.02\text{ dB}$ of dynamic range ($\approx 20 \log_{10}(2) \approx 6.0206\text{ dB}$):
+     Each added bit of resolution doubles the number of voltage levels, cutting the step size in half ($2\times$ voltage precision). Because decibels for voltage amplitude scale as $20 \log_{10}(\text{ratio})$, each bit adds approximately $20 \log_{10}(2) \approx 6.02\text{ dB}$ of dynamic range:
      $$\Delta\text{SQNR} \approx 6.02 \times \Delta N = 6.02 \times (12 - 8) = 6.02 \times 4 = 24.08\text{ dB}$$
      The 12-bit ADC delivers a $24.08\text{ dB}$ cleaner signal, cutting quantization noise power by a factor of $256$ ($16^2$).
 </ModelAnswer>
@@ -726,7 +734,7 @@ Do not confuse sampling rate (how often you measure in time, measured in samples
         { id: "d", text: "Q ≈ 5.00 mV, and maximum quantization error is ±2.50 mV" },
       ],
       correctOptionId: "a",
-      explanation: "A 10-bit ADC provides 2¹⁰ = 1024 discrete quantization steps. Across a 5.0 V full-scale span, the step size is Q = 5.0 V / 1024 ≈ 0.0048828 V ≈ 4.88 mV. When samples are rounded to the nearest integer level, the maximum distance between any continuous voltage and its assigned code is half of one step: ±Q / 2 ≈ ±4.88 mV / 2 = ±2.44 mV. Option (b) mistakenly uses 2⁹ = 512 levels. Option (c) confuses peak error (±Q/2) with the full step size Q. Option (d) incorrectly approximates 2¹⁰ as 1000 instead of 1024.",
+      explanation: "A 10-bit ADC partitions the voltage range into 2¹⁰ = 1024 discrete quantization intervals. Across a 5.0 V full-scale span, the step size is Q = 5.0 V / 1024 ≈ 0.0048828 V ≈ 4.88 mV. (Calculating Q as 5.0 V / 1023 between extreme code centers yields 4.8876 mV, which also rounds to 4.88 mV). When samples are rounded to the nearest integer level, the maximum distance between any continuous voltage and its assigned code is half of one step: ±Q / 2 ≈ ±4.88 mV / 2 = ±2.44 mV. Option (b) mistakenly uses 2⁹ = 512 levels. Option (c) confuses peak error (±Q/2) with the full step size Q. Option (d) incorrectly approximates 2¹⁰ as 1000 instead of 1024.",
     },
     {
       id: "q2",
@@ -762,7 +770,7 @@ Do not confuse sampling rate (how often you measure in time, measured in samples
         { id: "d", text: "TTL uses negative logic conventions while 74HC CMOS exclusively uses positive logic" },
       ],
       correctOptionId: "a",
-      explanation: "5V 74HC CMOS gates require an input voltage of at least V_IH(min) = 0.7 × V_CC = 3.5 V to guarantee recognition of a logic 1. However, standard 5V TTL outputs guarantee only V_OH(min) = 2.4 V (due to internal bipolar transistor voltage drops). Because 2.4 V is well below 3.5 V, a TTL HIGH lands directly in the 74HC indeterminate transition region (1.5 V to 3.5 V), causing erratic switching or oscillations. On the LOW side, TTL V_OL(max) = 0.4 V easily satisfies the 74HC V_IL(max) = 1.5 V requirement. Option (c) is wrong because CMOS inputs draw virtually no current (high input impedance).",
+      explanation: "5V 74HC CMOS gates require an input voltage of at least V_IH(min) = 0.7 × V_CC = 3.5 V to guarantee recognition of a logic 1. However, standard 5V TTL outputs guarantee only V_OH(min) = 2.4 V (because TTL totem-pole upper stages use an NPN emitter follower and series diode that drop roughly 1.4 V from the 5V rail). Because 2.4 V is well below 3.5 V, a TTL HIGH lands directly in the 74HC indeterminate transition region (1.5 V to 3.5 V), causing erratic switching or oscillations. On the LOW side, TTL V_OL(max) = 0.4 V easily satisfies the 74HC V_IL(max) = 1.5 V requirement. Option (c) is wrong because CMOS inputs draw virtually no current (high input impedance).",
     },
     {
       id: "q5",

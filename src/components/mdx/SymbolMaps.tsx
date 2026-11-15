@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { btn, btnPrimary, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { Panel } from "@/components/mdx/MatrixVisualizers";
+import { Panel, Toggle, btn, btnPrimary } from "@/components/mdx/vizKit";
 import { TimingDiagram } from "@/components/mdx/LogicVisualizers";
 import type { Bit } from "@/lib/logic";
 import { shiftRegisterStep, simulateRippleStep, simulateSynchronousStep } from "@/lib/datapath";
@@ -487,6 +486,7 @@ export function SchematicMarks() {
     const qn: Bit = sig ? 0 : 1;
     stage = (
       <>
+        <path d="M75,80 H120" strokeWidth={3} className={`transition-colors ${wire(!!sig)}`} />
         <rect x={120} y={30} width={120} height={100} rx={4} strokeWidth={2} className="fill-card stroke-foreground/70" />
         <text x={180} y={70} textAnchor="middle" className={small}>stored bit</text>
         <text x={180} y={98} textAnchor="middle" className="fill-foreground font-mono text-[24px] font-bold">{sig}</text>
@@ -961,11 +961,12 @@ function FFBox({
         </g>
       ))}
       {right.map((p) => (
-        <g key={p.name}>
+        <g key={`${p.name}-${p.y}`}>
           {p.bubble && <circle cx={x + w + 5} cy={p.y} r={5} strokeWidth={2} className={`fill-card ${H("out-bubble")}`} />}
           <text x={x + w - 5} y={p.y + 4} textAnchor="end" className={`${T(`pin:${p.name}`)} font-mono text-[12px] select-none`}>
             {p.name}
           </text>
+          {p.over && <path d={`M${x + w - 13},${p.y - 9} H${x + w - 5}`} strokeWidth={1.3} className={H(`pin:${p.name}`)} />}
         </g>
       ))}
       {value}
@@ -1572,6 +1573,7 @@ export function CounterSchematic({ start = "ripple" }: { start?: "ripple" | "syn
   const [busy, setBusy] = useState(false);
   const [pulse, setPulse] = useState(0);
   const [hist, setHist] = useState<number[]>([0]);
+  const [rippleStyle, setRippleStyle] = useState<"q" | "qbar">("q");
   const timers = useTimers();
   const bits = mode === "ripple" ? 4 : 3;
 
@@ -1633,7 +1635,69 @@ export function CounterSchematic({ start = "ripple" }: { start?: "ripple" | "syn
   const settling = busy && mode === "ripple" && trail.length > 1 && shown !== simulateRippleStep(trail[0], 4).to;
 
   let drawing: ReactNode;
-  if (mode === "ripple") {
+  if (mode === "ripple" && rippleStyle === "qbar") {
+    // As on the lecture slide: rising-edge flip-flops, each clocked by the Q-bar of the one before,
+    // with every T fed from one count-enable line held at 1.
+    const BX = (i: number) => 112 + i * 138;
+    drawing = (
+      <svg viewBox="0 0 680 210" className="w-full min-w-[560px] block" role="img" aria-label={`Ripple counter clocked from Q-bar, showing ${bin(shown, 4)}`}>
+        <path d={`M40,50 H${BX(3) - 14}`} strokeWidth={2.4} className="stroke-mint" />
+        <text x={40} y={40} className="fill-mint font-mono text-[11px]">count enable (= 1)</text>
+        <path d={`M40,140 H${BX(0)}`} strokeWidth={2.4} className="stroke-sky/70" />
+        <text x={20} y={160} className="fill-sky font-mono text-[11px]">count pulses</text>
+        {pulse > 0 && !reducedMotion() && (
+          <circle key={pulse} r={6} className="fill-neon">
+            <animateMotion dur="0.3s" fill="freeze" path={`M40,140 H${BX(0)}`} />
+            <animate attributeName="opacity" values="1;1;0" dur="0.4s" fill="freeze" />
+          </circle>
+        )}
+        {[0, 1, 2, 3].map((i) => {
+          const x = BX(i);
+          const v = q(i);
+          const nv = (1 - v) as Bit;
+          const hot = active.includes(i);
+          return (
+            <g key={i}>
+              <path d={`M${x - 14},50 V100 H${x}`} fill="none" strokeWidth={2.2} className="stroke-mint" />
+              {i > 0 && <Dot x={x - 14} y={50} on />}
+              <FFBox
+                x={x}
+                y={76}
+                w={80}
+                h={84}
+                title={`Q${i}`}
+                left={[
+                  { name: "T", y: 100 },
+                  { name: "C", y: 140, clock: "rising" },
+                ]}
+                right={[
+                  { name: "Q", y: 100 },
+                  { name: "Q", y: 140, bubble: true, over: true },
+                ]}
+                stroke={hot ? "stroke-neon" : ink}
+                fill={hot ? "fill-neon/15" : "fill-card"}
+                value={
+                  <text x={x + 40} y={124} textAnchor="middle" className="fill-foreground font-mono text-[22px] font-bold select-none">
+                    {v}
+                  </text>
+                }
+              />
+              <path d={`M${x + 80},100 H${x + 100}`} strokeWidth={2.4} className={wire(!!v)} />
+              {i < 3 && (
+                <path
+                  d={`M${x + 90},140 H${BX(i + 1)}`}
+                  strokeWidth={2.4}
+                  className={`transition-colors ${active.includes(i + 1) ? "stroke-neon" : wire(!!nv)}`}
+                />
+              )}
+              <text x={x + 40} y={178} textAnchor="middle" className={small}>Q̄{i} = {nv}</text>
+            </g>
+          );
+        })}
+        <text x={112} y={200} className={small}>Each Q̄ clocks the next stage, which flips when that wire rises 0 → 1 (as Q falls).</text>
+      </svg>
+    );
+  } else if (mode === "ripple") {
     const BX = (i: number) => 112 + i * 138;
     drawing = (
       <svg viewBox="0 0 680 200" className="w-full min-w-[560px] block" role="img" aria-label={`Ripple counter showing ${bin(shown, 4)}`}>
@@ -1766,6 +1830,16 @@ export function CounterSchematic({ start = "ripple" }: { start?: "ripple" | "syn
         ]}
         onChange={switchMode}
       />
+      {mode === "ripple" && (
+        <Toggle<"q" | "qbar">
+          value={rippleStyle}
+          options={[
+            ["q", "falling edge, clocked by Q"],
+            ["qbar", "rising edge, clocked by Q̄"],
+          ]}
+          onChange={setRippleStyle}
+        />
+      )}
       <div className="rounded-xl bg-secondary/30 p-3 overflow-x-auto">
         <div className="flex flex-col items-center gap-3">
           <div className="w-full min-w-0 overflow-x-auto">{drawing}</div>
@@ -1805,7 +1879,9 @@ export function CounterSchematic({ start = "ripple" }: { start?: "ripple" | "syn
         </div>
       )}
       <p className="rounded-lg border-l-[3px] border-violet/50 bg-violet/[0.05] px-4 py-2.5 text-[15px] leading-relaxed">
-        {mode === "ripple"
+        {mode === "ripple" && rippleStyle === "qbar"
+          ? "Same counter, other wiring. When Q0 falls 1 → 0, its bubbled output (Q-bar) rises 0 → 1, and that rising edge clocks stage 1, so each stage still flips when the one before it falls. Jump to 7 and count: the in-between values 6, 4 and 0 are the same."
+          : mode === "ripple"
           ? "Jump to 7, then count. Q0 flips and falls, which clocks Q1, which falls and clocks Q2, and so on. With 10 ns per stage the outputs pass through 6, 4 and 0 before reaching 8 at 40 ns."
           : "Every flip-flop sees the same clock edge. The wires decide in advance which ones flip: T0 is tied to 1, T1 = A0, T2 = A1·A0 (orange boxes flip on the next edge). All the flips happen together, so there are no in-between values."}
       </p>

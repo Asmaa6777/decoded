@@ -9,7 +9,7 @@ To build circuits for addition, subtraction, multiplication, and division, hardw
 
 ## Unsigned binary arithmetic
 
-In digital arithmetic, addition combines two numbers: the **augend** (the first operand) and the **addend** (the number added) to produce a **sum** and a **carry-out**. Subtraction combines the **minuend** (the starting quantity) and the **subtrahend** (the quantity deducted) to produce a **difference** and a **borrow**.
+In digital arithmetic, addition combines two numbers: the **augend** (first operand $A$) and the **addend** (second operand $B$) to produce a **sum** ($S = A + B$) and a **carry-out**. Subtraction combines the **minuend** ($M$) and the **subtrahend** ($S$) to produce a **difference** ($D = M - S$) and a **borrow**. In modern programming languages, these are simply referred to as the first and second operands.
 
 Unsigned arithmetic works only on non-negative numbers $[0, 2^n - 1]$. The rules for single-bit binary addition follow decimal column addition, with only two allowed digits (0 and 1):
 
@@ -55,7 +55,7 @@ Binary subtraction can also be performed by hand using the traditional borrowing
 - $0 - 0 = 0$, borrow $0$
 - $1 - 0 = 1$, borrow $0$
 - $1 - 1 = 0$, borrow $0$
-- $0 - 1 = 1$, borrow $1$ from the next higher column (a borrow brings in $2$ from the next column; $2 - 1 = 1$)
+- $0 - 1 = 1$, borrow $1$ from the next higher column (because the radix is 2, borrowing brings in 2 units, just as borrowing in base 10 brings in 10; $2 - 1 = 1$)
 
 ```
 Borrows:       1  1  1
@@ -71,7 +71,7 @@ Direct borrowing is familiar on paper, but separate borrowing circuits in silico
 
 ## How do you write a negative number with only 0 and 1?
 
-A register is a bank of flip-flops storing $n$ bits. Because wires cannot carry a negative sign, hardware designers evaluated three conventions for signed numbers.
+A register is a bank of flip-flops storing $n$ bits in the CPU's [arithmetic logic unit](/courses/computer-organization/inside-the-cpu). Because wires cannot carry a negative sign, hardware designers evaluated three conventions for signed numbers.
 
 ### 1. Signed-magnitude
 
@@ -102,7 +102,7 @@ Subtracting a binary number from $111\dots1_2$ flips every $0 \to 1$ and $1 \to 
 
 **Drawbacks:**
 1. **Two zeros:** Both $+0 = 00000000_2$ and $-0 = 11111111_2$ exist.
-2. **End-around carry:** When adding numbers, any carry-out from the MSB has weight $2^n \equiv 1 \pmod{2^n - 1}$. It must loop back and be added to the least significant bit, which takes an extra addition step.
+2. **End-around carry:** When adding numbers, any carry-out from the MSB has weight $2^n = (2^n - 1) + 1$. Because the 1's complement number line wraps at $2^n - 1$, that carry has wrapped around the modulus and must loop back to be added into the least significant bit ($+1$), requiring a slower two-step addition in hardware.
 
 ### 3. Signed two's complement
 
@@ -112,7 +112,7 @@ $$
 -N = 2^n - N = ((2^n - 1) - N) + 1
 $$
 
-The advantage of **two's complement** is that the MSB acts as a positional weight with a **negative value**:
+In an $n$-bit register, flipping the MSB from 0 to 1 adds $2^{n-1}$. But because register arithmetic wraps modulo $2^n$, that value is equivalent to $2^{n-1} - 2^n = -2^{n-1}$. Thus, in **two's complement**, the MSB acts as a positional weight with an intrinsically **negative value**:
 
 $$
 N = -a_{n-1} 2^{n-1} + \sum_{i=0}^{n-2} a_i 2^i
@@ -173,7 +173,7 @@ $$
 -2^n + 2^{n-1} = -2^{n-1}(2 - 1) = -2^{n-1}
 $$
 
-The mathematical sum of the two new high bits is identical to the old negative MSB weight!
+The mathematical sum of the two new high bits is identical to the old negative MSB weight. For example, extending 4-bit `1011` ($-8 + 3 = -5$) to 8-bit `11111011` sets the new sign bit to $-128$, but adds positive weights $+64 + 32 + 16 + 8 = +120$. The net sum of the extension bits is $-128 + 120 = -8$, preserving the exact numerical value $-8 + 3 = -5$.
 
 <Callout tone="orange" label="Mistake students make">
 **Zero-extending signed negative numbers.** Padding higher bits with zeros works only for unsigned integers. If you zero-extend the 4-bit signed number `1011` ($-5$) into 8 bits as `00001011`, the number becomes $+11_{10}$. Negative signed numbers must replicate the sign bit (`11111011` $= -5_{10}$).
@@ -271,7 +271,7 @@ The sign rule states:
 2. If you add two negative numbers and obtain a positive result $\implies$ **Overflow occurred**.
 3. Adding a positive number and a negative number **can never overflow**, because the magnitude of the sum is always smaller than the larger operand.
 
-Hardware detects signed overflow using a single XOR gate. Let $C_{n-1}$ be the carry entering the sign bit (MSB), and let $C_n$ be the carry exiting the sign bit:
+Hardware detects signed overflow using a single XOR gate. In an $n$-bit adder, $C_{n-1}$ is the carry entering the most significant full adder stage (the sign column, bit $n-1$), while $C_n$ is the carry exiting that sign stage into the final carry-out pin. When only one of these two carries is asserted ($C_{n-1} \ne C_n$), the sign bit flips incorrectly:
 
 $$
 \text{Overflow } V = C_{n-1} \oplus C_n

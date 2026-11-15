@@ -1,4 +1,6 @@
 import { Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/algorithm-design-and-analysis/questions";
 
 # Quiz: Searching, Graphs, Greedy & DP
 
@@ -8,102 +10,5 @@ The second half of the course in eight questions. Get 6 right to pass and finish
   courseSlug="algorithm-design-and-analysis"
   lessonSlug="final-quiz"
   passThreshold={6/8}
-  questions={[
-    {
-      id: "q1",
-      prompt: "What does binary search require that linear search doesn't?",
-      options: [
-        { id: "a", text: "The array must have no duplicates" },
-        { id: "b", text: "The array must be sorted" },
-        { id: "c", text: "The array length must be a power of two" },
-        { id: "d", text: "The target must be in the array" },
-      ],
-      correctOptionId: "b",
-      explanation: "Discarding half the array is only valid if everything on one side of the midpoint is smaller and everything on the other side is larger, which is the definition of a sorted array. Option A is incorrect because binary search works on arrays with duplicate keys (it returns one matching index). Option C is incorrect because integer midpoint division handles any array size. Option D is incorrect because binary search handles absent keys gracefully, terminating when low exceeds high and returning -1.",
-    },
-    {
-      id: "q2",
-      prompt: "Roughly how many comparisons does binary search need, in the worst case, on a sorted array of 1,000,000 elements?",
-      options: [
-        { id: "a", text: "About 20" },
-        { id: "b", text: "About 1,000" },
-        { id: "c", text: "About 500,000" },
-        { id: "d", text: "About 1,000,000" },
-      ],
-      correctOptionId: "a",
-      explanation: "Each comparison cuts the search window in half: log₂(1,000,000) ≈ 19.93, so binary search requires at most 20 comparisons. Option B (1,000) corresponds to square-root block jump search (O(√n)). Option C (500,000) is the average case for linear search (n/2). Option D (1,000,000) is the worst-case comparison count for linear search.",
-    },
-    {
-      id: "q3",
-      prompt: "Using Euclid's algorithm, what is gcd(60, 24)?",
-      options: [
-        { id: "a", text: "6" },
-        { id: "b", text: "12" },
-        { id: "c", text: "24" },
-        { id: "d", text: "4" },
-      ],
-      correctOptionId: "b",
-      explanation: "Dividing 60 by 24 gives remainder 12 (60 = 2 × 24 + 12), reducing the problem to gcd(24, 12). Next, 24 mod 12 = 0 (24 = 2 × 12 + 0), halting with gcd(12, 0) = 12. Options A and D (6 and 4) are common divisors of 60 and 24, but neither is the greatest common divisor. Option C (24) is a divisor of 24, but fails to divide 60 evenly (60 mod 24 = 12).",
-    },
-    {
-      id: "q4",
-      prompt: "Which data structure does breadth-first search (BFS) use to decide what to visit next?",
-      options: [
-        { id: "a", text: "A stack" },
-        { id: "b", text: "A queue" },
-        { id: "c", text: "A sorted array" },
-        { id: "d", text: "A hash table" },
-      ],
-      correctOptionId: "b",
-      explanation: "BFS uses a FIFO queue, so vertices are explored in the order they were discovered: level by level in concentric ripples. Option A (a stack) is used by Depth-First Search (DFS) to explore paths deeply before backtracking. Option C (a sorted array) is used for binary search or static lookups, not dynamic frontier traversal. Option D (a hash table) is used for constant-time key-value lookups or tracking visited sets, but does not provide the ordered first-in, first-out scheduling that BFS requires.",
-    },
-    {
-      id: "q5",
-      prompt: "What is the time complexity of BFS and DFS on a graph stored as an adjacency list?",
-      options: [
-        { id: "a", text: "O(V)" },
-        { id: "b", text: "O(V × E)" },
-        { id: "c", text: "O(V + E)" },
-        { id: "d", text: "O(V²) always" },
-      ],
-      correctOptionId: "c",
-      explanation: "Each vertex is enqueued/pushed and processed once (O(V)), and each edge is examined a constant number of times when scanning adjacency lists (twice for undirected graphs, O(E)), giving O(V + E) total time. Option A (O(V)) is incomplete because it ignores the time spent scanning edges incident to each vertex. Option B (O(V × E)) is a classic misconception: the inner loop does not scan all E edges for every vertex, but only the edges incident to that vertex, which sum to 2E over the whole traversal by the Handshaking Lemma. Option D (O(V²)) is the time complexity when using an adjacency matrix, where finding neighbors requires scanning a whole row of size V for every vertex.",
-    },
-    {
-      id: "q6",
-      prompt: "Each choice a greedy algorithm makes must be feasible, locally optimal, and…",
-      options: [
-        { id: "a", text: "Reversible" },
-        { id: "b", text: "Random" },
-        { id: "c", text: "Irrevocable" },
-        { id: "d", text: "Recursive" },
-      ],
-      correctOptionId: "c",
-      explanation: "Once a greedy choice is made, it is irrevocable: it is never reconsidered or undone. This keeps greedy algorithms fast and simple, though it can cause them to miss the global optimum if an early decision was suboptimal. Option A (Reversible) is incorrect because greedy algorithms do not backtrack. Option B (Random) is incorrect because greedy choices follow deterministic local criteria. Option D (Recursive) is incorrect because greedy algorithms are typically implemented as iterative loops.",
-    },
-    {
-      id: "q7",
-      prompt: "In Kruskal's algorithm, what happens to the next cheapest edge if both of its ends are already in the same tree?",
-      options: [
-        { id: "a", text: "It is rejected, because it would create a cycle" },
-        { id: "b", text: "It replaces the most expensive edge in the tree" },
-        { id: "c", text: "It is added, because it is the cheapest one left" },
-        { id: "d", text: "The algorithm starts again from that edge" },
-      ],
-      correctOptionId: "a",
-      explanation: "A spanning tree is strictly acyclic. If an edge's endpoints already belong to the same component of the forest, a path already links them, so adding the edge would form a cycle; Kruskal's algorithm immediately discards it and continues. Option B describes dynamic tree cycle maintenance, not Kruskal's edge scan. Option C violates the tree property by creating a cycle. Option D is incorrect because Kruskal advances strictly forward through the sorted edge list without restarting.",
-    },
-    {
-      id: "q8",
-      prompt: "In the 0/1 knapsack table, item i (weight wᵢ, value vᵢ) fits in capacity w. What is V[i, w]?",
-      options: [
-        { id: "a", text: "V[i−1, w] + vᵢ" },
-        { id: "b", text: "max(V[i−1, w], vᵢ + V[i−1, w − wᵢ])" },
-        { id: "c", text: "max(V[i, w−1], V[i−1, w])" },
-        { id: "d", text: "vᵢ / wᵢ" },
-      ],
-      correctOptionId: "b",
-      explanation: "When item i fits within capacity w, we take the maximum between skipping it (V[i−1, w]) and taking it (vᵢ plus V[i−1, w − wᵢ], which uses remaining capacity w − wᵢ on the earlier i−1 items). Option A ignores capacity constraints by adding vᵢ without deducting wᵢ. Option C compares adjacent cells without accounting for item value or weight. Option D is the greedy value density heuristic used in fractional knapsack problems, not the dynamic programming recurrence.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "final-quiz")}
 />

@@ -1,6 +1,8 @@
 import { Suspense, useEffect, useState, useMemo, useRef } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { MDXProvider } from "@mdx-js/react";
+// KaTeX styles only matter where formulas render, so they load with this page.
+import "katex/dist/katex.min.css";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getLesson, lessonNeighbors, lessonKind } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
@@ -13,6 +15,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Flag, PanelLeft } from "lucide-react";
 import { reportMistakeUrl } from "@/lib/reportMistake";
 import { writeLastLesson } from "@/lib/progressStore";
+import { LessonLearners } from "@/components/LearnerCounts";
 import { scrollToSection } from "@/lib/scrollToSection";
 
 const SIDEBAR_KEY = "decoded:sidebar-open";
@@ -28,9 +31,11 @@ function readSidebarPref() {
 // links to other lessons get a hover preview of the definition they point at
 const mdxComponents = { pre: CodeBlock, a: LessonLink };
 
+/** At least a screen tall, so "Mark as complete" and the previous/next links start off
+ *  screen; otherwise the arriving lesson shoves them down, a large layout shift. */
 function LessonSkeleton() {
   return (
-    <div role="status" aria-label="Loading lesson" className="animate-pulse space-y-4 py-4">
+    <div role="status" aria-label="Loading lesson" className="animate-pulse space-y-4 py-4 min-h-screen">
       <div className="h-10 w-2/3 bg-secondary" />
       <div className="h-4 w-full bg-secondary" />
       <div className="h-4 w-11/12 bg-secondary" />
@@ -186,6 +191,7 @@ export default function LessonPage() {
 
           <div className="flex items-center gap-3 mb-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
             <span>{lesson.duration} read</span>
+            <LessonLearners course={course.slug} lesson={lesson.slug} />
           </div>
 
           <MDXProvider components={mdxComponents}>

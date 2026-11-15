@@ -1,4 +1,17 @@
-@import "katex/dist/katex.min.css";
+/* Self-hosted fonts (Fontsource, same files and unicode ranges as Google Fonts).
+   Only these weights exist, so stick to them. The Latin files used above the
+   fold are preloaded by preloadFonts in vite.config.ts. */
+@import "@fontsource/syne/400.css";
+@import "@fontsource/syne/600.css";
+@import "@fontsource/syne/700.css";
+@import "@fontsource/syne/800.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource/lora/400.css";
+@import "@fontsource/lora/500.css";
+@import "@fontsource/lora/400-italic.css";
+@import "@fontsource/lora/500-italic.css";
 
 @tailwind base;
 @tailwind components;
@@ -264,7 +277,7 @@
   .prose-reading ul:not(:where(.not-prose, .not-prose *)) { list-style: disc; }
   .prose-reading ol:not(:where(.not-prose, .not-prose *)) { list-style: decimal; }
   .prose-reading li { margin-bottom: .5rem; }
-  .prose-reading blockquote {
+  .prose-reading blockquote:not(:where(.not-prose, .not-prose *)) {
     border-left: 3px solid hsl(var(--orange));
     padding-left: 1.25rem;
     margin: 1.5rem 0;
@@ -389,4 +402,40 @@
 .cm-draw { animation: cm-draw 500ms ease-out; }
 @media (prefers-reduced-motion: reduce) {
   .cm-draw { animation: none; }
+}
+
+/* ---------- Site motion ----------
+   Short and quiet, never needed to read anything, and off when the
+   visitor asks for reduced motion. */
+
+/* Each page fades in on navigation. Opacity only: a transform here
+   would break position: fixed for everything inside the page. */
+@keyframes page-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.page-in { animation: page-in 260ms ease-out; }
+
+/* Something rising into place. Set --d for a delay, e.g. style={{ "--d": "120ms" }}. */
+/* No "to" frame, so it ends on the element's own opacity (a faded card stays faded). */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+}
+.rise-in { animation: rise-in 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--d, 0ms); }
+
+/* Cards wait hidden until they scroll into view (useReveal adds data-shown).
+   It fills backwards only, so once it ends the element's own opacity,
+   transform and hover styles apply as usual. */
+.reveal[data-shown="false"] { opacity: 0; }
+.reveal[data-shown="true"] { animation: rise-in 520ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards; animation-delay: var(--d, 0ms); }
+
+/* A link underline that draws in from the left on hover. */
+.link-draw { background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size 220ms ease-out, color 150ms; }
+.link-draw:hover, .link-draw:focus-visible, .link-draw[aria-current="page"] { background-size: 100% 1px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-in, .rise-in { animation: none; }
+  .reveal[data-shown="false"] { opacity: 1; }
+  .reveal[data-shown="true"] { animation: none; }
+  .link-draw { transition: none; }
 }

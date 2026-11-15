@@ -49,3 +49,18 @@ export const prerequisites: Record<string, string[]> = {
   microprocessors: ["logic-design", "computer-organization"],
   "computer-architecture": ["logic-design", "computer-organization", "microprocessors"],
 };
+
+/** Subject groups for the track filter on the home page. Every course belongs to exactly one. */
+export type TrackGroup = { slug: string; title: string; courses: string[] };
+
+export const trackGroups: TrackGroup[] = [
+  { slug: "foundations", title: "Foundations", courses: ["computer-literacy", "the-exam-mind", "discrete-mathematics"] },
+  { slug: "machine", title: "The machine", courses: ["logic-design", "computer-organization", "microprocessors", "computer-architecture"] },
+  {
+    slug: "algorithms",
+    title: "Algorithms & maths",
+    courses: ["algorithm-design-and-analysis", "data-structures", "computational-mathematics", "advanced-algorithms"],
+  },
+  { slug: "systems", title: "Systems", courses: ["operating-systems", "computer-networks", "distributed-systems"] },
+  { slug: "theory", title: "Theory & graphics", courses: ["theory-of-computation", "computer-graphics"] },
+];

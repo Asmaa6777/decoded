@@ -6,7 +6,7 @@ import { ClockExplorer, RaceAroundLab } from "@/components/mdx/LogicVisualizers"
 
 The unclocked [SR latch](/courses/logic-design/sr-latch) responds to its inputs at all times. In a system with many gates, this creates problems. Combinational logic produces temporary glitches as signals travel along paths of different lengths. If memory elements reacted to every glitch, data would corrupt constantly.
 
-To build predictable computing machines, state updates must be synchronized. Memory elements must only listen to their inputs when commanded by a dedicated control line. In digital electronics, this synchronization signal is called the **enable** input ($EN$) or the system **clock** ($C$ or $CLK$).
+To build predictable computing machines, state updates must be synchronized. Memory elements must only listen to their inputs when commanded by a dedicated control line. In digital electronics, this synchronization signal is called the **enable** input ($EN$) or the system [clock](/courses/computer-organization/machine-cycle) ($C$ or $CLK$).
 
 ## Adding Control: The Gated SR Latch
 
@@ -137,7 +137,7 @@ A periodic clock waveform is characterized by several fundamental timing paramet
    (0 -> 1)                (1 -> 0)
 ```
 
-1. **Clock Period ($T$):** The total time required to complete one full cycle (seconds).
+1. **Clock Period ($T$):** The total time required to complete one full cycle (seconds). In modern processors, the clock period dictates the [execution time per instruction](/courses/computer-architecture/measuring-performance).
 2. **Clock Frequency ($f$):** The number of cycles completed per second:
    $$f = \frac{1}{T} \qquad (\text{Hertz, Hz})$$
 3. **Pulse Width / High Time ($t_H$ or $t_w$):** The duration during which the clock voltage remains at logic 1.
@@ -179,7 +179,7 @@ Suppose the clock rises to $C = 1$:
 
 $$0 \longrightarrow 1 \longrightarrow 0 \longrightarrow 1 \longrightarrow 0 \dots$$
 
-The circuit oscillates at a frequency set by its own gate delays. When the clock pulse falls back to 0 ($C \to 0$), the value stored in the latch is unpredictable, depending on the exact instant the clock edge fell.
+The circuit oscillates at a frequency set by its own gate delays. Notice that this oscillation only occurs while $C = 1$. When the clock pulse falls back to 0 ($C \to 0$), the front-end gates close, freezing whatever value happened to be on $D$ at that exact instant. Because gate delays vary with temperature and manufacturing tolerances, the final stored bit is completely unpredictable.
 
 This timing problem is known as the **race-around condition** (or feedback transparency hazard). A level-sensitive transparent latch cannot safely update its own state based on feedback.
 
@@ -312,7 +312,7 @@ This matches the standard characteristic equation.
 
 ### Problem 3: Calculating Safe Feedback Conditions
 
-An engineer attempts to build a frequency divider using a transparent gated D latch with $Q'$ wired back to $D$ through an inverter. The latch has propagation delay $t_{pd} = 1.2\text{ ns}$, and the external inverter has delay $t_{inv} = 0.8\text{ ns}$.
+An engineer attempts to build a frequency divider using a transparent gated D latch with primary output $Q$ wired back to data input $D$ through an inverter (setting $D = Q'$). The latch has propagation delay $t_{pd} = 1.2\text{ ns}$, and the external inverter has delay $t_{inv} = 0.8\text{ ns}$.
 1. What is the total loop feedback delay $t_{loop}$?
 2. What is the maximum clock high pulse width $t_H$ that can be permitted before the race-around oscillation occurs?
 3. Explain why this constraint makes transparent latches impractical for edge-synchronized counters.
@@ -347,7 +347,7 @@ Analyze the behavior of a 4-NAND gated SR latch under invalid input conditions:
    - Recall that any 0 input into a NAND gate unconditionally forces its output to 1:
      $$Q = (\bar{S} \cdot Q')' = (0 \cdot Q')' = 1$$
      $$Q' = (\bar{R} \cdot Q)' = (0 \cdot Q)' = 1$$
-   - Both outputs are driven to logic 1 simultaneously ($Q = 1, Q' = 1$), destroying their complementary relationship.
+   - Both outputs are driven to logic 1 simultaneously ($Q = 1, Q' = 1$), destroying their complementary relationship. In CMOS circuits this does not cause a short circuit (both pull-up PMOS networks connect to $V_{DD}$), but the stored state is invalid.
 
 2. **Race Condition Trace upon Clock Falling Edge ($C \to 0$):**
    - As $C$ falls to 0, both front-end NAND gates attempt to pull their outputs up to 1 ($\bar{S} \to 1$ and $\bar{R} \to 1$).

@@ -5,7 +5,7 @@ import { MemoryUnit, CoincidentMemoryLab, MemoryExpansionLab } from "@/component
 
 We have built basic logic gates, assembled them into combinational arithmetic adders and multiplexers, introduced feedback loops to create latches and edge-triggered flip-flops, and chained flip-flops into multi-bit registers and counters.
 
-Now, we combine all of these fundamental components to build the primary memory of a computer: **Random-Access Memory (RAM)**.
+Now, we combine all of these fundamental components to build the primary memory of a computer: **Random-Access Memory (RAM)**, occupying the central tier of the [memory hierarchy](/courses/computer-organization/memory-hierarchy).
 
 Think of computer memory as a massive grid of numbered post-office boxes:
 - Each box stores a fixed-length group of bits called a **word**.
@@ -137,7 +137,7 @@ For a 1024-word memory ($k = 10$ address lines):
 
 ## Tri-State Logic and Shared System Buses
 
-In a computer, multiple subsystems (RAM, ROM, CPU, disk controllers, network cards) must exchange data over a common set of shared physical wires called the **system data bus**.
+In a computer, multiple subsystems (RAM, ROM, CPU, disk controllers, network cards) must exchange data over a common set of shared physical wires called the system [data bus](/courses/computer-organization/buses#width-is-everything).
 
 If two conventional logic gates were connected to the same wire, and one tried to output logic 1 ($+5\text{ V}$) while the other output logic 0 ($0\text{ V}$), a direct low-resistance short circuit would form. The resulting catastrophic current spike (called **bus contention** or a **bus fight**) would overheat and destroy the semiconductor transistors.
 
@@ -153,7 +153,7 @@ To share a bus safely, circuits use **tri-state buffers** (three-state logic):
 A tri-state buffer has three possible electrical output states:
 1. **Logic 0:** Low voltage ($0\text{ V}$).
 2. **Logic 1:** High voltage ($+3.3\text{ V}$ or $+5\text{ V}$).
-3. **High-Impedance ($\text{Hi-Z}$):** The output transistors are completely switched off. The terminal acts as an open circuit (virtual infinite electrical resistance), disconnecting the device from the wire.
+3. **High-Impedance ($\text{Hi-Z}$):** The output transistors are completely switched off. The terminal acts as an open circuit (virtual infinite electrical resistance), disconnecting the device from the wire. $\text{Hi-Z}$ is not a third voltage level like 0 V or 2.5 V: it is an electrical disconnection that draws no current and drives no voltage, allowing whichever device is active to dictate the bus voltage without electrical conflict.
 
 When a memory chip is not actively being read, its internal tri-state output buffers are placed in $\text{Hi-Z}$. This allows other chips to transmit data across the shared wires without interference.
 
@@ -191,7 +191,7 @@ Data Out     ------------------------------+======= Valid ==
 | **Cost per Bit** | High | Very low | Low |
 | **Volatility** | Volatile (loses data on power loss) | Volatile (loses data on power loss) | Non-volatile (retains data permanently) |
 | **Refresh Needed?** | No refresh required | **Must be refreshed** every $64\text{ ms}$ | No |
-| **Primary Use** | CPU L1/L2/L3 caches, register files | Main system memory (DDR4, DDR5) | Boot firmware (BIOS/UEFI), lookup tables |
+| **Primary Use** | CPU [processor caches](/courses/computer-architecture/cache-mapping#three-ways-to-map), register files | [Main memory](/courses/computer-architecture/main-memory) (DDR4, DDR5) | Boot firmware (BIOS/UEFI), lookup tables |
 
 Because DRAM stores each bit as a microscopic electrostatic charge on a capacitor, that charge leaks away through silicon sub-threshold leakage within milliseconds. A DRAM controller must perform periodic **refresh cycles** (reading and re-amplifying every row thousands of times per second) to preserve stored data.
 
@@ -312,6 +312,7 @@ Design an **$8\text{K} \times 16$** memory system using commercial **$2\text{K} 
    - In every bank of two chips:
      - The first chip connects to data bus lines $D_7 \dots D_0$ (low byte).
      - The second chip connects to data bus lines $D_{15} \dots D_8$ (high byte).
+   - Bank 0 pairs Chip 0 (low byte) and Chip 1 (high byte). Bank 1 pairs Chip 2 and Chip 3. Bank 2 pairs Chip 4 and Chip 5. Bank 3 pairs Chip 6 and Chip 7.
    - All 4 low-byte chips wire their data pins to $D_7 \dots D_0$, and all 4 high-byte chips wire their data pins to $D_{15} \dots D_8$.
    - /WE connects in parallel to all 8 chips.
 </ModelAnswer>
@@ -389,7 +390,7 @@ A standard CMOS Static RAM (SRAM) cell consists of six transistors: two PMOS pul
 2. **Read Stability Constraint (Cell Ratio $\beta$):**
    - If $V_{bump}$ rises above the threshold voltage $V_{th(N_R)}$ of the opposing NMOS driver $N_R$, $N_R$ will turn ON, discharging $Q'$ and accidentally flipping the stored bit!
    - To keep $V_{bump}$ safely below $V_{th}$, driver transistor $N_L$ must have much lower resistance than access transistor $A_L$.
-   - Lower resistance requires a wider channel: the **cell ratio** is defined as:
+   - Because channel resistance is inversely proportional to transistor channel width ($R_{on} \propto 1/W$), lower resistance requires a wider channel. The **cell ratio** is defined as:
      $$\beta = \frac{(W/L)_{driver}}{(W/L)_{access}} = \frac{(W/L)_{N_L}}{(W/L)_{A_L}} \ge 1.2 \text{ to } 1.5$$
    - The pull-down NMOS driver must be physically wider (stronger) than the access transistor.
 

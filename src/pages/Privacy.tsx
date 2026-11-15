@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import {
@@ -61,14 +62,40 @@ export default function Privacy() {
             <li>the address of your profile picture, and your username if you use GitHub, shown in your account menu</li>
             <li>the courses you've registered for, the lessons you've completed, your best quiz scores, and when</li>
             <li>a sign-in session, kept in a cookie that lasts up to 90 days</li>
+            <li>if you make a profile, the handle you chose and whether it's public</li>
+            <li>who you study each course with, if you invite someone or accept an invite</li>
           </ul>
           <p>
             Decoded doesn't store your email address, password or your name from Google. The data is held on Cloudflare,
             and the cookie is used only to keep you signed in.
           </p>
 
+          <h2 className="font-display">Public profiles</h2>
+          <p>
+            A profile is off until you turn it on. While it's on, anyone can see your handle, your profile picture, when
+            you joined, and the courses you take with how many lessons you've completed, and can find you by searching
+            your handle. Your quiz scores are never shown. Turn it off on{" "}
+            <Link to="/profile">your profile page</Link> and it disappears at once, though your handle stays reserved for
+            you.
+          </p>
+          <p>
+            If you report a profile, Decoded keeps who sent the report, the reason and when, so the team can review it.
+            The person you report isn't told who you are.
+          </p>
+
+          <h2 className="font-display">Study companions</h2>
+          <p>
+            You can study a course with someone by sending them an invite link, which works once and expires after 7 days.
+            Nobody can become your companion without a link you sent them. Companions see each other's handle, picture
+            and progress in that one course: how many lessons are done and the latest one. They don't see quiz scores or
+            your other courses. Either of you can remove the other at any time, and they aren't told. If you turn your
+            profile off, you disappear from your companions' lists until you turn it back on.
+          </p>
+
           <h2 className="font-display">Deleting your data</h2>
-          <p>Deleting your account removes your account, sessions, registrations and saved progress straight away.</p>
+          <p>
+            Deleting your account removes your account, sessions, registrations, saved progress, profile and companions straight away.
+          </p>
           {status === "signed-in" ? (
             <AlertDialog>
               <AlertDialogTrigger asChild>

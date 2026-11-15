@@ -1,6 +1,9 @@
 # Decoded — Brand Guide
 
-A reference for keeping the look, voice, and feel of Decoded consistent across new lessons, marketing copy, social posts, and AI-generated content. Hand this file to any LLM (or human) producing content for the site and tell them to match it.
+A reference for keeping the look and feel of Decoded consistent across pages, marketing copy, social posts, and AI-generated content. Hand this file to any LLM (or human) producing that content and tell them to match it.
+
+> [!IMPORTANT]
+> The rules for writing lessons (voice, plain language, lesson structure, callouts, visuals and links) live in [writing-lessons.md](writing-lessons.md). This file covers the visual identity and marketing copy.
 
 ---
 
@@ -16,27 +19,10 @@ The reader is a CS student or self-taught engineer who is smart, impatient, and 
 
 ## 2. Voice and tone
 
-### Voice (always)
+The voice everywhere, and the words to avoid, are in [writing-lessons.md](writing-lessons.md#voice). Lessons follow that file. Marketing copy uses the same voice with a sharper tone:
 
-- **Declarative, not hedged.** "An alphabet is a finite, non-empty set of symbols. That is the entire definition. Nothing more." Don't pad with *perhaps, somewhat, you could say.*
-- **Second-person, conversational.** "You will see it everywhere." "Get these right and the rest of the course has a foundation."
-- **Plain language explaining hard ideas.** A reader without the jargon should still feel the shape of the concept. Introduce notation only after you've explained what it does in English.
-- **Calls out the trap.** When something is commonly misunderstood, name the misunderstanding directly. "The empty string ε is not the empty set ∅." This is a recurring move — the *gotcha callout*.
-- **Bridges to the real world.** Where a concept maps to a tool (regex, parsers, CPUs, antivirus, routing, schedulers), name that tool. The mapping is the product.
-
-### Tone shifts
-
-- **Lessons:** measured, didactic, occasionally dry-funny. Like a good professor who respects your time.
-- **Landing / marketing:** sharper, more declarative, near-manifesto. Short lines. Italic for the philosophical aside ("Theory without tools is boring. Tools without theory are fragile.").
-- **Callouts:** punchy. One idea per callout, framed as warning, insight, or "what you just built."
-
-### Tone red lines (never)
-
-- No "hey there!", emojis, exclamation marks for energy, or hustle-speak.
-- No corporate-edu padding: *In today's fast-paced world…*, *industry-leading*, *cutting-edge*, *unlock your potential*.
+- **Landing and marketing:** declarative, near-manifesto. Short lines. Italic for the philosophical aside ("Theory without tools is boring. Tools without theory are fragile.").
 - No fake humility ("I'm just a small site…") and no chest-thumping ("the world's best CS course").
-- No AI-tells: tricolons of fluff, *delve into*, *robust*, *seamless*, *leveraging*, *it's important to note that*.
-- No emojis in body copy (the design uses typography for emphasis, not pictograms).
 
 ---
 
@@ -52,7 +38,7 @@ Three fonts. Each has one job. Never use a font for the wrong job.
 
 ### Typographic patterns
 
-- **Eyebrow:** uppercase, monospace, `tracking-[0.2em]`, 11px, muted color. Sits above a section heading to label *what kind of thing this is*. Examples: `THE PEOPLE`, `OUR ORIGIN`, `TRACKS`, `CS THEORY · REAL-WORLD SKILLS MAPPED`.
+- **Eyebrow:** uppercase, monospace, `tracking-[0.2em]`, 11px, muted color. Sits above a section heading to label *what kind of thing this is*. Examples: `THE PEOPLE`, `OUR ORIGIN`, `TRACKS`, `CS THEORY · IN DEPTH, CONNECTED`.
 - **Display headings:** Syne, font-weight 700–800, tight tracking (`-0.01em`), short. Avoid headlines longer than two lines. Lowercase the word in the accent color when one phrase is being highlighted (e.g. "Computer science Proofs, **decoded** to production tools" — `decoded` is the neon word).
 - **Body:** Lora 18px, line-height 1.75. Generous. Never tighten this — readability is load-bearing.
 - **Mono for metadata:** anything that is *data about* the content (duration, version, status, route, tag) is monospace, 10–12px, uppercase, wide tracking. This is the "terminal" half of the aesthetic.
@@ -104,15 +90,7 @@ These are the recurring visual moves that make something "feel like Decoded":
 
 ## 6. Component voice
 
-Each in-MDX component carries a specific meaning. Don't use them interchangeably.
-
-- **`<Callout tone="orange">`** — "Don't fall into this trap." A misconception, a common mistake, a gotcha. The reader is about to get something wrong; correct them before they do.
-- **`<Callout tone="violet">`** — "Why this exists / why mathematicians chose this." Meta-commentary that gives motivation behind a definition. Reflective.
-- **`<Callout tone="mint">`** — "What you just built." Summary at the end of a section or lesson. Reassuring, validating.
-- **`<Callout tone="neon">`** — Reserve for the rare exciting "this is the key insight" moment. Use sparingly; over-use drains its power.
-- **`<Callout tone="sky">`** — Theory-side context, formal note, or "the math view."
-- **`<PracticalApplication>` / `<ApplicationsGrid>`** — The bridge to the outside world. Each card points to a real tool, real link, real video, or real exercise. No platitudes.
-- **`<Pillar>`** — Marketing-side. Three-up structural concepts on a landing/teaser surface. Not for lessons.
+What each lesson component (callout tones, `<PracticalApplication>`, quizzes) is for is in [writing-lessons.md](writing-lessons.md#callouts-and-components). `<Pillar>` is marketing-side: three-up structural concepts on a landing or teaser surface, not for lessons.
 
 ---
 
@@ -131,29 +109,11 @@ Bad (corporate-edu, AI-flavored):
 - *Master Computer Science with Our Cutting-Edge Platform*
 - *Your Journey to Becoming a Better Engineer Starts Here*
 
-### Lesson openings
-
-Always anchor the lesson in the **historical or human problem** that made the concept necessary. Don't start with a definition.
-
-Good:
-> Before any machine, before any automaton, before any algorithm — mathematicians needed to agree on what they were even talking about. When Turing, Kleene, and Chomsky were building this field in the 1930s–50s, they kept running into the same problem: how do you precisely describe an infinite collection of strings using a finite set of rules?
-
-Bad:
-> A formal language is a set of strings over a finite alphabet. In this lesson, we will explore the foundational concepts…
-
-### Definitions
-
-When introducing notation, define it three ways in this order: **plain English → formal symbol → example.** Never symbol-first.
-
-### Sentence rhythm
-
-Mix short declarative sentences with one longer connective sentence. The short sentences are the rhythm; the long one is the explanation. Em-dashes are the preferred connector — not semicolons, not parentheses for asides.
-
 ### Eyebrows (mono, uppercase, tracked)
 
 Two to five words. State *what kind of thing follows*. Examples:
 
-- `CS THEORY · REAL-WORLD SKILLS MAPPED`
+- `CS THEORY · IN DEPTH, CONNECTED`
 - `OUR ORIGIN`
 - `THE PEOPLE`
 - `TRACKS`
@@ -178,13 +138,11 @@ Before shipping a page, lesson, or piece of marketing copy, run through:
 - [ ] Display heading in Syne, ≤ 2 lines
 - [ ] If a word in the heading is highlighted, it's in `--neon` (and only one word)
 - [ ] Body in Lora, generous line-height
-- [ ] At least one moment that maps theory → a real production tool
 - [ ] No emojis, no rounded pills, no drop shadows
 - [ ] Borders not fills for surfaces; cards have sharp corners
 - [ ] Accent color belongs to the right emotional register (see §4)
-- [ ] No AI-flavored connective tissue (*delve, robust, seamless, leverage, it's important to note*)
-- [ ] If a callout is used, its tone matches its purpose (§6)
-- [ ] Lesson opening anchors in a human/historical problem, not a definition
+- [ ] Copy follows the voice and the "Never" list in [writing-lessons.md](writing-lessons.md)
+- [ ] A lesson also passes the checklist in [writing-lessons.md](writing-lessons.md#checklist)
 
 ---
 
@@ -194,14 +152,10 @@ Paste this verbatim into the system prompt of any model you ask to write Decoded
 
 > You are writing for **Decoded**, an editorial site that decodes computer science theory into the real-world tools it powers. Match this voice: declarative, second-person, plain language explaining hard ideas, occasionally dry. Treat the reader as a smart peer, not a beginner.
 >
-> Open lessons with the historical or human problem that made the concept necessary — never with a definition. Bridge every concept to a real production tool (regex engines, parsers, CPUs, schedulers, etc.) at least once.
+> If you are writing a lesson, follow docs/writing-lessons.md for the words, structure and components. Bridge every concept to a real production tool (regex engines, parsers, CPUs, schedulers, etc.) at least once.
 >
 > Use three fonts via CSS classes: `font-display` (Syne) for headings, `font-mono` (IBM Plex Mono) for eyebrows/labels/buttons/code, `font-body` (Lora) for prose. Eyebrows are uppercase, monospace, wide-tracked, 2–5 words, used to label what kind of section follows.
 >
 > Only five accent colors exist: neon (`#e8ff47`, the spark / primary), orange (`#ff6b35`, warning / friction), sky (`#7eb8ff`, theoretical / calm), violet (`#b47fff`, reflective / motivation), mint (`#47ffcc`, resolution / summary). Never invent a sixth. Use one accent word per headline at most.
 >
-> Custom MDX components — `<Callout tone="...">`, `<PracticalApplication>`, `<ApplicationsGrid>`, `<Pillar>` — must be explicitly imported at the top of each `.mdx` file from `@/components/mdx/MdxComponents`. Use `Callout` with the tone that matches the purpose: orange = misconception, violet = motivation, mint = recap, sky = formal note, neon = key insight.
->
-> Never use: emojis, rounded pills, drop shadows, hedging language (*perhaps, somewhat, you could say*), AI-flavored words (*delve, robust, seamless, leverage, navigate the world of*), exclamation marks for energy, or "in today's fast-paced world"–style intros.
->
-> Sentence rhythm: short declarative sentences interleaved with one longer explanatory sentence. Em-dashes are the preferred connector. Define notation in this order: plain English → formal symbol → example.
+> Never use: emojis, rounded pills, drop shadows, hedging language (*perhaps, somewhat, you could say*), AI-flavored words (*delve, robust, seamless, leverage, navigate the world of*), em-dashes as connectors, exclamation marks for energy, or "in today's fast-paced world"–style intros.

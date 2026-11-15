@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { ContinueLearning } from "@/components/ContinueLearning";
-import CourseCard from "@/components/CourseCard";
+import { TrackPicker } from "@/components/TrackPicker";
 import { courses } from "@/content/registry";
+import { DecodeText } from "@/components/DecodeText";
 import { CourseGlyph } from "@/components/brand/Glyphs";
+import { HeroField } from "@/components/HeroField";
 
 const accentText: Record<string, string> = {
   neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
@@ -12,7 +14,7 @@ const accentText: Record<string, string> = {
 
 export default function Index() {
   useEffect(() => {
-    document.title = "Decoded — CS Theory to Real-World Skills";
+    document.title = "Decoded — Computer Science, In Depth and Connected";
   }, []);
 
   return (
@@ -23,31 +25,32 @@ export default function Index() {
       <SiteHeader />
 
       {/* HERO */}
-      <section className="relative z-10 border-b border-border">
-        <div className="container py-20 md:py-28 max-w-6xl">
-          <div className="eyebrow text-neon mb-5">CS Theory · Real-world skills mapped</div>
+      <section className="relative z-10 overflow-hidden border-b border-border">
+        <HeroField />
+        <div className="container relative py-20 md:py-28">
+          <div className="rise-in eyebrow text-neon mb-5">CS theory · In depth, connected</div>
           {/* Syne is very wide: three fixed lines, sized to the viewport so each fits on one line from md up */}
-          <h1 className="font-display font-extrabold leading-[0.95] tracking-tight text-[clamp(2.5rem,5.4vw,4.5rem)]">
+          <h1 className="rise-in font-display font-extrabold leading-[0.95] tracking-tight text-[clamp(2.5rem,5.4vw,4.5rem)]">
             <span className="block md:whitespace-nowrap">Computer science</span>
             <span className="block md:whitespace-nowrap">
-              proofs, <span className="text-neon">decoded</span> to
+              proofs, <span className="text-neon"><DecodeText text="decoded" /></span> to
             </span>
             <span className="block md:whitespace-nowrap">production tools</span>
           </h1>
-          <p className="mt-8 max-w-2xl text-lg md:text-xl text-muted-foreground italic font-body leading-relaxed">
-            Every course in a CS curriculum maps to something practical, used daily, with applications everywhere. It just has to be mapped.
-            This is the layer that connects the theory with what's out there.
+          <p style={{ "--d": "120ms" } as CSSProperties} className="rise-in mt-8 max-w-2xl text-lg md:text-xl text-muted-foreground italic font-body leading-relaxed">
+            Every course in a CS degree is already inside something you use: the regex in your editor, the encryption in
+            your browser, the pixels on your screen. Each lesson here starts with the idea and ends at the tool.
           </p>
 
           <ContinueLearning />
 
-          <div className="mt-10 flex flex-wrap gap-3">
+          <div style={{ "--d": "220ms" } as CSSProperties} className="rise-in mt-10 flex flex-wrap gap-3">
             <Link
               to="/courses/theory-of-computation"
-              className="inline-flex items-center gap-2 bg-neon text-background px-5 py-3 font-mono text-xs uppercase tracking-widest font-semibold hover:opacity-90 transition"
+              className="group inline-flex items-center gap-2 bg-neon text-background px-5 py-3 font-mono text-xs uppercase tracking-widest font-semibold hover:opacity-90 transition"
             >
               Start with Theory of Computation
-              <span aria-hidden>→</span>
+              <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-1">→</span>
             </Link>
             <Link
               to="/courses"
@@ -58,7 +61,7 @@ export default function Index() {
           </div>
 
           {/* Track legend: one glyph and colour per course */}
-          <ul className="mt-14 flex flex-wrap gap-x-6 gap-y-3 font-mono text-[11px] text-muted-foreground tracking-widest uppercase">
+          <ul style={{ "--d": "320ms" } as CSSProperties} className="rise-in mt-14 flex flex-wrap gap-x-6 gap-y-3 font-mono text-[11px] text-muted-foreground tracking-widest uppercase">
             {courses.map((c) => (
               <li key={c.slug} className={`inline-flex items-center gap-2 ${c.status === "coming-soon" ? "opacity-50" : ""}`}>
                 <CourseGlyph slug={c.slug} className={`h-4 w-4 ${accentText[c.accent]}`} />
@@ -72,27 +75,28 @@ export default function Index() {
 
       {/* INTRO TEXT */}
       <section className="relative z-10 border-b border-border">
-        <div className="container py-16 md:py-20 max-w-3xl">
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-6">
-            Theory vs. Tools
-          </h2>
-          <div className="font-body text-lg leading-relaxed text-foreground/80 space-y-5">
-            <p>
-              University courses hide the tools engineers use every day behind dense proofs, heavy notation
-              and theorems. You shouldn't have to decode your own syllabus just to find out what it's really
-              about or where it shows up in production. Decoded pulls out the real-world use hiding inside
-              your coursework.
-            </p>
-            <p className="text-neon">
-              One topic at a time.
-            </p>
+        <div className="container py-16 md:py-20">
+          <div className="max-w-3xl">
+            <h2 className="font-display text-3xl md:text-4xl font-bold mb-6">
+              Theory vs. Tools
+            </h2>
+            <div className="font-body text-lg leading-relaxed text-foreground/80 space-y-5">
+              <p>
+                Most CS courses teach the proof and stop there. The tool that idea turned into, the one engineers
+                use every day, gets a passing mention or none at all. You shouldn't have to decode your own
+                syllabus to find out why it matters.
+              </p>
+              <p className="text-neon">
+                Decoded takes one topic at a time, explains it in plain words and shows you the software it runs in.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* COURSE GRID */}
       <section id="courses" className="relative z-10">
-        <div className="container py-20 max-w-5xl">
+        <div className="container py-20">
           <div className="flex items-baseline justify-between mb-10 gap-4 flex-wrap">
             <div>
               <div className="eyebrow text-muted-foreground mb-2">Tracks</div>
@@ -103,17 +107,13 @@ export default function Index() {
             </span>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {courses.map((c) => (
-              <CourseCard key={c.slug} slug={c.slug} />
-            ))}
-          </div>
+          <TrackPicker />
         </div>
       </section>
 
       {/* THE STORY */}
       <section className="relative z-10 border-t border-border bg-black/20">
-        <div className="container py-24 max-w-4xl">
+        <div className="container py-24">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <div className="eyebrow text-neon mb-4">Our Origin</div>

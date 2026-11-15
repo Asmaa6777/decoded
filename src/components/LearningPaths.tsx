@@ -14,7 +14,7 @@ export function LearningPaths() {
   return (
     <section aria-label="Suggested paths" className="mb-14">
       <div className="eyebrow text-muted-foreground mb-4">Not sure what to read next? Follow a path</div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {learningPaths.map((path) => (
           <div key={path.slug} className="border border-border bg-card p-5">
             <h2 className="font-display text-xl font-bold">{path.title}</h2>

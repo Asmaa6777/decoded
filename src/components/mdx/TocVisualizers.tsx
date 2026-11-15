@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from "react";
-import { Stepper } from "@/components/mdx/AlgoVisualizers";
+import { Stepper } from "@/components/mdx/vizKit";
 import { derivationFrames, findDerivation, isVariable, leftmostDerivations, parseGrammar, parseTree, shortestStrings, showRule, EPSILON, type DerivationState, type Side, type TreeNode } from "@/lib/grammar";
 import { alphabetOf, firstDifference, firstWords, matcher, parseRe, ReError } from "@/lib/regular";
 import { eliminationFrames, ELIMINATION_STEPS, FINAL, START, tgAccepts, type Tg } from "@/lib/transitionGraph";
