@@ -4,13 +4,14 @@ Every rule for the words, structure and components inside a Decoded lesson, in o
 
 ## The reader
 
-A CS student or self-taught engineer who is smart, short on time and tired of hearing that "this will matter someday". Many read English as a second language. Write for someone meeting the subject for the first time who has read only the earlier lessons.
+A CS student or self-taught engineer who is smart, short on time and tired of hearing that "this will matter someday", or being told about prerequisites with no quick way to look them up. Many read English as a second language. Write for someone meeting the subject for the first time who has read only the earlier lessons.
 
 ## Voice
 
 - **Say it plainly and with confidence.** "An alphabet is a finite, non-empty set of symbols. That is the entire definition." Don't hedge with *perhaps*, *somewhat* or *you could say*.
 - **Talk to the reader as "you".** "You will see it everywhere." Treat them as a peer, not a beginner.
 - **Measured, occasionally dry-funny.** Like a good teacher who respects your time.
+- **Use scientists' humor where it makes an idea easier.** The jokes the field tells about itself, an absurd but accurate comparison, or a famous mistake told with a straight face can make a hard idea stick. In a regex lesson: "Some people, when confronted with a problem, think 'I know, I'll use regular expressions.' Now they have two problems." Use it only where it fits. Most lessons need none, and one is usually enough. The joke has to teach something or ease a hard step. It never replaces the explanation, never mocks the reader, and avoids puns and idioms a non-native speaker would miss.
 - **Name the real tool.** Where an idea powers something real (regex engines, parsers, CPUs, schedulers, routers), say so. That link from theory to tool is what the site is for.
 
 ## Plain language
@@ -33,7 +34,7 @@ A CS student or self-taught engineer who is smart, short on time and tired of he
 
 ## Shape of a lesson
 
-- **Open with the problem.** Start from something the reader already knows, or the problem that made the idea necessary. Never open with a definition. A line of history is fine when it *is* the problem; history for its own sake gets cut.
+- **Open with the problem.** Start from something the reader already knows, or the problem that made the idea necessary. Never open with a definition. A line of history is fine when it *is* the problem; History told as a story, with who was stuck, what they tried and what happened, is a plus. A list of dates and names for its own sake gets cut.
 - **Define in three steps: plain words, then the symbol, then an example.** Never symbol first.
 - **Bold a term where you define it**, as in "the **dot product** multiplies matching entries". Link previews look for that bold word (see [Linking between lessons](#linking-between-lessons)).
 - **Define every term before you use it.** If a lesson uses a term another lesson defines, link it.
