@@ -59,6 +59,10 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
 - [ ] 11. Real readers (whole course)
 - [ ] 12. Final quality review (whole course)
 
+## Reading the slides cheaply
+
+Text copies of all six slide decks are in `_sources/advanced-software-engineering/*.md` (git-ignored, never committed). Five were made with [markitdown](https://github.com/microsoft/markitdown) (`markitdown deck.pdf > deck.md`). The week 5 "Building Software Architecture" deck has broken font encoding, so its copy was made with OCR (`pdftoppm -r 150` then `tesseract`, one `## Slide N` heading per page). Read these first; open a slide image only to check a diagram.
+
 ## What each round must deliver
 
 | # | Round | Done when |
