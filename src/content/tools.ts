@@ -190,6 +190,31 @@ export const tools: Tool[] = [
     ],
   },
   {
+    name: "Kafka, RabbitMQ and message queues",
+    what: "How services hand work to each other without waiting, and why a queue keeps orders from getting lost.",
+    lessons: [
+      { course: "advanced-software-engineering", lesson: "pipe-and-filter-and-messaging", mentions: "Kafka" },
+      { course: "advanced-software-engineering", lesson: "ten-styles-at-a-glance", mentions: "Pub/Sub" },
+      { course: "data-structures", lesson: "queues-and-deques", mentions: "queue" },
+    ],
+  },
+  {
+    name: "Docker, Kubernetes and microservices",
+    what: "Why splitting an app into many small services became cheap, and what it costs you.",
+    lessons: [
+      { course: "advanced-software-engineering", lesson: "the-architects-role", mentions: "Docker" },
+      { course: "advanced-software-engineering", lesson: "ten-styles-at-a-glance", mentions: "Netflix" },
+    ],
+  },
+  {
+    name: "AI coding assistants",
+    what: "Why an AI agent needs tests, memory files and limits around it, and two ways AI-written code went wrong.",
+    lessons: [
+      { course: "advanced-software-engineering", lesson: "engineering-in-the-age-of-ai", mentions: "harness" },
+      { course: "advanced-software-engineering", lesson: "case-study-ai-generated-pid", mentions: "pip" },
+    ],
+  },
+  {
     name: "Threads and locks",
     what: "Why two threads adding to the same number can lose updates, and the locks that stop it.",
     lessons: [

@@ -981,6 +981,8 @@ export type QuizQuestion = {
   options: QuizOption[];
   correctOptionId: string;
   explanation?: string;
+  /** A diagram or code shown under the prompt, for questions about a system or a picture. */
+  figure?: ReactNode;
 };
 
 /** A written exam question's model answer, hidden behind a button so the reader can try first. */
@@ -1069,6 +1071,7 @@ export function Quiz(props: QuizProps) {
             <div className="px-5 py-4 border-b border-border/60 bg-gradient-to-r from-violet/[0.07] to-transparent">
               <p className="font-medium leading-relaxed">{question.prompt}</p>
             </div>
+            {question.figure && <div className="px-5 pt-4 [&>*]:my-0">{question.figure}</div>}
             <div className="p-5 space-y-2.5">
               {question.options.map((option, oi) => {
                 const isSelected = selectedOptionId === option.id;
