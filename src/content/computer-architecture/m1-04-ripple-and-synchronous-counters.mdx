@@ -21,6 +21,14 @@ A 4-bit ripple counter uses four [T flip-flops](/courses/computer-architecture/s
 
 Each bit runs at half the rate of the bit before it, which is exactly how binary counting goes: $0000, 0001, 0010, 0011, \dots$. A timing diagram of the counter shows the same thing: $Q_0$ switches at half the rate of the count pulses, $Q_1$ at a quarter, and so on.
 
+### Clocking from Q-bar
+
+Textbooks often draw the same counter with **rising-edge** flip-flops (a plain triangle at C, no bubble), each one clocked by the **$\overline{Q}$** output of the stage before it instead of $Q$. $\overline{Q}$ always holds the opposite of $Q$, so when $Q_0$ falls from 1 to 0, $\overline{Q}_0$ rises from 0 to 1. That rising edge clocks stage 1 at the same moment the falling-edge version would. Each stage still flips when the bit below it falls, and the counter still counts up.
+
+That drawing also feeds every T input from one **count enable** line instead of tying each T to 1. With enable at 1 the counter runs as above. Pull it to 0 and no flip-flop toggles, so the count holds where it is while the pulses keep coming.
+
+The pairing is what matters. Swap only one of the two and the counter runs backwards: rising-edge flip-flops clocked from $Q$, or falling-edge ones clocked from $\overline{Q}$, make a down-counter. Logic Design covers this under [counting up vs counting down](/courses/logic-design/counters#counting-up-vs-counting-down).
+
 ### The settling problem
 
 Each flip-flop takes a short time to respond, its [propagation delay](/courses/logic-design/logic-gates#propagation-delay-and-transition-times) $t_{pd}$. In a ripple counter these delays add up, because stage 1 can't start until stage 0 has finished. Delays this short are measured in **nanoseconds** (ns), billionths of a second. With $t_{pd} = 10\text{ ns}$, the step from 7 ($0111$) to 8 ($1000$) goes:
@@ -32,7 +40,7 @@ Each flip-flop takes a short time to respond, its [propagation delay](/courses/l
 
 For 40 ns the counter shows values it never really held. Any circuit that reads it in that window, such as a [decoder](/courses/logic-design/comparators-decoders-encoders) picking a memory address, gets a wrong answer. The longer the counter, the longer it takes to **settle**: up to $n \times t_{pd}$ for $n$ bits.
 
-Jump to 7 below and send a count pulse to watch the ripple.
+Jump to 7 below and send a count pulse to watch the ripple. The second switch flips between the two wirings: the in-between values are the same in both.
 
 <CounterSchematic />
 
