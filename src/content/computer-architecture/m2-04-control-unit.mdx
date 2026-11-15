@@ -18,7 +18,16 @@ From these inputs, the control unit generates two categories of outputs: interna
 
 ## Micro-operations and the instruction cycle
 
-An instruction execution cycle decomposes into a sequence of atomic hardware operations known as **micro-operations**. Each micro-operation completes in a single clock time step ($T_i$).
+An instruction execution cycle decomposes into a sequence of atomic hardware operations known as **micro-operations**. A **micro-operation** is an elementary hardware operation executed in a single clock cycle ($T_i$), such as an internal register transfer, an ALU computation, or opening a bus transceiver.
+
+These operations manipulate specific internal processor registers:
+
+- **Memory Address Register** ($MAR$): Holds the physical memory address placed onto the system address bus.
+- **Memory Buffer Register** ($MBR$, also called Memory Data Register $MDR$): Holds data read from memory or waiting to be written to memory across the data bus.
+- **Program Counter** ($PC$): Holds the memory address of the next instruction to fetch.
+- **Instruction Register** ($IR$): Holds the binary machine instruction currently being decoded and executed.
+- **Accumulator** ($AC$): A general-purpose CPU register holding operands and arithmetic results.
+- **Stack Pointer** ($SP$): Holds the memory address of the top of the call and return stack.
 
 The execution cycle divides into distinct sub-cycles:
 
@@ -26,9 +35,11 @@ The execution cycle divides into distinct sub-cycles:
 
 Every instruction begins by fetching its binary representation from memory into the instruction register:
 
-- $T_1: MAR \leftarrow PC$ (Transfer Program Counter to Memory Address Register)
-- $T_2: MBR \leftarrow \text{Memory}[MAR], \quad PC \leftarrow PC + 1$ (Read instruction from RAM into Memory Buffer Register, advance PC)
-- $T_3: IR \leftarrow MBR$ (Load instruction into Instruction Register for decoding)
+- $T_1: MAR \leftarrow PC$
+- $T_2: MBR \leftarrow \text{Memory}[MAR], \quad PC \leftarrow PC + 1$
+- $T_3: IR \leftarrow MBR$
+
+These operations cannot be merged into a single clock cycle. In $T_1$, the address from $PC$ must propagate across internal buses to $MAR$ and stabilize on the external address lines. In $T_2$, RAM requires access time to read the addressed storage cell and drive the data bus; simultaneously, a dedicated hardware incrementer updates the $PC$. In $T_3$, the stable data in $MBR$ is latched into $IR$ so opcode decoding can begin.
 
 ### 2. The decode cycle
 
@@ -84,6 +95,12 @@ $$
 \text{Load}_{AC} = T_6 \cdot (q_{\text{ADD}} + q_{\text{SUB}}) + T_5 \cdot q_{\text{LDA}}
 $$
 
+At the end of an instruction's final micro-operation, a reset signal ($T_{\text{clear}}$) clears the step counter back to $T_0$, readying the CPU for the next instruction fetch without wasting clock ticks on unused time steps.
+
+<Callout tone="orange" label="Trap: Forgetting the step counter reset signal">
+If a processor uses a 4-bit step counter capable of counting 16 clock steps ($T_0$ to $T_{15}$), an instruction that completes in 4 steps would waste 12 clock cycles if left unchecked. A hardwired control unit must assert a step counter clear signal ($T_{\text{clear}}$) on the final micro-operation of each instruction to immediately return the counter to $T_0$.
+</Callout>
+
 **Advantages:** Maximum operating speed. Because signals propagate directly through silicon gates with zero memory lookup overhead, hardwired control supports high clock frequencies and is standard in [RISC designs](/courses/computer-architecture/risc-and-cisc).
 
 **Disadvantages:** Inflexible. Modifying an instruction format, correcting a logic flaw, or expanding the instruction set requires redesigning the physical layout and re-fabricating the silicon wafer.
@@ -95,9 +112,9 @@ Proposed by Maurice Wilkes in 1951, microprogrammed control treats the control u
 A microprogrammed control unit contains four primary hardware elements:
 
 1. **Control Store (Control Memory)**: An internal Read-Only Memory (ROM) or flash array storing the microinstructions.
-2. **Control Address Register ($CAR$)**: Holds the control store memory address of the next microinstruction to read.
-3. **Control Data Register ($CDR$ / Microinstruction Register $MIR$)**: Buffers the microinstruction fetched from the control store, driving datapath control lines.
-4. **Microsequencer (Next-Address Generator)**: Computes the next address for $CAR$, supporting sequential increments, conditional branches based on ALU flags, or mapping a new opcode from the instruction register.
+2. **Control Address Register ($CAR$)**: An internal register holding the control store memory address of the next microinstruction to read.
+3. **Control Data Register ($CDR$ / Microinstruction Register $MIR$)**: Buffers the microinstruction fetched from the control store, directly driving datapath control lines.
+4. **Microsequencer (Next-Address Generator)**: Combinational and sequential logic that determines the next address for $CAR$, supporting sequential step increments, conditional branches based on ALU status flags, or loading a starting microcode address mapped from the opcode in $IR$.
 
 Every row in control memory is a **microinstruction**. An entire machine-level instruction (a macro-instruction such as `MULT [EAX], EBX`) corresponds to a routine of microinstructions executed in sequence.
 
@@ -108,6 +125,10 @@ Every row in control memory is a **microinstruction**. An entire machine-level i
 | **Design complexity** | High, especially for complex ISAs | Systematic, structured, and modular |
 | **Modification flexibility** | Inflexible (requires silicon respin) | High (requires updating control memory) |
 | **Instruction set fit** | [RISC architectures](/courses/computer-architecture/risc-and-cisc) | Complex CISC architectures |
+
+<Callout tone="orange" label="Trap: Confusing the Program Counter with the Control Address Register">
+The Program Counter ($PC$) and Control Address Register ($CAR$) both store addresses, but they operate in completely different memory domains. The $PC$ points to macro-instructions residing in main system RAM. The $CAR$ points to microinstructions residing in the CPU's internal control store ROM. The $PC$ advances when a macro-instruction completes, while the $CAR$ updates on every single clock tick.
+</Callout>
 
 <Callout tone="violet" label="Field updates via microcode">
 Modern x86 processors contain writable microcode patches. When hardware security vulnerabilities (such as branch prediction leaks) are discovered after chips have shipped, manufacturers release microcode updates through operating system patches. The CPU loads these patches into an internal SRAM microcode buffer during system boot, rerouting instructions without replacing physical chips.
@@ -130,6 +151,10 @@ In a **vertical microinstruction**, mutually exclusive control lines are grouped
 
 - **Advantage:** Narrow control words (e.g., 16 to 24 bits), saving substantial control memory silicon area.
 - **Disadvantage:** Reduced parallelism. Operations grouped into the same field cannot activate concurrently. The external decoder introduces gate propagation delay, lowering the maximum clock frequency.
+
+<Callout tone="orange" label="Trap: Assuming vertical microcode executes faster because words are smaller">
+Narrow vertical microinstructions save valuable silicon area in the control store, but they execute slower than horizontal microinstructions. Encoded vertical fields must pass through combinational decoders before reaching datapath multiplexers and register clock enables, adding gate propagation delay to each clock cycle. Furthermore, because mutually exclusive operations packed into the same field cannot activate simultaneously, operations often require more consecutive microinstructions to finish.
+</Callout>
 
 ## Nanoprogramming (two-level control)
 

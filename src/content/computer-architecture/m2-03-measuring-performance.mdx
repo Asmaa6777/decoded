@@ -5,11 +5,20 @@ import { CpiCalculator, ClockTrap } from "@/components/mdx/ArchitectureVisualize
 
 Before you can make a computer faster, you must define what "faster" means. A common assumption is that a processor running at 4.0 GHz must outperform one running at 2.5 GHz. In practice, clock rate alone tells you almost nothing about how quickly an application will complete.
 
-The only definitive measure of computer performance is execution time: the wall-clock time required to execute a specific workload from start to finish.
+The only definitive measure of computer performance is execution time. But execution time has two distinct meanings:
+
+- **Wall-clock time** (or elapsed time): The total real-world latency required to finish a task, including memory access stalls, disk and network I/O, and operating system multitasking overhead.
+- **CPU execution time**: The time the processor actively spends executing machine instructions for that program, excluding waiting for I/O or servicing other user processes.
 
 ## The iron law of processor performance
 
-Three fundamental factors govern how long a program takes to execute on a central processing unit. Their relationship is known as the **CPU performance equation**:
+Three fundamental factors govern CPU execution time. Total execution time equals the total number of clock ticks multiplied by the duration of one tick:
+
+$$
+\text{CPU Execution Time} = \text{Clock Cycles} \times \text{Clock Period}
+$$
+
+Because total clock cycles can be expressed as the number of instructions executed multiplied by the average number of clock cycles required per instruction ($\text{Clock Cycles} = \text{Instruction Count} \times \text{CPI}$), substituting gives the **CPU performance equation**:
 
 $$
 \text{CPU Execution Time} = \text{Instruction Count} \times \text{CPI} \times \text{Clock Period}
@@ -59,6 +68,10 @@ $$
 
 where $IC_i$ is the number of times instruction class $i$ is executed, and $\text{CPI}_i$ is the cycle count for that class.
 
+<Callout tone="orange" label="Trap: Averaging CPI directly without instruction weighting">
+Students often calculate the average CPI of a processor by taking a simple arithmetic mean: $(CPI_1 + CPI_2 + \dots) / n$. This produces deceptive results because instruction classes do not execute in equal proportions. An instruction class that accounts for 60% of all executions has six times the influence on total clock cycles as a class that accounts for only 10%. Always multiply each class CPI by its relative execution frequency.
+</Callout>
+
 ## MIPS and MFLOPS pitfalls
 
 Two popular shorthand metrics attempt to capture processor speed in a single number:
@@ -90,23 +103,33 @@ While MIPS appears straightforward, comparing MIPS across different architecture
 3. Both machines take the exact same wall-clock time, but the RISC processor posts twice the MIPS score.
 4. If an inefficient compiler emits redundant instructions that do no useful work, the processor's MIPS score actually increases because CPI drops, even though total execution time worsens.
 
+<Callout tone="orange" label="Trap: Treating MIPS as a universal benchmark across architectures">
+MIPS measures the rate of instruction completion, not the rate of useful work accomplished. Because a RISC processor requires more instructions than a CISC processor to perform the same task, it can report a significantly higher MIPS rating while executing the workload in the exact same wall-clock time. Furthermore, an inefficient compiler that fails to remove redundant instructions can artificially inflate a CPU's MIPS rating by running more trivial instructions per second.
+</Callout>
+
 For scientific, graphics, and machine learning workloads, **MFLOPS** (Million Floating-Point Operations Per Second) or **TFLOPS** ($10^{12}$ FLOPS) measures the rate of actual arithmetic operations (multiplications and additions) rather than raw machine instructions.
 
 ## Amdahl's law
 
 When architects seek to speed up a computer, they often enhance a specific component, such as adding a dedicated vector unit or hardware floating-point multiplier.
 
-**Amdahl's law** defines the maximum speedup achievable when only a fraction of a program can take advantage of an improvement:
+Suppose a program takes $T_{\text{old}}$ to execute. An enhancement speeds up a fraction $f$ of the program's execution time by a factor of $s$. The remaining fraction $(1 - f)$ cannot use the enhancement and runs at normal speed.
+
+The new execution time is:
 
 $$
-\text{Speedup}_{\text{overall}} = \frac{\text{Execution Time}_{\text{old}}}{\text{Execution Time}_{\text{new}}} = \frac{1}{(1 - f) + \dfrac{f}{s}}
+T_{\text{new}} = T_{\text{old}} \times (1 - f) + T_{\text{old}} \times \frac{f}{s} = T_{\text{old}} \left( (1 - f) + \frac{f}{s} \right)
 $$
 
-where:
-- $f$ is the fraction of total execution time spent running the portion of the program that benefits from the improvement ($0 \le f \le 1$).
-- $s$ is the speedup factor applied strictly to that fraction.
+The overall speedup is the ratio of old execution time to new execution time:
 
-As the enhancement becomes infinitely fast ($s \to \infty$), the execution time of that component drops to zero, yielding an asymptotic upper bound:
+$$
+\text{Speedup}_{\text{overall}} = \frac{T_{\text{old}}}{T_{\text{new}}} = \frac{T_{\text{old}}}{T_{\text{old}} \left( (1 - f) + \dfrac{f}{s} \right)} = \frac{1}{(1 - f) + \dfrac{f}{s}}
+$$
+
+This formulation is **Amdahl's law**.
+
+As the enhancement becomes infinitely fast ($s \to \infty$), the execution time of that component drops to zero ($\frac{f}{s} \to 0$), yielding an asymptotic upper bound:
 
 $$
 \text{Speedup}_{\max} = \frac{1}{1 - f}
@@ -126,15 +149,39 @@ The fraction $f$ in Amdahl's law represents the fraction of total execution time
 
 ## Benchmarks and the geometric mean
 
-To evaluate processors fairly, the computing industry relies on standardized benchmark suites such as **SPEC CPU** (Standard Performance Evaluation Corporation). These suites run real, non-synthetic applications including compilers, chess engines, ray tracers, and fluid dynamics simulators.
+To evaluate processors fairly, the computing industry relies on standardized benchmark suites such as **SPEC CPU** (Standard Performance Evaluation Corporation). These suites run real applications including compilers, chess engines, ray tracers, and fluid dynamics simulators.
 
-When benchmark runtimes are normalized against a baseline reference machine, computing the standard arithmetic mean produces deceptive results that depend on which machine is chosen as the baseline. To preserve consistent relative rankings, architects use the **geometric mean**:
+When benchmark runtimes are normalized against a baseline reference machine, computing the standard arithmetic mean produces deceptive results that depend on which machine is chosen as the baseline.
+
+Consider two computers running two benchmark programs:
+- Program 1: Computer A takes 1 second; Computer B takes 10 seconds.
+- Program 2: Computer A takes 100 seconds; Computer B takes 10 seconds.
+
+If you normalize runtimes against Computer A:
+- Program 1 ratio: Computer A = 1.0, Computer B = 10.0.
+- Program 2 ratio: Computer A = 1.0, Computer B = 0.1.
+- Arithmetic mean: Computer A = 1.0, Computer B = $(10.0 + 0.1) / 2 = 5.05$. Computer A appears 5 times faster than Computer B.
+
+If you normalize runtimes against Computer B:
+- Program 1 ratio: Computer A = 0.1, Computer B = 1.0.
+- Program 2 ratio: Computer A = 10.0, Computer B = 1.0.
+- Arithmetic mean: Computer A = $(0.1 + 10.0) / 2 = 5.05$, Computer B = 1.0. Computer B now appears 5 times faster than Computer A!
+
+The conclusion reverses depending entirely on the choice of baseline machine. To preserve consistent relative rankings across any baseline, architects use the **geometric mean**:
 
 $$
 \text{Geometric Mean} = \sqrt[n]{\prod_{i=1}^n \text{Execution Time Ratio}_i}
 $$
 
-The geometric mean guarantees that the performance ratio between any two computers remains identical regardless of the baseline chosen for normalization.
+For the benchmark above:
+- Normalized to Computer A: Geometric Mean(B) = $\sqrt{10.0 \times 0.1} = \sqrt{1.0} = 1.0$.
+- Normalized to Computer B: Geometric Mean(A) = $\sqrt{0.1 \times 10.0} = \sqrt{1.0} = 1.0$.
+
+The geometric mean guarantees that the performance ratio between any two computers remains identical regardless of which computer is chosen as the baseline.
+
+<Callout tone="orange" label="Trap: Assuming a compiler that reduces CPI always improves speed">
+A compiler might replace a 4-cycle multiplication instruction with six 1-cycle additions and bit shifts. The average CPI drops from 4.0 to 1.0. However, the total instruction count increases from 1 to 6. The original code took $1 \times 4 = 4$ clock cycles, while the new code takes $6 \times 1 = 6$ clock cycles. Total execution time increased by 50% despite the lower CPI score.
+</Callout>
 
 ## Practice
 

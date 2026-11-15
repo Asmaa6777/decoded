@@ -17,11 +17,15 @@ The data revealed a consistent pattern known as the **80/20 rule**: approximatel
 
 Yet supporting those rare, complex instructions imposed heavy penalties on the entire machine:
 
-1. **Longer clock periods**: Complex instruction decoding and multi-cycle execution paths increased critical path propagation delays, slowing the clock rate for every instruction.
+1. **Longer clock periods**: The **critical path** is the longest sequence of combinational logic gates a signal must traverse between two clocked registers. In a synchronous processor, clock frequency is bounded by the slowest logic stage. When hardware decoders must handle up to 15 different instruction lengths, multiple prefix bytes, and complex addressing modes, the decode stage delay stretches out. Even when executing a 1-cycle integer addition, the CPU clock cannot tick faster than the worst-case decode delay allows.
 2. **Silicon waste**: Vast areas of chip silicon were dedicated to microcode ROMs that stored execution routines for rarely used instructions.
-3. **Pipelining bottlenecks**: Instructions with variable lengths and unpredictable cycle counts could not easily overlap in a modern [instruction pipeline](/courses/computer-architecture/pipelining).
+3. **Pipelining bottlenecks**: **Pipelining** overlaps the execution of multiple instructions across sequential stages (fetch, decode, execute, memory, writeback), much like an assembly line in a factory. Instructions with variable lengths and unpredictable cycle counts stall the pipeline and make regular scheduling nearly impossible.
 
 This realization gave rise to **Reduced Instruction Set Computers** (RISC). The core philosophy was straightforward: strip away specialized instructions, streamline decoding, and make the common operations run as fast as possible.
+
+<Callout tone="orange" label="Trap: Confusing instruction count with execution time">
+A CISC compiler might emit 4 instructions where a RISC compiler emits 8 instructions for the exact same calculation, leading students to conclude that the CISC processor will finish faster. But execution time depends on three factors: $\text{Time} = IC \times CPI \times \tau$. If the CISC processor averages 6 cycles per instruction at a 1.0 GHz clock, and the RISC processor averages 1.2 cycles per instruction at a 2.5 GHz clock, the RISC machine executes the task in $8 \times 1.2 \times 0.4\text{ ns} = 3.84\text{ ns}$, while the CISC machine takes $4 \times 6 \times 1.0\text{ ns} = 24.0\text{ ns}$.
+</Callout>
 
 ## Core principles of RISC
 
@@ -53,16 +57,20 @@ Procedure calls present a major performance bottleneck in traditional architectu
 
 To eliminate this memory bus traffic, the Berkeley RISC and SPARC architectures introduced **overlapping register windows**.
 
-A SPARC processor might contain 128 physical hardware registers, but a program sees only 32 logical registers at any moment, designated $R_0$ through $R_{31}$. These 32 registers are partitioned into four groups of 8:
+A SPARC processor might contain 128 physical hardware registers, but a program sees only 32 logical registers at any moment, designated $R_0$ through $R_{31}$. An internal hardware register called the **Current Window Pointer** ($CWP$) indicates the active window. These 32 registers are partitioned into four groups of 8:
 
 - **Global registers** ($R_0 - R_7$): Shared by all procedures across the entire system.
 - **In registers** ($R_8 - R_{15}$): Hold input arguments passed from the caller.
 - **Local registers** ($R_{16} - R_{23}$): Hold local variables private to the current procedure.
 - **Out registers** ($R_{24} - R_{31}$): Hold arguments to pass when calling the next procedure.
 
-When procedure $A$ calls procedure $B$, the processor shifts its active register pointer by 16 registers. The `Out` registers of procedure $A$ become the `In` registers of procedure $B$. Parameters are passed between functions instantly without writing a single byte to memory.
+When procedure $A$ calls procedure $B$, the processor shifts its active register pointer by 16 registers ($CWP \leftarrow CWP + 1$). The `Out` registers of procedure $A$ become the `In` registers of procedure $B$. Parameters are passed between functions instantly without writing a single byte to memory, because both procedures reference the exact same physical storage cells.
 
 When nested function calls exceed the capacity of the physical register file, the processor triggers a **window overflow trap**, prompting the operating system to spill the oldest window frame to system RAM.
+
+<Callout tone="orange" label="Trap: Assuming register windows copy data across buses">
+Students often assume that when procedure $A$ passes arguments to procedure $B$, hardware buses copy bits from Out registers to In registers. No data moves. The processor merely increments the Current Window Pointer ($CWP$). The physical transistors holding procedure $A$'s $R_{24}$ are the exact same transistors procedure $B$ accesses as $R_8$.
+</Callout>
 
 ## Modern convergence
 
@@ -73,6 +81,10 @@ Today, the line between RISC and CISC has largely blurred:
 
 <Callout tone="orange" label="Trap: Equating RISC with reduced capability">
 A common misconception is that a Reduced Instruction Set Computer has less computational power than a CISC processor. Both architectures are Turing complete and compute identical software. RISC reduces the complexity and variety of instruction formats, not the problems the computer can solve.
+</Callout>
+
+<Callout tone="orange" label="Trap: Believing modern x86 chips execute CISC instructions directly">
+Many engineers believe modern x86 processors still execute legacy CISC instructions directly on their arithmetic logic units. In reality, modern Intel and AMD processors act as CISC decoders wrapped around high-speed superscalar RISC engines. Variable-length x86 instructions are translated into fixed-length micro-operations ($\mu\text{ops}$) in the CPU front end before execution.
 </Callout>
 
 ## Practice
