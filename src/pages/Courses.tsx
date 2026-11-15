@@ -21,7 +21,7 @@ export default function Courses() {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <SiteHeader />
       <main className="flex-1">
-        <div className="container py-14 md:py-20 max-w-5xl">
+        <div className="container py-14 md:py-20">
           <div className="eyebrow text-muted-foreground mb-3">All Tracks</div>
           <h1 className="font-display text-4xl md:text-6xl font-extrabold leading-[1.05] tracking-tight mb-5">
             Every CS course,<br />decoded.
@@ -33,7 +33,7 @@ export default function Courses() {
           {mine.length > 0 && (
             <section aria-label="Your courses" className="mb-12">
               <div className="eyebrow text-muted-foreground mb-4">Your courses</div>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {mine.map((c) => (
                   <CourseCard key={c.slug} slug={c.slug} />
                 ))}
@@ -50,7 +50,7 @@ export default function Courses() {
             </Link>
           </p>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {courses.filter((c) => !mine.includes(c)).map((c) => (
               <CourseCard key={c.slug} slug={c.slug} />
             ))}
