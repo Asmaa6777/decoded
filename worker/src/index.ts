@@ -1,6 +1,7 @@
 import { currentUserId, deleteAccount, finishSignIn, signOut, startSignIn } from "./auth";
 import { changeProgress, enroll, getProgress, saveQuizScore, unenroll } from "./progress";
 import { allCourseStats, courseStats } from "./stats";
+import { acceptInvite, createInvite, getInvite, listCompanions, removeCompanion } from "./companions";
 import { getOwnProfile, getPublicProfile, reportProfile, saveOwnProfile, searchProfiles } from "./profiles";
 
 export interface Env {
@@ -20,6 +21,10 @@ async function route(request: Request, env: Env): Promise<Response> {
   if (request.method !== "GET" && request.headers.get("Origin") !== env.SITE_ORIGIN) {
     return Response.json({ error: "forbidden" }, { status: 403 });
   }
+
+  const invite = pathname.match(/^\/companions\/invites\/([A-Za-z0-9_-]+)(\/accept)?$/);
+  if (invite && request.method === "POST" && invite[2]) return acceptInvite(request, env, invite[1]);
+  if (invite && request.method === "GET" && !invite[2]) return getInvite(env, invite[1]);
 
   const report = pathname.match(/^\/profiles\/([a-z0-9_]+)\/report$/);
   if (request.method === "POST" && report) return reportProfile(request, env, report[1]);
@@ -51,6 +56,12 @@ async function route(request: Request, env: Env): Promise<Response> {
       return saveOwnProfile(request, env);
     case "GET /profiles":
       return searchProfiles(request, env);
+    case "POST /companions/invites":
+      return createInvite(request, env);
+    case "GET /companions":
+      return listCompanions(request, env);
+    case "POST /companions/remove":
+      return removeCompanion(request, env);
     case "GET /me":
       return Response.json({ signedIn: (await currentUserId(request, env)) !== null });
     case "POST /auth/sign-out":
