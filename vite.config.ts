@@ -26,6 +26,33 @@ function mdxExceptRaw(options: Parameters<typeof mdx>[0]): Plugin {
   };
 }
 
+/** Fonts on screen before any scrolling: the hero heading, body text, and the mono header. */
+const PRELOAD_FONTS = ["syne-latin-800-normal", "lora-latin-400-normal", "ibm-plex-mono-latin-400-normal"];
+
+/** Adds <link rel="preload"> for PRELOAD_FONTS, so they download alongside the CSS
+ *  instead of after it. Build only: the files' hashed names exist once bundled. */
+function preloadFonts(): Plugin {
+  return {
+    name: "preload-fonts",
+    apply: "build",
+    transformIndexHtml: {
+      order: "post",
+      handler(_html, ctx) {
+        const files = Object.keys(ctx.bundle ?? {});
+        return PRELOAD_FONTS.map((name) => {
+          const file = files.find((f) => f.startsWith(`assets/${name}-`) && f.endsWith(".woff2"));
+          if (!file) throw new Error(`preloadFonts: no bundled file for ${name}`);
+          return {
+            tag: "link",
+            attrs: { rel: "preload", href: `/${file}`, as: "font", type: "font/woff2", crossorigin: "" },
+            injectTo: "head" as const,
+          };
+        });
+      },
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   base: "/",
@@ -56,6 +83,7 @@ export default defineConfig(({ mode }) => ({
       ],
     }),
     react(),
+    preloadFonts(),
     mode === "development" && componentTagger(),
   ].filter(Boolean),
   resolve: {

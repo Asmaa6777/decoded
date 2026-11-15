@@ -1,3 +1,18 @@
+/* Self-hosted fonts (Fontsource, same files and unicode ranges as Google Fonts).
+   Only these weights exist, so stick to them. The Latin files used above the
+   fold are preloaded by preloadFonts in vite.config.ts. */
+@import "@fontsource/syne/400.css";
+@import "@fontsource/syne/600.css";
+@import "@fontsource/syne/700.css";
+@import "@fontsource/syne/800.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource/lora/400.css";
+@import "@fontsource/lora/500.css";
+@import "@fontsource/lora/400-italic.css";
+@import "@fontsource/lora/500-italic.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
