@@ -65,6 +65,8 @@ The browser here is a <Term id="thin-client">thin client</Term>: almost all the 
 
 ## Client-server
 
+Operating Systems covers the mechanisms underneath, sockets, RPC and pipes, in [communication in client-server systems](/courses/operating-systems/interprocess-communication#communication-in-client-server-systems). Here we look at client-server as an architectural style.
+
 In <Term id="client-server">client-server</Term>, client processes interact with individual server processes, usually on a separate computer, to access data or a resource. **A server may in turn use the services of other servers**, so the same process can be a server to one side and a client to the other.
 
 <BoxDiagram
@@ -94,7 +96,7 @@ In <Term id="client-server">client-server</Term>, client processes interact with
 
 - **<Term id="separation-of-concerns">Separation of concerns</Term>:** each tier handles one concern (display, business rules, data).
 - **<Term id="synchronous-communication">Synchronous communication</Term>:** requests flow in a single direction, from the client tier through the web and business-logic tiers to the data tier, and each caller waits for the answer.
-- **Flexible deployment:** there are no restrictions on how a multi-tier application is deployed. All tiers can run on one machine, or, at the other extreme, each tier on its own machine.
+- **Flexible deployment** (which tier runs where is a [deployment view](/courses/advanced-software-engineering/allocation-views#the-deployment-style) question from Lecture 4): there are no restrictions on how a multi-tier application is deployed. All tiers can run on one machine, or, at the other extreme, each tier on its own machine.
 
 ### Addressing quality attributes
 

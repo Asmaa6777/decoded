@@ -49,7 +49,7 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
   - [x] L3
   - [x] L4
   - [x] L5
-- [ ] 9. Connections (whole course)
+- [x] 9. Connections (whole course)
 - [ ] 10. Student read-through
   - [ ] L1
   - [ ] L2
@@ -300,3 +300,28 @@ New figures include the harness state store, a 64-bit sequence with the missing 
 **Test:** the course test now requires every system/diagram question to start with one of the eight type labels, and at least five different types per lecture.
 
 **Checked:** all five practice lessons at 390 px (4–5 figures each, no page overflow, no page errors), the build.
+
+### Round 9, connections: whole course
+
+Listed every cross-lesson link already in the course (25, all inside the course), looked for ideas that one lecture uses and another teaches, pairs students confuse, and other courses that teach the same mechanisms.
+
+**Changed, inside the course:**
+- L1 → L2: verification gates linked to fitness functions.
+- L3 → L2: SOLID introduced as the cost-friction principle at class level.
+- L4 → L2: a "same word, different meaning" callout separating Lecture 2's *structure* (a value: ease of change) from Lecture 4's *structure* (a set of elements).
+- L4 → L3: required interfaces in C&C views linked to Dependency Inversion.
+- L5 → L4: n-tier's flexible deployment linked to the deployment view.
+- L5 → L3: microservices' "one capability per service" linked to SRP.
+- Already present from earlier rounds: ML silent failures ↔ the float32 bug, ISP vs SRP, DI vs DIP, messaging vs pub/sub, client-server vs messaging, module vs component, the First Law and 2002 data center from the microservices section, and every "next lesson" link.
+
+**Changed, across courses:**
+- Client-server (m5-02) → Operating Systems' communication in client-server systems.
+- Pipe-and-filter (m5-03) → the Operating Systems Linux lab's redirection and pipes.
+- Messaging (m5-03) → Data Structures' queues, and Operating Systems' indirect communication (mailboxes).
+- Back-links: Data Structures' queues lesson links "messages between services" to messaging; Operating Systems' IPC lesson links its microservices card to the microservices section.
+
+**Paths and tools:**
+- New learning path "Building real software": Data Structures → Operating Systems → Computer Networks → Advanced Software Engineering. Prerequisites were set in round 1.
+- Three new entries on the tools page: Kafka, RabbitMQ and message queues; Docker, Kubernetes and microservices; AI coding assistants. Each points at lessons whose text contains the claimed word (checked by the tools test).
+
+**Checked:** links and previews tests (every new link resolves to a real heading and has a preview), paths and tools tests, the Data Structures and Operating Systems course tests, lint, the build.

@@ -45,7 +45,7 @@ The breakthrough came from changing the question. Instead of *"how do we make th
 
 1. **The initializer/worker pattern.** Separate setting up from doing. An *initializer agent* maps the repository and writes a task list (`feature_list.json`). *Worker agents* then each start in a fresh, clean context window, and they hand over state through git commits and progress notes (`NOTES.md`), not through memory.
 2. **Context compaction and progressive tooling.** Remove context that is no longer needed, and load a tool's description only when the tool is about to be used.
-3. **Hard <Term id="verification-gate">verification gates</Term>.** Automated test suites and strict exit codes decide when work is done. The model can't declare victory; the tests have to pass.
+3. **Hard <Term id="verification-gate">verification gates</Term>.** Automated test suites and strict exit codes decide when work is done. The model can't declare victory; the tests have to pass. (Lecture 2 calls automated checks like this [fitness functions](/courses/advanced-software-engineering/the-architects-role#the-eight-expectations-of-an-architect) when they guard an architecture.)
 4. **Architectural inversion.** The intelligence isn't only in the model's weights. It is also in the harness that constrains, coordinates and checks the model.
 
 <BoxDiagram

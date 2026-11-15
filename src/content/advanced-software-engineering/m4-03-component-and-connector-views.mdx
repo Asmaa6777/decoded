@@ -61,7 +61,7 @@ UML draws a component as a box (with a small component icon) and makes its inter
 - **<Term id="required-interface">Required interface</Term>** (socket): a service this component needs.
 - **<Term id="port">Port</Term>**: the named point on the component's edge where an interface attaches.
 
-A connection is drawn by plugging a socket into a matching lollipop. In the lecture's example, an *Order System* requires `CustomerLookup` (provided by a *Customer Repository*) and `ProductAccessor` (provided by an *Inventory System*):
+A connection is drawn by plugging a socket into a matching lollipop. Components that only know the interfaces they require are the runtime face of Lecture 3's [Dependency Inversion Principle](/courses/advanced-software-engineering/dependency-inversion-principle). In the lecture's example, an *Order System* requires `CustomerLookup` (provided by a *Customer Repository*) and `ProductAccessor` (provided by an *Inventory System*):
 
 <BoxDiagram
   title="Order system wired through interfaces"

@@ -145,7 +145,7 @@ Functionality is exposed as services over standard web protocols: HTTP with SOAP
 
 ## Microservices
 
-The application is a set of small, independently deployable services. **Each owns its data and one business capability**, and they talk through APIs or messaging. *Example:* after a major database outage in 2008, Netflix split its monolith into hundreds of microservices on AWS (streaming, billing, recommendations), each deployed and scaled on its own. Amazon and Uber work the same way.
+The application is a set of small, independently deployable services. **Each owns its data and one business capability** (the [Single Responsibility Principle](/courses/advanced-software-engineering/design-principles-and-srp#responsibility--actor) at service scale: one service, one reason to change), and they talk through APIs or messaging. *Example:* after a major database outage in 2008, Netflix split its monolith into hundreds of microservices on AWS (streaming, billing, recommendations), each deployed and scaled on its own. Amazon and Uber work the same way.
 
 <BoxDiagram
   title="Microservices with an API gateway"

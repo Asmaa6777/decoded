@@ -15,7 +15,7 @@ In the <Term id="pipe-and-filter">pipe-and-filter</Term> style:
 - **connectors are <Term id="pipe">pipes</Term>:** conduits for data streams;
 - **the style invariant: filters are independent (no shared state).**
 
-**Example:** the UNIX shell. Step through this pipeline:
+**Example:** the UNIX shell, whose `|` you can try in Operating Systems' [Linux lab](/courses/operating-systems/lab-linux-commands#redirection-and-pipes). Step through this pipeline:
 
 <PipelineRunner />
 
@@ -106,7 +106,7 @@ In the <Term id="messaging">messaging</Term> style, clients don't call servers d
 - Clients send requests to the queue, **where the message is stored until an application removes it**.
 - After the client has written the message to the queue, **it continues without waiting** for the message to be removed.
 
-That is <Term id="asynchronous-communication">asynchronous communication</Term>. Step through it:
+That is <Term id="asynchronous-communication">asynchronous communication</Term>. The queue is first-in, first-out: the same [queue](/courses/data-structures/queues-and-deques) as in Data Structures, at system scale. Inside one machine, Operating Systems' [indirect communication](/courses/operating-systems/interprocess-communication#indirect-communication) through mailboxes is the same idea. Step through it:
 
 <MessageQueueStepper />
 
