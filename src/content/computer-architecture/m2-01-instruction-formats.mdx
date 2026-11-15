@@ -1,36 +1,204 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { InstructionFormats } from "@/components/mdx/ArchitectureVisualizers";
 
 # Instruction Formats
 
-An instruction is only a number, and the CPU has to pull it apart to see what it's being asked to do. The way those bits are divided is the instruction's **format**. Most of it splits into two parts:
+A processor has no intuition. When it fetches 32 bits from system memory into the [instruction register](/courses/computer-architecture/control-unit), those bits are only electrical voltage levels. The processor must slice that bit pattern into fields that answer two questions: what operation should the arithmetic logic unit perform, and where should it find the data?
 
-- The **opcode**: which operation.
-- The **operands**: what to work on, usually given as addresses or register numbers.
+The specification that defines how those bits are laid out is the **instruction format**. The complete contract between hardware and software, covering the supported instructions, registers, data types, and memory models, is the **instruction set architecture** (ISA).
+
+Every machine instruction divides into at least two primary fields:
+
+- The **opcode** (operation code): specifies the operation, such as addition, logical shift, or memory load.
+- The **operands**: specify the inputs and destination, represented as register numbers, memory addresses, or immediate constants.
 
 ```
-| opcode |  operand 1  |  operand 2  |
++---------------+---------------+---------------+
+|    opcode     |   operand 1   |   operand 2   |
++---------------+---------------+---------------+
 ```
 
-## How many operands?
+With an $n$-bit opcode, a processor can distinguish up to $2^n$ unique operations. If a machine provides 64 distinct operations, its opcode field requires at least $\log_2(64) = 6$ bits.
 
-Say an instruction is 16 bits long. Use 4 bits for the opcode, and you have 12 bits left. Should they name three things, or just one? Fewer addresses make for shorter instructions but also longer programs. Compare the same calculation, $X = (A + B) \times (C + D)$, on four kinds of machine.
+## Fixed against variable length
+
+Architects face an early choice: should every instruction occupy the exact same number of bits, or should instruction length vary?
+
+In **fixed-length instructions**, every command uses the same width, typically 32 bits, as in MIPS, ARM, and RISC-V. Decoding is straightforward. The [program counter](/courses/computer-architecture/ripple-and-synchronous-counters#the-program-counter) advances by 4 bytes on every fetch, and register fields sit at identical bit offsets across all instructions. The hardware can read register files before opcode decoding finishes. The penalty is binary size: a simple return or register clear uses 32 bits even when 8 bits would suffice.
+
+In **variable-length instructions**, commands span different lengths, such as 1 to 15 bytes in x86. Simple instructions like single-byte flags occupy minimal space, while complex memory-to-memory operations take more. This yields tight code density and reduces memory consumption. The penalty is complex decoding hardware. The processor cannot tell where the next instruction begins until it decodes the length prefix of the current one.
+
+## How many addresses?
+
+Consider a 16-bit instruction budget. With a 4-bit opcode, 12 bits remain for operand references. Should those 12 bits name three registers, two memory locations, or a single value?
+
+Fewer addresses per instruction make each instruction shorter, but require more instructions to finish a program. The trade-off creates four classical computer architectures:
+
+1. **3-address machines**: Every instruction explicitly names two sources and a distinct destination. Source values remain intact.
+2. **2-address machines**: One address serves as both a source operand and the final destination. The original value in the destination register is overwritten.
+3. **1-address machines (accumulator machines)**: The processor features a dedicated [accumulator](/courses/microprocessors/registers) register ($AC$). All arithmetic operations implicitly read from and write to $AC$, so instructions only name a single memory operand.
+4. **0-address machines (stack machines)**: Operands sit on a Last-In, First-Out stack. Operations pop the top two entries, compute the result, and push it back. Only `PUSH` and `POP` name memory locations.
+
+Compare the evaluation of the expression $X = (A + B) \times (C + D)$ across these four designs.
 
 <InstructionFormats />
 
-| Format | Example | Meaning | Good | Bad |
+| Architecture | Sample syntax | Operation | Advantages | Disadvantages |
 |---|---|---|---|---|
-| 3-address | `ADD X, Y, Z` | Z = X + Y (the order varies by machine) | Short programs | Long instructions |
-| 2-address | `ADD X, Y` | One operand is also the destination | A balance | Destroys an operand |
-| 1-address | `ADD X` | AC = AC + X | Short instructions | Lots of memory trips |
-| 0-address | `ADD` | Pops two, pushes the sum | Shortest instructions | Longest programs |
+| **3-address** | `ADD R1, A, B` | $R1 \leftarrow A + B$ | Short programs, preserves source registers | Long instruction word, high bit budget |
+| **2-address** | `ADD R1, B` | $R1 \leftarrow R1 + B$ | Balanced instruction length | Destroys one source operand |
+| **1-address** | `ADD B` | $AC \leftarrow AC + B$ | Very short instructions | High memory bus traffic, sequential bottleneck |
+| **0-address** | `ADD` | $TOS \leftarrow \text{pop}() + \text{pop}()$ | Compact opcode-only instructions | Long instruction sequences, deep stack access |
 
-The 8086 is mostly a [2-address machine](/courses/microprocessors/registers): `ADD AX, BX`. Calculators and the Java virtual machine use a 0-address stack.
+Evaluating $X = (A + B) \times (C + D)$ highlights the contrast in program length:
 
-<Callout tone="violet" label="Each bit counts">
-With an $n$-bit opcode, a CPU can have up to $2^n$ different operations. If 5 bits name a register, it can reach 32 registers. These small budgets are why bigger instruction sets need longer instructions. For example, an instruction with an 8-bit opcode and two 5-bit register fields is 18 bits long.
+```
+3-address (3 instructions):
+  ADD  R1, A, B       ; R1 = A + B
+  ADD  R2, C, D       ; R2 = C + D
+  MUL  X,  R1, R2     ; X  = R1 * R2
+
+2-address (6 instructions):
+  MOV  R1, A          ; R1 = A
+  ADD  R1, B          ; R1 = A + B
+  MOV  R2, C          ; R2 = C
+  ADD  R2, D          ; R2 = C + D
+  MUL  R1, R2         ; R1 = (A + B) * (C + D)
+  MOV  X,  R1         ; X  = R1
+
+1-address (7 instructions):
+  LOAD A              ; AC = A
+  ADD  B              ; AC = A + B
+  STORE T             ; Mem[T] = A + B
+  LOAD C              ; AC = C
+  ADD  D              ; AC = C + D
+  MUL  T              ; AC = (C + D) * Mem[T]
+  STORE X             ; Mem[X] = AC
+
+0-address (8 instructions):
+  PUSH A              ; Push A
+  PUSH B              ; Push B
+  ADD                 ; Pop B, Pop A, Push A + B
+  PUSH C              ; Push C
+  PUSH D              ; Push D
+  ADD                 ; Pop D, Pop C, Push C + D
+  MUL                 ; Pop (C+D), Pop (A+B), Push product
+  POP  X              ; Store top of stack into X
+```
+
+Real systems adopt these models for specific constraints. The x86 architecture is primarily a 2-address machine (`ADD EAX, EBX`). Standard RISC processors like RISC-V use 3-address formats. The Java Virtual Machine (JVM) and WebAssembly use 0-address stack architectures because compact bytecodes save download bandwidth over networks.
+
+## Expanding opcodes
+
+Fixed-length instructions create a mathematical puzzle. If an instruction is fixed at 16 bits and memory addresses require 4 bits each, a 3-address instruction uses $4 + (3 \times 4) = 16$ bits. That leaves exactly 4 bits for the opcode, allowing only $2^4 = 16$ possible opcodes. If all 16 bit patterns represent 3-address instructions, zero patterns remain for 2-address, 1-address, or 0-address instructions.
+
+Architects resolve this using **expanding opcodes**. Instead of assigning all 16 opcode patterns to 3-address instructions, reserve one or more patterns as escape codes to indicate that the opcode continues into the next operand field.
+
+Consider a 16-bit instruction format with 4-bit addresses:
+
+```
+3-address format:  [ Opcode: 4 bits ] [ Addr1: 4 bits ] [ Addr2: 4 bits ] [ Addr3: 4 bits ]
+2-address format:  [      Opcode: 8 bits      ] [ Addr1: 4 bits ] [ Addr2: 4 bits ]
+1-address format:  [            Opcode: 12 bits           ] [ Addr1: 4 bits ]
+0-address format:  [                  Opcode: 16 bits                 ]
+```
+
+To support 14 distinct 3-address instructions, allocate binary patterns `0000` through `1101` (14 patterns) to the 3-address format. Two patterns remain unused: `1110` and `1111`.
+
+When the decoder encounters `1110` in the first 4 bits, it treats the next 4 bits as part of an expanded 8-bit opcode. The pattern `1110` followed by 4 bits yields $1 \times 2^4 = 16$ possible 2-address instructions. The pattern `1111` can be reserved to expand further into 1-address and 0-address instructions.
+
+<Callout tone="violet" label="Why expanding opcodes exist">
+Expanding opcodes let hardware support a rich mix of operations without variable instruction lengths. Operations that need fewer addresses gain larger opcode spaces.
 </Callout>
 
 ## Addressing modes
 
-The operand field doesn't have to hold the data itself. An **addressing mode** tells the CPU how to get to the data, and it's part of the architecture. The [8086's eight modes](/courses/microprocessors/addressing-modes) are the example to work through. There's a trade-off here too: more modes make programs shorter, but complicate decoding. That trade-off is the next lesson's subject.
+An instruction specifies operations on data, but operands rarely sit directly inside memory as static constants. Code needs local stack variables, pointer dereferencing, struct member access, and array indexing.
+
+An **addressing mode** defines the rule for calculating the actual target memory address, known as the **effective address** ($EA$), from fields inside the instruction.
+
+| Addressing mode | Syntax example | Effective address ($EA$) | Memory lookups | Main use case |
+|---|---|---|---|---|
+| **Immediate** | `MOV R1, #42` | None (operand is in instruction) | 0 | Loading constants |
+| **Direct (Absolute)** | `MOV R1, [1000]` | $EA = 1000$ | 1 | Global static variables |
+| **Indirect** | `MOV R1, @[1000]` | $EA = \text{Memory}[1000]$ | 2 | Pointers and references |
+| **Register** | `MOV R1, R2` | $EA = R2$ (register direct) | 0 | Fast temporary storage |
+| **Register indirect** | `MOV R1, [R2]` | $EA = [R2]$ | 1 | Pointer dereferencing |
+| **Displacement (Base + Offset)** | `MOV R1, [BP + 8]` | $EA = [BP] + 8$ | 1 | Struct fields, stack frames |
+| **Indexed** | `MOV R1, [Base + R2]` | $EA = \text{Base} + [R2]$ | 1 | Stepping through arrays |
+| **PC-relative** | `JMP +16` | $EA = PC + 16$ | 0 (target address) | Position-independent branching |
+
+In **PC-relative addressing**, the offset is added to the program counter. If a code module is relocated to a different memory address by the operating system loader, internal jumps within the module stay valid without updating hardcoded addresses.
+
+<Callout tone="orange" label="Trap: Confusing immediate constants with direct addresses">
+Writing `MOV R1, 100` in assembly looks similar to `MOV R1, [100]`. In immediate addressing (`100`), the literal number 100 enters register `R1`. In direct addressing (`[100]`), the processor reads the data stored at RAM memory address 100. Forgetting the brackets changes a pointer lookup into a hardcoded integer.
+</Callout>
+
+## Practice
+
+<ModelAnswer title="Problem 1: Expanding opcode capacity">
+A computer uses 16-bit instructions and 4-bit register addresses. The instruction set must accommodate:
+
+1. 15 instructions with 3 register operands.
+2. 8 instructions with 2 register operands.
+3. $K$ instructions with zero operands.
+
+Calculate the maximum number of zero-operand instructions ($K$) this architecture can support.
+
+---
+
+**Solution:**
+
+Step 1: Determine the bit requirements for 3-register instructions.
+Three 4-bit register addresses require $3 \times 4 = 12$ bits. This leaves $16 - 12 = 4$ bits for the opcode.
+A 4-bit opcode provides $2^4 = 16$ total bit combinations (`0000` to `1111`).
+Allocating 15 patterns to 3-register instructions leaves $16 - 15 = 1$ pattern available for expansion.
+
+Step 2: Determine capacity for 2-register instructions.
+Two 4-bit register addresses use $2 \times 4 = 8$ bits, leaving $16 - 8 = 8$ bits for the expanded opcode.
+The 1 unallocated 4-bit prefix expands across the next 4 bits, providing $1 \times 2^4 = 16$ possible patterns.
+Allocating 8 patterns leaves $16 - 8 = 8$ patterns available for zero-operand expansion.
+
+Step 3: Determine capacity for zero-operand instructions.
+Zero-operand instructions have no register fields, so all remaining 8 bits belong to the opcode.
+Each of the 8 available prefixes expands across the remaining 8 bits:
+$$K = 8 \times 2^8 = 8 \times 256 = 2{,}048$$
+
+The architecture can support up to 2,048 distinct zero-operand instructions.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 2: Effective address derivation across modes">
+A processor has a register file where register $R1$ contains `0x0200` and register $R2$ contains `0x0040`. Memory contains the following 16-bit words:
+
+- Address `0x0200`: `0x0500`
+- Address `0x0240`: `0x0900`
+- Address `0x0500`: `0x1234`
+
+Determine the effective address ($EA$) and the final operand fetched by each of the following instructions:
+
+1. `LOAD R3, [0x0200]` (Direct addressing)
+2. `LOAD R3, [R1]` (Register indirect addressing)
+3. `LOAD R3, [R1 + R2]` (Indexed addressing)
+4. `LOAD R3, @[0x0200]` (Memory indirect addressing)
+
+---
+
+**Solution:**
+
+1. **Direct addressing (`LOAD R3, [0x0200]`):**
+   - Effective address: $EA = \text{0x0200}$.
+   - Operand fetched: Value at memory address `0x0200` = `0x0500`.
+
+2. **Register indirect addressing (`LOAD R3, [R1]`):**
+   - Effective address: $EA = [R1] = \text{0x0200}$.
+   - Operand fetched: Value at memory address `0x0200` = `0x0500`.
+
+3. **Indexed addressing (`LOAD R3, [R1 + R2]`):**
+   - Effective address: $EA = [R1] + [R2] = \text{0x0200} + \text{0x0040} = \text{0x0240}$.
+   - Operand fetched: Value at memory address `0x0240` = `0x0900`.
+
+4. **Memory indirect addressing (`LOAD R3, @[0x0200]`):**
+   - First lookup: Read pointer stored at address `0x0200`, which gives `0x0500`.
+   - Effective address: $EA = \text{Memory}[\text{0x0200}] = \text{0x0500}$.
+   - Operand fetched: Value at memory address `0x0500` = `0x1234`.
+</ModelAnswer>

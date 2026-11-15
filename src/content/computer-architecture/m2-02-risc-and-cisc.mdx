@@ -1,40 +1,156 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { RiscCiscCompare } from "@/components/mdx/ArchitectureVisualizers";
 
 # RISC and CISC
 
-There are two philosophies of instruction set design. A chef's knife set is a good way to see the difference. You could own one gadget for each task: an apple corer, an egg slicer and a garlic press. Or you could own one good knife and combine simple cuts.
+In the early decades of computer engineering, memory was slow, expensive, and limited in capacity. Programmers wrote software by hand in assembly language, and early compilers struggled to generate efficient machine code. To make programming easier and conserve precious memory bytes, hardware designers added increasingly sophisticated instructions directly into processor silicon.
 
-**CISC** (Complex Instruction Set Computer) is the gadget drawer: many instructions, some doing a lot of work. **RISC** (Reduced Instruction Set Computer) is the knife: fewer, simpler instructions that you combine.
+This created **Complex Instruction Set Computers** (CISC). The goal was to close the **semantic gap**, the conceptual distance between high-level programming language statements and machine instructions.
+
+A single CISC instruction could perform several distinct actions: fetch two operands from memory, multiply them, and write the product back to RAM. The VAX-11/780 included instructions like `INDEX` to check array bounds and compute scaled offsets, and `POLY` to evaluate an entire polynomial in floating point with a single instruction. The x86 architecture features instructions like `REP MOVSB` to copy entire blocks of memory.
+
+## The empirical shift
+
+In the early 1980s, researchers including David Patterson at UC Berkeley and John Hennessy at Stanford measured how real compilers and software actually used these rich instruction sets.
+
+The data revealed a consistent pattern known as the **80/20 rule**: approximately 80% of a processor's execution time was spent executing only 20% of its instructions. These frequent instructions were simple operations: integer additions, register copies, conditional branches, and basic memory loads and stores. The specialized instructions designed to close the semantic gap went largely unused by optimizing compilers.
+
+Yet supporting those rare, complex instructions imposed heavy penalties on the entire machine:
+
+1. **Longer clock periods**: Complex instruction decoding and multi-cycle execution paths increased critical path propagation delays, slowing the clock rate for every instruction.
+2. **Silicon waste**: Vast areas of chip silicon were dedicated to microcode ROMs that stored execution routines for rarely used instructions.
+3. **Pipelining bottlenecks**: Instructions with variable lengths and unpredictable cycle counts could not easily overlap in a modern [instruction pipeline](/courses/computer-architecture/pipelining).
+
+This realization gave rise to **Reduced Instruction Set Computers** (RISC). The core philosophy was straightforward: strip away specialized instructions, streamline decoding, and make the common operations run as fast as possible.
+
+## Core principles of RISC
+
+RISC is not merely an architecture with fewer instructions; it is a systematic design philosophy built around six technical principles:
+
+1. **Load-store architecture**: Arithmetic and logical instructions operate exclusively on internal processor registers (`ADD R1, R2, R3`). Only two dedicated operations access system memory: `LOAD` to read from RAM into a register, and `STORE` to write from a register into RAM.
+2. **Fixed instruction length**: Every instruction uses identical bit width, typically 32 bits. Instruction fields such as register addresses sit at fixed bit locations, allowing the processor to fetch operands from the register file before opcode decoding finishes.
+3. **Single-cycle execution**: By breaking complex operations into primitive steps, each instruction can advance through one stage of an execution pipeline per clock cycle.
+4. **Hardwired control**: Instead of reading multi-step microcode from internal ROM, RISC processors generate control signals directly from combinational [logic gates](/courses/logic-design/logic-gates), cutting execution latency.
+5. **Large general-purpose register file**: RISC processors provide 32 or more general-purpose registers. Holding variables in high-speed registers avoids frequent trips across the slow memory bus.
+6. **Optimizing compilers**: Responsibility for efficiency shifts to the compiler, which schedules instructions to keep pipeline stages occupied and allocates registers to eliminate redundant memory traffic.
 
 <RiscCiscCompare />
 
-## Side by side
-
-| | RISC | CISC |
+| Architectural attribute | RISC (e.g., ARM, RISC-V, MIPS) | CISC (e.g., x86) |
 |---|---|---|
-| Instructions | Few and simple | Many, some complex |
-| Instruction length | Fixed | Variable |
-| Cycles per instruction | Near 1 | Several, and it varies |
-| Addressing modes | Few | Many |
-| Memory access | Only `LOAD` and `STORE` | Many instructions can touch memory |
-| Registers | Many | Fewer |
-| [Control unit](/courses/computer-architecture/control-unit) | Usually hardwired | Usually microprogrammed |
-| Program size | Larger | Smaller |
-| Examples | ARM, RISC-V, MIPS | x86 |
+| **Instruction length** | Fixed (typically 32 bits) | Variable (1 to 15 bytes in x86) |
+| **Instruction complexity** | Simple, primitive operations | Simple to highly complex |
+| **Addressing modes** | Few (typically 2 to 3) | Many (often 8 to 12) |
+| **ALU operands** | Registers only | Registers and memory locations |
+| **Cycles per instruction (CPI)** | Near 1.0 in a steady pipeline | Variable (1 to over 100 cycles) |
+| **Control unit implementation** | Hardwired combinational logic | Microprogrammed ROM |
+| **Register file size** | Large (typically 32 to 128) | Small to moderate (8 to 16 architectural registers) |
+| **Code density** | Lower (programs need more instructions) | Higher (compact binaries save memory) |
 
-## Why RISC came about
+## Overlapping register windows
 
-CISC made sense when memory was tiny and costly: a single rich instruction saved space. Then researchers measured real programs and found that most of the time was spent on a handful of simple instructions, while many complex ones were hardly used.
+Procedure calls present a major performance bottleneck in traditional architectures. Each time a program calls a function, it must save caller registers to the stack in memory, push function arguments, branch to the callee, execute, and restore registers upon return.
 
-Simple, same-length instructions have one big advantage: they fit neatly into a [pipeline](/courses/computer-architecture/pipelining). Each stage takes the same time, so the CPU can finish about one instruction per clock tick.
+To eliminate this memory bus traffic, the Berkeley RISC and SPARC architectures introduced **overlapping register windows**.
 
-Recall the formula from the next lesson: time = instructions × cycles per instruction × clock period. RISC accepts more instructions in exchange for fewer cycles per instruction and a faster clock.
+A SPARC processor might contain 128 physical hardware registers, but a program sees only 32 logical registers at any moment, designated $R_0$ through $R_{31}$. These 32 registers are partitioned into four groups of 8:
 
-<Callout tone="violet" label="Today the line is blurred">
-Inside a modern x86 chip, a [decoder](/courses/logic-design/comparators-decoders-encoders#decoders-pick-exactly-one) breaks each CISC instruction into RISC-like micro-operations and pipelines those. So software sees CISC while the hardware runs RISC. Your phone most likely has an ARM chip, a RISC design chosen largely because simpler decoding saves power.
+- **Global registers** ($R_0 - R_7$): Shared by all procedures across the entire system.
+- **In registers** ($R_8 - R_{15}$): Hold input arguments passed from the caller.
+- **Local registers** ($R_{16} - R_{23}$): Hold local variables private to the current procedure.
+- **Out registers** ($R_{24} - R_{31}$): Hold arguments to pass when calling the next procedure.
+
+When procedure $A$ calls procedure $B$, the processor shifts its active register pointer by 16 registers. The `Out` registers of procedure $A$ become the `In` registers of procedure $B$. Parameters are passed between functions instantly without writing a single byte to memory.
+
+When nested function calls exceed the capacity of the physical register file, the processor triggers a **window overflow trap**, prompting the operating system to spill the oldest window frame to system RAM.
+
+## Modern convergence
+
+Today, the line between RISC and CISC has largely blurred:
+
+1. **CISC chips run RISC underneath**: Modern x86 processors from Intel and AMD do not execute x86 instructions directly on the datapath. Instead, hardware decoders split incoming variable-length CISC instructions into fixed-size, primitive operations called **micro-operations** ($\mu\text{ops}$). These $\mu\text{ops}$ are executed by an internal out-of-order superscalar RISC core. Software enjoys x86 backwards compatibility, while hardware gains RISC pipelining efficiency.
+2. **RISC chips adopted compression**: Early RISC programs suffered from poor code density compared to CISC. To conserve cache space and memory bandwidth, modern RISC architectures introduced 16-bit compressed instruction extensions, such as ARM Thumb-2 and the RISC-V `C` extension. A hardware predecoder expands these 16-bit instructions into standard 32-bit instructions during instruction fetch.
+
+<Callout tone="orange" label="Trap: Equating RISC with reduced capability">
+A common misconception is that a Reduced Instruction Set Computer has less computational power than a CISC processor. Both architectures are Turing complete and compute identical software. RISC reduces the complexity and variety of instruction formats, not the problems the computer can solve.
 </Callout>
 
-## Calling a subroutine
+## Practice
 
-Architectures also differ in how they call procedures. The 8086 [pushes the return address on the stack](/courses/microprocessors/stack-and-procedures), which takes a memory access. Many RISC machines keep the return address in a register instead, which is faster for simple calls. A procedure that calls another has to save that register to memory first.
+<ModelAnswer title="Problem 1: Assembly compilation comparison">
+Consider the high-level language statement:
+
+$$Y[i] = X[i] \times 4 + Z$$
+
+Assume $i$ is stored in register `R1`, the base addresses of arrays $X$ and $Y$ are stored in registers `R2` and `R3`, and variable $Z$ resides in memory location `0x1000`. Each array element is a 4-byte integer.
+
+Write the instruction sequences to evaluate this statement on:
+1. A CISC architecture with register-memory operations and scaled indexed addressing.
+2. A pure RISC load-store architecture.
+
+Compare the total instruction count and the number of memory access operations.
+
+---
+
+**Solution:**
+
+**1. CISC architecture:**
+```asm
+; Scale index i by 4 and load X[i], multiply by 4, add Z, store to Y[i]
+MOV  EAX, [R2 + R1*4]     ; Load X[i] directly using scaled indexing
+SHL  EAX, 2               ; Multiply by 4 (shift left by 2 bits)
+ADD  EAX, [0x1000]        ; Add value of Z directly from memory
+MOV  [R3 + R1*4], EAX     ; Store result directly into Y[i]
+```
+- Total instructions: 4.
+- Memory accesses: 3 (Read $X[i]$, Read $Z$, Write $Y[i]$).
+
+**2. RISC load-store architecture:**
+```asm
+; All memory access strictly through explicit LOAD and STORE
+SLLI R4, R1, 2            ; R4 = i * 4 (byte offset)
+ADD  R5, R2, R4           ; R5 = address of X[i]
+LOAD R6, [R5]             ; R6 = X[i]
+SLLI R6, R6, 2            ; R6 = X[i] * 4
+LOAD R7, [0x1000]         ; R7 = Z
+ADD  R8, R6, R7           ; R8 = (X[i] * 4) + Z
+ADD  R9, R3, R4           ; R9 = address of Y[i]
+STORE [R9], R8            ; Store result into Y[i]
+```
+- Total instructions: 8.
+- Memory accesses: 3 (Read $X[i]$, Read $Z$, Write $Y[i]$).
+
+Both architectures perform the identical number of memory bus data transfers (3 data references), but the CISC machine requires half as many instructions because its addressing hardware computes base-plus-scaled-index calculations in single instructions. The RISC machine executes more primitive instructions, but each instruction is simple enough to pipeline cleanly.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 2: SPARC register window allocation">
+A RISC processor with overlapping register windows has 136 physical hardware registers.
+
+The register organization defines:
+- 8 Global registers shared by all procedures.
+- 24 registers per window (8 In, 8 Local, 8 Out).
+- An overlap of 8 registers between adjacent windows (the Out registers of window $k$ serve as the In registers of window $k+1$).
+
+1. Calculate how many distinct window frames ($W$) this physical register file supports.
+2. Determine the maximum depth of procedure nesting possible before a window overflow trap occurs.
+
+---
+
+**Solution:**
+
+**Part 1: Number of distinct window frames:**
+First, subtract the dedicated global registers:
+$$\text{Available registers} = 136 - 8 = 128$$
+
+Each window requires 8 In, 8 Local, and 8 Out registers. Because the Out registers of one window overlap with the In registers of the next, each additional window consumes only 16 unique physical registers (8 Local + 8 Out, while its In registers reuse the previous window's Out registers).
+
+The relationship for $W$ circular windows is:
+$$\text{Total registers} = \text{Globals} + W \times 16$$
+$$136 = 8 + 16W$$
+$$16W = 128 \implies W = 8$$
+
+The processor supports 8 complete register windows.
+
+**Part 2: Maximum procedure nesting depth:**
+Because the register windows form a circular ring buffer, one window must remain reserved to handle the trap condition when wrapping around. Therefore, the processor can execute up to 7 nested procedure calls ($W - 1 = 7$) before triggering a window overflow trap that forces the operating system to spill window contents to RAM.
+</ModelAnswer>

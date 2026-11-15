@@ -1,32 +1,256 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { ControlUnitCompare } from "@/components/mdx/ArchitectureVisualizers";
 
 # The Control Unit
 
-So far the [control unit](/courses/computer-organization/inside-the-cpu) has been a box labelled "directs everything". What's actually inside?
+A processor datapath contains general-purpose registers, an arithmetic logic unit, internal buses, and multiplexers. Left on their own, these components do nothing. Multiplexers need select lines driven to the correct input. Registers need their load enables held high at the precise clock edge. The ALU needs function select bits to tell an addition from a bitwise XOR.
 
-The rest of the CPU is a set of parts waiting for instructions. Registers have Load lines. [Multiplexers](/courses/logic-design/multiplexers) have select lines. The ALU has lines that choose an operation. The control unit's only output is a set of on/off **control signals**, and its job is to set them correctly at each clock tick.
+The component responsible for coordinating the datapath is the **control unit** (CU). Its outputs are binary **control signals**, which turn functional units on or off at each clock tick.
 
-So one instruction becomes a little sequence of steps called **micro-operations**, one per tick. Think of a player piano: the roll says which keys to press at each moment, and the piano itself just follows.
+The control unit operates through four primary inputs:
 
-Here are the signals for an `ADD`. Use the toggle to see the two ways of generating them.
+1. **Instruction Register ($IR$)**: The opcode field indicates which operation has been fetched from memory.
+2. **Clock generator**: Supplies the periodic square wave that defines machine cycle boundaries ($T_0, T_1, T_2, \dots$).
+3. **ALU status flags**: Condition codes such as Zero ($Z$), Negative ($N$), Carry ($C$), and Overflow ($V$) that govern conditional branching.
+4. **System control bus**: External inputs including system reset ($\overline{\text{RESET}}$), interrupts ($\text{INT}$), and bus hold requests.
+
+From these inputs, the control unit generates two categories of outputs: internal datapath control lines (register enables, ALU selectors, bus gates) and external system bus lines ($\overline{\text{MEMR}}$, $\overline{\text{MEMW}}$, $\overline{\text{IOR}}$, $\overline{\text{IOW}}$).
+
+## Micro-operations and the instruction cycle
+
+An instruction execution cycle decomposes into a sequence of atomic hardware operations known as **micro-operations**. Each micro-operation completes in a single clock time step ($T_i$).
+
+The execution cycle divides into distinct sub-cycles:
+
+### 1. The fetch cycle
+
+Every instruction begins by fetching its binary representation from memory into the instruction register:
+
+- $T_1: MAR \leftarrow PC$ (Transfer Program Counter to Memory Address Register)
+- $T_2: MBR \leftarrow \text{Memory}[MAR], \quad PC \leftarrow PC + 1$ (Read instruction from RAM into Memory Buffer Register, advance PC)
+- $T_3: IR \leftarrow MBR$ (Load instruction into Instruction Register for decoding)
+
+### 2. The decode cycle
+
+During time step $T_3$, the instruction's opcode bits are decoded by hardware logic to identify the operation and addressing mode. If the instruction uses indirect addressing, an extra memory lookup occurs to resolve the [effective address](/courses/computer-architecture/instruction-formats#addressing-modes):
+
+- $T_3: MAR \leftarrow IR[\text{Address}]$
+- $T_4: MBR \leftarrow \text{Memory}[MAR]$
+- $T_4: IR[\text{Address}] \leftarrow MBR$
+
+### 3. The execute cycle
+
+The execute cycle depends on the specific opcode. For an instruction that adds a memory operand to an accumulator (`ADD [X]`):
+
+- $T_4: MAR \leftarrow IR[\text{Address}]$ (Load target operand address into MAR)
+- $T_5: MBR \leftarrow \text{Memory}[MAR]$ (Read operand value from memory into MBR)
+- $T_6: AC \leftarrow AC + MBR$ (ALU sums AC and MBR, result loaded into AC)
+
+### 4. The interrupt cycle
+
+If an external interrupt is pending at the completion of an execute cycle:
+
+- $T_1: MBR \leftarrow PC, \quad MAR \leftarrow SP$ (Place return address into MBR, stack pointer to MAR)
+- $T_2: \text{Memory}[MAR] \leftarrow MBR, \quad SP \leftarrow SP - 1$ (Push return address onto memory stack, decrement SP)
+- $T_3: PC \leftarrow \text{Interrupt Handler Vector}$ (Load starting address of interrupt service routine into PC)
+
+The stepper below traces the control signals asserted during an `ADD` instruction across five discrete clock time steps:
 
 <ControlUnitCompare />
 
 ## Two ways to build it
 
-**Hardwired.** The signals come straight out of [gates](/courses/logic-design/logic-gates). Each signal has its own logic expression in terms of the opcode and the current time step. A [counter](/courses/logic-design/counters) keeps track of the steps, and a [decoder](/courses/logic-design/comparators-decoders-encoders) turns the opcode into lines.
+Processor designers implement control units through two contrasting paradigms: **hardwired control** and **microprogrammed control**.
 
-**Microprogrammed.** The signals are stored in a small, special memory called the **control store**. Each row, called a **microinstruction**, says which signals should be on for that tick. To run an instruction, the control unit reads its rows in order. In effect, it's a tiny computer inside the computer.
+### Hardwired control
 
-| | Hardwired | Microprogrammed |
+In a hardwired control unit, control signals are generated directly by combinational logic circuits.
+
+The architecture consists of three core components:
+
+1. An **instruction decoder**: Takes the $n$-bit opcode from the instruction register and asserts one of $2^n$ unique instruction lines ($q_{\text{ADD}}, q_{\text{SUB}}, q_{\text{LDA}}, \dots$).
+2. A **step counter**: A modulo-$k$ [counter](/courses/logic-design/counters) driven by the CPU clock, decoded to generate active timing signals ($T_0, T_1, T_2, \dots$).
+3. A **combinational logic network**: A matrix of [logic gates](/courses/logic-design/logic-gates) or a Programmable Logic Array (PLA) that combines instruction lines, timing signals, and ALU condition flags.
+
+Each control output line is governed by a Boolean expression. For instance, the control line that triggers an internal memory read ($\text{Read}$) must activate during the instruction fetch phase at step $T_2$, and during the execute phase of memory-referencing instructions like `ADD`, `SUB`, and `LDA` at step $T_5$:
+
+$$
+\text{Read} = T_2 + T_5 \cdot (q_{\text{ADD}} + q_{\text{SUB}} + q_{\text{LDA}})
+$$
+
+Similarly, the signal that loads the accumulator ($\text{Load}_{AC}$) activates at step $T_6$ for arithmetic instructions and step $T_5$ for direct loads:
+
+$$
+\text{Load}_{AC} = T_6 \cdot (q_{\text{ADD}} + q_{\text{SUB}}) + T_5 \cdot q_{\text{LDA}}
+$$
+
+**Advantages:** Maximum operating speed. Because signals propagate directly through silicon gates with zero memory lookup overhead, hardwired control supports high clock frequencies and is standard in [RISC designs](/courses/computer-architecture/risc-and-cisc).
+
+**Disadvantages:** Inflexible. Modifying an instruction format, correcting a logic flaw, or expanding the instruction set requires redesigning the physical layout and re-fabricating the silicon wafer.
+
+### Microprogrammed control
+
+Proposed by Maurice Wilkes in 1951, microprogrammed control treats the control unit as an internal miniature computer executing a stored program of low-level commands called **microcode**.
+
+A microprogrammed control unit contains four primary hardware elements:
+
+1. **Control Store (Control Memory)**: An internal Read-Only Memory (ROM) or flash array storing the microinstructions.
+2. **Control Address Register ($CAR$)**: Holds the control store memory address of the next microinstruction to read.
+3. **Control Data Register ($CDR$ / Microinstruction Register $MIR$)**: Buffers the microinstruction fetched from the control store, driving datapath control lines.
+4. **Microsequencer (Next-Address Generator)**: Computes the next address for $CAR$, supporting sequential increments, conditional branches based on ALU flags, or mapping a new opcode from the instruction register.
+
+Every row in control memory is a **microinstruction**. An entire machine-level instruction (a macro-instruction such as `MULT [EAX], EBX`) corresponds to a routine of microinstructions executed in sequence.
+
+| Attribute | Hardwired control | Microprogrammed control |
 |---|---|---|
-| Built from | Gates | Control memory |
-| Speed | Faster | Slower, since each step reads a memory |
-| Changing it | Redesign the chip | Rewrite the microcode |
-| Complex instructions | Very hard | Fairly easy |
-| Used in | [RISC](/courses/computer-architecture/risc-and-cisc) | CISC |
+| **Core technology** | Combinational logic gates and PLAs | High-speed control ROM / RAM |
+| **Execution speed** | Fast (gate delay only) | Slower (constrained by ROM read access time) |
+| **Design complexity** | High, especially for complex ISAs | Systematic, structured, and modular |
+| **Modification flexibility** | Inflexible (requires silicon respin) | High (requires updating control memory) |
+| **Instruction set fit** | [RISC architectures](/courses/computer-architecture/risc-and-cisc) | Complex CISC architectures |
 
-<Callout tone="violet" label="Fixing chips after they ship">
-Modern x86 chips still contain microcode, and it can be updated. When a security flaw is found in a processor, the fix sometimes ships as a microcode update through your operating system. That's impossible with purely hardwired logic.
+<Callout tone="violet" label="Field updates via microcode">
+Modern x86 processors contain writable microcode patches. When hardware security vulnerabilities (such as branch prediction leaks) are discovered after chips have shipped, manufacturers release microcode updates through operating system patches. The CPU loads these patches into an internal SRAM microcode buffer during system boot, rerouting instructions without replacing physical chips.
 </Callout>
+
+## Horizontal against vertical microprogramming
+
+Architects format microinstructions in two primary ways:
+
+### Horizontal microprogramming
+
+In a **horizontal microinstruction**, each bit in the control word directly controls a single datapath signal line. If the datapath requires 48 control lines, the microinstruction is 48 bits wide.
+
+- **Advantage:** Maximum parallelism. The control word can simultaneously activate the ALU, trigger a memory read, and increment the program counter in a single clock cycle. Zero decoding logic is required between the control register and the datapath.
+- **Disadvantage:** Wide control memory words, leading to large control store area. Many bits remain zero in any given cycle because many datapath operations are mutually exclusive (such as reading from two different registers onto a shared bus).
+
+### Vertical microprogramming
+
+In a **vertical microinstruction**, mutually exclusive control lines are grouped into encoded bit fields. For example, selecting 1 of 16 source registers requires only 4 bits ($\log_2 16 = 4$), and selecting 1 of 8 ALU functions requires only 3 bits ($\log_2 8 = 3$). Decoders located at the output of the microinstruction register expand these encoded bits into individual control lines.
+
+- **Advantage:** Narrow control words (e.g., 16 to 24 bits), saving substantial control memory silicon area.
+- **Disadvantage:** Reduced parallelism. Operations grouped into the same field cannot activate concurrently. The external decoder introduces gate propagation delay, lowering the maximum clock frequency.
+
+## Nanoprogramming (two-level control)
+
+In complex CISC processors, many microinstructions share identical horizontal control bit patterns. Storing these redundant wide words in a massive control store consumes excessive silicon area.
+
+To eliminate this redundancy, architectures such as the Motorola 68000 introduced **nanoprogramming**, a two-level control memory architecture:
+
+1. **Microstore (Level 1)**: Holds narrow microinstructions containing addresses pointing into the nanostore.
+2. **Nanostore (Level 2)**: Holds only the unique, distinct horizontal control words.
+
+If a machine requires 2,048 microinstructions, but only 128 unique control signal combinations exist across those instructions:
+- A single horizontal control store with 64-bit words requires:
+  $$2{,}048 \times 64 = 131{,}072\text{ bits}$$
+- A nanoprogrammed design uses:
+  - Microstore: $2{,}048 \text{ words} \times \log_2(128) \text{ bits} = 2{,}048 \times 7 = 14{,}336\text{ bits}$
+  - Nanostore: $128 \text{ words} \times 64 \text{ bits} = 8{,}192\text{ bits}$
+  - Total bits: $14{,}336 + 8{,}192 = 22{,}528\text{ bits}$
+
+Nanoprogramming achieves an 82.8% reduction in control memory storage bits at the cost of one extra memory access cycle per microinstruction.
+
+<Callout tone="orange" label="Trap: Confusing macro-instructions with microinstructions">
+A machine instruction (like `MOV EAX, [EBX]`) fetched from system RAM is a **macro-instruction**. A **microinstruction** is a primitive control word fetched from internal CPU control ROM. A single macro-instruction executes as an entire routine of multiple microinstructions.
+</Callout>
+
+## Practice
+
+<ModelAnswer title="Problem 1: Hardwired control signal equation derivation">
+A simplified multicycle CPU has three instructions: `LOAD`, `STORE`, and `ADD`.
+The instruction cycle uses a 3-bit step counter generating decoded time steps $T_0, T_1, T_2, T_3, T_4$.
+
+The instruction micro-operations are:
+- **All instructions (Fetch):**
+  - $T_0: MAR \leftarrow PC$
+  - $T_1: MBR \leftarrow \text{Memory}[MAR], \quad PC \leftarrow PC + 1$
+  - $T_2: IR \leftarrow MBR$
+- **Execute for `LOAD [addr]` ($q_L$):**
+  - $T_3: MAR \leftarrow IR[\text{Address}]$
+  - $T_4: MBR \leftarrow \text{Memory}[MAR], \quad AC \leftarrow MBR$
+- **Execute for `STORE [addr]` ($q_S$):**
+  - $T_3: MAR \leftarrow IR[\text{Address}], \quad MBR \leftarrow AC$
+  - $T_4: \text{Memory}[MAR] \leftarrow MBR$
+- **Execute for `ADD [addr]` ($q_A$):**
+  - $T_3: MAR \leftarrow IR[\text{Address}]$
+  - $T_4: MBR \leftarrow \text{Memory}[MAR], \quad AC \leftarrow AC + MBR$
+
+Derive the minimal Boolean logic equations for the following hardware control lines:
+1. $MAR_{\text{in}}$ (Load Memory Address Register)
+2. $\text{Memory}_{\text{read}}$ (Initiate memory read)
+3. $AC_{\text{in}}$ (Load Accumulator)
+
+---
+
+**Solution:**
+
+**1. Equation for $MAR_{\text{in}}$:**
+$MAR$ is loaded at:
+- Time step $T_0$ during the common fetch cycle (from $PC$).
+- Time step $T_3$ during the execute cycle of `LOAD` ($q_L$), `STORE` ($q_S$), and `ADD` ($q_A$).
+
+Boolean expression:
+$$MAR_{\text{in}} = T_0 + T_3 \cdot (q_L + q_S + q_A)$$
+
+**2. Equation for $\text{Memory}_{\text{read}}$:**
+A memory read is triggered at:
+- Time step $T_1$ during the fetch cycle (reading instruction into $MBR$).
+- Time step $T_4$ during the execute cycle of `LOAD` ($q_L$) and `ADD` ($q_A$). (Note: `STORE` writes to memory at $T_4$ rather than reading).
+
+Boolean expression:
+$$\text{Memory}_{\text{read}} = T_1 + T_4 \cdot (q_L + q_A)$$
+
+**3. Equation for $AC_{\text{in}}$:**
+$AC$ is updated only during:
+- Time step $T_4$ of `LOAD` ($q_L$) when loading data from $MBR$.
+- Time step $T_4$ of `ADD` ($q_A$) when storing the ALU sum.
+
+Boolean expression:
+$$AC_{\text{in}} = T_4 \cdot (q_L + q_A)$$
+</ModelAnswer>
+
+<ModelAnswer title="Problem 2: Horizontal vs vertical control store sizing">
+A processor datapath requires 56 distinct control signals. A microprogram consists of 512 microinstructions.
+
+Analysis of datapath operations indicates that the 56 control signals can be partitioned into mutually exclusive functional groups:
+- Group 1: 18 ALU operations (including idle)
+- Group 2: 12 register load enables (including no load)
+- Group 3: 8 bus source selectors (including no drive)
+- Group 4: 6 memory and I/O bus commands (including idle)
+- Remaining 12 control signals: Independent, non-mutually-exclusive lines.
+
+Each vertical microinstruction also requires a 9-bit Next-Address field for branching.
+
+1. Calculate the total control store size in bits for a purely horizontal microprogrammed control unit (assuming a 9-bit Next-Address field).
+2. Calculate the total control store size in bits for the vertical microprogrammed control unit.
+3. Determine the percentage reduction in control store capacity achieved by vertical microprogramming.
+
+---
+
+**Solution:**
+
+**Part 1: Horizontal control store size:**
+In horizontal microcode, each of the 56 control lines receives an independent bit, plus the 9-bit next-address field:
+$$\text{Word width}_{\text{horizontal}} = 56 + 9 = 65\text{ bits}$$
+$$\text{Total bits}_{\text{horizontal}} = 512 \text{ words} \times 65 \text{ bits/word} = 33{,}280\text{ bits}$$
+
+**Part 2: Vertical control store size:**
+Encode each mutually exclusive group into the minimum number of binary bits ($\lceil \log_2 N \rceil$):
+- Group 1 (18 ALU operations): $\lceil \log_2(18) \rceil = 5\text{ bits}$ (supports up to $2^5 = 32$)
+- Group 2 (12 register loads): $\lceil \log_2(12) \rceil = 4\text{ bits}$ (supports up to $2^4 = 16$)
+- Group 3 (8 bus sources): $\lceil \log_2(8) \rceil = 3\text{ bits}$ (supports up to $2^3 = 8$)
+- Group 4 (6 memory/IO commands): $\lceil \log_2(6) \rceil = 3\text{ bits}$ (supports up to $2^3 = 8$)
+- Independent signals: 12 bits (1 bit per line)
+- Next-Address field: 9 bits
+
+Total vertical word width:
+$$\text{Word width}_{\text{vertical}} = 5 + 4 + 3 + 3 + 12 + 9 = 36\text{ bits}$$
+
+Total control store size:
+$$\text{Total bits}_{\text{vertical}} = 512 \text{ words} \times 36 \text{ bits/word} = 18{,}432\text{ bits}$$
+
+**Part 3: Percentage reduction:**
+$$\text{Reduction} = \frac{33{,}280 - 18{,}432}{33{,}280} \times 100\% = \frac{14{,}848}{33{,}280} \times 100\% \approx 44.62\%$$
+
+Vertical microprogramming reduces the required control store memory capacity by 44.6%, requiring only four decoders ($5 \to 18$, $4 \to 12$, $3 \to 8$, $3 \to 6$) at the output of the microinstruction register.
+</ModelAnswer>
