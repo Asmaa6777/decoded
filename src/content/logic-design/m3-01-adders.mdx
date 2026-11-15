@@ -240,7 +240,7 @@ The resulting Sum is $S = S_3 S_2 S_1 S_0 = 1000_2$, with final carry $C_4 = 1$.
 
 ## The Controlled Adder-Subtractor Circuit
 
-Processors rarely include a separate hardware subtractor. Instead, systems use [two's complement arithmetic](/courses/logic-design/binary-arithmetic#3-signed-twos-complement):
+Processors rarely include a separate hardware subtractor. Instead, systems use [two's complement arithmetic](/courses/logic-design/binary-arithmetic#3-signed-twos-complement), which directly powers the [add and subtract](/courses/microprocessors/arithmetic-and-logic#add-and-subtract) instructions in microprocessor assembly:
 $$
 A - B = A + (-B) = A + B' + 1
 $$

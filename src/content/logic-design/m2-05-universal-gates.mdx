@@ -7,11 +7,11 @@ In early computing systems, building a machine required stocking dozens of disti
 
 Could a complete, general-purpose computer be constructed from only a **single type of logic gate**?
 
-Yes, if that gate is **NAND**, or **NOR**. These two gates are known as **universal gates** because either gate alone can synthesize all three fundamental Boolean operations: NOT, AND, and OR. Because any combinational or sequential circuit can be expressed in terms of NOT, AND, and OR, a single universal gate type is sufficient to build arithmetic logic units, registers, control units, and complete microprocessors.
+Yes, if that gate is **NAND**, or **NOR**. These two gates are known as **universal gates** because either gate alone can synthesize all three fundamental Boolean operations: NOT, AND, and OR. Because any combinational or sequential circuit can be expressed in terms of NOT, AND, and OR, a single universal gate type is sufficient to build [arithmetic logic units](/courses/computer-organization/inside-the-cpu), registers, control units, and complete microprocessors.
 
 ## Functional completeness and Emil Post's criterion
 
-A set of logic gates is **functionally complete** if every possible Boolean switching function can be realized using only gates from that set.
+A set of logic gates is **functionally complete** if every possible Boolean switching function can be realized using only gates from that set, a property shared with [logical equivalences](/courses/discrete-mathematics/equivalence-and-laws#the-laws) in formal logic.
 
 The standard reference set is $\{\text{AND}, \text{OR}, \text{NOT}\}$, which directly maps to Huntington's postulates. However, this set contains redundancy:
 - By De Morgan's law, $A + B = (A'B')'$. Thus, the set $\{\text{AND}, \text{NOT}\}$ is functionally complete without OR.

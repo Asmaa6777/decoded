@@ -233,6 +233,33 @@ export const tools: Tool[] = [
     lessons: [
       { course: "computer-architecture", lesson: "registers-and-shift-registers", mentions: "UART" },
       { course: "logic-design", lesson: "signals", mentions: "serial" },
+      { course: "logic-design", lesson: "registers", mentions: "shift register" },
+    ],
+  },
+  {
+    name: "Digital logic and 7400-series ICs",
+    what: "The standard TTL and CMOS chips that implement gates, decoders and arithmetic circuits on circuit boards.",
+    lessons: [
+      { course: "logic-design", lesson: "logic-gates", mentions: "7400" },
+      { course: "logic-design", lesson: "multiplexers", mentions: "7400" },
+      { course: "logic-design", lesson: "signals", mentions: "TTL" },
+      { course: "computer-architecture", lesson: "demystifying-circuit-schematics", mentions: "7400" },
+    ],
+  },
+  {
+    name: "Seven-segment displays and digital readouts",
+    what: "How calculators, digital clocks and instruments convert 4-bit binary codes into decimal digits.",
+    lessons: [
+      { course: "logic-design", lesson: "codes-and-floating-point", mentions: "seven-segment" },
+      { course: "logic-design", lesson: "comparators-decoders-encoders", mentions: "BCD" },
+    ],
+  },
+  {
+    name: "RAM chips and memory expansion",
+    what: "How memory systems use address decoders, chip select lines and tri-state buses to expand word length and capacity.",
+    lessons: [
+      { course: "logic-design", lesson: "memory-unit", mentions: "SRAM" },
+      { course: "computer-organization", lesson: "ram-and-rom", mentions: "DRAM" },
     ],
   },
 ];

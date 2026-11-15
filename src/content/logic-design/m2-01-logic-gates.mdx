@@ -6,7 +6,7 @@ import { CmosSwitchVisualizer, PropagationDelayLab } from "@/components/mdx/Logi
 
 A **logic gate** is the basic building block of digital circuits. It takes one or more binary inputs, represented by electric voltages, and produces a single binary output according to a Boolean **switching function** $f: \{0, 1\}^n \to \{0, 1\}$. Every digital system, from a microwave timer to a 64-bit multi-core processor, is built by connecting millions or billions of these gates.
 
-At the circuit level, gates are built from semiconductor switches called **MOSFETs** (Metal-Oxide-Semiconductor Field-Effect Transistors). Each MOSFET has four physical terminals: the **gate** (control input), the **source**, the **drain**, and the **substrate** (body). The voltage applied across the gate terminal creates an electric field that opens or closes a conductive channel between the drain and source.
+At the circuit level, gates are built from semiconductor switches called **MOSFETs** (Metal-Oxide-Semiconductor Field-Effect Transistors). Just as [transistors](/courses/computer-organization/whats-inside#the-idea-that-makes-it-all-work) act as voltage-controlled switches in a computer's microarchitecture, each MOSFET has four physical terminals: the **gate** (control input), the **source**, the **drain**, and the **substrate** (body). The voltage applied across the gate terminal creates an electric field that opens or closes a conductive channel between the drain and source.
 
 In **CMOS** (Complementary Metal-Oxide-Semiconductor) technology, gates use matched pairs of n-channel (nMOS) and p-channel (pMOS) transistors organized into two complementary networks:
 - **nMOS transistors (Pull-Down Network, PDN):** Conduct electricity between drain and source when their gate terminal receives a high voltage (logic 1, near $V_{DD}$). When driven with a low voltage (logic 0), they turn off. The PDN connects the output node to ground ($V_{SS} = 0\,\text{V}$).
@@ -18,13 +18,13 @@ Test the complementary switching of pMOS and nMOS networks below, and see what h
 
 <CmosSwitchVisualizer />
 
-Click the input terminals below to toggle their logic levels, and cycle through each gate type to observe how the truth table and output signal respond.
+Click the input terminals below to toggle their logic levels, and cycle through each gate type to observe how the [truth table](/courses/discrete-mathematics/propositions-and-connectives#truth-tables) and output signal respond.
 
 <GatePlayground />
 
 ## The eight fundamental logic gates
 
-Digital systems rely on eight basic gate types, classified by how their outputs respond to input combinations:
+Digital systems rely on eight basic gate types, which directly implement the fundamental operations of [propositions and connectives](/courses/discrete-mathematics/propositions-and-connectives#the-five-connectives) in propositional logic:
 
 | Gate | Graphic Symbol | IEEE Rectangular Symbol | Boolean Expression | Output is 1 when |
 |---|---|---|---|---|

@@ -103,7 +103,7 @@ A small voltage spike of $+0.26\text{ V}$ lifts the wire to $1.76\text{ V}$, pas
 By restricting the system to only two values, engineers establish wide buffer zones called **logic levels**. A circuit does not have to measure an exact voltage; it only needs to detect whether a voltage falls into the upper band or the lower band.
 
 <Callout tone="orange" label="Mistake students make">
-**Assuming binary was chosen because base-2 math is mathematically superior.** Ternary (base-3) arithmetic is slightly more efficient in theory, and working decimal computers have existed. Binary became standard because of transistor physics. Building a transistor that acts as a simple ON/OFF switch is much simpler, cheaper, and less sensitive to heat or manufacturing differences than building a switch with three or ten distinct levels.
+**Assuming binary was chosen because base-2 math is mathematically superior.** Ternary (base-3) arithmetic is slightly more efficient in theory, and working decimal computers have existed. Binary became standard because of transistor physics. Building a [transistor](/courses/computer-organization/whats-inside#the-idea-that-makes-it-all-work) that acts as a simple ON/OFF switch is much simpler, cheaper, and less sensitive to heat or manufacturing differences than building a switch with three or ten distinct levels.
 </Callout>
 
 ## Logic levels and threshold voltages
@@ -421,7 +421,7 @@ Serial Transmission (8 bits in 8 clock cycles):
 ### Serial transmission
 Bits are sent sequentially, one after another, over a single conductor (plus a shared ground reference line).
 - **Advantages:** Requires only one signal wire (or one differential pair), keeping cables thin, connectors compact, pin counts low, and circuit boards uncrowded.
-- **Disadvantages:** At equal clock rates, transmitting an 8-bit byte requires eight sequential clock cycles.
+- **Disadvantages:** At equal clock rates, transmitting an 8-bit byte requires eight sequential [clock cycles](/courses/computer-organization/machine-cycle).
 
 ### Parallel transmission
 All bits of a byte or word are sent simultaneously across multiple physical conductors, with one bit assigned to each wire.

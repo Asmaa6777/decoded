@@ -3,7 +3,7 @@ import { CounterLab, CounterComparisonLab, ModCounterLab } from "@/components/md
 
 # Binary Counters
 
-Digital computers use binary counters to measure time, step through instruction addresses, and divide clock frequencies.
+Digital computers use binary counters to measure time, step through instruction addresses in the [Program Counter](/courses/computer-organization/inside-the-cpu#the-registers-that-matter-most), and divide clock frequencies.
 
 Examine the lowest four bits of a standard binary counting sequence:
 
@@ -26,7 +26,7 @@ Notice the pattern:
 - Bit $Q_2$ toggles every **4 steps** (whenever both $Q_1$ and $Q_0$ were 1).
 - Bit $Q_3$ toggles every **8 steps** (whenever $Q_2, Q_1, Q_0$ were all 1).
 
-A digital **counter** is a sequential circuit that cycles through a specified sequence of binary states upon the arrival of clock pulses. The number of unique states in the cycle is called the **modulus** (or **MOD**) of the counter. An $n$-bit counter has a maximum modulus of $2^n$.
+A digital **counter** is a sequential circuit that cycles through a specified sequence of binary states upon the arrival of clock pulses, sequencing the [machine cycle](/courses/computer-organization/machine-cycle) in CPU control units. The number of unique states in the cycle is called the **modulus** (or **MOD**) of the counter. An $n$-bit counter has a maximum modulus of $2^n$.
 
 Because a [T flip-flop](/courses/logic-design/flip-flops#2-the-t-flip-flop-toggle) (or a [JK flip-flop](/courses/logic-design/flip-flops#3-the-jk-flip-flop) with $J = K = 1$) toggles on every active clock edge, a counter is constructed by interconnecting a chain of toggling flip-flops.
 

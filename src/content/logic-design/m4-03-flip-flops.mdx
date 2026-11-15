@@ -5,7 +5,7 @@ import { EdgeLab, MasterSlave, JkLab, FlipFlopConversionLab, SystemTimingLab } f
 
 A [latch](/courses/logic-design/d-latch-and-clock) is level-sensitive: as long as its enable line remains high, its window is open, allowing input fluctuations to pass directly to the output. An **edge-triggered flip-flop** acts like a camera shutter: it samples its input at one precise transition, the clock edge, and ignores the input during the rest of the clock cycle.
 
-By sampling only on transitions, flip-flops eliminate transparency hazards and make it possible to build complex, reliable sequential circuits.
+By sampling only on transitions, flip-flops eliminate transparency hazards and make it possible to build complex, reliable sequential circuits, such as the [five classic pipeline stages](/courses/computer-architecture/pipelining#the-five-classic-stages) of modern processors.
 
 Below, compare how a level-sensitive latch and an edge-triggered flip-flop respond to the identical clock and data signals. Click data cells to change $D$ while the clock is high, and observe how only the latch reflects those mid-pulse changes:
 
@@ -32,7 +32,7 @@ In logic diagrams, a small dynamic indicator triangle ($\vartriangle$) on an inp
 
 ## How to Freeze an Instant: The Master-Slave Architecture
 
-Physical semiconductor gates cannot measure an infinitesimal mathematical instant. Instead, edge triggering is achieved by cascading two distinct latches in series under complementary clock control. This structure is known as a **master-slave flip-flop**.
+Physical semiconductor gates cannot measure an infinitesimal mathematical instant. Instead, edge triggering is achieved by cascading two distinct latches in series under complementary clock control. This structure is known as a **master-slave flip-flop**, which forms the basis for [edge-triggered flip-flops](/courses/computer-architecture/sequential-logic-and-latches#edge-triggered-flip-flops) in processor control.
 
 The circuit acts as an electronic **airlock**: there are two sequential doors, and because the clock driving the second door is inverted, the two doors can never be open at the same time.
 

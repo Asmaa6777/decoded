@@ -5,7 +5,7 @@ import { CarryRace, FastAdderLab } from "@/components/mdx/LogicVisualizers";
 
 Digital logic gates are physical electronic devices made of transistors. When gate inputs switch between logic levels, the output does not respond instantaneously. The finite time required for transistors to charge and discharge parasitic capacitances is the [propagation delay](/courses/logic-design/logic-gates#propagation-delay-and-transition-times) ($t_{pd}$).
 
-A single gate delay is small, often under 50 picoseconds in modern silicon, but delays accumulate along signal paths. In arithmetic circuits, this creates a performance bottleneck known as the **carry propagation problem**.
+A single gate delay is small, often under 50 picoseconds in modern silicon, but delays accumulate along signal paths, directly limiting the maximum [clock rate](/courses/computer-architecture/measuring-performance) and creating a performance bottleneck known as the **carry propagation problem**.
 
 ## The Propagation Delay Bottleneck in Ripple-Carry Adders
 
@@ -42,7 +42,7 @@ $$
 | 32 bits | 64 levels | $64\tau$ | $15.6\text{ MHz}$ |
 | 64 bits | 128 levels | $128\tau$ | $7.8\text{ MHz}$ |
 
-Because a CPU's clock frequency depends on the longest path in the machine ($f_{\text{clk}} \le \frac{1}{t_{\text{critical}}}$), a 64-bit ripple-carry adder would limit the processor to very low clock speeds.
+Because a CPU's clock frequency depends on the longest path in the machine ($f_{\text{clk}} \le \frac{1}{t_{\text{critical}}}$), as analyzed in [measuring performance](/courses/computer-architecture/measuring-performance), a 64-bit ripple-carry adder would limit the processor to very low clock speeds.
 
 ## The Carry-Lookahead Principle
 

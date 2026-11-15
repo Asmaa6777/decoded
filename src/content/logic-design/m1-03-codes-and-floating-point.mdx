@@ -3,7 +3,7 @@ import { CodeTable, GrayEncoder, FloatExplorer, BcdAdderVisualizer, ParityLab } 
 
 # Codes and Floating Point
 
-A collection of bits on a data bus has no built-in meaning. The byte `01000111` could represent the integer 71, the ASCII letter `G`, part of a floating-point number, an instruction for a processor, or a pixel color channel. 
+A collection of bits on a data bus has no built-in meaning. The byte `01000111` could represent the integer 71, the [ASCII](/courses/computer-organization/bits-and-bytes#letters-are-numbers) letter `G`, part of a floating-point number, an instruction for a processor, or a pixel color channel. 
 
 A **code** is an agreed mapping between symbols (letters, numbers, machine commands) and binary patterns called **code words**. Different goals, such as display readability, sensor reliability, arithmetic simplicity, and numerical range, require different binary codes.
 
@@ -16,7 +16,7 @@ Digital systems use several types of binary codes:
 1. **Weighted codes:** Each bit position in the code word has a fixed weight. The decimal value is the sum of the weights of all 1s (such as standard binary, 8421 BCD, and 2421 code).
 2. **Non-weighted codes:** Bit positions do not have fixed numerical weights. Patterns are chosen for physical or algebraic properties (such as Excess-3 and Gray code).
 3. **Self-complementing (reflective) codes:** Inverting every bit of a digit's code word gives the code word for its 9's complement (1's complement). This simplifies decimal subtraction in hardware.
-4. **Error-detecting codes:** Extra bits (such as parity) are added to a code word so hardware can spot whether data was corrupted during transmission or storage.
+4. **Error-detecting codes:** Extra bits (such as parity) are added to a code word so hardware can spot whether data was corrupted during transmission or storage, much like [checksums in network protocols](/courses/computer-networks/udp-and-ports#udp-just-ports-and-a-checksum).
 
 ## BCD: decimal digits, one at a time
 
@@ -295,7 +295,7 @@ $$
 \text{Decimal: } \pm M \times 10^E \qquad \text{Binary: } \pm M \times 2^E
 $$
 
-The **IEEE 754 standard** defines how binary floating-point numbers are encoded into 32-bit (single precision) and 64-bit (double precision) words.
+The **IEEE 754 standard** defines how binary floating-point numbers are encoded into 32-bit (single precision) and 64-bit (double precision) words, allowing hardware to compute with the fractional coordinates and slopes needed for [slope-intercept equations in computer graphics](/courses/computer-graphics/slope-and-the-line-equation#the-slope-intercept-equation).
 
 ### Single-precision 32-bit format
 

@@ -7,7 +7,7 @@ Computers are built from electronic switches that settle into two stable voltage
 
 A single binary digit is called a **bit**, the smallest unit of information in digital computing. To represent larger quantities, hardware groups bits into standard sizes:
 - A **nibble** is 4 bits, which can hold $2^4 = 16$ distinct values (the exact capacity of one hexadecimal digit).
-- A **byte** is 8 bits, which can hold $2^8 = 256$ distinct values. It is the standard addressable unit of computer memory.
+- A **byte** is 8 bits, which can hold $2^8 = 256$ distinct values. As introduced in [bits and bytes](/courses/computer-organization/bits-and-bytes), it is the standard addressable unit of computer memory.
 - A **word** is the natural data width a processor handles in one cycle (such as 16 bits on older chips, 32 bits on microcontrollers, and 64 bits on modern processors).
 
 People think in decimal (base 10). Engineers write byte patterns, register values, and memory addresses in octal (base 8) and hexadecimal (base 16). Working with digital hardware means moving comfortably between these number systems.
@@ -270,7 +270,7 @@ For example, convert $(\text{7B.4})_{16}$ to octal:
 3. Read in octal: $(173.2)_8$.
 
 <Callout tone="sky" label="Where you see this in hardware">
-Hexadecimal is standard shorthand in assembly language, circuit schematics, and debuggers. A 32-bit register holds 8 hex digits, a 64-bit address holds 16 hex digits, and color codes like `#FF8800` represent red, green, and blue intensities as three 8-bit bytes ($255, 136, 0$). You also compute addresses by hand when you [calculate 8086 physical addresses](/courses/microprocessors/segments-and-addresses).
+Hexadecimal is standard shorthand in assembly language, circuit schematics, and debuggers. A 32-bit register holds 8 hex digits, a 64-bit address holds 16 hex digits, and color codes like `#FF8800` represent red, green, and blue intensities as three 8-bit bytes ($255, 136, 0$) in [24-bit true color](/courses/computer-graphics/color-pixels#24-bit-true-color). You also compute addresses by hand when you [calculate 8086 physical addresses](/courses/microprocessors/segments-and-addresses).
 </Callout>
 
 ## Fractions

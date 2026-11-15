@@ -296,7 +296,7 @@ It provides three status lines for cascading into 16-to-4 or 64-to-6 priority ne
 <PriorityEncoderLab />
 
 <Callout tone="neon" label="Interrupt Controllers">
-Priority encoders are the core of CPU [interrupt handling](/courses/microprocessors/interrupts). When multiple devices, such as a network card, keyboard, and disk controller, request CPU attention at once, a priority encoder (such as the 8259A PIC) arbitrates immediately. It sends the identifier of the highest-priority device to the processor.
+Priority encoders are the core of CPU [interrupt handling](/courses/microprocessors/interrupts). When multiple devices, such as a network card, keyboard, and disk controller, request CPU attention at once, a priority encoder (such as the 8259A PIC) arbitrates immediately in [bus arbitration](/courses/computer-architecture/buses-and-arbitration#arbitration-whose-turn-is-it). It sends the identifier of the highest-priority device to the processor.
 </Callout>
 
 ## Common exam pitfalls and student mistakes
@@ -478,7 +478,7 @@ A frequent error is connecting $\overline{GS}_H$ (Group Select) to the downstrea
 
 ### Problem 6: Microprocessor memory address decoding and partial decoding hazards
 
-A microprocessor system has a 16-bit address bus ($A_{15}\dots A_0$) addressing up to 64 KB of memory space. The system includes:
+A microprocessor system has a 16-bit address bus ($A_{15}\dots A_0$) addressing up to 64 KB of memory space, matching the address decoding in [RAM and ROM](/courses/computer-organization/ram-and-rom#two-kinds-of-ram). The system includes:
 - Two 8 KB ROM chips (ROM 0 and ROM 1)
 - Two 8 KB SRAM chips (RAM 0 and RAM 1)
 Each 8 KB memory IC has 13 address pins ($A_{12}\dots A_0$) and an active-LOW chip enable pin $\overline{CE}$.

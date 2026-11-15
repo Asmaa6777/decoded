@@ -3,7 +3,7 @@ import { LawChecker } from "@/components/mdx/LogicVisualizers";
 
 # Boolean Algebra
 
-**Boolean algebra** is the mathematics behind digital circuits. Formulated by George Boole in 1854 for propositional logic and adapted to switching circuits by Claude Shannon in 1938, it works with binary variables that take one of two values: $0$ and $1$.
+**Boolean algebra** is the mathematics behind digital circuits. Formulated by George Boole in 1854 for propositional logic and adapted to switching circuits by Claude Shannon in 1938, it mirrors the rules of [logical equivalence](/courses/discrete-mathematics/equivalence-and-laws#the-laws) in formal logic, working with binary variables that take one of two values: $0$ and $1$.
 
 Before working with Boolean equations, two basic terms help:
 - A **literal** is any appearance of a variable, either in uncomplemented form ($x$) or complemented form ($x'$). A circuit with $n$ variables has $2n$ possible literals.
@@ -11,7 +11,7 @@ Before working with Boolean equations, two basic terms help:
 
 Why do engineers use Boolean algebra? On a chip, every literal, AND operation, and OR operation turns into transistors, wires, and gate inputs:
 - Simplifying an expression reduces the **gate count** and silicon area.
-- Reducing nested logic levels shortens **propagation delay**, allowing higher clock speeds.
+- Reducing nested logic levels shortens **propagation delay**, allowing higher [clock speeds](/courses/computer-architecture/measuring-performance).
 - Removing unnecessary switching transitions lowers **dynamic power dissipation**.
 
 ## Axiomatic foundations: Huntington's postulates (1904)
@@ -140,7 +140,7 @@ $$
 
 ## De Morgan's theorems and function complementation
 
-Augustus De Morgan formalized the rules for inverting compound logical operations:
+Augustus De Morgan formalized the rules for inverting compound logical operations, which you may recognize from [De Morgan's laws](/courses/discrete-mathematics/equivalence-and-laws#de-morgans-laws) in propositional logic:
 $$
 (x + y)' = x' \cdot y' \qquad\text{and}\qquad (x \cdot y)' = x' + y'
 $$

@@ -188,10 +188,10 @@ When $D = 0$, all outputs are forced to 0 regardless of $S_1, S_0$. When $D = 1$
 Multiplexers and demultiplexers route data throughout microprocessors:
 
 1. **ALU Operand Routing:**
-   In an instruction like `ADD R1, R2, R3`, the processor's register file contains many general-purpose registers. Dual multiplexer trees select which two register outputs are delivered to inputs $A$ and $B$ of the ALU. The register fields within the [instruction format](/courses/computer-architecture/instruction-formats) drive the multiplexer select lines directly.
+   In an instruction like `ADD R1, R2, R3`, the processor's register file contains many general-purpose registers. Dual multiplexer trees select which two register outputs are delivered to inputs $A$ and $B$ of the [ALU](/courses/computer-organization/inside-the-cpu). The register fields within the [instruction format](/courses/computer-architecture/instruction-formats) drive the multiplexer select lines directly.
 
 2. **Bidirectional Bus Sharing:**
-   Computers connect dozens of memory modules and peripheral chips across a common system [bus](/courses/computer-organization/buses). Multiplexers gate which subsystem drives data onto the bus during any given clock cycle, preventing bus contention.
+   Computers connect dozens of memory modules and peripheral chips across a common system [bus](/courses/computer-organization/buses). Multiplexers gate which subsystem drives data onto the bus during any given clock cycle, preventing bus contention, and resolve [data hazards](/courses/computer-architecture/pipeline-hazards#data-hazards) by forwarding results straight to execution stages.
 
 3. **Time-Division Multiplexing (TDM):**
    In telecommunications, multiple digitized voice or data channels take turns transmitting across a single high-speed physical wire or optical fiber. A multiplexer at the transmitter samples each channel in round-robin sequence, while a demultiplexer at the receiver reconstitutes the original individual streams.

@@ -76,7 +76,7 @@ On each active clock edge, every stored bit advances one position along the chai
 
 ### The Four Fundamental Topologies
 
-Shift registers form the bridge between the serial communication world (where bits travel one at a time over single wires) and the parallel computer world (where 32 or 64 bits travel simultaneously over buses).
+Shift registers form the bridge between the serial communication world (where bits travel one at a time over single wires, as in [stream ciphers](/courses/computational-mathematics/stream-ciphers#how-it-works)) and the parallel computer world (where 32 or 64 bits travel simultaneously over buses).
 
 ```
   1. SISO:  Serial In  ---> [FF0] ---> [FF1] ---> [FF2] ---> [FF3] ---> Serial Out
@@ -160,7 +160,7 @@ To operate correctly, the register is pre-loaded with a single logic 1 (e.g. `10
 $$1000 \longrightarrow 0100 \longrightarrow 0010 \longrightarrow 0001 \longrightarrow 1000 \dots$$
 
 - **Properties:** An $n$-bit ring counter has exactly $n$ distinct states.
-- **Advantage:** Each state is **one-hot encoded** (only one bit is 1 at any time). It requires **zero decoding gates** to generate non-overlapping multi-phase clock pulses or step a sequencer through $n$ sequential execution phases.
+- **Advantage:** Each state is **one-hot encoded** (only one bit is 1 at any time). It requires **zero decoding gates** to generate non-overlapping multi-phase clock pulses or step a sequencer through $n$ sequential execution phases of the [machine cycle](/courses/computer-organization/machine-cycle).
 - **Weakness:** If electrical noise creates an extra 1 (such as `1010`) or clears the 1 (`0000`), the counter remains trapped in an illegal cycle. Reliable designs use a self-starting feedback gate: $D_0 = Q_1' \cdot Q_2' \cdot Q_3'$.
 
 ### 2. The Johnson Counter (Twisted-Ring Counter)

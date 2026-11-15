@@ -5,7 +5,7 @@ import { MemoryUnit, CoincidentMemoryLab, MemoryExpansionLab } from "@/component
 
 We have built basic logic gates, assembled them into combinational arithmetic adders and multiplexers, introduced feedback loops to create latches and edge-triggered flip-flops, and chained flip-flops into multi-bit registers and counters.
 
-Now, we combine all of these fundamental components to build the primary memory of a computer: **Random-Access Memory (RAM)**.
+Now, we combine all of these fundamental components to build the primary memory of a computer: **Random-Access Memory (RAM)**, occupying the central tier of the [memory hierarchy](/courses/computer-organization/memory-hierarchy).
 
 Think of computer memory as a massive grid of numbered post-office boxes:
 - Each box stores a fixed-length group of bits called a **word**.
@@ -137,7 +137,7 @@ For a 1024-word memory ($k = 10$ address lines):
 
 ## Tri-State Logic and Shared System Buses
 
-In a computer, multiple subsystems (RAM, ROM, CPU, disk controllers, network cards) must exchange data over a common set of shared physical wires called the **system data bus**.
+In a computer, multiple subsystems (RAM, ROM, CPU, disk controllers, network cards) must exchange data over a common set of shared physical wires called the system [data bus](/courses/computer-organization/buses#width-is-everything).
 
 If two conventional logic gates were connected to the same wire, and one tried to output logic 1 ($+5\text{ V}$) while the other output logic 0 ($0\text{ V}$), a direct low-resistance short circuit would form. The resulting catastrophic current spike (called **bus contention** or a **bus fight**) would overheat and destroy the semiconductor transistors.
 
@@ -191,7 +191,7 @@ Data Out     ------------------------------+======= Valid ==
 | **Cost per Bit** | High | Very low | Low |
 | **Volatility** | Volatile (loses data on power loss) | Volatile (loses data on power loss) | Non-volatile (retains data permanently) |
 | **Refresh Needed?** | No refresh required | **Must be refreshed** every $64\text{ ms}$ | No |
-| **Primary Use** | CPU L1/L2/L3 caches, register files | Main system memory (DDR4, DDR5) | Boot firmware (BIOS/UEFI), lookup tables |
+| **Primary Use** | CPU [processor caches](/courses/computer-architecture/cache-mapping#three-ways-to-map), register files | [Main memory](/courses/computer-architecture/main-memory) (DDR4, DDR5) | Boot firmware (BIOS/UEFI), lookup tables |
 
 Because DRAM stores each bit as a microscopic electrostatic charge on a capacitor, that charge leaks away through silicon sub-threshold leakage within milliseconds. A DRAM controller must perform periodic **refresh cycles** (reading and re-amplifying every row thousands of times per second) to preserve stored data.
 

@@ -130,7 +130,7 @@ $\Delta x = 6$ and $\Delta y = 5$, so 6 steps, $x_{\text{inc}} = 1$ and $y_{\tex
 
 DDA is simple and gap-free, but it isn't perfect:
 
-- It still uses **floating-point** numbers and **rounds** every pixel, and rounding takes time.
+- It still uses [floating-point](/courses/logic-design/codes-and-floating-point#floating-point-very-large-and-very-small-numbers) numbers and **rounds** every pixel, and rounding takes time.
 - Adding a rounded $m$ over and over **accumulates error**, so on long lines the computed points drift away from the true line.
 
 <PracticalApplication title="Rasterization" tool="GPUs, game engines">

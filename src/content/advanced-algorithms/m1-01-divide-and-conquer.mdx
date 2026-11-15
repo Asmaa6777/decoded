@@ -104,7 +104,7 @@ There are four ways to compute $F_n$, from worst to best:
 
 1. **Naive recursion.** This takes $\Omega(\varphi^n)$ time, which is exponential. Here $\varphi = \frac{1 + \sqrt 5}{2} \approx 1.618$ is the **golden ratio**.
 2. **Bottom-up.** Compute $F_0, F_1, F_2, \dots, F_n$ in order, each one the sum of the previous two: $\Theta(n)$.
-3. **Naive recursive squaring.** $F_n = \varphi^n / \sqrt5$, rounded to the nearest integer. Computing $\varphi^n$ by recursive squaring takes $\Theta(\lg n)$ time. *But it's unreliable:* floating-point arithmetic has round-off errors, and for large $n$ the answer comes out wrong.
+3. **Naive recursive squaring.** $F_n = \varphi^n / \sqrt5$, rounded to the nearest integer. Computing $\varphi^n$ by recursive squaring takes $\Theta(\lg n)$ time. *But it's unreliable:* [floating-point](/courses/logic-design/codes-and-floating-point#floating-point-very-large-and-very-small-numbers) arithmetic has round-off errors, and for large $n$ the answer comes out wrong.
 4. **Recursive squaring with matrices.** Exact, and $\Theta(\lg n)$.
 
 <Callout tone="violet" label="Theorem">

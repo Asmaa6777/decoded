@@ -14,7 +14,7 @@ The most primitive digital memory circuit consists of two [inverters](/courses/l
 
 <BistableLoop />
 
-This configuration is called a **bistable element** (or bistable multivibrator) because it has two stable electrical equilibrium states:
+This configuration is called a **bistable element** (or bistable multivibrator) because it has two stable electrical equilibrium states, modeling the state memory seen in a [state diagram](/courses/theory-of-computation/how-to-read-a-machine#the-anatomy-of-a-state-diagram):
 1. **State 1 ($Q = 1$):** If $Q = 1$, the input to NOT 1 is 1. NOT 1 outputs $Q' = 0$. That 0 feeds into NOT 2, which outputs $Q = 1$. The circuit reinforces itself indefinitely.
 2. **State 2 ($Q = 0$):** If $Q = 0$, the input to NOT 1 is 0. NOT 1 outputs $Q' = 1$. That 1 feeds into NOT 2, which outputs $Q = 0$. Again, the state holds indefinitely.
 
