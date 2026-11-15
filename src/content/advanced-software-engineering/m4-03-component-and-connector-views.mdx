@@ -1,5 +1,5 @@
 import { Callout } from "@/components/mdx/MdxComponents";
-import { Term, KeyTerms, BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+import { Term, KeyTerms, BoxDiagram, UmlComponentNotation } from "@/components/mdx/SoftwareEngineeringVisualizers";
 
 # Component-and-Connector Views
 
@@ -39,23 +39,7 @@ Its units are components; its connectors are their communication mechanisms.
 
 UML draws a component as a box (with a small component icon) and makes its interfaces explicit:
 
-<BoxDiagram
-  title="UML component notation"
-  width={560}
-  height={150}
-  nodes={[
-    { id: "pi", label: "provided", x: 70, y: 75, kind: "interface" },
-    { id: "port1", label: "", x: 175, y: 75, w: 14, h: 14 },
-    { id: "comp", label: "Component", x: 280, y: 75, w: 190, h: 70, kind: "component", tone: "sky" },
-    { id: "port2", label: "", x: 385, y: 75, w: 14, h: 14 },
-    { id: "ri", label: "required ⊂", x: 490, y: 75, kind: "plain" },
-  ]}
-  edges={[
-    { from: "port1", to: "pi", head: "none" },
-    { from: "port2", to: "ri", head: "none" },
-  ]}
-  caption="A provided interface is a lollipop (line + circle). A required interface is a socket (line + half-circle). Both attach at ports, the small squares on the component's edge."
-/>
+<UmlComponentNotation />
 
 - **<Term id="provided-interface">Provided interface</Term>** (lollipop): a service this component offers.
 - **<Term id="required-interface">Required interface</Term>** (socket): a service this component needs.

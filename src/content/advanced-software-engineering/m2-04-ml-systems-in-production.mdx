@@ -84,14 +84,14 @@ Before adding a probabilistic engine, an architect must check that ML is really 
 
 1. **Reliability.** The system keeps working despite hardware or network faults. ML adds a new threat: <Term id="silent-failure">silent failures</Term>, where a model returns well-formed answers that are stale, wrong or biased.
 2. **Scalability.** Handling growth in data, in <Term id="qps">QPS</Term>, or in the number of models. This needs automatic CPU/GPU scaling and a way to run thousands of customized models.
-3. **Maintainability.** Clear separation of concerns, standard feature stores, and shared interfaces so data scientists and MLOps engineers can work together.
+3. **Maintainability.** Clear separation of concerns, standard feature stores (one shared place where the inputs models use are computed and stored), and shared interfaces so data scientists and MLOps engineers (the people who deploy and run models in production) can work together.
 4. **Adaptability.** The architecture can detect performance decay (drift) and trigger retraining smoothly.
 
 ## Traditional software engineering versus ML engineering
 
 | Dimension | Traditional software | Machine learning systems |
 | --- | --- | --- |
-| Where the logic comes from | written explicitly by engineers | emerges from code + data + hyperparameters |
+| Where the logic comes from | written explicitly by engineers | emerges from code + data + hyperparameters (training settings people choose, such as how long to train) |
 | How it fails | loudly: stack traces, null pointers, crashes | silently: valid output, wrong behavior or bias |
 | How it's tested | unit tests check exact outputs | statistical evaluation checks probabilistic bounds |
 | How it decays | when dependencies or APIs change | as soon as real-world data drifts |

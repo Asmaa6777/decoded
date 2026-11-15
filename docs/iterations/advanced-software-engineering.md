@@ -50,12 +50,12 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
   - [x] L4
   - [x] L5
 - [x] 9. Connections (whole course)
-- [ ] 10. Student read-through
-  - [ ] L1
-  - [ ] L2
-  - [ ] L3
-  - [ ] L4
-  - [ ] L5
+- [x] 10. Student read-through
+  - [x] L1
+  - [x] L2
+  - [x] L3
+  - [x] L4
+  - [x] L5
 - [ ] 11. Real readers (whole course)
 - [ ] 12. Final quality review (whole course)
 
@@ -325,3 +325,20 @@ Listed every cross-lesson link already in the course (25, all inside the course)
 - Three new entries on the tools page: Kafka, RabbitMQ and message queues; Docker, Kubernetes and microservices; AI coding assistants. Each points at lessons whose text contains the claimed word (checked by the tools test).
 
 **Checked:** links and previews tests (every new link resolves to a real heading and has a preview), paths and tools tests, the Data Structures and Operating Systems course tests, lint, the build.
+
+### Round 10, student read-through: L1 to L5
+
+Read each lesson in order as a first-time student who has only the earlier lessons, listing every place it confused, stalled or bored, then fixed the list. (Done in the same session as the earlier rounds, not a fresh one: see "not checked".)
+
+**The list, with fixes:**
+1. m1-01: "SWE-bench Verified: a benchmark" assumes the reader knows what a benchmark is. → glossed.
+2. m2-01: Lecture 2 has four lessons and the first one doesn't say where the lecture is going. → a short "Lecture 2 in four lessons" roadmap with links.
+3. m2-04: "feature stores", "MLOps" and "hyperparameters" appear with no explanation. → each glossed in a few words.
+4. m3-01: the opening lists ISO 26262, ISO/SAE 21434 and "UN R155/R156" as bare names. → each says what it covers.
+5. m3-02: "battery SOC" in the EV routing strategy. → "state of charge (SOC)".
+6. m3-05: "ISO 8855" in the ObjectSensor contract. → "the standard coordinate system for vehicles".
+7. m4-03: the UML notation figure faked the socket with a "⊂" character and had invisible ports, so lollipop vs socket was hard to see, the very thing it teaches. → a dedicated `UmlComponentNotation` drawing with a real circle, a real half-circle, labelled ports, readable at phone width.
+
+**Read and found clear:** the flow from the AI case studies into Lecture 2's economics, the SOLID sequence (each principle ends by pointing at the next), the views lessons (each opens by naming its kind of structure), the Lecture 5 process → styles flow, and every practice lesson's "about these questions" note.
+
+**Not checked:** a truly fresh read. The guide asks for a separate session that didn't build the course; this round was done by the same one, so round 11 (real readers) matters even more.

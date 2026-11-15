@@ -170,7 +170,7 @@ public class EcoRoute implements RoutingStrategy { /* minimize energy / fuel */ 
 public class AvoidTollsRoute implements RoutingStrategy { /* secondary roads only */ }
 
 // NEW: plugs in without changing NavigationService
-public class EvChargingAwareRoute implements RoutingStrategy { /* plan charging stops from battery SOC */ }
+public class EvChargingAwareRoute implements RoutingStrategy { /* plan charging stops from battery state of charge (SOC) */ }
 ```
 
 This is the <Term id="strategy-pattern">Strategy pattern</Term>: the service *delegates* the routing decision to whichever strategy object it currently holds.

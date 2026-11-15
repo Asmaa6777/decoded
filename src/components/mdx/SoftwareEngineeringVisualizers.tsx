@@ -899,3 +899,35 @@ export function Topologies() {
     </figure>
   );
 }
+
+/* ------------------------ UML component notation ------------------------ */
+
+/** A UML component with a port, a provided interface (lollipop) and a required interface (socket). */
+export function UmlComponentNotation() {
+  const label = (x: number, y: number, t: string, anchor: "start" | "middle" | "end" = "middle") => (
+    <text x={x} y={y} textAnchor={anchor} fontSize="13" className="font-mono" fill="hsl(var(--foreground))">{t}</text>
+  );
+  return (
+    <figure className="not-prose my-6">
+      <div className="rounded-sm border border-border bg-card p-2">
+        <svg viewBox="0 0 360 150" role="img" aria-label="A UML component with a provided interface drawn as a lollipop on the left and a required interface drawn as a socket on the right, both attached at ports" className="mx-auto block h-auto w-full" style={{ maxWidth: 520 }}>
+          <rect x="120" y="45" width="120" height="60" rx="3" fill="hsl(var(--sky) / 0.13)" stroke={toneVar("sky")} strokeWidth="1.5" />
+          {label(180, 80, "Component")}
+          <rect x="113" y="68" width="14" height="14" fill="hsl(var(--card))" stroke={stroke} strokeWidth="1.5" />
+          <rect x="233" y="68" width="14" height="14" fill="hsl(var(--card))" stroke={stroke} strokeWidth="1.5" />
+          <line x1="113" y1="75" x2="58" y2="75" stroke={stroke} strokeWidth="1.5" />
+          <circle cx="50" cy="75" r="8" fill="hsl(var(--card))" stroke={stroke} strokeWidth="1.5" />
+          <line x1="247" y1="75" x2="300" y2="75" stroke={stroke} strokeWidth="1.5" />
+          <path d="M312,64 A11,11 0 0 0 312,86" fill="none" stroke={stroke} strokeWidth="1.5" />
+          {label(50, 108, "provided")}
+          {label(50, 123, "(lollipop)")}
+          {label(312, 108, "required")}
+          {label(312, 123, "(socket)")}
+          {label(120, 30, "port", "middle")}
+          <line x1="120" y1="34" x2="120" y2="66" stroke={stroke} strokeWidth="1" strokeDasharray="3 3" />
+        </svg>
+      </div>
+      <figcaption className="mt-2 text-center text-sm text-muted-foreground">A provided interface is a lollipop (line + circle). A required interface is a socket (line + half-circle). Both attach at ports, the small squares on the component's edge.</figcaption>
+    </figure>
+  );
+}

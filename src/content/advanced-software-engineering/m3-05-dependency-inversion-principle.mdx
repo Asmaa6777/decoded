@@ -72,7 +72,7 @@ The most safety-critical code, `associateAndTrack`, is reopened and re-tested fo
 package adas.fusion;   // in the policy package!
 
 public interface ObjectSensor {
-    /** Contract: detections in the VEHICLE frame (ISO 8855), SI units, timestamped.
+    /** Contract: detections in the VEHICLE frame (ISO 8855, the standard coordinate system for vehicles), SI units, timestamped.
      *  Returns an empty list, never null. */
     ObjectList detectObjects(Timestamp cycle);
     SensorType type();
