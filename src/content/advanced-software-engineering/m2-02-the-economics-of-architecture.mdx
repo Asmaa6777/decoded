@@ -1,5 +1,5 @@
 import { Callout } from "@/components/mdx/MdxComponents";
-import { Term, KeyTerms, FeatureCostChart, EisenhowerMatrix } from "@/components/mdx/SoftwareEngineeringVisualizers";
+import { Term, KeyTerms, FeatureCostChart, EisenhowerMatrix, DiagramTabs } from "@/components/mdx/SoftwareEngineeringVisualizers";
 
 # The Economics of Architecture
 
@@ -45,6 +45,64 @@ How can you tell that an architecture is decaying? Look at the *friction* of cha
 > **The principle:** in a healthy system, the cost of a change is proportional *only* to its scope, never to its shape.
 
 **Example.** Two requests, both "small": *add a new payment method* and *add a field to the invoice*. In a healthy system both cost about the same, because both are small. In a decaying system, one of them happens to cut across five tangled modules and costs ten times more. When cost depends on shape, the structure is getting in the way.
+
+<DiagramTabs
+  title="Same-sized changes, two structures"
+  tabs={[
+    {
+      label: "Healthy: new payment method",
+      width: 540, height: 245,
+      nodes: [
+        { id: "ui", label: "UI", x: 270, y: 35, w: 120 },
+        { id: "pay", label: "Payments", x: 90, y: 125, w: 130 },
+        { id: "inv", label: "Invoices", x: 270, y: 125, w: 130 },
+        { id: "ord", label: "Orders", x: 450, y: 125, w: 130 },
+        { id: "db", label: "Data access", x: 270, y: 210, w: 150, kind: "store" },
+      ],
+      edges: [
+        { from: "ui", to: "pay" }, { from: "ui", to: "inv" }, { from: "ui", to: "ord" },
+        { from: "pay", to: "db" }, { from: "inv", to: "db" }, { from: "ord", to: "db" },
+      ],
+      highlight: ["pay"],
+      caption: "Small scope, small cost: only Payments changes.",
+    },
+    {
+      label: "Healthy: new invoice field",
+      width: 540, height: 245,
+      nodes: [
+        { id: "ui", label: "UI", x: 270, y: 35, w: 120 },
+        { id: "pay", label: "Payments", x: 90, y: 125, w: 130 },
+        { id: "inv", label: "Invoices", x: 270, y: 125, w: 130 },
+        { id: "ord", label: "Orders", x: 450, y: 125, w: 130 },
+        { id: "db", label: "Data access", x: 270, y: 210, w: 150, kind: "store" },
+      ],
+      edges: [
+        { from: "ui", to: "pay" }, { from: "ui", to: "inv" }, { from: "ui", to: "ord" },
+        { from: "pay", to: "db" }, { from: "inv", to: "db" }, { from: "ord", to: "db" },
+      ],
+      highlight: ["inv"],
+      caption: "Also small scope, and also one module. In a healthy system the cost follows the scope.",
+    },
+    {
+      label: "Decaying: new invoice field",
+      width: 540, height: 245,
+      nodes: [
+        { id: "ui", label: "UI", x: 270, y: 35, w: 120 },
+        { id: "pay", label: "Payments", x: 90, y: 125, w: 130 },
+        { id: "inv", label: "Invoices", x: 270, y: 125, w: 130 },
+        { id: "ord", label: "Orders", x: 450, y: 125, w: 130 },
+        { id: "db", label: "Data access", x: 270, y: 210, w: 150, kind: "store" },
+      ],
+      edges: [
+        { from: "ui", to: "pay" }, { from: "ui", to: "inv" }, { from: "ui", to: "ord" },
+        { from: "pay", to: "inv" }, { from: "inv", to: "ord" }, { from: "ord", to: "pay", bend: 40 },
+        { from: "pay", to: "db" }, { from: "inv", to: "db" }, { from: "ord", to: "db" }, { from: "ui", to: "db", bend: -60 },
+      ],
+      highlight: ["ui", "pay", "inv", "ord", "db"],
+      caption: "The same small request, but the modules reach into each other, so the change ripples through all five. The shape, not the scope, sets the cost: the warning sign of decay.",
+    },
+  ]}
+/>
 
 ## The Eisenhower matrix in software
 

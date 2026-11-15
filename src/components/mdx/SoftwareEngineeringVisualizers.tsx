@@ -92,6 +92,33 @@ export function KeyTerms({ ids }: { ids: string[] }) {
   );
 }
 
+/* ------------------------------ ScrollFrame ------------------------------ */
+
+/** The diagram frame. On a narrow screen a wide diagram scrolls sideways inside it
+    (text stays readable), and a hint says so. */
+function ScrollFrame({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setOverflow(el.scrollWidth > el.clientWidth + 4);
+    check();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <>
+      <div ref={ref} className="overflow-x-auto rounded-sm border border-border bg-card p-2 text-foreground">
+        {children}
+      </div>
+      {overflow && <div className="mt-1 text-right font-mono text-[11px] text-muted-foreground" aria-hidden>swipe to see the whole diagram →</div>}
+    </>
+  );
+}
+
 /* ------------------------------ BoxDiagram ------------------------------ */
 
 export type BoxNode = {
@@ -165,13 +192,13 @@ export function BoxDiagram({
 
   return (
     <figure className="not-prose my-6">
-      <div className="overflow-x-auto rounded-sm border border-border bg-card p-2 text-foreground">
+      <ScrollFrame>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
           aria-label={title ?? caption?.toString() ?? "diagram"}
           className="mx-auto block h-auto w-full"
-          style={{ minWidth: Math.min(width, 440), maxWidth: width }}
+          style={{ minWidth: Math.min(width, 420), maxWidth: width }}
         >
           <defs>
             <marker id={`${uid}-arrow`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -216,7 +243,7 @@ export function BoxDiagram({
             <DiagramNode key={n.id} n={n} lit={hl.has(n.id)} />
           ))}
         </svg>
-      </div>
+      </ScrollFrame>
       {caption && <figcaption className="mt-2 text-center text-sm text-muted-foreground">{caption}</figcaption>}
     </figure>
   );
@@ -621,23 +648,24 @@ export function OccupancyGridLsp() {
           </button>
         ))}
       </div>
-      <svg viewBox="0 0 520 170" role="img" aria-label="A car approaching a barrier at roof height, with a bridge high above the road" className="mx-auto block h-auto w-full" style={{ maxWidth: 520 }}>
-        <line x1="10" y1="150" x2="510" y2="150" stroke={stroke} strokeWidth="2" />
+      <svg viewBox="0 0 360 200" role="img" aria-label="A car approaching a barrier at roof height, with a bridge high above the road" className="mx-auto block h-auto w-full" style={{ maxWidth: 520 }}>
+        <line x1="6" y1="160" x2="354" y2="160" stroke={stroke} strokeWidth="2" />
         {[0, 1, 2, 3].map((z) => (
-          <text key={z} x="14" y={145 - z * 32} fontSize="10" className="font-mono" fill="hsl(var(--muted-foreground))">
+          <text key={z} x="8" y={154 - z * 34} fontSize="11" className="font-mono" fill="hsl(var(--muted-foreground))">
             z={z}
           </text>
         ))}
-        <rect x="60" y="112" width="70" height="30" rx="6" fill="hsl(var(--sky) / 0.2)" stroke={toneVar("sky")} />
-        <text x="95" y="132" textAnchor="middle" fontSize="11" className="font-mono" fill="hsl(var(--foreground))">car</text>
-        <rect x="230" y="100" width="60" height="10" fill="hsl(var(--orange) / 0.3)" stroke={toneVar("orange")} />
-        <text x="260" y="94" textAnchor="middle" fontSize="11" className="font-mono" fill="hsl(var(--foreground))">barrier (roof height)</text>
-        <text x="260" y="165" textAnchor="middle" fontSize="11" className="font-mono" fill={barrierHit ? toneVar("orange") : barrierHit === false ? toneVar("mint") : "hsl(var(--muted-foreground))"}>
+        <rect x="40" y="122" width="62" height="32" rx="6" fill="hsl(var(--sky) / 0.2)" stroke={toneVar("sky")} />
+        <text x="71" y="143" textAnchor="middle" fontSize="14" className="font-mono" fill="hsl(var(--foreground))">car</text>
+        <rect x="150" y="110" width="60" height="10" fill="hsl(var(--orange) / 0.3)" stroke={toneVar("orange")} />
+        <text x="180" y="102" textAnchor="middle" fontSize="13" className="font-mono" fill="hsl(var(--foreground))">barrier</text>
+        <text x="180" y="88" textAnchor="middle" fontSize="11" className="font-mono" fill="hsl(var(--muted-foreground))">(roof height)</text>
+        <text x="180" y="184" textAnchor="middle" fontSize="15" fontWeight="600" className="font-mono" fill={barrierHit ? toneVar("orange") : barrierHit === false ? toneVar("mint") : "hsl(var(--muted-foreground))"}>
           {mark(barrierHit)}
         </text>
-        <rect x="380" y="28" width="110" height="10" fill="hsl(var(--violet) / 0.3)" stroke={toneVar("violet")} />
-        <text x="435" y="22" textAnchor="middle" fontSize="11" className="font-mono" fill="hsl(var(--foreground))">bridge (high above)</text>
-        <text x="435" y="165" textAnchor="middle" fontSize="11" className="font-mono" fill={bridgeHit ? toneVar("orange") : bridgeHit === false ? toneVar("mint") : "hsl(var(--muted-foreground))"}>
+        <rect x="250" y="34" width="100" height="10" fill="hsl(var(--violet) / 0.3)" stroke={toneVar("violet")} />
+        <text x="300" y="26" textAnchor="middle" fontSize="13" className="font-mono" fill="hsl(var(--foreground))">bridge (high)</text>
+        <text x="300" y="184" textAnchor="middle" fontSize="15" fontWeight="600" className="font-mono" fill={bridgeHit ? toneVar("orange") : bridgeHit === false ? toneVar("mint") : "hsl(var(--muted-foreground))"}>
           {mark(bridgeHit)}
         </text>
       </svg>
@@ -768,7 +796,7 @@ export function SequenceDiagram({
   const H = top + 22 + steps.length * rowH + 10;
   return (
     <figure className="not-prose my-6">
-      <div className="overflow-x-auto rounded-sm border border-border bg-card p-2 text-foreground">
+      <ScrollFrame>
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={title ?? "sequence diagram"} className="mx-auto block h-auto w-full" style={{ minWidth: Math.min(W, 460), maxWidth: W }}>
           <defs>
             <marker id={`${uid}-a`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
@@ -826,8 +854,48 @@ export function SequenceDiagram({
             );
           })}
         </svg>
-      </div>
+      </ScrollFrame>
       {caption && <figcaption className="mt-2 text-center text-sm text-muted-foreground">{caption}</figcaption>}
+    </figure>
+  );
+}
+
+/* ------------------------------ Topologies ------------------------------ */
+
+const TOPOLOGIES: { name: string; pts: [number, number][]; links: [number, number][] }[] = [
+  { name: "Ring", pts: [[40, 10], [68, 26], [68, 58], [40, 74], [12, 58], [12, 26]], links: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0]] },
+  { name: "Mesh", pts: [[14, 16], [66, 12], [40, 42], [16, 70], [66, 68]], links: [[0, 1], [0, 2], [1, 2], [2, 3], [2, 4], [3, 4], [1, 4]] },
+  { name: "Star", pts: [[40, 42], [40, 8], [74, 42], [40, 76], [6, 42]], links: [[0, 1], [0, 2], [0, 3], [0, 4]] },
+  { name: "Fully connected", pts: [[14, 14], [66, 14], [66, 70], [14, 70]], links: [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]] },
+  { name: "Line", pts: [[6, 42], [28, 42], [52, 42], [74, 42]], links: [[0, 1], [1, 2], [2, 3]] },
+  { name: "Tree", pts: [[40, 10], [18, 40], [62, 40], [8, 72], [28, 72], [62, 72]], links: [[0, 1], [0, 2], [1, 3], [1, 4], [2, 5]] },
+  { name: "Bus", pts: [[12, 20], [40, 20], [68, 20], [12, 60], [40, 60], [68, 60]], links: [] },
+];
+
+/** The seven topologies from Lecture 5, as small pictures that wrap on narrow screens. */
+export function Topologies() {
+  return (
+    <figure className="not-prose my-6">
+      <div className="grid grid-cols-3 gap-2 rounded-sm border border-border bg-card p-3 sm:grid-cols-4">
+        {TOPOLOGIES.map((t) => (
+          <div key={t.name} className="flex flex-col items-center">
+            <svg viewBox="0 0 80 84" className="h-20 w-20" role="img" aria-label={`${t.name} topology`}>
+              {t.name === "Bus" && <line x1="4" y1="40" x2="76" y2="40" stroke={stroke} strokeWidth="2" />}
+              {t.name === "Bus" && t.pts.map(([x, y], i) => <line key={i} x1={x} y1={y} x2={x} y2={40} stroke={stroke} strokeWidth="1.4" />)}
+              {t.links.map(([a, b], i) => (
+                <line key={i} x1={t.pts[a][0]} y1={t.pts[a][1]} x2={t.pts[b][0]} y2={t.pts[b][1]} stroke={stroke} strokeWidth="1.4" />
+              ))}
+              {t.pts.map(([x, y], i) => (
+                <circle key={i} cx={x} cy={y} r="5" fill="hsl(var(--mint) / 0.25)" stroke={toneVar("mint")} strokeWidth="1.5" />
+              ))}
+            </svg>
+            <div className="mt-1 text-center font-mono text-[11px] text-muted-foreground">{t.name}</div>
+          </div>
+        ))}
+      </div>
+      <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+        The seven topologies the lecture shows. A style's configuration rules often fix the topology: pipe-and-filter is a line or tree of filters; client-server is a star around the server.
+      </figcaption>
     </figure>
   );
 }

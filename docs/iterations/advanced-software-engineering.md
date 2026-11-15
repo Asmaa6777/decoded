@@ -31,12 +31,12 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
   - [x] L3
   - [x] L4
   - [x] L5
-- [ ] 6. Visualizations
-  - [ ] L1
-  - [ ] L2
-  - [ ] L3
-  - [ ] L4
-  - [ ] L5
+- [x] 6. Visualizations
+  - [x] L1
+  - [x] L2
+  - [x] L3
+  - [x] L4
+  - [x] L5
 - [ ] 7. MCQ practice
   - [ ] L1
   - [ ] L2
@@ -243,3 +243,23 @@ Merged `main` (481 new commits) into the branch, then into `main`. The merge had
 - **Moved components:** `FocusPanel` now comes from `vizKit.tsx` and `Diagram` from `Diagram.tsx`.
 
 Lint, the full test suite and the build pass after the merge.
+
+### Round 6, visualizations: L1 to L5
+
+Opened the diagram-heavy lessons in Chromium at 390 px wide, in dark and light themes with reduced motion, and judged every idea still only in text.
+
+**Found:**
+- Wide diagrams (decomposition vs client-server, the 4-participant sequence diagram, several before/after tabs) were cut off at the right edge with no sign they scroll.
+- The topology picture in m5-01 lost its "Line" and "Bus" panels on phones.
+- The LSP height scene's labels were too small to read at phone width (about 7 px).
+- Scope vs shape of change (m2-02) was explained only in words.
+
+**Changed:**
+- `ScrollFrame` wraps every `BoxDiagram` and `SequenceDiagram`: wide diagrams keep readable text and scroll inside their frame, and a "swipe to see the whole diagram →" hint appears only when the diagram is actually wider than the screen. The minimum drawing width dropped from 440 to 420.
+- New `Topologies` component: the lecture's seven topologies (ring, mesh, star, fully connected, line, tree, bus; mesh was missing before) as small pictures in a grid that wraps on narrow screens.
+- The LSP scene was redrawn on a narrower canvas with 13–15 px labels.
+- New scope-vs-shape tabs in m2-02: the same small request in a healthy system (one module changes) and in a decaying one (it ripples through all five).
+
+**Checked:** both themes, reduced motion (none of the course's components animate), no page overflow on the checked lessons, a term popup opens from the keyboard (focus + Enter), lint, the course tests and the build.
+
+**Judged and left as text or tables:** the 4D model, the eight expectations, and the SWE-vs-ML table: they are lists to revise from, and a picture would add nothing.

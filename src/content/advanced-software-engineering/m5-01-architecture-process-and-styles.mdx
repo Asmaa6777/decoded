@@ -1,5 +1,5 @@
 import { Callout } from "@/components/mdx/MdxComponents";
-import { Term, KeyTerms, BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+import { Term, KeyTerms, BoxDiagram, Topologies } from "@/components/mdx/SoftwareEngineeringVisualizers";
 import { Diagram } from "@/components/mdx/Diagram";
 
 # The Architecture Process and Architectural Styles
@@ -33,34 +33,7 @@ Every style defines three things:
 
 Topology is the *shape* of the connections. The lecture shows seven:
 
-<BoxDiagram
-  title="Common topologies"
-  width={640}
-  height={250}
-  nodes={[
-    { id: "r1", label: "", x: 60, y: 40, w: 14, h: 14, tone: "mint" }, { id: "r2", label: "", x: 95, y: 60, w: 14, h: 14, tone: "mint" }, { id: "r3", label: "", x: 95, y: 100, w: 14, h: 14, tone: "mint" }, { id: "r4", label: "", x: 60, y: 120, w: 14, h: 14, tone: "mint" }, { id: "r5", label: "", x: 25, y: 100, w: 14, h: 14, tone: "mint" }, { id: "r6", label: "", x: 25, y: 60, w: 14, h: 14, tone: "mint" },
-    { id: "rl", label: "Ring", x: 60, y: 150, kind: "plain" },
-    { id: "s0", label: "", x: 230, y: 80, w: 16, h: 16, tone: "mint" }, { id: "s1", label: "", x: 230, y: 30, w: 14, h: 14, tone: "mint" }, { id: "s2", label: "", x: 280, y: 80, w: 14, h: 14, tone: "mint" }, { id: "s3", label: "", x: 230, y: 130, w: 14, h: 14, tone: "mint" }, { id: "s4", label: "", x: 180, y: 80, w: 14, h: 14, tone: "mint" },
-    { id: "sl", label: "Star", x: 230, y: 155, kind: "plain" },
-    { id: "f1", label: "", x: 380, y: 40, w: 14, h: 14, tone: "mint" }, { id: "f2", label: "", x: 440, y: 40, w: 14, h: 14, tone: "mint" }, { id: "f3", label: "", x: 440, y: 110, w: 14, h: 14, tone: "mint" }, { id: "f4", label: "", x: 380, y: 110, w: 14, h: 14, tone: "mint" },
-    { id: "fl", label: "Fully connected", x: 410, y: 150, kind: "plain" },
-    { id: "l1", label: "", x: 520, y: 80, w: 14, h: 14, tone: "mint" }, { id: "l2", label: "", x: 555, y: 80, w: 14, h: 14, tone: "mint" }, { id: "l3", label: "", x: 590, y: 80, w: 14, h: 14, tone: "mint" }, { id: "l4", label: "", x: 625, y: 80, w: 14, h: 14, tone: "mint" },
-    { id: "ll", label: "Line", x: 572, y: 115, kind: "plain" },
-    { id: "t1", label: "", x: 160, y: 190, w: 14, h: 14, tone: "mint" }, { id: "t2", label: "", x: 125, y: 225, w: 14, h: 14, tone: "mint" }, { id: "t3", label: "", x: 195, y: 225, w: 14, h: 14, tone: "mint" },
-    { id: "tl", label: "Tree", x: 250, y: 215, kind: "plain" },
-    { id: "b1", label: "", x: 380, y: 190, w: 14, h: 14, tone: "mint" }, { id: "b2", label: "", x: 430, y: 190, w: 14, h: 14, tone: "mint" }, { id: "b3", label: "", x: 480, y: 190, w: 14, h: 14, tone: "mint" }, { id: "bb1", label: "", x: 380, y: 225, w: 2, h: 2, kind: "plain" }, { id: "bb3", label: "", x: 480, y: 225, w: 2, h: 2, kind: "plain" }, { id: "bb2", label: "", x: 430, y: 225, w: 2, h: 2, kind: "plain" },
-    { id: "bl", label: "Bus", x: 545, y: 225, kind: "plain" },
-  ]}
-  edges={[
-    { from: "r1", to: "r2", head: "none" }, { from: "r2", to: "r3", head: "none" }, { from: "r3", to: "r4", head: "none" }, { from: "r4", to: "r5", head: "none" }, { from: "r5", to: "r6", head: "none" }, { from: "r6", to: "r1", head: "none" },
-    { from: "s0", to: "s1", head: "none" }, { from: "s0", to: "s2", head: "none" }, { from: "s0", to: "s3", head: "none" }, { from: "s0", to: "s4", head: "none" },
-    { from: "f1", to: "f2", head: "none" }, { from: "f1", to: "f3", head: "none" }, { from: "f1", to: "f4", head: "none" }, { from: "f2", to: "f3", head: "none" }, { from: "f2", to: "f4", head: "none" }, { from: "f3", to: "f4", head: "none" },
-    { from: "l1", to: "l2", head: "none" }, { from: "l2", to: "l3", head: "none" }, { from: "l3", to: "l4", head: "none" },
-    { from: "t1", to: "t2", head: "none" }, { from: "t1", to: "t3", head: "none" },
-    { from: "bb1", to: "bb3", head: "none" }, { from: "b1", to: "bb1", head: "none" }, { from: "b2", to: "bb2", head: "none" }, { from: "b3", to: "bb3", head: "none" },
-  ]}
-  caption="Ring, star, fully connected, line, tree and bus (the lecture also shows a partial mesh). A style's configuration rules often fix the topology: pipe-and-filter is a line or tree of filters; client-server is a star around the server."
-/>
+<Topologies />
 
 ## The role of the software architect
 
