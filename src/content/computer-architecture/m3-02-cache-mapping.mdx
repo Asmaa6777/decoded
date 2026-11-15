@@ -3,22 +3,22 @@ import { CacheLab } from "@/components/mdx/ArchitectureVisualizers";
 
 # Cache Mapping
 
-Main memory stores gigabytes of instructions and data, but reading from dynamic RAM takes dozens of nanoseconds. High-speed processor execution depends on the [cache](/courses/computer-organization/memory-hierarchy), a small on-chip memory built from fast SRAM. Because the cache holds only kilobytes or megabytes, thousands of different main memory locations must compete for each storage location in the cache.
+Main memory holds gigabytes of code and data, but reading from DRAM takes dozens of nanoseconds. High-speed processors depend on the [cache](/courses/computer-organization/memory-hierarchy), a small on-chip memory built from fast SRAM. Because the cache holds only kilobytes or megabytes, thousands of main memory addresses share each slot in the cache.
 
-To make caching work, hardware designers must solve two questions on every memory access: where in the cache does a given memory address go, and how does the processor verify that the data currently stored in that slot is the exact word requested?
+To make caching work, hardware must answer two questions on every memory access: where does a given memory address go, and how does the processor verify that the data in that slot is the exact word requested?
 
 ## The Principle of Locality and Cache Blocks
 
-Caches succeed because computer programs exhibit predictable memory access patterns known as the principle of locality:
+Caches work because running programs visit memory in predictable patterns, known as the principle of locality:
 
-1. **Temporal locality**: A memory location accessed right now is likely to be accessed again in the near future. Program loops, subroutine call stacks, and accumulator variables demonstrate strong temporal locality.
-2. **Spatial locality**: Memory locations physically adjacent to a recently accessed address are likely to be accessed soon. Sequential instruction streams and sequential array traversals show strong spatial locality.
+1. **Temporal locality**: A memory location accessed right now is likely to be accessed again soon. Loop counters, call stacks, and running totals show strong temporal locality.
+2. **Spatial locality**: Memory locations near a recently accessed address are likely to be accessed soon. Stepping through an array or executing consecutive instructions shows strong spatial locality.
 
-To exploit spatial locality, the cache does not store isolated single bytes. Instead, memory moves between main memory and cache in fixed-size chunks called **blocks** (or **cache lines**), typically 32, 64, or 128 bytes in size. When a program reads a single 4-byte integer from memory, the cache controller fetches the entire 64-byte block enclosing that integer.
+To exploit spatial locality, the cache does not load single bytes. Memory moves between main memory and cache in fixed-size chunks called **blocks** (or **cache lines**), typically 32, 64, or 128 bytes. When a program reads a single 4-byte integer, the cache controller fetches the entire 64-byte block holding it.
 
-On every memory reference, the processor checks whether the requested address is already resident:
-- A **cache hit** occurs when the requested word is found in the cache. The data returns to the processor execution pipeline in 1 to 4 clock cycles without accessing main memory.
-- A **cache miss** occurs when the requested word is absent. The processor pipeline must stall or switch tasks while the missing block is retrieved from slower memory (taking dozens or hundreds of cycles).
+On every memory reference, the processor checks whether the address is already in the cache:
+- A **cache hit** occurs when the requested word is found in the cache. The data returns in 1 to 4 clock cycles without touching main memory.
+- A **cache miss** occurs when the word is absent. The processor pipeline must stall or switch tasks while the missing block is fetched from slower memory, taking dozens or hundreds of cycles.
 
 ## Anatomy of an Address: Offset, Index, and Tag
 
@@ -40,7 +40,7 @@ $$
 Think of a library catalog. The **offset** specifies the exact paragraph on a page. The **index** specifies the bookcase shelf where the volume must be placed. The **tag** is the book's registration title printed on its spine: because many different books share the same shelf, the librarian reads the tag to ensure the book on the shelf is the one you requested.
 
 <Callout tone="orange" label="Indexing by byte address instead of block address">
-A common calculation mistake is taking the modulo of the raw byte address by the number of sets: `Address % S`. That incorrectly uses the block offset bits ($A_{b-1} \dots A_0$) as part of the index! The offset bits must always be stripped off first:
+A common calculation mistake is taking the modulo of the raw byte address by the number of sets: `Address % S`. That incorrectly uses the block offset bits ($A_{b-1} \dots A_0$) as part of the index. The offset bits must always be stripped off first:
 $$
 \text{Set Index} = \left\lfloor \frac{\text{Address}}{\text{Block Size}} \right\rfloor \bmod S = (\text{Block Address}) \bmod S
 $$
@@ -48,7 +48,7 @@ Bits $A_{s+b-1} \dots A_b$ form the index, never bits $A_{s-1} \dots A_0$.
 </Callout>
 
 <Callout tone="violet" label="Why the set index uses middle bits">
-Notice that the index bits ($s$) come from the middle of the address, right above the block offset, rather than the most significant bits. If the highest bits were used as the set index, contiguous blocks in memory would all map to the exact same set, causing immediate collision thrashing during sequential array traversals. Using the middle bits ensures that consecutive memory blocks map into consecutive cache sets ($0, 1, 2, \dots$), distributing references evenly across the entire cache.
+The index bits come from the middle of the address, right above the block offset, rather than the top bits. If the top bits picked the set, consecutive blocks in memory would all map to the same set, filling one line and thrashing during sequential array reads. Using the middle bits ensures that consecutive memory blocks map into consecutive sets ($0, 1, 2, \dots$), spreading references evenly across the cache.
 </Callout>
 
 ### Internal Cache Line Structure
@@ -77,7 +77,7 @@ Because $S$ is a power of two ($2^s$), this modulo operation corresponds to taki
 
 - **Hardware complexity**: Minimal. The cache needs only a single comparator to compare the address tag with the tag stored in the indexed line.
 - **Access latency**: Fastest. The index bits select the line immediately, and data readout can begin in parallel with tag comparison.
-- **Limitation**: **Conflict misses** (also called collision misses or ping-pong thrashing). If a program repeatedly alternates between two distinct memory blocks that happen to share the exact same index bits, they will continuously evict each other from the cache, even if 99% of the remaining cache lines are completely empty.
+- **Limitation**: **Conflict misses** (also called collision misses or ping-pong thrashing). If a program alternates between two memory blocks that share the same index, they continually evict each other from the cache, even if the rest of the cache is completely empty.
 
 ### 2. Fully Associative Cache
 
@@ -87,11 +87,11 @@ In a **fully associative cache**, a memory block can be placed in any cache line
   $$t = m - b$$
 - **Conflict misses**: Completely eliminated. A block is evicted only when the entire cache is full (capacity miss).
 - **Hardware complexity**: Extreme. To determine whether a memory address hits, the cache controller must compare the incoming tag against the tags of every single cache line in parallel simultaneously. An $N$-line cache requires $N$ separate comparators.
-- **Usage**: Feasible only for small structures where conflict misses are catastrophic, such as translation lookaside buffers (TLBs) containing 16 to 128 entries.
+- **Usage**: Practical only for small structures where conflict misses are unusually costly, such as translation lookaside buffers (TLBs) with 16 to 128 entries.
 
 ### 3. Set-Associative Cache
 
-A **$k$-way set-associative cache** represents the practical compromise used in modern CPUs. The cache is divided into $S$ sets, where each set contains exactly $k$ parallel cache lines (called "ways").
+A **$k$-way set-associative cache** balances speed and hit rate. The cache is divided into $S$ sets, where each set contains $k$ parallel cache lines (called ways).
 
 $$
 S = \frac{\text{Total Cache Lines}}{k} = \frac{\text{Cache Capacity}}{k \times \text{Block Size}}
@@ -141,11 +141,11 @@ Suppose a loop repeatedly accesses byte addresses `0` and `16`:
 - Block 0: Index = $0 \bmod 4 = 0$, Tag = 0.
 - Block 4: Index = $4 \bmod 4 = 0$, Tag = 1.
 
-Both blocks map to **Set 0**!
+Both blocks map to **Set 0**.
 When the program reads `0`, block 0 loads into Set 0 (Miss).
 When the program reads `16`, block 4 evicts block 0 from Set 0 (Miss).
 When the program reads `0` again, block 0 evicts block 4 from Set 0 (Miss).
-Every single access misses. This is **cache thrashing**.
+Every read misses because the two blocks kick each other out. This is **cache thrashing**.
 
 ### Under 2-Way Set Associativity (2 sets, 2 lines per set):
 - Number of sets: $S = 4 / 2 = 2$ sets.
@@ -154,16 +154,16 @@ Every single access misses. This is **cache thrashing**.
 - Block 0: Index = $0 \bmod 2 = 0$, Tag = 0.
 - Block 4: Index = $4 \bmod 2 = 0$, Tag = 2.
 
-Both blocks map to **Set 0**, but Set 0 contains 2 ways!
+Both blocks map to **Set 0**, but Set 0 contains 2 ways.
 - Access 0: Block 0 is placed in Way 0 of Set 0 (Miss).
 - Access 16: Block 4 is placed in Way 1 of Set 0 (Miss).
-- Next access 0: Hits in Way 0!
-- Next access 16: Hits in Way 1!
+- Next access 0: Hits in Way 0.
+- Next access 16: Hits in Way 1.
 
 Associativity eliminates the conflict miss, converting all subsequent accesses into immediate cache hits.
 
 <Callout tone="orange" label="Matrix loop nesting pitfalls">
-In C and C++, 2D arrays are stored in **row-major order** (row after row sequentially in memory). Iterating through an array `matrix[row][col]` with the inner loop on `col` steps through adjacent memory bytes, maximizing spatial locality and cache hits. Inverting the loops to iterate `col` first causes the access pointer to stride across entire rows, jumping across memory blocks and causing frequent conflict and capacity misses.
+In C and C++, 2D arrays are stored in **row-major order** (row after row sequentially in memory). Iterating through an array `matrix[row][col]` with the inner loop on `col` steps through adjacent memory bytes, maximizing spatial locality and cache hits. Swapping the loops to iterate `col` first causes the access pointer to stride across entire rows, jumping across memory blocks and causing frequent conflict and capacity misses.
 </Callout>
 
 <Callout tone="mint" label="Key takeaway">

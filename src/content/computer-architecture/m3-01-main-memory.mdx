@@ -3,53 +3,53 @@ import { InterleaveLab } from "@/components/mdx/ArchitectureVisualizers";
 
 # Main Memory Performance
 
-Every computer architecture must confront the **memory wall**: the widening speed gap between the central processor and main memory. While processor execution pipelines have accelerated by orders of magnitude, dynamic memory access times have improved far more slowly. A modern processor core can execute hundreds of operations in the time it takes a single request to travel to main memory and return with data. Understanding memory organization, cell technologies, bus timing, and interleaving is essential to preventing the execution engine from sitting idle.
+Every computer architecture faces the **memory wall**: the widening speed gap between the processor and main memory. Processor pipelines have grown hundreds of times faster over recent decades, while dynamic RAM access times have improved far more slowly. A modern CPU core can finish hundreds of operations in the time it takes one request to reach main memory and return. Preventing the CPU from sitting idle takes careful work across memory organization, cell design, bus timing, and bank interleaving.
 
-You have seen [what a memory unit is built from](/courses/logic-design/memory-unit) and [where it sits in the memory hierarchy](/courses/computer-organization/memory-hierarchy). Here we quantify its speed, examine how memory chips are assembled into systems, and show how memory architectures maximize data throughput.
+You have seen [what a memory unit is built from](/courses/logic-design/memory-unit) and [where it sits in the memory hierarchy](/courses/computer-organization/memory-hierarchy). This lesson looks at what makes memory fast or slow: how SRAM and DRAM store bits, how chips combine into wider arrays, and how interleaving keeps data moving on every bus cycle.
 
 ## Memory Technologies: SRAM and DRAM
 
-Main memory systems rely on semiconductor storage technologies categorized by whether their storage cells require continuous electrical refresh cycles.
+Semiconductor memory comes in two main types, separated by whether the storage cells need constant electrical refreshing.
 
 ### Static RAM (SRAM)
 
-A **static random-access memory** (SRAM) cell stores each bit using a bistable latch built from cross-coupled inverters, typically implemented with six CMOS transistors (a 6T cell, where T stands for transistor).
+A **static random-access memory** (SRAM) cell stores each bit in a two-state latch made from two cross-coupled inverters. The standard design uses six CMOS transistors (a 6T cell).
 
-Two CMOS inverters are connected in a loop: the output of the first inverter drives the input of the second, and the output of the second drives the input of the first. This cross-coupling creates positive feedback, locking the internal storage nodes into one of two stable voltage states: high ($V_{DD}$) or low (Ground). Two additional nMOS access transistors connect these storage nodes to a pair of complementary data lines called the **Bit Line** ($BL$) and **Bit Line Bar** ($\overline{BL}$). When the row select wire, known as the **Word Line**, goes high, both access transistors turn on, connecting the cell to the bitlines for reading or writing.
+The two inverters connect in a loop: the output of each inverter drives the input of the other. This feedback locks the internal storage nodes into one of two stable states: high ($V_{DD}$) or low (Ground). Two nMOS access transistors connect these nodes to a pair of complementary data wires called the **Bit Line** ($BL$) and **Bit Line Bar** ($\overline{BL}$). When the row select wire, called the **Word Line**, goes high, both access transistors turn on and connect the cell to the bit lines for reading or writing.
 
-1. **High speed**: An access takes between 0.5 and 2.5 nanoseconds because reading and writing only require charging or discharging the gate capacitance of internal transistors.
-2. **Persistence**: The cell retains its stored data bit indefinitely as long as power is supplied. It requires no periodic refresh circuitry.
-3. **Low density and high cost**: Six transistors per bit occupy considerable silicon area on a die. SRAM chips yield far fewer bits per square millimeter than DRAM chips and cost significantly more per gigabyte.
+1. **High speed**: An access takes between 0.5 and 2.5 nanoseconds because reads and writes only need to charge or discharge gate capacitance.
+2. **Persistence**: The cell retains its stored bit as long as power is connected. It needs no refresh circuitry.
+3. **Low density and high cost**: Six transistors per bit take up substantial silicon area. SRAM chips hold far fewer bits per square millimeter than DRAM chips and cost more per gigabyte.
 
-Because of its speed and density limits, SRAM is reserved for on-chip processor caches: L1, L2, and L3 caches.
+Because SRAM is fast but space-hungry, processors reserve it for on-chip caches: L1, L2, and L3.
 
 ### Dynamic RAM (DRAM)
 
-A **dynamic random-access memory** (DRAM) cell stores a bit as an electrostatic charge on a tiny microscopic capacitor, accessed through a single pass transistor (a 1T-1C cell, consisting of one transistor and one capacitor).
+A **dynamic random-access memory** (DRAM) cell stores a bit as charge on a tiny capacitor, accessed through a single transistor (a 1T-1C cell).
 
-The gate of the access transistor connects to the **Word Line** (row select), its source connects to the **Bit Line** (column data), and its drain connects to the storage capacitor (typically only 20 to 30 femtofarads).
+The transistor gate connects to the **Word Line** (row select), one terminal connects to the **Bit Line** (column data), and the other connects to the storage capacitor (often only 20 to 30 femtofarads).
 
-1. **High density**: With only one transistor and one capacitor per bit, billions of cells can fit on a single silicon die. This makes DRAM economical for main system memory.
-2. **Capacitor leakage and refresh**: The charge stored on the tiny capacitor leaks away through the silicon substrate within milliseconds. To prevent data loss, the memory controller must issue periodic **refresh** commands (typically reading and rewriting every row in the memory matrix every 64 milliseconds). The memory is called "dynamic" precisely because its state continually decays and must be refreshed.
-3. **Destructive read**: Reading a DRAM cell shares the capacitor charge ($Q = C V$) with the much larger capacitance of the long bitline wire, discharging the cell capacitor. This charge sharing shifts the bitline voltage by only a few tens of millivolts. A sensitive differential **sense amplifier** detects this small voltage delta, amplifies it to full logic rail voltage ($V_{DD}$ or Ground), and drives the level back into the cell to restore the original charge before the row can be closed.
-4. **The Row Buffer**: When a wordline activates a row of DRAM cells, the sense amplifiers read an entire row of data (thousands of bits, often called a DRAM page) into an on-chip latch array called the **row buffer**. Subsequent memory requests to that same row hit the row buffer directly, skipping the row activation latency.
+1. **High density**: With only one transistor and one capacitor per bit, billions of cells fit on a single chip. This makes DRAM economical for main memory.
+2. **Capacitor leakage and refresh**: Charge leaks through the silicon substrate within milliseconds. To prevent data loss, the memory controller issues periodic **refresh** commands (reading and rewriting each row about every 64 milliseconds). The memory is called dynamic because its stored state decays over time.
+3. **Destructive read**: Reading a cell drains it. The tiny capacitor charge ($Q = C V$) shares itself with the larger capacitance of the long bit line wire, shifting the wire voltage by only a few tens of millivolts. A sensitive **sense amplifier** detects this small shift, pulls the line to full voltage ($V_{DD}$ or Ground), and writes the value back to the capacitor to restore the original charge before closing the row.
+4. **The row buffer**: When a word line activates a row of cells, the sense amplifiers copy an entire row of data (thousands of bits, often called a DRAM page) into an on-chip latch array called the **row buffer**. Later reads from that same row come straight from the row buffer, skipping the row activation delay.
 
-Non-volatile semiconductor storage includes **read-only memory** (ROM), electrically erasable programmable ROM (EEPROM), and **flash memory**. Flash memory stores charge on floating-gate or charge-trap transistors that retain data without power. NAND flash achieves high density for solid-state storage drives (SSDs), while NOR flash allows byte-level random read access for firmware bootloaders.
+Non-volatile semiconductor storage includes **read-only memory** (ROM), electrically erasable programmable ROM (EEPROM), and **flash memory**. Flash memory stores charge on floating gates or charge traps that hold data without power. NAND flash provides high density for solid-state drives (SSDs), while NOR flash allows random byte-level reads for bootloaders.
 
 ## Key Performance Metrics: Latency and Bandwidth
 
-Three fundamental metrics define the performance of a memory subsystem:
+Three metrics define memory subsystem performance:
 
-1. **Access time ($t_{AC}$)**: The latency elapsed between the instant the processor presents a valid address and read command on the memory bus and the instant the requested data word becomes stable on the data bus.
-2. **Cycle time ($t_{CYC}$)**: The minimum time required between the start of one memory access and the start of the next access. In SRAM, cycle time is roughly equal to access time. In DRAM, cycle time is substantially longer than access time because the memory array must spend time precharging bitlines and restoring capacitor charge after every read.
-3. **Bandwidth**: The maximum rate at which data can be transferred across the memory bus, measured in megabytes or gigabytes per second:
+1. **Access time ($t_{AC}$)**: The delay between the processor placing an address and read command on the bus and valid data appearing on the data pins.
+2. **Cycle time ($t_{CYC}$)**: The minimum time needed between starting one access and starting the next. For SRAM, cycle time matches access time closely. For DRAM, cycle time is much longer than access time because the array has to precharge its bit lines and recharge the capacitors after every read.
+3. **Bandwidth**: The rate at which data moves across the bus, measured in megabytes or gigabytes per second:
 
 $$
 \text{Bandwidth} = \frac{\text{Bytes per transfer}}{\text{Cycle time}} = \text{Bus Width (bytes)} \times \text{Bus Frequency} \times \text{Transfers per cycle}
 $$
 
 <Callout tone="orange" label="Confusing access time with cycle time">
-Students frequently assume that once memory outputs a requested data word (access time $t_{AC}$), the memory is ready for the next command. In DRAM, cycle time $t_{CYC}$ is significantly longer than access time because the bank must precharge its bitlines and restore the drained capacitor charge before any new row can be opened. Starting a second access before $t_{CYC}$ has elapsed causes data corruption.
+It is easy to assume that once memory returns data ($t_{AC}$), it can accept the next command immediately. In DRAM, cycle time $t_{CYC}$ is much longer than access time because the bank must precharge bit lines and restore capacitor charge before opening another row. Sending another request before $t_{CYC}$ completes leads to corrupt data.
 </Callout>
 
 For example, a system with a 64-bit wide data bus (8 bytes) operating with a memory cycle time of 10 nanoseconds yields:
@@ -60,30 +60,30 @@ $$
 
 ### DRAM Timing Parameters
 
-Modern DRAM controllers coordinate transfers using specific timing parameters measured in memory clock cycles:
+Modern DRAM controllers coordinate transfers with timing parameters measured in memory clock cycles:
 
-- **Row Address to Column Address Delay ($t_{RCD}$)**: The clock cycles required to activate a row in the memory array and latch its contents into the row buffer before a column read or write command can be sent.
-- **Column Address Strobe Latency ($t_{CL}$ or CAS Latency)**: The delay in clock cycles between issuing a column address and the appearance of the first data word on the data pins.
-- **Row Precharge Time ($t_{RP}$)**: The time required to precharge the bitlines and close an active row so that another row in the same bank can be opened.
-- **Row Active Time ($t_{RAS}$)**: The minimum time a row must remain open to ensure the sense amplifiers fully restore the cell capacitors.
+- **Row Address to Column Address Delay ($t_{RCD}$)**: The cycles needed to activate a row in the array and latch it into the row buffer before issuing a column command.
+- **Column Address Strobe Latency ($t_{CL}$ or CAS Latency)**: The delay in clock cycles between sending a column address and the first data word appearing on the data pins.
+- **Row Precharge Time ($t_{RP}$)**: The time needed to precharge the bit lines and close an active row so another row in the same bank can open.
+- **Row Active Time ($t_{RAS}$)**: The minimum time a row must stay open so the sense amplifiers can fully recharge the capacitors.
 
-This timing architecture leads to two distinct latency paths:
-- **Row buffer hit (Page hit)**: The requested data already resides in the open row buffer. The access takes only CAS latency: $t_{\text{access}} = t_{CL}$.
-- **Row buffer conflict (Page miss)**: The requested address is in a different row within the same bank. The controller must precharge the old row, activate the new row, and read the column: $t_{\text{access}} = t_{RP} + t_{RCD} + t_{CL}$.
+This creates two access paths:
+- **Row buffer hit (Page hit)**: The requested data is already in the open row buffer. The access needs only CAS latency: $t_{\text{access}} = t_{CL}$.
+- **Row buffer conflict (Page miss)**: The address is in a different row of the same bank. The controller must precharge the old row, activate the new one, and read the column: $t_{\text{access}} = t_{RP} + t_{RCD} + t_{CL}$.
 
-When a memory specification reads **DDR4-3200 16-18-18-38**, these numbers represent $t_{CL}$, $t_{RCD}$, $t_{RP}$, and $t_{RAS}$ in clock cycles at 1600 MHz bus clock frequency.
+When memory is sold as **DDR4-3200 16-18-18-38**, those four numbers represent $t_{CL}$, $t_{RCD}$, $t_{RP}$, and $t_{RAS}$ in clock cycles at a 1600 MHz bus clock.
 
 ## Memory Organization: Sizing and Chip Arrays
 
-Memory chips have limited word lengths and storage capacities. To build a system with wider data words and larger address spaces, memory system designers connect multiple individual memory chips into a coordinated array.
+Individual memory chips have fixed word lengths and capacities. To build a larger system, designers connect multiple chips into an array.
 
-Consider building a main memory of size $M \times N$ (meaning $M$ words of $N$ bits each) using smaller chips of size $K \times W$ (meaning $K$ words of $W$ bits each):
+To build a memory of size $M \times N$ ($M$ words of $N$ bits each) using smaller chips of size $K \times W$ ($K$ words of $W$ bits each):
 
-1. **Expanding word length**: When the desired word width $N$ exceeds the chip word width $W$, we place $N / W$ chips in parallel. Their address lines, read/write controls, and chip enable lines connect in parallel to the system address and control buses. Each chip supplies $W$ bits of the total $N$-bit data bus.
-2. **Expanding word capacity**: When the desired number of words $M$ exceeds the chip capacity $K$, we create $M / K$ separate rows or banks. An address decoder decodes the higher-order address bits to drive the active-low chip select ($\overline{CS}$) line of the target chip row. The lower-order address bits connect in parallel to the address pins of every chip.
+1. **Expanding word length**: When the word width $N$ is wider than the chip width $W$, place $N / W$ chips side by side. Their address lines and control wires connect in parallel to the bus. Each chip provides $W$ bits toward the total $N$-bit data word.
+2. **Expanding word capacity**: When the total words $M$ exceed the chip capacity $K$, create $M / K$ separate banks. A decoder reads the higher address bits to drive the active-low chip select ($\overline{CS}$) pin of the target bank. The lower address bits connect in parallel to every chip.
 
 <Callout tone="orange" label="Address pin confusion in memory expansion">
-When assembling memory chips into an array, students often wonder whether to connect high-order or low-order address bits to the chip pins. The chip address pins must always receive the continuous lower address bits ($A_{k-1} \dots A_0$) so that each chip contains a contiguous block of addresses. The high-order address bits ($A_{A-1} \dots A_k$) feed the bank select decoder, selecting which chip bank is active. Reversing this wiring scatters contiguous byte addresses across different physical chips.
+When wiring chips into an array, it is easy to wonder whether high or low address bits go to the chip pins. The chip pins must receive the continuous lower address bits ($A_{k-1} \dots A_0$) so each chip holds a contiguous block of addresses. The higher address bits ($A_{A-1} \dots A_k$) feed the bank select decoder to choose which bank is active. Swapping them scatters adjacent bytes across physical chips.
 </Callout>
 
 <Callout tone="sky" label="Address bus splitting">
@@ -94,9 +94,9 @@ For an address bus of $A$ bits accessing a byte-organized memory:
 
 ## Memory Interleaving
 
-When a single memory bank receives a memory access, the entire bank remains busy for a full cycle time $t_{CYC}$. If the cycle time is 40 ns and the bus transfer time $t_B$ is only 10 ns, the data bus sits completely idle for 30 ns while the internal bank precharges and recovers.
+When a single memory bank takes a read, the entire bank stays busy for the full cycle time $t_{CYC}$. If the cycle time is 40 ns and the bus transfer time $t_B$ is only 10 ns, the bus sits idle for 30 ns while the bank precharges and recovers.
 
-**Memory interleaving** breaks the memory system into $M$ independent memory banks. Each bank contains its own address buffer, row decoders, column decoders, and sense amplifiers. By partitioning the address space across multiple banks, consecutive memory requests can be initiated in different banks before earlier banks have completed their recovery cycles.
+**Memory interleaving** divides memory into $M$ independent banks. Each bank has its own address buffer, row and column decoders, and sense amplifiers. Distributing addresses across multiple banks allows consecutive requests to start in different banks before earlier banks finish recovering.
 
 ### Low-Order Interleaving
 
@@ -119,11 +119,11 @@ When the CPU reads a sequence of consecutive addresses (such as fetching instruc
 If the degree of interleaving $M$ satisfies $M \ge t_{CYC} / t_B$, memory throughput achieves the theoretical limit of the memory bus: one data word delivered every bus transfer cycle.
 
 <Callout tone="orange" label="The stride conflict trap">
-Low-order interleaving accelerates sequential memory accesses. However, if a program traverses an array with a stride equal to a multiple of the number of banks $M$ (such as striding down the columns of a 2D matrix stored in row-major order), every access maps to the exact same bank. For example, in a 4-bank system ($M = 4$) with a stride of 4, accessing indices $0, 4, 8, 12, \dots$ calculates:
+Low-order interleaving speeds up sequential reads. But if a program reads an array with a stride that is a multiple of $M$ (such as reading down a column of a matrix stored by rows), every access lands in the same bank. For example, in a 4-bank system ($M = 4$) with a stride of 4, indices $0, 4, 8, 12, \dots$ all calculate:
 $$
 0 \bmod 4 = 0, \quad 4 \bmod 4 = 0, \quad 8 \bmod 4 = 0, \quad 12 \bmod 4 = 0
 $$
-Every single memory reference routes to Bank 0, while Banks 1, 2, and 3 sit completely idle. The requests serialize, forcing the processor to wait a full recovery cycle $t_{CYC}$ between every transfer.
+Every read routes to Bank 0, leaving Banks 1, 2, and 3 idle. The accesses queue up, forcing the CPU to wait a full recovery cycle $t_{CYC}$ between transfers.
 </Callout>
 
 ### High-Order Interleaving
@@ -138,24 +138,24 @@ All consecutive addresses up to bank capacity $K$ reside within Bank 0, the next
 
 ## Modern High-Performance DRAM Innovations
 
-Modern memory standards enhance raw bandwidth through structural innovations:
+Modern memory standards increase bandwidth with several design changes:
 
-1. **Synchronous DRAM (SDRAM)**: Traditional asynchronous DRAM relied on control signal edge transitions ($RAS$ and $CAS$). SDRAM latches addresses and commands on the rising edge of the system bus clock, synchronizing memory access directly with the processor memory bus.
-2. **Burst Mode**: After sending an initial row and column address, the memory controller holds the row open in the row buffer and streams a burst of 4, 8, or 16 consecutive data words at consecutive clock cycles without retransmitting address bits.
-3. **Double Data Rate (DDR)**: DDR SDRAM transmits data on both the rising edge and the falling edge of the clock signal, doubling data throughput without increasing the clock frequency. Subsequent generations (DDR2 through DDR5) increase prefetch buffer depths (from 2n to 16n) and elevate bus frequencies.
-4. **Dual In-line Memory Modules (DIMMs)**: Main memory is packaged on printed circuit boards called **DIMMs**, featuring memory chips mounted on both sides with separate electrical contacts on each side, providing a standard 64-bit wide data bus interface to the motherboard.
-5. **Multi-Channel Architecture**: Motherboards feature multiple independent 64-bit memory channels. Dual-channel memory controllers access two distinct DIMM slots concurrently across a combined 128-bit wide data interface, doubling peak memory bandwidth.
+1. **Synchronous DRAM (SDRAM)**: Older DRAM waited on control signal changes. SDRAM latches addresses and commands on the rising edge of the system bus clock, keeping memory in lockstep with the processor.
+2. **Burst Mode**: After sending an initial row and column address, the memory controller leaves the row open in the row buffer and streams a burst of 4, 8, or 16 consecutive words on consecutive clock cycles without sending new addresses.
+3. **Double Data Rate (DDR)**: DDR SDRAM transfers data on both the rising and falling edges of the clock signal, doubling data throughput without raising clock frequency. Later generations (DDR2 through DDR5) increase prefetch buffer depths (from 2n to 16n) and raise bus frequencies.
+4. **Dual In-line Memory Modules (DIMMs)**: Main memory is mounted on circuit boards called **DIMMs**, with memory chips on both sides and separate electrical contacts on each side, giving a standard 64-bit wide data bus to the motherboard.
+5. **Multi-Channel Architecture**: Motherboards provide independent 64-bit memory channels. Dual-channel memory controllers talk to two distinct DIMM slots at once across a combined 128-bit interface, doubling peak bandwidth.
 
 <Callout tone="orange" label="Confusing transfer rate (MT/s) with clock frequency">
-A DDR4-3200 memory module does not run at an internal clock frequency of 3200 MHz. Because DDR transfers data on both the rising and falling edges of the clock signal, the memory I/O bus clock runs at 1600 MHz to achieve 3200 MegaTransfers per second (3200 MT/s). Furthermore, the internal DRAM cell core runs even slower (typically 200 to 400 MHz), relying on a wide 8n prefetch buffer to match high-speed bus output.
+A DDR4-3200 memory module does not run at an internal clock frequency of 3200 MHz. Because DDR transfers data on both the rising and falling edges of the clock signal, the memory I/O bus clock runs at 1600 MHz to achieve 3200 MegaTransfers per second (3200 MT/s). The internal DRAM core runs slower still (typically 200 to 400 MHz), using an 8n prefetch buffer to feed the faster bus.
 </Callout>
 
 <Callout tone="violet" label="Why dual-channel memory matters">
-A processor running integrated graphics relies on system RAM for video frame buffering. A single 64-bit DDR4 channel running at 3200 MT/s provides 25.6 GB/s of bandwidth. Operating two DIMMs in dual-channel mode widens the memory interface to 128 bits, providing 51.2 GB/s, which dramatically reduces memory starvation for graphics pipelines.
+A CPU with integrated graphics relies on system RAM to hold video frames. A single 64-bit DDR4 channel at 3200 MT/s gives 25.6 GB/s of bandwidth. Running two DIMMs in dual-channel mode widens the bus to 128 bits, providing 51.2 GB/s and keeping the graphics pipeline from stalling on memory.
 </Callout>
 
 <Callout tone="mint" label="Key takeaway">
-Main memory performance depends on balancing access latency against burst bandwidth. SRAM offers nanosecond access speeds for caches, while DRAM achieves dense, low-cost capacity for main memory. Low-order interleaving hides DRAM cycle recovery time by pipelining transfers across independent banks, matching bus transfer capacity for sequential workloads.
+Main memory performance balances access latency against burst bandwidth. SRAM offers sub-nanosecond access speeds for caches, while DRAM delivers dense, low-cost capacity for main memory. Low-order interleaving hides DRAM cycle recovery time by pipelining transfers across independent banks, matching bus capacity for sequential workloads.
 </Callout>
 
 ## Exam-Style Practice
@@ -199,7 +199,7 @@ All 4 chips operate in parallel as a single bank providing $128\text{K}$ 32-bit 
 Total addressable space is $512\text{ KB} = 2^{19}\text{ bytes}$, requiring 19 address lines ($A_{18} \dots A_0$):
 - **Byte Offset within Word (2 bits, $A_1 \dots A_0$)**: Because each word consists of 4 bytes, $\log_2(4) = 2$ bits select the individual byte within the 32-bit word during byte-level memory operations.
 - **Chip Address Inputs (17 bits, $A_{18} \dots A_2$)**: Each chip contains $128\text{K} = 2^{17}$ addressable locations. Therefore, the 17 address bits $A_{18} \dots A_2$ connect directly to the 17 address pins of all 4 chips in parallel.
-- **Bank Select**: Because 1 bank spans the entire $512\text{ KB}$ address space, no external bank decoder is required. The active-low chip select pins ($\overline{CS}$) of all 4 chips are asserted simultaneously whenever a valid memory request occurs.
+- **Bank Select**: Because one bank covers the entire $512\text{ KB}$ space, the system needs no external bank decoder. The active-low chip select pins ($\overline{CS}$) of all 4 chips are asserted simultaneously whenever a valid memory request occurs.
 </ModelAnswer>
 
 <ModelAnswer title="Problem 2: Interleaved memory bandwidth and timing analysis">
