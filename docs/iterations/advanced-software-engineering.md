@@ -56,8 +56,8 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
   - [x] L3
   - [x] L4
   - [x] L5
-- [ ] 11. Real readers (whole course)
-- [ ] 12. Final quality review (whole course)
+- [ ] 11. Real readers (whole course): waiting for student feedback; can't be done by an agent
+- [x] 12. Final quality review (whole course)
 
 ## Reading the slides cheaply
 
@@ -342,3 +342,26 @@ Read each lesson in order as a first-time student who has only the earlier lesso
 **Read and found clear:** the flow from the AI case studies into Lecture 2's economics, the SOLID sequence (each principle ends by pointing at the next), the views lessons (each opens by naming its kind of structure), the Lecture 5 process → styles flow, and every practice lesson's "about these questions" note.
 
 **Not checked:** a truly fresh read. The guide asks for a separate session that didn't build the course; this round was done by the same one, so round 11 (real readers) matters even more.
+
+### Round 12, final quality review: whole course
+
+Checked the course against the final-quality list in the original request, and ran the full checks: lint (0 errors; the 12 warnings are pre-existing in `src/components/ui`), all 3451 tests in 67 files, and the build (35 OG images, 294 pages).
+
+| Requirement | Status | Evidence |
+| --- | --- | --- |
+| Faithful to the slides | ✓ | Round 2 checked all five lectures and the infographic slide by slide; additions are labelled as ours. |
+| Lecture structure kept | ✓ | Five modules labelled Lecture 1 to Lecture 5, in slide order; the test checks the labels. |
+| Difficult terms highlighted | ✓ | 153 highlights over 129 glossary terms; once per lesson, every key term highlighted, every entry used (tested). |
+| Short definition popups | ✓ | Hover or tap; one shared glossary; each entry under 260 characters and names its lecture (tested); opens from the keyboard. |
+| Student-friendly English | ✓ | Rounds 3, 4 and 10: common-mistake callouts in all 19 content lessons, long sentences split, jargon glossed. |
+| Meaningful visualizations | ✓ | 69 diagrams and demos, each tied to a slide idea; phone width, both themes checked (round 6). |
+| System and architecture diagrams used widely | ✓ | Architecture, UML class/component/package/deployment, sequence, process and topology diagrams in every lecture. |
+| MCQ quizzes after each lecture | ✓ | 63 scored questions in the question bank, 11–13 per lecture, every content lesson covered (tested). |
+| System and diagram questions | ✓ | 33 labelled questions, at least five of the eight types per lecture (tested). |
+| Questions test understanding | ✓ | Mostly scenario, comparison, "which is NOT", design-decision and diagram questions; recall is the minority. |
+| Every question explained | ✓ | Every question has an explanation (tested); the dilemmas have model answers labelled as written for the course. |
+
+**What remains:**
+- **Round 11, real readers.** Students need to use the course and report what didn't work: confusing terms, unclear diagrams, questions too easy or ambiguous. Its findings should start a new round of fixes here.
+- **A fresh-session read-through.** Round 10 was done by the session that built the course; a separate reviewer would catch different things.
+- **Upstream.** The course is on this fork's branch (and on `main` up to the merge after round 5). It reaches decoded.stack42.tech only through a pull request to STACK-42/decoded.
