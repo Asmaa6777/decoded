@@ -7,8 +7,10 @@
 // home and /courses into dist/og/. Lessons reuse their course's image. Every
 // route it writes also goes into dist/sitemap.xml.
 //
-// GitHub Pages serves dist/courses/<slug>/index.html for /courses/<slug>,
+// GitHub Pages serves dist/courses/<slug>/index.html for /courses/<slug>/,
 // and the SPA boots from it exactly as it does from the root index.html.
+// A copy at dist/courses/<slug>.html answers /courses/<slug> (the form the
+// app's own links use) directly, instead of a redirect to the slash form.
 
 import { build } from "esbuild";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -281,9 +283,11 @@ async function writeRoute(template, route, meta) {
   routes.push(url);
   if (!SEO_BLOCK.test(template)) throw new Error("seo markers not found in dist/index.html");
   const html = template.replace(SEO_BLOCK, seoBlock({ ...meta, url }));
-  const file = route === "/" ? path.join(DIST, "index.html") : path.join(DIST, route, "index.html");
+  if (route === "/") return writeFile(path.join(DIST, "index.html"), html);
+  const file = path.join(DIST, route, "index.html");
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, html);
+  await writeFile(path.join(DIST, `${route}.html`), html);
 }
 
 /* ---------- main ---------- */
