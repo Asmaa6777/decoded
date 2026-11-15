@@ -40,6 +40,7 @@ export const prerequisites: Record<string, string[]> = {
   "algorithm-design-and-analysis": ["discrete-mathematics"],
   "advanced-algorithms": ["algorithm-design-and-analysis", "discrete-mathematics", "data-structures"],
   "computational-mathematics": ["discrete-mathematics"],
+  "advanced-software-engineering": ["data-structures", "operating-systems", "computer-networks"],
   "theory-of-computation": ["discrete-mathematics"],
   "distributed-systems": ["operating-systems", "computer-networks"],
   "computer-organization": ["computer-literacy"],

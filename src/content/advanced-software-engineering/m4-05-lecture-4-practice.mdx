@@ -1,0 +1,247 @@
+import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Lecture 4 Practice
+
+<Callout tone="violet" label="About these questions">
+This course has no past exams. These questions were written for this course from the Lecture 4 material (architectural views). They are practice, not original exam questions.
+</Callout>
+
+## Practice quiz
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-4-practice"
+  questions={[
+    {
+      id: "q1",
+      prompt: "What is the difference between a structure and a view?",
+      options: [
+        { id: "a", text: "They are the same thing" },
+        { id: "b", text: "A structure is the set of elements itself; a view is a representation of one or more structures" },
+        { id: "c", text: "A view is the code; a structure is the diagram" },
+        { id: "d", text: "Structures are runtime; views are static" },
+      ],
+      correctOptionId: "b",
+      explanation: "Structure = the territory; view = a map of it. Option (c) gets it backwards.",
+    },
+    {
+      id: "q2",
+      prompt: "Why can't a single view represent an architecture?",
+      options: [
+        { id: "a", text: "Diagrams can't be large enough" },
+        { id: "b", text: "Architecture is a set of structures, and different views expose different qualities and relations" },
+        { id: "c", text: "UML forbids it" },
+        { id: "d", text: "It can, if it's detailed enough" },
+      ],
+      correctOptionId: "b",
+      explanation: "The definition says 'set of structures'. A module view shows modifiability but not runtime performance; a deployment view the reverse.",
+    },
+    {
+      id: "q3",
+      prompt: "A config file and a parser grammar file are…",
+      options: [
+        { id: "a", text: "components" },
+        { id: "b", text: "connectors" },
+        { id: "c", text: "implementation artifacts, belonging to the module (static) world" },
+        { id: "d", text: "environmental elements" },
+      ],
+      correctOptionId: "c",
+      explanation: "They exist at build time, not as running entities. Modules are units of implementation.",
+    },
+    {
+      id: "q4",
+      prompt: "'Every module becomes exactly one component at runtime.' Is this true?",
+      options: [
+        { id: "a", text: "Yes, always" },
+        { id: "b", text: "No: one module can become many components, and many modules can become one component" },
+        { id: "c", text: "Only in client-server systems" },
+        { id: "d", text: "Only for executables" },
+      ],
+      correctOptionId: "b",
+      explanation: "The lecture answers 'No!': one Client module may run as ten client processes; many packages may compile into one running program.",
+    },
+    {
+      id: "q5",
+      prompt: "Which two constraints does the decomposition style impose?",
+      options: [
+        { id: "a", text: "No loops; each module has exactly one parent" },
+        { id: "b", text: "Every module uses every other; no parents" },
+        { id: "c", text: "Modules must be classes; at most two children" },
+        { id: "d", text: "Loops allowed; multiple parents allowed" },
+      ],
+      correctOptionId: "a",
+      explanation: "Those two constraints make every decomposition a tree, with is-part-of as its relation.",
+    },
+    {
+      id: "q6",
+      prompt: "Module A uses module B when…",
+      options: [
+        { id: "a", text: "A is inside B" },
+        { id: "b", text: "A's correctness depends on B's correctness" },
+        { id: "c", text: "A inherits from B" },
+        { id: "d", text: "A and B run on the same machine" },
+      ],
+      correctOptionId: "b",
+      explanation: "That's the lecture's definition of 'uses'. Inside = decomposition; inherits = generalization; same machine = deployment.",
+    },
+    {
+      id: "q7",
+      prompt: "Which view is the best tool for planning incremental development?",
+      options: [
+        { id: "a", text: "Uses view" },
+        { id: "b", text: "Deployment view" },
+        { id: "c", text: "Install view" },
+        { id: "d", text: "Concurrency view" },
+      ],
+      correctOptionId: "a",
+      explanation: "The uses graph shows what must work before what, so it tells you the build order and which subsets can be delivered.",
+    },
+    {
+      id: "q8",
+      prompt: "A team wants to know which parts of a system can run in parallel and where they compete for a shared lock. Which view?",
+      options: [
+        { id: "a", text: "Decomposition view" },
+        { id: "b", text: "Concurrency view (a C&C view)" },
+        { id: "c", text: "Work assignment view" },
+        { id: "d", text: "Data model view" },
+      ],
+      correctOptionId: "b",
+      explanation: "The concurrency view exists to find parallelism and resource contention. It's a runtime question, so it's a C&C view.",
+    },
+    {
+      id: "q9",
+      prompt: "In UML component notation, a lollipop (line ending in a circle) is…",
+      options: [
+        { id: "a", text: "a required interface" },
+        { id: "b", text: "a provided interface" },
+        { id: "c", text: "a port" },
+        { id: "d", text: "a connector" },
+      ],
+      correctOptionId: "b",
+      explanation: "Lollipop = provided; socket (half-circle) = required; port = the small square on the component's edge.",
+    },
+    {
+      id: "q10",
+      prompt: "The work assignment style maps…",
+      options: [
+        { id: "a", text: "components to hardware" },
+        { id: "b", text: "components to files and folders" },
+        { id: "c", text: "modules to teams and people" },
+        { id: "d", text: "modules to processes" },
+      ],
+      correctOptionId: "c",
+      explanation: "Deployment = components→hardware; install = components→files; work assignment = modules→teams, because teams write code.",
+    },
+  ]}
+/>
+
+## System and diagram questions
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-4-practice"
+  practice
+  questions={[
+    {
+      id: "d1",
+      prompt: "Diagram interpretation: what kind of view is this?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={180}
+          nodes={[
+            { id: "web", label: "Web server", x: 110, y: 70, w: 150, h: 54, kind: "node" },
+            { id: "app", label: "App server", x: 320, y: 70, w: 150, h: 54, kind: "node" },
+            { id: "db", label: "DB server", x: 520, y: 70, w: 140, h: 54, kind: "node" },
+            { id: "war", label: "shop.war", x: 110, y: 155, w: 110, kind: "note" },
+          ]}
+          edges={[
+            { from: "web", to: "app", label: "«intranet»", head: "none" },
+            { from: "app", to: "db", label: "«intranet»", head: "none" },
+            { from: "war", to: "web", label: "«deploy»", dashed: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A decomposition view" },
+        { id: "b", text: "A uses view" },
+        { id: "c", text: "A deployment view (allocation)" },
+        { id: "d", text: "A work assignment view" },
+      ],
+      correctOptionId: "c",
+      explanation: "3-D nodes, communication paths and «deploy» arrows put software onto hardware: a UML deployment view, one of the allocation styles.",
+    },
+    {
+      id: "d2",
+      prompt: "Error detection: this is meant to be a decomposition view. What's wrong?",
+      figure: (
+        <BoxDiagram
+          width={520}
+          height={190}
+          nodes={[
+            { id: "sys", label: "System", x: 260, y: 35, w: 120, kind: "package" },
+            { id: "a", label: "Billing", x: 140, y: 110, w: 120, kind: "package" },
+            { id: "b", label: "Orders", x: 380, y: 110, w: 120, kind: "package" },
+            { id: "u", label: "Utils", x: 260, y: 170, w: 120, kind: "package", tone: "orange" },
+          ]}
+          edges={[
+            { from: "a", to: "sys", head: "none" },
+            { from: "b", to: "sys", head: "none" },
+            { from: "u", to: "a", head: "none", label: "part of" },
+            { from: "u", to: "b", head: "none", label: "part of" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Nothing" },
+        { id: "b", text: "Utils has two parents; in decomposition each module has exactly one parent" },
+        { id: "c", text: "System should be part of Billing" },
+        { id: "d", text: "Packages can't be decomposed" },
+      ],
+      correctOptionId: "b",
+      explanation: "A module can be part of only one parent. If both Billing and Orders depend on Utils, that's a uses relation, which belongs in a uses view, not in the decomposition.",
+    },
+    {
+      id: "d3",
+      prompt: "Diagram interpretation: the lecture says the arrows in this C&C diagram 'should be replaced'. Why?",
+      figure: (
+        <BoxDiagram
+          width={560}
+          height={180}
+          nodes={[
+            { id: "ctl", label: "Controller", x: 280, y: 40, w: 140, kind: "component" },
+            { id: "s", label: "Sensor", x: 100, y: 145, w: 120, kind: "component" },
+            { id: "a", label: "Actuator", x: 280, y: 145, w: 120, kind: "component" },
+            { id: "g", label: "GUI", x: 460, y: 145, w: 120, kind: "component" },
+          ]}
+          edges={[
+            { from: "ctl", to: "s", label: "sense" },
+            { from: "ctl", to: "a", label: "actuate" },
+            { from: "ctl", to: "g", label: "display" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Arrows must always point upward" },
+        { id: "b", text: "A plain arrow doesn't say which side provides and which requires the interface; lollipop/socket notation does" },
+        { id: "c", text: "C&C diagrams can't contain a controller" },
+        { id: "d", text: "The labels should be class names" },
+      ],
+      correctOptionId: "b",
+      explanation: "In UML, components connect through provided (lollipop) and required (socket) interfaces at ports. Sensor, Actuator and GUI provide; the Controller requires.",
+    },
+    {
+      id: "d4",
+      prompt: "Diagram construction: you must show which .jar file each running EJB component is packaged in, and the folder tree on the server. Which view do you draw?",
+      options: [
+        { id: "a", text: "Deployment view" },
+        { id: "b", text: "Install view" },
+        { id: "c", text: "Uses view" },
+        { id: "d", text: "Generalization view" },
+      ],
+      correctOptionId: "b",
+      explanation: "The install style maps C&C components to files and folders in production, and its notation must show the file tree. Deployment maps components to hardware instead.",
+    },
+  ]}
+/>

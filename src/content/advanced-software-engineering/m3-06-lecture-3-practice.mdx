@@ -1,0 +1,238 @@
+import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Lecture 3 Practice
+
+<Callout tone="violet" label="About these questions">
+This course has no past exams. These questions were written for this course from the Lecture 3 material (SOLID). They are practice, not original exam questions.
+</Callout>
+
+## Practice quiz
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-3-practice"
+  questions={[
+    {
+      id: "q1",
+      prompt: "A class is changed by the perception team, the diagnostics team and the HMI team. What does SRP say?",
+      options: [
+        { id: "a", text: "It's fine as long as the class is small" },
+        { id: "b", text: "It has three responsibilities, because three actors can ask for changes" },
+        { id: "c", text: "It violates OCP, not SRP" },
+        { id: "d", text: "It should be made abstract" },
+      ],
+      correctOptionId: "b",
+      explanation: "Responsibility = reason to change = actor. Three actors means three responsibilities, however small the class is.",
+    },
+    {
+      id: "q2",
+      prompt: "Applying the 'itself' test, which method should move OUT of FrontCamera?",
+      options: [
+        { id: "a", text: "captureFrame()" },
+        { id: "b", text: "adjustExposure()" },
+        { id: "c", text: "runSelfTest()" },
+        { id: "d", text: "renderOnHud(frame)" },
+      ],
+      correctOptionId: "d",
+      explanation: "'The FrontCamera renders on the HUD itself' sounds wrong: HUD drawing is HMI work and moves to HudRenderer. The other three are the camera's own hardware functions.",
+    },
+    {
+      id: "q3",
+      prompt: "MediaLibrary.search() reads artist, genre, source and year from other objects to decide matches. Which smell is this, and where should the logic go?",
+      options: [
+        { id: "a", text: "God class; into a new SearchManager" },
+        { id: "b", text: "Feature envy; into TrackFilter.matches(), the class that owns the criteria" },
+        { id: "c", text: "Fat interface; split TrackMetadata" },
+        { id: "d", text: "No smell; the loop is fine" },
+      ],
+      correctOptionId: "b",
+      explanation: "Using another object's data more than your own is feature envy. Information Expert says the class with the information (TrackFilter) should make the decision.",
+    },
+    {
+      id: "q4",
+      prompt: "After the OCP refactoring, adding Blind Spot Detection requires…",
+      options: [
+        { id: "a", text: "a new case in AdasFeatureManager's switch" },
+        { id: "b", text: "one new class implementing AdasFunction, registered at the composition root" },
+        { id: "c", text: "editing every existing feature class" },
+        { id: "d", text: "no code at all" },
+      ],
+      correctOptionId: "b",
+      explanation: "New behavior = new code. The manager stays untouched; only the composition root changes, which is why OCP is 'never 100% absolute'.",
+    },
+    {
+      id: "q5",
+      prompt: "The driver switches navigation from Fastest to Eco while driving. Which approach to OCP fits best?",
+      options: [
+        { id: "a", text: "Inheritance: a new NavigationService subclass per mode" },
+        { id: "b", text: "Delegation with the Strategy pattern: swap the RoutingStrategy object at runtime" },
+        { id: "c", text: "A switch statement on a mode string" },
+        { id: "d", text: "Template Method" },
+      ],
+      correctOptionId: "b",
+      explanation: "Runtime swapping is delegation's strength (binding time: runtime). Inheritance binds at build/config time; a switch violates OCP.",
+    },
+    {
+      id: "q6",
+      prompt: "OccupancyGrid3D extends OccupancyGrid compiles and passes unit tests. Why does it still violate LSP?",
+      options: [
+        { id: "a", text: "Java doesn't allow overloading" },
+        { id: "b", text: "The inherited isFree(x, y) has no clear meaning in 3D, so code written for the base type gets wrong answers" },
+        { id: "c", text: "3D grids use more memory" },
+        { id: "d", text: "It should be an interface instead of a class" },
+      ],
+      correctOptionId: "b",
+      explanation: "LSP is about behavior, not signatures. The subtype weakens the base contract: callers can't know which layer is checked, causing missed barriers or phantom braking.",
+    },
+    {
+      id: "q7",
+      prompt: "Which change to a subtype breaks LSP's contract rule?",
+      options: [
+        { id: "a", text: "Accepting a wider range of inputs than the base type" },
+        { id: "b", text: "Guaranteeing more precise results than the base type" },
+        { id: "c", text: "Requiring callers to pass an extra condition the base type didn't need" },
+        { id: "d", text: "Adding a new method" },
+      ],
+      correctOptionId: "c",
+      explanation: "That strengthens a precondition, which is forbidden. Weakening preconditions (a) and strengthening postconditions (b) are allowed.",
+    },
+    {
+      id: "q8",
+      prompt: "AutomatedDrivingStack returns false from areHandsOnWheel() because the interface forces it to. Which principle is violated?",
+      options: [
+        { id: "a", text: "SRP" },
+        { id: "b", text: "OCP" },
+        { id: "c", text: "ISP" },
+        { id: "d", text: "DIP" },
+      ],
+      correctOptionId: "c",
+      explanation: "A fat interface forces implementers to fake methods they don't support. Splitting it into client-specific interfaces (AttentionMonitorable, etc.) removes the dummy.",
+    },
+    {
+      id: "q9",
+      prompt: "In the DIP fix, which package should contain the ObjectSensor interface?",
+      options: [
+        { id: "a", text: "sensors.suppliera, next to the radar driver" },
+        { id: "b", text: "adas.fusion, the high-level policy package" },
+        { id: "c", text: "test.sil" },
+        { id: "d", text: "A shared utils package" },
+      ],
+      correctOptionId: "b",
+      explanation: "The high-level module owns the abstraction, written in its own terms. That's what makes the source dependency point from details toward policy (the 'inversion').",
+    },
+    {
+      id: "q10",
+      prompt: "Which statement about Dependency Inversion and Dependency Injection is correct?",
+      options: [
+        { id: "a", text: "They are two names for the same thing" },
+        { id: "b", text: "Inversion is the principle (depend on abstractions); injection is a wiring technique" },
+        { id: "c", text: "Injection is the principle; inversion is the technique" },
+        { id: "d", text: "Using injection automatically satisfies DIP" },
+      ],
+      correctOptionId: "b",
+      explanation: "The lecture's 'crucial distinction'. You can inject a concrete supplier driver and still violate DIP, so (d) is false.",
+    },
+  ]}
+/>
+
+## System and diagram questions
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-3-practice"
+  practice
+  questions={[
+    {
+      id: "d1",
+      prompt: "Error detection: which principle does this design break most directly?",
+      figure: (
+        <BoxDiagram
+          width={560}
+          height={180}
+          nodes={[
+            { id: "sf", label: "SensorFusion", x: 120, y: 90, w: 150, tone: "orange" },
+            { id: "r", label: "SupplierARadarDriver", x: 400, y: 45, w: 190 },
+            { id: "c", label: "SupplierBCameraDriver", x: 400, y: 140, w: 190 },
+          ]}
+          edges={[
+            { from: "sf", to: "r", label: "new" },
+            { from: "sf", to: "c", label: "new" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "LSP" },
+        { id: "b", text: "ISP" },
+        { id: "c", text: "DIP: high-level policy depends directly on low-level concrete drivers" },
+        { id: "d", text: "None; this is the recommended design" },
+      ],
+      correctOptionId: "c",
+      explanation: "The arrows go from policy to detail and the drivers are created with new. The fix: fusion owns an ObjectSensor interface that adapters implement.",
+    },
+    {
+      id: "d2",
+      prompt: "Missing component: what should replace the ? so that fusion never names a supplier?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={210}
+          nodes={[
+            { id: "sf", label: "SensorFusion", x: 120, y: 50, w: 150, tone: "sky" },
+            { id: "m", label: "?", x: 400, y: 50, w: 150, kind: "missing" },
+            { id: "a", label: "SupplierCRadarAdapter", x: 230, y: 165, w: 200 },
+            { id: "b", label: "SimulatedSensor", x: 470, y: 165, w: 160 },
+          ]}
+          edges={[
+            { from: "sf", to: "m", label: "uses" },
+            { from: "a", to: "m", head: "triangle", dashed: true },
+            { from: "b", to: "m", head: "triangle", dashed: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "SupplierCRadarDriver" },
+        { id: "b", text: "The ObjectSensor interface, owned by the fusion package" },
+        { id: "c", text: "The CAN bus" },
+        { id: "d", text: "A composition root" },
+      ],
+      correctOptionId: "b",
+      explanation: "Both adapters 'realize' (dashed + hollow triangle) the missing element, so it must be an interface. Fusion uses it. The composition root wires objects together but isn't implemented by anyone.",
+    },
+    {
+      id: "d3",
+      prompt: "Relationship identification: OccupancyGrid3D holds a list of OccupancyGrid layers that don't exist without it. What relationship is this?",
+      figure: (
+        <BoxDiagram
+          width={500}
+          height={130}
+          nodes={[
+            { id: "g3", label: "OccupancyGrid3D", x: 120, y: 65, w: 170 },
+            { id: "g", label: "OccupancyGrid\n(one per layer)", x: 380, y: 65, w: 170, h: 48 },
+          ]}
+          edges={[{ from: "g3", to: "g", label: "layers" }]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Inheritance" },
+        { id: "b", text: "Composition (with delegation)" },
+        { id: "c", text: "Aggregation" },
+        { id: "d", text: "Realization" },
+      ],
+      correctOptionId: "b",
+      explanation: "The 3D grid owns its layers, and they have no independent lifecycle: composition. It delegates isFree(x, y, z) to them. Aggregation would be parts that live independently, like a radar used by sensor fusion.",
+    },
+    {
+      id: "d4",
+      prompt: "Design decision: the OTA update manager must install packages on the AD stack but must never be able to steer. Which interface should OtaUpdateManager.update() accept?",
+      options: [
+        { id: "a", text: "VehicleOperator" },
+        { id: "b", text: "AutomatedDrivingStack" },
+        { id: "c", text: "OtaUpdatable" },
+        { id: "d", text: "MotionControl" },
+      ],
+      correctOptionId: "c",
+      explanation: "With ISP the OTA manager sees only installOtaUpdate(). Accepting VehicleOperator or the concrete stack would expose steer() and brake(): a larger attack surface.",
+    },
+  ]}
+/>

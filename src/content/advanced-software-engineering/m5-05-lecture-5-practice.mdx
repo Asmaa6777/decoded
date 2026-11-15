@@ -1,0 +1,269 @@
+import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { BoxDiagram, SequenceDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+
+# Lecture 5 Practice
+
+<Callout tone="violet" label="About these questions">
+This course has no past exams. These questions were written for this course from the Lecture 5 material (building an architecture, and the ten styles). They are practice, not original exam questions.
+</Callout>
+
+## Practice quiz
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-5-practice"
+  questions={[
+    {
+      id: "q1",
+      prompt: "Which three things does every architectural style define?",
+      options: [
+        { id: "a", text: "A vocabulary of design elements, configuration (topological) rules, and a semantic interpretation" },
+        { id: "b", text: "A language, a framework and a database" },
+        { id: "c", text: "Requirements, design and validation" },
+        { id: "d", text: "Modules, components and allocations" },
+      ],
+      correctOptionId: "a",
+      explanation: "Those are the 'basic properties of styles'. (c) is the architecture process; (d) the three kinds of structures.",
+    },
+    {
+      id: "q2",
+      prompt: "Architecturally significant requirements are essentially…",
+      options: [
+        { id: "a", text: "the list of screens" },
+        { id: "b", text: "the quality and non-functional requirements" },
+        { id: "c", text: "the project budget" },
+        { id: "d", text: "the database schema" },
+      ],
+      correctOptionId: "b",
+      explanation: "Step 1 of the process: they come from functional and stakeholder requirements, and they are the qualities (performance, availability…) that drive the design.",
+    },
+    {
+      id: "q3",
+      prompt: "In Step 2, what is the difference between 2a and 2b?",
+      options: [
+        { id: "a", text: "2a chooses the overall framework from known styles; 2b specifies the components and gives them responsibilities" },
+        { id: "b", text: "2a writes code; 2b tests it" },
+        { id: "c", text: "2a validates; 2b gathers requirements" },
+        { id: "d", text: "There is no difference" },
+      ],
+      correctOptionId: "a",
+      explanation: "Choose the architecture framework, then allocate components. Outputs: architecture views and the architecture document.",
+    },
+    {
+      id: "q4",
+      prompt: "Why does the architecture process loop back from validation?",
+      options: [
+        { id: "a", text: "Because it is iterative: validation can reveal problems in the design or requirements" },
+        { id: "b", text: "Because validation always fails the first time" },
+        { id: "c", text: "To add more features" },
+        { id: "d", text: "It doesn't loop" },
+      ],
+      correctOptionId: "a",
+      explanation: "The lecture's outline marks the process as iterative, with feedback from validation to design and requirements.",
+    },
+    {
+      id: "q5",
+      prompt: "In n-tier client-server, how can availability be improved?",
+      options: [
+        { id: "a", text: "Put all tiers on one machine" },
+        { id: "b", text: "Replicate the servers in each tier" },
+        { id: "c", text: "Remove the business logic tier" },
+        { id: "d", text: "Use a thicker client" },
+      ],
+      correctOptionId: "b",
+      explanation: "The lecture: 'servers in each tier could be replicated.' One machine creates a single point of failure.",
+    },
+    {
+      id: "q6",
+      prompt: "Which is the defining property of peer-to-peer?",
+      options: [
+        { id: "a", text: "A central server answers all requests" },
+        { id: "b", text: "All processes play similar roles, acting as both client and server" },
+        { id: "c", text: "Data flows through a chain of filters" },
+        { id: "d", text: "Messages wait in a queue" },
+      ],
+      correctOptionId: "b",
+      explanation: "Peers cooperate without a client/server distinction. Napster's central index server is a hybrid.",
+    },
+    {
+      id: "q7",
+      prompt: "What is the style invariant of pipe-and-filter?",
+      options: [
+        { id: "a", text: "Filters share a common database" },
+        { id: "b", text: "Filters are independent: no shared state" },
+        { id: "c", text: "Each filter must finish before the next starts" },
+        { id: "d", text: "There must be exactly three filters" },
+      ],
+      correctOptionId: "b",
+      explanation: "Independence is what makes filters reusable and reorderable. (c) is false: filters can run concurrently.",
+    },
+    {
+      id: "q8",
+      prompt: "After a client writes a message to a queue in the messaging style, it…",
+      options: [
+        { id: "a", text: "waits for the server's reply" },
+        { id: "b", text: "continues without waiting for the message to be removed" },
+        { id: "c", text: "deletes the message" },
+        { id: "d", text: "blocks the queue" },
+      ],
+      correctOptionId: "b",
+      explanation: "That is asynchronous communication, the key property of messaging.",
+    },
+    {
+      id: "q9",
+      prompt: "A browser runs your handler automatically when a button is clicked, though your code never called it. Which style?",
+      options: [
+        { id: "a", text: "Client-server" },
+        { id: "b", text: "Implicit invocation" },
+        { id: "c", text: "Pipe-and-filter" },
+        { id: "d", text: "Microservices" },
+      ],
+      correctOptionId: "b",
+      explanation: "addEventListener registers interest; the event triggers the procedure: implicit invocation (the infographic's DOM example).",
+    },
+    {
+      id: "q10",
+      prompt: "Which is NOT a typical drawback of microservices?",
+      options: [
+        { id: "a", text: "Distributed-system complexity" },
+        { id: "b", text: "Hard data consistency" },
+        { id: "c", text: "High DevOps and monitoring effort" },
+        { id: "d", text: "Services can't be deployed independently" },
+      ],
+      correctOptionId: "d",
+      explanation: "Independent deployment is microservices' main advantage, not a drawback.",
+    },
+  ]}
+/>
+
+## System and diagram questions
+
+<Quiz
+  courseSlug="advanced-software-engineering"
+  lessonSlug="lecture-5-practice"
+  practice
+  questions={[
+    {
+      id: "d1",
+      prompt: "System interpretation: in this n-tier system, which component is responsible for applying business rules such as 'orders over $1,000 need approval'?",
+      figure: (
+        <BoxDiagram
+          width={520}
+          height={250}
+          nodes={[
+            { id: "a", label: "A: Web browser", x: 260, y: 30, w: 200 },
+            { id: "b", label: "B: Web server", x: 260, y: 95, w: 200 },
+            { id: "c", label: "C: Application server", x: 260, y: 160, w: 200 },
+            { id: "d", label: "D: Database", x: 260, y: 225, w: 200, kind: "store" },
+          ]}
+          edges={[
+            { from: "a", to: "b", both: true },
+            { from: "b", to: "c", both: true },
+            { from: "c", to: "d", both: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A" },
+        { id: "b", text: "B" },
+        { id: "c", text: "C" },
+        { id: "d", text: "D" },
+      ],
+      correctOptionId: "c",
+      explanation: "The application server is the business logic tier. The browser is a thin client, the web server handles presentation, and the database is the data management tier.",
+    },
+    {
+      id: "d2",
+      prompt: "Missing component: playback, catalog and analytics services must exchange events without knowing about each other. What goes in the middle?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={200}
+          nodes={[
+            { id: "p", label: "Playback service", x: 100, y: 60, w: 160 },
+            { id: "c", label: "Catalog service", x: 100, y: 150, w: 160 },
+            { id: "m", label: "?", x: 310, y: 105, w: 140, kind: "missing" },
+            { id: "r", label: "Recommendations", x: 510, y: 60, w: 150 },
+            { id: "a", label: "Analytics", x: 510, y: 150, w: 150 },
+          ]}
+          edges={[
+            { from: "p", to: "m", label: "publish" },
+            { from: "c", to: "m", label: "publish" },
+            { from: "m", to: "r", label: "subscribe", dashed: true },
+            { from: "m", to: "a", dashed: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A pipe" },
+        { id: "b", text: "A pub/sub broker with topics" },
+        { id: "c", text: "An API gateway" },
+        { id: "d", text: "A load balancer" },
+      ],
+      correctOptionId: "b",
+      explanation: "Publish and subscribe arrows meet at a broker with topics (Spotify's song.played). An API gateway routes client requests to services; it doesn't decouple publishers from subscribers.",
+    },
+    {
+      id: "d3",
+      prompt: "Sequence understanding: in the messaging style, what happens right after the client writes 'order #1' to the queue?",
+      figure: (
+        <SequenceDiagram
+          participants={["Client", "Queue", "Server"]}
+          steps={[
+            { from: 0, to: 1, label: "put(order #1)" },
+            { from: 0, to: 0, label: "", hidden: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "The client waits until the server replies" },
+        { id: "b", text: "The client continues with its own work; the message waits in the queue" },
+        { id: "c", text: "The queue calls the client back" },
+        { id: "d", text: "The server pushes the message back to the client" },
+      ],
+      correctOptionId: "b",
+      explanation: "Asynchronous: the message is stored until the server removes it, and the client carries on immediately.",
+    },
+    {
+      id: "d4",
+      prompt: "Design decision: a log-processing job reads raw logs, removes noise, parses fields and writes a report, with no user interaction. Which style fits best?",
+      options: [
+        { id: "a", text: "Peer-to-peer" },
+        { id: "b", text: "Pipe-and-filter" },
+        { id: "c", text: "Client-server" },
+        { id: "d", text: "Event-based plug-ins" },
+      ],
+      correctOptionId: "b",
+      explanation: "A one-way stream of transformations with no interaction is exactly what pipe-and-filter is for (like cat log | grep ERROR | sort).",
+    },
+    {
+      id: "d5",
+      prompt: "Error detection: this was drawn as a microservices design. What's wrong?",
+      figure: (
+        <BoxDiagram
+          width={560}
+          height={200}
+          nodes={[
+            { id: "o", label: "Orders svc", x: 110, y: 50, w: 130 },
+            { id: "u", label: "Users svc", x: 280, y: 50, w: 130 },
+            { id: "p", label: "Payment svc", x: 450, y: 50, w: 130 },
+            { id: "db", label: "One shared database", x: 280, y: 160, w: 220, kind: "store", tone: "orange" },
+          ]}
+          edges={[
+            { from: "o", to: "db" },
+            { from: "u", to: "db" },
+            { from: "p", to: "db" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Nothing; sharing a database saves money" },
+        { id: "b", text: "Each microservice should own its data; a shared database couples them, so they can't change or deploy independently" },
+        { id: "c", text: "There should be only one service" },
+        { id: "d", text: "Services must talk through pipes" },
+      ],
+      correctOptionId: "b",
+      explanation: "Database per service is part of the style's definition. A shared schema means one service's change can break the others.",
+    },
+  ]}
+/>

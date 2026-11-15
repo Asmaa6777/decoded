@@ -63,6 +63,30 @@ const AaMst = lesson(() => import("@/content/advanced-algorithms/m3-03-minimum-s
 const AaHuffman = lesson(() => import("@/content/advanced-algorithms/m3-04-huffman-and-activity-selection.mdx"));
 const AaShortestPaths = lesson(() => import("@/content/advanced-algorithms/m3-05-shortest-paths.mdx"));
 const AaPNP = lesson(() => import("@/content/advanced-algorithms/m4-01-p-and-np.mdx"));
+const AseAgeOfAi = lesson(() => import("@/content/advanced-software-engineering/m1-01-engineering-in-the-age-of-ai.mdx"));
+const AsePid = lesson(() => import("@/content/advanced-software-engineering/m1-02-case-study-ai-generated-pid.mdx"));
+const AseL1Practice = lesson(() => import("@/content/advanced-software-engineering/m1-03-lecture-1-practice.mdx"));
+const AseComplexity = lesson(() => import("@/content/advanced-software-engineering/m2-01-complexity-architecture-and-design.mdx"));
+const AseEconomics = lesson(() => import("@/content/advanced-software-engineering/m2-02-the-economics-of-architecture.mdx"));
+const AseArchitectsRole = lesson(() => import("@/content/advanced-software-engineering/m2-03-the-architects-role.mdx"));
+const AseMlSystems = lesson(() => import("@/content/advanced-software-engineering/m2-04-ml-systems-in-production.mdx"));
+const AseL2Practice = lesson(() => import("@/content/advanced-software-engineering/m2-05-lecture-2-practice.mdx"));
+const AseSrp = lesson(() => import("@/content/advanced-software-engineering/m3-01-design-principles-and-srp.mdx"));
+const AseOcp = lesson(() => import("@/content/advanced-software-engineering/m3-02-open-closed-principle.mdx"));
+const AseLsp = lesson(() => import("@/content/advanced-software-engineering/m3-03-liskov-substitution-principle.mdx"));
+const AseIsp = lesson(() => import("@/content/advanced-software-engineering/m3-04-interface-segregation-principle.mdx"));
+const AseDip = lesson(() => import("@/content/advanced-software-engineering/m3-05-dependency-inversion-principle.mdx"));
+const AseL3Practice = lesson(() => import("@/content/advanced-software-engineering/m3-06-lecture-3-practice.mdx"));
+const AseViews = lesson(() => import("@/content/advanced-software-engineering/m4-01-views-and-structures.mdx"));
+const AseModuleViews = lesson(() => import("@/content/advanced-software-engineering/m4-02-module-views.mdx"));
+const AseCcViews = lesson(() => import("@/content/advanced-software-engineering/m4-03-component-and-connector-views.mdx"));
+const AseAllocationViews = lesson(() => import("@/content/advanced-software-engineering/m4-04-allocation-views.mdx"));
+const AseL4Practice = lesson(() => import("@/content/advanced-software-engineering/m4-05-lecture-4-practice.mdx"));
+const AseProcess = lesson(() => import("@/content/advanced-software-engineering/m5-01-architecture-process-and-styles.mdx"));
+const AseNTier = lesson(() => import("@/content/advanced-software-engineering/m5-02-n-tier-client-server-and-peer-to-peer.mdx"));
+const AsePipeMessaging = lesson(() => import("@/content/advanced-software-engineering/m5-03-pipe-and-filter-and-messaging.mdx"));
+const AseTenStyles = lesson(() => import("@/content/advanced-software-engineering/m5-04-ten-styles-at-a-glance.mdx"));
+const AseL5Practice = lesson(() => import("@/content/advanced-software-engineering/m5-05-lecture-5-practice.mdx"));
 const CmMatrices = lesson(() => import("@/content/computational-mathematics/m0-01-matrices-and-matlab.mdx"));
 const CmTranspose = lesson(() => import("@/content/computational-mathematics/m0-02-transpose-and-products.mdx"));
 const CmMultiply = lesson(() => import("@/content/computational-mathematics/m0-03-multiplying-matrices.mdx"));
@@ -478,6 +502,77 @@ export const courses: Course[] = [
         blurb: "Problems that are easy to check but seem impossible to solve quickly, and the million-dollar question behind them.",
         lessons: [
           { slug: "p-and-np", title: "P, NP, NP-Hard and NP-Complete", duration: "20 min", Component: AaPNP },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "advanced-software-engineering",
+    title: "Advanced Software Engineering",
+    tagline: "Architecture is the decisions that are hard to change later.",
+    description:
+      "Software engineering for the age of AI, decoded. Why an LLM needs an engineered harness, essential versus accidental complexity, the economics of architecture, the SOLID principles applied to real car software, architectural views (module, component-and-connector, allocation), and ten architectural styles from n-tier to microservices. Every lecture has highlighted terms you can tap for a definition, diagrams of the systems it describes, and a practice set with system and diagram questions.",
+    accent: "sky",
+    status: "available",
+    authors: [asmaaFarouq],
+    modules: [
+      {
+        title: "Foundations of Modern Engineering: The AI-Augmented SDLC",
+        label: "Lecture 1",
+        blurb: "Why AI makes classic engineering more important, told through two case studies.",
+        lessons: [
+          { slug: "engineering-in-the-age-of-ai", title: "Software Engineering in the Age of AI", duration: "14 min", Component: AseAgeOfAi },
+          { slug: "case-study-ai-generated-pid", title: "Case Study: The AI-Generated PID Controller", duration: "14 min", Component: AsePid },
+          { slug: "lecture-1-practice", title: "Lecture 1 Practice", duration: "15 min", kind: "quiz", Component: AseL1Practice },
+        ],
+      },
+      {
+        title: "Foundations of Modern Engineering",
+        label: "Lecture 2",
+        blurb: "Complexity, what architecture is, why it pays, what architects do, and ML systems.",
+        lessons: [
+          { slug: "complexity-architecture-and-design", title: "Complexity, Architecture and Design", duration: "16 min", Component: AseComplexity },
+          { slug: "the-economics-of-architecture", title: "The Economics of Architecture", duration: "12 min", Component: AseEconomics },
+          { slug: "the-architects-role", title: "The Architect's Role and the Laws of Architecture", duration: "18 min", Component: AseArchitectsRole },
+          { slug: "ml-systems-in-production", title: "Machine Learning Systems in Production", duration: "18 min", Component: AseMlSystems },
+          { slug: "lecture-2-practice", title: "Lecture 2 Practice", duration: "20 min", kind: "quiz", Component: AseL2Practice },
+        ],
+      },
+      {
+        title: "SOLID Principles",
+        label: "Lecture 3",
+        blurb: "Five design principles, each shown on real driver-assistance and infotainment code.",
+        lessons: [
+          { slug: "design-principles-and-srp", title: "Design Principles and the Single Responsibility Principle", duration: "22 min", Component: AseSrp },
+          { slug: "open-closed-principle", title: "The Open–Closed Principle", duration: "16 min", Component: AseOcp },
+          { slug: "liskov-substitution-principle", title: "The Liskov Substitution Principle", duration: "20 min", Component: AseLsp },
+          { slug: "interface-segregation-principle", title: "The Interface Segregation Principle", duration: "14 min", Component: AseIsp },
+          { slug: "dependency-inversion-principle", title: "The Dependency Inversion Principle", duration: "20 min", Component: AseDip },
+          { slug: "lecture-3-practice", title: "Lecture 3 Practice", duration: "20 min", kind: "quiz", Component: AseL3Practice },
+        ],
+      },
+      {
+        title: "Architectural Views",
+        label: "Lecture 4",
+        blurb: "One system, many views: modules, components and connectors, and allocation.",
+        lessons: [
+          { slug: "views-and-structures", title: "Views and Structures", duration: "14 min", Component: AseViews },
+          { slug: "module-views", title: "Module Views: Decomposition and Uses", duration: "14 min", Component: AseModuleViews },
+          { slug: "component-and-connector-views", title: "Component-and-Connector Views", duration: "14 min", Component: AseCcViews },
+          { slug: "allocation-views", title: "Allocation Views: Deployment, Install and Work Assignment", duration: "14 min", Component: AseAllocationViews },
+          { slug: "lecture-4-practice", title: "Lecture 4 Practice", duration: "20 min", kind: "quiz", Component: AseL4Practice },
+        ],
+      },
+      {
+        title: "Building Software Architecture",
+        label: "Lecture 5",
+        blurb: "The architecture process, and ten architectural styles with their trade-offs.",
+        lessons: [
+          { slug: "architecture-process-and-styles", title: "The Architecture Process and Architectural Styles", duration: "16 min", Component: AseProcess },
+          { slug: "n-tier-client-server-and-peer-to-peer", title: "N-Tier, Client-Server and Peer-to-Peer", duration: "14 min", Component: AseNTier },
+          { slug: "pipe-and-filter-and-messaging", title: "Pipe-and-Filter and Messaging", duration: "14 min", Component: AsePipeMessaging },
+          { slug: "ten-styles-at-a-glance", title: "Ten Architecture Styles at a Glance", duration: "16 min", Component: AseTenStyles },
+          { slug: "lecture-5-practice", title: "Lecture 5 Practice", duration: "20 min", kind: "quiz", Component: AseL5Practice },
         ],
       },
     ],
