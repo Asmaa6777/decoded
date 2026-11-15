@@ -8,8 +8,8 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
 
 - [x] 1. Skeleton (whole course)
 - [ ] 2. Source fidelity
-  - [ ] L1
-  - [ ] L2
+  - [x] L1
+  - [x] L2
   - [ ] L3
   - [ ] L4
   - [ ] L5
@@ -141,3 +141,20 @@ Newest last.
 **Note on file names:** lesson files must start `m<N>-<NN>-`; the lesson-link and preview tooling reads lesson slugs from that pattern. The first draft used `l<N>-` and failed the link test, so the files were renamed.
 
 **Next:** round 2, source fidelity, one lecture at a time starting with L1.
+
+### Round 2, source fidelity: L1 and L2
+
+Checked Lecture 1 (13 slides) against m1-01 to m1-03, and Lecture 2 (37 slides) against m2-01 to m2-05, slide by slide from the text copies, with the diagram slides (L1 slide 10, L2 slides 7 and 28) checked as images.
+
+**Already covered:** L1: course objectives and the prime directive; the scaling myth, "wait for GPT-N" and black-box fallacy; the SWE-bench case study with all three failures and the short-term-memory analogy; the harness's four mechanisms and architectural inversion; the moral (engine vs vehicle, three points, takeaway); the PID setting, the three voices, the setup slide's sequence diagram, the incident with its 12-hour run and 0.0000001 delta, and the typosquatting attack. L2: every slide, including the software crisis and Brooks, both complexities, the four properties, the continuum and Axiom I, the definition and architectural vs design details, the architect/developer figure, the three open questions, the house analogy, the economic goal, the clean-up-later fallacy, the two values, cost-friction, the Eisenhower matrix, Table 1, the 4D model, all eight expectations and the compliance imperative, Pets.com and the 2002 data center, depth vs breadth and the knowledge pyramid, process vs practices, both laws with corollaries and examples, the circle of life, the four hands-on strategies, the ML paradigm shift, the definition, when to use and the five reasons not to, the four pillars, Table 2, the three dilemmas with their numbers, and the summary.
+
+**Changed:**
+- m1-01: SWE-bench described as on the slide ("500 complex engineering tasks"), dropping a detail the slide doesn't give; the slide's terms *context garbage collection* and *bounded contexts* now appear, each explained; added the lecture's readings.
+- m2-01: the answers to the three open questions are labelled as ours, not the slides'.
+- m2-04: the dilemma model answers are labelled as written for this course; added the lecture's readings.
+
+**Source errors:** none new beyond round 1's (the "catastrophic cancellation" name, and the two course codes in the headers).
+
+**Left out on purpose:** the bibliography slide (a reference list); the lessons cite the per-lecture readings instead. L1 slide 13 is blank.
+
+**Not checked:** no browser check (text-only changes).

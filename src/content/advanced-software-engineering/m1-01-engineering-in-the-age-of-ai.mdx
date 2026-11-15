@@ -31,7 +31,7 @@ Early in the generative-AI boom, many people made the same three mistakes.
 
 ## Case study: an AI agent without a harness
 
-Anthropic tested early versions of its model, Claude, on SWE-bench Verified: 500 real software-engineering tasks taken from open-source repositories. Left on its own, even a very capable model hit the same failures again and again.
+Anthropic tested early versions of its model, Claude, on SWE-bench Verified: a benchmark of 500 complex engineering tasks. Left on its own, even a very capable model hit the same failures again and again.
 
 - **Premature victory.** It declared a task finished as soon as the code compiled, leaving logic bugs that produced no error.
 - **<Term id="context-rot">Context rot</Term> and drift.** On long tasks the model's <Term id="context-window">context window</Term> filled up. It started to override the constraints it had been given at the start, or got stuck in loops of repairing its own repairs.
@@ -78,11 +78,15 @@ Every part of the harness is ordinary engineering: splitting responsibilities, k
 
 The case study's lesson is: **an LLM is just an engine; the harness is the vehicle.**
 
-- **Raw scale is not enough.** Without state management, error-recovery loops and clearing out dead context, even a huge model falls apart on messy real-world tasks.
-- **Classical rigor still matters.** Software architecture, clear boundaries between parts, and automated quality gates have not become obsolete.
+- **Raw scale is not enough.** Without state management, error-recovery loops and *context garbage collection* (clearing out context that is no longer needed), even a huge model falls apart on messy real-world tasks.
+- **Classical rigor still matters.** Software architecture, *bounded contexts* (clear boundaries around each part of the system and its vocabulary), and automated quality gates have not become obsolete.
 - **The strategic inversion.** Classical system design is now the main tool for turning a stream of non-deterministic tokens into reliable production software.
 
 In the age of AI, traditional software engineering hasn't died. It has become the thing that multiplies what AI can do.
+
+## Readings for this lecture
+
+*Clean Architecture* (Martin), chapters 1–2 · *Fundamentals of Software Architecture* (Richards & Ford), chapters 1–2 · *Designing Machine Learning Systems* (Huyen), chapter 1.
 
 ## Key terms
 
