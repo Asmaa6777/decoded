@@ -41,9 +41,11 @@ export default defineConfig(({ mode }) => ({
       providerImportSource: "@mdx-js/react",
       remarkPlugins: [remarkGfm, remarkMath],
       rehypePlugins: [
-        rehypeKatex,
-        // ids on headings, used by the lesson contents sidebar and deep links
+        // ids on headings, used by the lesson contents sidebar and deep links.
+        // Before KaTeX, so "## Where $n \log n$ comes from" gets
+        // where-n-log-n-comes-from, the same id vitest.config.ts produces.
         rehypeSlug,
+        rehypeKatex,
         // class="lead-in" on a paragraph's leading bold label, coloured by the lesson CSS
         rehypeLeadIn,
         // each formula as one prebuilt HTML string rather than hundreds of JSX calls
