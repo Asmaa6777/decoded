@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
 import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { buildDocs, searchLessons, type IndexEntry } from "@/lib/search";
@@ -62,35 +61,5 @@ export function SearchDialog({ open, onOpenChange }: { open: boolean; onOpenChan
         </Command>
       </DialogContent>
     </Dialog>
-  );
-}
-
-export function SearchButton() {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        setOpen((o) => !o);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  return (
-    <>
-      <button
-        type="button"
-        aria-label="Search lessons"
-        title="Search lessons (⌘K)"
-        onClick={() => setOpen(true)}
-        className="text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <Search className="h-4 w-4" aria-hidden />
-      </button>
-      <SearchDialog open={open} onOpenChange={setOpen} />
-    </>
   );
 }
