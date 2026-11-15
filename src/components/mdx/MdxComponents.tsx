@@ -1,4 +1,5 @@
 import { Children, ReactNode, isValidElement, useId, useMemo, useState, useRef, useCallback, useEffect, useLayoutEffect } from "react";
+import { recordAnswers } from "@/lib/review";
 import { useProgress } from "@/hooks/useProgress";
 import { recordQuizScore } from "@/lib/progressSync";
 
@@ -1020,8 +1021,11 @@ export function Quiz(props: QuizProps) {
       if (submitted[questionId]) return; // Lock after first answer
       setAnswers((a) => ({ ...a, [questionId]: optionId }));
       setSubmitted((s) => ({ ...s, [questionId]: true }));
+      // Every answer becomes (or updates) a card in the review queue.
+      const q = questions.find((x) => x.id === questionId);
+      if (q) recordAnswers([{ id: q.id, correct: optionId === q.correctOptionId }]);
     },
-    [submitted]
+    [submitted, questions]
   );
 
   const answeredCount = Object.keys(submitted).length;
