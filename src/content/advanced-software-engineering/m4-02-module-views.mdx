@@ -76,7 +76,7 @@ The lecture's real example is the **ATIA-M** system. Drawn as a tree:
     { from: "utmc", to: "win", head: "none" },
     { from: "more", to: "java", head: "none" },
   ]}
-  caption="Every module has exactly one parent, and there are no loops. The server-side Java modules break down further into controller, business, servlet, utils, facades, entity, the CCS subsystem and more."
+  caption="Every module has exactly one parent, and there are no loops. The server-side Java modules break down further into adisc (a subsystem), controller, business, servlet, utils, itc (a subsystem), client, facades, entity, objects, test, tdc (a subsystem), taglibs, and the CCS subsystem (webservice, portal, security, common)."
 />
 
 ## The uses style
@@ -114,8 +114,12 @@ The uses view makes explicit which modules use which others to do their jobs.
 />
 
 <Callout tone="orange" label="Decomposition is not uses">
-The same modules appear in both views, but the lines mean different things. In decomposition, a line means *is part of* (and must form a tree). In uses, an arrow means *depends on for correctness* (and can go between any two modules). The lecture's estore example shows a uses view where `util` and `dao` are used by almost everything: a sign they must be built and stabilized first.
+The same modules appear in both views, but the lines mean different things. In decomposition, a line means *is part of* (and must form a tree). In uses, an arrow means *depends on for correctness* (and can go between any two modules). The lecture's second uses example, an online store, has modules `estore.webapp`, `web::estore`, `web::shared`, `web::accessControl`, `estore.core`, `admin.client`, `admin.core`, `util` and `dao`, joined by «use» arrows. Many of those arrows end at `util` and `dao`, so they have to work before most of the others can be tested.
 </Callout>
+
+## Readings for this lecture
+
+*Documenting Software Architectures* (Clements et al.): prologue P3 "Architecture Views", chapters 2, 3 and 5, and epilogue E.2 · *Software Architecture: Foundations, Theory, and Practice* (Taylor, Medvidovic, Dashofy).
 
 ## Key terms
 

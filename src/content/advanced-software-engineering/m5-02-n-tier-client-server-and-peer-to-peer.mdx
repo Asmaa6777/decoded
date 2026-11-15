@@ -88,7 +88,7 @@ In <Term id="client-server">client-server</Term>, client processes interact with
   caption="The middle server answers clients and is itself a client of another server. Each box is a process on its own computer."
 />
 
-**Examples:** a web browser and a web server; an email app and a mail server; a mobile banking app and the bank's servers.
+**Examples** (from the lecture's styles summary): browsers such as Chrome request pages from web servers such as Apache or Nginx over HTTP; email clients talk to mail servers over SMTP/IMAP.
 
 ### Key properties
 
@@ -104,6 +104,14 @@ In <Term id="client-server">client-server</Term>, client processes interact with
 | **Modifiability** | Separation of concerns: change the UI without touching the data tier. |
 | **Performance** | Depends on the speed of the connections between tiers, and on how much data is transferred across them. Every tier boundary adds a network hop. |
 | **Scalability** | Does the tier type matter? Yes: stateless tiers (web, application) scale by adding servers; the data tier is the hard one, because copies of data must stay consistent. |
+
+### Pros and cons (from the styles summary)
+
+| Pros | Cons |
+| --- | --- |
+| centralized data and control | the server is a single point of failure |
+| easier security and backups | the server can become a bottleneck |
+| thin clients, easy updates | depends on the network |
 
 <Callout tone="orange" label="The weak spot">
 A single server is a <Term id="single-point-of-failure">single point of failure</Term> and can become a bottleneck. That's why replication is the first availability tactic in this style.

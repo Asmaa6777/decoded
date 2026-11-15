@@ -7,12 +7,12 @@ The course follows the lectures, not chapters. Each module is one lecture, label
 Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L2** Foundations of Modern Engineering · **L3** SOLID Principles · **L4** Architectural Views · **L5** Building Software Architecture (with the ten-styles infographic)
 
 - [x] 1. Skeleton (whole course)
-- [ ] 2. Source fidelity
+- [x] 2. Source fidelity
   - [x] L1
   - [x] L2
   - [x] L3
-  - [ ] L4
-  - [ ] L5
+  - [x] L4
+  - [x] L5
 - [ ] 3. Depth
   - [ ] L1
   - [ ] L2
@@ -175,3 +175,21 @@ Checked Lecture 3 (61 slides, SOLID applied to automotive software) against m3-0
 **Left out on purpose:** the credits line naming the authors of the original slides (no people's names in lessons).
 
 **Not checked:** no browser check (text and table changes only).
+
+### Round 2, source fidelity: L4 and L5
+
+Checked Lecture 4 (41 slides) against m4-01 to m4-05, Lecture 5 (29 slides, from the OCR copy) and the ten-styles infographic (11 pages) against m5-01 to m5-05. Diagram slides were checked as images (L4 decomposition, ATIA-M, uses, C&C, deployment, install and work-assignment figures; L5 process, step 2, n-tier, client-server, P2P, pipe-and-filter and messaging figures).
+
+**Already covered:** L4: the documentation equation, how views relate to quality attributes and goals, "can one view represent an architecture?", structures vs views, the GEB image, the three kinds of structures, every module-vs-component question and the "No!" with its figure, the module-structure questions, the four module styles, decomposition (relation, elements, both constraints, the A–E figure, ATIA-M), uses (definition, relation, purpose, the loop question, the ATIA-M uses figure), C&C components, connectors and questions, the concurrency view, UML component notation with the order-system example, the climate-control module and C&C views with the lecture's own lollipop warning, and all three allocation styles with their definitions, questions and figures. L5: the terminology review, styles vs views, the three properties of styles, the seven topologies, the architect's role, the iterative process, steps 1, 2, 2a and 2b with their figures, the style list, n-tier (both figures, key properties, quality attributes), client-server, P2P with the Napster hybrid, pipe-and-filter (properties, invariant, UNIX example, both views, the three open questions), messaging (figure, key property, quality attributes). Infographic: all ten styles with definition, example, pros and cons.
+
+**Changed:**
+- m4-02: the ATIA-M server-side Java module list is now complete in the caption (it was summarized); the estore uses example is described as the slide draws it, replacing an interpretation of its circles; added the lecture's readings.
+- m4-04: the second UML deployment example (device → OS → Tomcat → shopping.war nesting) is now described.
+- m5-02: client-server examples and pros/cons table taken from the infographic, replacing examples of our own.
+- m5-03: the infographic's messaging examples (Amazon SQS orders, LinkedIn Kafka) and pros/cons table; added the lecture's readings.
+
+**Source errors:** L4's decomposition slide names an app "TDDT", the uses slide names it "TDDC"; the lessons keep each slide's spelling. L4's C&C example uses plain arrows that the lecture itself says should be lollipops (redrawn in m4-03).
+
+**Left out on purpose:** image credits on L4's slides (a previous course offering) and the infographic's navigation hints.
+
+**Round 2 is complete for all five lectures.** **Next:** round 3, depth, starting with L1.

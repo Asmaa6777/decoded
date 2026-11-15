@@ -119,11 +119,21 @@ Notice step 2: the client sent two orders before the server had taken either. An
 | **Availability** | Queues can be replicated across messaging servers, so messages survive a server failure. If the receiving server is down, messages wait in the queue instead of being lost. |
 | **Modifiability** | Asynchronous communication: sender and receiver don't need to know about each other or run at the same time. The **message format** becomes the contract: change it carefully, because every receiver depends on it. |
 
-Real messaging systems use a <Term id="message-broker">message broker</Term>, such as RabbitMQ, Apache Kafka or Amazon SQS, to store and route messages.
+Real messaging systems use a <Term id="message-broker">message broker</Term>, such as RabbitMQ, Apache Kafka or JMS, to store and route messages. The lecture's summary gives two examples: when you place an Amazon order, payment, warehouse and shipping are handled through message queues (Amazon SQS); LinkedIn built Kafka to move trillions of messages a day between its systems.
+
+| Pros (from the styles summary) | Cons |
+| --- | --- |
+| loose coupling of components | extra infrastructure (the broker) |
+| reliable, buffered delivery | harder debugging and tracing |
+| handles load peaks well | eventual consistency, added latency |
 
 <Callout tone="sky" label="Compare with client-server">
 In [client-server](/courses/advanced-software-engineering/n-tier-client-server-and-peer-to-peer#client-server), the client waits for each answer (synchronous). In messaging it doesn't. The price is that the client can't immediately know whether its request succeeded.
 </Callout>
+
+## Readings for this lecture
+
+*Essential Software Architecture* (Gorton), chapters 7 and 8.
 
 ## Key terms
 
