@@ -90,6 +90,7 @@ Each course has one GitHub issue that tracks its rounds, labelled [`course-itera
 - **Post each round's report as a comment** on the issue, so what was found but not fixed isn't lost in a chat.
 - **Say `Part of #N` in each round's commits or pull request,** and tick the box when the round's bar is met. The change that finishes the last round says `Fixes #N`.
 - **See where every course stands** with `gh issue list --label course-iteration`.
+- **Update the course's `rounds` in `src/content/registry.ts`** when a round is finished for every module. It counts rounds in order, so a round done for only some modules doesn't count yet. Readers see it as a maturity badge on the course card and page: First draft (rounds 1–2), Checked (3–5), Polished (6–7), Refined (8) and Student-tested (9). The wording they see, in `src/lib/maturity.ts`, describes what the course has been through without the round names.
 
 Some rounds a course may also need:
 

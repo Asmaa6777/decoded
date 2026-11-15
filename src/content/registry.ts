@@ -287,6 +287,12 @@ export type Course = {
   description: string;
   accent: "neon" | "orange" | "sky" | "violet" | "mint";
   status: "available" | "coming-soon";
+  /**
+   * How many rounds of "Build in iterations" (docs/building-a-course.md) are
+   * finished for every module, counted in order. Omitted means 1, the
+   * skeleton. Readers see it as a maturity level (src/lib/maturity.ts).
+   */
+  rounds?: number;
   authors?: Author[];
   modules: Module[];
 };
@@ -368,6 +374,7 @@ export const courses: Course[] = [
       "Sorting, searching, graphs, greedy choices and dynamic programming. The classic university algorithms course, decoded: every algorithm is animated step by step next to its Java code, every lesson explains why it works and what it costs, and each one ends with easy LeetCode problems to lock it in.",
     accent: "sky",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -424,6 +431,7 @@ export const courses: Course[] = [
       "The second algorithms course, decoded. Asymptotic notation and recurrences, divide and conquer, randomized quicksort and linear-time sorting, hashing, balanced and red-black trees, skip lists, dynamic programming, greedy algorithms, shortest paths, and the P vs NP question. Every lesson follows the lectures and labs, in plain language, with step-through animations.",
     accent: "violet",
     status: "available",
+    rounds: 7,
     authors: [asmaaFarouq],
     modules: [
       {
@@ -490,6 +498,7 @@ export const courses: Course[] = [
       "Matrices, polynomials, number theory and the first ciphers, worked in MATLAB with NumPy, pandas and plain Python alongside. Watch matrix entries slide into place, space bend under a linear map and a cipher wheel turn, then see where each idea shows up in machine learning.",
     accent: "mint",
     status: "available",
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -609,6 +618,7 @@ export const courses: Course[] = [
       "Build a computer's parts from the bottom up. Flip inputs and watch signals move through real gates, simplify circuits with Karnaugh maps, add numbers with nothing but XOR and AND, and see how a loop of two gates can remember a bit.",
     accent: "neon",
     status: "available",
+    rounds: 6,
     authors: [ahmedAlghali],
     modules: [
       {
@@ -1065,6 +1075,7 @@ export const courses: Course[] = [
       "Pixels, color depth and image size, resolution and pixel density, how CRT, LCD and LED displays light a picture, raster against vector images, and the algorithms that decide which pixels a straight line should light. Sweep a CRT beam, mix a pixel's bytes, zoom into jaggies and step through DDA and Bresenham pixel by pixel.",
     accent: "sky",
     status: "available",
+    rounds: 3,
     authors: [ahmedAlghali],
     modules: [
       {

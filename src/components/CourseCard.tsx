@@ -4,6 +4,7 @@ import { prerequisites } from "@/content/paths";
 import { useProgress } from "@/hooks/useProgress";
 import { useRegistration } from "@/hooks/useRegistration";
 import { CourseGlyph } from "@/components/brand/Glyphs";
+import { CourseMaturity } from "@/components/CourseMaturity";
 
 const accentText: Record<string, string> = {
   neon: "text-neon",
@@ -57,6 +58,8 @@ export default function CourseCard({ slug }: { slug: string }) {
         <p className="text-sm text-muted-foreground italic leading-relaxed mb-5">
           {course.tagline}
         </p>
+
+        {!disabled && <CourseMaturity rounds={course.rounds} className="mb-5" />}
 
         {required && (
           <p className="text-xs text-muted-foreground mb-5">

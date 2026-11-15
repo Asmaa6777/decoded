@@ -7,6 +7,7 @@ import { useQuizScores } from "@/hooks/useQuizScores";
 import { CoursePrerequisites, CourseRegistration } from "@/components/CourseRegistration";
 import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 import { CourseAuthors } from "@/components/CourseAuthors";
+import { CourseMaturity } from "@/components/CourseMaturity";
 
 const accentText: Record<string, string> = {
   neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
@@ -47,6 +48,7 @@ export default function CoursePage() {
             <p className="font-body text-xl italic text-muted-foreground max-w-2xl mb-6 leading-relaxed">
               {course.tagline}
             </p>
+            {course.status === "available" && <CourseMaturity rounds={course.rounds} className="mb-6" />}
             <p className="font-body text-base leading-relaxed text-foreground/80 max-w-2xl">
               {course.description}
             </p>
