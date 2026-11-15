@@ -391,7 +391,22 @@ Built to the bar the other lectures reached after rounds 1 to 10, not as a thin 
 - Small slips on the slides: "FR6 The system could recommends", "FR8 shall be able to records", "F5" for FR5, "descreased". The lessons use corrected wording.
 
 **Found but not fixed:**
-- The writing guide reserves `tone="sky"` callouts for "the formal view". Several earlier lessons use sky for cross-reference notes ("Connection", "Related", "Next"); they should move to a fitting tone or become plain text in a later pass.
-- Lecture 6 hasn't had separate plain-language, read-through or real-reader rounds; it was written to those standards in one pass.
+- (Fixed in the follow-up below.) Several earlier lessons used `tone="sky"` for cross-reference notes, which the guide reserves for the formal view.
+- (Fixed in the follow-up below.) Lecture 6 hadn't had its own plain-language and read-through rounds.
 
 **Checked:** lint (0 errors), the course, question-bank, link, preview and paths/tools tests, the build (300 pages), and all six new pages at 390 px in dark theme (no overflow, no page errors; the calculator updates live).
+
+### Lecture 6 review rounds, callout tones and epigraph check
+
+**Lecture 6, plain language and student read-through:** scanned m6-01 to m6-06 for long sentences, hard words and em-dashes (none), then read them as a first-time student.
+- Glossed jargon used without explanation: gapless playback, HSM (m6-03); circuit breakers, points of presence, CRUD, NAT, Avro/Protobuf (m6-04).
+- Split five long sentences (m6-01 guiding question kept; m6-03 control path, m6-04 pipe vs topic, two in m6-05) and turned the activities paragraph into a list.
+- Rounds 2 (source fidelity), 5 (terminology), 6 (visualizations), 7–8 (practice) and 9 (connections) were met when the lecture was written; the course tests enforce the terminology, coverage and question-type rules for it like every other lecture.
+
+**Callout tones across the course** (writing guide: orange = trap, violet = why it exists, sky = formal view, mint = recap, neon = the one key insight): 14 callouts moved off `sky`. Cross-reference and roadmap notes → mint; "ISP vs SRP" and "messaging vs publish-subscribe" → orange (common confusions); "why this matters / who cares / why work assignment is architecture / connectors are first-class" → violet; "the surprising conclusion" (structure beats behavior) → neon. No `sky` callouts remain, since the course has no formal-notation views.
+
+**Epigraph:** "The only way to go fast, is to go well." confirmed as Robert C. Martin's wording in chapter 1 of *Clean Architecture* (2017).
+
+**Checked:** lint (0 errors), all 3504 tests, the build (300 pages).
+
+**Still open:** round 11, real readers, for all six lectures.

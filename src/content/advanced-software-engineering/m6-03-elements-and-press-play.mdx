@@ -15,7 +15,7 @@ These are the same building blocks as Lecture 4's [component-and-connector view]
 
 | Element | Type | Responsibility | Provided interface | Required interfaces |
 | --- | --- | --- | --- | --- |
-| Playback engine | client component | buffering, decoding, seeking, gapless playback | `play(trackId)`, `seek(ms)` | Audio Fetcher, Key client |
+| Playback engine | client component | buffering, decoding, seeking, gapless playback (no silence between tracks) | `play(trackId)`, `seek(ms)` | Audio Fetcher, Key client |
 | Audio fetcher | client component | chooses a source: local cache → CDN → origin (historically P2P peers) | `fetchChunk(fileId, range)` | CDN HTTP, peer protocol |
 | Local cache | client data store | encrypted LRU cache of audio chunks, plus offline downloads | `get/put(chunk)` | filesystem |
 | Event logger | client component | buffers events on the device, batches and retries | `log(event)` | event gateway |
@@ -31,7 +31,7 @@ These are the same building blocks as Lecture 4's [component-and-connector view]
 | Search service | backend service | query parsing, ranking | `search(q, market)` | search index |
 | Playlist service | backend service | create/read/update/delete playlists, versions, collaboration | `getPlaylist`, `applyChange` | playlist store |
 | Storage resolver | backend service | maps a `trackId` to encrypted file IDs / URLs per bitrate | `resolve(trackId, quality)` | object store, CDN signer |
-| Key service | backend service | issues decryption keys bound to a user and device | `getKey(fileId, deviceToken)` | HSM / key DB |
+| Key service | backend service | issues decryption keys bound to a user and device | `getKey(fileId, deviceToken)` | HSM (a tamper-proof key-storage device) / key DB |
 | Ingestion pipeline | backend subsystem | validate → transcode → normalise → fingerprint → encrypt → publish | `submit(deliveryPackage)` | object store, catalog |
 | Event gateway / bus | middleware | durable, partitioned, <Term id="at-least-once">at-least-once</Term> event transport | `publish(topic, e)`, `subscribe(topic)` | storage |
 | Recommendation jobs | data processing | feature extraction, model training, playlist generation | output datasets | data lake |
@@ -97,7 +97,7 @@ One tap, about ten messages, a 250 ms budget (the cache-miss case). Read it top 
 Walk through it once:
 
 1. **①** The engine checks the local cache first. Here it misses.
-2. **② to ⑥** The control path: the gateway asks the catalog whether this track may play in this market (constraint C1), then asks the resolver for the file, and returns a signed CDN URL.
+2. **② to ⑥** The control path. The gateway asks the catalog whether this track may play in this market (constraint C1). Then it asks the resolver for the file, and returns a signed CDN URL.
 3. **⑦a and ⑦b** The <Term id="drm">DRM</Term> key and the first chunk are requested *at the same time*, so neither waits for the other.
 4. **⑧ and ⑨** The first chunk arrives, is decrypted and decoded, and playback starts, inside the 250 ms budget.
 5. **⑩** The "play started" event is handed to the event logger. It goes to the bus later, in a batch.

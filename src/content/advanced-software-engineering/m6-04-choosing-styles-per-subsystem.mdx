@@ -54,8 +54,8 @@ S7 appears twice: same subsystem, same requirement (QA1), different style in dif
 
 | Weakness | Mitigation |
 | --- | --- |
-| the server is a bottleneck / single point of failure | replication, multiple regions, caching, circuit breakers |
-| round-trip latency | edge points of presence, gateway aggregation, client caching |
+| the server is a bottleneck / single point of failure | replication, multiple regions, caching, circuit breakers (stop calling a failing service for a while, so the failure doesn't spread) |
+| round-trip latency | edge points of presence (server sites close to users), gateway aggregation, client caching |
 | bandwidth cost for heavy content | move audio to a CDN, a specialised client-server |
 
 **Rejected: P2P for metadata and playlists.** Authority and consistency can't be enforced on untrusted peers, so licensing (C1) fails.
@@ -107,7 +107,7 @@ A [layered](/courses/advanced-software-engineering/ten-styles-at-a-glance#layere
 | Weakness | Mitigation / note |
 | --- | --- |
 | performance overhead from passing through layers | relaxed layering on the audio data path: the playback engine writes straight to the platform's audio output |
-| the <Term id="sinkhole-anti-pattern">"sinkhole" anti-pattern</Term>: requests pass through layers that do nothing with them | watch for it in simple CRUD services |
+| the <Term id="sinkhole-anti-pattern">"sinkhole" anti-pattern</Term>: requests pass through layers that do nothing with them | watch for it in simple CRUD services (ones that only create, read, update and delete records) |
 | doesn't address distribution: it structures one deployable unit | that's why it is combined with client-server |
 
 **Two kinds of view.** Layered answers a [module-view](/courses/advanced-software-engineering/module-views) question: *how is the code organised?* Client-server, P2P and messaging answer a [C&C-view](/courses/advanced-software-engineering/component-and-connector-views) question: *how do running parts interact?* So "should we use layered or client-server?" is the wrong question: they answer different questions, and are combined, not compared.
@@ -138,7 +138,7 @@ It was **hybrid, not pure P2P**. Pure P2P can't enforce licensing, authenticatio
 
 | What changed | Effect on the architecture |
 | --- | --- |
-| mobile became dominant | phones make poor peers (battery, data caps, NAT, background limits); they never took part in P2P anyway |
+| mobile became dominant | phones make poor peers (battery, data caps, home routers (NAT) that block incoming connections, limits on background apps); they never took part in P2P anyway |
 | CDN and server bandwidth costs dropped | the cost driver C5 got weaker, so the main reason for P2P weakened |
 | the company grew | it could afford its own and third-party delivery infrastructure |
 | complexity and operational risk | P2P is harder to debug and monitor, and using users' resources worried users |
@@ -252,7 +252,7 @@ The same pattern runs S12's royalty batch: events in → de-duplicate → aggreg
 | Weakness | Mitigation |
 | --- | --- |
 | latency adds up across stages | never use it for "press play" (interactive) |
-| coupling through the data format | schemas (Avro / Protobuf) with versioning |
+| coupling through the data format | schemas (formats such as Avro or Protobuf) with versioning |
 | errors spread across stages | <Term id="dead-letter-queue">dead-letter queues</Term> and idempotent filters |
 | serialisation overhead | accepted for batch and bulk work |
 
@@ -312,7 +312,7 @@ Three of the four quality ASRs (QA1, QA5, QA6) are served by this one style. Tha
 
 **Rejected: clients calling a synchronous `POST /royalty/play`.** That creates <Term id="temporal-coupling">temporal coupling</Term>: if the royalty service is down, events are lost or playback slows down, breaking QA1 and QA5.
 
-*Think about it:* pipe-and-filter and messaging both use queues. What separates them? (A pipe carries a stream to *the next transformation step* in a fixed chain; a topic carries a *fact* to any number of independent subscribers that the producer doesn't know about.)
+*Think about it:* pipe-and-filter and messaging both use queues. What separates them? (A pipe carries a stream to *the next transformation step* in a fixed chain. A topic carries a *fact* to any number of independent subscribers, which the producer doesn't know about.)
 
 <Callout tone="orange" label="Common mistake">
 Asking "which style does this system use?" and picking one. Streamify uses five, each where its strengths match a subsystem's dominant qualities. Another trap is comparing layered with client-server: one organises code, the other organises running parts, so you use both.

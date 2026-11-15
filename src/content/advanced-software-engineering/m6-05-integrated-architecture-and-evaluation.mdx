@@ -164,12 +164,19 @@ Constraint C1 (licensing with DRM and per-country rights) and FR8 (counting ever
 **Q5.** How does Conway's Law (Spotify's squad model) show up in the decomposition from Stage 2?
 
 <ModelAnswer>
-Decomposition criterion 4, rate of change and team ownership: squads own services end to end, so the subsystem boundaries follow team boundaries. QA6 (a squad deploys a recommendation change in under a day, without coordinating) is only possible because one team owns S10 and its data, and talks to others through the bus and versioned APIs.
+Decomposition criterion 4, rate of change and team ownership: squads own services end to end, so the subsystem boundaries follow team boundaries. Take QA6: a squad deploys a recommendation change in under a day, without coordinating. That's only possible because one team owns S10 and its data. It talks to the others only through the bus and versioned APIs.
 </ModelAnswer>
 
 ## In-class activities and assignment
 
-The lecture ends with four activities: writing two six-part scenarios (offline playback FR5, Connect handoff FR10); critiquing a decomposition that merges Search into Catalog; a debate on whether a 2024 start-up with expensive bandwidth and mostly desktop and TV users should use hybrid P2P; and designing a `PlayEvent` schema that supports royalties, de-duplication and recommendations. The take-home assignment applies the four stages to one of: a ride-hailing platform, a collaborative document editor, video conferencing (P2P vs. server trade-offs), or a vehicle OTA-update platform.
+The lecture ends with four activities:
+
+- write two six-part scenarios, for offline playback (FR5) and the Connect handoff (FR10);
+- critique a decomposition that merges Search into Catalog;
+- debate whether a 2024 start-up with expensive bandwidth and mostly desktop and TV users should use hybrid P2P;
+- design a `PlayEvent` schema that supports royalties, de-duplication and recommendations.
+
+The take-home assignment applies the four stages to one of: a ride-hailing platform, a collaborative document editor, video conferencing (P2P vs. server trade-offs), or a vehicle OTA-update platform.
 
 ## Key terms
 
