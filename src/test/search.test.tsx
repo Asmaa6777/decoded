@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SearchButton } from "@/components/SearchDialog";
+import { SearchButton } from "@/components/SearchButton";
 import { buildDocs, searchLessons, type SearchDoc } from "@/lib/search";
 
 const doc = (over: Partial<SearchDoc>): SearchDoc => ({

@@ -58,7 +58,7 @@ Registering for a course (`src/hooks/useRegistration.ts`) is what shows the prog
 `src/content/paths.ts` holds the suggested learning paths and course prerequisites (suggestions only; nothing is locked). `src/content/tools.ts` maps real tools to lessons for `/tools`. A test checks each linked lesson's source mentions what the entry claims, so update the entry if a lesson changes.
 
 ### Search
-`src/components/SearchDialog.tsx` (header icon or Cmd/Ctrl+K) searches in the browser. Lesson titles come from the registry; headings and body text come from `dist/search-index.json`, which `scripts/og/generate.mjs` writes and the dialog fetches on first open. In `npm run dev` that file doesn't exist, so only titles match.
+`src/components/SearchDialog.tsx` (header icon or Cmd/Ctrl+K) searches in the browser. `SearchButton.tsx` lazy-loads it on first open, so keep the dialog's imports out of the button. Lesson titles come from the registry; headings and body text come from `dist/search-index.json`, which `scripts/og/generate.mjs` writes and the dialog fetches on first open. In `npm run dev` that file doesn't exist, so only titles match.
 
 ### API Worker
 `worker/` is a separate npm project (Cloudflare Worker + D1) deployed to `https://decoded-api.stack42.tech` with `npx wrangler deploy`; pushing to GitHub doesn't deploy it. Schema changes go in `worker/migrations/` and are applied with `npm run migrate`. It has its own tests (`npm test` in `worker/`), which CI runs. OAuth credentials are Worker secrets (`wrangler secret put`), never committed. Accounts hold only the sign-in provider's user ID, plus an avatar URL and, for GitHub, a username (Google's name is left unread), and session tokens are stored hashed. Accounts aren't linked across providers.
