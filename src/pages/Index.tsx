@@ -14,7 +14,7 @@ const accentText: Record<string, string> = {
 
 export default function Index() {
   useEffect(() => {
-    document.title = "Decoded — CS Theory to Real-World Skills";
+    document.title = "Decoded — Computer Science, In Depth and Connected";
   }, []);
 
   return (

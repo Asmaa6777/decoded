@@ -148,7 +148,7 @@ function homeCard(mod) {
     h(
       "div",
       { flexDirection: "column", gap: 22 },
-      h("div", mono(18, C.neon), "CS theory · real-world tools"),
+      h("div", mono(18, C.neon), "CS theory · in depth, connected"),
       h(
         "div",
         { flexDirection: "column", fontFamily: "Syne", fontWeight: 800, fontSize: 70, lineHeight: 1.0, color: C.fg, letterSpacing: -2.5 },
@@ -297,8 +297,8 @@ await renderPng(homeCard(mod), fonts, path.join(DIST, "og/home.png"));
 await renderPng(coursesCard(mod), fonts, path.join(DIST, "og/courses.png"));
 
 await writeRoute(template, "/", {
-  title: "Decoded — CS Theory to Real-World Skills",
-  description: "Computer science courses decoded into the practical skills engineers actually use. Bridge the gap between abstract theory and modern tools.",
+  title: "Decoded — Computer Science, In Depth and Connected",
+  description: "CS courses that explain each idea in plain words, let you step through it in a simulation, and show the software it runs in.",
   url: `${SITE}/`,
   image: img("home"),
 });
