@@ -1,6 +1,7 @@
 import { currentUserId, deleteAccount, finishSignIn, signOut, startSignIn } from "./auth";
 import { changeProgress, enroll, getProgress, saveQuizScore, unenroll } from "./progress";
 import { allCourseStats, courseStats } from "./stats";
+import { getOwnProfile, getPublicProfile, reportProfile, saveOwnProfile, searchProfiles } from "./profiles";
 
 export interface Env {
   DB: D1Database;
@@ -18,6 +19,12 @@ async function route(request: Request, env: Env): Promise<Response> {
   // Cookies go with any request, so changes are only accepted from the site itself.
   if (request.method !== "GET" && request.headers.get("Origin") !== env.SITE_ORIGIN) {
     return Response.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  const report = pathname.match(/^\/profiles\/([a-z0-9_]+)\/report$/);
+  if (request.method === "POST" && report) return reportProfile(request, env, report[1]);
+  if (request.method === "GET" && pathname.startsWith("/profiles/")) {
+    return getPublicProfile(env, pathname.slice("/profiles/".length));
   }
 
   if (request.method === "GET" && pathname.startsWith("/stats/")) {
@@ -38,6 +45,12 @@ async function route(request: Request, env: Env): Promise<Response> {
       return finishSignIn(request, env, "google");
     case "GET /stats":
       return allCourseStats(env);
+    case "GET /profile":
+      return getOwnProfile(request, env);
+    case "POST /profile":
+      return saveOwnProfile(request, env);
+    case "GET /profiles":
+      return searchProfiles(request, env);
     case "GET /me":
       return Response.json({ signedIn: (await currentUserId(request, env)) !== null });
     case "POST /auth/sign-out":
