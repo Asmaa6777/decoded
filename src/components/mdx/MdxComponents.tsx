@@ -185,6 +185,23 @@ export function Callout({
   );
 }
 
+/* Epigraph: a short quote under a course's or lesson's title, the way books
+   open a chapter. The quote is a prop, not children, so it stays on one JSX
+   line and link previews (src/lib/lessonPreview.ts) never pick it as the
+   lesson's opening paragraph. */
+export function Epigraph({ quote, by, source }: { quote: string; by: string; source?: string }) {
+  return (
+    <figure className="not-prose my-10 ml-auto max-w-md">
+      <div aria-hidden className="mb-4 h-px w-10 bg-neon" />
+      <blockquote className="font-body text-xl italic leading-snug text-foreground/90">{quote}</blockquote>
+      <figcaption className="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+        {by}
+        {source && <span className="mt-1 block font-body text-sm normal-case italic tracking-normal">{source}</span>}
+      </figcaption>
+    </figure>
+  );
+}
+
 export function PracticalApplication({
   title,
   tool,

@@ -264,7 +264,7 @@
   .prose-reading ul:not(:where(.not-prose, .not-prose *)) { list-style: disc; }
   .prose-reading ol:not(:where(.not-prose, .not-prose *)) { list-style: decimal; }
   .prose-reading li { margin-bottom: .5rem; }
-  .prose-reading blockquote {
+  .prose-reading blockquote:not(:where(.not-prose, .not-prose *)) {
     border-left: 3px solid hsl(var(--orange));
     padding-left: 1.25rem;
     margin: 1.5rem 0;
