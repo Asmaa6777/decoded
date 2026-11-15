@@ -1,51 +1,274 @@
-import { Callout } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
 import { ReplacementLab, WritePolicyLab, AmatCalculator } from "@/components/mdx/ArchitectureVisualizers";
 
 # Cache Policies: Replacement, Writes and Block Size
 
-[Mapping](/courses/computer-architecture/cache-mapping) says where a block may go. Designers have three more decisions to make.
+[Cache mapping](/courses/computer-architecture/cache-mapping) dictates where in a cache an address is allowed to go. But mapping alone is only part of cache architecture. Designers must decide three further policies: which existing block to evict when a set is full, how to handle memory writes so that data remains consistent, and how large each block should be to maximize performance.
+
+The overarching design objective is to minimize **average memory access time** (AMAT) while maintaining data integrity across the system.
+
+## The 3Cs Miss Taxonomy
+
+To diagnose why cache misses occur, Mark Hill and David Patterson developed the **3Cs model**, which categorizes every cache miss into one of three fundamental classes:
+
+1. **Compulsory misses (Cold misses)**: The very first access to a memory block. The block has never been in the cache, so the miss is unavoidable unless hardware or software prefetching predicts the access beforehand.
+2. **Capacity misses**: The cache cannot contain all the blocks needed during program execution. If a program repeatedly accesses a working set of 128 KB on a 64 KB cache, blocks will be repeatedly evicted and re-fetched even if the cache has infinite associativity.
+3. **Conflict misses (Collision misses)**: Multiple distinct memory blocks map to the same set in a direct-mapped or set-associative cache. These misses occur because of non-uniform placement and would vanish if the cache were fully associative with the same capacity.
+4. **Coherence misses (The 4th C)**: In multiprocessor and multicore systems, a cache miss triggered when another processor core writes to a shared cache block, causing the local copy to be invalidated.
 
 ## What gets thrown out?
 
-When a set is full, something has to go. In a direct-mapped cache there's no choice, but in the others there is.
+When a cache set is completely full and a miss brings in a new block, hardware must select an existing line to evict. A cache **replacement policy** governs this decision. In a direct-mapped cache there is no choice because each address maps to only one line, but set-associative and fully associative caches require an eviction algorithm such as **LRU** (Least Recently Used), FIFO, or random replacement.
 
-- **LRU** (least recently used): throw out whatever hasn't been used for the longest. It's like clearing your desk of whatever you haven't touched lately. Operating systems use the same rule for [page replacement](/courses/operating-systems/page-replacement-and-thrashing#least-recently-used-lru).
-- **FIFO** (first in, first out): throw out whatever has been there the longest, even if you're using it constantly.
-- **Random**: pick one at random. It's the cheapest to build, and it's surprisingly close to LRU.
+### Least Recently Used (LRU)
 
-Click through each access in both modes. Block 1 keeps getting used. Does it survive?
+The **Least Recently Used** (LRU) policy evicts the block that has remained unreferenced for the longest period of time.
+
+- **Rationale**: Exploits temporal locality. A block accessed recently is likely to be accessed again; a block untouched for thousands of cycles is the least likely to be needed soon.
+- **Hardware implementation**:
+  - In a 2-way set-associative cache, LRU requires exactly 1 bit per set. Setting the bit to 0 or 1 indicates which of the two ways was accessed most recently.
+  - In a 4-way set-associative cache, tracking true LRU order among 4 ways requires $\log_2(4!) = \log_2(24) \approx 5$ or 6 bits per set, or a $4 \times 4$ triangular bit matrix.
+  - For 8-way and 16-way caches, exact LRU becomes too complex and consumes too much power and silicon area.
+- **Pseudo-LRU (Tree-PLRU)**: Modern high-associativity caches approximate LRU using a binary decision tree. An 8-way cache needs only $8 - 1 = 7$ tracking bits per set arranged in a 3-level binary tree. Each access flips the tree pointers away from the accessed way, directing the next eviction toward an unreferenced line.
+
+### First-In, First-Out (FIFO)
+
+The **First-In, First-Out** (FIFO) policy evicts the block that has been resident in the set for the longest time, regardless of how frequently or recently it was accessed.
+
+- **Hardware implementation**: Simple circular counter per set pointing to the next victim way.
+- **Drawback**: FIFO frequently evicts critical loop variables, lookup tables, and OS kernel routines simply because they were loaded early during program startup.
+
+### Random Replacement
+
+The **Random** policy selects a victim line uniformly at random using a pseudorandom number generator or clock-driven counter.
+
+- **Hardware implementation**: Requires zero tracking bits in the cache tag array.
+- **Performance**: In large caches with high associativity ($\ge 8$-way), random replacement performs surprisingly close to LRU (within 1 to 2% miss rate) because the probability of accidentally picking the most critical active line is small.
+
+### Optimal Replacement (MIN / Belady's Algorithm)
+
+The **Optimal** (or MIN) algorithm evicts the block whose next access will occur furthest in the future.
+
+- **Theoretical bound**: Belady proved that MIN achieves the lowest possible miss rate for any fixed-size cache.
+- **Unrealizability**: MIN cannot be implemented in hardware because it requires future knowledge of program execution. It serves as an offline theoretical benchmark to measure how close practical policies come to perfection.
+
+Click through each access to compare how LRU and FIFO manage a shared cache set:
 
 <ReplacementLab />
 
 ## What happens on a write?
 
-The CPU changes a value that's in the cache. Now the cache and main memory disagree. When should memory be updated?
+Read operations do not alter cache contents. Writes, however, modify data. When the CPU writes a modified word into the cache, main memory and cache temporarily disagree. Maintaining **cache coherency** and data consistency across main memory and other cores requires clear write policies. Architecture defines two policies for handling write hits and two policies for handling write misses.
 
-- **Write-through**: write to both at once. Memory is always correct, but every write takes the slow trip to memory.
-- **Write-back**: write only to the cache, and mark the block with a **dirty bit**. Memory is only updated when that block gets thrown out. It's much faster, but more complicated.
+### Write Hit Policies
 
-Consider a loop updating a counter a thousand times. Write-through sends all thousand writes to memory. Write-back sends only the last.
+#### 1. Write-Through
+
+In a **write-through** cache, every write to the cache simultaneously updates main memory.
+
+- **Advantage**: Main memory always holds a clean, up-to-date copy of data. Simplifies cache coherence in multicore systems and makes recovery after power loss or fault straightforward.
+- **Disadvantage**: Terrible performance if executed synchronously. Writing to main memory takes 50 to 100 ns. If 15% of all CPU instructions are memory stores, the processor pipeline would stall continuously on memory bus traffic.
+- **Write Buffer**: To avoid processor stalls, write-through caches place a **write buffer** (a small FIFO queue, typically 4 to 16 entries) between the cache and memory bus. The processor writes the data to both the cache and the write buffer in 1 cycle and continues execution immediately. The memory controller drains the buffer to DRAM in the background.
+
+<Callout tone="orange" label="Write buffer saturation">
+A write buffer hides memory latency only if writes arrive in bursts followed by gaps. If a tight loop performs continuous stores faster than DRAM can absorb them, the write buffer fills to capacity. Subsequent stores stall the execution pipeline until the buffer drains.
+</Callout>
+
+#### 2. Write-Back (Copy-Back)
+
+In a **write-back** cache, writes update only the cache line. Main memory is not updated immediately.
+
+- **Dirty Bit ($D$)**: Each cache line includes a 1-bit **dirty flag** (or modified bit). When the processor writes to a line, the hardware marks its dirty bit as 1.
+- **Memory Update**: Main memory is updated only when a dirty line is evicted to make room for a new block. If a clean line (dirty bit 0) is evicted, it is discarded immediately with zero bus writes.
+- **Advantage**: Drastic reduction in memory bus traffic. A loop modifying an array element 10,000 times generates 10,000 cache writes but only 1 write to main memory when the block is eventually replaced.
+- **Disadvantage**: More complex hardware. Evicting a dirty block requires two distinct memory operations: writing back the dirty victim to DRAM, and reading the incoming block into the cache.
 
 <WritePolicyLab />
 
-To lessen the waiting, write-through caches often use a small **write buffer**, so the CPU can drop off the write and move on.
+### Write Miss Policies
 
-<Callout tone="violet" label="The coherence problem">
-On a multicore chip, each core has its own cache. If one core uses write-back, the others can see old values. **Cache coherence** protocols keep them in step, and they're one reason multicore chips are hard to design.
+When the processor attempts to write to an address that is not in the cache, two approaches exist:
+
+1. **Write-Allocate (Fetch-on-Write)**: The missed block is fetched from main memory into the cache, and the write is executed in the cache line. This is the natural pairing for **write-back** caches, because subsequent writes to that block will hit in the cache.
+2. **No-Write-Allocate (Write-Around)**: The data is written directly to main memory without loading the block into the cache. This is the standard pairing for **write-through** caches, preventing non-repeated writes from evicting useful cached blocks.
+
+<Callout tone="violet" label="Multicore cache coherence">
+On modern multi-core chips, each core contains a private L1 and L2 cache. If Core 0 writes to address $X$ in its private write-back cache, Core 1 reading address $X$ from its own cache could read stale data. Hardware **cache coherence protocols** (such as MESI: Modified, Exclusive, Shared, Invalid) monitor the system bus and invalidate or update private cache lines whenever another core writes to a shared memory address.
 </Callout>
 
-## How big should a block be?
+## Block Size Trade-Offs
 
-A bigger block brings in more neighbours, which helps [spatial locality](/courses/computer-organization/memory-hierarchy#why-such-a-small-cache-works), up to a point. Too large, and you have two problems: fewer blocks fit, so useful data gets thrown out sooner, and each miss takes longer because there's more to copy. Common sizes settle around 64 bytes.
+Block size represents a trade-off between spatial locality and transfer overhead:
 
-## Putting a number on it
+1. **Increasing block size (from 16 to 64 bytes)**:
+   - Takes advantage of spatial locality by fetching neighbouring words that the program will likely need.
+   - Reduces the number of compulsory misses.
+   - Reduces the number of tag bits required per cache byte (since larger blocks mean fewer total lines).
+2. **Excessively large blocks (beyond 128 bytes)**:
+   - For a fixed total cache capacity, larger blocks mean fewer total sets. This causes more conflict and capacity misses.
+   - **Miss Penalty increases**: Transferring a 256-byte block across a 64-bit bus requires 32 sequential transfers, tying up the memory controller and stalling the CPU for dozens of additional cycles.
+   - Spatial locality diminishes: if the program only uses 4 bytes of a 256-byte block, the remaining 252 bytes waste memory bandwidth and displace other useful data (**cache pollution**).
 
-The measure that ties all of this together is the **average memory access time**:
+Modern desktop and server processors universally standardize on **64-byte blocks**.
+
+## Average Memory Access Time (AMAT)
+
+The unifying quantitative equation in memory system design is **Average Memory Access Time** (AMAT):
 
 $$
-\text{AMAT} = \text{hit time} + \text{miss rate} \times \text{miss penalty}
+\text{AMAT} = t_{\text{hit}} + (\text{Miss Rate} \times \text{Miss Penalty})
 $$
+
+Where:
+- $t_{\text{hit}}$ is the time to hit in the cache (typically 1 to 4 clock cycles for L1).
+- $\text{Miss Rate}$ is the fraction of all memory accesses that miss.
+- $\text{Miss Penalty}$ is the additional time required to fetch the block from the lower level of the memory hierarchy.
 
 <AmatCalculator />
 
-Every decision in this lesson is an attempt to shrink one of these three terms. Larger caches lower the miss rate but raise the hit time. Adding another level of cache lowers the miss penalty.
+### Multi-Level Cache Hierarchies
+
+To overcome the latency-capacity dilemma, modern processors use a multi-level hierarchy:
+
+- **Level 1 (L1)**: Small (32 KB to 64 KB per core), extremely fast (1 to 4 cycles, ~1 ns). Split into dedicated **L1 Instruction Cache (L1 I-Cache)** and **L1 Data Cache (L1 D-Cache)** to allow simultaneous instruction fetching and data load/store without structural hazards.
+- **Level 2 (L2)**: Moderate capacity (512 KB to 2 MB per core), fast (10 to 14 cycles, ~3 to 4 ns), unified (holds both instructions and data).
+- **Level 3 (L3)**: Large capacity (16 MB to 96 MB shared across all cores), moderate latency (30 to 50 cycles, ~10 to 15 ns).
+
+The multi-level AMAT equation expands as:
+
+$$
+\text{AMAT} = t_{L1} + \text{MR}_{L1} \times \left( t_{L2} + \text{MR}_{L2} \times \left( t_{L3} + \text{MR}_{L3} \times t_{\text{mem}} \right) \right)
+$$
+
+<Callout tone="sky" label="Local vs. global miss rate">
+When analyzing multi-level caches:
+- **Local Miss Rate ($\text{MR}_{\text{local}}$)**: The fraction of references arriving at that specific cache level that miss.
+  $$\text{MR}_{L2\text{, local}} = \frac{\text{Misses at L2}}{\text{Total accesses to L2}}$$
+- **Global Miss Rate ($\text{MR}_{\text{global}}$)**: The fraction of all CPU memory references that miss at that cache level.
+  $$\text{MR}_{L2\text{, global}} = \frac{\text{Misses at L2}}{\text{Total CPU references}} = \text{MR}_{L1} \times \text{MR}_{L2\text{, local}}$$
+</Callout>
+
+<Callout tone="mint" label="Key takeaway">
+Cache performance is governed by the interaction of replacement, write, and sizing policies. LRU preserves temporally active data, while write-back with write-allocate prevents memory bus saturation. Multi-level cache hierarchies minimize AMAT by combining small, ultra-fast L1 split caches with large, unified L2 and L3 caches.
+</Callout>
+
+## Exam-Style Practice
+
+<ModelAnswer title="Problem 1: Multi-level cache AMAT and performance analysis">
+A processor has a clock frequency of 2 GHz (clock cycle time $\tau = 0.5\text{ ns}$).
+The memory hierarchy consists of a split L1 cache, a unified L2 cache, and main memory with the following parameters:
+
+- L1 hit time: 1 clock cycle (0.5 ns)
+- L1 miss rate: 4% (0.04)
+- L2 hit time: 10 clock cycles (5 ns)
+- L2 local miss rate: 20% (0.20)
+- Main memory access latency: 100 clock cycles (50 ns)
+
+1. Calculate the global miss rate for the L2 cache.
+2. Calculate the Average Memory Access Time (AMAT) in clock cycles and in nanoseconds.
+3. If an architectural redesign reduces the L2 local miss rate from 20% to 10%, calculate the new AMAT and the overall memory speedup.
+
+---
+
+**Solution:**
+
+**Part 1: Global Miss Rate for L2:**
+$$
+\text{Global MR}_{L2} = \text{MR}_{L1} \times \text{Local MR}_{L2} = 0.04 \times 0.20 = 0.008\text{ (or 0.8%)}
+$$
+Only 0.8% of all memory accesses issued by the CPU reach main memory.
+
+**Part 2: Baseline AMAT Calculation:**
+Using the multi-level AMAT formula:
+$$
+\text{AMAT} = t_{L1} + \text{MR}_{L1} \times \text{Miss Penalty}_{L1}
+$$
+The miss penalty of L1 is the time spent resolving the miss through L2:
+$$
+\text{Miss Penalty}_{L1} = t_{L2} + \text{Local MR}_{L2} \times t_{\text{mem}}
+$$
+Substituting the given cycle counts:
+$$
+\text{Miss Penalty}_{L1} = 10\text{ cycles} + 0.20 \times 100\text{ cycles} = 10 + 20 = 30\text{ cycles}
+$$
+Now compute overall AMAT in clock cycles:
+$$
+\text{AMAT} = 1\text{ cycle} + 0.04 \times 30\text{ cycles} = 1 + 1.2 = 2.2\text{ clock cycles}
+$$
+Convert to nanoseconds ($\tau = 0.5\text{ ns}$):
+$$
+\text{AMAT} = 2.2 \times 0.5\text{ ns} = 1.1\text{ ns}
+$$
+
+**Part 3: Redesign with L2 Local Miss Rate = 10%:**
+Recalculate the L1 miss penalty:
+$$
+\text{Miss Penalty}_{L1,\text{new}} = 10\text{ cycles} + 0.10 \times 100\text{ cycles} = 10 + 10 = 20\text{ cycles}
+$$
+Recalculate AMAT:
+$$
+\text{AMAT}_{\text{new}} = 1\text{ cycle} + 0.04 \times 20\text{ cycles} = 1 + 0.8 = 1.8\text{ clock cycles}
+$$
+In nanoseconds:
+$$
+\text{AMAT}_{\text{new}} = 1.8 \times 0.5\text{ ns} = 0.9\text{ ns}
+$$
+Memory speedup achieved:
+$$
+\text{Speedup} = \frac{\text{AMAT}_{\text{baseline}}}{\text{AMAT}_{\text{new}}} = \frac{2.2}{1.8} \approx 1.222
+$$
+This represents a 22.2% reduction in memory access latency.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 2: Memory bus traffic under write-through vs. write-back">
+A processor executes a benchmark program of 1,000,000 instructions.
+Memory reference statistics for the benchmark:
+- 30% of instructions are memory data reads (loads).
+- 10% of instructions are memory data writes (stores).
+- The remaining 60% are ALU operations that perform no data memory accesses.
+- Assume instruction fetch accesses are handled by a separate dedicated I-cache that incurs zero data bus traffic.
+
+The data cache has a block size of 64 bytes. The data miss rate for reads is 3%, and the data miss rate for writes is 5%.
+In the write-back cache, 40% of evicted blocks are dirty ($D = 1$).
+Assume a write-allocate policy for write-back, and a no-write-allocate policy for write-through. Assume word writes transfer 4 bytes.
+
+Calculate the total number of bytes transferred across the main memory bus for:
+1. A write-through cache with a write buffer.
+2. A write-back cache.
+
+---
+
+**Solution:**
+
+**Total memory references:**
+- Read instructions ($N_{\text{reads}}$) = $1{,}000{,}000 \times 0.30 = 300{,}000$ reads.
+- Write instructions ($N_{\text{writes}}$) = $1{,}000{,}000 \times 0.10 = 100{,}000$ writes.
+
+**Part 1: Write-Through (No-Write-Allocate):**
+In write-through:
+- Every read miss fetches a full 64-byte block from memory.
+  $$\text{Read misses} = 300{,}000 \times 0.03 = 9{,}000\text{ misses}$$
+  $$\text{Bytes from read misses} = 9{,}000 \times 64\text{ bytes} = 576{,}000\text{ bytes}$$
+- Because the cache is no-write-allocate, write misses do not fetch blocks.
+- Every write instruction (both hits and misses) must write its 4-byte word directly to main memory:
+  $$\text{Bytes from writes} = 100{,}000 \times 4\text{ bytes} = 400{,}000\text{ bytes}$$
+- Total memory bus bytes:
+  $$\text{Total Bytes}_{\text{WT}} = 576{,}000 + 400{,}000 = 976{,}000\text{ bytes} \approx 953.1\text{ KB}$$
+
+**Part 2: Write-Back (Write-Allocate):**
+In write-back:
+- Read misses fetch a 64-byte block:
+  $$\text{Read misses} = 300{,}000 \times 0.03 = 9{,}000\text{ blocks}$$
+- Write misses fetch a 64-byte block (due to write-allocate):
+  $$\text{Write misses} = 100{,}000 \times 0.05 = 5{,}000\text{ blocks}$$
+- Total block fetches = $9{,}000 + 5{,}000 = 14{,}000$ blocks.
+  $$\text{Bytes fetched into cache} = 14{,}000 \times 64\text{ bytes} = 896{,}000\text{ bytes}$$
+- Each of these 14,000 block allocations causes an eviction.
+  Of the evicted blocks, 40% are dirty and must be written back to main memory:
+  $$\text{Evicted dirty blocks} = 14{,}000 \times 0.40 = 5{,}600\text{ blocks}$$
+  $$\text{Bytes written back to memory} = 5{,}600 \times 64\text{ bytes} = 358{,}400\text{ bytes}$$
+- Total memory bus bytes:
+  $$\text{Total Bytes}_{\text{WB}} = 896{,}000 + 358{,}400 = 1{,}254{,}400\text{ bytes} \approx 1{,}225\text{ KB}$$
+
+Notice that when the write miss rate is high and blocks are large (64 bytes vs 4-byte words), write-allocate fetches 64 bytes for each miss. However, if the program demonstrates temporal locality where writes repeatedly update existing cached blocks (write hit rate 95%), write-back performs all repeated writes locally at zero memory bus cost.
+</ModelAnswer>
