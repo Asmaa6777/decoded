@@ -372,6 +372,45 @@ const SR_NOR: CircuitLayout = {
   outputs: [{ id: "oQ", label: "Q", x: 310, y: 55, from: "Q" }, { id: "oQn", label: "Q'", x: 310, y: 175, from: "Qn" }],
 };
 
+const BISTABLE: CircuitLayout = {
+  w: 340,
+  h: 190,
+  inputs: [],
+  gates: [
+    { id: "Qn", type: "NOT", x: 150, y: 30, in: ["Q"], name: "NOT 1", route: { 0: [[240, 150], [240, 125], [125, 75], [125, 50]] } },
+    { id: "Q", type: "NOT", x: 150, y: 130, in: ["Qn"], name: "NOT 2", route: { 0: [[240, 50], [240, 75], [125, 125], [125, 150]] } },
+  ],
+  outputs: [{ id: "oQn", label: "Q'", x: 280, y: 50, from: "Qn" }, { id: "oQ", label: "Q", x: 280, y: 150, from: "Q" }],
+};
+
+/** Two inverters in a loop: each state keeps itself going, and nothing outside can change it. */
+export function BistableLoop() {
+  const [q, setQ] = useState<Bit>(1);
+  const values: Signals = { Q: q, Qn: q ? 0 : 1 };
+  return (
+    <div className="not-prose my-8 border border-border bg-card rounded-sm overflow-hidden text-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+        <div className="eyebrow text-neon">Two inverters in a loop</div>
+        <Legend items={LEGEND.slice(0, 2)} />
+      </div>
+      <div className="p-5 flex flex-col gap-4">
+        <CircuitDrawing layout={BISTABLE} values={values} />
+        <p aria-live="polite" className="min-h-[3em] text-sm leading-relaxed">
+          {q
+            ? "Q = 1 goes into NOT 1, which outputs Q' = 0. That 0 goes into NOT 2, which outputs Q = 1, the value we started with. The loop agrees with itself, so it stays like this."
+            : "Q = 0 goes into NOT 1, which outputs Q' = 1. That 1 goes into NOT 2, which outputs Q = 0 again. This state keeps itself going too."}
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">power up in</span>
+          <button type="button" aria-pressed={q === 1} className={`${btn} ${q === 1 ? "border-mint bg-mint/20" : ""}`} onClick={() => setQ(1)}>State 1 (Q = 1)</button>
+          <button type="button" aria-pressed={q === 0} className={`${btn} ${q === 0 ? "border-mint bg-mint/20" : ""}`} onClick={() => setQ(0)}>State 2 (Q = 0)</button>
+        </div>
+        <p className="text-xs text-muted-foreground">There is no input to click: once the loop is running, nothing outside it can change the stored bit.</p>
+      </div>
+    </div>
+  );
+}
+
 const srRead = (v: Signals) => {
   if (v.S && v.R) return "S and R are both 1, so both gates are forced to 0 and Q no longer equals the opposite of Q'. Nothing useful is being stored. Don't do this.";
   if (v.S) return "S is held at 1: the latch stores 1 (Q = 1). Now let go of S and watch what happens: nothing.";

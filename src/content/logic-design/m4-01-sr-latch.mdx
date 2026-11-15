@@ -1,6 +1,6 @@
 import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
-import { SrLatchNor, SrLatchNand } from "@/components/mdx/CircuitVisualizers";
-import { DebouncerLab } from "@/components/mdx/LogicVisualizers";
+import { BistableLoop, SrLatchNor, SrLatchNand } from "@/components/mdx/CircuitVisualizers";
+import { DebouncerLab, TimingDiagram } from "@/components/mdx/LogicVisualizers";
 
 # The SR Latch: How a Circuit Remembers
 
@@ -12,15 +12,7 @@ How can a network of simple logic gates hold onto a value without any moving par
 
 The most primitive digital memory circuit consists of two [inverters](/courses/logic-design/logic-gates#not-gate-inverter-and-buffer) connected in a closed feedback loop: the output of the first inverter drives the input of the second, and the output of the second inverter wires directly back into the input of the first.
 
-```
-       +-----[ NOT 1 ]----( Q' )----+
-       |                            |
-       +--------------+             |
-                      |             |
-       +--------------+             |
-       |                            |
-       +-----[ NOT 2 ]----( Q )-----+
-```
+<BistableLoop />
 
 This configuration is called a **bistable element** (or bistable multivibrator) because it has two stable electrical equilibrium states:
 1. **State 1 ($Q = 1$):** If $Q = 1$, the input to NOT 1 is 1. NOT 1 outputs $Q' = 0$. That 0 feeds into NOT 2, which outputs $Q = 1$. The circuit reinforces itself indefinitely.
@@ -39,20 +31,6 @@ Replacing the two inverters with 2-input [NOR gates](/courses/logic-design/logic
 - **$Q'$ (or $\bar{Q}$):** The complementary output, which should always hold the logical inverse of $Q$.
 
 Recall the governing rule of a NOR gate: **any 1 on any input forces the output to 0**. Conversely, an output can be 1 only if *all* inputs are 0.
-
-```
-             R -----\
-                     \___ [ NOR 1 ]----+----- Q
-               +----/                  |
-               |                       |
-               |      +----------------+
-               |      |
-               +------+----------------+
-                      |                |
-               +----\ |                |
-               |     \___ [ NOR 2 ]----+----- Q'
-             S -----/
-```
 
 The circuit below is fully interactive. Click **Press Set** to trace the signal step-by-step through the feedback loop:
 
@@ -154,20 +132,6 @@ Because digital circuits need predictable behavior, the input combination $S = R
 
 You can also build an SR latch from cross-coupled NAND gates. It works the same way but on inverted signals, because any 0 going into a NAND forces its output to 1. So its inputs rest at 1, and you pull one down to 0 to act on it. A signal that does its job at 0 is called **active low**. Its control inputs are designated **$\bar{S}$** and **$\bar{R}$**.
 
-```
-            /S -----\
-                     \___ [ NAND 1 ]----+----- Q
-               +----/                   |
-               |                        |
-               |      +-----------------+
-               |      |
-               +------+-----------------+
-                      |                 |
-               +----\ |                 |
-               |     \___ [ NAND 2 ]----+----- Q'
-            /R -----/
-```
-
 <SrLatchNand />
 
 ### Function Table of the Active-LOW Latch
@@ -190,32 +154,21 @@ Notice the exact duality:
 
 In the physical world, mechanical switches (pushbuttons, toggles, keys) do not make clean, instantaneous contact. When metal contacts strike each other, mechanical elasticity causes them to bounce and separate repeatedly for several milliseconds before settling into solid electrical contact.
 
-```
-Mechanical Switch Voltage:
-3.3V --+       +--+  +-+ +------------------- (Settled HIGH)
-       |       |  |  | | |
-  0V --+-------+  +--+ +-+------------------- (Chattering / Bouncing)
-       |<--- 5 to 20 ms --->|
-```
+<TimingDiagram
+  signals={[
+    { name: "ideal", bits: [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], tone: "stroke-mint" },
+    { name: "real", bits: [0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1], tone: "stroke-orange" },
+  ]}
+  marks={[4, 11]}
+/>
+
+The top trace is the switch you imagine: one clean step from 0 to 1. The bottom trace is what the switch really does. Between the two dashed lines (5 to 20 ms on a typical switch) the contacts bounce, and the voltage jumps between 0 and 1 several times before it settles.
 
 If a mechanical switch is connected directly to a high-speed digital counter or processor interrupt, the digital logic will detect dozens of false rising and falling edges, counting dozens of events for a single physical button press.
 
 The standard industrial solution is the **SR latch switch debouncer**:
 
-```
-           +3.3V (Vcc)
-             |
-            [R1] Pull-up
-             |
-        A ---+----------------- /S (NAND Latch)
-         \                                  \___ Q (Clean Output)
-          o-- Common (GND)                  /
-        B ---+----------------- /R (NAND Latch)
-             |
-            [R2] Pull-up
-             |
-           +3.3V (Vcc)
-```
+<DebouncerLab />
 
 1. An SPDT (Single-Pole Double-Throw) switch connects common ground to either terminal A or terminal B.
 2. Both terminals are held at logic 1 through pull-up resistors $R_1$ and $R_2$.
@@ -225,8 +178,6 @@ The standard industrial solution is the **SR latch switch debouncer**:
 6. The latch will never reset to 0 until the switch travels all the way across to make contact with terminal B, pulling $\bar{R} \to 0$.
 
 The output $Q$ produces a clean, bounce-free signal that can safely drive digital logic.
-
-<DebouncerLab />
 
 <Callout tone="neon" label="Hardware Foundation">
 Cross-coupled storage is the foundation of high-speed processor registers and on-chip caches. The 6-transistor (6T) [SRAM](/courses/computer-organization/ram-and-rom) cell used in modern L1 and L2 caches is a microscopic CMOS implementation of this cross-coupled loop, holding billions of bits simultaneously.
