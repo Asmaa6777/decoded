@@ -24,7 +24,7 @@ export default function Index() {
 
       {/* HERO */}
       <section className="relative z-10 border-b border-border">
-        <div className="container py-20 md:py-28 max-w-6xl">
+        <div className="container py-20 md:py-28">
           <div className="eyebrow text-neon mb-5">CS Theory · Real-world skills mapped</div>
           {/* Syne is very wide: three fixed lines, sized to the viewport so each fits on one line from md up */}
           <h1 className="font-display font-extrabold leading-[0.95] tracking-tight text-[clamp(2.5rem,5.4vw,4.5rem)]">
@@ -72,27 +72,29 @@ export default function Index() {
 
       {/* INTRO TEXT */}
       <section className="relative z-10 border-b border-border">
-        <div className="container py-16 md:py-20 max-w-3xl">
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-6">
-            Theory vs. Tools
-          </h2>
-          <div className="font-body text-lg leading-relaxed text-foreground/80 space-y-5">
-            <p>
-              University courses hide the tools engineers use every day behind dense proofs, heavy notation
-              and theorems. You shouldn't have to decode your own syllabus just to find out what it's really
-              about or where it shows up in production. Decoded pulls out the real-world use hiding inside
-              your coursework.
-            </p>
-            <p className="text-neon">
-              One topic at a time.
-            </p>
+        <div className="container py-16 md:py-20">
+          <div className="max-w-3xl">
+            <h2 className="font-display text-3xl md:text-4xl font-bold mb-6">
+              Theory vs. Tools
+            </h2>
+            <div className="font-body text-lg leading-relaxed text-foreground/80 space-y-5">
+              <p>
+                University courses hide the tools engineers use every day behind dense proofs, heavy notation
+                and theorems. You shouldn't have to decode your own syllabus just to find out what it's really
+                about or where it shows up in production. Decoded pulls out the real-world use hiding inside
+                your coursework.
+              </p>
+              <p className="text-neon">
+                One topic at a time.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* COURSE GRID */}
       <section id="courses" className="relative z-10">
-        <div className="container py-20 max-w-5xl">
+        <div className="container py-20">
           <div className="flex items-baseline justify-between mb-10 gap-4 flex-wrap">
             <div>
               <div className="eyebrow text-muted-foreground mb-2">Tracks</div>
@@ -113,7 +115,7 @@ export default function Index() {
 
       {/* THE STORY */}
       <section className="relative z-10 border-t border-border bg-black/20">
-        <div className="container py-24 max-w-4xl">
+        <div className="container py-24">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <div className="eyebrow text-neon mb-4">Our Origin</div>
