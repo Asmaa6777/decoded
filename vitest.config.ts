@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import rehypeSlug from "rehype-slug";
 import rehypeLeadIn from "./src/lib/rehypeLeadIn";
+import rehypeKatexHtml from "./src/lib/rehypeKatexHtml";
 import mdx from "@mdx-js/rollup";
 import type { Plugin } from "vite";
 import remarkMath from "remark-math";
@@ -28,7 +29,7 @@ export default defineConfig({
     mdxExceptRaw({
       providerImportSource: "@mdx-js/react",
       remarkPlugins: [remarkGfm, remarkMath],
-      rehypePlugins: [rehypeSlug, rehypeKatex, rehypeLeadIn],
+      rehypePlugins: [rehypeSlug, rehypeKatex, rehypeLeadIn, rehypeKatexHtml],
     }),
     react(),
   ],
