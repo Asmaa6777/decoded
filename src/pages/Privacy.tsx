@@ -63,6 +63,7 @@ export default function Privacy() {
             <li>the courses you've registered for, the lessons you've completed, your best quiz scores, and when</li>
             <li>a sign-in session, kept in a cookie that lasts up to 90 days</li>
             <li>if you make a profile, the handle you chose and whether it's public</li>
+            <li>who you study each course with, if you invite someone or accept an invite</li>
           </ul>
           <p>
             Decoded doesn't store your email address, password or your name from Google. The data is held on Cloudflare,
@@ -82,9 +83,18 @@ export default function Privacy() {
             The person you report isn't told who you are.
           </p>
 
+          <h2 className="font-display">Study companions</h2>
+          <p>
+            You can study a course with someone by sending them an invite link, which works once and expires after 7 days.
+            Nobody can become your companion without a link you sent them. Companions see each other's handle, picture
+            and progress in that one course: how many lessons are done and the latest one. They don't see quiz scores or
+            your other courses. Either of you can remove the other at any time, and they aren't told. If you turn your
+            profile off, you disappear from your companions' lists until you turn it back on.
+          </p>
+
           <h2 className="font-display">Deleting your data</h2>
           <p>
-            Deleting your account removes your account, sessions, registrations, saved progress and profile straight away.
+            Deleting your account removes your account, sessions, registrations, saved progress, profile and companions straight away.
           </p>
           {status === "signed-in" ? (
             <AlertDialog>

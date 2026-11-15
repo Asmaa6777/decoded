@@ -9,6 +9,7 @@ import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 import { CourseAuthors } from "@/components/CourseAuthors";
 import { CourseMaturity } from "@/components/CourseMaturity";
 import { CourseLearners } from "@/components/LearnerCounts";
+import { CourseCompanions } from "@/components/Companions";
 import { coursesWithBanks } from "@/content/questionBanks";
 import { readAttempts } from "@/lib/exams";
 
@@ -62,6 +63,7 @@ export default function CoursePage() {
               <CoursePrerequisites courseSlug={course.slug} />
             </div>
             {total > 0 && <CourseRegistration course={course} />}
+            {total > 0 && <CourseCompanions course={course} />}
             {coursesWithBanks.has(course.slug) && <ExamEntry slug={course.slug} />}
           </div>
         </header>

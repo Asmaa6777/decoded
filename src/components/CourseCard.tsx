@@ -5,6 +5,7 @@ import { useProgress } from "@/hooks/useProgress";
 import { useRegistration } from "@/hooks/useRegistration";
 import { CourseGlyph } from "@/components/brand/Glyphs";
 import { useLearnerCount } from "@/lib/learnerStats";
+import { useCompanions } from "@/lib/companions";
 import { CourseMaturity } from "@/components/CourseMaturity";
 import { useReveal } from "@/hooks/useReveal";
 import { useEffect, useState, type CSSProperties } from "react";
@@ -34,6 +35,7 @@ export default function CourseCard({ slug }: { slug: string }) {
   ).length;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   const learners = useLearnerCount(course.slug);
+  const companions = useCompanions(course.slug);
   const disabled = course.status === "coming-soon";
   const required = prerequisites[course.slug]?.map((s) => courses.find((c) => c.slug === s)!.title);
 
@@ -105,6 +107,19 @@ export default function CourseCard({ slug }: { slug: string }) {
                 style={{ width: shown ? `${pct}%` : 0, transitionDelay: `${delay + 250}ms` }}
               />
             </div>
+            {/* companions' progress under yours: two at most, so the card keeps its size */}
+            {companions.slice(0, 2).map((c) => (
+              <div key={c.handle} className="flex items-center gap-3 pt-1.5 font-mono text-[10px] text-muted-foreground">
+                <span className="w-24 truncate normal-case">@{c.handle}</span>
+                <span className="h-[2px] flex-1 bg-secondary overflow-hidden" aria-hidden>
+                  <span className={`block h-full opacity-60 ${accentBg[course.accent]}`} style={{ width: `${Math.min(100, (c.completed / total) * 100)}%` }} />
+                </span>
+                <span>{Math.min(c.completed, total)}/{total}</span>
+              </div>
+            ))}
+            {companions.length > 2 && (
+              <div className="font-mono text-[10px] text-muted-foreground">and {companions.length - 2} more studying with you</div>
+            )}
           </div>
         )}
       </div>
