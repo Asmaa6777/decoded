@@ -45,7 +45,7 @@ export function SiteFooter() {
       <div className="container py-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 font-mono text-[11px] tracking-widest text-muted-foreground uppercase">
         <span className="flex items-center gap-2">
           <BrandMark compact className="h-4 w-4 text-foreground" />
-          Decoded. Built for bridging the abstraction gap
+          Decoded.
         </span>
         <nav className="flex items-center gap-6">
           <Link to="/courses" className="hover:text-foreground transition-colors">Courses</Link>
