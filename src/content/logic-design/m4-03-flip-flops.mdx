@@ -78,7 +78,7 @@ The circuit acts as an electronic **airlock**: there are two sequential doors, a
    - The slave latch disables first, locking output $Q$ in place.
    - The master latch then re-enables, opening its window to begin tracking the next data bit on $D$ in preparation for the next cycle.
 
-Because data never has an open path from primary input $D$ to primary output $Q$, **race-around feedback oscillations cannot occur**.
+In summary: **the master samples while $CLK = 0$ and locks on the rising edge ($0 \to 1$); the slave samples while $CLK = 1$ and locks on the falling edge ($1 \to 0$)**. Because data never has an open path from primary input $D$ to primary output $Q$, **race-around feedback oscillations cannot occur**.
 
 ---
 
@@ -184,7 +184,7 @@ $$
 Q(t+1) = S + R' Q(t) \qquad (S \cdot R = 0)
 $$
 
-The condition $S = K = 1$ remains forbidden.
+The condition $S = R = 1$ remains forbidden.
 
 ---
 
@@ -447,7 +447,7 @@ Trace output $Q$ across the following sequential events:
 Synthesize a positive-edge-triggered **JK flip-flop** using an available **D flip-flop** and minimal external combinational logic.
 1. Formulate the state transition and conversion table mapping current state $Q(t)$ and desired inputs $(J, K)$ to the required data input $D$.
 2. Derive the minimal Boolean sum-of-products equation for $D$ using a 3-variable Karnaugh map.
-3. Show that input $D$ can be implemented directly using a single 2-to-1 multiplexer without any external logic gates.
+3. Show that input $D$ can be implemented directly using a single 2-to-1 multiplexer (with inverted input $K'$ or a single inverter).
 
 <ModelAnswer>
 1. **Conversion Table:**
@@ -481,10 +481,10 @@ Synthesize a positive-edge-triggered **JK flip-flop** using an available **D fli
    Comparing with the JK equation $D = Q' \cdot J + Q \cdot K'$:
    - Connect state $Q$ to select input $S$ ($S = Q$).
    - Connect input $J$ to multiplexer input $I_0$ ($I_0 = J$).
-   - Connect inverted input $K'$ to multiplexer input $I_1$ ($I_1 = K'$).
+   - Connect inverted input $K'$ (or $K$ through an inverter) to multiplexer input $I_1$ ($I_1 = K'$).
    The 2-to-1 multiplexer computes:
    $$D = Q' \cdot J + Q \cdot K'$$
-   A single 2-to-1 multiplexer driven by $Q$ completely synthesizes the JK flip-flop steering logic.
+   A single 2-to-1 multiplexer driven by $Q$ synthesizes the complete JK flip-flop steering logic. If the complementary signal $\bar{K}$ is provided directly from the input bus, zero external gates are needed; otherwise, only one inverter on $K$ is required.
 </ModelAnswer>
 
 ### Problem 5: Clock Skew and Pipeline Timing Budget Analysis
@@ -527,7 +527,7 @@ The datasheet specifications are:
      Maximum frequency drops significantly from $172.41\text{ MHz}$ to $138.89\text{ MHz}$.
    - Hold time check:
      $$\text{Slack}_{hold} = 1.0\text{ ns} - (0.7\text{ ns} - 0.8\text{ ns}) = 1.0 - (-0.1) = +1.1\text{ ns}$$
-     Hold margin is exceptionally robust ($+1.1\text{ ns}$). Negative skew hurts performance but protects hold time.
+     Hold margin is exceptionally robust ($+1.1\text{ ns}$). Negative skew means the clock reaches $R_2$ before $R_1$, so $R_2$ has already closed its capture window before new data from $R_1$ can arrive. Negative skew hurts maximum operating frequency but eliminates hold hazards.
 </ModelAnswer>
 
 ### Problem 6: CMOS Master-Slave Transmission Gate D Flip-Flop Architecture

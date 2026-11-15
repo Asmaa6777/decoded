@@ -618,7 +618,7 @@ export const courses: Course[] = [
       "Build a computer's parts from the bottom up. Flip inputs and watch signals move through real gates, simplify circuits with Karnaugh maps, add numbers with nothing but XOR and AND, and see how a loop of two gates can remember a bit.",
     accent: "neon",
     status: "available",
-    rounds: 7,
+    rounds: 8,
     authors: [ahmedAlghali],
     modules: [
       {

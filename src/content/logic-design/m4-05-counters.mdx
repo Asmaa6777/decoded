@@ -67,7 +67,7 @@ The direction of counting depends on whether the flip-flops trigger on rising or
    - Connecting stage $i$'s clock to the normal output $Q_{i-1}$ produces an **Up-Counter**. (When $Q_{i-1}$ rolls over from $1 \to 0$, it generates a falling edge that triggers stage $i$).
    - Connecting stage $i$'s clock to the inverted output $Q'_{i-1}$ produces a **Down-Counter**.
 2. **Positive-Edge Triggered ($\uparrow$):**
-   - Connecting stage $i$'s clock to $Q'_{i-1}$ produces an **Up-Counter**.
+   - Connecting stage $i$'s clock to $Q'_{i-1}$ produces an **Up-Counter**. (When $Q_{i-1}$ rolls over from $1 \to 0$, $Q'_{i-1}$ rises from $0 \to 1$, generating the rising edge needed to trigger stage $i$).
    - Connecting stage $i$'s clock to $Q_{i-1}$ produces a **Down-Counter**.
 
 ### Critical Weakness 1: Accumulated Propagation Delay
@@ -141,11 +141,13 @@ $$
    1 --| T  |   +--->| T  |          +----+         +----+           |
        |  Q0|---+    |  Q1|---+----->| &  |-- T2    | &  |-- T3      |
        |>   |        |>   |   |      +----+         +----+           |
-       +----+        +----+   |        |   FF 2       ^   FF 3       |
+       +----+        +----+   |        |  to FF 2     |  to FF 3     |
          ^             ^      +--------+--------------+              |
          |             |                                             |
    CLK --+-------------+---------------------------------------------+
 ```
+
+The carry AND gates compute the toggle enable inputs ($T_2 = Q_0 \cdot Q_1$ and $T_3 = Q_0 \cdot Q_1 \cdot Q_2$) that feed the $T$ terminals of flip-flops FF 2 and FF 3. Each flip-flop is clocked in unison by the common clock line.
 
 ### Synchronous Up/Down Counter
 
@@ -320,8 +322,8 @@ Compare the maximum operating frequency of a 6-bit ripple counter against a 6-bi
    $$f_{max(ripple)} = 1 / (26\text{ ns}) \approx 38.46\text{ MHz}$$
 
 2. **Synchronous Counter Frequency:**
-   In a synchronous counter with series carry, the critical path consists of FF 0's clock-to-Q delay, propagation through 4 cascaded carry AND gates, and the final flip-flop's setup time:
-   $$T_{CLK(min)} \ge t_{pd} + 4 \times t_{AND} + t_{su} = 4\text{ ns} + (4 \times 1.5\text{ ns}) + 2\text{ ns} = 12\text{ ns}$$
+   In a synchronous counter with series carry, stage 0 has $T_0 = 1$ and stage 1 has $T_1 = Q_0$ (no gates). Stages 2 through 5 cascade $n - 2 = 6 - 2 = 4$ two-input carry AND gates. The critical path consists of FF 0's clock-to-Q delay, propagation through the 4 cascaded carry AND gates, and the final flip-flop's setup time:
+   $$T_{CLK(min)} \ge t_{pd} + (n - 2) \times t_{AND} + t_{su} = 4\text{ ns} + (4 \times 1.5\text{ ns}) + 2\text{ ns} = 12\text{ ns}$$
    $$f_{max(sync)} = 1 / (12\text{ ns}) \approx 83.33\text{ MHz}$$
 
 The synchronous counter runs more than **twice as fast**, without intermediate decoding glitches.
