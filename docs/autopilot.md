@@ -27,7 +27,7 @@ If the job's queue is empty, take the top item in the other queue. If both are e
 
 1. **One task per run.** Finish it, ship it, stop. Don't start a second task to fill time.
 2. **Stop rule.** If the task is unclear, or tests still fail after two real attempts at a fix, stop. Commit any useful work to the branch, log what blocked you under "Blocked", and end the run.
-3. **Follow the repo's own rules:** `CLAUDE.md`, `docs/building-a-course.md` (including "Linking between lessons") and `docs/brand.md`.
+3. **Follow the repo's own rules:** `CLAUDE.md`, `docs/writing-lessons.md`, `docs/building-a-course.md` and `docs/brand.md`.
 4. **Before opening or updating a pull request:** `npm run lint` (0 errors), `npm run test` and `npm run build` all pass.
 5. **Facts must be right.** Work every example again and run every code sample. No source material is provided, so write from standard textbooks and recognized curricula (ACM/IEEE CS2023) in your own words.
 6. **GitHub:** `gh pr ...` and `gh issue ...` fail in these sessions (GraphQL is blocked). Use the REST API through `gh api`, for example:

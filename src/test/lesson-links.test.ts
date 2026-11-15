@@ -5,7 +5,7 @@ import GithubSlugger from "github-slugger";
 import { courses, getLesson } from "@/content/registry";
 
 /* Lessons link to the lesson that teaches a concept instead of re-teaching it
-   (see "Linking between lessons" in docs/building-a-course.md). This checks
+   (see "Linking between lessons" in docs/writing-lessons.md). This checks
    every such link on the site points at a real lesson and, when it names a
    #section, at a real heading in it. */
 
