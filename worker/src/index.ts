@@ -1,5 +1,6 @@
 import { currentUserId, deleteAccount, finishSignIn, signOut, startSignIn } from "./auth";
 import { changeProgress, enroll, getProgress, saveQuizScore, unenroll } from "./progress";
+import { allCourseStats, courseStats } from "./stats";
 
 export interface Env {
   DB: D1Database;
@@ -19,6 +20,10 @@ async function route(request: Request, env: Env): Promise<Response> {
     return Response.json({ error: "forbidden" }, { status: 403 });
   }
 
+  if (request.method === "GET" && pathname.startsWith("/stats/")) {
+    return courseStats(request, env, pathname.slice("/stats/".length));
+  }
+
   switch (key) {
     case "GET /health":
       await env.DB.prepare("SELECT 1").first();
@@ -31,6 +36,8 @@ async function route(request: Request, env: Env): Promise<Response> {
       return startSignIn(request, env, "google");
     case "GET /auth/google/callback":
       return finishSignIn(request, env, "google");
+    case "GET /stats":
+      return allCourseStats(env);
     case "GET /me":
       return Response.json({ signedIn: (await currentUserId(request, env)) !== null });
     case "POST /auth/sign-out":
@@ -75,7 +82,8 @@ export default {
     const headers = new Headers(response.headers);
     for (const [name, value] of Object.entries(corsHeaders)) headers.set(name, value);
     headers.set("Vary", "Origin");
-    headers.set("Cache-Control", "no-store");
+    // Account responses are private; a route that returns public numbers sets its own caching.
+    if (!response.headers.has("Cache-Control")) headers.set("Cache-Control", "no-store");
     headers.set("X-Content-Type-Options", "nosniff");
     return new Response(response.body, { status: response.status, headers });
   },
