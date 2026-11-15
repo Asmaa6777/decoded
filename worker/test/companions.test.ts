@@ -26,7 +26,7 @@ async function signIn(githubId: number): Promise<string> {
   return cookieValue(done, "__Host-decoded_session");
 }
 
-const as = (session: string | null) => (session ? { Cookie: `__Host-decoded_session=${session}` } : {});
+const as = (session: string | null): Record<string, string> => (session ? { Cookie: `__Host-decoded_session=${session}` } : {});
 const post = (session: string | null, path: string, body: unknown = {}) =>
   call(path, { method: "POST", headers: { Origin: SITE, ...as(session) }, body: JSON.stringify(body) });
 const get = async (session: string | null, path: string) => {
