@@ -18,7 +18,7 @@ From these inputs, the control unit generates two categories of outputs: interna
 
 ## Micro-operations and the instruction cycle
 
-An instruction execution cycle decomposes into a sequence of atomic hardware operations known as **micro-operations**. A **micro-operation** is an elementary hardware operation executed in a single clock cycle ($T_i$), such as an internal register transfer, an ALU computation, or opening a bus transceiver.
+An instruction execution cycle breaks down into single-cycle hardware steps called **micro-operations**. A **micro-operation** is a single hardware operation completed in one clock cycle ($T_i$), such as copying a register, running an ALU operation, or placing data on a bus.
 
 These operations manipulate specific internal processor registers:
 
@@ -101,9 +101,7 @@ At the end of an instruction's final micro-operation, a reset signal ($T_{\text{
 If a processor uses a 4-bit step counter capable of counting 16 clock steps ($T_0$ to $T_{15}$), an instruction that completes in 4 steps would waste 12 clock cycles if left unchecked. A hardwired control unit must assert a step counter clear signal ($T_{\text{clear}}$) on the final micro-operation of each instruction to immediately return the counter to $T_0$.
 </Callout>
 
-**Advantages:** Maximum operating speed. Because signals propagate directly through silicon gates with zero memory lookup overhead, hardwired control supports high clock frequencies and is standard in [RISC designs](/courses/computer-architecture/risc-and-cisc).
-
-**Disadvantages:** Inflexible. Modifying an instruction format, correcting a logic flaw, or expanding the instruction set requires redesigning the physical layout and re-fabricating the silicon wafer.
+Hardwired control provides maximum speed because signals propagate directly through logic gates with no memory lookup delays. This supports high clock frequencies, making it standard in [RISC designs](/courses/computer-architecture/risc-and-cisc). The drawback is inflexibility: modifying an instruction format, fixing a logic bug, or adding an instruction requires redesigning the circuit layout and fabricating a new chip.
 
 ### Microprogrammed control
 
@@ -127,7 +125,7 @@ Every row in control memory is a **microinstruction**. An entire machine-level i
 | **Instruction set fit** | [RISC architectures](/courses/computer-architecture/risc-and-cisc) | Complex CISC architectures |
 
 <Callout tone="orange" label="Trap: Confusing the Program Counter with the Control Address Register">
-The Program Counter ($PC$) and Control Address Register ($CAR$) both store addresses, but they operate in completely different memory domains. The $PC$ points to macro-instructions residing in main system RAM. The $CAR$ points to microinstructions residing in the CPU's internal control store ROM. The $PC$ advances when a macro-instruction completes, while the $CAR$ updates on every single clock tick.
+The Program Counter ($PC$) and Control Address Register ($CAR$) both store addresses, but they point to different memories. The $PC$ points to instructions in main system RAM, while the $CAR$ points to microinstructions in the CPU's internal control store ROM. The $PC$ advances when a full instruction completes, while the $CAR$ updates on every clock cycle.
 </Callout>
 
 <Callout tone="violet" label="Field updates via microcode">
@@ -142,18 +140,16 @@ Architects format microinstructions in two primary ways:
 
 In a **horizontal microinstruction**, each bit in the control word directly controls a single datapath signal line. If the datapath requires 48 control lines, the microinstruction is 48 bits wide.
 
-- **Advantage:** Maximum parallelism. The control word can simultaneously activate the ALU, trigger a memory read, and increment the program counter in a single clock cycle. Zero decoding logic is required between the control register and the datapath.
-- **Disadvantage:** Wide control memory words, leading to large control store area. Many bits remain zero in any given cycle because many datapath operations are mutually exclusive (such as reading from two different registers onto a shared bus).
+Because each bit directly drives one control line, horizontal microinstructions offer maximum parallelism. A single control word can activate the ALU, request a memory read, and increment the program counter in the same clock cycle, with no decoding logic between the control register and the datapath. The trade-off is word width: wide words require a large control store, and many bits sit unused each cycle because operations like reading from two different registers onto the same bus are mutually exclusive.
 
 ### Vertical microprogramming
 
 In a **vertical microinstruction**, mutually exclusive control lines are grouped into encoded bit fields. For example, selecting 1 of 16 source registers requires only 4 bits ($\log_2 16 = 4$), and selecting 1 of 8 ALU functions requires only 3 bits ($\log_2 8 = 3$). Decoders located at the output of the microinstruction register expand these encoded bits into individual control lines.
 
-- **Advantage:** Narrow control words (e.g., 16 to 24 bits), saving substantial control memory silicon area.
-- **Disadvantage:** Reduced parallelism. Operations grouped into the same field cannot activate concurrently. The external decoder introduces gate propagation delay, lowering the maximum clock frequency.
+Grouping mutually exclusive operations into binary fields produces narrow control words (such as 16 to 24 bits), which saves control store area. The drawback is reduced parallelism: operations in the same field cannot run at the same time. The decoders between the control register and datapath also add gate delay, which lowers the maximum clock frequency.
 
 <Callout tone="orange" label="Trap: Assuming vertical microcode executes faster because words are smaller">
-Narrow vertical microinstructions save valuable silicon area in the control store, but they execute slower than horizontal microinstructions. Encoded vertical fields must pass through combinational decoders before reaching datapath multiplexers and register clock enables, adding gate propagation delay to each clock cycle. Furthermore, because mutually exclusive operations packed into the same field cannot activate simultaneously, operations often require more consecutive microinstructions to finish.
+Narrow vertical microinstructions save silicon area in the control store, but they execute slower than horizontal microinstructions. Encoded vertical fields must pass through combinational decoders before reaching datapath multiplexers and register clock enables, adding gate delay to each clock cycle. In addition, because operations packed into the same field cannot activate at the same time, tasks often require more consecutive microinstructions to finish.
 </Callout>
 
 ## Nanoprogramming (two-level control)
@@ -176,7 +172,7 @@ If a machine requires 2,048 microinstructions, but only 128 unique control signa
 Nanoprogramming achieves an 82.8% reduction in control memory storage bits at the cost of one extra memory access cycle per microinstruction.
 
 <Callout tone="orange" label="Trap: Confusing macro-instructions with microinstructions">
-A machine instruction (like `MOV EAX, [EBX]`) fetched from system RAM is a **macro-instruction**. A **microinstruction** is a primitive control word fetched from internal CPU control ROM. A single macro-instruction executes as an entire routine of multiple microinstructions.
+A machine instruction (like `MOV EAX, [EBX]`) fetched from system RAM is a **macro-instruction**. A **microinstruction** is a primitive control word fetched from internal CPU control ROM. A single macro-instruction executes as a sequence of multiple microinstructions.
 </Callout>
 
 ## Practice

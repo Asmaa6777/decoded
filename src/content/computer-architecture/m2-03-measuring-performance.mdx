@@ -7,8 +7,8 @@ Before you can make a computer faster, you must define what "faster" means. A co
 
 The only definitive measure of computer performance is execution time. But execution time has two distinct meanings:
 
-- **Wall-clock time** (or elapsed time): The total real-world latency required to finish a task, including memory access stalls, disk and network I/O, and operating system multitasking overhead.
-- **CPU execution time**: The time the processor actively spends executing machine instructions for that program, excluding waiting for I/O or servicing other user processes.
+- **Wall-clock time** (or elapsed time): The total real-world time required to finish a task, including memory access stalls, disk and network I/O, and operating system multitasking overhead.
+- **CPU execution time**: The time the processor actively spends executing machine instructions for that program, excluding time spent waiting for I/O or other programs.
 
 ## The iron law of processor performance
 
@@ -18,7 +18,7 @@ $$
 \text{CPU Execution Time} = \text{Clock Cycles} \times \text{Clock Period}
 $$
 
-Because total clock cycles can be expressed as the number of instructions executed multiplied by the average number of clock cycles required per instruction ($\text{Clock Cycles} = \text{Instruction Count} \times \text{CPI}$), substituting gives the **CPU performance equation**:
+Total clock cycles equal the number of instructions executed multiplied by the average cycles per instruction ($\text{Clock Cycles} = \text{Instruction Count} \times \text{CPI}$). Substituting gives the **CPU performance equation**:
 
 $$
 \text{CPU Execution Time} = \text{Instruction Count} \times \text{CPI} \times \text{Clock Period}
@@ -69,7 +69,7 @@ $$
 where $IC_i$ is the number of times instruction class $i$ is executed, and $\text{CPI}_i$ is the cycle count for that class.
 
 <Callout tone="orange" label="Trap: Averaging CPI directly without instruction weighting">
-Students often calculate the average CPI of a processor by taking a simple arithmetic mean: $(CPI_1 + CPI_2 + \dots) / n$. This produces deceptive results because instruction classes do not execute in equal proportions. An instruction class that accounts for 60% of all executions has six times the influence on total clock cycles as a class that accounts for only 10%. Always multiply each class CPI by its relative execution frequency.
+Taking a simple unweighted average of CPI values, $(CPI_1 + CPI_2 + \dots) / n$, produces incorrect results because instruction classes do not execute in equal proportions. An instruction class that accounts for 60% of all executions contributes six times as many cycles as one that accounts for only 10%. Always multiply each class CPI by its share of total instructions.
 </Callout>
 
 ## MIPS and MFLOPS pitfalls
@@ -104,7 +104,7 @@ While MIPS appears straightforward, comparing MIPS across different architecture
 4. If an inefficient compiler emits redundant instructions that do no useful work, the processor's MIPS score actually increases because CPI drops, even though total execution time worsens.
 
 <Callout tone="orange" label="Trap: Treating MIPS as a universal benchmark across architectures">
-MIPS measures the rate of instruction completion, not the rate of useful work accomplished. Because a RISC processor requires more instructions than a CISC processor to perform the same task, it can report a significantly higher MIPS rating while executing the workload in the exact same wall-clock time. Furthermore, an inefficient compiler that fails to remove redundant instructions can artificially inflate a CPU's MIPS rating by running more trivial instructions per second.
+MIPS measures the rate of instruction completion, not the rate of useful work accomplished. Because a RISC processor requires more instructions than a CISC processor to perform the same task, it can report a higher MIPS score while executing the workload in the exact same wall-clock time. In addition, an inefficient compiler that fails to remove redundant instructions can artificially inflate a CPU's MIPS score by running more trivial instructions per second.
 </Callout>
 
 For scientific, graphics, and machine learning workloads, **MFLOPS** (Million Floating-Point Operations Per Second) or **TFLOPS** ($10^{12}$ FLOPS) measures the rate of actual arithmetic operations (multiplications and additions) rather than raw machine instructions.
@@ -144,7 +144,7 @@ $$
 The remaining 80% of unaccelerated time sets a hard ceiling on overall system gains. This principle is why architects focus on the **common case**: optimizing what runs most frequently yields far greater returns than perfecting rare edge cases.
 
 <Callout tone="orange" label="Trap: Applying Amdahl's law to code size rather than runtime">
-The fraction $f$ in Amdahl's law represents the fraction of total execution time, not the percentage of code lines written in source files. An encryption loop that occupies only 2% of the codebase might consume 90% of execution time. Accelerating that 2% of code provides massive system gains.
+The fraction $f$ in Amdahl's law is the fraction of total execution time, not the share of source code lines. An encryption loop that occupies only 2% of the codebase might consume 90% of execution time. Accelerating that 2% of code produces large speedups.
 </Callout>
 
 ## Benchmarks and the geometric mean
@@ -165,7 +165,7 @@ If you normalize runtimes against Computer A:
 If you normalize runtimes against Computer B:
 - Program 1 ratio: Computer A = 0.1, Computer B = 1.0.
 - Program 2 ratio: Computer A = 10.0, Computer B = 1.0.
-- Arithmetic mean: Computer A = $(0.1 + 10.0) / 2 = 5.05$, Computer B = 1.0. Computer B now appears 5 times faster than Computer A!
+- Arithmetic mean: Computer A = $(0.1 + 10.0) / 2 = 5.05$, Computer B = 1.0. Computer B now appears 5 times faster than Computer A.
 
 The conclusion reverses depending entirely on the choice of baseline machine. To preserve consistent relative rankings across any baseline, architects use the **geometric mean**:
 
@@ -238,7 +238,7 @@ $$\text{Time}_{\text{new}} = \frac{132 \times 10^6}{2.0 \times 10^9} = 0.066\tex
 **Part 3: Overall speedup:**
 $$\text{Speedup} = \frac{\text{Time}_{\text{initial}}}{\text{Time}_{\text{new}}} = \frac{0.070}{0.066} \approx 1.061\times$$
 
-The optimized program executes 6.1% faster. Notice that average CPI worsened (increased from 1.40 to 1.55), but overall execution time improved because the total instruction count dropped significantly from 100 million to 85 million.
+The optimized program executes 6.1% faster. Average CPI worsened from 1.40 to 1.55, but overall execution time improved because the total instruction count dropped from 100 million to 85 million.
 </ModelAnswer>
 
 <ModelAnswer title="Problem 2: Amdahl's law hardware design target">

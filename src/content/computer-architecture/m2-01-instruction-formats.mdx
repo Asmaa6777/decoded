@@ -10,7 +10,7 @@ The specification that defines how those bits are laid out is the **instruction 
 Every machine instruction divides into at least two primary fields:
 
 - The **opcode** (operation code): specifies the operation, such as addition, logical shift, or memory load.
-- The **operands**: specify the inputs and destination, represented as register numbers, memory addresses, or immediate constants.
+- The **operands**: specify the inputs and destination, such as register numbers, memory addresses, or immediate constants.
 
 | Field | Opcode | Operand 1 | Operand 2 |
 |---|---|---|---|
@@ -22,12 +22,12 @@ With an $n$-bit opcode, a processor can distinguish up to $2^n$ unique operation
 
 Architects face an early choice: should every instruction occupy the exact same number of bits, or should instruction length vary?
 
-In **fixed-length instructions**, every command uses the same width, typically 32 bits, as in MIPS, ARM, and RISC-V. A **register file** is the processor's internal bank of high-speed storage registers accessed by a binary index. Decoding is straightforward. The [program counter](/courses/computer-architecture/ripple-and-synchronous-counters#the-program-counter) advances by 4 bytes on every fetch, and register fields sit at identical bit offsets across all instructions. Because operand bit positions never shift, the hardware can read operands from the register file during the first clock cycle, in parallel with opcode decoding. The penalty is binary size: a simple return or register clear uses 32 bits even when 8 bits would suffice.
+In **fixed-length instructions**, every command uses the same width, typically 32 bits, as in MIPS, ARM, and RISC-V. A **register file** is the processor's internal bank of high-speed storage registers accessed by a binary index. Decoding is simple. The [program counter](/courses/computer-architecture/ripple-and-synchronous-counters#the-program-counter) advances by 4 bytes on every fetch, and register fields sit at identical bit offsets across all instructions. Because operand bit positions never shift, the hardware can read operands from the register file during the first clock cycle, in parallel with opcode decoding. The penalty is code size: a return or register clear uses 32 bits even when 8 bits would suffice.
 
-In **variable-length instructions**, commands span different lengths, such as 1 to 15 bytes in x86. Simple instructions like single-byte flags occupy minimal space, while complex memory-to-memory operations take more. This yields tight code density and reduces memory consumption. The penalty is complex decoding hardware. The processor cannot tell where the next instruction begins until it decodes the length prefix of the current one.
+In **variable-length instructions**, commands span different lengths, such as 1 to 15 bytes in x86. Simple instructions like single-byte flags take little space, while complex memory operations take more. This keeps programs small and saves memory. The penalty is complex decoding hardware. The processor cannot tell where the next instruction begins until it decodes the length prefix of the current one.
 
 <Callout tone="orange" label="Trap: Confusing instruction length with data word length">
-A 32-bit architecture does not mean every instruction must be 32 bits, nor does a 64-bit CPU require 64-bit instructions. Word length refers to the width of the CPU data registers and integer arithmetic units, while instruction format governs how instructions are encoded in memory. For instance, the 64-bit x86-64 architecture still uses variable-length instructions from 1 to 15 bytes.
+A 32-bit architecture does not require 32-bit instructions, and a 64-bit CPU does not require 64-bit instructions. Word length refers to the width of CPU data registers and integer arithmetic units, while instruction format governs how instructions are encoded in memory. For example, 64-bit x86-64 still uses variable-length instructions from 1 to 15 bytes.
 </Callout>
 
 ## How many addresses?
@@ -37,9 +37,9 @@ Consider a 16-bit instruction budget. With a 4-bit opcode, 12 bits remain for op
 Fewer addresses per instruction make each instruction shorter, but require more instructions to finish a program. The trade-off creates four classical computer architectures:
 
 1. **3-address machines**: Every instruction explicitly names two sources and a distinct destination. Source values remain intact.
-2. **2-address machines**: One address serves as both a source operand and the final destination. The original value in the destination register is overwritten.
+2. **2-address machines**: One address acts as both a source operand and the destination. The original value in the destination register is overwritten.
 3. **1-address machines (accumulator machines)**: The processor features a dedicated [accumulator](/courses/microprocessors/registers) register ($AC$). An **accumulator** is a working register that automatically supplies one input to the arithmetic logic unit and receives the output. All arithmetic operations implicitly read from and write to $AC$, so instructions only name a single memory operand.
-4. **0-address machines (stack machines)**: Operands sit on a Last-In, First-Out stack. The **Top of Stack** ($TOS$) refers to the memory location or register holding the most recently pushed value. Operations pop the top two entries, compute the result, and push it back. Only `PUSH` and `POP` name memory locations.
+4. **0-address machines (stack machines)**: Operands sit on a Last-In, First-Out stack. The **Top of Stack** ($TOS$) is the memory location or register holding the most recently pushed value. Operations pop the top two entries, compute the result, and push it back. Only `PUSH` and `POP` name memory locations.
 
 In register transfer notation, the left arrow ($R1 \leftarrow A + B$) denotes copying the computed result on the right into the storage location on the left.
 
@@ -90,21 +90,21 @@ Evaluating $X = (A + B) \times (C + D)$ highlights the contrast in program lengt
   POP  X              ; Store top of stack into X
 ```
 
-Real systems adopt these models for specific constraints. The x86 architecture is primarily a 2-address machine (`ADD EAX, EBX`). Standard RISC processors like RISC-V use 3-address formats. A **bytecode** is an intermediate, platform-independent instruction encoding executed by an interpreter or virtual machine rather than directly by silicon. The Java Virtual Machine (JVM) and WebAssembly use 0-address stack architectures because compact bytecodes save download bandwidth over networks.
+Real architectures adopt these models for specific constraints. The x86 architecture is primarily a 2-address machine (`ADD EAX, EBX`). Standard RISC processors like RISC-V use 3-address formats. A **bytecode** is an instruction format meant for a virtual machine or interpreter instead of physical hardware. The Java Virtual Machine (JVM) and WebAssembly use 0-address stack architectures because compact bytecodes save download bandwidth over networks.
 
 <Callout tone="orange" label="Trap: Assuming fewer addresses per instruction reduces total program size">
-A 0-address or 1-address instruction takes fewer bits than a 3-address instruction, leading students to assume accumulator or stack programs use less memory overall. However, because each instruction does less work, the program requires far more instructions. A calculation that takes 3 instructions on a 3-address machine takes 7 on an accumulator machine and 8 on a stack machine, creating substantial memory bus traffic to save and reload temporary results.
+A 0-address or 1-address instruction takes fewer bits than a 3-address instruction, which can make stack programs seem smaller overall. But because each instruction does less work, the program needs more instructions. An expression that takes 3 instructions on a 3-address machine takes 7 on an accumulator machine and 8 on a stack machine, adding memory bus traffic to save and reload intermediate results.
 </Callout>
 
 ## Expanding opcodes
 
-Fixed-length instructions create a mathematical puzzle. If an instruction is fixed at 16 bits and memory addresses require 4 bits each, a 3-address instruction uses $4 + (3 \times 4) = 16$ bits. That leaves exactly 4 bits for the opcode, allowing only $2^4 = 16$ possible opcodes. If all 16 bit patterns represent 3-address instructions, zero patterns remain for 2-address, 1-address, or 0-address instructions.
+Fixed-length instructions create a conflict between opcode count and operand count. If an instruction is fixed at 16 bits and memory addresses require 4 bits each, a 3-address instruction uses $4 + (3 \times 4) = 16$ bits. That leaves exactly 4 bits for the opcode, allowing only $2^4 = 16$ possible opcodes. If all 16 bit patterns represent 3-address instructions, zero patterns remain for 2-address, 1-address, or 0-address instructions.
 
 Architects resolve this using **expanding opcodes**. Instead of assigning all 16 opcode patterns to 3-address instructions, reserve one or more patterns as escape codes to indicate that the opcode continues into the next operand field.
 
 Consider a 16-bit instruction format with 4-bit register addresses:
 
-| Instruction format | Bits 15–12 | Bits 11–8 | Bits 7–4 | Bits 3–0 |
+| Instruction format | Bits 15-12 | Bits 11-8 | Bits 7-4 | Bits 3-0 |
 |---|---|---|---|---|
 | **3-address** | Opcode (4 bits) | Addr 1 (4 bits) | Addr 2 (4 bits) | Addr 3 (4 bits) |
 | **2-address** | Escape prefix (4 bits) | Extended opcode (4 bits) | Addr 1 (4 bits) | Addr 2 (4 bits) |
@@ -116,11 +116,11 @@ To support 14 distinct 3-address instructions, allocate binary patterns `0000` t
 When the decoder encounters `1110` in the first 4 bits, it does not look for Addr 1. Instead, it treats the next 4 bits as part of an expanded 8-bit opcode. The pattern `1110` followed by 4 bits yields $1 \times 2^4 = 16$ possible 2-address instructions. The pattern `1111` can be reserved to expand further into 1-address and 0-address instructions.
 
 <Callout tone="orange" label="Trap: Reusing an escape prefix as an active opcode">
-When designing expanding opcodes, an opcode pattern used as an escape prefix cannot also serve as an instruction opcode at that same level. If pattern `1111` is assigned to an active 3-address instruction, the processor cannot use `1111` to expand into 2-address instructions, because the decoder would have no way to know whether the following bits are register addresses or extended opcode bits.
+When designing expanding opcodes, an opcode pattern used as an escape prefix cannot also serve as an instruction opcode at that same level. If pattern `1111` is assigned to an active 3-address instruction, the processor cannot use `1111` to expand into 2-address instructions. The decoder would have no way to tell whether the following bits are register addresses or extended opcode bits.
 </Callout>
 
 <Callout tone="violet" label="Why expanding opcodes exist">
-Expanding opcodes let hardware support a rich mix of operations without variable instruction lengths. Operations that need fewer addresses gain larger opcode spaces.
+Expanding opcodes let hardware support a mix of operations without variable instruction lengths. Operations that need fewer addresses gain larger opcode spaces.
 </Callout>
 
 ## Addressing modes
@@ -149,7 +149,7 @@ Writing `MOV R1, 100` in assembly looks similar to `MOV R1, [100]`. In immediate
 </Callout>
 
 <Callout tone="orange" label="Trap: Confusing register indirect with memory indirect addressing">
-Both modes access data through pointers, but their hardware cost differs fundamentally. In register indirect (`[R1]`), the pointer sits inside an on-chip CPU register, so the processor makes only 1 memory bus access to fetch the operand. In memory indirect (`@[1000]`), the pointer itself is stored in RAM. The processor must make 2 separate round trips to memory: first to read the pointer address, and second to read the actual data.
+Both modes access data through pointers, but their hardware cost differs. In register indirect (`[R1]`), the pointer sits inside a CPU register, so the processor makes only 1 memory access to fetch the operand. In memory indirect (`@[1000]`), the pointer is stored in RAM. The processor makes 2 separate round trips to memory: first to read the pointer address, and second to read the actual data.
 </Callout>
 
 ## Practice
