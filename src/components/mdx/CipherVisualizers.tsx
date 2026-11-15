@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { btn, inputCls, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { Panel, useTween } from "@/components/mdx/MatrixVisualizers";
+import { Panel, Stepper, Toggle, btn, inputCls, useTween } from "@/components/mdx/vizKit";
 import { affineDecrypt, affineEncrypt, affineTable, ALPHABET, bitsToText, findPeakLetter, FLOW_CODE, flowFrames, keystream, letterCounts, letterFrequencies, MATLAB_XOR, shiftDecrypt, shiftEncrypt, textToBits, validAffineKey, xorBits, xorFrames } from "@/lib/ciphers";
 import { gcd, inverseMod } from "@/lib/numberTheory";
 

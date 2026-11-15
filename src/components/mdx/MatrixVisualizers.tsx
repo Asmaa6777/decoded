@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { btn, FocusPanel, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
+import { Panel, Stepper, Toggle, btn, useTween } from "@/components/mdx/vizKit";
 import { inverseFrames, MATLAB_INVERSE, apply2, det2, dotAngle, type DotAngle, diagOf, diagOnly, kron, kronFrames, MAGIC4, MATLAB_KRON, MATLAB_NORM, normFrames, tril, triu, type NormKind, elementwiseFrames, MAGIC3, MATLAB_ELEMENTWISE, MATLAB_MATMUL, matMulFrames, type Map2, MATLAB_VECTOR_PRODUCT, pascal, transpose, vectorProductFrames, type ElementwiseOp, type Mat, type VectorProductKind } from "@/lib/matrix";
 
 /* ============================================================
@@ -9,51 +9,6 @@ import { inverseFrames, MATLAB_INVERSE, apply2, det2, dotAngle, type DotAngle, d
    AlgoVisualizers: neon = looking at, orange = writing, mint = done,
    violet = special, sky = active window.
    ============================================================ */
-
-export function Panel({ title, legend, children }: { title: string; legend?: [string, string][]; children: React.ReactNode }) {
-  return (
-    <FocusPanel title={title} eyebrowTone="text-mint" legend={legend}>
-      {children}
-    </FocusPanel>
-  );
-}
-
-/** Eases `target` in on every change. Reduced-motion users get the end state straight away. */
-export function useTween(target: number[], ms = 650): [number[], (from: number[]) => void] {
-  const [value, setValue] = useState(target);
-  const current = useRef(target);
-  const key = target.join(",");
-  const [restart, setRestart] = useState(0);
-  useEffect(() => {
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduce || typeof requestAnimationFrame === "undefined") {
-      current.current = target;
-      setValue(target);
-      return;
-    }
-    const from = current.current;
-    const start = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / ms);
-      const e = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
-      const next = target.map((x, i) => (from[i] ?? x) + (x - (from[i] ?? x)) * e);
-      current.current = next;
-      setValue(next);
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-    // the serialized key stands in for the array; restart replays from a new start
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, restart, ms]);
-  const replayFrom = (from: number[]) => {
-    current.current = from;
-    setValue(from);
-    setRestart((r) => r + 1);
-  };
-  return [value, replayFrom];
-}
 
 export type CellTone = "neon" | "orange" | "sky" | "violet" | "mint" | "muted";
 

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { btn, inputCls, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { Panel } from "@/components/mdx/MatrixVisualizers";
+import { Panel, Stepper, Toggle, btn, inputCls } from "@/components/mdx/vizKit";
 import type { Frame } from "@/lib/algorithms";
 import {
   addressFields, amat, amdahl, cpi, cpuTime, fieldBits, FORMAT_MEMORY, FORMAT_PROGRAMS, formatFrames, interleaveTimes, mips, pipelineCycles, schedulePipeline, simulateCache, translate, unpipelinedCycles, writePolicyCost,

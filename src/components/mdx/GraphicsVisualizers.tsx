@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { btn, inputCls, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { Panel } from "@/components/mdx/MatrixVisualizers";
+import { Panel, Stepper, Toggle, btn, inputCls } from "@/components/mdx/vizKit";
 import {
   aspectRatio, bitmapToBits, blend, bresenhamFrames, colorsFor, CPP_BRESENHAM, CPP_DDA, CPP_NAIVE, ddaFrames, from565, HOUSE, HOUSE_LINES, imageSize, lineCoverage,
   naiveFrames, ddaRounded, lcdTransmission, lcdTwist, slopeKind, INDEXED_PICTURE, pixelsFor, ppiFromDiagonal, printInches, quantize, rasterDisc, rasterize, rgbTo565, screenInches, toBinary, toHex, wrap, type LineState, type Pt,

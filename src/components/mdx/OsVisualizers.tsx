@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { btn, FocusPanel, inputCls, Legend, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
+import { FocusPanel, Legend, Stepper, Toggle, btn, inputCls } from "@/components/mdx/vizKit";
 import {
   BOUNDED_WAITING_CODE,
   boundedWaitingFrames,

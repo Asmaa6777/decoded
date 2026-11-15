@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { btn, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { Panel } from "@/components/mdx/MatrixVisualizers";
+import { Panel, Stepper, Toggle, btn } from "@/components/mdx/vizKit";
 import {
   apparentFrequency, convFrames, errorNorm, gaussian, gaussianHistogram, gaussianPdf, MATLAB_MOVING_AVERAGE, movingAverage, playgroundClean, snr, std, tradeoffDecomposition, voiceLike,
 } from "@/lib/signals";

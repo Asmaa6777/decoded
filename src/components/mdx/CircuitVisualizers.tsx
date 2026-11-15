@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { btn, Legend } from "@/components/mdx/AlgoVisualizers";
+import { Legend, btn } from "@/components/mdx/vizKit";
 import { evalGate, settle, truthRows, type Bit, type GateType, type NetGate, type Signals } from "@/lib/logic";
 
 /* ============================================================

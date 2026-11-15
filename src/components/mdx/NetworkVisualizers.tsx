@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { btn, inputCls, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { Panel } from "@/components/mdx/MatrixVisualizers";
+import { Panel, Stepper, Toggle, btn, inputCls } from "@/components/mdx/vizKit";
 import {
   DNS_HOPS,
   dnsFrames,

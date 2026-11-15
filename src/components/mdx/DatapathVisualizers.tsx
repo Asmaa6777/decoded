@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { btn } from "@/components/mdx/AlgoVisualizers";
-import { Panel } from "@/components/mdx/MatrixVisualizers";
+import { Panel, btn } from "@/components/mdx/vizKit";
 
 /* --------------------------- Four Eras Timeline --------------------------- */
 

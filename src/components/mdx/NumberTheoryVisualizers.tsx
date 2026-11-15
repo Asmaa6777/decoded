@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { btn, Stepper, Toggle } from "@/components/mdx/AlgoVisualizers";
-import { Panel } from "@/components/mdx/MatrixVisualizers";
+import { Panel, Stepper, Toggle, btn } from "@/components/mdx/vizKit";
 import { diffieHellmanFrames, dlogFrames, fastPowFrames, logTable, MATLAB_DH, MATLAB_DLOG, MATLAB_FASTPOW, cycleFrames, extendedFrames, isPrimitiveRoot, MATLAB_EXT, MATLAB_ORDER, order, powers, factorize, gcd, MATLAB_SIEVE, MATLAB_WILSON, phi, sieveFrames, wilsonFrames, euclidTiles, MATLAB_EUCLID, mod, tileFrames } from "@/lib/numberTheory";
 
 /* ------------------------------- Euclid tiles ------------------------------ */
