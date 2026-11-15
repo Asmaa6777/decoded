@@ -84,7 +84,7 @@ Students and organizations often mix these up:
 
 *Corollary:* if you think you've found an architectural pattern without a big trade-off, you just haven't found the trade-off yet.
 
-*Example:* microservices give independent scaling, but bring network latency, failures in transactions that span services, and much harder deployment.
+*Example:* <Term id="microservices">microservices</Term> give independent scaling, but bring network <Term id="latency">latency</Term>, failures in transactions that span services, and much harder deployment.
 
 **Second Law: "Why is more important than how."**
 
@@ -106,7 +106,7 @@ An architect who stops coding becomes an "ivory tower" architect. The lecture gi
 
 1. **Targeted feature delivery.** Build non-critical business features planned one to three iterations ahead. Never touch critical-path framework code.
 2. **High-quality proofs of concept.** Write production-quality <Term id="poc">POCs</Term> to compare competing tools. Even throwaway code should be good enough to serve as a reference.
-3. **Technical debt stories.** Take low-priority technical-debt or infrastructure tasks that won't stall the team if they slip.
+3. **Technical debt stories.** Take low-priority <Term id="technical-debt">technical-debt</Term> or infrastructure tasks that won't stall the team if they slip.
 4. **Developer tooling and automation.** Build command-line utilities, custom linters, code generators and automated fitness functions that help the team.
 
 <Callout tone="orange" label="Common mistake">

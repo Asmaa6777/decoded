@@ -103,12 +103,12 @@ A silent ML failure is the same kind of danger as the [float32 bug](/courses/adv
 
 ## Think and defend: three dilemmas
 
-The lecture ends with three dilemmas. There is no single right answer; the point is to reason with the [First Law](/courses/advanced-software-engineering/the-architects-role#the-laws-of-software-architecture): everything is a trade-off. Try each before opening the model answer. The model answers were written for this course; the slides only pose the questions.
+The lecture ends with three dilemmas. There is no single right answer; the point is to reason with the [First Law](/courses/advanced-software-engineering/the-architects-role#the-laws-of-software-architecture): everything is a <Term id="trade-off">trade-off</Term>. Try each before opening the model answer. The model answers were written for this course; the slides only pose the questions.
 
 **Dilemma 1: speed vs. structural integrity.** Your startup has 3 months of money left. The CEO demands a big pivot to a new feature set. Built cleanly, it takes 4 months and the company dies. Hacked together, it takes 2 months but leaves an unmaintainable mess. What is the "least worst" decision?
 
 <ModelAnswer>
-A company that runs out of money gets no second chance, so ship in about 2 months. But hack *deliberately*. Keep the mess inside clear boundaries (one module, one service) so it can be replaced. Write down the shortcuts as technical debt. Plan to pay that debt back as soon as the company survives. Remember the ["clean up later" fallacy](/courses/advanced-software-engineering/the-economics-of-architecture#the-clean-up-later-fallacy): the clean-up won't happen by itself, so it has to be scheduled.
+A company that runs out of money gets no second chance, so ship in about 2 months. But hack *deliberately*. Keep the mess inside clear boundaries (one module, one service) so it can be replaced. Write down the shortcuts as <Term id="technical-debt">technical debt</Term>. Plan to pay that debt back as soon as the company survives. Remember the ["clean up later" fallacy](/courses/advanced-software-engineering/the-economics-of-architecture#the-clean-up-later-fallacy): the clean-up won't happen by itself, so it has to be scheduled.
 </ModelAnswer>
 
 **Dilemma 2: latency vs. throughput.** You're building an ML-driven high-frequency trading bot. Option A processes trades one at a time: <Term id="latency">latency</Term> 10 ms, <Term id="throughput">throughput</Term> 100 QPS. Option B batches 50 trades: latency 45 ms, throughput 1,000 QPS. Which do you choose?

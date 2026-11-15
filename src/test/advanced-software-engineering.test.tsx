@@ -71,6 +71,20 @@ describe("Advanced Software Engineering course", () => {
     }
   });
 
+  it("highlights each term once per lesson, highlights every key term, and uses every glossary entry", () => {
+    const usedAnywhere = new Set<string>();
+    for (const [file, src] of Object.entries(sources)) {
+      const terms = [...src.matchAll(/<Term id="([^"]+)"/g)].map((m) => m[1]);
+      terms.forEach((t) => usedAnywhere.add(t));
+      const dups = terms.filter((t, i) => terms.indexOf(t) !== i);
+      expect(dups, `${file}: term highlighted more than once`).toEqual([]);
+      for (const m of src.matchAll(/<KeyTerms ids=\{\[([^\]]+)\]\}/g)) {
+        for (const id of m[1].match(/"([^"]+)"/g)!.map((x) => x.slice(1, -1))) expect(terms, `${file}: key term "${id}" is never highlighted`).toContain(id);
+      }
+    }
+    expect(Object.keys(glossary).filter((id) => !usedAnywhere.has(id))).toEqual([]);
+  });
+
   it("keeps people, institutions and slide footers out of the lessons", () => {
     const all = Object.values(sources).join("\n").toLowerCase();
     expect(files.length).toBe(flattenLessons(course).length);

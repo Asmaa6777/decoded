@@ -27,7 +27,7 @@ The word "inversion" refers to that last row. At runtime, fusion still *calls* t
 Why it matters in cars:
 
 - **Supplier independence.** Carmakers swap radar, camera or LiDAR suppliers between model generations without breaking core logic.
-- **Hardware/software decoupling.** The same ADAS software runs on different chips through standard abstractions.
+- **Hardware/software decoupling.** The same <Term id="adas">ADAS</Term> software runs on different chips through standard <Term id="abstraction">abstractions</Term>.
 - **SIL / HIL simulation.** High-level policies can be tested against simulated sensors with no physical hardware (<Term id="sil-hil">SIL/HIL testing</Term>).
 - **Industry standards.** AUTOSAR ports/RTE and Android Automotive's VHAL are real-world DIP.
 
@@ -210,7 +210,7 @@ A cloud gateway needs the battery's state of charge to show charging progress in
 <ModelAnswer>
 Yes, both. **ISP:** the gateway needs one method but is given four, including `overrideThermalLimits()` and `flashFirmware()`. **DIP:** an internet-facing, high-level service depends directly on a low-level, safety-critical module's concrete interface.
 
-Hazards: a compromised cloud gateway (the most exposed part of the car) could override thermal limits, risking a battery fire, or flash malicious firmware. That is a huge cybersecurity attack surface under ISO/SAE 21434 and a safety hazard under ISO 26262.
+Hazards: a compromised cloud gateway (the most exposed part of the car) could override thermal limits, risking a battery fire, or flash malicious firmware. That is a huge cybersecurity <Term id="attack-surface">attack surface</Term> under ISO/SAE 21434 and a safety hazard under ISO 26262.
 
 Inverted design: the gateway defines the small abstraction it needs, e.g. `interface ChargeStatusProvider { double stateOfCharge(); }`. A read-only adapter inside the vehicle implements it by calling the BMS. The gateway can now *only* read the state of charge; it can't even name the dangerous methods.
 </ModelAnswer>

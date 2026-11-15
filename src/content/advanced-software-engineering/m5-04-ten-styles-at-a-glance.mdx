@@ -3,7 +3,7 @@ import { Term, KeyTerms, BoxDiagram, DiagramTabs } from "@/components/mdx/Softwa
 
 # Ten Architecture Styles at a Glance
 
-Lecture 5 comes with a one-page summary of all ten styles: a short definition, a real-life example, and the key pro and con of each. This lesson puts them side by side, then covers the five not yet explained in detail: implicit invocation, publish-subscribe, event-based, web services and microservices.
+Lecture 5 comes with a one-page summary of all ten styles: a short definition, a real-life example, and the key pro and con of each. This lesson puts them side by side, then covers the five not yet explained in detail: implicit invocation, publish-subscribe, event-based, <Term id="web-services">web services</Term> and <Term id="microservices">microservices</Term>.
 
 ## The summary table
 
@@ -172,6 +172,8 @@ The application is a set of small, independently deployable services. **Each own
   ]}
   caption="Database per service: no service reads another's database. gRPC is a fast remote-call protocol, an alternative to REST. The API gateway is the single entry point for clients."
 />
+
+Clients reach the services through an <Term id="api-gateway">API gateway</Term>, which routes each request to the right service.
 
 - **Pros:** independent deployment and scaling; technology freedom per service; fault isolation.
 - **Cons:** distributed-system complexity; keeping data consistent across services is hard (often only <Term id="eventual-consistency">eventual consistency</Term>); high DevOps and monitoring effort.

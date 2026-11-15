@@ -25,12 +25,12 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
   - [x] L3
   - [x] L4
   - [x] L5
-- [ ] 5. Terminology (highlight + definition popup)
-  - [ ] L1
-  - [ ] L2
-  - [ ] L3
-  - [ ] L4
-  - [ ] L5
+- [x] 5. Terminology (highlight + definition popup)
+  - [x] L1
+  - [x] L2
+  - [x] L3
+  - [x] L4
+  - [x] L5
 - [ ] 6. Visualizations
   - [ ] L1
   - [ ] L2
@@ -220,3 +220,17 @@ Scanned the prose of every lesson (code, tables and diagram data excluded) for s
 **Not changed:** most scanner hits were bulleted lists the script joined into one "sentence"; the lists themselves are short items.
 
 **Not checked:** the repository's humanizer pass (not available in this environment); no browser check.
+
+### Round 5, terminology: L1 to L5
+
+Audited every `<Term>` and `<KeyTerms>` with a script: glossary entries never highlighted, terms highlighted twice in one lesson, key terms not highlighted in their lesson, and glossary terms that appear in a lesson's prose without a highlight.
+
+**Found:** six glossary entries were never highlighted (srp, cohesion, artifact, web-services, microservices, api-gateway); m3-03 highlighted "delegation" twice; four lessons listed key terms they never highlighted.
+
+**Changed:**
+- Fixed all of the above. "Single Responsibility Principle" is now highlighted where it's named in m3-01; cohesion is introduced alongside coupling; the artifact and API-gateway definitions got a sentence each in m4-04 and m5-04.
+- **Highlighted terms taught in another lesson** at their first plain-prose use, where a reader may have forgotten them: trade-off (m1-01, m2-04), technical debt (m2-03, m2-04), microservices and latency (m2-03), ADAS (m3-02, m3-05), abstraction (m3-03, m3-05), coupling and ASIL (m3-04), attack surface (m3-05), replication and architectural style (m4-03), module view (m4-04), quality attribute and component (m5-01), synchronous (m5-03), web services and microservices (m5-04). Popups show where the term is taught ("Lecture N").
+- **Left plain on purpose:** everyday words that are also glossary entries (behavior, structure, module, view) where the lesson uses them in their everyday sense, and the style names in m5-01's overview list, which the next three lessons highlight properly.
+- The course test now enforces: one highlight per term per lesson, every key term highlighted in its lesson, and every glossary entry used somewhere. 153 highlights in total.
+
+**Not checked:** dark theme and keyboard use of the popups (round 6).

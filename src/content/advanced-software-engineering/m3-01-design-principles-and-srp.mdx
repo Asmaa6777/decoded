@@ -45,13 +45,13 @@ So **poor design means expensive, risky change.** If one edit touches ten classe
 
 > Every object in your system should have a single responsibility, and all the object's services should be focused on carrying out that single responsibility.
 
-or, in Robert C. Martin's words: **"A class should have only one reason to change."**
+This is the <Term id="srp">Single Responsibility Principle</Term> (SRP). In Robert C. Martin's words: **"A class should have only one reason to change."**
 
 ### What is a "responsibility"?
 
 An ECU (electronic control unit) is one of the small computers in a car. Picture one "super-ECU" class that captures camera frames, detects lanes, decides on steering torque, logs diagnostics and draws graphics on the HUD (head-up display, the information projected onto the windscreen). Now picture five focused classes: `CameraDriver`, `LaneDetector`, `LaneKeepController`, `DiagnosticLogger`, `HudRenderer`.
 
-In the first design, **a change to the HUD layout can break lane keeping**, because both live in the same class. In the second, each class changes for one reason only. Bundling unrelated jobs into one module creates hidden <Term id="coupling">coupling</Term>, which makes simple changes risky and expensive to verify. A class like that is called a <Term id="god-class">god class</Term>.
+In the first design, **a change to the HUD layout can break lane keeping**, because both live in the same class. In the second, each class changes for one reason only. Bundling unrelated jobs into one module creates hidden <Term id="coupling">coupling</Term> and low <Term id="cohesion">cohesion</Term>, which makes simple changes risky and expensive to verify. A class like that is called a <Term id="god-class">god class</Term>.
 
 ### Responsibility = actor
 

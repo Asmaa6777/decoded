@@ -114,7 +114,7 @@ public class OccupancyGrid3D {                     // no longer "extends Occupan
 
 No meaningless inherited `isFree(x, y)` remains. Every method has a clear contract, and the 2D logic is reused through <Term id="delegation">delegation</Term>.
 
-**Step 2: an abstraction that states the exact question.**
+**Step 2: an <Term id="abstraction">abstraction</Term> that states the exact question.**
 
 ```java
 public interface DrivableSpaceMap {
@@ -202,7 +202,7 @@ public class PathPlanner {                              // works with ANY implem
 
 Three relationships to tell apart:
 
-- **<Term id="delegation">Delegation</Term>:** an object hands a task to a helper. It uses the behavior without becoming that type.
+- **Delegation:** an object hands a task to a helper. It uses the behavior without becoming that type.
 - **<Term id="composition">Composition</Term>:** an object owns its parts; the parts have no life of their own (`OccupancyGrid3D` owns its height layers).
 - **<Term id="aggregation">Aggregation</Term>:** an object uses independent parts (`SensorFusion` uses a `RadarSensor` and a `FrontCamera` that exist on their own).
 

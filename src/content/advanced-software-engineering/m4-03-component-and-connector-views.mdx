@@ -10,7 +10,7 @@ A <Term id="cc-view">component-and-connector (C&C) view</Term> shows the system 
 - **<Term id="component">Components</Term>** are runtime units: processes, clients, servers and data stores.
 - **<Term id="connector">Connectors</Term>** are the possible pathways of interaction between components: communication links, protocols and information flows.
 
-Examples of connectors: **service invocation** (calling a service), **message queues**, **event multicast** and **pipes**. Each of these becomes the heart of an architectural style in [Lecture 5](/courses/advanced-software-engineering/architecture-process-and-styles).
+Examples of connectors: **service invocation** (calling a service), **message queues**, **event multicast** and **pipes**. Each of these becomes the heart of an <Term id="architectural-style">architectural style</Term> in [Lecture 5](/courses/advanced-software-engineering/architecture-process-and-styles).
 
 <Callout tone="sky" label="Connectors are first-class">
 In a C&C view a connector isn't just a line. "Calls synchronously over HTTP" and "drops a message in a queue" are different connectors with very different behavior when something fails, so a good C&C view says which one each line is.
@@ -20,7 +20,7 @@ In a C&C view a connector isn't just a line. "Calls synchronously over HTTP" and
 
 - What are the major executing components, and how do they interact?
 - What are the major shared data stores?
-- Which parts of the system are replicated?
+- Which parts of the system are <Term id="replication">replicated</Term>?
 - How does data move through the system?
 - Which parts of the system can run in parallel?
 

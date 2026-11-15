@@ -17,7 +17,7 @@ or, as Robert C. Martin also puts it: *"Many client-specific interfaces are bett
 
 Why it matters in cars:
 
-- **Mixed criticality.** A QM (non-safety) infotainment app must never depend on an interface that exposes ASIL-rated motion control.
+- **Mixed criticality.** A QM (non-safety) infotainment app must never depend on an interface that exposes <Term id="asil">ASIL-rated</Term> motion control.
 - **Cybersecurity (ISO/SAE 21434).** Bloated interfaces enlarge the <Term id="attack-surface">attack surface</Term>. Small interfaces enforce <Term id="least-privilege">least privilege</Term>.
 - **SOA and AUTOSAR Adaptive.** Services are deployed as small, fine-grained interfaces, not as one vehicle-wide "god interface." They talk over automotive service protocols such as SOME/IP and DDS.
 
@@ -72,7 +72,7 @@ public class AutomatedDrivingStack implements VehicleOperator {
 
 - **Silent logic bugs:** `areHandsOnWheel() == false` from the AD stack triggers a spurious emergency alert.
 - **Attack surface:** the OTA manager can call steering and braking directly.
-- **Verification coupling:** changing the DMS gaze format forces recompiling and re-certifying the motion controllers.
+- **Verification <Term id="coupling">coupling</Term>:** changing the DMS gaze format forces recompiling and re-certifying the motion controllers.
 
 ## The fix: client-specific interfaces
 

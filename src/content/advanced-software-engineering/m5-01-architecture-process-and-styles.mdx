@@ -25,7 +25,7 @@ Lecture 5 moves from *describing* an architecture to *building* one. It starts w
 
 Every style defines three things:
 
-1. **A vocabulary of design elements:** the component and connector types and data elements it uses. *E.g. pipes, filters, objects, servers.*
+1. **A vocabulary of design elements:** the <Term id="component">component</Term> and connector types and data elements it uses. *E.g. pipes, filters, objects, servers.*
 2. **A set of configuration rules:** <Term id="topology">topological</Term> constraints that decide which compositions of elements are allowed. *E.g. a component may be connected to at most two other components.*
 3. **A semantic interpretation:** compositions of design elements have well-defined meanings. *E.g. in pipe-and-filter, an arrow always means "this data stream flows here."*
 
@@ -125,7 +125,7 @@ Its **input** is the architecture requirements; its **outputs** are the **archit
 ### Step 2a in practice
 
 - **Reusing known solutions lowers risk:** an established style reduces the chance that the application fails because of an unsuitable architecture.
-- **Patterns have clear pros and cons** with respect to specific quality attributes. That's what makes them useful: you pick a style *because of* the qualities you need.
+- **Patterns have clear pros and cons** with respect to specific <Term id="quality-attribute">quality attributes</Term>. That's what makes them useful: you pick a style *because of* the qualities you need.
 - **Small applications:** one pattern, like n-tier client-server, may be enough.
 - **Complex applications:** the design combines several known patterns, and the architect specifies how they fit together into the whole.
 

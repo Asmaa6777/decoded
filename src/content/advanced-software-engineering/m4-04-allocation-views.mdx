@@ -19,7 +19,7 @@ The style is defined by:
 - **Elements:** a *software element* and an *environmental element*. A software element has properties it **requires** from the environment (e.g. 2 GB of memory); an environmental element has properties it **provides** to the software (e.g. 8 GB of memory).
 - **Relation:** *allocated-to*. A software element is mapped (allocated) to an environmental element.
 
-The software elements can come from either a module view or a C&C view. There are three common allocation styles:
+The software elements can come from either a <Term id="module-view">module view</Term> or a C&C view. There are three common allocation styles:
 
 | Style | Maps | onto |
 | --- | --- | --- |
@@ -56,6 +56,8 @@ The deployment style maps components and connectors to the hardware they run on.
   ]}
   caption="3-D boxes are nodes (hardware or execution environments). Lines between nodes are communication paths. Dashed «deploy» arrows put artifacts onto nodes."
 />
+
+An <Term id="artifact">artifact</Term> is a physical file produced by development, such as a `.jar` or `.ear` archive.
 
 UML can also nest nodes, one inside another. The lecture's second example has four levels: a `«device» Sun Fire X4150 Server` → its `«OS» SUSE Linux Enterprise 10` → a `«JSP server» Apache Tomcat Server 5.5` → the deployed `«web archive» shopping.war`.
 
