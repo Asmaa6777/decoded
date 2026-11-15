@@ -1,12 +1,15 @@
 import { currentUserId, deleteAccount, finishSignIn, signOut, startSignIn } from "./auth";
 import { changeProgress, enroll, getProgress, saveQuizScore, unenroll } from "./progress";
 import { allCourseStats, courseStats } from "./stats";
+import { share } from "./share";
 import { acceptInvite, createInvite, getInvite, listCompanions, removeCompanion } from "./companions";
 import { getOwnProfile, getPublicProfile, reportProfile, saveOwnProfile, searchProfiles } from "./profiles";
 
 export interface Env {
   DB: D1Database;
   SITE_ORIGIN: string;
+  /** Where shared profile and invite links point, so they get their own previews. */
+  SHARE_ORIGIN: string;
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   GOOGLE_CLIENT_ID: string;
@@ -85,6 +88,8 @@ async function route(request: Request, env: Env): Promise<Response> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    if (new URL(request.url).origin === env.SHARE_ORIGIN) return share(request, env);
+
     const fromSite = request.headers.get("Origin") === env.SITE_ORIGIN;
     const corsHeaders: Record<string, string> = fromSite
       ? { "Access-Control-Allow-Origin": env.SITE_ORIGIN, "Access-Control-Allow-Credentials": "true" }
