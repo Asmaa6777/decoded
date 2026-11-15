@@ -14,18 +14,20 @@ Caches succeed because computer programs exhibit predictable memory access patte
 1. **Temporal locality**: A memory location accessed right now is likely to be accessed again in the near future. Program loops, subroutine call stacks, and accumulator variables demonstrate strong temporal locality.
 2. **Spatial locality**: Memory locations physically adjacent to a recently accessed address are likely to be accessed soon. Sequential instruction streams and sequential array traversals show strong spatial locality.
 
-To exploit spatial locality, the cache does not store isolated single bytes. Instead, memory moves between main memory and cache in fixed-size chunks called **blocks** (or **cache lines**), typically 32, 64, or 128 bytes in size. When a program reads a single 4-byte integer from memory, the cache controller fetches the entire 64-byte block enclosing that integer. Subsequent accesses to neighbouring variables hit in the cache with zero DRAM delay.
+To exploit spatial locality, the cache does not store isolated single bytes. Instead, memory moves between main memory and cache in fixed-size chunks called **blocks** (or **cache lines**), typically 32, 64, or 128 bytes in size. When a program reads a single 4-byte integer from memory, the cache controller fetches the entire 64-byte block enclosing that integer.
+
+On every memory reference, the processor checks whether the requested address is already resident:
+- A **cache hit** occurs when the requested word is found in the cache. The data returns to the processor execution pipeline in 1 to 4 clock cycles without accessing main memory.
+- A **cache miss** occurs when the requested word is absent. The processor pipeline must stall or switch tasks while the missing block is retrieved from slower memory (taking dozens or hundreds of cycles).
 
 ## Anatomy of an Address: Offset, Index, and Tag
 
 When the processor issues an $m$-bit physical memory address, the cache controller divides the address bits into three distinct fields:
 
-```
-+------------------------+------------------+---------------------+
-|        Tag (t)         |    Index (s)     |     Offset (b)      |
-+------------------------+------------------+---------------------+
- <------------------------- m bits ------------------------------>
-```
+| Field | Tag ($t$ bits) | Set Index ($s$ bits) | Block Offset ($b$ bits) |
+|---|---|---|---|
+| **Bit Position** | $A_{m-1} \dots A_{s+b}$ | $A_{s+b-1} \dots A_b$ | $A_{b-1} \dots A_0$ |
+| **Hardware Function** | Uniquely identifies memory block | Selects set (row) in cache | Selects byte within block |
 
 1. **Block Offset ($b$ bits)**: Selects the specific byte within the cache block. A block size of $B$ bytes requires $b = \log_2(B)$ offset bits.
 2. **Set Index ($s$ bits)**: Selects the specific set or row inside the cache array where the block must reside. If the cache is partitioned into $S$ sets, the index requires $s = \log_2(S)$ bits.
@@ -36,6 +38,18 @@ t = m - s - b
 $$
 
 Think of a library catalog. The **offset** specifies the exact paragraph on a page. The **index** specifies the bookcase shelf where the volume must be placed. The **tag** is the book's registration title printed on its spine: because many different books share the same shelf, the librarian reads the tag to ensure the book on the shelf is the one you requested.
+
+<Callout tone="orange" label="Indexing by byte address instead of block address">
+A common calculation mistake is taking the modulo of the raw byte address by the number of sets: `Address % S`. That incorrectly uses the block offset bits ($A_{b-1} \dots A_0$) as part of the index! The offset bits must always be stripped off first:
+$$
+\text{Set Index} = \left\lfloor \frac{\text{Address}}{\text{Block Size}} \right\rfloor \bmod S = (\text{Block Address}) \bmod S
+$$
+Bits $A_{s+b-1} \dots A_b$ form the index, never bits $A_{s-1} \dots A_0$.
+</Callout>
+
+<Callout tone="violet" label="Why the set index uses middle bits">
+Notice that the index bits ($s$) come from the middle of the address, right above the block offset, rather than the most significant bits. If the highest bits were used as the set index, contiguous blocks in memory would all map to the exact same set, causing immediate collision thrashing during sequential array traversals. Using the middle bits ensures that consecutive memory blocks map into consecutive cache sets ($0, 1, 2, \dots$), distributing references evenly across the entire cache.
+</Callout>
 
 ### Internal Cache Line Structure
 
@@ -89,6 +103,18 @@ $$
 
 Common configurations include 2-way, 4-way, 8-way, and 16-way set-associative caches.
 
+In a set-associative cache, hardware verifies hits in parallel:
+- **Hardware Comparators**: Each way in the selected set connects to its own dedicated comparator circuit (a parallel bank of XNOR gates feeding an AND gate). All $k$ comparators evaluate in parallel, testing whether the stored tag matches the address tag and the valid bit is 1.
+- **Output Multiplexer**: The $k$ comparator match signals control a $k$-to-1 multiplexer that routes data from the hitting way onto the processor data bus. If none of the comparators match, a cache miss signal is asserted.
+
+<Callout tone="orange" label="Assuming higher associativity always improves speed">
+While increasing associativity ($k$) decreases the cache miss rate by eliminating conflict misses, it does not always make the processor faster. Higher associativity requires wider multiplexers and larger comparator fan-in, increasing the hit latency ($t_{\text{hit}}$). If increasing associativity adds an entire clock cycle to the hit path, the extra cycle paid on every memory access often hurts overall performance more than the avoided misses help.
+</Callout>
+
+<Callout tone="orange" label="Confusing cache capacity with total hardware storage">
+When engineers specify a "64 KB cache", that number measures only the usable data capacity. The physical silicon must also store tag bits, valid bits, dirty bits, and replacement state for every line. For a 64 KB 4-way cache with 32-byte blocks and 32-bit addresses, metadata adds over 5.6 KB of additional SRAM storage (nearly a 9% overhead). Forgetting metadata leads to underestimating on-chip die area and power budgets.
+</Callout>
+
 <CacheLab />
 
 <Callout tone="violet" label="The 2:1 cache rule of thumb">
@@ -96,6 +122,10 @@ Empirical studies by Patterson and Hennessy showed that a direct-mapped cache of
 </Callout>
 
 ## Direct-Mapped vs. 2-Way Associative Trace Walkthrough
+
+To understand eviction, hardware tracks access order within each set:
+- **Most Recently Used (MRU)**: The line within the set that was accessed most recently in time.
+- **Least Recently Used (LRU)**: The line within the set that has remained unreferenced for the longest period of time. When a set is full, the LRU line is chosen for replacement.
 
 Consider a toy cache of 4 blocks, each 4 bytes in size, with 8-bit addresses.
 - Block size = 4 bytes $\implies$ Offset $b = \log_2(4) = 2$ bits.

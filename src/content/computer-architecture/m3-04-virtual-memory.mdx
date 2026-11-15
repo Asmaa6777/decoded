@@ -25,12 +25,10 @@ Virtual memory partitions both virtual and physical address spaces into fixed-si
 
 When a program generates an $n$-bit virtual address, the hardware divides it into two fields:
 
-```
-+------------------------------------+--------------------------+
-|     Virtual Page Number (VPN)      |     Page Offset (p)      |
-+------------------------------------+--------------------------+
- <---------------------------- n bits ------------------------->
-```
+| Field | Virtual Page Number ($VPN$) | Page Offset ($p$ bits) |
+|---|---|---|
+| **Bit Position** | $A_{n-1} \dots A_p$ | $A_{p-1} \dots A_0$ |
+| **Hardware Function** | Selects virtual page in page table | Selects exact byte within page |
 
 1. **Page Offset ($p$ bits)**: Selects the specific byte within a page. A page size of $P$ bytes requires $p = \log_2(P)$ offset bits. For 4 KB pages, $p = \log_2(4096) = 12$ bits.
 2. **Virtual Page Number ($VPN$)**: Identifies which page in the virtual address space is being referenced:
@@ -53,13 +51,14 @@ $$
 \text{Physical Address} = (PFN \times \text{Page Size}) + \text{Page Offset}
 $$
 
-```
- Virtual Address:   [  VPN  | Offset ]
-                       |         |
-                  (Translate)    |  (Direct pass-through)
-                       v         v
-Physical Address:   [  PFN  | Offset ]
-```
+The translation proceeds along two concurrent paths:
+1. **Offset pass-through**: The lower $p$ bits ($A_{p-1} \dots A_0$) pass directly through untranslated, preserving the byte position within the physical frame.
+2. **Frame lookup**: The upper $VPN$ bits feed the MMU, which queries the page table (or TLB) to output the matching $PFN$.
+3. **Address concatenation**: The physical address is constructed by placing the $PFN$ in the high-order bits and appending the untouched page offset.
+
+<Callout tone="orange" label="Attempting to translate the page offset">
+A frequent beginner mistake is attempting to pass the offset bits through the page table or MMU translation logic. The page offset never changes during address translation! Because virtual pages and physical frames are identical in size (typically 4 KB), byte 120 within a virtual page is physically stored at byte 120 within the assigned physical frame. Translation applies strictly to the Virtual Page Number ($VPN$).
+</Callout>
 
 <PageTableLab />
 
@@ -69,11 +68,10 @@ The translation from $VPN$ to $PFN$ is stored in a lookup data structure called 
 
 Each entry in a page table is called a **Page Table Entry** (PTE), typically 4 or 8 bytes wide, containing both the target frame address and control flags:
 
-```
-+---+---+---+---+---+---+-----------------------------------------+
-| V | R | W | X | U | D |       Physical Frame Number (PFN)       |
-+---+---+---+---+---+---+-----------------------------------------+
-```
+| Field | Valid ($V$) | Referenced ($R$) | Write ($W$) | Execute ($X$) | User ($U/S$) | Dirty ($D$) | Physical Frame Number ($PFN$) |
+|---|---|---|---|---|---|---|---|
+| **Width** | 1 bit | 1 bit | 1 bit | 1 bit | 1 bit | 1 bit | High-order address bits |
+| **Purpose** | Resident in RAM | Page accessed | Writable | Machine code | User vs Kernel | Modified by store | Base frame address in RAM |
 
 1. **Valid bit ($V$)**: Indicates whether the virtual page is currently resident in physical RAM ($V = 1$) or resides out on secondary disk swap storage ($V = 0$).
 2. **Physical Frame Number ($PFN$)**: The base address bits of the physical RAM frame holding the page.
@@ -81,6 +79,10 @@ Each entry in a page table is called a **Page Table Entry** (PTE), typically 4 o
 4. **User / Supervisor bit ($U/S$)**: Enforces privilege rings, ensuring unprivileged user-mode applications cannot read or alter operating system kernel memory.
 5. **Dirty bit ($D$)**: Set to 1 by the hardware MMU whenever a processor store instruction modifies data within the page frame. When the page is eventually evicted from RAM, the operating system checks the dirty bit: if $D = 1$, the page must be written back to disk; if $D = 0$, it can be overwritten immediately.
 6. **Referenced bit ($R$ or Accessed bit $A$)**: Set to 1 by hardware whenever any byte in the page is read or written. Operating system page replacement algorithms (such as the Clock algorithm) inspect this bit to identify actively used pages.
+
+<Callout tone="orange" label="Confusing virtual address space with physical memory">
+Students often confuse the size of the virtual address space with the amount of installed physical RAM. On a 32-bit CPU, every process receives a full $2^{32} = 4\text{ GB}$ virtual address space, even if the computer physically contains only 512 MB of RAM. The 4 GB address space is dictated by the pointer bit width, not by the motherboard DRAM chips.
+</Callout>
 
 ## Multi-Level (Hierarchical) Page Tables
 
@@ -97,19 +99,22 @@ If a system runs 250 active processes, 1 GB of physical memory would be consumed
 
 To solve this scaling problem, architectures implement **multi-level page tables**. In a two-level paging system (such as 32-bit x86), the 20-bit $VPN$ is partitioned into two 10-bit indices:
 
-```
-+--------------------+---------------------+--------------------+
-|  Directory (10)    |   Page Table (10)   |    Offset (12)     |
-+--------------------+---------------------+--------------------+
-```
+| Field | Page Directory Index ($PDI$) | Page Table Index ($PTI$) | Page Offset ($p$) |
+|---|---|---|---|
+| **Bit Position** | $A_{31} \dots A_{22}$ (10 bits) | $A_{21} \dots A_{12}$ (10 bits) | $A_{11} \dots A_0$ (12 bits) |
+| **Indexed Table** | Page Directory | Secondary Page Table | Byte within 4 KB frame |
 
-1. **Page Directory Index (10 bits)**: Indexes into the **Page Directory** (a single 4 KB table containing 1,024 directory entries, pointed to by the PTBR/`CR3` register).
-2. **Page Table Index (10 bits)**: Indexes into a secondary **Page Table** (each also 4 KB in size, holding 1,024 PTEs).
+1. **Page Directory Index (10 bits)**: Indexes into the **Page Directory** (a single 4 KB table containing 1,024 **Page Directory Entries** (PDEs), pointed to by the PTBR/`CR3` register). Each valid PDE contains the physical base address of a secondary page table.
+2. **Page Table Index (10 bits)**: Indexes into that secondary **Page Table** (each also 4 KB in size, holding 1,024 PTEs).
 3. **Offset (12 bits)**: Indexes the byte within the 4 KB page frame.
 
 The advantage is **sparse allocation**: if a program uses only 2 MB of code at address `0x00400000` and 1 MB of stack at address `0xBFFFF000`, the operating system allocates only the top-level Page Directory (4 KB) and two secondary Page Tables (8 KB). The remaining 1,022 entries in the Page Directory are marked invalid ($V = 0$) and require no secondary page tables. Storage drops from 4 MB down to 12 KB per process!
 
-In 64-bit processors, this hierarchy extends to four levels (PML4 $\to$ PDPT $\to$ PD $\to$ PT) or five levels.
+In 64-bit processors, this hierarchy extends to four levels:
+- **PML4** (Page Map Level 4)
+- **PDPT** (Page Directory Pointer Table)
+- **PD** (Page Directory)
+- **PT** (Page Table)
 
 ## Making it fast: the TLB
 
@@ -122,28 +127,16 @@ Translating every address would triple memory latency, reducing computer speed b
 
 To accelerate **virtual memory** translation and eliminate this overhead, the MMU includes a dedicated hardware cache called the **Translation Lookaside Buffer** (TLB).
 
-```
-Virtual Address: [ VPN | Offset ]
-                   |       |
-         +---------+       |
-         |                 |
-     [  TLB  ]             |
-     (Hit? Yes)            |
-         |                 |
-       [PFN]               |
-         |                 |
-         +---------+       |
-                   |       |
-                   v       v
-Physical Address: [ PFN | Offset ]
-```
+The TLB is a small, highly associative hardware cache (typically 64 to 512 entries) containing recently translated $(VPN \to PFN)$ mappings:
+1. When the CPU emits a virtual address, the MMU queries the TLB tag array using the $VPN$.
+2. **TLB Hit**: If the translation is present and valid, the TLB outputs the $PFN$ in less than 1 clock cycle. The physical address is assembled immediately with zero main memory overhead.
+3. **TLB Miss**: If the translation is absent from the TLB, the hardware must perform a **page table walk**:
+   - **Hardware Page Table Walker** (x86, ARM): Dedicated finite-state machines in the MMU traverse the hierarchical page tables in memory, load the missing PTE into the TLB, and retry the memory access.
+   - **Software-Managed TLB** (MIPS, SPARC): The MMU generates a TLB Miss trap exception. The operating system kernel executes a short, optimized trap handler that fetches the PTE and inserts it into the TLB using privileged instructions.
 
-The TLB is a small, highly associative hardware cache (typically 64 to 512 entries) containing recently translated $(VPN \to PFN)$ mappings.
-
-- **TLB Hit**: If the requested $VPN$ is present in the TLB, the physical frame number $PFN$ is produced in less than 1 clock cycle. Translation completes with zero DRAM access delay.
-- **TLB Miss**: If the translation is not in the TLB, the hardware must perform a **page table walk**:
-  - **Hardware Page Table Walker** (x86, ARM): Dedicated finite-state machines in the MMU traverse the hierarchical page tables in memory, load the missing PTE into the TLB, and retry the memory access.
-  - **Software-Managed TLB** (MIPS, SPARC): The MMU generates a TLB Miss trap exception. The operating system kernel executes a short, optimized trap handler that fetches the PTE and inserts it into the TLB using privileged instructions.
+<Callout tone="orange" label="Confusing TLB misses with page faults">
+Do not confuse a TLB miss with a page fault. A **TLB miss** merely means the address translation is not currently cached in the processor's high-speed TLB; the page is almost always already resident in physical RAM, requiring only a quick hardware page table walk (tens of nanoseconds). A **page fault** occurs when the page is completely absent from physical RAM ($V = 0$ in the PTE), requiring an operating system trap and slow secondary storage disk I/O (millions of nanoseconds).
+</Callout>
 
 ### Process Context and the TLB
 
@@ -174,18 +167,16 @@ Because disk access latency ($10\text{ ms}$) is approximately $100{,}000$ to $1{
 
 When an architecture contains both a cache and virtual memory, hardware must decide in what order translation and cache lookup occur:
 
-```
-+--------------------+-----------------------------+-----------------------------+
-| Architecture       | Index Derivation            | Tag Comparison              |
-+--------------------+-----------------------------+-----------------------------+
-| PIPT               | Physical Address Bits       | Physical Address Bits       |
-| VIVT               | Virtual Address Bits        | Virtual Address Bits        |
-| VIPT               | Virtual Address Bits        | Physical Address Bits       |
-+--------------------+-----------------------------+-----------------------------+
-```
+| Architecture | Index Derivation | Tag Comparison | Advantages | Drawbacks |
+|---|---|---|---|---|
+| **PIPT** | Physical Address Bits | Physical Address Bits | Zero aliasing | TLB on critical path before cache lookup |
+| **VIVT** | Virtual Address Bits | Virtual Address Bits | Fast (no TLB delay) | Aliasing and context switch flushes |
+| **VIPT** | Virtual Address Bits | Physical Address Bits | Parallel TLB and cache lookup | Way size constrained by page size |
 
 1. **Physically Indexed, Physically Tagged (PIPT)**: The virtual address is translated by the TLB first. The resulting physical address is then used to index the cache and compare tags. PIPT is completely free of aliasing problems, but it places the TLB latency directly on the critical path before the cache can even begin line lookup.
-2. **Virtually Indexed, Virtually Tagged (VIVT)**: Both index and tag come from the virtual address. Caching occurs with zero TLB delay. However, VIVT suffers from **aliasing / homonyms**: two distinct processes using the same virtual address `0x1000` could mistakenly access each other's cached data, requiring complete cache flushes on every context switch.
+2. **Virtually Indexed, Virtually Tagged (VIVT)**: Both index and tag come from the virtual address. Caching occurs with zero TLB delay. However, VIVT suffers from cache coherency pitfalls:
+   - **Homonyms (Aliasing)**: The same virtual address in two different processes refers to two distinct physical frames. Without flushing the cache or tracking process IDs, Process B could read stale data belonging to Process A.
+   - **Synonyms**: Two different virtual addresses refer to the same physical frame. The same memory byte could be cached in two different lines, causing inconsistency if one is modified.
 3. **Virtually Indexed, Physically Tagged (VIPT)**: The high-performance compromise used in modern L1 caches!
 
 ### Why VIPT Dominates Modern L1 Caches
@@ -193,6 +184,10 @@ When an architecture contains both a cache and virtual memory, hardware must dec
 Recall that a 4 KB page has 12 offset bits ($A_{11} \dots A_0$). Because the page offset is never modified during address translation, the lower 12 bits of a virtual address are **identical** to the lower 12 bits of the physical address!
 
 In a VIPT cache, the cache controller extracts the set index bits directly from these lower offset bits. The cache array can look up the set in parallel while the TLB translates the $VPN$ into the $PFN$. When the cache line tags are read out from the cache SRAM, the physical frame number arrives from the TLB just in time to compare tags.
+
+<Callout tone="orange" label="VIPT aliasing when cache way exceeds page size">
+If the size of a single cache way exceeds the page size ($\text{Way Size} > \text{Page Size}$), the cache index requires bits from the Virtual Page Number ($VPN$). Because the operating system can map multiple virtual pages to the same physical frame with different high-order address bits, the exact same physical byte can map to two distinct cache sets simultaneously. This creates cache synonyms, where a write to one cache line does not update the other, corrupting program data.
+</Callout>
 
 <Callout tone="sky" label="The VIPT aliasing limit">
 To guarantee that a VIPT cache never suffers from aliasing, the set index bits ($s$) plus the block offset bits ($b$) must fit entirely within the page offset bits ($p$):

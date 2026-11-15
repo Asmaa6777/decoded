@@ -29,7 +29,11 @@ The **Least Recently Used** (LRU) policy evicts the block that has remained unre
   - In a 2-way set-associative cache, LRU requires exactly 1 bit per set. Setting the bit to 0 or 1 indicates which of the two ways was accessed most recently.
   - In a 4-way set-associative cache, tracking true LRU order among 4 ways requires $\log_2(4!) = \log_2(24) \approx 5$ or 6 bits per set, or a $4 \times 4$ triangular bit matrix.
   - For 8-way and 16-way caches, exact LRU becomes too complex and consumes too much power and silicon area.
-- **Pseudo-LRU (Tree-PLRU)**: Modern high-associativity caches approximate LRU using a binary decision tree. An 8-way cache needs only $8 - 1 = 7$ tracking bits per set arranged in a 3-level binary tree. Each access flips the tree pointers away from the accessed way, directing the next eviction toward an unreferenced line.
+- **Pseudo-LRU (Tree-PLRU)**: Modern high-associativity caches approximate LRU using a binary decision tree. For an 8-way cache, each set stores 7 tracking bits ($B_0 \dots B_6$) organized as a 3-level binary tree:
+  - Root bit $B_0$ points to the left half (Ways 0–3) or right half (Ways 4–7).
+  - Level-1 bits $B_1, B_2$ point to pairs of ways (Ways 0–1 vs 2–3, and Ways 4–5 vs 6–7).
+  - Level-2 bits $B_3 \dots B_6$ point to individual ways.
+  When an access hits Way 2, the hardware flips all bits along the path to Way 2 so they point *away* from Way 2. When an eviction occurs, hardware follows the arrows to find an unreferenced **victim block**.
 
 ### First-In, First-Out (FIFO)
 
@@ -82,6 +86,7 @@ In a **write-back** cache, writes update only the cache line. Main memory is not
 - **Memory Update**: Main memory is updated only when a dirty line is evicted to make room for a new block. If a clean line (dirty bit 0) is evicted, it is discarded immediately with zero bus writes.
 - **Advantage**: Drastic reduction in memory bus traffic. A loop modifying an array element 10,000 times generates 10,000 cache writes but only 1 write to main memory when the block is eventually replaced.
 - **Disadvantage**: More complex hardware. Evicting a dirty block requires two distinct memory operations: writing back the dirty victim to DRAM, and reading the incoming block into the cache.
+- **Write-Back Buffer**: When a dirty line must be evicted to service a cache miss, making the processor wait for the dirty line to write all the way to DRAM would double miss latency. High-performance caches copy the dirty victim into a temporary **write-back buffer** (or victim buffer). The critical requested block is fetched from DRAM immediately, resuming processor execution. The memory controller then drains the dirty block from the write-back buffer to DRAM in the background.
 
 <WritePolicyLab />
 
@@ -91,6 +96,10 @@ When the processor attempts to write to an address that is not in the cache, two
 
 1. **Write-Allocate (Fetch-on-Write)**: The missed block is fetched from main memory into the cache, and the write is executed in the cache line. This is the natural pairing for **write-back** caches, because subsequent writes to that block will hit in the cache.
 2. **No-Write-Allocate (Write-Around)**: The data is written directly to main memory without loading the block into the cache. This is the standard pairing for **write-through** caches, preventing non-repeated writes from evicting useful cached blocks.
+
+<Callout tone="orange" label="Assuming write-back always generates less bus traffic">
+While write-back drastically cuts bus traffic for loops with high write locality, it can actually generate more bus traffic than write-through when write misses dominate. Under write-allocate, a write miss fetches a complete 64-byte block from DRAM into the cache, even if the program wrote only a single 4-byte integer. In contrast, write-through with no-write-allocate sends only the 4-byte store directly across the bus without fetching the surrounding block.
+</Callout>
 
 <Callout tone="violet" label="Multicore cache coherence">
 On modern multi-core chips, each core contains a private L1 and L2 cache. If Core 0 writes to address $X$ in its private write-back cache, Core 1 reading address $X$ from its own cache could read stale data. Hardware **cache coherence protocols** (such as MESI: Modified, Exclusive, Shared, Invalid) monitor the system bus and invalidate or update private cache lines whenever another core writes to a shared memory address.
@@ -124,6 +133,12 @@ Where:
 - $\text{Miss Rate}$ is the fraction of all memory accesses that miss.
 - $\text{Miss Penalty}$ is the additional time required to fetch the block from the lower level of the memory hierarchy.
 
+Every memory reference begins by querying the cache. The processor cannot know whether a request will hit or miss until it searches the tag array. Therefore, the cache hit latency $t_{\text{hit}}$ is spent on every single reference, whether it hits or misses.
+
+<Callout tone="orange" label="Forgetting hit latency on cache misses">
+A frequent student error when calculating total access time on a miss is forgetting $t_{\text{hit}}$. Students compute $\text{Latency} = \text{Miss Penalty}$, assuming the cache was bypassed. In reality, the processor spent $t_{\text{hit}}$ cycles checking the cache tags before declaring the miss and initiating the memory fetch. The total time spent on a miss is $t_{\text{hit}} + \text{Miss Penalty}$.
+</Callout>
+
 <AmatCalculator />
 
 ### Multi-Level Cache Hierarchies
@@ -139,6 +154,10 @@ The multi-level AMAT equation expands as:
 $$
 \text{AMAT} = t_{L1} + \text{MR}_{L1} \times \left( t_{L2} + \text{MR}_{L2} \times \left( t_{L3} + \text{MR}_{L3} \times t_{\text{mem}} \right) \right)
 $$
+
+<Callout tone="orange" label="Confusing local and global miss rates">
+In multi-level cache problems, students frequently mix up local and global miss rates. If L1 has a 4% miss rate ($\text{MR}_{L1} = 0.04$) and L2 has a 20% local miss rate ($\text{MR}_{L2,\text{local}} = 0.20$), only $0.04 \times 0.20 = 0.008$ (or 0.8%) of all CPU instructions reach main memory. Plugging 20% directly into the main memory miss penalty formula overestimates DRAM traffic by a factor of 25!
+</Callout>
 
 <Callout tone="sky" label="Local vs. global miss rate">
 When analyzing multi-level caches:
@@ -174,7 +193,7 @@ The memory hierarchy consists of a split L1 cache, a unified L2 cache, and main 
 
 **Part 1: Global Miss Rate for L2:**
 $$
-\text{Global MR}_{L2} = \text{MR}_{L1} \times \text{Local MR}_{L2} = 0.04 \times 0.20 = 0.008\text{ (or 0.8%)}
+\text{Global MR}_{L2} = \text{MR}_{L1} \times \text{Local MR}_{L2} = 0.04 \times 0.20 = 0.008\text{ (or 0.8\\%)}
 $$
 Only 0.8% of all memory accesses issued by the CPU reach main memory.
 
