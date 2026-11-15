@@ -104,6 +104,10 @@ If the microscopic details are neglected, the house doesn't work, however good t
 
 **The software equivalent:** high-level <Term id="decoupling">decoupling</Term> is achieved only through microscopic code choices, such as `import` statements and variable declarations. If one class imports another, they are <Term id="coupling">coupled</Term>, whatever the diagram says.
 
+<Callout tone="orange" label="Common mistake">
+Deciding what is architectural by *size*: "big boxes are architecture, small code is design." A one-line import rule can be architectural. The test is whether you need the detail to reason about the system's qualities and failures.
+</Callout>
+
 ## Key terms
 
 <KeyTerms ids={["essential-complexity", "accidental-complexity", "software-architecture", "architectural-decision", "coupling", "decoupling"]} />

@@ -117,6 +117,10 @@ The uses view makes explicit which modules use which others to do their jobs.
 The same modules appear in both views, but the lines mean different things. In decomposition, a line means *is part of* (and must form a tree). In uses, an arrow means *depends on for correctness* (and can go between any two modules). The lecture's second uses example, an online store, has modules `estore.webapp`, `web::estore`, `web::shared`, `web::accessControl`, `estore.core`, `admin.client`, `admin.core`, `util` and `dao`, joined by «use» arrows. Many of those arrows end at `util` and `dao`, so they have to work before most of the others can be tested.
 </Callout>
 
+<Callout tone="orange" label="Common mistake">
+Drawing "uses" in a decomposition view, which gives a module two parents. Decomposition is a tree of is-part-of; dependencies go in the uses view. Also, "uses" is not "calls": A uses B only if A's correctness depends on B.
+</Callout>
+
 ## Readings for this lecture
 
 *Documenting Software Architectures* (Clements et al.): prologue P3 "Architecture Views", chapters 2, 3 and 5, and epilogue E.2 · *Software Architecture: Foundations, Theory, and Practice* (Taylor, Medvidovic, Dashofy).

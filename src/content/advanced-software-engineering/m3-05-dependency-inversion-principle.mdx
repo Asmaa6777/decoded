@@ -53,7 +53,7 @@ public class SensorFusion {                                          // HIGH-LEV
 }
 ```
 
-The dependencies point down a chain: `SensorFusion` → `SupplierARadarDriver` → CAN bus, and `SensorFusion` → `SupplierBCameraDriver` → automotive Ethernet.
+The dependencies point down a chain: `SensorFusion` → `SupplierARadarDriver` → CAN bus (the classic in-car network), and `SensorFusion` → `SupplierBCameraDriver` → automotive Ethernet.
 
 | Hardware change | Impact on `SensorFusion` |
 | --- | --- |
@@ -224,6 +224,10 @@ Inverted design: the gateway defines the small abstraction it needs, e.g. `inter
 | LSP | subtypes keep the full contract; prefer delegation |
 | ISP | clients never depend on methods they don't use |
 | DIP | high-level policy owns the domain abstractions |
+
+<Callout tone="orange" label="Common mistake">
+Thinking "I use dependency injection, so I follow DIP." Injecting a `SupplierARadarDriver` is DI but still violates DIP. The other trap is putting `ObjectSensor` in the supplier's package: then fusion imports the supplier's code and nothing is inverted. The interface belongs to the high-level package.
+</Callout>
 
 ## Readings for this lecture
 

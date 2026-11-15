@@ -13,12 +13,12 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
   - [x] L3
   - [x] L4
   - [x] L5
-- [ ] 3. Depth
-  - [ ] L1
-  - [ ] L2
-  - [ ] L3
-  - [ ] L4
-  - [ ] L5
+- [x] 3. Depth
+  - [x] L1
+  - [x] L2
+  - [x] L3
+  - [x] L4
+  - [x] L5
 - [ ] 4. Plain language
   - [ ] L1
   - [ ] L2
@@ -192,4 +192,18 @@ Checked Lecture 4 (41 slides) against m4-01 to m4-05, Lecture 5 (29 slides, from
 
 **Left out on purpose:** image credits on L4's slides (a previous course offering) and the infographic's navigation hints.
 
-**Round 2 is complete for all five lectures.** **Next:** round 3, depth, starting with L1.
+**Round 2 is complete for all five lectures.**
+
+### Round 3, depth: L1 to L5
+
+Read each content lesson looking for terms used before they're explained, examples with skipped steps, and missing "what students get wrong."
+
+**Changed:**
+- **A "Common mistake" callout in all 19 content lessons**, each naming a specific confusion from that lesson's material, e.g. SRP read as "one method", DI mistaken for DIP, the interface placed in the supplier's package, a decomposition view drawn with two parents, deployment vs install, tiers vs machines, messaging vs publish-subscribe, big scope mistaken for bad architecture. The course test now requires one in every content lesson.
+- **Abbreviations explained at first use:** tokens (m1-01); ECU, HUD, DTC, GNSS (m3-01); SOME/IP and DDS (m3-04); CAN bus (m3-05); EJB and .ear/.jar/.war (m4-04); SOAP/WSDL vs REST/JSON, OSGi, gRPC (m5-04). Terms that matter more get glossary popups in round 5.
+
+**Already deep enough:** the worked examples were walked through in round 1 (float32 absorption in four steps with the 2⁻⁷ spacing, the itself test per method, the scope-vs-shape example, both LSP fix steps, the three DIP steps, the pipeline and the queue steppers).
+
+**Found but not fixed:** the m3-02 common-mistake note mentions over-abstraction as "a related trap"; the slides don't name it, and the note says the lecture's abstractions all wrap something that varies. Kept because it stops readers over-applying OCP.
+
+**Not checked:** no browser check (text only).

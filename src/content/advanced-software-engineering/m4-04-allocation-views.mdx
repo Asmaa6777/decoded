@@ -95,7 +95,7 @@ Any install-view notation must show:
     { from: "cus", to: "c2", dashed: true },
     { from: "tx", to: "c3", dashed: true },
   ]}
-  caption="The archive contains .jar files, and each .jar manifests (packages) runtime components. The lecture's full figure also shows web-client.war (servlets, JSPs, static files) and app-client.jar."
+  caption="The archive contains .jar files, and each .jar manifests (packages) runtime components. EJBs (Enterprise JavaBeans) are Java server-side components; .ear, .jar and .war are Java archive files for a whole application, a library or component, and a web application. The lecture's full figure also shows web-client.war (servlets, JSPs, static files) and app-client.jar."
 />
 
 ## The work assignment style
@@ -120,6 +120,10 @@ The lecture's example is a table for a satellite ground system:
 
 <Callout tone="sky" label="Why work assignment is architecture">
 Teams build systems that mirror their communication structure. If two modules that must talk constantly are given to two teams that never meet, the interface between them will suffer. The [Single Responsibility Principle](/courses/advanced-software-engineering/design-principles-and-srp#responsibility--actor) makes the same point at class level: one module, one actor.
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Mixing up deployment and install views. Deployment maps running components to *hardware*; install maps them to *files and folders*. And work assignment maps *modules*, not components, to teams, because teams write code.
 </Callout>
 
 ## Key terms

@@ -35,7 +35,7 @@ Anthropic tested early versions of its model, Claude, on SWE-bench Verified: a b
 
 - **Premature victory.** It declared a task finished as soon as the code compiled, leaving logic bugs that produced no error.
 - **<Term id="context-rot">Context rot</Term> and drift.** On long tasks the model's <Term id="context-window">context window</Term> filled up. It started to override the constraints it had been given at the start, or got stuck in loops of repairing its own repairs.
-- **Overwhelmed execution.** Showing it every environment detail and every tool up front made it spend its tokens reading instead of solving.
+- **Overwhelmed execution.** Showing it every environment detail and every tool up front made it spend its tokens (the chunks of text a model reads and writes, which are limited and cost money) reading instead of solving.
 
 The team summed it up with an analogy: the model was *like a brilliant, world-class engineer with severe short-term memory, locked in a room with no pen, no paper and no processes.* The intelligence was there. Everything that lets an engineer use intelligence over a long task was missing.
 
@@ -83,6 +83,10 @@ The case study's lesson is: **an LLM is just an engine; the harness is the vehic
 - **The strategic inversion.** Classical system design is now the main tool for turning a stream of non-deterministic tokens into reliable production software.
 
 In the age of AI, traditional software engineering hasn't died. It has become the thing that multiplies what AI can do.
+
+<Callout tone="orange" label="Common mistake">
+Thinking an AI agent's "done" means done. The case study's first failure, premature victory, is exactly that. Done means a deterministic check, such as the test suite, says so. A second trap: treating a bigger context window as memory. It still fills up and rots; the harness keeps state in files instead.
+</Callout>
 
 ## Readings for this lecture
 

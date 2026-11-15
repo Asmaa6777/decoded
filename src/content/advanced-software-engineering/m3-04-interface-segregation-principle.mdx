@@ -19,7 +19,7 @@ Why it matters in cars:
 
 - **Mixed criticality.** A QM (non-safety) infotainment app must never depend on an interface that exposes ASIL-rated motion control.
 - **Cybersecurity (ISO/SAE 21434).** Bloated interfaces enlarge the <Term id="attack-surface">attack surface</Term>. Small interfaces enforce <Term id="least-privilege">least privilege</Term>.
-- **SOA and AUTOSAR Adaptive.** Services are deployed as fine-grained interfaces (SOME/IP, DDS), avoiding vehicle-wide "god interfaces."
+- **SOA and AUTOSAR Adaptive.** Services are deployed as fine-grained interfaces (using automotive service protocols such as SOME/IP and DDS), avoiding vehicle-wide "god interfaces."
 
 ## The violation: a fat VehicleOperator
 
@@ -177,6 +177,10 @@ public class VehicleMotionController {
 
 <Callout tone="sky" label="ISP vs SRP">
 They sound alike but look from different sides. [SRP](/courses/advanced-software-engineering/design-principles-and-srp) is about a *class*: it should answer to one actor. ISP is about an *interface's clients*: none should depend on methods it doesn't use.
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Splitting an interface into one-method pieces for its own sake. Split by *client*: each interface is what one kind of client needs (MotionControl for the motion controller, OtaUpdatable for the OTA manager). And don't confuse ISP with SRP: ISP looks from the client's side.
 </Callout>
 
 ## Key terms

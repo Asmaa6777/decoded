@@ -131,6 +131,10 @@ Real messaging systems use a <Term id="message-broker">message broker</Term>, su
 In [client-server](/courses/advanced-software-engineering/n-tier-client-server-and-peer-to-peer#client-server), the client waits for each answer (synchronous). In messaging it doesn't. The price is that the client can't immediately know whether its request succeeded.
 </Callout>
 
+<Callout tone="orange" label="Common mistake">
+Thinking filters run one after another, each finishing first. They can run at the same time, passing data along as it's produced. In messaging, the opposite slip: expecting the client to know the result straight away. It doesn't wait, so it doesn't know.
+</Callout>
+
 ## Readings for this lecture
 
 *Essential Software Architecture* (Gorton), chapters 7 and 8.

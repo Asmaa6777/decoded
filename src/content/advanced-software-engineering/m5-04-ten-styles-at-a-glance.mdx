@@ -95,7 +95,7 @@ N-tier client-server, from [the previous lesson](/courses/advanced-software-engi
         { from: "core", to: "git", both: true, dashed: true },
         { from: "core", to: "yours", both: true, dashed: true },
       ],
-      caption: "Save a file and Eclipse fires a resource-change event; the Java builder, Git and error markers each react on their own. A new plug-in just registers for the events it cares about.",
+      caption: "Save a file and Eclipse fires a resource-change event; the Java builder, Git and error markers each react on their own. (OSGi is the Java module system Eclipse's plug-ins run on.) A new plug-in just registers for the events it cares about.",
     },
   ]}
 />
@@ -121,7 +121,7 @@ Both use a broker. In [messaging](/courses/advanced-software-engineering/pipe-an
 
 ## Web services
 
-Functionality is exposed as services over standard web protocols: HTTP with SOAP/WSDL, or REST/JSON. Programs on any platform, in any language, can call them. *Examples:* Expedia and Skyscanner pull flight and hotel data from airline and hotel services; Uber and many others call the Google Maps API.
+Functionality is exposed as services over standard web protocols: HTTP with SOAP/WSDL (XML messages, described by a WSDL file), or REST/JSON (plain HTTP requests carrying JSON). Programs on any platform, in any language, can call them. *Examples:* Expedia and Skyscanner pull flight and hotel data from airline and hotel services; Uber and many others call the Google Maps API.
 
 <BoxDiagram
   title="The SOA triangle"
@@ -170,7 +170,7 @@ The application is a set of small, independently deployable services. **Each own
     { from: "u", to: "udb" },
     { from: "p", to: "pdb" },
   ]}
-  caption="Database per service: no service reads another's database. The API gateway is the single entry point for clients."
+  caption="Database per service: no service reads another's database. gRPC is a fast remote-call protocol, an alternative to REST. The API gateway is the single entry point for clients."
 />
 
 - **Pros:** independent deployment and scaling; technology freedom per service; fault isolation.
@@ -178,6 +178,10 @@ The application is a set of small, independently deployable services. **Each own
 
 <Callout tone="orange" label="Remember the First Law">
 Lecture 2 used microservices as its example of the [First Law](/courses/advanced-software-engineering/the-architects-role#the-laws-of-software-architecture): independent scaling, paid for with network latency, distributed transaction failures and deployment complexity. And the [2002 data center case](/courses/advanced-software-engineering/the-architects-role#two-case-studies-architecture-depends-on-context) explains why this style only became common once containers made services cheap.
+</Callout>
+
+<Callout tone="orange" label="Common mistake">
+Mixing up messaging and publish-subscribe. In a queue, each message is taken by one receiver; in pub/sub, every subscriber gets a copy. And drawing "microservices" that share one database: that couples them, so they can't change or deploy independently.
 </Callout>
 
 ## Key terms

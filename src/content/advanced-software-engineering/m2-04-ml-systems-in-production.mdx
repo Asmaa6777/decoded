@@ -127,6 +127,10 @@ Usually not. 0.5% more accuracy must pay for 3× the servers plus maintaining 15
 2. Architecture is a series of local trade-offs; there is no perfect system.
 3. ML systems fail silently, so they need statistical checks, not only deterministic tests.
 
+<Callout tone="orange" label="Common mistake">
+Assuming no errors means it works. ML systems fail silently: the output is well-formed but wrong. The other common mistake is reaching for ML when a rule, a regex or a lookup table would do. The lecture's default is rules first.
+</Callout>
+
 ## Readings for this lecture
 
 *Clean Architecture*, chapters 1–2 · *Fundamentals of Software Architecture*, chapters 1–2 · *Designing Machine Learning Systems*, chapter 1.

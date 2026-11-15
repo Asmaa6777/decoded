@@ -126,6 +126,10 @@ Neither failure was a lack of intelligence in the model. Both were missing engin
 
 This is the course's argument in miniature: AI writes code quickly, and engineering decides whether that code can be trusted.
 
+<Callout tone="orange" label="Common mistake">
+"The maths matches the textbook, so the code is correct." The formula was right; the *implementation* (a 32-bit sum, a hallucinated import) was wrong. Also, switching to 64-bit floats only moves the limit further away. A real controller also clamps the integral term so it can't grow forever.
+</Callout>
+
 ## Key terms
 
 <KeyTerms ids={["pid-controller", "feedback-loop", "float32", "absorption", "hil-simulation", "hallucination", "typosquatting", "supply-chain-attack"]} />

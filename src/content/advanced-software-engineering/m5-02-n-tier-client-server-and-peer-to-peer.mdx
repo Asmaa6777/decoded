@@ -155,6 +155,10 @@ In <Term id="peer-to-peer">peer-to-peer</Term> (P2P), **all processes play simil
 | no single point of failure | hard to manage and back up |
 | resources spread across the peers | performance and availability vary with which peers are online |
 
+<Callout tone="orange" label="Common mistake">
+Thinking n tiers need n machines. A tier is a logical layer; the lecture says all tiers can run on one machine or each on its own. Tier count is a design choice; machine count is a deployment choice.
+</Callout>
+
 ## Key terms
 
 <KeyTerms ids={["n-tier", "client-server", "thin-client", "separation-of-concerns", "synchronous-communication", "replication", "single-point-of-failure", "peer-to-peer"]} />

@@ -113,6 +113,10 @@ The lecture's climate-control example draws a *Controller* component connected t
 
 **C&C views can simplify.** The module view of the same system has separate Cooler, Heater and Fan classes; the C&C view shows one Actuator component. A view only needs the detail its concern requires.
 
+<Callout tone="orange" label="Common mistake">
+Putting classes into a C&C view, or drawing bare arrows. A C&C view shows runtime components, and each line should say what kind of connector it is (call, queue, event, pipe) and, in UML, who provides and who requires the interface.
+</Callout>
+
 ## Key terms
 
 <KeyTerms ids={["cc-view", "component", "connector", "concurrency-view", "resource-contention", "provided-interface", "required-interface", "port"]} />

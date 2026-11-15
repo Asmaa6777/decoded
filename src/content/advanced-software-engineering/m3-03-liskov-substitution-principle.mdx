@@ -226,6 +226,10 @@ The base contract, as callers understand it, is "after `applyBrakingForce(f)`, t
 Redesign: make the physical limit part of the contract. For example, the actuator publishes its capabilities (`maxSlewRateKnPerS()`), and `applyBrakingForce` returns or reports the force actually achieved, or a status when the request can't be met. Then the planner can plan with the real limit, and a request that can't be met is visible instead of silent.
 </ModelAnswer>
 
+<Callout tone="orange" label="Common mistake">
+"It compiles and never throws, so LSP holds." LSP is about behavior, not signatures. OccupancyGrid3D compiles, and the brake actuator in the dilemma never throws, yet both break their contract. And "is-a" in English is not proof you should use `extends`.
+</Callout>
+
 ## Key terms
 
 <KeyTerms ids={["lsp", "behavioral-contract", "precondition", "postcondition", "delegation", "composition", "aggregation"]} />

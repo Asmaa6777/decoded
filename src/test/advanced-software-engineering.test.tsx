@@ -67,6 +67,7 @@ describe("Advanced Software Engineering course", () => {
       if (file.includes("practice")) continue;
       expect(src, file).toMatch(/<Term id=/);
       expect(src, file).toContain("<KeyTerms");
+      expect(src, file).toContain('label="Common mistake"');
     }
   });
 

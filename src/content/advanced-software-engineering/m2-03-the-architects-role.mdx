@@ -109,6 +109,10 @@ An architect who stops coding becomes an "ivory tower" architect. The lecture gi
 3. **Technical debt stories.** Take low-priority technical-debt or infrastructure tasks that won't stall the team if they slip.
 4. **Developer tooling and automation.** Build command-line utilities, custom linters, code generators and automated fitness functions that help the team.
 
+<Callout tone="orange" label="Common mistake">
+Mixing up an architecture decision with a design principle. "The UI cannot query the database" is a decision: breaking it is a violation. "Prefer asynchronous messaging" is a principle: you may deviate with a good reason. And documenting *how* without *why* breaks the Second Law.
+</Callout>
+
 ## Key terms
 
 <KeyTerms ids={["architecture-characteristics", "fitness-function", "elastic-scale", "technical-depth", "technical-breadth", "unknown-unknowns", "trade-off", "adr", "poc", "critical-path"]} />

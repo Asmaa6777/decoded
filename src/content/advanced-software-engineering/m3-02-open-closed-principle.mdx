@@ -190,6 +190,10 @@ This is the <Term id="strategy-pattern">Strategy pattern</Term>: the service *de
 OCP depends on the [Single Responsibility Principle](/courses/advanced-software-engineering/design-principles-and-srp) (first separate what varies) and works best together with [Dependency Inversion](/courses/advanced-software-engineering/dependency-inversion-principle) (the manager depends on an abstraction, not on concrete features).
 </Callout>
 
+<Callout tone="orange" label="Common mistake">
+Thinking OCP means you may never edit any file. Registering a new feature still edits the composition root; the goal is to keep the edits at the edges, away from verified code. A related trap is adding abstractions for changes nobody has asked for; the lecture's abstractions all wrap something that actually varies (features, routing modes).
+</Callout>
+
 ## Key terms
 
 <KeyTerms ids={["ocp", "abstraction", "polymorphism", "composition-root", "strategy-pattern", "template-method"]} />
