@@ -61,6 +61,6 @@ export const trackGroups: TrackGroup[] = [
     title: "Algorithms & maths",
     courses: ["algorithm-design-and-analysis", "data-structures", "computational-mathematics", "advanced-algorithms"],
   },
-  { slug: "systems", title: "Systems", courses: ["operating-systems", "computer-networks", "distributed-systems"] },
+  { slug: "systems", title: "Systems", courses: ["operating-systems", "computer-networks", "distributed-systems", "advanced-software-engineering"] },
   { slug: "theory", title: "Theory & graphics", courses: ["theory-of-computation", "computer-graphics"] },
 ];

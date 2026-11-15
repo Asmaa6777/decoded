@@ -234,3 +234,12 @@ Audited every `<Term>` and `<KeyTerms>` with a script: glossary entries never hi
 - The course test now enforces: one highlight per term per lesson, every key term highlighted in its lesson, and every glossary entry used somewhere. 153 highlights in total.
 
 **Not checked:** dark theme and keyboard use of the popups (round 6).
+
+### Merge with main (between rounds 5 and 6)
+
+Merged `main` (481 new commits) into the branch, then into `main`. The merge had no text conflicts, but `main` had added three rules the course had to follow:
+- **Question bank:** scored quizzes now read from `src/content/advanced-software-engineering/questions.ts` (48 questions, ids `advanced-software-engineering/lecture-N-practice/qK`). The system and diagram questions stay inline as `<Quiz practice>`, which the bank rule allows.
+- **Track groups:** the course is in the "Systems" group on the home page.
+- **Moved components:** `FocusPanel` now comes from `vizKit.tsx` and `Diagram` from `Diagram.tsx`.
+
+Lint, the full test suite and the build pass after the merge.

@@ -1,4 +1,6 @@
 import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/advanced-software-engineering/questions";
 import { BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
 
 # Lecture 4 Practice
@@ -12,128 +14,7 @@ This course has no past exams. These questions were written for this course from
 <Quiz
   courseSlug="advanced-software-engineering"
   lessonSlug="lecture-4-practice"
-  questions={[
-    {
-      id: "q1",
-      prompt: "What is the difference between a structure and a view?",
-      options: [
-        { id: "a", text: "They are the same thing" },
-        { id: "b", text: "A structure is the set of elements itself; a view is a representation of one or more structures" },
-        { id: "c", text: "A view is the code; a structure is the diagram" },
-        { id: "d", text: "Structures are runtime; views are static" },
-      ],
-      correctOptionId: "b",
-      explanation: "Structure = the territory; view = a map of it. Option (c) gets it backwards.",
-    },
-    {
-      id: "q2",
-      prompt: "Why can't a single view represent an architecture?",
-      options: [
-        { id: "a", text: "Diagrams can't be large enough" },
-        { id: "b", text: "Architecture is a set of structures, and different views expose different qualities and relations" },
-        { id: "c", text: "UML forbids it" },
-        { id: "d", text: "It can, if it's detailed enough" },
-      ],
-      correctOptionId: "b",
-      explanation: "The definition says 'set of structures'. A module view shows modifiability but not runtime performance; a deployment view the reverse.",
-    },
-    {
-      id: "q3",
-      prompt: "A config file and a parser grammar file are…",
-      options: [
-        { id: "a", text: "components" },
-        { id: "b", text: "connectors" },
-        { id: "c", text: "implementation artifacts, belonging to the module (static) world" },
-        { id: "d", text: "environmental elements" },
-      ],
-      correctOptionId: "c",
-      explanation: "They exist at build time, not as running entities. Modules are units of implementation.",
-    },
-    {
-      id: "q4",
-      prompt: "'Every module becomes exactly one component at runtime.' Is this true?",
-      options: [
-        { id: "a", text: "Yes, always" },
-        { id: "b", text: "No: one module can become many components, and many modules can become one component" },
-        { id: "c", text: "Only in client-server systems" },
-        { id: "d", text: "Only for executables" },
-      ],
-      correctOptionId: "b",
-      explanation: "The lecture answers 'No!': one Client module may run as ten client processes; many packages may compile into one running program.",
-    },
-    {
-      id: "q5",
-      prompt: "Which two constraints does the decomposition style impose?",
-      options: [
-        { id: "a", text: "No loops; each module has exactly one parent" },
-        { id: "b", text: "Every module uses every other; no parents" },
-        { id: "c", text: "Modules must be classes; at most two children" },
-        { id: "d", text: "Loops allowed; multiple parents allowed" },
-      ],
-      correctOptionId: "a",
-      explanation: "Those two constraints make every decomposition a tree, with is-part-of as its relation.",
-    },
-    {
-      id: "q6",
-      prompt: "Module A uses module B when…",
-      options: [
-        { id: "a", text: "A is inside B" },
-        { id: "b", text: "A's correctness depends on B's correctness" },
-        { id: "c", text: "A inherits from B" },
-        { id: "d", text: "A and B run on the same machine" },
-      ],
-      correctOptionId: "b",
-      explanation: "That's the lecture's definition of 'uses'. Inside = decomposition; inherits = generalization; same machine = deployment.",
-    },
-    {
-      id: "q7",
-      prompt: "Which view is the best tool for planning incremental development?",
-      options: [
-        { id: "a", text: "Uses view" },
-        { id: "b", text: "Deployment view" },
-        { id: "c", text: "Install view" },
-        { id: "d", text: "Concurrency view" },
-      ],
-      correctOptionId: "a",
-      explanation: "The uses graph shows what must work before what, so it tells you the build order and which subsets can be delivered.",
-    },
-    {
-      id: "q8",
-      prompt: "A team wants to know which parts of a system can run in parallel and where they compete for a shared lock. Which view?",
-      options: [
-        { id: "a", text: "Decomposition view" },
-        { id: "b", text: "Concurrency view (a C&C view)" },
-        { id: "c", text: "Work assignment view" },
-        { id: "d", text: "Data model view" },
-      ],
-      correctOptionId: "b",
-      explanation: "The concurrency view exists to find parallelism and resource contention. It's a runtime question, so it's a C&C view.",
-    },
-    {
-      id: "q9",
-      prompt: "In UML component notation, a lollipop (line ending in a circle) is…",
-      options: [
-        { id: "a", text: "a required interface" },
-        { id: "b", text: "a provided interface" },
-        { id: "c", text: "a port" },
-        { id: "d", text: "a connector" },
-      ],
-      correctOptionId: "b",
-      explanation: "Lollipop = provided; socket (half-circle) = required; port = the small square on the component's edge.",
-    },
-    {
-      id: "q10",
-      prompt: "The work assignment style maps…",
-      options: [
-        { id: "a", text: "components to hardware" },
-        { id: "b", text: "components to files and folders" },
-        { id: "c", text: "modules to teams and people" },
-        { id: "d", text: "modules to processes" },
-      ],
-      correctOptionId: "c",
-      explanation: "Deployment = components→hardware; install = components→files; work assignment = modules→teams, because teams write code.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "lecture-4-practice")}
 />
 
 ## System and diagram questions

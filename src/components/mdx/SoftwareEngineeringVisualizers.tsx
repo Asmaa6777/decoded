@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
-import { FocusPanel } from "@/components/mdx/AlgoVisualizers";
+import { FocusPanel } from "@/components/mdx/vizKit";
 import { glossary } from "@/content/advanced-software-engineering/glossary";
 import {
   accumulate,

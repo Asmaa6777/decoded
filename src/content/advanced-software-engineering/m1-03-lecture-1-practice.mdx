@@ -1,4 +1,6 @@
 import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/advanced-software-engineering/questions";
 import { BoxDiagram, SequenceDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
 
 # Lecture 1 Practice
@@ -12,104 +14,7 @@ This course has no past exams. These questions were written for this course from
 <Quiz
   courseSlug="advanced-software-engineering"
   lessonSlug="lecture-1-practice"
-  questions={[
-    {
-      id: "q1",
-      prompt: "The course's core paradigm says architecture is…",
-      options: [
-        { id: "a", text: "the high-level diagrams drawn before any code is written" },
-        { id: "b", text: "the decisions that are hard to change later" },
-        { id: "c", text: "the choice of programming language and framework" },
-        { id: "d", text: "whatever the most senior engineer decides" },
-      ],
-      correctOptionId: "b",
-      explanation: "Architecture is defined by cost of change, not by level or by who decides. A language choice can be architectural (it's hard to change), but it's an example, not the definition. Diagrams are only a picture of the decisions.",
-    },
-    {
-      id: "q2",
-      prompt: "An AI agent marks a coding task 'done' as soon as the project compiles, but a logic bug remains. Which failure from the case study is this?",
-      options: [
-        { id: "a", text: "Context rot" },
-        { id: "b", text: "Overwhelmed execution" },
-        { id: "c", text: "Premature victory" },
-        { id: "d", text: "The scaling myth" },
-      ],
-      correctOptionId: "c",
-      explanation: "Premature victory is declaring success on a weak signal like compilation. Context rot is losing earlier constraints as the context fills; overwhelmed execution is wasting tokens on too many tools and details; the scaling myth is a belief about models, not an agent failure.",
-    },
-    {
-      id: "q3",
-      prompt: "Which harness mechanism most directly prevents premature victory?",
-      options: [
-        { id: "a", text: "Hard verification gates: automated tests and exit codes decide completion" },
-        { id: "b", text: "Progressive tooling: load tool schemas only when needed" },
-        { id: "c", text: "A larger context window" },
-        { id: "d", text: "Writing feature_list.json" },
-      ],
-      correctOptionId: "a",
-      explanation: "If only a passing test suite can mark work complete, the model can't declare victory on compilation alone. Progressive tooling fights overwhelmed execution; the task list organizes work but doesn't check it; a bigger window is the 'wait for GPT-N' answer.",
-    },
-    {
-      id: "q4",
-      prompt: "In the initializer/worker pattern, how do worker agents know what earlier workers did?",
-      options: [
-        { id: "a", text: "They share one long context window" },
-        { id: "b", text: "Through git commits and progress files such as NOTES.md" },
-        { id: "c", text: "The initializer agent tells each worker over a chat channel" },
-        { id: "d", text: "They don't; each worker redoes the whole task" },
-      ],
-      correctOptionId: "b",
-      explanation: "Each worker starts with a fresh, clean context. State lives outside the model, in commits and notes, which is what keeps context rot away.",
-    },
-    {
-      id: "q5",
-      prompt: "Which statement is NOT a lesson of the harness case study?",
-      options: [
-        { id: "a", text: "An LLM is the engine; the harness is the vehicle" },
-        { id: "b", text: "Automated quality gates are still essential" },
-        { id: "c", text: "Bigger models make software architecture unnecessary" },
-        { id: "d", text: "Classical system design turns non-deterministic output into reliable software" },
-      ],
-      correctOptionId: "c",
-      explanation: "That's the scaling myth the lecture rejects. The other three are the lecture's own conclusions.",
-    },
-    {
-      id: "q6",
-      prompt: "In a PID controller, which term grows while a small error persists over time?",
-      options: [
-        { id: "a", text: "P, proportional" },
-        { id: "b", text: "I, integral" },
-        { id: "c", text: "D, derivative" },
-        { id: "d", text: "None; all three react only to the current error" },
-      ],
-      correctOptionId: "b",
-      explanation: "The integral term adds up past errors (the 'past' voice). P reacts to the error now; D reacts to how fast the error changes, acting as brakes.",
-    },
-    {
-      id: "q7",
-      prompt: "Why did the AI-written unit tests pass even though the controller lost altitude?",
-      options: [
-        { id: "a", text: "The tests were written in a different language" },
-        { id: "b", text: "Python can't represent 0.0000001" },
-        { id: "c", text: "The tests came from the same model and didn't exercise long runs where the integral sum grows huge" },
-        { id: "d", text: "The hardware-in-the-loop simulator was misconfigured" },
-      ],
-      correctOptionId: "c",
-      explanation: "The bug only appears when the sum is very large, after hours. Short tests written by the same model shared its blind spot. 0.0000001 is representable on its own; it's the addition to a huge float32 that loses it.",
-    },
-    {
-      id: "q8",
-      prompt: "The import yaml_config_parser was a real but malicious package. Which control would most directly have stopped it?",
-      options: [
-        { id: "a", text: "Using 64-bit floats" },
-        { id: "b", text: "A dependency allow-list / checking every new package before installing it" },
-        { id: "c", text: "A longer simulation run" },
-        { id: "d", text: "Adding a derivative term" },
-      ],
-      correctOptionId: "b",
-      explanation: "This is a supply chain attack via typosquatting. Only checking dependencies stops it. The other options address the numeric bug, a separate failure.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "lecture-1-practice")}
 />
 
 ## System and diagram questions

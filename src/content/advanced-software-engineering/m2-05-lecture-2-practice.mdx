@@ -1,4 +1,6 @@
 import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/advanced-software-engineering/questions";
 import { BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
 
 # Lecture 2 Practice
@@ -12,128 +14,7 @@ This course has no past exams. These questions were written for this course from
 <Quiz
   courseSlug="advanced-software-engineering"
   lessonSlug="lecture-2-practice"
-  questions={[
-    {
-      id: "q1",
-      prompt: "A billing system copies the same discount rule into five modules, so every rule change needs five edits. What kind of complexity is this?",
-      options: [
-        { id: "a", text: "Essential complexity" },
-        { id: "b", text: "Accidental complexity" },
-        { id: "c", text: "Conformity" },
-        { id: "d", text: "Invisibility" },
-      ],
-      correctOptionId: "b",
-      explanation: "The rule itself may be essential, but copying it five times is self-inflicted: accidental complexity, which good engineering removes. Conformity and invisibility are Brooks' properties of software in general.",
-    },
-    {
-      id: "q2",
-      prompt: "Which of Brooks' properties explains why software is under constant pressure to change, unlike a building?",
-      options: [
-        { id: "a", text: "Complexity" },
-        { id: "b", text: "Conformity" },
-        { id: "c", text: "Changeability" },
-        { id: "d", text: "Invisibility" },
-      ],
-      correctOptionId: "c",
-      explanation: "Because code is perceived as malleable, everyone expects it to change. Conformity is about having to fit arbitrary human interfaces and rules.",
-    },
-    {
-      id: "q3",
-      prompt: "According to the lecture's definition, which detail belongs in the architecture rather than only in the design?",
-      options: [
-        { id: "a", text: "The name of a loop counter variable" },
-        { id: "b", text: "A rule that the UI layer may never import the database package" },
-        { id: "c", text: "Whether a method uses a for-loop or a stream" },
-        { id: "d", text: "The indentation style" },
-      ],
-      correctOptionId: "b",
-      explanation: "You need the import rule to reason about the system's qualities (modifiability, layering). The others are needed to build the code but not to reason about failures or qualities, so they're design details. Note the rule is small but still architectural.",
-    },
-    {
-      id: "q4",
-      prompt: "In a healthy system, the cost of a change should depend on…",
-      options: [
-        { id: "a", text: "its scope only" },
-        { id: "b", text: "its shape only" },
-        { id: "c", text: "both scope and shape equally" },
-        { id: "d", text: "how urgent it is" },
-      ],
-      correctOptionId: "a",
-      explanation: "The cost-friction principle: cost proportional only to scope (logical size), never to shape (how it fits the structure). When shape drives cost, the architecture is decaying.",
-    },
-    {
-      id: "q5",
-      prompt: "Program A works perfectly but is rigid and tightly coupled. Program B has bugs but is modular. According to the lecture, which survives longer and why?",
-      options: [
-        { id: "a", text: "A, because working software earns revenue" },
-        { id: "b", text: "B, because fixing it is cheap, while A freezes when requirements change" },
-        { id: "c", text: "Both equally; behavior and structure are worth the same" },
-        { id: "d", text: "Neither; both must be rewritten" },
-      ],
-      correctOptionId: "b",
-      explanation: "Case A succeeds now but dies when requirements shift (refactoring cost → infinity). Case B is 'immortal': its defects are cheap to fix. Structure is the greater value.",
-    },
-    {
-      id: "q6",
-      prompt: "In the Eisenhower matrix, where does architecture belong, and what is the failure mode?",
-      options: [
-        { id: "a", text: "Quadrant 1; ignoring production bugs" },
-        { id: "b", text: "Quadrant 2; letting urgent-but-trivial features (Q3) win over it" },
-        { id: "c", text: "Quadrant 3; spending too long on it" },
-        { id: "d", text: "Quadrant 4; it's a nice-to-have" },
-      ],
-      correctOptionId: "b",
-      explanation: "Architecture is important but not urgent (Q2). Elevating Q3 features above it is what the lecture says destroys companies.",
-    },
-    {
-      id: "q7",
-      prompt: "'Prefer asynchronous messaging' belongs to which dimension of the 4D model?",
-      options: [
-        { id: "a", text: "Structure" },
-        { id: "b", text: "Architecture characteristics" },
-        { id: "c", text: "Architecture decisions" },
-        { id: "d", text: "Design principles" },
-      ],
-      correctOptionId: "d",
-      explanation: "'Prefer' signals a directional guideline: a design principle. A hard constraint like 'the UI cannot query the DB' would be an architecture decision.",
-    },
-    {
-      id: "q8",
-      prompt: "A new architect can read the diagrams of a system but can't tell why it uses an event store instead of a relational database. Which law is being violated by the original team?",
-      options: [
-        { id: "a", text: "First Law: everything is a trade-off" },
-        { id: "b", text: "Second Law: why is more important than how" },
-        { id: "c", text: "Cost-friction principle" },
-        { id: "d", text: "Brooks' changeability property" },
-      ],
-      correctOptionId: "b",
-      explanation: "The team recorded how but not why. ADRs would preserve the reasoning, so future teams don't dismantle the design's strengths.",
-    },
-    {
-      id: "q9",
-      prompt: "Which is NOT a good reason to use machine learning?",
-      options: [
-        { id: "a", text: "The rules change constantly, so hand-written code rots" },
-        { id: "b", text: "The problem operates at massive scale" },
-        { id: "c", text: "The law requires a full trace of the exact logic behind every decision" },
-        { id: "d", text: "Humans can't write the if-statements for the mapping" },
-      ],
-      correctOptionId: "c",
-      explanation: "Mandatory full interpretability is a reason NOT to use ML. The other three are the lecture's reasons for using it.",
-    },
-    {
-      id: "q10",
-      prompt: "How do ML systems typically fail, compared with traditional software?",
-      options: [
-        { id: "a", text: "Loudly, with stack traces" },
-        { id: "b", text: "Silently: valid-looking outputs that are wrong or biased" },
-        { id: "c", text: "Only when their dependencies change" },
-        { id: "d", text: "They don't fail once trained" },
-      ],
-      correctOptionId: "b",
-      explanation: "Silent failures are the defining ML risk; traditional software tends to fail loudly. ML also decays as data drifts, not only when dependencies change.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "lecture-2-practice")}
 />
 
 ## System and diagram questions

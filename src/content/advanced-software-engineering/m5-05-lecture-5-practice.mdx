@@ -1,4 +1,6 @@
 import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/advanced-software-engineering/questions";
 import { BoxDiagram, SequenceDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
 
 # Lecture 5 Practice
@@ -12,128 +14,7 @@ This course has no past exams. These questions were written for this course from
 <Quiz
   courseSlug="advanced-software-engineering"
   lessonSlug="lecture-5-practice"
-  questions={[
-    {
-      id: "q1",
-      prompt: "Which three things does every architectural style define?",
-      options: [
-        { id: "a", text: "A vocabulary of design elements, configuration (topological) rules, and a semantic interpretation" },
-        { id: "b", text: "A language, a framework and a database" },
-        { id: "c", text: "Requirements, design and validation" },
-        { id: "d", text: "Modules, components and allocations" },
-      ],
-      correctOptionId: "a",
-      explanation: "Those are the 'basic properties of styles'. (c) is the architecture process; (d) the three kinds of structures.",
-    },
-    {
-      id: "q2",
-      prompt: "Architecturally significant requirements are essentially…",
-      options: [
-        { id: "a", text: "the list of screens" },
-        { id: "b", text: "the quality and non-functional requirements" },
-        { id: "c", text: "the project budget" },
-        { id: "d", text: "the database schema" },
-      ],
-      correctOptionId: "b",
-      explanation: "Step 1 of the process: they come from functional and stakeholder requirements, and they are the qualities (performance, availability…) that drive the design.",
-    },
-    {
-      id: "q3",
-      prompt: "In Step 2, what is the difference between 2a and 2b?",
-      options: [
-        { id: "a", text: "2a chooses the overall framework from known styles; 2b specifies the components and gives them responsibilities" },
-        { id: "b", text: "2a writes code; 2b tests it" },
-        { id: "c", text: "2a validates; 2b gathers requirements" },
-        { id: "d", text: "There is no difference" },
-      ],
-      correctOptionId: "a",
-      explanation: "Choose the architecture framework, then allocate components. Outputs: architecture views and the architecture document.",
-    },
-    {
-      id: "q4",
-      prompt: "Why does the architecture process loop back from validation?",
-      options: [
-        { id: "a", text: "Because it is iterative: validation can reveal problems in the design or requirements" },
-        { id: "b", text: "Because validation always fails the first time" },
-        { id: "c", text: "To add more features" },
-        { id: "d", text: "It doesn't loop" },
-      ],
-      correctOptionId: "a",
-      explanation: "The lecture's outline marks the process as iterative, with feedback from validation to design and requirements.",
-    },
-    {
-      id: "q5",
-      prompt: "In n-tier client-server, how can availability be improved?",
-      options: [
-        { id: "a", text: "Put all tiers on one machine" },
-        { id: "b", text: "Replicate the servers in each tier" },
-        { id: "c", text: "Remove the business logic tier" },
-        { id: "d", text: "Use a thicker client" },
-      ],
-      correctOptionId: "b",
-      explanation: "The lecture: 'servers in each tier could be replicated.' One machine creates a single point of failure.",
-    },
-    {
-      id: "q6",
-      prompt: "Which is the defining property of peer-to-peer?",
-      options: [
-        { id: "a", text: "A central server answers all requests" },
-        { id: "b", text: "All processes play similar roles, acting as both client and server" },
-        { id: "c", text: "Data flows through a chain of filters" },
-        { id: "d", text: "Messages wait in a queue" },
-      ],
-      correctOptionId: "b",
-      explanation: "Peers cooperate without a client/server distinction. Napster's central index server is a hybrid.",
-    },
-    {
-      id: "q7",
-      prompt: "What is the style invariant of pipe-and-filter?",
-      options: [
-        { id: "a", text: "Filters share a common database" },
-        { id: "b", text: "Filters are independent: no shared state" },
-        { id: "c", text: "Each filter must finish before the next starts" },
-        { id: "d", text: "There must be exactly three filters" },
-      ],
-      correctOptionId: "b",
-      explanation: "Independence is what makes filters reusable and reorderable. (c) is false: filters can run concurrently.",
-    },
-    {
-      id: "q8",
-      prompt: "After a client writes a message to a queue in the messaging style, it…",
-      options: [
-        { id: "a", text: "waits for the server's reply" },
-        { id: "b", text: "continues without waiting for the message to be removed" },
-        { id: "c", text: "deletes the message" },
-        { id: "d", text: "blocks the queue" },
-      ],
-      correctOptionId: "b",
-      explanation: "That is asynchronous communication, the key property of messaging.",
-    },
-    {
-      id: "q9",
-      prompt: "A browser runs your handler automatically when a button is clicked, though your code never called it. Which style?",
-      options: [
-        { id: "a", text: "Client-server" },
-        { id: "b", text: "Implicit invocation" },
-        { id: "c", text: "Pipe-and-filter" },
-        { id: "d", text: "Microservices" },
-      ],
-      correctOptionId: "b",
-      explanation: "addEventListener registers interest; the event triggers the procedure: implicit invocation (the infographic's DOM example).",
-    },
-    {
-      id: "q10",
-      prompt: "Which is NOT a typical drawback of microservices?",
-      options: [
-        { id: "a", text: "Distributed-system complexity" },
-        { id: "b", text: "Hard data consistency" },
-        { id: "c", text: "High DevOps and monitoring effort" },
-        { id: "d", text: "Services can't be deployed independently" },
-      ],
-      correctOptionId: "d",
-      explanation: "Independent deployment is microservices' main advantage, not a drawback.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "lecture-5-practice")}
 />
 
 ## System and diagram questions

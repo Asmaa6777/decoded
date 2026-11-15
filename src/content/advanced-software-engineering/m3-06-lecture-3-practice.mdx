@@ -1,4 +1,6 @@
 import { Callout, Quiz } from "@/components/mdx/MdxComponents";
+import { questionsForQuiz } from "@/lib/questions";
+import { questions } from "@/content/advanced-software-engineering/questions";
 import { BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
 
 # Lecture 3 Practice
@@ -12,128 +14,7 @@ This course has no past exams. These questions were written for this course from
 <Quiz
   courseSlug="advanced-software-engineering"
   lessonSlug="lecture-3-practice"
-  questions={[
-    {
-      id: "q1",
-      prompt: "A class is changed by the perception team, the diagnostics team and the HMI team. What does SRP say?",
-      options: [
-        { id: "a", text: "It's fine as long as the class is small" },
-        { id: "b", text: "It has three responsibilities, because three actors can ask for changes" },
-        { id: "c", text: "It violates OCP, not SRP" },
-        { id: "d", text: "It should be made abstract" },
-      ],
-      correctOptionId: "b",
-      explanation: "Responsibility = reason to change = actor. Three actors means three responsibilities, however small the class is.",
-    },
-    {
-      id: "q2",
-      prompt: "Applying the 'itself' test, which method should move OUT of FrontCamera?",
-      options: [
-        { id: "a", text: "captureFrame()" },
-        { id: "b", text: "adjustExposure()" },
-        { id: "c", text: "runSelfTest()" },
-        { id: "d", text: "renderOnHud(frame)" },
-      ],
-      correctOptionId: "d",
-      explanation: "'The FrontCamera renders on the HUD itself' sounds wrong: HUD drawing is HMI work and moves to HudRenderer. The other three are the camera's own hardware functions.",
-    },
-    {
-      id: "q3",
-      prompt: "MediaLibrary.search() reads artist, genre, source and year from other objects to decide matches. Which smell is this, and where should the logic go?",
-      options: [
-        { id: "a", text: "God class; into a new SearchManager" },
-        { id: "b", text: "Feature envy; into TrackFilter.matches(), the class that owns the criteria" },
-        { id: "c", text: "Fat interface; split TrackMetadata" },
-        { id: "d", text: "No smell; the loop is fine" },
-      ],
-      correctOptionId: "b",
-      explanation: "Using another object's data more than your own is feature envy. Information Expert says the class with the information (TrackFilter) should make the decision.",
-    },
-    {
-      id: "q4",
-      prompt: "After the OCP refactoring, adding Blind Spot Detection requires…",
-      options: [
-        { id: "a", text: "a new case in AdasFeatureManager's switch" },
-        { id: "b", text: "one new class implementing AdasFunction, registered at the composition root" },
-        { id: "c", text: "editing every existing feature class" },
-        { id: "d", text: "no code at all" },
-      ],
-      correctOptionId: "b",
-      explanation: "New behavior = new code. The manager stays untouched; only the composition root changes, which is why OCP is 'never 100% absolute'.",
-    },
-    {
-      id: "q5",
-      prompt: "The driver switches navigation from Fastest to Eco while driving. Which approach to OCP fits best?",
-      options: [
-        { id: "a", text: "Inheritance: a new NavigationService subclass per mode" },
-        { id: "b", text: "Delegation with the Strategy pattern: swap the RoutingStrategy object at runtime" },
-        { id: "c", text: "A switch statement on a mode string" },
-        { id: "d", text: "Template Method" },
-      ],
-      correctOptionId: "b",
-      explanation: "Runtime swapping is delegation's strength (binding time: runtime). Inheritance binds at build/config time; a switch violates OCP.",
-    },
-    {
-      id: "q6",
-      prompt: "OccupancyGrid3D extends OccupancyGrid compiles and passes unit tests. Why does it still violate LSP?",
-      options: [
-        { id: "a", text: "Java doesn't allow overloading" },
-        { id: "b", text: "The inherited isFree(x, y) has no clear meaning in 3D, so code written for the base type gets wrong answers" },
-        { id: "c", text: "3D grids use more memory" },
-        { id: "d", text: "It should be an interface instead of a class" },
-      ],
-      correctOptionId: "b",
-      explanation: "LSP is about behavior, not signatures. The subtype weakens the base contract: callers can't know which layer is checked, causing missed barriers or phantom braking.",
-    },
-    {
-      id: "q7",
-      prompt: "Which change to a subtype breaks LSP's contract rule?",
-      options: [
-        { id: "a", text: "Accepting a wider range of inputs than the base type" },
-        { id: "b", text: "Guaranteeing more precise results than the base type" },
-        { id: "c", text: "Requiring callers to pass an extra condition the base type didn't need" },
-        { id: "d", text: "Adding a new method" },
-      ],
-      correctOptionId: "c",
-      explanation: "That strengthens a precondition, which is forbidden. Weakening preconditions (a) and strengthening postconditions (b) are allowed.",
-    },
-    {
-      id: "q8",
-      prompt: "AutomatedDrivingStack returns false from areHandsOnWheel() because the interface forces it to. Which principle is violated?",
-      options: [
-        { id: "a", text: "SRP" },
-        { id: "b", text: "OCP" },
-        { id: "c", text: "ISP" },
-        { id: "d", text: "DIP" },
-      ],
-      correctOptionId: "c",
-      explanation: "A fat interface forces implementers to fake methods they don't support. Splitting it into client-specific interfaces (AttentionMonitorable, etc.) removes the dummy.",
-    },
-    {
-      id: "q9",
-      prompt: "In the DIP fix, which package should contain the ObjectSensor interface?",
-      options: [
-        { id: "a", text: "sensors.suppliera, next to the radar driver" },
-        { id: "b", text: "adas.fusion, the high-level policy package" },
-        { id: "c", text: "test.sil" },
-        { id: "d", text: "A shared utils package" },
-      ],
-      correctOptionId: "b",
-      explanation: "The high-level module owns the abstraction, written in its own terms. That's what makes the source dependency point from details toward policy (the 'inversion').",
-    },
-    {
-      id: "q10",
-      prompt: "Which statement about Dependency Inversion and Dependency Injection is correct?",
-      options: [
-        { id: "a", text: "They are two names for the same thing" },
-        { id: "b", text: "Inversion is the principle (depend on abstractions); injection is a wiring technique" },
-        { id: "c", text: "Injection is the principle; inversion is the technique" },
-        { id: "d", text: "Using injection automatically satisfies DIP" },
-      ],
-      correctOptionId: "b",
-      explanation: "The lecture's 'crucial distinction'. You can inject a concrete supplier driver and still violate DIP, so (d) is false.",
-    },
-  ]}
+  questions={questionsForQuiz(questions, "lecture-3-practice")}
 />
 
 ## System and diagram questions
