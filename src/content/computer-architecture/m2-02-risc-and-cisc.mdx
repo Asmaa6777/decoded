@@ -33,7 +33,7 @@ RISC is a design approach built around six technical principles:
 
 1. **Load-store architecture**: Arithmetic and logical instructions operate exclusively on internal processor registers (`ADD R1, R2, R3`). Only two dedicated operations access system memory: `LOAD` to read from RAM into a register, and `STORE` to write from a register into RAM.
 2. **Fixed instruction length**: Every instruction uses identical bit width, typically 32 bits. Instruction fields such as register addresses sit at fixed bit locations, allowing the processor to fetch operands from the register file before opcode decoding finishes.
-3. **Single-cycle execution**: By breaking complex operations into primitive steps, each instruction can advance through one stage of an execution pipeline per clock cycle.
+3. **Single-cycle throughput**: By breaking complex operations into primitive steps, each instruction can advance through one stage of an execution pipeline per clock cycle. While each instruction takes several cycles of pipeline latency to complete, the processor retires one instruction every clock cycle under ideal conditions ($\text{CPI} \approx 1.0$).
 4. **Hardwired control**: Instead of reading multi-step microcode from internal ROM, RISC processors generate control signals directly from combinational [logic gates](/courses/logic-design/logic-gates), cutting execution latency.
 5. **Large general-purpose register file**: RISC processors provide 32 or more general-purpose registers. Holding variables in high-speed registers avoids frequent trips across the slow memory bus.
 6. **Optimizing compilers**: Responsibility for efficiency shifts to the compiler, which schedules instructions to keep pipeline stages occupied and allocates registers to eliminate redundant memory traffic.
@@ -60,16 +60,16 @@ To eliminate this memory bus traffic, the Berkeley RISC and SPARC architectures 
 A SPARC processor might contain 128 physical hardware registers, but a program sees only 32 logical registers at any moment, designated $R_0$ through $R_{31}$. An internal hardware register called the **Current Window Pointer** ($CWP$) indicates the active window. These 32 registers are partitioned into four groups of 8:
 
 - **Global registers** ($R_0 - R_7$): Shared by all procedures across the entire system.
-- **In registers** ($R_8 - R_{15}$): Hold input arguments passed from the caller.
+- **Out registers** ($R_8 - R_{15}$): Hold arguments to pass when calling the next procedure.
 - **Local registers** ($R_{16} - R_{23}$): Hold local variables private to the current procedure.
-- **Out registers** ($R_{24} - R_{31}$): Hold arguments to pass when calling the next procedure.
+- **In registers** ($R_{24} - R_{31}$): Hold input arguments received from the caller.
 
-When procedure $A$ calls procedure $B$, the processor shifts its active register pointer by 16 registers ($CWP \leftarrow CWP + 1$). The `Out` registers of procedure $A$ become the `In` registers of procedure $B$. Parameters are passed between functions instantly without writing a single byte to memory, because both procedures reference the exact same physical storage cells.
+When procedure $A$ calls procedure $B$, executing a `SAVE` instruction advances the window pointer (in SPARC, decrementing $CWP$ in circular modulo arithmetic, $CWP \leftarrow (CWP - 1) \bmod W$, matching downward stack growth; returning via `RESTORE` increments $CWP$). The active window slides by 16 physical registers: the `Out` registers of procedure $A$ ($R_8 - R_{15}$) directly become the `In` registers of procedure $B$ ($R_{24} - R_{31}$). Parameters are passed between functions without writing a single byte to memory, because both procedures reference the exact same physical storage cells.
 
 When nested function calls exceed the capacity of the physical register file, the processor triggers a **window overflow trap**, prompting the operating system to spill the oldest window frame to system RAM.
 
 <Callout tone="orange" label="Trap: Assuming register windows copy data across buses">
-When procedure $A$ passes arguments to procedure $B$, no data moves across an internal bus. The processor increments the Current Window Pointer ($CWP$). The physical storage cells that hold procedure $A$'s $R_{24}$ are the same ones procedure $B$ accesses as $R_8$.
+When procedure $A$ passes arguments to procedure $B$, no data moves across an internal bus. The processor updates the Current Window Pointer ($CWP$). The physical storage cells that hold procedure $A$'s $R_8$ are the exact same cells procedure $B$ accesses as $R_{24}$.
 </Callout>
 
 ## Modern convergence
@@ -119,10 +119,10 @@ MOV  [R3 + R1*4], EAX     ; Store result directly into Y[i]
 - Total instructions: 4.
 - Memory accesses: 3 (Read $X[i]$, Read $Z$, Write $Y[i]$).
 
-**2. RISC load-store architecture:**
+**2. RISC load-store architecture (using RISC-V style mnemonics where SLLI is Shift Left Logical Immediate):**
 ```asm
 ; All memory access strictly through explicit LOAD and STORE
-SLLI R4, R1, 2            ; R4 = i * 4 (byte offset)
+SLLI R4, R1, 2            ; R4 = i * 4 (shift left by 2 bits for byte offset)
 ADD  R5, R2, R4           ; R5 = address of X[i]
 LOAD R6, [R5]             ; R6 = X[i]
 SLLI R6, R6, 2            ; R6 = X[i] * 4
@@ -280,7 +280,7 @@ A 64 KB cache holds:
 The CISC cache holds 25% more instructions. If a program's hot inner loop contains 18,000 instructions, it fits entirely within the CISC L1 cache (zero cache misses), but exceeds the RISC cache capacity, triggering frequent L1 cache misses and memory stall penalties that can negate the RISC processor's lower average CPI.
 
 **Part 3: Compressed instruction sets:**
-Compressed ISAs (like ARM Thumb-2 and RISC-V "C") introduce 16-bit encodings for the most common instructions (loads, stores, branches, simple arithmetic). The compiler mixes 16-bit and 32-bit instructions seamlessly. A simple hardware expander in the fetch stage decompresses 16-bit instructions into standard 32-bit RISC operations before decoding, reducing binary size by 25% to 30% without sacrificing pipeline simplicity.
+Compressed ISAs (like ARM Thumb-2 and RISC-V "C") introduce 16-bit encodings for the most common instructions (loads, stores, branches, simple arithmetic). The compiler mixes 16-bit and 32-bit instructions in the same binary without manual mode switches. A simple hardware expander in the fetch stage decompresses 16-bit instructions into standard 32-bit RISC operations before decoding, reducing binary size by 25% to 30% without sacrificing pipeline simplicity.
 </ModelAnswer>
 
 <ModelAnswer title="Problem 6: CISC micro-operation decomposition">

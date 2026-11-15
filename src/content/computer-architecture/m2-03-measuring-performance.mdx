@@ -33,10 +33,10 @@ $$
 Each factor reflects a distinct layer of the computer system:
 
 1. **Instruction Count** ($IC$): The total number of machine instructions executed by the program. This is determined by the algorithm, the efficiency of the optimizing compiler, and the expressiveness of the [instruction set architecture](/courses/computer-architecture/instruction-formats).
-2. **Cycles Per Instruction** ($\text{CPI}$): The average number of clock cycles required to execute one instruction. This is determined by the processor microarchitecture (pipelining depth, branch prediction, superscalar issue width) and the latency of the memory hierarchy.
+2. **Cycles Per Instruction** ($\text{CPI}$): The average number of clock cycles required to execute one instruction. This is determined by the processor microarchitecture (pipelining depth, branch prediction, superscalar issue width) and the latency of the memory hierarchy. A **superscalar processor** contains multiple execution units, allowing it to issue and execute more than one instruction per clock cycle.
 3. **Clock Cycle Time** ($\tau$ or $1 / f_{\text{clk}}$): The duration of a single clock tick in seconds (or ticks per second in gigahertz). This is determined by hardware datapath design, critical path propagation delay through logic gates, and silicon fabrication technology.
 
-The inverse of CPI is **Instructions Per Cycle** ($\text{IPC} = 1 / \text{CPI}$). High-performance modern processors execute multiple instructions simultaneously, achieving an IPC greater than 1.0 (or a CPI well below 1.0).
+The inverse of CPI is **Instructions Per Cycle** ($\text{IPC} = 1 / \text{CPI}$). High-performance modern superscalar processors execute multiple instructions in parallel, achieving an IPC greater than 1.0 (or a CPI well below 1.0).
 
 ## The clock speed trap
 
@@ -82,7 +82,7 @@ $$
 \text{MIPS} = \frac{IC}{\text{CPU Time} \times 10^6} = \frac{f_{\text{clk}}}{\text{CPI} \times 10^6}
 $$
 
-Here is a comparison of two processors running at 200 MHz on an identical instruction mix:
+Here is a comparison of two processors running at 200 MHz on a program divided into four instruction classes: ALU operations (1 cycle), conditional branches (2 to 3 cycles), memory loads and stores (4 cycles), and floating-point operations (5 cycles). For Machine A, the instruction frequencies are 38%, 15%, 42%, and 5%. For Machine B, the frequencies are 35%, 30%, 15%, and 20%:
 
 <CpiCalculator />
 
@@ -325,7 +325,7 @@ A scientific simulation program spends 15% of its execution time in non-parallel
 **Solution:**
 
 **Part 1: Speedup across core counts:**
-Applying Amdahl's law with serial fraction $s = 0.15$ and parallel fraction $f = 0.85$:
+Applying Amdahl's law with serial fraction $f_{\text{serial}} = 0.15$ and parallel fraction $f_{\text{parallel}} = 0.85$:
 $$\text{Speedup}(P) = \frac{1}{0.15 + \dfrac{0.85}{P}}$$
 
 - For $P = 4$:
@@ -357,7 +357,7 @@ The cache memory hierarchy operates with the following specifications:
 - L1 data cache miss rate: 4%.
 - L1 miss penalty (time to service from L2 cache): 10 clock cycles.
 - L2 cache local miss rate: 20%.
-- L2 miss penalty (time to service from main memory DRAM): 100 clock cycles.
+- L2 miss penalty (additional time to service from main memory DRAM): 100 clock cycles (total 110 cycles when missing both caches).
 
 1. Calculate the memory stall cycles per instruction contributed by the cache hierarchy.
 2. Calculate the effective average CPI ($\text{CPI}_{\text{eff}} = \text{CPI}_{\text{base}} + \text{Memory Stalls}$).
@@ -368,7 +368,7 @@ The cache memory hierarchy operates with the following specifications:
 **Solution:**
 
 **Part 1: Memory stall cycles per instruction:**
-Memory accesses occur on 30% of instructions. When an access misses in L1 (4% of accesses), it incurs a 10-cycle penalty to check L2. Furthermore, 20% of those L1 misses also miss in L2, triggering the full 100-cycle DRAM access:
+Memory accesses occur on 30% of instructions. When an access misses in L1 (4% of accesses), it incurs a 10-cycle penalty to check L2. Furthermore, 20% of those L1 misses also miss in L2, incurring the 10-cycle L2 check plus 100 cycles to fetch the block from DRAM ($10 + 100 = 110$ cycles):
 $$\text{Stall cycles}_{\text{L1 miss, L2 hit}} = 0.04 \times (1 - 0.20) \times 10 = 0.032 \times 10 = 0.32\text{ cycles/access}$$
 $$\text{Stall cycles}_{\text{L2 miss}} = 0.04 \times 0.20 \times (10 + 100) = 0.008 \times 110 = 0.88\text{ cycles/access}$$
 $$\text{Total stalls per memory access} = 0.32 + 0.88 = 1.20\text{ cycles/access}$$

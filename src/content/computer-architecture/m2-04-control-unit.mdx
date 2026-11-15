@@ -41,17 +41,19 @@ Every instruction begins by fetching its binary representation from memory into 
 
 These operations cannot be merged into a single clock cycle. In $T_1$, the address from $PC$ must propagate across internal buses to $MAR$ and stabilize on the external address lines. In $T_2$, RAM requires access time to read the addressed storage cell and drive the data bus; simultaneously, a dedicated hardware incrementer updates the $PC$. In $T_3$, the stable data in $MBR$ is latched into $IR$ so opcode decoding can begin.
 
+Depending on whether a hardware step counter is 0-indexed or 1-indexed, textbooks write these steps as $T_0, T_1, T_2$ or $T_1, T_2, T_3$. The sequence of operations is identical: first address the memory, then read the word and increment $PC$, then load the instruction register.
+
 ### 2. The decode cycle
 
 During time step $T_3$, the instruction's opcode bits are decoded by hardware logic to identify the operation and addressing mode. If the instruction uses indirect addressing, an extra memory lookup occurs to resolve the [effective address](/courses/computer-architecture/instruction-formats#addressing-modes):
 
 - $T_3: MAR \leftarrow IR[\text{Address}]$
 - $T_4: MBR \leftarrow \text{Memory}[MAR]$
-- $T_4: IR[\text{Address}] \leftarrow MBR$
+- $T_5: IR[\text{Address}] \leftarrow MBR$
 
 ### 3. The execute cycle
 
-The execute cycle depends on the specific opcode. For an instruction that adds a memory operand to an accumulator (`ADD [X]`):
+The execute cycle depends on the specific opcode. For an instruction using direct addressing that adds a memory operand to an accumulator (`ADD [X]`), where the address is already in $IR[\text{Address}]$:
 
 - $T_4: MAR \leftarrow IR[\text{Address}]$ (Load target operand address into MAR)
 - $T_5: MBR \leftarrow \text{Memory}[MAR]$ (Read operand value from memory into MBR)
@@ -169,7 +171,7 @@ If a machine requires 2,048 microinstructions, but only 128 unique control signa
   - Nanostore: $128 \text{ words} \times 64 \text{ bits} = 8{,}192\text{ bits}$
   - Total bits: $14{,}336 + 8{,}192 = 22{,}528\text{ bits}$
 
-Nanoprogramming achieves an 82.8% reduction in control memory storage bits at the cost of one extra memory access cycle per microinstruction.
+Nanoprogramming achieves an 82.8% reduction in control memory storage bits at the cost of one extra memory access cycle per microinstruction. In practical control units, Level 1 microinstructions also store next-address sequencing bits for the microsequencer, which adds to the microstore width (worked out in detail in Problem 4).
 
 <Callout tone="orange" label="Trap: Confusing macro-instructions with microinstructions">
 A machine instruction (like `MOV EAX, [EBX]`) fetched from system RAM is a **macro-instruction**. A **microinstruction** is a primitive control word fetched from internal CPU control ROM. A single macro-instruction executes as a sequence of multiple microinstructions.

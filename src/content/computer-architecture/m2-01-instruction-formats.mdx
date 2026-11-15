@@ -39,7 +39,7 @@ Fewer addresses per instruction make each instruction shorter, but require more 
 1. **3-address machines**: Every instruction explicitly names two sources and a distinct destination. Source values remain intact.
 2. **2-address machines**: One address acts as both a source operand and the destination. The original value in the destination register is overwritten.
 3. **1-address machines (accumulator machines)**: The processor features a dedicated [accumulator](/courses/microprocessors/registers) register ($AC$). An **accumulator** is a working register that automatically supplies one input to the arithmetic logic unit and receives the output. All arithmetic operations implicitly read from and write to $AC$, so instructions only name a single memory operand.
-4. **0-address machines (stack machines)**: Operands sit on a Last-In, First-Out stack. The **Top of Stack** ($TOS$) is the memory location or register holding the most recently pushed value. Operations pop the top two entries, compute the result, and push it back. Only `PUSH` and `POP` name memory locations.
+4. **0-address machines (stack machines)**: Operands sit on a Last-In, First-Out stack. The **Top of Stack** ($TOS$) is the memory location or register holding the most recently pushed value. Operations pop the top two entries, compute the result, and push it back. For non-commutative operations like subtraction and division, the first operand pushed is the left operand: the processor pops operand 2 (the top of stack) into a temporary register, pops operand 1, and computes $\text{operand 1} - \text{operand 2}$ before pushing the result back. Only `PUSH` and `POP` name memory locations.
 
 In register transfer notation, the left arrow ($R1 \leftarrow A + B$) denotes copying the computed result on the right into the storage location on the left.
 
@@ -98,7 +98,7 @@ A 0-address or 1-address instruction takes fewer bits than a 3-address instructi
 
 ## Expanding opcodes
 
-Fixed-length instructions create a conflict between opcode count and operand count. If an instruction is fixed at 16 bits and memory addresses require 4 bits each, a 3-address instruction uses $4 + (3 \times 4) = 16$ bits. That leaves exactly 4 bits for the opcode, allowing only $2^4 = 16$ possible opcodes. If all 16 bit patterns represent 3-address instructions, zero patterns remain for 2-address, 1-address, or 0-address instructions.
+Fixed-length instructions create a conflict between opcode count and operand count. If an instruction is fixed at 16 bits and register addresses require 4 bits each, a 3-address instruction uses $4 + (3 \times 4) = 16$ bits. That leaves exactly 4 bits for the opcode, allowing only $2^4 = 16$ possible opcodes. If all 16 bit patterns represent 3-address instructions, zero patterns remain for 2-address, 1-address, or 0-address instructions.
 
 Architects resolve this using **expanding opcodes**. Instead of assigning all 16 opcode patterns to 3-address instructions, reserve one or more patterns as escape codes to indicate that the opcode continues into the next operand field.
 
@@ -136,11 +136,15 @@ An **addressing mode** defines the rule for calculating the actual target memory
 | **Indirect** | `MOV R1, @[1000]` | $EA = \text{Memory}[1000]$ | 2 | Pointers and references |
 | **Register** | `MOV R1, R2` | $EA = R2$ (register direct) | 0 | Fast temporary storage |
 | **Register indirect** | `MOV R1, [R2]` | $EA = [R2]$ | 1 | Pointer dereferencing |
+| **Auto-increment** | `LOAD R1, (R2)+` | $EA = [R2]$; then $R2 \leftarrow [R2] + d$ | 1 | Sequential array walk, stack pop |
+| **Auto-decrement** | `LOAD R1, -(R2)` | $R2 \leftarrow [R2] - d$; then $EA = [R2]$ | 1 | Reverse array walk, stack push |
 | **Displacement (Base + Offset)** | `MOV R1, [BP + 8]` | $EA = [BP] + 8$ | 1 | Struct fields, stack frames |
 | **Indexed** | `MOV R1, [Base + R2]` | $EA = \text{Base} + [R2]$ | 1 | Stepping through arrays |
-| **PC-relative** | `JMP +16` | $EA = PC + 16$ | 0 (target address) | Position-independent branching |
+| **PC-relative** | `JMP +16` | $EA = PC + 16$ | 0 for branch (1 for data) | Position-independent branching |
 
-In **PC-relative addressing**, the offset is added to the program counter. If a code module is relocated to a different memory address by the operating system loader, internal jumps within the module stay valid without updating hardcoded addresses.
+In **auto-increment addressing** (`(R2)+`), the CPU accesses memory using the address currently held in register $R2$, then automatically increments $R2$ by the operand byte width $d$ (such as 4 bytes for a 32-bit word). In **auto-decrement addressing** (`-(R2)`), the register is decremented before the memory access. These modes enable sequential array traversal and stack management without separate pointer update instructions.
+
+In **PC-relative addressing**, the offset is added to the program counter. For a branch, the target address is written directly into the $PC$ without a data memory lookup. When used to load position-independent data (such as RIP-relative constants in x86-64), the computed address performs 1 memory read. If a code module is relocated to a different memory address by the operating system loader, internal jumps within the module stay valid without updating hardcoded addresses.
 
 In **register indirect addressing**, the operand pointer already sits inside a fast on-chip CPU register, requiring 1 memory bus cycle to fetch the target data. In **memory indirect addressing**, the pointer itself resides in RAM. The processor must perform 2 sequential memory bus cycles: first to retrieve the pointer from RAM, and second to fetch the actual operand from the target memory address.
 
@@ -319,7 +323,7 @@ Because every instruction is 4-byte aligned, the bottom two bits of any valid in
 $$\text{Displacement}_{\min} = -32{,}768 \times 4 = -131{,}072\text{ bytes} = -128\text{ KB}$$
 $$\text{Displacement}_{\max} = +32{,}767 \times 4 = +131{,}068\text{ bytes} = +128\text{ KB} - 4\text{ bytes}$$
 
-Word-aligned scaling multiplies the branching reach by a factor of 4 compared to a raw byte offset.
+Because two's complement encoding uses one pattern for zero, negative values reach $-2^{15} = -32{,}768$ while positive values reach only $+2^{15} - 1 = +32{,}767$. Word-aligned scaling multiplies the branching reach by a factor of 4 compared to a raw byte offset.
 
 **Part 2: Reachable address boundaries:**
 When the branch instruction at `0x00401020` is fetched, the PC increments by 4 bytes:
