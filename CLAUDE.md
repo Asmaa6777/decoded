@@ -36,7 +36,7 @@ npx vitest run -t "name of test"
 A course with `status: "coming-soon"` typically has empty `modules: []` and is rendered as a teaser; `status: "available"` courses have real lessons.
 
 ### Routing and rendering flow
-`src/App.tsx` wires global providers (React Query, `ThemeProvider`, tooltip, toasters) and four routes via React Router:
+`src/App.tsx` wires global providers (`ThemeProvider`, tooltip, the Sonner toaster) and the routes via React Router. Index, Courses and CoursePage are in the main bundle; LessonPage, Tools, Dashboard, Team and Privacy are lazy-loaded. The main path through the site:
 `/` (Index) → `/courses` (Courses) → `/courses/:courseSlug` (CoursePage) → `/courses/:courseSlug/:lessonSlug` (LessonPage).
 
 `LessonPage` (itself lazily loaded) pulls the lesson from the registry, renders `<lesson.Component />` inside a Tailwind Typography `prose` article, and builds prev/next navigation from `lessonNeighbors`.
