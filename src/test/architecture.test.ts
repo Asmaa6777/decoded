@@ -1,5 +1,26 @@
 import { describe, it, expect } from "vitest";
-import { amat, amdahl, cpi, cpuTime, FORMAT_PROGRAMS, fieldBits, formatFrames, interleaveTimes, mips, pipelineCycles, schedulePipeline, simulateCache, translate, unpipelinedCycles, writePolicyCost, type FormatKind } from "@/lib/architecture";
+import {
+  amat,
+  amdahl,
+  calculateAmdahlRequiredSpeedup,
+  calculateControlStoreSize,
+  calculateMaxZeroOpInstructions,
+  calculateRegisterWindows,
+  cpi,
+  cpuTime,
+  FORMAT_PROGRAMS,
+  fieldBits,
+  formatFrames,
+  interleaveTimes,
+  mips,
+  pipelineCycles,
+  schedulePipeline,
+  simulateCache,
+  translate,
+  unpipelinedCycles,
+  writePolicyCost,
+  type FormatKind,
+} from "@/lib/architecture";
 
 describe("instruction formats", () => {
   it.each([3, 2, 1, 0] as FormatKind[])("%i-address program computes 25", (k) => {
@@ -94,3 +115,30 @@ describe("interleaving", () => {
     expect(interleaveTimes(8, 4, 4).total).toBe(11);
   });
 });
+
+describe("module 2 calculations", () => {
+  it("calculates expanding opcode zero-operand capacity", () => {
+    expect(calculateMaxZeroOpInstructions(16, 4, 15, 8)).toBe(2048);
+    expect(calculateMaxZeroOpInstructions(16, 4, 16, 0)).toBe(0);
+  });
+
+  it("calculates register windows and nesting depth", () => {
+    const res = calculateRegisterWindows(136, 8, 24, 8);
+    expect(res.windows).toBe(8);
+    expect(res.maxNestingDepth).toBe(7);
+  });
+
+  it("calculates horizontal vs vertical control store sizing", () => {
+    const res = calculateControlStoreSize(512, 12, [18, 12, 8, 6], 9);
+    expect(res.horizontalBits).toBe(33280);
+    expect(res.verticalBits).toBe(18432);
+    expect(res.reductionPercent).toBeCloseTo(44.62, 1);
+  });
+
+  it("calculates required Amdahl speedup", () => {
+    expect(calculateAmdahlRequiredSpeedup(0.6, 2.0)).toBeCloseTo(6.0);
+    expect(calculateAmdahlRequiredSpeedup(0.6, 2.5)).toBeNull();
+    expect(calculateAmdahlRequiredSpeedup(0.6, 3.0)).toBeNull();
+  });
+});
+

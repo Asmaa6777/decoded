@@ -15,7 +15,7 @@ export const questions: Question[] = [
       { id: "d", text: "The type of memory chip" },
     ],
     correctOptionId: "a",
-    explanation: "A programmer sees the instruction set. The others can change between chips without any change to software.",
+    explanation: "The instruction set is visible directly to the programmer and compiler as an architectural contract. Cache size (b), clock speed (c), and the memory chip technology (d) are organizational implementations that can change between processor models without breaking software compatibility.",
   },
   {
     id: "computer-architecture/final-quiz/q2",
@@ -28,7 +28,7 @@ export const questions: Question[] = [
       { id: "d", text: "6" },
     ],
     correctOptionId: "a",
-    explanation: "0.5(1) + 0.3(3) + 0.2(2) = 0.5 + 0.9 + 0.4 = 1.8.",
+    explanation: "The weighted CPI is 0.5(1) + 0.3(3) + 0.2(2) = 0.5 + 0.9 + 0.4 = 1.8. 2.0 is the incorrect unweighted average (1 + 3 + 2) / 3, which ignores instruction frequencies. 2.2 results from swapping frequency weights, and 6 is the raw sum of cycle counts.",
   },
   {
     id: "computer-architecture/final-quiz/q3",
@@ -41,7 +41,7 @@ export const questions: Question[] = [
       { id: "d", text: "125" },
     ],
     correctOptionId: "c",
-    explanation: "500 × 10⁶ ÷ (2 × 10⁶) = 250.",
+    explanation: "MIPS = clockHz / (CPI × 10⁶) = 500 × 10⁶ / (2 × 10⁶) = 250. 1000 mistakenly multiplies clock rate by CPI instead of dividing, 500 ignores the CPI of 2, and 125 incorrectly divides by 2 twice.",
   },
   {
     id: "computer-architecture/final-quiz/q4",
@@ -54,7 +54,7 @@ export const questions: Question[] = [
       { id: "d", text: "A microprogrammed control unit" },
     ],
     correctOptionId: "c",
-    explanation: "The others are all typical of CISC. Keeping memory access separate is what keeps RISC instructions simple and regular.",
+    explanation: "Strict load-store memory access is a core hallmark of RISC; arithmetic operations execute only on registers. Variable-length instructions (a), numerous complex addressing modes (b), and microprogrammed control units (d) are typical characteristics of CISC architectures.",
   },
   {
     id: "computer-architecture/final-quiz/q5",
@@ -67,7 +67,7 @@ export const questions: Question[] = [
       { id: "d", text: "It needs no clock" },
     ],
     correctOptionId: "b",
-    explanation: "Hardwired is faster. Microcode is effectively software for the control unit.",
+    explanation: "Microprogrammed control provides flexibility because modifying or fixing control logic requires rewriting control ROM words rather than refabricating gates. Hardwired control is faster than microcode (disproving a). Microcode requires control memory (disproving c), and both designs require a clock (disproving d).",
   },
   {
     id: "computer-architecture/final-quiz/q6",

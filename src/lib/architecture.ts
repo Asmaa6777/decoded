@@ -255,3 +255,74 @@ export function interleaveTimes(words: number, banks: number, cycle: number, tra
   });
   return { rows, total: Math.max(...rows.map((r) => r.end), 0), single: words * cycle };
 }
+
+/* -------------------- instruction formats & practice ------------------- */
+
+/** Computes maximum zero-operand instructions supported with expanding opcodes. */
+export function calculateMaxZeroOpInstructions(
+  instructionBits: number,
+  regBits: number,
+  threeRegCount: number,
+  twoRegCount: number
+): number {
+  const opcodeBits3Reg = instructionBits - 3 * regBits;
+  const totalPatterns3Reg = 1 << opcodeBits3Reg;
+  const remainingPrefixes3Reg = totalPatterns3Reg - threeRegCount;
+  if (remainingPrefixes3Reg <= 0) return 0;
+
+  const opcodeBits2Reg = instructionBits - 2 * regBits;
+  const expansionBitsStep1 = opcodeBits2Reg - opcodeBits3Reg;
+  const totalPatterns2Reg = remainingPrefixes3Reg * (1 << expansionBitsStep1);
+  const remainingPrefixes2Reg = totalPatterns2Reg - twoRegCount;
+  if (remainingPrefixes2Reg <= 0) return 0;
+
+  const remainingBitsForZeroOp = 2 * regBits;
+  return remainingPrefixes2Reg * (1 << remainingBitsForZeroOp);
+}
+
+/** Computes number of register windows and max nesting depth before trap. */
+export function calculateRegisterWindows(
+  totalPhysicalRegs: number,
+  globalRegs: number,
+  windowSize: number,
+  overlapRegs: number
+): { windows: number; maxNestingDepth: number } {
+  const available = totalPhysicalRegs - globalRegs;
+  const stepSize = windowSize - overlapRegs;
+  const windows = Math.floor(available / stepSize);
+  return {
+    windows,
+    maxNestingDepth: windows - 1,
+  };
+}
+
+/** Sizing comparison between horizontal and vertical control stores. */
+export function calculateControlStoreSize(
+  microinstructions: number,
+  independentSignals: number,
+  signalGroups: number[],
+  nextAddressBits: number
+): { horizontalBits: number; verticalBits: number; reductionPercent: number } {
+  const totalDirect = independentSignals + signalGroups.reduce((a, b) => a + b, 0);
+  const horizontalWord = totalDirect + nextAddressBits;
+  const horizontalBits = microinstructions * horizontalWord;
+
+  const encodedBits = signalGroups.reduce((sum, g) => sum + Math.ceil(Math.log2(g)), 0);
+  const verticalWord = independentSignals + encodedBits + nextAddressBits;
+  const verticalBits = microinstructions * verticalWord;
+
+  const reductionPercent = ((horizontalBits - verticalBits) / horizontalBits) * 100;
+  return { horizontalBits, verticalBits, reductionPercent };
+}
+
+/** Computes component speedup required for target overall speedup under Amdahl's Law. */
+export function calculateAmdahlRequiredSpeedup(
+  fractionEnhanced: number,
+  targetSpeedup: number
+): number | null {
+  const maxSpeedup = 1 / (1 - fractionEnhanced);
+  if (targetSpeedup >= maxSpeedup) return null;
+  const denom = 1 / targetSpeedup - (1 - fractionEnhanced);
+  return fractionEnhanced / denom;
+}
+

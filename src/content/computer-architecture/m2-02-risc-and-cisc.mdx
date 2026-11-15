@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { RiscCiscCompare } from "@/components/mdx/ArchitectureVisualizers";
 
 # RISC and CISC
@@ -89,6 +89,8 @@ Modern x86 processors from Intel and AMD do not execute legacy CISC instructions
 
 ## Practice
 
+### Part 1: Written Exam & Lab Problems
+
 <ModelAnswer title="Problem 1: Assembly compilation comparison">
 Consider the high-level language statement:
 
@@ -166,3 +168,259 @@ The processor supports 8 complete register windows.
 **Part 2: Maximum procedure nesting depth:**
 Because the register windows form a circular ring buffer, one window must remain reserved to handle the trap condition when wrapping around. Therefore, the processor can execute up to 7 nested procedure calls ($W - 1 = 7$) before triggering a window overflow trap that forces the operating system to spill window contents to RAM.
 </ModelAnswer>
+
+<ModelAnswer title="Problem 3: Procedure call parameter passing overhead">
+Compare the hardware overhead of a procedure call that passes 4 integer arguments and returns 1 integer result on two machines:
+
+1. **CISC machine using memory stack frames:**
+   - Caller pushes 4 arguments onto the memory stack (`PUSH`).
+   - `CALL` instruction pushes the return address onto the stack.
+   - Callee prologue pushes the old frame pointer (`EBP`) and updates `EBP`.
+   - Callee executes, places return value in register `EAX`.
+   - Callee epilogue pops the saved frame pointer (`POP EBP`).
+   - `RET` instruction pops the return address.
+   - Caller cleans up the 4 stack arguments.
+
+2. **RISC machine with overlapping register windows:**
+   - Caller writes 4 arguments directly into Out registers `R8-R11`.
+   - `CALL` writes return address into link register `R15`.
+   - `SAVE` instruction decrements the Current Window Pointer ($CWP$), mapping caller's Out registers directly to callee's In registers `R24-R27`.
+   - Callee executes, places return value in In register `R24`.
+   - `RESTORE` increments $CWP$, mapping callee's In register back to caller's Out register `R8`.
+   - `RET` branches to return address.
+
+Assume memory read/write operations take 3 clock cycles each, while internal register-to-register and pointer updates take 1 clock cycle. Calculate the total memory bus accesses and clock cycle overhead dedicated strictly to procedure linkage.
+
+---
+
+**Solution:**
+
+**1. CISC stack frame overhead:**
+- Pushing 4 arguments: 4 memory writes ($4 \times 3 = 12$ cycles).
+- `CALL` pushing return address: 1 memory write (3 cycles).
+- Prologue saving `EBP`: 1 memory write (3 cycles).
+- Epilogue restoring `EBP`: 1 memory read (3 cycles).
+- `RET` popping return address: 1 memory read (3 cycles).
+- Callee argument cleanup: 1 cycle (adjusting stack pointer).
+- Total memory bus references: $4 + 1 + 1 + 1 + 1 = 8$ memory transactions.
+- Total linkage execution time: $12 + 3 + 3 + 3 + 3 + 1 = 25$ clock cycles.
+
+**2. RISC register window overhead:**
+- Loading arguments into Out registers: 4 internal register writes ($4 \times 1 = 4$ cycles).
+- `CALL` saving link register: 1 cycle (internal register write).
+- `SAVE` decrementing $CWP$: 1 cycle (internal pointer register update).
+- Returning value into In register: 1 cycle (internal register write).
+- `RESTORE` incrementing $CWP$: 1 cycle (internal pointer register update).
+- `RET` branch: 1 cycle.
+- Total memory bus references: 0 memory transactions.
+- Total linkage execution time: $4 + 1 + 1 + 1 + 1 + 1 = 9$ clock cycles.
+
+Register windows eliminate all 8 memory transactions to RAM, cutting linkage overhead from 25 cycles to 9 cycles while avoiding data cache pollution.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 4: Window overflow and underflow trap cost analysis">
+A SPARC processor incorporates $W = 8$ circular register windows. The operating system maintains a Window Invalid Mask ($WIM$), where bit $k = 1$ marks window $k$ as reserved to trap circular overflow.
+An application executes a recursive function that reaches a call nesting depth of 14 before returning to depth 0.
+
+1. At what call depth does the first Window Overflow trap occur?
+2. If saving a window frame of 16 registers (8 Local + 8 In/Out) to system RAM requires 32 clock cycles, calculate the cumulative trap penalty incurred across the entire recursive execution (both call descent and return ascent).
+3. Explain the mechanical roles of the Current Window Pointer ($CWP$) and Window Invalid Mask ($WIM$) during a trap.
+
+---
+
+**Solution:**
+
+**Part 1: Initial overflow call depth:**
+The processor starts with 1 window reserved for the trap handler boundary ($WIM$ bit set). With $W = 8$ windows, the hardware can accommodate $W - 1 = 7$ nested frames without accessing memory.
+The 8th procedure call attempts to shift $CWP$ into the window guarded by $WIM = 1$, firing the first Window Overflow trap at call depth 8.
+
+**Part 2: Cumulative trap penalty:**
+- **Call descent (depth 8 to 14):**
+  Calls at depths 8, 9, 10, 11, 12, 13, and 14 each trigger an overflow trap to spill an older window frame to the memory stack:
+  $$\text{Overflow traps} = 14 - 8 + 1 = 7 \text{ traps}$$
+  $$\text{Descent penalty} = 7 \times 32 \text{ cycles} = 224 \text{ clock cycles}$$
+
+- **Return ascent (depth 14 returning back to depth 0):**
+  As each procedure returns via `RESTORE`, $CWP$ moves in reverse. When $CWP$ steps into a window that was previously spilled to memory, a Window Underflow trap fires to restore the 16 registers from RAM:
+  $$\text{Underflow traps} = 7 \text{ traps}$$
+  $$\text{Ascent penalty} = 7 \times 32 \text{ cycles} = 224 \text{ clock cycles}$$
+
+- **Total penalty:**
+  $$\text{Total cycle cost} = 224 + 224 = 448 \text{ clock cycles}$$
+
+**Part 3: Role of CWP and WIM:**
+$CWP$ is a 3-bit hardware pointer indicating which physical register bank maps to the current procedure's local and parameter registers. $WIM$ is an 8-bit register where a single `1` bit marks the boundary. When a `SAVE` instruction causes $(CWP - 1) \bmod 8$ to match the $WIM$ bit position, hardware traps to OS kernel code. The kernel writes the targeted window to RAM and rotates the $WIM$ bit, permitting execution to continue safely.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 5: Code expansion and instruction cache working set">
+A software suite contains 100,000 instructions when compiled for a CISC architecture with an average instruction length of 3.2 bytes. The identical source code compiled for a 32-bit fixed-length RISC architecture requires 140,000 instructions.
+
+1. Calculate the binary code size in kilobytes for both architectures.
+2. If both processors are equipped with a 64 KB L1 instruction cache, compare their working set coverage and explain the performance dilemma RISC architectures encounter.
+3. How do modern compressed instruction set extensions (such as ARM Thumb-2 or RISC-V "C") resolve this dilemma?
+
+---
+
+**Solution:**
+
+**Part 1: Binary code size:**
+- CISC binary size:
+  $$\text{Size}_{\text{CISC}} = 100{,}000 \times 3.2\text{ bytes} = 320{,}000\text{ bytes} \approx 312.5\text{ KB}$$
+- RISC binary size (fixed 32-bit = 4 bytes):
+  $$\text{Size}_{\text{RISC}} = 140{,}000 \times 4.0\text{ bytes} = 560{,}000\text{ bytes} \approx 546.9\text{ KB}$$
+- Code size ratio:
+  $$\frac{560{,}000}{320{,}000} = 1.75\times$$
+The RISC executable is 75% larger.
+
+**Part 2: Instruction cache impact:**
+A 64 KB cache holds:
+- In CISC: $\dfrac{65{,}536\text{ bytes}}{3.2\text{ bytes/instruction}} \approx 20{,}480\text{ instructions}$.
+- In RISC: $\dfrac{65{,}536\text{ bytes}}{4.0\text{ bytes/instruction}} = 16{,}384\text{ instructions}$.
+
+The CISC cache holds 25% more instructions. If a program's hot inner loop contains 18,000 instructions, it fits entirely within the CISC L1 cache (zero cache misses), but exceeds the RISC cache capacity, triggering frequent L1 cache misses and memory stall penalties that can negate the RISC processor's lower average CPI.
+
+**Part 3: Compressed instruction sets:**
+Compressed ISAs (like ARM Thumb-2 and RISC-V "C") introduce 16-bit encodings for the most common instructions (loads, stores, branches, simple arithmetic). The compiler mixes 16-bit and 32-bit instructions seamlessly. A simple hardware expander in the fetch stage decompresses 16-bit instructions into standard 32-bit RISC operations before decoding, reducing binary size by 25% to 30% without sacrificing pipeline simplicity.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 6: CISC micro-operation decomposition">
+An x86 processor fetches the complex memory-to-register CISC instruction:
+
+```asm
+ADD [EAX + EBX*4 + 0x20], ECX
+```
+
+1. Decompose this single macro-instruction into its equivalent sequence of primitive RISC micro-operations ($\mu\text{ops}$).
+2. Trace the data dependencies between the generated $\mu\text{ops}$.
+3. Explain why this internal decomposition allows modern CISC processors to achieve pipelined execution with an effective CPI approaching 1.0.
+
+---
+
+**Solution:**
+
+**Part 1: Micro-operation breakdown:**
+The hardware instruction decoder splits the single macro-instruction into 4 atomic $\mu\text{ops}$:
+```text
+1. AGEN  T1, EAX, EBX, 4, 0x20 ; Address Generation Unit: T1 = EAX + (EBX * 4) + 0x20
+2. LOAD  T2, [T1]             ; Memory Unit: Read 32-bit value at address T1 into temp reg T2
+3. ADD   T3, T2, ECX          ; ALU: Add contents of T2 and ECX, store in temp reg T3
+4. STORE [T1], T3             ; Memory Unit: Write sum T3 back to address T1
+```
+
+**Part 2: Data dependency analysis:**
+- $\mu\text{op}$ 2 (LOAD) depends on $\mu\text{op}$ 1 (AGEN) for the target address $T_1$.
+- $\mu\text{op}$ 3 (ADD) depends on $\mu\text{op}$ 2 (LOAD) for operand $T_2$.
+- $\mu\text{op}$ 4 (STORE) depends on both $\mu\text{op}$ 1 (for address $T_1$) and $\mu\text{op}$ 3 (for result data $T_3$).
+
+**Part 3: Architectural performance benefit:**
+By converting the variable-length, multicycle CISC instruction into standardized, fixed-width $\mu\text{ops}$, the CPU core can execute them using a high-frequency RISC out-of-order execution engine. The execution units (ALU, Load Unit, Store Unit, AGU) can schedule independent $\mu\text{ops}$ from surrounding instructions in parallel, hiding memory latencies and achieving throughput of multiple instructions per clock cycle.
+</ModelAnswer>
+
+---
+
+### Part 2: In-Lesson Interactive Practice
+
+<Quiz
+  courseSlug="computer-architecture"
+  lessonSlug="risc-and-cisc"
+  practice
+  questions={[
+    {
+      id: "rc-p1",
+      prompt: "What empirical finding by Patterson and Hennessy in the early 1980s motivated the development of RISC architectures?",
+      options: [
+        { id: "a", text: "Over 80% of execution time was spent on simple instructions like loads, stores, and branches, while complex instructions were rarely generated by compilers" },
+        { id: "b", text: "Computer memory speeds were advancing much faster than processor logic speeds" },
+        { id: "c", text: "Programmers were writing assembly language code faster than high-level compilers could compile it" },
+        { id: "d", text: "Hardware microcode memory was becoming too inexpensive to justify hardwired control" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: The 80/20 rule showed that complex CISC instructions added hardware complexity, stretched clock periods, and required extensive microcode, yet optimizing compilers rarely used them. Focusing hardware on executing simple instructions in a single cycle yielded superior real-world performance. Option (b) is inverted: processor speeds were outpacing memory speeds (the memory wall). Option (c) is false because high-level languages were replacing manual assembly. Option (d) contradicts the historical trend away from complex microcode.",
+    },
+    {
+      id: "rc-p2",
+      prompt: "In a pure load-store RISC architecture, which instructions are permitted to reference system memory?",
+      options: [
+        { id: "a", text: "Only explicit LOAD and STORE instructions" },
+        { id: "b", text: "All arithmetic and logical instructions" },
+        { id: "c", text: "Only branch and subroutine jump instructions" },
+        { id: "d", text: "Any instruction that specifies a displacement greater than zero" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A load-store architecture strictly decouples memory access from data processing. ALU operations (ADD, SUB, AND) operate exclusively on general-purpose registers, ensuring uniform instruction execution times and simplified pipeline hazard detection. Option (b) describes a CISC register-memory architecture. Option (c) and Option (d) are incorrect.",
+    },
+    {
+      id: "rc-p3",
+      prompt: "How does an overlapping register window mechanism (such as SPARC) eliminate memory bus traffic during standard procedure calls?",
+      options: [
+        { id: "a", text: "The caller's Out registers physically become the callee's In registers by updating a pointer, passing parameters without memory writes" },
+        { id: "b", text: "Parameters are compressed and transmitted over a serial internal bus" },
+        { id: "c", text: "The operating system maps the parameters into a virtual RAM page" },
+        { id: "d", text: "Arguments are stored directly in the instruction cache" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Register windows overlap adjacent frames. When a procedure executes SAVE, the Current Window Pointer shifts so that registers 8-15 (caller's Out) are re-indexed as registers 24-31 (callee's In). No registers are pushed to RAM or copied across buses. Option (b), Option (c), and Option (d) are incorrect descriptions.",
+    },
+    {
+      id: "rc-p4",
+      prompt: "Why did attempting to narrow the 'semantic gap' with complex CISC hardware instructions fail to accelerate program execution?",
+      options: [
+        { id: "a", text: "Complex instructions required multicycle microcode and elongated the clock cycle for all instructions, while rarely matching compiler-generated idioms" },
+        { id: "b", text: "High-level languages ceased supporting arithmetic operations" },
+        { id: "c", text: "CISC instructions caused permanent magnetic degradation of memory cores" },
+        { id: "d", text: "Compilers were legally prohibited from generating proprietary CISC opcodes" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Highly specialized instructions (such as VAX POLY or INDEX) were difficult for compilers to target effectively. Meanwhile, supporting them forced processors to adopt slower clock rates, complex microcode decoders, and variable-length formats, penalizing common operations. Option (b), Option (c), and Option (d) are fictitious.",
+    },
+    {
+      id: "rc-p5",
+      prompt: "Under what operational condition does a circular register window architecture trigger an overflow trap?",
+      options: [
+        { id: "a", text: "When a procedure call advances the Current Window Pointer into a window frame marked invalid by the Window Invalid Mask" },
+        { id: "b", text: "When the program attempts to write a 64-bit integer into a 32-bit register" },
+        { id: "c", text: "When a procedure has more than 8 local variables" },
+        { id: "d", text: "When an arithmetic instruction causes an integer divide-by-zero" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Because the physical register windows form a circular ring buffer, deep call nesting wraps around. The Window Invalid Mask (WIM) marks one window as a safety boundary. Attempting to use this window triggers an OS trap, which saves the oldest window frame to RAM and shifts the mask. Option (b) is an arithmetic/type error. Option (c) is handled by compiler register spilling, not a hardware window trap. Option (d) is a floating-point/ALU exception.",
+    },
+    {
+      id: "rc-p6",
+      prompt: "How do modern x86 processors (such as Intel Core or AMD Zen) execute CISC instructions at high clock speeds?",
+      options: [
+        { id: "a", text: "Hardware decoders translate complex x86 instructions into simple, fixed-length micro-operations (µops) that execute on an internal RISC-like core" },
+        { id: "b", text: "They run an internal software emulator written in Java" },
+        { id: "c", text: "They eliminate the arithmetic logic unit in favor of look-up tables" },
+        { id: "d", text: "They reject all variable-length instructions at the BIOS level" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Modern CISC processors achieve high performance through architectural convergence: the front-end decodes x86 instructions into RISC-like micro-operations (µops). These µops feed into an out-of-order execution engine featuring register renaming, branch prediction, and multi-issue execution. Option (b), Option (c), and Option (d) are false.",
+    },
+    {
+      id: "rc-p7",
+      prompt: "What is the primary disadvantage of fixed 32-bit RISC instruction formats compared to variable-length CISC formats?",
+      options: [
+        { id: "a", text: "Lower code density, resulting in larger binary executables and increased instruction cache pressure" },
+        { id: "b", text: "Inability to implement pipelined execution" },
+        { id: "c", text: "Requirement for external cooling units" },
+        { id: "d", text: "Incompatibility with dynamic random access memory" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Fixed 32-bit instructions allocate 4 bytes even for simple operations like NOP or register clear, whereas variable-length CISC formats encode them in 1 or 2 bytes. This lower code density expands binary size by 20% to 40%, potentially causing more instruction cache misses. Option (b) is inverted (fixed length simplifies pipelining). Option (c) and Option (d) are unrelated physical factors.",
+    },
+    {
+      id: "rc-p8",
+      prompt: "Why did early RISC designs abandon microprogrammed control units in favor of hardwired control logic?",
+      options: [
+        { id: "a", text: "Hardwired control produces control signals through fast combinational gates in a single cycle, avoiding control store ROM access delays" },
+        { id: "b", text: "Microcode ROMs could only be manufactured using discrete magnetic cores" },
+        { id: "c", text: "Hardwired control units can be modified via software updates after manufacturing" },
+        { id: "d", text: "Microprogrammed control units cannot execute conditional jumps" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Because RISC instructions are regular and uniform, their control signals can be generated directly by combinational logic gates and state flip-flops within a single clock cycle. Reading instructions from a microcode ROM added an extra level of indirection that slowed down the clock. Option (b) is historically inaccurate. Option (c) is false (hardwired logic is fixed in silicon). Option (d) is false.",
+    },
+  ]}
+/>
+

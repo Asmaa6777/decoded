@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { InstructionFormats } from "@/components/mdx/ArchitectureVisualizers";
 
 # Instruction Formats
@@ -154,6 +154,8 @@ Both modes access data through pointers, but their hardware cost differs. In reg
 
 ## Practice
 
+### Part 1: Written Exam & Lab Problems
+
 <ModelAnswer title="Problem 1: Expanding opcode capacity">
 A computer uses 16-bit instructions and 4-bit register addresses. The instruction set must accommodate:
 
@@ -226,3 +228,292 @@ Determine the effective address ($EA$) and the final operand fetched by each of 
    - Second memory read: Fetch the operand from address `0x0500`.
    - Operand fetched: Value at memory address `0x0500` = `0x1234`.
 </ModelAnswer>
+
+<ModelAnswer title="Problem 3: Machine code density and memory bus traffic">
+Evaluate the arithmetic statement:
+
+$$Z = (A \times B) + (C \times D) - E$$
+
+Assume variables $A, B, C, D, E, Z$ reside in distinct memory locations.
+Compare the implementation across four machine models:
+- 3-address architecture (general-purpose registers)
+- 2-address architecture (general-purpose registers)
+- 1-address architecture (accumulator-based)
+- 0-address architecture (stack-based)
+
+For each model, determine the instruction sequence, total instruction count, and the number of data memory access operations (reads and writes).
+
+---
+
+**Solution:**
+
+**1. 3-address architecture:**
+```asm
+MUL R1, A, B       ; R1 = Memory[A] * Memory[B]
+MUL R2, C, D       ; R2 = Memory[C] * Memory[D]
+ADD R1, R1, R2     ; R1 = R1 + R2 (registers only)
+SUB Z, R1, E       ; Memory[Z] = R1 - Memory[E]
+```
+- Total instructions: 4.
+- Data memory references: 6 (read $A$, read $B$, read $C$, read $D$, read $E$, write $Z$).
+
+**2. 2-address architecture:**
+```asm
+MOV R1, A          ; R1 = Memory[A]
+MUL R1, B          ; R1 = R1 * Memory[B]
+MOV R2, C          ; R2 = Memory[C]
+MUL R2, D          ; R2 = R2 * Memory[D]
+ADD R1, R2         ; R1 = R1 + R2
+SUB R1, E          ; R1 = R1 - Memory[E]
+MOV Z, R1          ; Memory[Z] = R1
+```
+- Total instructions: 7.
+- Data memory references: 6 (read $A$, read $B$, read $C$, read $D$, read $E$, write $Z$).
+
+**3. 1-address accumulator architecture:**
+```asm
+LOAD A             ; AC = Memory[A]
+MUL B              ; AC = AC * Memory[B]
+STORE T            ; Memory[T] = AC (spill partial product)
+LOAD C             ; AC = Memory[C]
+MUL D              ; AC = AC * Memory[D]
+ADD T              ; AC = AC + Memory[T]
+SUB E              ; AC = AC - Memory[E]
+STORE Z            ; Memory[Z] = AC
+```
+- Total instructions: 8.
+- Data memory references: 8 (read $A$, read $B$, write $T$, read $C$, read $D$, read $T$, read $E$, write $Z$). The accumulator cannot hold two partial products at once, forcing a temporary spill to RAM ($T$).
+
+**4. 0-address stack architecture:**
+```asm
+PUSH A             ; Push Memory[A]
+PUSH B             ; Push Memory[B]
+MUL                ; Pop top two, push product
+PUSH C             ; Push Memory[C]
+PUSH D             ; Push Memory[D]
+MUL                ; Pop top two, push product
+ADD                ; Pop top two, push sum
+PUSH E             ; Push Memory[E]
+SUB                ; Pop top two, push difference
+POP Z              ; Pop result and store into Memory[Z]
+```
+- Total instructions: 10.
+- Data memory references: 6 (assuming top of stack sits inside dedicated CPU registers). If the stack resides in RAM, every push and pop triggers additional memory bus cycles.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 4: PC-relative branch reach and target calculation">
+A 32-bit RISC processor uses fixed 32-bit instructions aligned on 4-byte word boundaries. Conditional branch instructions dedicate a 16-bit signed two's complement immediate field to encode the branch displacement.
+
+1. Derive the maximum forward and backward branching reach in bytes when the offset field specifies words rather than bytes.
+2. If a conditional branch instruction is located at memory address `0x00401020`, calculate the lowest and highest target memory addresses reachable by this instruction, assuming the program counter updates to $PC = \text{Current Address} + 4$ before branch calculation.
+3. If the instruction at `0x00401020` has an immediate field value of `-12` (in words), compute the exact effective branch target address ($EA$).
+
+---
+
+**Solution:**
+
+**Part 1: Range derivation:**
+A 16-bit signed two's complement number spans the range:
+$$-2^{15} \le \text{offset} \le 2^{15} - 1 \implies -32{,}768 \text{ to } +32{,}767 \text{ words}$$
+Because every instruction is 4-byte aligned, the bottom two bits of any valid instruction address are always `00`. Shifting the 16-bit word offset left by 2 bits produces an 18-bit signed byte displacement:
+$$\text{Displacement}_{\min} = -32{,}768 \times 4 = -131{,}072\text{ bytes} = -128\text{ KB}$$
+$$\text{Displacement}_{\max} = +32{,}767 \times 4 = +131{,}068\text{ bytes} = +128\text{ KB} - 4\text{ bytes}$$
+
+Word-aligned scaling multiplies the branching reach by a factor of 4 compared to a raw byte offset.
+
+**Part 2: Reachable address boundaries:**
+When the branch instruction at `0x00401020` is fetched, the PC increments by 4 bytes:
+$$PC_{\text{updated}} = \text{0x00401020} + 4 = \text{0x00401024}$$
+
+- Lowest reachable target address:
+  $$EA_{\min} = \text{0x00401024} - 131{,}072 = \text{0x00401024} - \text{0x00020000} = \text{0x003E1024}$$
+- Highest reachable target address:
+  $$EA_{\max} = \text{0x00401024} + 131{,}068 = \text{0x00401024} + \text{0x0001FFFC} = \text{0x00421020}$$
+
+**Part 3: Branch target for immediate `-12`:**
+Word offset = $-12$.
+Byte displacement = $-12 \times 4 = -48\text{ bytes} = -\text{0x30}$.
+$$EA = PC_{\text{updated}} + \text{Byte Displacement} = \text{0x00401024} - \text{0x00000030} = \text{0x00400FF4}$$
+</ModelAnswer>
+
+<ModelAnswer title="Problem 5: Expanding opcode design under strict bit constraints">
+A 12-bit instruction format on an embedded microcontroller allocates 3 bits per register specifier.
+The architecture must accommodate:
+- 3 instructions with two register operands.
+- $N$ instructions with one register operand.
+- 32 instructions with zero operands.
+
+Determine the maximum number of single-register instructions ($N$) that can be supported, showing the bit pattern allocation and verifying complete coverage of the opcode space.
+
+---
+
+**Solution:**
+
+**Step 1: Two-register instruction allocation:**
+Two register fields consume $2 \times 3 = 6$ bits, leaving $12 - 6 = 6$ bits for the primary opcode.
+A 6-bit primary opcode provides $2^6 = 64$ total combinations (`000000` to `111111`).
+Allocating 3 combinations to two-register instructions leaves:
+$$64 - 3 = 61 \text{ patterns available as 6-bit escape prefixes}$$
+
+**Step 2: Single-register instruction and zero-operand capacity:**
+A single-register instruction uses 3 bits for its register operand, leaving $12 - 3 = 9$ bits for the opcode.
+Each 6-bit escape prefix expands across the next 3 bits, generating $2^3 = 8$ possible 9-bit patterns.
+With 61 prefixes available, the total number of 9-bit patterns is:
+$$61 \times 8 = 488 \text{ possible 9-bit patterns}$$
+
+Zero-operand instructions require all 12 bits for the opcode (no register fields).
+Each unused 9-bit pattern expands across the lowest 3 bits to yield $2^3 = 8$ zero-operand instructions.
+To support 32 zero-operand instructions, the number of 9-bit prefixes reserved for expansion is:
+$$\text{Reserved prefixes} = \frac{32}{8} = 4 \text{ prefixes}$$
+
+**Step 3: Calculating maximum single-register instructions ($N$):**
+Subtracting the 4 reserved prefixes from the 488 available patterns gives:
+$$N = 488 - 4 = 484 \text{ single-register instructions}$$
+
+**Verification:**
+- 3 two-register instructions consume $3 \times 2^6 = 192$ bit combinations.
+- 484 single-register instructions consume $484 \times 2^3 = 3{,}872$ bit combinations.
+- 32 zero-operand instructions consume $32 \times 1 = 32$ bit combinations.
+- Total bit combinations: $192 + 3{,}872 + 32 = 4{,}096 = 2^{12}$.
+The instruction space is 100% utilized with zero decoding ambiguity.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 6: Base-displacement with scaled indexing">
+A 64-bit architecture provides a base-plus-scaled-index displacement addressing mode:
+
+$$EA = [R_b] + [R_i] \times S + D$$
+
+where $R_b$ is the base register, $R_i$ is the index register, $S \in \{1, 2, 4, 8\}$ is a scale factor, and $D$ is a 16-bit signed displacement.
+
+1. Given register contents $R_b = \text{0x7FFF0000}$, $R_i = 25$, scale factor $S = 8$, and displacement $D = 12$, calculate the resulting effective address ($EA$).
+2. Explain how processor hardware computes this effective address in a single clock cycle without using a multi-cycle ALU multiplier.
+3. Why are scale factors restricted to powers of two ($1, 2, 4, 8$) in hardware instruction formats?
+
+---
+
+**Solution:**
+
+**Part 1: Effective address calculation:**
+- Base address $[R_b] = \text{0x7FFF0000}$.
+- Scaled index: $R_i \times S = 25 \times 8 = 200 = \text{0xC8}$.
+- Displacement: $D = 12 = \text{0x0C}$.
+Summing these values:
+$$EA = \text{0x7FFF0000} + 200 + 12 = \text{0x7FFF0000} + 212 = \text{0x7FFF0000} + \text{0xD4} = \text{0x7FFF00D4}$$
+
+**Part 2: Hardware implementation:**
+The calculation avoids an ALU multiplier entirely:
+1. **Barrel shifter:** The scale factor $S \in \{1, 2, 4, 8\}$ is encoded in 2 instruction bits. The hardware shifts index register $R_i$ left by $0, 1, 2,$ or $3$ bits using a combinational shifter, incurring less than 0.2 ns of gate delay.
+2. **3-input adder / Carry-save adder:** The base address, shifted index, and sign-extended displacement are fed into a 3-input adder in the address generation unit (AGU) to produce $EA$ within a single clock cycle.
+
+**Part 3: Power-of-two restriction:**
+Restricting $S$ to powers of two allows the multiplication to be implemented purely as a hardwired bit shift (left shift by $\log_2 S$ bits). Arbitrary scale factors (like $\times 3$ or $\times 5$) would require full combinational adders or multi-cycle arithmetic units, lengthening the critical path and reducing maximum clock frequency.
+</ModelAnswer>
+
+---
+
+### Part 2: In-Lesson Interactive Practice
+
+<Quiz
+  courseSlug="computer-architecture"
+  lessonSlug="instruction-formats"
+  practice
+  questions={[
+    {
+      id: "fmt-p1",
+      prompt: "In a 16-bit instruction format with 4-bit register addresses, if all 16 primary 4-bit opcode combinations are assigned to 3-register instructions, how many 2-register instructions can be supported?",
+      options: [
+        { id: "a", text: "0" },
+        { id: "b", text: "1" },
+        { id: "c", text: "16" },
+        { id: "d", text: "256" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Opcode expansion requires at least one unassigned primary bit pattern to serve as an escape prefix. If all 16 primary patterns are consumed by 3-register instructions, no escape code exists, making it impossible to decode any 2-register or 1-register instructions without ambiguity. Option (b), Option (c), and Option (d) incorrectly assume that additional instructions can be encoded without a reserved prefix.",
+    },
+    {
+      id: "fmt-p2",
+      prompt: "How many memory bus read operations are required to fetch an operand using memory indirect addressing (@[addr]) compared to register indirect addressing ([R1])?",
+      options: [
+        { id: "a", text: "2 memory reads for memory indirect, 1 memory read for register indirect" },
+        { id: "b", text: "1 memory read for memory indirect, 2 memory reads for register indirect" },
+        { id: "c", text: "1 memory read for each" },
+        { id: "d", text: "3 memory reads for memory indirect, 0 for register indirect" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In memory indirect addressing, the pointer itself resides in RAM, requiring a first memory read to fetch the pointer address and a second memory read to fetch the actual operand. In register indirect addressing, the pointer already resides inside a CPU register, so the processor makes only 1 memory read to retrieve the operand. Option (b) reverses the two modes. Option (c) misses the extra pointer dereference in memory indirect. Option (d) erroneously assumes register indirect requires no memory read.",
+    },
+    {
+      id: "fmt-p3",
+      prompt: "In a 32-bit RISC architecture where all instructions are 4-byte aligned, why does a 16-bit signed branch offset provide a reach of ±128 KB rather than ±32 KB?",
+      options: [
+        { id: "a", text: "The 16-bit offset represents a word count and is shifted left by 2 bits, yielding an 18-bit effective byte displacement" },
+        { id: "b", text: "Branch prediction hardware doubles the effective address space" },
+        { id: "c", text: "The processor uses an internal cache line offset table" },
+        { id: "d", text: "The offset is added twice to the Program Counter" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Because instructions must align on 4-byte boundaries, the two least significant bits of an instruction address are always 00. Rather than storing redundant zeros, the immediate field stores the displacement in units of 32-bit words (instructions). Shifting left by 2 bits scales the ±32 K word reach to ±128 KB of byte-addressable memory. Option (b), Option (c), and Option (d) are fabricated hardware mechanisms.",
+    },
+    {
+      id: "fmt-p4",
+      prompt: "In a zero-address stack machine evaluating the expression (A + B) * C, what is the exact state of the stack immediately after executing PUSH A, PUSH B, ADD?",
+      options: [
+        { id: "a", text: "The stack contains a single value: (A + B)" },
+        { id: "b", text: "The stack contains two values: (A + B) and B" },
+        { id: "c", text: "The stack is empty" },
+        { id: "d", text: "The stack contains three values: A, B, and (A + B)" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In a stack architecture, an arithmetic operation pops its two operands from the top of the stack, computes the result, and pushes the single result back onto the stack. PUSH A and PUSH B create a two-element stack [A, B]. ADD pops both A and B, sums them, and pushes (A + B), leaving exactly one element on the stack. Option (b), Option (c), and Option (d) fail to account for how stack operands are consumed upon execution.",
+    },
+    {
+      id: "fmt-p5",
+      prompt: "Why does immediate addressing execute faster than direct memory addressing?",
+      options: [
+        { id: "a", text: "The operand is embedded directly inside the fetched instruction, requiring zero data memory bus cycles" },
+        { id: "b", text: "Immediate operands bypass the arithmetic logic unit" },
+        { id: "c", text: "Immediate values are automatically cached in the register file" },
+        { id: "d", text: "Immediate addressing disables processor interrupts during execution" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In immediate addressing, the operand is stored directly within the instruction word in the instruction register. Once the instruction is fetched, the data is already inside the CPU, eliminating the memory bus cycle required by direct addressing. Option (b) is false because the ALU still processes immediate values. Option (c) and Option (d) describe unrelated or incorrect hardware behaviors.",
+    },
+    {
+      id: "fmt-p6",
+      prompt: "What is the primary architectural purpose of auto-increment addressing (LOAD R1, (R2)+)?",
+      options: [
+        { id: "a", text: "It reads data through pointer R2 and automatically advances R2 by the operand byte size in the same instruction" },
+        { id: "b", text: "It doubles the CPU clock frequency for subsequent instructions" },
+        { id: "c", text: "It resets the Program Counter to the beginning of a loop" },
+        { id: "d", text: "It writes data into both memory and a register simultaneously" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Auto-increment addressing uses the address in R2 to access memory and then automatically increments R2 by the operand size (e.g., 4 bytes for a word). This allows linear array traversal and stack popping without executing a separate increment instruction. Option (b), Option (c), and Option (d) mischaracterize the addressing mode.",
+    },
+    {
+      id: "fmt-p7",
+      prompt: "What is the primary hardware bottleneck inherent to a pure 1-address accumulator architecture?",
+      options: [
+        { id: "a", text: "High accumulator register pressure forcing frequent memory spills and reloads for intermediate results" },
+        { id: "b", text: "Inability to implement conditional branching" },
+        { id: "c", text: "Lack of support for integer addition" },
+        { id: "d", text: "Mandatory requirement for 64-bit instruction words" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: With only a single accumulator register, every intermediate calculation overwrites the accumulator. When computing expressions with multiple sub-terms (like (A*B) + (C*D)), partial products must be spilled to memory with STORE and reloaded later, increasing memory traffic and instruction count. Option (b) and Option (c) are false because accumulator machines readily perform arithmetic and branches. Option (d) is incorrect because accumulator instructions are typically very compact.",
+    },
+    {
+      id: "fmt-p8",
+      prompt: "Why do variable-length instruction formats (such as x86) increase hardware decode complexity compared to fixed-length formats?",
+      options: [
+        { id: "a", text: "The processor cannot determine instruction boundaries or read register operands in parallel until prior bytes are sequentially decoded" },
+        { id: "b", text: "Variable-length instructions cannot be stored in semiconductor memory" },
+        { id: "c", text: "They prevent the arithmetic logic unit from performing subtraction" },
+        { id: "d", text: "They require all instructions to be exactly 1 byte long" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: In a variable-length ISA (1 to 15 bytes in x86), the start of instruction N+1 cannot be located until the length and prefixes of instruction N have been parsed. Furthermore, operand register fields reside at variable bit positions, preventing parallel register file reads during the fetch cycle. Option (b), Option (c), and Option (d) are factually incorrect.",
+    },
+  ]}
+/>
+

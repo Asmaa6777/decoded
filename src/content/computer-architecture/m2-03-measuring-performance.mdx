@@ -1,4 +1,4 @@
-import { Callout, ModelAnswer } from "@/components/mdx/MdxComponents";
+import { Callout, ModelAnswer, Quiz } from "@/components/mdx/MdxComponents";
 import { CpiCalculator, ClockTrap } from "@/components/mdx/ArchitectureVisualizers";
 
 # Measuring Performance
@@ -185,6 +185,8 @@ A compiler might replace a 4-cycle multiplication instruction with six 1-cycle a
 
 ## Practice
 
+### Part 1: Written Exam & Lab Problems
+
 <ModelAnswer title="Problem 1: Evaluating compiler optimization tradeoffs">
 A software benchmark executes on a 2.0 GHz processor with the following instruction distribution and cycle costs:
 
@@ -273,3 +275,262 @@ $$\frac{1.20}{k} = 0.20 \implies k = \frac{1.20}{0.20} = 6$$
 
 The database query coprocessor must achieve a $6\times$ speedup to deliver a $2.0\times$ overall system performance gain.
 </ModelAnswer>
+
+<ModelAnswer title="Problem 3: Processor comparison across architectures using the Iron Law">
+Two processors, Machine A and Machine B, implement different instruction set architectures. A standard computational benchmark is compiled for each machine:
+
+- **Machine A:** Clock rate $f_A = 4.0\text{ GHz}$, Instruction count $IC_A = 1.2 \times 10^9$, average $\text{CPI}_A = 1.8$.
+- **Machine B:** Clock rate $f_B = 2.5\text{ GHz}$, Instruction count $IC_B = 0.6 \times 10^9$, average $\text{CPI}_B = 1.2$.
+
+1. Calculate the CPU execution time for both machines.
+2. Determine which machine is faster, and calculate the speedup factor.
+3. Compute the MIPS rating for both machines, and explain why the machine with the higher MIPS score is actually the slower computer.
+
+---
+
+**Solution:**
+
+**Part 1: CPU execution time:**
+Using the Iron Law ($\text{CPU Time} = \dfrac{IC \times \text{CPI}}{f}$):
+- Machine A:
+  $$\text{Time}_A = \frac{1.2 \times 10^9 \times 1.8}{4.0 \times 10^9\text{ Hz}} = \frac{2.16 \times 10^9}{4.0 \times 10^9} = 0.540\text{ seconds}$$
+- Machine B:
+  $$\text{Time}_B = \frac{0.6 \times 10^9 \times 1.2}{2.5 \times 10^9\text{ Hz}} = \frac{0.72 \times 10^9}{2.5 \times 10^9} = 0.288\text{ seconds}$$
+
+**Part 2: Performance comparison:**
+Machine B is faster because its execution time is substantially lower:
+$$\text{Speedup} = \frac{\text{Time}_A}{\text{Time}_B} = \frac{0.540}{0.288} = 1.875\times$$
+Machine B delivers an 87.5% speedup over Machine A.
+
+**Part 3: MIPS comparison and pitfall analysis:**
+$$\text{MIPS} = \frac{f}{\text{CPI} \times 10^6}$$
+- Machine A:
+  $$\text{MIPS}_A = \frac{4.0 \times 10^9}{1.8 \times 10^6} \approx 2{,}222.2\text{ MIPS}$$
+- Machine B:
+  $$\text{MIPS}_B = \frac{2.5 \times 10^9}{1.2 \times 10^6} \approx 2{,}083.3\text{ MIPS}$$
+
+Machine A executes 2,222 million instructions per second, while Machine B executes only 2,083 million instructions per second. Yet Machine A takes almost twice as long to finish the program!
+Machine A requires twice as many total instructions ($1.2 \times 10^9$ vs $0.6 \times 10^9$) to perform the exact same computation. MIPS measures instruction throughput rather than work accomplished. Because different ISAs express the same high-level task with different numbers of instructions, comparing MIPS across architectures is fundamentally flawed.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 4: Multicore scaling under Amdahl's law with serial fraction">
+A scientific simulation program spends 15% of its execution time in non-parallelizable serial code (file initialization, data reading, and barrier synchronization). The remaining 85% of execution time can be divided evenly across any number of parallel processor cores ($P$).
+
+1. Calculate the overall system speedup when executed on $P = 4, 8, 16,$ and $64$ processor cores.
+2. Determine the asymptotic theoretical limit of speedup as the core count approaches infinity ($P \to \infty$).
+3. If an engineering specification requires achieving an overall speedup of at least $5.0\times$, determine whether this goal is mathematically achievable, and if so, find the minimum integer core count $P$ required.
+
+---
+
+**Solution:**
+
+**Part 1: Speedup across core counts:**
+Applying Amdahl's law with serial fraction $s = 0.15$ and parallel fraction $f = 0.85$:
+$$\text{Speedup}(P) = \frac{1}{0.15 + \dfrac{0.85}{P}}$$
+
+- For $P = 4$:
+  $$\text{Speedup}(4) = \frac{1}{0.15 + \dfrac{0.85}{4}} = \frac{1}{0.15 + 0.2125} = \frac{1}{0.3625} \approx 2.759\times$$
+- For $P = 8$:
+  $$\text{Speedup}(8) = \frac{1}{0.15 + \dfrac{0.85}{8}} = \frac{1}{0.15 + 0.10625} = \frac{1}{0.25625} \approx 3.902\times$$
+- For $P = 16$:
+  $$\text{Speedup}(16) = \frac{1}{0.15 + \dfrac{0.85}{16}} = \frac{1}{0.15 + 0.053125} = \frac{1}{0.203125} \approx 4.923\times$$
+- For $P = 64$:
+  $$\text{Speedup}(64) = \frac{1}{0.15 + \dfrac{0.85}{64}} = \frac{1}{0.15 + 0.01328} = \frac{1}{0.16328} \approx 6.124\times$$
+
+**Part 2: Asymptotic speedup bound ($P \to \infty$):**
+$$\text{Speedup}_{\max} = \lim_{P \to \infty} \frac{1}{0.15 + \dfrac{0.85}{P}} = \frac{1}{0.15} \approx 6.667\times$$
+Regardless of how many thousands of cores are added, the speedup can never exceed $6.67\times$.
+
+**Part 3: Minimum cores for $5.0\times$ speedup:**
+Because $5.0 < 6.667$, the target is achievable:
+$$5.0 = \frac{1}{0.15 + \dfrac{0.85}{P}}$$
+$$0.15 + \frac{0.85}{P} = \frac{1}{5.0} = 0.20$$
+$$\frac{0.85}{P} = 0.20 - 0.15 = 0.05$$
+$$P = \frac{0.85}{0.05} = 17 \text{ cores}$$
+
+The system requires at least 17 dedicated parallel cores to deliver a $5.0\times$ speedup.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 5: Memory stall CPI and memory hierarchy impact">
+A processor has an ideal base cycle cost $\text{CPI}_{\text{base}} = 1.2$ when all memory accesses hit in the L1 cache. The application workload consists of 30% data memory reference instructions (loads and stores).
+The cache memory hierarchy operates with the following specifications:
+- L1 data cache miss rate: 4%.
+- L1 miss penalty (time to service from L2 cache): 10 clock cycles.
+- L2 cache local miss rate: 20%.
+- L2 miss penalty (time to service from main memory DRAM): 100 clock cycles.
+
+1. Calculate the memory stall cycles per instruction contributed by the cache hierarchy.
+2. Calculate the effective average CPI ($\text{CPI}_{\text{eff}} = \text{CPI}_{\text{base}} + \text{Memory Stalls}$).
+3. Calculate what percentage of total execution time is spent stalled waiting on memory.
+
+---
+
+**Solution:**
+
+**Part 1: Memory stall cycles per instruction:**
+Memory accesses occur on 30% of instructions. When an access misses in L1 (4% of accesses), it incurs a 10-cycle penalty to check L2. Furthermore, 20% of those L1 misses also miss in L2, triggering the full 100-cycle DRAM access:
+$$\text{Stall cycles}_{\text{L1 miss, L2 hit}} = 0.04 \times (1 - 0.20) \times 10 = 0.032 \times 10 = 0.32\text{ cycles/access}$$
+$$\text{Stall cycles}_{\text{L2 miss}} = 0.04 \times 0.20 \times (10 + 100) = 0.008 \times 110 = 0.88\text{ cycles/access}$$
+$$\text{Total stalls per memory access} = 0.32 + 0.88 = 1.20\text{ cycles/access}$$
+
+Factoring in the 30% memory reference frequency:
+$$\text{Memory Stalls} = 0.30 \times 1.20 = 0.36\text{ cycles per instruction}$$
+
+**Part 2: Effective overall CPI:**
+$$\text{CPI}_{\text{eff}} = \text{CPI}_{\text{base}} + \text{Memory Stalls} = 1.20 + 0.36 = 1.56\text{ cycles per instruction}$$
+
+**Part 3: Percentage of execution time spent stalled:**
+$$\text{Fraction stalled} = \frac{\text{Memory Stalls}}{\text{CPI}_{\text{eff}}} = \frac{0.36}{1.56} \approx 0.2308 \implies 23.08\%$$
+The CPU core spends nearly a quarter of its execution time waiting for memory transfers, demonstrating why cache hierarchy tuning is as vital to processor performance as ALU clock speed.
+</ModelAnswer>
+
+<ModelAnswer title="Problem 6: SPEC benchmark geometric mean vs arithmetic mean">
+A benchmark suite evaluates two computers against a standard Reference Machine $R$ across three programs:
+
+| Program | Reference Machine $R$ | Computer $A$ | Computer $B$ |
+|---|---|---|---|
+| Program 1 ($P_1$) | 100 s | 20 s | 50 s |
+| Program 2 ($P_2$) | 200 s | 100 s | 50 s |
+| Program 3 ($P_3$) | 500 s | 100 s | 250 s |
+
+1. Calculate the SPEC performance ratio for each program on Computer $A$ and Computer $B$ relative to Reference Machine $R$ (where $\text{Ratio} = \text{Time}_{\text{Ref}} / \text{Time}_{\text{Test}}$).
+2. Compute the geometric mean of the SPEC ratios for both computers. Which computer is faster overall?
+3. Explain why the arithmetic mean of normalized execution ratios is mathematically flawed when evaluating computer performance.
+
+---
+
+**Solution:**
+
+**Part 1: Individual SPEC ratios relative to Reference $R$:**
+- Computer $A$:
+  - $P_1$: $100 / 20 = 5.00$
+  - $P_2$: $200 / 100 = 2.00$
+  - $P_3$: $500 / 100 = 5.00$
+- Computer $B$:
+  - $P_1$: $100 / 50 = 2.00$
+  - $P_2$: $200 / 50 = 4.00$
+  - $P_3$: $500 / 250 = 2.00$
+
+**Part 2: Geometric mean computation:**
+$$\text{GM} = \sqrt[n]{\prod_{i=1}^n r_i}$$
+- Computer $A$:
+  $$\text{GM}_A = \sqrt[3]{5.00 \times 2.00 \times 5.00} = \sqrt[3]{50.0} \approx 3.684$$
+- Computer $B$:
+  $$\text{GM}_B = \sqrt[3]{2.00 \times 4.00 \times 2.00} = \sqrt[3]{16.0} \approx 2.520$$
+
+Computer $A$ is faster overall by a factor of:
+$$\frac{\text{GM}_A}{\text{GM}_B} = \frac{3.684}{2.520} \approx 1.462\times \text{ (46.2% faster)}$$
+
+**Part 3: Flaw of arithmetic mean for normalized metrics:**
+If one used the arithmetic mean of ratios, the result would depend arbitrarily on which machine is chosen as the baseline. If Computer $A$ were chosen as the reference, normalized ratios for Computer $B$ would be $20/50 = 0.4$, $100/50 = 2.0$, and $100/250 = 0.4$, giving an arithmetic mean of $(0.4 + 2.0 + 0.4)/3 = 0.933 < 1.0$, suggesting Computer $B$ is faster, while relative to $R$ the arithmetic mean for $A$ is $(5+2+5)/3 = 4.0$ vs $(2+4+2)/3 = 2.67$ for $B$, suggesting $A$ is faster.
+Only the geometric mean satisfies the property of consistency: $\text{GM}(A/B) = \text{GM}(A/R) / \text{GM}(B/R)$, ensuring that the ranking of computers remains invariant regardless of the chosen reference machine.
+</ModelAnswer>
+
+---
+
+### Part 2: In-Lesson Interactive Practice
+
+<Quiz
+  courseSlug="computer-architecture"
+  lessonSlug="measuring-performance"
+  practice
+  questions={[
+    {
+      id: "perf-p1",
+      prompt: "In the Iron Law of Processor Performance (CPU Time = IC × CPI / f), which factor is determined primarily by the compiler and instruction set architecture rather than circuit fabrication?",
+      options: [
+        { id: "a", text: "Instruction Count (IC)" },
+        { id: "b", text: "Clock frequency (f)" },
+        { id: "c", text: "Transistor propagation delay" },
+        { id: "d", text: "Supply voltage" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Instruction Count is determined entirely by the algorithm, the compiler optimizations, and the expressiveness of the instruction set architecture (ISA). Clock frequency (b), transistor delay (c), and voltage (d) are physical hardware and silicon fabrication parameters. Option (b), Option (c), and Option (d) are incorrect.",
+    },
+    {
+      id: "perf-p2",
+      prompt: "Processor X runs at 3.0 GHz with an average CPI of 1.5. Processor Y runs at 4.5 GHz with an average CPI of 2.5 on the same ISA and program. Which processor completes the program faster?",
+      options: [
+        { id: "a", text: "Processor X is faster because its time per instruction (0.50 ns) is lower than Processor Y (0.56 ns)" },
+        { id: "b", text: "Processor Y is faster because its clock frequency is 50% higher" },
+        { id: "c", text: "Both processors finish at exactly the same time" },
+        { id: "d", text: "Processor Y is faster because higher CPI indicates more work accomplished per cycle" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Time per instruction is CPI / f. For Processor X: 1.5 / (3.0 × 10^9) = 0.500 ns per instruction. For Processor Y: 2.5 / (4.5 × 10^9) ≈ 0.556 ns per instruction. Because both execute the same instruction count, Processor X takes less total time. Option (b) falls directly into the clock speed trap. Option (c) is mathematically false. Option (d) incorrectly defines CPI.",
+    },
+    {
+      id: "perf-p3",
+      prompt: "Why is MIPS (Million Instructions Per Second) an invalid metric for comparing performance across different processor architectures?",
+      options: [
+        { id: "a", text: "Different ISAs require different numbers of instructions to accomplish the same program task" },
+        { id: "b", text: "MIPS can only be measured on single-core computers" },
+        { id: "c", text: "MIPS changes depending on the display monitor refresh rate" },
+        { id: "d", text: "MIPS is only defined for floating-point calculations" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: A CISC machine may perform in 1 instruction what a RISC machine takes 3 instructions to complete. Even if the RISC machine executes instructions at a higher rate (higher MIPS), the CISC machine may finish the overall task sooner. Option (b) is false. Option (c) is irrelevant. Option (d) confuses MIPS with MFLOPS.",
+    },
+    {
+      id: "perf-p4",
+      prompt: "According to Amdahl's Law, if 25% of a program's execution time consists of sequential code that cannot be parallelized, what is the maximum theoretical speedup achievable on an infinite number of processors?",
+      options: [
+        { id: "a", text: "4.0×" },
+        { id: "b", text: "25×" },
+        { id: "c", text: "75×" },
+        { id: "d", text: "Infinite speedup" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Amdahl's Law states that Speedup = 1 / ((1 - f) + f/N). As N approaches infinity, the parallel term f/N drops to zero, leaving Speedup_max = 1 / (1 - f) = 1 / 0.25 = 4.0×. Even with an infinite supercomputer, the 25% serial portion limits speedup to 4×. Option (b), Option (c), and Option (d) fail to apply the asymptotic formula.",
+    },
+    {
+      id: "perf-p5",
+      prompt: "Why is calculating average CPI as the unweighted arithmetic mean of instruction cycle costs ((CPI_1 + CPI_2 + ...)/N) incorrect?",
+      options: [
+        { id: "a", text: "It treats all instruction types as equally frequent, ignoring the real instruction mix executed by the program" },
+        { id: "b", text: "Arithmetic division is not supported by hardware control units" },
+        { id: "c", text: "It produces a negative number whenever branch instructions are present" },
+        { id: "d", text: "It doubles the measured clock period" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Instructions occur with vastly different frequencies in real programs (e.g., 50% ALU, 30% load/store, 20% branch). Averaging cycle counts without weighting by instruction frequency produces a meaningless figure. Option (b), Option (c), and Option (d) are nonsensical.",
+    },
+    {
+      id: "perf-p6",
+      prompt: "What mathematical property makes the geometric mean the required metric for summarizing normalized SPEC benchmark ratios?",
+      options: [
+        { id: "a", text: "Consistency under reference machine substitution: the performance ratio between Machine A and Machine B remains unchanged regardless of which computer is chosen as baseline" },
+        { id: "b", text: "The geometric mean always equals the arithmetic mean when sample sizes exceed 10" },
+        { id: "c", text: "The geometric mean excludes cache misses from the calculation" },
+        { id: "d", text: "It requires no multiplication operations" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: The geometric mean possesses property invariance: GM(A)/GM(B) is identical whether normalized against Reference R, Machine A, or Machine B. The arithmetic mean of ratios changes relative rankings depending on the reference baseline. Option (b), Option (c), and Option (d) are false.",
+    },
+    {
+      id: "perf-p7",
+      prompt: "A database query represents 75% of a server's execution time. To double the overall speed of the server (2.0× speedup), by what factor must the query subsystem be accelerated?",
+      options: [
+        { id: "a", text: "3.0×" },
+        { id: "b", text: "2.0×" },
+        { id: "c", text: "1.5×" },
+        { id: "d", text: "4.0×" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Under Amdahl's Law: 2.0 = 1 / ((1 - 0.75) + 0.75 / k) = 1 / (0.25 + 0.75 / k). Cross-multiplying: 0.50 + 1.50 / k = 1.0 => 1.50 / k = 0.50 => k = 1.50 / 0.50 = 3.0×. Option (b) mistakenly assumes accelerating by 2× achieves a 2× system gain. Option (c) and Option (d) are incorrect.",
+    },
+    {
+      id: "perf-p8",
+      prompt: "A Unix benchmark reports 100 seconds of wall-clock time, 15 seconds of user CPU time, and 5 seconds of system CPU time. What accounts for the remaining 80 seconds?",
+      options: [
+        { id: "a", text: "Time spent waiting for I/O operations (disk, network) and CPU idle time while waiting for other scheduled processes" },
+        { id: "b", text: "Arithmetic overflow stall cycles in the floating-point unit" },
+        { id: "c", text: "Time spent decoding variable-length x86 instruction prefixes" },
+        { id: "d", text: "Cache tag comparison gate propagation delays" },
+      ],
+      correctOptionId: "a",
+      explanation: "Option (a) is correct: Wall-clock time encompasses the entire real-world duration. Total CPU time is User (15 s) + System (5 s) = 20 seconds. The remaining 80 seconds are spent waiting for asynchronous I/O (disk reads, network sockets) or blocked by OS context switches. Option (b), Option (c), and Option (d) occur during CPU active execution time.",
+    },
+  ]}
+/>
+
