@@ -184,7 +184,7 @@ export function Callout({
    lesson's opening paragraph. */
 export function Epigraph({ quote, by, source }: { quote: string; by: string; source?: string }) {
   return (
-    <figure className="not-prose my-10 ml-auto max-w-md">
+    <figure className="not-prose my-10 max-w-xl">
       <div aria-hidden className="mb-4 h-px w-10 bg-neon" />
       <blockquote className="font-body text-xl italic leading-snug text-foreground/90">{quote}</blockquote>
       <figcaption className="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
