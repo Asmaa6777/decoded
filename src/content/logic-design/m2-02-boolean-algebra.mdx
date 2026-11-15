@@ -47,9 +47,18 @@ A Boolean algebra is a set of elements $B$ with two binary operators $+$ (logica
    <Callout tone="neon" label="A key difference from real arithmetic">
    In ordinary elementary algebra, multiplication distributes over addition ($x(y+z) = xy + xz$), but addition does NOT distribute over multiplication ($x + yz \ne (x+y)(x+z)$). In Boolean algebra, both operations distribute over each other.
    
-   To see why $x + yz = (x + y)(x + z)$ holds, expand the right side using the first distributive law:
+   To verify that $x + yz = (x + y)(x + z)$ holds, expand the right-hand side using the first distributive law:
    $$
-   (x + y)(x + z) = x(x + z) + y(x + z) = xx + xz + yx + yz = x + xz + xy + yz = x(1 + z + y) + yz = x(1) + yz = x + yz
+   \begin{aligned}
+   (x + y)(x + z) &= x(x + z) + y(x + z) && \text{Distribute } (x + z) \\
+   &= xx + xz + yx + yz && \text{Distribute } x \text{ and } y \\
+   &= x + xz + xy + yz && \text{Idempotence: } xx = x \\
+   &= x(1 + z) + xy + yz && \text{Identity: } x \cdot 1 = x \\
+   &= x(1) + xy + yz && \text{Boundedness: } 1 + z = 1 \\
+   &= x + xy + yz && \text{Identity: } x \cdot 1 = x \\
+   &= x(1 + y) + yz && \text{Identity and distribution} \\
+   &= x(1) + yz = x + yz && \text{Boundedness and identity}
+   \end{aligned}
    $$
    </Callout>
 
@@ -117,6 +126,11 @@ In this expression:
 1. $xy$ contains literal $x$.
 2. $x'z$ contains the complemented literal $x'$.
 3. $yz$ is formed by multiplying the remaining literals from the first two terms. This third term is the **consensus term**.
+
+To spot a consensus term in any expression regardless of variable ordering, use this three-step test:
+1. Find two product terms containing a variable and its complement (such as $x$ in one term and $x'$ in the other).
+2. Look at the remaining literals in each of those two terms ($y$ and $z$).
+3. Form their product ($yz$). If that product appears in the expression, it is the redundant consensus term and can be removed without changing the function.
 
 **Formal proof of the Consensus Theorem:**
 $$
@@ -234,17 +248,29 @@ When simplifying and proving Boolean expressions, students routinely encounter t
 Prove the absorption identity $x + xy = x$ using only Huntington's postulates, stating the exact postulate applied at each step.
 
 <ModelAnswer>
+First, derive the boundedness property $y + 1 = 1$ directly from Huntington's postulates:
+$$
+\begin{aligned}
+y + 1 &= (y + 1) \cdot 1 && \text{Postulate 2: Multiplicative identity } (w \cdot 1 = w) \\
+&= (y + 1) \cdot (y + y') && \text{Postulate 5: Complement } (y + y' = 1) \\
+&= y + (1 \cdot y') && \text{Postulate 4: Second distributive law } (y + ab = (y+a)(y+b)) \\
+&= y + y' && \text{Postulate 2 & 3: Identity and commutativity } (1 \cdot y' = y') \\
+&= 1 && \text{Postulate 5: Complement } (y + y' = 1)
+\end{aligned}
+$$
+
+Now prove the absorption identity $x + xy = x$:
 $$
 \begin{aligned}
 x + xy &= x \cdot 1 + xy && \text{Postulate 2: Identity element } (x \cdot 1 = x) \\
-&= x \cdot (1 + y) && \text{Postulate 4: Distributive law } (x \cdot w + x \cdot y = x \cdot (w + y)) \\
+&= x \cdot (1 + y) && \text{Postulate 4: Distributive law } (x \cdot 1 + x \cdot y = x \cdot (1 + y)) \\
 &= x \cdot (y + 1) && \text{Postulate 3: Commutative law } (1 + y = y + 1) \\
-&= x \cdot 1 && \text{Theorem 2: Boundedness } (y + 1 = 1) \\
+&= x \cdot 1 && \text{Boundedness derived above } (y + 1 = 1) \\
 &= x && \text{Postulate 2: Identity element } (x \cdot 1 = x)
 \end{aligned}
 $$
 
-Thus, $x + xy = x$ is rigorously derived.
+Thus, $x + xy = x$ is rigorously derived using only Huntington's postulates.
 
 <Callout tone="orange" label="Common exam pitfall">
 On rigorous algebraic proofs, students often write $x + xy = x(1 + y)$ without citing the identity postulate ($x = x \cdot 1$) first. You cannot factor $x$ out of a lone variable unless it is explicitly paired with the multiplicative identity element $1$.
@@ -435,7 +461,7 @@ Expanding three 3-variable sum terms by multiplying out all terms produces $27$ 
 
 Prove each of the following Boolean identities algebraically using standard Huntington postulates and theorems:
 1. $A \oplus B \oplus AB = A + B$
-2. $A \oplus B \oplus A'B' = 1$
+2. $(A \oplus B) \oplus (AB + A'B') = 1$
 3. $(A \oplus B)' = AB + A'B'$
 
 <ModelAnswer>
@@ -460,27 +486,26 @@ Prove each of the following Boolean identities algebraically using standard Hunt
    $$
    Therefore, $A \oplus B \oplus AB = A + B$.
 
-2. **Prove $A \oplus B \oplus A'B' = 1$:**
-   Let $X = A \oplus B = A'B + AB'$ and $Z = A'B'$.
-   Evaluate orthogonality:
+2. **Prove $(A \oplus B) \oplus (AB + A'B') = 1$:**
+   Let $X = A \oplus B = A'B + AB'$.
+   From part 3, the complement of XOR is the XNOR equivalence function:
    $$
-   X \cdot Z = (A'B + AB')(A'B') = 0 + 0 = 0
+   X' = (A \oplus B)' = AB + A'B'
    $$
-   Therefore:
+   Now evaluate the XOR between any variable expression $X$ and its complement $X'$ using the definition $x \oplus y = x'y + xy'$:
    $$
-   X \oplus Z = X + Z = (A'B + AB') + A'B' = A'(B + B') + AB' = A' + AB' = A' + B'
+   \begin{aligned}
+   X \oplus X' &= X'(X') + X(X')' && \text{Definition of XOR} \\
+   &= X' \cdot X' + X \cdot X && \text{Involution: } (X')' = X \\
+   &= X' + X && \text{Idempotence: } W \cdot W = W \\
+   &= 1 && \text{Complement law: } X + X' = 1
+   \end{aligned}
    $$
-   Wait, let us check with a truth table for $A \oplus B \oplus A'B'$:
-   - For $A=0, B=0$: $0 \oplus 0 \oplus 1 = 1$.
-   - For $A=0, B=1$: $0 \oplus 1 \oplus 0 = 1$.
-   - For $A=1, B=0$: $1 \oplus 0 \oplus 0 = 1$.
-   - For $A=1, B=1$: $1 \oplus 1 \oplus 0 = 0 \oplus 0 = 0$.
-   Notice when $A=1, B=1$, $A \oplus B = 0$ and $A'B' = 0 \implies 0 \oplus 0 = 0$.
-   Wait! $A \oplus B \oplus (AB)' = A \oplus B \oplus (A' + B') = 1$ is the identity!
-   Let us prove $A \oplus B \oplus (A \odot B) = 1$:
-   Let $X = A \oplus B$ and $W = A \odot B = (A \oplus B)' = X'$.
-   Then $X \oplus X' = X'(X')' + X(X') = X \cdot X + X' \cdot X' = X + X' = 1$.
-   Because $(A \oplus B)' = AB + A'B'$, $(A \oplus B) \oplus (AB + A'B') = 1$.
+   Substituting $X = A \oplus B$ and $X' = AB + A'B'$:
+   $$
+   (A \oplus B) \oplus (AB + A'B') = 1
+   $$
+   Any Boolean expression XORed with its complement evaluates identically to 1 across all input combinations.
 
 3. **Prove $(A \oplus B)' = AB + A'B'$:**
    $$

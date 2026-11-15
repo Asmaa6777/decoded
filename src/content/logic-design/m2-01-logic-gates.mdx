@@ -6,7 +6,7 @@ import { CmosSwitchVisualizer, PropagationDelayLab } from "@/components/mdx/Logi
 
 A **logic gate** is the basic building block of digital circuits. It takes one or more binary inputs, represented by electric voltages, and produces a single binary output according to a Boolean **switching function** $f: \{0, 1\}^n \to \{0, 1\}$. Every digital system, from a microwave timer to a 64-bit multi-core processor, is built by connecting millions or billions of these gates.
 
-At the circuit level, gates are built from semiconductor switches called **MOSFETs** (Metal-Oxide-Semiconductor Field-Effect Transistors). Just as [transistors](/courses/computer-organization/whats-inside#the-idea-that-makes-it-all-work) act as voltage-controlled switches in a computer's microarchitecture, each MOSFET has four physical terminals: the **gate** (control input), the **source**, the **drain**, and the **substrate** (body). The voltage applied across the gate terminal creates an electric field that opens or closes a conductive channel between the drain and source.
+At the circuit level, gates are built from semiconductor switches called **MOSFETs** (Metal-Oxide-Semiconductor Field-Effect Transistors). Just as [transistors](/courses/computer-organization/whats-inside#the-idea-that-makes-it-all-work) act as voltage-controlled switches in a computer's microarchitecture, each MOSFET has four physical terminals: the **gate** (control input), the **source**, the **drain**, and the **substrate** (body). The voltage applied across the gate terminal creates an electric field that opens or closes a conductive channel between the drain and source. In digital integrated circuits, the substrate is internally connected to the supply rails (to ground $V_{SS}$ for nMOS, and to positive supply $V_{DD}$ for pMOS). Because the substrate is already biased to keep internal diodes reverse-biased, digital circuit schematics omit the substrate terminal and treat MOSFETs as three-terminal voltage-controlled switches.
 
 In **CMOS** (Complementary Metal-Oxide-Semiconductor) technology, gates use matched pairs of n-channel (nMOS) and p-channel (pMOS) transistors organized into two complementary networks:
 - **nMOS transistors (Pull-Down Network, PDN):** Conduct electricity between drain and source when their gate terminal receives a high voltage (logic 1, near $V_{DD}$). When driven with a low voltage (logic 0), they turn off. The PDN connects the output node to ground ($V_{SS} = 0\,\text{V}$).
@@ -36,6 +36,8 @@ Digital systems rely on eight basic gate types, which directly implement the fun
 | **NOR** | OR with inversion bubble | `≥1` with right bubble | $Y = (A + B)'$ | All inputs are 0 |
 | **XOR** | Double-curved back, pointed | `=1` | $Y = A \oplus B = A'B + AB'$ | Exactly one input is 1 (inputs differ) |
 | **XNOR** | XOR with inversion bubble | `=1` with right bubble | $Y = (A \oplus B)' = AB + A'B'$ | Inputs are equal |
+
+The IEEE Std 91 rectangular symbols use qualifying labels that describe the gate's condition in plain logic: `&` indicates all inputs must be 1 (AND); `≥1` indicates at least one input must be 1 (inclusive OR); `=1` indicates exactly one input must be 1 (exclusive OR); and `1` indicates a single-input identity buffer or inverter. A small circle or right bubble marks inversion.
 
 ### NOT gate (Inverter) and Buffer
 
@@ -183,6 +185,8 @@ Gates do not switch instantaneously. The physical delay required for a signal ch
   t_{pd} = \frac{t_{pHL} + t_{pLH}}{2}
   $$
 
+The subscripts $HL$ and $LH$ describe the direction of the **output** transition, not the input. For an inverting gate (NOT, NAND, NOR), an input rising edge ($0 \to 1$) produces an output falling edge ($1 \to 0$), so the applicable delay is $t_{pHL}$. For a non-inverting gate (Buffer, AND, OR), a rising input produces a rising output, so the applicable delay is $t_{pLH}$.
+
 Why measure propagation delays at the **50% voltage threshold**? Downstream transistor switching thresholds sit approximately midway between the power supply rails ($V_{DD}/2$). The 50% point marks when downstream gates start reading the changing voltage as the opposite binary state.
 
 Output waveforms also require finite time to cross voltage levels:
@@ -203,6 +207,10 @@ Cumulative propagation delays along critical combinational paths set the maximum
 $$
 f_{\max} \le \frac{1}{t_{\text{path(longest)}} + t_{\text{setup}} + t_{\text{clk-to-Q}}}
 $$
+
+Here $t_{\text{path(longest)}}$ is the maximum combinational gate delay between storage elements. The other two parameters arise from the synchronous registers that launch and capture signals, covered in [Flip-Flops](/courses/logic-design/flip-flops):
+- **Clock-to-Q delay ($t_{\text{clk-to-Q}}$):** The time a launching flip-flop requires to emit its new output bit after the clock edge arrives.
+- **Setup time ($t_{\text{setup}}$):** The safety margin of time the receiving flip-flop demands the incoming data remain stable before the next clock edge arrives.
 
 Trace how signal transitions alternate polarities along cascaded stages and accumulate path delay below:
 
@@ -267,6 +275,8 @@ $$
 \text{Fan-out} = \min\Big(\text{Fan-out (High)}, \text{Fan-out (Low)}\Big)
 $$
 
+The floor function $\lfloor \dots \rfloor$ truncates the division because physical gate inputs cannot be fractionally connected. Rounding up to the next integer, even if the division yields $16.9$, is prohibited: loading the output with 17 gates would demand more sinking or sourcing current than rated, pulling the output voltage into the forbidden indeterminate zone and destroying noise margins.
+
 ### Floating inputs: TTL vs. CMOS behavior
 
 Leaving an unused gate input unconnected (**floating**) produces very different, and potentially dangerous, consequences depending on the logic family:
@@ -284,7 +294,9 @@ In lab prototypes and discrete boards, digital logic is packaged in 14-pin or 16
 - **7432:** Quad 2-input OR gates
 - **7486:** Quad 2-input XOR gates
 
-On standard 14-pin DIP packages, pins are numbered counter-clockwise starting from the top-left index notch or dot: pin 14 supplies $+5\,\text{V}$ ($V_{CC}$), and pin 7 connects to ground (GND).
+On standard DIP packages, pins are numbered counter-clockwise starting from the top-left index notch or dot:
+- On 14-pin DIP packages, pin 14 supplies $+5\,\text{V}$ ($V_{CC}$), and pin 7 connects to ground (GND).
+- On 16-pin DIP packages, pin 16 supplies $+5\,\text{V}$ ($V_{CC}$), and pin 8 connects to ground (GND).
 
 ## Common exam pitfalls and student mistakes
 
