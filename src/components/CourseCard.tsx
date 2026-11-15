@@ -5,6 +5,8 @@ import { useProgress } from "@/hooks/useProgress";
 import { useRegistration } from "@/hooks/useRegistration";
 import { CourseGlyph } from "@/components/brand/Glyphs";
 import { CourseMaturity } from "@/components/CourseMaturity";
+import { useReveal } from "@/hooks/useReveal";
+import { useEffect, useState, type CSSProperties } from "react";
 
 const accentText: Record<string, string> = {
   neon: "text-neon",
@@ -33,16 +35,30 @@ export default function CourseCard({ slug }: { slug: string }) {
   const disabled = course.status === "coming-soon";
   const required = prerequisites[course.slug]?.map((s) => courses.find((c) => c.slug === s)!.title);
 
+  const { ref, shown } = useReveal<HTMLDivElement>();
+  // Cards in the same row come in one after another, left to right.
+  const [delay, setDelay] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    const parent = el?.parentElement;
+    if (!el || !parent) return;
+    const cols = getComputedStyle(parent).gridTemplateColumns.split(" ").filter(Boolean).length || 1;
+    setDelay((Array.prototype.indexOf.call(parent.children, el) % cols) * 90);
+  }, [ref]);
+
   const Wrapper: React.ElementType = disabled ? "div" : Link;
   const wrapperProps = disabled ? {} : { to: `/courses/${course.slug}` };
 
   return (
     <Wrapper
       {...wrapperProps}
-      className={`group relative block border border-border bg-card overflow-hidden transition-all
+      ref={ref}
+      data-shown={shown}
+      style={{ "--d": `${delay}ms` } as CSSProperties}
+      className={`reveal group relative block border border-border bg-card overflow-hidden transition-all
         ${disabled ? "opacity-60 cursor-not-allowed" : "hover:border-foreground/40 hover:-translate-y-0.5"}`}
     >
-      <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentBg[course.accent]}`} aria-hidden />
+      <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${disabled ? "" : "group-hover:w-[6px]"} transition-[width] duration-200 ${accentBg[course.accent]}`} aria-hidden />
 
       <div className="p-6 md:p-7">
         <div className="flex items-center justify-between gap-3 mb-4">
@@ -70,7 +86,7 @@ export default function CourseCard({ slug }: { slug: string }) {
 
         {!disabled && total > 0 && !registered && (
           <div className={`font-mono text-[10px] tracking-widest uppercase ${accentText[course.accent]}`}>
-            Register to track progress →
+            Register to track progress <span aria-hidden className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
           </div>
         )}
 
@@ -82,8 +98,8 @@ export default function CourseCard({ slug }: { slug: string }) {
             </div>
             <div className="h-[3px] w-full bg-secondary overflow-hidden">
               <div
-                className={`h-full ${accentBg[course.accent]} transition-all duration-500`}
-                style={{ width: `${pct}%` }}
+                className={`h-full ${accentBg[course.accent]} transition-[width] duration-700 ease-out`}
+                style={{ width: shown ? `${pct}%` : 0, transitionDelay: `${delay + 250}ms` }}
               />
             </div>
           </div>

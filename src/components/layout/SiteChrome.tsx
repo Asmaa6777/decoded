@@ -18,13 +18,15 @@ export function SiteHeader() {
         <nav className="flex items-center gap-3 sm:gap-6 font-mono text-xs uppercase tracking-widest">
           <Link
             to="/"
-            className={`hidden sm:inline transition-colors hover:text-foreground ${pathname === "/" ? "text-foreground" : "text-muted-foreground"}`}
+            aria-current={pathname === "/" ? "page" : undefined}
+            className={`link-draw hidden sm:inline transition-colors hover:text-foreground ${pathname === "/" ? "text-foreground" : "text-muted-foreground"}`}
           >
             Home
           </Link>
           <Link
             to="/courses"
-            className={`transition-colors hover:text-foreground ${pathname.startsWith("/courses") ? "text-foreground" : "text-muted-foreground"}`}
+            aria-current={pathname.startsWith("/courses") ? "page" : undefined}
+            className={`link-draw transition-colors hover:text-foreground ${pathname.startsWith("/courses") ? "text-foreground" : "text-muted-foreground"}`}
           >
             Courses
           </Link>
@@ -48,10 +50,10 @@ export function SiteFooter() {
           Decoded.
         </span>
         <nav className="flex items-center gap-6">
-          <Link to="/courses" className="hover:text-foreground transition-colors">Courses</Link>
-          <Link to="/tools" className="hover:text-foreground transition-colors">Tools</Link>
-          <Link to="/team" className="hover:text-foreground transition-colors">Contributors</Link>
-          <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+          <Link to="/courses" className="link-draw hover:text-foreground transition-colors">Courses</Link>
+          <Link to="/tools" className="link-draw hover:text-foreground transition-colors">Tools</Link>
+          <Link to="/team" className="link-draw hover:text-foreground transition-colors">Contributors</Link>
+          <Link to="/privacy" className="link-draw hover:text-foreground transition-colors">Privacy</Link>
         </nav>
         <span className="flex flex-col gap-2 md:items-end">
           <span>v0.1 · Progress saved {status === "signed-in" ? "to your account" : "on this device"}</span>

@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { ContinueLearning } from "@/components/ContinueLearning";
 import { TrackPicker } from "@/components/TrackPicker";
 import { courses } from "@/content/registry";
+import { DecodeText } from "@/components/DecodeText";
 import { CourseGlyph } from "@/components/brand/Glyphs";
 
 const accentText: Record<string, string> = {
@@ -25,29 +26,29 @@ export default function Index() {
       {/* HERO */}
       <section className="relative z-10 border-b border-border">
         <div className="container py-20 md:py-28">
-          <div className="eyebrow text-neon mb-5">CS Theory · Real-world skills mapped</div>
+          <div className="rise-in eyebrow text-neon mb-5">CS Theory · Real-world skills mapped</div>
           {/* Syne is very wide: three fixed lines, sized to the viewport so each fits on one line from md up */}
-          <h1 className="font-display font-extrabold leading-[0.95] tracking-tight text-[clamp(2.5rem,5.4vw,4.5rem)]">
+          <h1 className="rise-in font-display font-extrabold leading-[0.95] tracking-tight text-[clamp(2.5rem,5.4vw,4.5rem)]">
             <span className="block md:whitespace-nowrap">Computer science</span>
             <span className="block md:whitespace-nowrap">
-              proofs, <span className="text-neon">decoded</span> to
+              proofs, <span className="text-neon"><DecodeText text="decoded" /></span> to
             </span>
             <span className="block md:whitespace-nowrap">production tools</span>
           </h1>
-          <p className="mt-8 max-w-2xl text-lg md:text-xl text-muted-foreground italic font-body leading-relaxed">
+          <p style={{ "--d": "120ms" } as CSSProperties} className="rise-in mt-8 max-w-2xl text-lg md:text-xl text-muted-foreground italic font-body leading-relaxed">
             Every course in a CS curriculum maps to something practical, used daily, with applications everywhere. It just has to be mapped.
             This is the layer that connects the theory with what's out there.
           </p>
 
           <ContinueLearning />
 
-          <div className="mt-10 flex flex-wrap gap-3">
+          <div style={{ "--d": "220ms" } as CSSProperties} className="rise-in mt-10 flex flex-wrap gap-3">
             <Link
               to="/courses/theory-of-computation"
-              className="inline-flex items-center gap-2 bg-neon text-background px-5 py-3 font-mono text-xs uppercase tracking-widest font-semibold hover:opacity-90 transition"
+              className="group inline-flex items-center gap-2 bg-neon text-background px-5 py-3 font-mono text-xs uppercase tracking-widest font-semibold hover:opacity-90 transition"
             >
               Start with Theory of Computation
-              <span aria-hidden>→</span>
+              <span aria-hidden className="transition-transform duration-200 group-hover:translate-x-1">→</span>
             </Link>
             <Link
               to="/courses"
@@ -58,7 +59,7 @@ export default function Index() {
           </div>
 
           {/* Track legend: one glyph and colour per course */}
-          <ul className="mt-14 flex flex-wrap gap-x-6 gap-y-3 font-mono text-[11px] text-muted-foreground tracking-widest uppercase">
+          <ul style={{ "--d": "320ms" } as CSSProperties} className="rise-in mt-14 flex flex-wrap gap-x-6 gap-y-3 font-mono text-[11px] text-muted-foreground tracking-widest uppercase">
             {courses.map((c) => (
               <li key={c.slug} className={`inline-flex items-center gap-2 ${c.status === "coming-soon" ? "opacity-50" : ""}`}>
                 <CourseGlyph slug={c.slug} className={`h-4 w-4 ${accentText[c.accent]}`} />

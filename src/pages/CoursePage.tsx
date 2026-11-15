@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, type CSSProperties } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getCourse, flattenLessons, lessonKind } from "@/content/registry";
@@ -41,11 +41,11 @@ export default function CoursePage() {
               <span className={accentText[course.accent]}>{course.title}</span>
             </div>
 
-            <CourseGlyph slug={course.slug} className={`h-10 w-10 mb-5 ${accentText[course.accent]}`} />
-            <h1 className="font-display text-4xl md:text-6xl font-extrabold leading-[1.02] tracking-tight mb-4">
+            <CourseGlyph slug={course.slug} className={`rise-in h-10 w-10 mb-5 ${accentText[course.accent]}`} />
+            <h1 style={{ "--d": "60ms" } as CSSProperties} className="rise-in font-display text-4xl md:text-6xl font-extrabold leading-[1.02] tracking-tight mb-4">
               {course.title}
             </h1>
-            <p className="font-body text-xl italic text-muted-foreground max-w-2xl mb-6 leading-relaxed">
+            <p style={{ "--d": "140ms" } as CSSProperties} className="rise-in font-body text-xl italic text-muted-foreground max-w-2xl mb-6 leading-relaxed">
               {course.tagline}
             </p>
             {course.status === "available" && <CourseMaturity rounds={course.rounds} className="mb-6" />}
