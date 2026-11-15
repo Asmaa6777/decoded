@@ -216,6 +216,8 @@ Three relationships to tell apart:
 
 ## Think and defend: the actuator slew-rate trap
 
+*One of the lecture's three \"Think & Defend\" dilemmas. The slides pose the question; the model answer was written for this course.*
+
 A supplier delivers a braking actuator implementing `BrakeActuator` with `void applyBrakingForce(double kilonewtons)`. Physically, fluid pressure can only rise at 50 kN/s. During emergency braking (AEB), the planner demands a step to 100 kN in 10 ms. The driver silently limits the rise rate and reports no error. The supplier says: "We implemented the interface cleanly and never threw an exception." Why is this a serious LSP violation even though the code compiled and ran? How should the contract be redesigned?
 
 <ModelAnswer>

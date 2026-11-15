@@ -10,7 +10,7 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
 - [ ] 2. Source fidelity
   - [x] L1
   - [x] L2
-  - [ ] L3
+  - [x] L3
   - [ ] L4
   - [ ] L5
 - [ ] 3. Depth
@@ -158,3 +158,20 @@ Checked Lecture 1 (13 slides) against m1-01 to m1-03, and Lecture 2 (37 slides) 
 **Left out on purpose:** the bibliography slide (a reference list); the lessons cite the per-lecture readings instead. L1 slide 13 is blank.
 
 **Not checked:** no browser check (text-only changes).
+
+### Round 2, source fidelity: L3
+
+Checked Lecture 3 (61 slides, SOLID applied to automotive software) against m3-01 to m3-06.
+
+**Already covered:** the definition of a design principle, the four automotive challenges, the OO recap table and the SOLID table; SRP's two quotes, the super-ECU metaphor, the actor table and refined definition, the itself test with all seven FrontCamera methods and the "context matters" notes, the refactored classes, methods with parameters, the FFI benefit, the MediaLibrary before/smells/after/gains and the refactoring axiom; OCP's feature manager, impact table, refactoring, gains table, pragmatic reality, routing strategies and the inheritance-vs-delegation table; LSP's two statements, contracts table, contract rule, OccupancyGrid3D, the path planner, both "what went wrong" tables, the axiom, both fix steps, the gains table, the conservative default, the three relationships and decision matrix with the golden rule; ISP's fat-vs-segregated table, VehicleOperator, the forced dummies, the client table and hazards, the four interfaces, the focused operators and clients, the gains table and the Level 3 handover; DIP's statement, the traditional-vs-inverted table, the supplier-coupled fusion code and impact table, the three fix steps, the inverted-dependency diagram, the inversion-vs-injection distinction; all three dilemmas and the summary.
+
+**Changed:**
+- m3-05: added the slide's "what we gained" table as a static table (the interactive change-impact explorer stays, but revision needs the table too); added the lecture's readings.
+- Dilemma 1 (SRP vs. latency) moved from m3-05 to the end of m3-01, so each dilemma sits with the principle it tests (SRP, LSP, ISP+DIP).
+- m3-01, m3-03, m3-05: each dilemma is labelled as one of the lecture's "Think & Defend" questions, with the model answer marked as written for this course.
+
+**Source errors:** none found in the code or tables. Two names are simplified on purpose: the slide's DIP diagram stereotypes («Core Policy», «SIL Benchmark», «Radar», «Camera») appear as «core policy» and «SIL»; the radar/camera stereotypes are left off to fit phone width.
+
+**Left out on purpose:** the credits line naming the authors of the original slides (no people's names in lessons).
+
+**Not checked:** no browser check (text and table changes only).
