@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Flag, PanelLeft } from "lucide-react";
 import { reportMistakeUrl } from "@/lib/reportMistake";
 import { writeLastLesson } from "@/lib/progressStore";
+import { LessonLearners } from "@/components/LearnerCounts";
 import { scrollToSection } from "@/lib/scrollToSection";
 
 const SIDEBAR_KEY = "decoded:sidebar-open";
@@ -188,6 +189,7 @@ export default function LessonPage() {
 
           <div className="flex items-center gap-3 mb-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
             <span>{lesson.duration} read</span>
+            <LessonLearners course={course.slug} lesson={lesson.slug} />
           </div>
 
           <MDXProvider components={mdxComponents}>

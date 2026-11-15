@@ -2,6 +2,7 @@ import { Children, ReactNode, isValidElement, useId, useMemo, useState, useRef, 
 import { recordAnswers } from "@/lib/review";
 import { useProgress } from "@/hooks/useProgress";
 import { recordQuizScore } from "@/lib/progressSync";
+import { QuizAverage } from "@/components/LearnerCounts";
 
 type Tone = "neon" | "orange" | "sky" | "violet" | "mint";
 
@@ -1129,6 +1130,8 @@ export function Quiz(props: QuizProps) {
           {correctCount}/{questions.length} correct — {passed ? "PASSED" : `NEED ${Math.ceil(questions.length * passThreshold)}/${questions.length}`}
         </div>
       )}
+
+      {allAnswered && !practice && <QuizAverage course={courseSlug} lesson={lessonSlug} />}
 
       {allAnswered && (practice || !passed) && (
         <button

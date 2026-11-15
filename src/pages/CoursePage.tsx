@@ -8,6 +8,7 @@ import { CoursePrerequisites, CourseRegistration } from "@/components/CourseRegi
 import { CourseGlyph, LessonKindIcon } from "@/components/brand/Glyphs";
 import { CourseAuthors } from "@/components/CourseAuthors";
 import { CourseMaturity } from "@/components/CourseMaturity";
+import { CourseLearners } from "@/components/LearnerCounts";
 import { coursesWithBanks } from "@/content/questionBanks";
 import { readAttempts } from "@/lib/exams";
 
@@ -51,6 +52,7 @@ export default function CoursePage() {
               {course.tagline}
             </p>
             {course.status === "available" && <CourseMaturity rounds={course.rounds} className="mb-6" />}
+            <CourseLearners course={course.slug} className="-mt-3 mb-6" />
             <p className="font-body text-base leading-relaxed text-foreground/80 max-w-2xl">
               {course.description}
             </p>

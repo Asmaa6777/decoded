@@ -4,6 +4,7 @@ import { prerequisites } from "@/content/paths";
 import { useProgress } from "@/hooks/useProgress";
 import { useRegistration } from "@/hooks/useRegistration";
 import { CourseGlyph } from "@/components/brand/Glyphs";
+import { useLearnerCount } from "@/lib/learnerStats";
 import { CourseMaturity } from "@/components/CourseMaturity";
 import { useReveal } from "@/hooks/useReveal";
 import { useEffect, useState, type CSSProperties } from "react";
@@ -32,6 +33,7 @@ export default function CourseCard({ slug }: { slug: string }) {
     flattenLessons(course).some((l) => l.slug === s)
   ).length;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+  const learners = useLearnerCount(course.slug);
   const disabled = course.status === "coming-soon";
   const required = prerequisites[course.slug]?.map((s) => courses.find((c) => c.slug === s)!.title);
 
@@ -65,6 +67,7 @@ export default function CourseCard({ slug }: { slug: string }) {
           <CourseGlyph slug={course.slug} className={`h-7 w-7 ${accentText[course.accent]}`} />
           <span className={`font-mono text-[10px] tracking-[0.15em] uppercase ${accentText[course.accent]}`}>
             {course.status === "coming-soon" ? "Coming soon" : `${total} lesson${total !== 1 ? "s" : ""}`}
+            {learners ? ` · ${learners} learners` : ""}
           </span>
         </div>
 
