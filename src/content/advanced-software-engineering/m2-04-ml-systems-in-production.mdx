@@ -7,6 +7,8 @@ Machine learning systems are, according to the lecture, the ultimate test of arc
 
 ## The probabilistic paradigm shift
 
+A *paradigm shift* is a change in the basic way of doing something. Here, the change is from rules people write to rules a model learns from data.
+
 In traditional software, engineers write <Term id="deterministic">deterministic</Term> rules that turn inputs into outputs. Machine learning turns this around.
 
 <BoxDiagram
@@ -106,7 +108,7 @@ The lecture ends with three dilemmas. There is no single right answer; the point
 **Dilemma 1: speed vs. structural integrity.** Your startup has 3 months of money left. The CEO demands a big pivot to a new feature set. Built cleanly, it takes 4 months and the company dies. Hacked together, it takes 2 months but leaves an unmaintainable mess. What is the "least worst" decision?
 
 <ModelAnswer>
-A company that runs out of money gets no second chance, so ship in about 2 months. But hack *deliberately*: keep the mess inside clear boundaries (one module, one service) so it can be replaced, write down the shortcuts as technical debt, and plan to pay it back as soon as the company survives. Remember the ["clean up later" fallacy](/courses/advanced-software-engineering/the-economics-of-architecture#the-clean-up-later-fallacy): the clean-up won't happen by itself, so it has to be scheduled.
+A company that runs out of money gets no second chance, so ship in about 2 months. But hack *deliberately*. Keep the mess inside clear boundaries (one module, one service) so it can be replaced. Write down the shortcuts as technical debt. Plan to pay that debt back as soon as the company survives. Remember the ["clean up later" fallacy](/courses/advanced-software-engineering/the-economics-of-architecture#the-clean-up-later-fallacy): the clean-up won't happen by itself, so it has to be scheduled.
 </ModelAnswer>
 
 **Dilemma 2: latency vs. throughput.** You're building an ML-driven high-frequency trading bot. Option A processes trades one at a time: <Term id="latency">latency</Term> 10 ms, <Term id="throughput">throughput</Term> 100 QPS. Option B batches 50 trades: latency 45 ms, throughput 1,000 QPS. Which do you choose?

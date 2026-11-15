@@ -49,7 +49,7 @@ or, in Robert C. Martin's words: **"A class should have only one reason to chang
 
 ### What is a "responsibility"?
 
-Picture one "super-ECU" class (an ECU, electronic control unit, is one of the small computers in a car) that captures camera frames, detects lanes, decides on steering torque, logs diagnostics and draws graphics on the HUD (head-up display, the information projected onto the windscreen). Now picture five focused classes: `CameraDriver`, `LaneDetector`, `LaneKeepController`, `DiagnosticLogger`, `HudRenderer`.
+An ECU (electronic control unit) is one of the small computers in a car. Picture one "super-ECU" class that captures camera frames, detects lanes, decides on steering torque, logs diagnostics and draws graphics on the HUD (head-up display, the information projected onto the windscreen). Now picture five focused classes: `CameraDriver`, `LaneDetector`, `LaneKeepController`, `DiagnosticLogger`, `HudRenderer`.
 
 In the first design, **a change to the HUD layout can break lane keeping**, because both live in the same class. In the second, each class changes for one reason only. Bundling unrelated jobs into one module creates hidden <Term id="coupling">coupling</Term>, which makes simple changes risky and expensive to verify. A class like that is called a <Term id="god-class">god class</Term>.
 
@@ -254,7 +254,7 @@ Isolating what varies, so new capabilities can be added without editing existing
 In an ADAS domain controller, the perception pipeline detects obstacles (ASIL B), while telemetry logging writes diagnostic trace buffers to flash memory (QM, not safety-rated). A performance engineer merges both into one `FrontCameraPipeline` class to remove the inter-thread queue and save 3.5 ms. The safety architect objects that this violates SRP and ISO 26262 Freedom From Interference. Why is paying the 3.5 ms (or using a lock-free ring buffer) the right call instead of merging?
 
 <ModelAnswer>
-Once perception and logging share one class, they share memory and an execution context. A slow flash write, a full buffer or a logging bug can now delay or corrupt obstacle detection, so a non-safety (QM) part can interfere with a safety-rated (ASIL B) part: exactly what Freedom From Interference (above) forbids. The whole merged class would then have to be developed and certified to ASIL B, logging included, and every logging change would need safety re-verification (two actors, one class: an SRP violation). 3.5 ms is a measurable, bounded cost; interference is an unbounded safety risk. If latency really matters, keep the classes separate and connect them with a lock-free ring buffer, which removes most of the queue cost without sharing state.
+Once perception and logging share one class, they share memory and an execution context. A slow flash write, a full buffer or a logging bug can now delay or corrupt obstacle detection. So a non-safety (QM) part can interfere with a safety-rated (ASIL B) part. That is exactly what Freedom From Interference (above) forbids. The whole merged class would then have to be developed and certified to ASIL B, logging included, and every logging change would need safety re-verification (two actors, one class: an SRP violation). 3.5 ms is a measurable, bounded cost; interference is an unbounded safety risk. If latency really matters, keep the classes separate and connect them with a lock-free ring buffer, which removes most of the queue cost without sharing state.
 </ModelAnswer>
 
 <Callout tone="orange" label="Common mistake">

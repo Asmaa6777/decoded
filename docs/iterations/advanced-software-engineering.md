@@ -19,12 +19,12 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
   - [x] L3
   - [x] L4
   - [x] L5
-- [ ] 4. Plain language
-  - [ ] L1
-  - [ ] L2
-  - [ ] L3
-  - [ ] L4
-  - [ ] L5
+- [x] 4. Plain language
+  - [x] L1
+  - [x] L2
+  - [x] L3
+  - [x] L4
+  - [x] L5
 - [ ] 5. Terminology (highlight + definition popup)
   - [ ] L1
   - [ ] L2
@@ -207,3 +207,16 @@ Read each content lesson looking for terms used before they're explained, exampl
 **Found but not fixed:** the m3-02 common-mistake note mentions over-abstraction as "a related trap"; the slides don't name it, and the note says the lecture's abstractions all wrap something that varies. Kept because it stops readers over-applying OCP.
 
 **Not checked:** no browser check (text only).
+
+### Round 4, plain language: L1 to L5
+
+Scanned the prose of every lesson (code, tables and diagram data excluded) for sentences over 32 words and for a list of hard words (leverage, facilitate, paradigm, agnostic, pristine, catastrophic, inherently and similar), then read each hit.
+
+**Changed:**
+- Split ten long sentences into short ones: the tokens aside (m1-01), the "hack deliberately" answer (m2-04), the super-ECU and FFI sentences (m3-01), the SOA point (m3-04), both uses-view sentences (m4-02), the nested deployment example (now a four-step arrow chain, m4-04), and the Amazon/LinkedIn examples (m5-03).
+- Hard words: "facilitate" → "run discussions" (m2-03); the slide's "catastrophic anti-pattern" kept but explained; "paradigm shift" (a slide heading) explained in one sentence (m2-04).
+- Kept on purpose: slide terms that are the right names (catastrophic cancellation, deterministic, probabilistic), each explained where it's used.
+
+**Not changed:** most scanner hits were bulleted lists the script joined into one "sentence"; the lists themselves are short items.
+
+**Not checked:** the repository's humanizer pass (not available in this environment); no browser check.

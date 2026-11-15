@@ -87,8 +87,8 @@ The uses view makes explicit which modules use which others to do their jobs.
 
 - **Relation:** uses (depends on)
 - **Elements:** modules
-- **What it's for:** planning **incremental development**. If A uses B, B has to work before A can be tested, so the uses graph tells you what to build first and which subsets of the system can be delivered on their own.
-- **Constraints:** what about loops? Loops in a uses graph are allowed by the notation but are a warning sign: if A uses B and B uses A, neither can be built or tested without the other, so they become one big increment. Architects try to keep the uses graph loop-free.
+- **What it's for:** planning **incremental development**. If A uses B, B has to work before A can be tested. So the uses graph tells you what to build first, and which parts of the system can be delivered on their own.
+- **Constraints:** what about loops? The notation allows loops in a uses graph, but they are a warning sign. If A uses B and B uses A, neither can be built or tested without the other. They become one big piece of work. Architects try to keep the uses graph loop-free.
 
 "Uses" is stronger than "calls": A can call B without *using* it (e.g. it fires off a notification and doesn't care if it arrives), and A can use B without calling it directly.
 

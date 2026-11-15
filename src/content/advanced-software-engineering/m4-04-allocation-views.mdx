@@ -57,7 +57,7 @@ The deployment style maps components and connectors to the hardware they run on.
   caption="3-D boxes are nodes (hardware or execution environments). Lines between nodes are communication paths. Dashed «deploy» arrows put artifacts onto nodes."
 />
 
-UML can also nest nodes: the lecture's second example shows a `«device» Sun Fire X4150 Server` containing an `«OS» SUSE Linux Enterprise 10` node, which contains a `«JSP server» Apache Tomcat Server 5.5` execution environment, into which the `«web archive» shopping.war` artifact is deployed.
+UML can also nest nodes, one inside another. The lecture's second example has four levels: a `«device» Sun Fire X4150 Server` → its `«OS» SUSE Linux Enterprise 10` → a `«JSP server» Apache Tomcat Server 5.5` → the deployed `«web archive» shopping.war`.
 
 **Can a deployment view help with memory capacity analysis?** Yes, if you record the right properties: properties of the physical units (how much memory each machine *provides*) and properties of the software elements (how much each component *requires*). Add up what's allocated to each machine and compare.
 

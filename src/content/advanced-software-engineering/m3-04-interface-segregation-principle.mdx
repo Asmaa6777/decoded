@@ -19,7 +19,7 @@ Why it matters in cars:
 
 - **Mixed criticality.** A QM (non-safety) infotainment app must never depend on an interface that exposes ASIL-rated motion control.
 - **Cybersecurity (ISO/SAE 21434).** Bloated interfaces enlarge the <Term id="attack-surface">attack surface</Term>. Small interfaces enforce <Term id="least-privilege">least privilege</Term>.
-- **SOA and AUTOSAR Adaptive.** Services are deployed as fine-grained interfaces (using automotive service protocols such as SOME/IP and DDS), avoiding vehicle-wide "god interfaces."
+- **SOA and AUTOSAR Adaptive.** Services are deployed as small, fine-grained interfaces, not as one vehicle-wide "god interface." They talk over automotive service protocols such as SOME/IP and DDS.
 
 ## The violation: a fat VehicleOperator
 
