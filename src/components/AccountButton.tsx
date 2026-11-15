@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Github, LayoutDashboard, LogOut, ShieldCheck } from "lucide-react";
+import { Github, LayoutDashboard, LogOut, ShieldCheck, UserRound, Users } from "lucide-react";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -94,6 +94,18 @@ function AccountMenu() {
           <Link to="/dashboard">
             <LayoutDashboard className="mr-2 h-4 w-4" aria-hidden />
             Dashboard
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="cursor-pointer font-mono text-xs normal-case tracking-normal">
+          <Link to="/profile">
+            <UserRound className="mr-2 h-4 w-4" aria-hidden />
+            Your profile
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="cursor-pointer font-mono text-xs normal-case tracking-normal">
+          <Link to="/people">
+            <Users className="mr-2 h-4 w-4" aria-hidden />
+            Find people
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="cursor-pointer font-mono text-xs normal-case tracking-normal">

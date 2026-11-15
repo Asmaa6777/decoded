@@ -20,6 +20,9 @@ const Team = lazy(() => import("./pages/Team.tsx"));
 const Privacy = lazy(() => import("./pages/Privacy.tsx"));
 const ExamPage = lazy(() => import("./pages/ExamPage.tsx"));
 const ReviewPage = lazy(() => import("./pages/ReviewPage.tsx"));
+const ProfileSettings = lazy(() => import("./pages/ProfileSettings.tsx"));
+const PublicProfile = lazy(() => import("./pages/PublicProfile.tsx"));
+const People = lazy(() => import("./pages/People.tsx"));
 
 /** Fades each page in when the route changes (.page-in in index.css). */
 function PageFade({ children }: { children: ReactNode }) {
@@ -58,6 +61,9 @@ const App = () => (
             <Route path="/review" element={<Lazy><ReviewPage /></Lazy>} />
             <Route path="/team" element={<Lazy><Team /></Lazy>} />
             <Route path="/privacy" element={<Lazy><Privacy /></Lazy>} />
+            <Route path="/profile" element={<Lazy><ProfileSettings /></Lazy>} />
+            <Route path="/u/:handle" element={<Lazy><PublicProfile /></Lazy>} />
+            <Route path="/people" element={<Lazy><People /></Lazy>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
