@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { FocusPanel, Stepper, Toggle, btn, btnPrimary, inputCls, vizCard, vizHeader } from "@/components/mdx/vizKit";
 import {
   sortFrames,
@@ -110,8 +110,11 @@ function PointerRow({ s, count }: { s: ArrayState; count: number }) {
   return (
     <>
       {labels.map((l, i) => (
-        <div key={i} className="text-center font-mono text-[10px] text-sky leading-tight min-h-[14px]">
-          {l.join(",")}
+        <div key={i} className="flex flex-col items-center font-mono text-[10px] text-sky leading-tight min-h-[14px]">
+          {/* one name per line, never broken mid-word, even when the cell is narrower than the word */}
+          {l.map((name) => (
+            <span key={name} className="whitespace-nowrap">{name}</span>
+          ))}
         </div>
       ))}
     </>
@@ -144,7 +147,7 @@ export function ArrayBars({ s }: { s: ArrayState }) {
           );
         })}
       </div>
-      <div className="grid gap-1 mt-1" style={cols}>
+      <div className="grid gap-0.5 sm:gap-1 mt-1" style={cols}>
         {s.array.map((v, i) => (
           <div key={i} className={`text-center font-mono text-[11px] ${inRange(i, s) ? "text-foreground" : "text-muted-foreground/50"}`}>
             {v}
@@ -171,23 +174,29 @@ export function ArrayBars({ s }: { s: ArrayState }) {
 
 export function ArrayCells({ s }: { s: ArrayState }) {
   const n = s.array.length;
-  const cols = { gridTemplateColumns: `repeat(${n}, minmax(2.75rem, 1fr))` };
+  // Cells shrink on phones (to 18px, or more for wide values) so a 15-element
+  // array fits a 390px screen instead of scrolling sideways; from the sm
+  // breakpoint up they keep their full 2.75rem.
+  const digits = Math.max(1, ...s.array.map((v) => String(v).length));
+  const cols = { gridTemplateColumns: `repeat(${n}, minmax(var(--cell-min), 1fr))` };
+  // --cell-narrow is set here, on the same element that defines --cell-min from it.
+  const narrow = { ["--cell-narrow" as string]: `${Math.max(18, digits * 6 + 6)}px` } as CSSProperties;
   return (
-    <div className="min-w-fit">
-      <div className="grid gap-2" style={cols}>
+    <div className="min-w-fit [--cell-min:var(--cell-narrow)] sm:[--cell-min:2.75rem]" style={narrow}>
+      <div className="grid gap-0.5 sm:gap-2" style={cols}>
         {s.array.map((v, i) => {
           const tone = cellTone(i, s);
           return (
             <div
               key={i}
-              className={`h-14 flex items-center justify-center font-mono text-base rounded-xl transition-all duration-300 motion-reduce:transition-none ${tone ? cellBorder[tone] : "bg-secondary"} ${inRange(i, s) ? "" : "opacity-25"}`}
+              className={`h-11 sm:h-14 flex items-center justify-center font-mono text-[11px] sm:text-base rounded-md sm:rounded-xl transition-all duration-300 motion-reduce:transition-none ${tone ? cellBorder[tone] : "bg-secondary"} ${inRange(i, s) ? "" : "opacity-25"}`}
             >
               {v}
             </div>
           );
         })}
       </div>
-      <div className="grid gap-2 mt-1.5" style={cols}>
+      <div className="grid gap-0.5 sm:gap-2 mt-1.5" style={cols}>
         {s.array.map((_, i) => (
           <div key={i} className="text-center font-mono text-[11px] text-muted-foreground">
             {i}
