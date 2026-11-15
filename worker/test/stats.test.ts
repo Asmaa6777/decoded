@@ -9,7 +9,7 @@ const DAY = 24 * 60 * 60 * 1000;
 
 async function get(path: string) {
   const response = await worker.fetch(new Request(`${API}${path}`), env);
-  return { status: response.status, cache: response.headers.get("Cache-Control"), body: (await response.json()) as any };
+  return { status: response.status, cache: response.headers.get("Cache-Control"), body: (await response.json()) as Record<string, unknown> };
 }
 
 /** Adds `count` learners, each with the given completed lessons, enrollment and quiz score. */
