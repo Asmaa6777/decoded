@@ -86,6 +86,17 @@ describe("Advanced Software Engineering course", () => {
     expect(Object.keys(glossary).filter((id) => !usedAnywhere.has(id))).toEqual([]);
   });
 
+  it("gives every lecture a broad mix of labelled system and diagram questions", () => {
+    const TYPES = ["System interpretation", "Diagram interpretation", "Missing component", "Error detection", "Sequence understanding", "Relationship identification", "Design decision", "Diagram construction"];
+    for (const [file, src] of Object.entries(sources).filter(([f]) => f.includes("practice"))) {
+      const practice = src.slice(src.indexOf("## System and diagram questions"));
+      const prompts = [...practice.matchAll(/prompt: "([^"]+)"/g)].map((m) => m[1]);
+      for (const p of prompts) expect(TYPES.some((t) => p.startsWith(`${t}:`)), `${file}: unlabelled "${p.slice(0, 40)}"`).toBe(true);
+      const kinds = new Set(prompts.map((p) => p.split(":")[0]));
+      expect(kinds.size, `${file} has only ${[...kinds].join(", ")}`).toBeGreaterThanOrEqual(5);
+    }
+  });
+
   it("covers every content lesson in its lecture's scored quiz, and points each question back to its lesson", () => {
     course.modules.forEach((m, i) => {
       const quiz = `lecture-${i + 1}-practice`;

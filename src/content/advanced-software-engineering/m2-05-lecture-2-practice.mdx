@@ -1,7 +1,7 @@
 import { Callout, Quiz } from "@/components/mdx/MdxComponents";
 import { questionsForQuiz } from "@/lib/questions";
 import { questions } from "@/content/advanced-software-engineering/questions";
-import { BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+import { BoxDiagram, FeatureCostChart } from "@/components/mdx/SoftwareEngineeringVisualizers";
 
 # Lecture 2 Practice
 
@@ -96,6 +96,55 @@ This course has no past exams. These questions were written for this course from
       ],
       correctOptionId: "b",
       explanation: "The architectural axiom: process frameworks track who does what and when; they can't repair or preserve a decoupled architecture. Only disciplined engineering practices can.",
+    },
+    {
+      id: "d4",
+      prompt: "Diagram interpretation: a team plots the cost of each new feature over two years, and its curve looks like the orange 'bad design' line. What does it tell them?",
+      figure: <FeatureCostChart />,
+      options: [
+        { id: "a", text: "The team is getting faster at coding" },
+        { id: "b", text: "Structure is decaying: each feature costs more because of earlier messes" },
+        { id: "c", text: "Features are getting smaller" },
+        { id: "d", text: "Rising cost is normal and can't be avoided" },
+      ],
+      correctOptionId: "b",
+      explanation: "The lecture's goal: the 100th feature should cost what the 1st did. A rising curve means the cost of change depends on shape, which is architecture decaying. It can be avoided by keeping the structure clean.",
+    },
+    {
+      id: "d5",
+      prompt: "Missing component: which quadrant label belongs in the box marked ?",
+      figure: (
+        <BoxDiagram
+          width={480}
+          height={190}
+          nodes={[
+            { id: "q1", label: "Q1: critical\nproduction bugs", x: 130, y: 50, w: 200, h: 56 },
+            { id: "q2", label: "?", x: 350, y: 50, w: 200, h: 56, kind: "missing" },
+            { id: "q3", label: "Q3: urgent but\ntrivial features", x: 130, y: 140, w: 200, h: 56 },
+            { id: "q4", label: "Q4: nice-to-haves", x: 350, y: 140, w: 200, h: 56 },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "Customer complaints" },
+        { id: "b", text: "Architecture and structural integrity (important, not urgent)" },
+        { id: "c", text: "Marketing campaigns" },
+        { id: "d", text: "Sprint retrospectives" },
+      ],
+      correctOptionId: "b",
+      explanation: "Quadrant 2 is important but not urgent: architecture. Because it is never urgent, it is the one that gets pushed aside by Quadrant 3.",
+    },
+    {
+      id: "d6",
+      prompt: "Diagram construction: you're drawing the lecture's architect/developer figure. Which three items go on the architect's side?",
+      options: [
+        { id: "a", text: "Class design, user interface, source code" },
+        { id: "b", text: "Architecture characteristics, style, component structure" },
+        { id: "c", text: "Sprint plan, backlog, retrospective" },
+        { id: "d", text: "Database schema, CSS, unit tests" },
+      ],
+      correctOptionId: "b",
+      explanation: "In the figure the architect decides characteristics, style and component structure; the developer decides class design, UI and source code. The lecture's point is that these form one continuum, not a wall.",
     },
   ]}
 />

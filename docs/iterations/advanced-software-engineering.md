@@ -43,12 +43,12 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
   - [x] L3
   - [x] L4
   - [x] L5
-- [ ] 8. System and diagram questions
-  - [ ] L1
-  - [ ] L2
-  - [ ] L3
-  - [ ] L4
-  - [ ] L5
+- [x] 8. System and diagram questions
+  - [x] L1
+  - [x] L2
+  - [x] L3
+  - [x] L4
+  - [x] L5
 - [ ] 9. Connections (whole course)
 - [ ] 10. Student read-through
   - [ ] L1
@@ -278,3 +278,25 @@ Checked each lecture's scored quiz (now in `questions.ts`) for coverage of every
 **Mix per lecture (approx.):** conceptual 3, terminology 2, scenario/application 3, comparison 1–2, "which is NOT" 1–2, design decision 1.
 
 **Not checked:** whether the site's course exam picks these up as expected (it reads the same bank; no browser check this round).
+
+### Round 8, system and diagram questions: L1 to L5
+
+Checked each lecture's "System and diagram questions" against the eight question types in the request.
+
+**Found:** 19 questions in total, each lecture using only three or four types. No lecture had a diagram-construction question except L4, L2 and L4 had no missing-component question, and L1–L3 had no system-interpretation question.
+
+**Changed:** 14 new questions (19 → 33), each labelled with its type at the start of the prompt:
+
+| Lecture | Types now present |
+| --- | --- |
+| L1 | sequence, missing component, error detection, system interpretation, design decision, diagram construction |
+| L2 | relationship, design decision, error detection, diagram interpretation, missing component, diagram construction |
+| L3 | error detection, missing component, relationship, design decision, sequence, diagram construction, system interpretation |
+| L4 | diagram interpretation, error detection, diagram construction, missing component, relationship, system interpretation |
+| L5 | system interpretation, missing component, sequence, design decision, error detection, relationship, diagram construction |
+
+New figures include the harness state store, a 64-bit sequence with the missing actuator message, the Eisenhower matrix with a blank quadrant, the DIP runtime call through the interface, an install view with a missing .jar, a deployment with a single point of failure, and a pipeline with an unlabelled connector. Diagram-construction questions give a short scenario and ask which components and relationships belong in the diagram.
+
+**Test:** the course test now requires every system/diagram question to start with one of the eight type labels, and at least five different types per lecture.
+
+**Checked:** all five practice lessons at 390 px (4–5 figures each, no page overflow, no page errors), the build.

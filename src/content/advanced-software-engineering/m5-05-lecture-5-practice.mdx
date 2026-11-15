@@ -146,5 +146,44 @@ This course has no past exams. These questions were written for this course from
       correctOptionId: "b",
       explanation: "Database per service is part of the style's definition. A shared schema means one service's change can break the others.",
     },
+    {
+      id: "d6",
+      prompt: "Relationship identification: in this pipeline, what connects Split to To-upper, and what may the two share?",
+      figure: (
+        <BoxDiagram
+          width={520}
+          height={130}
+          nodes={[
+            { id: "s", label: "Split", x: 80, y: 65, w: 100, tone: "sky" },
+            { id: "u", label: "To-upper", x: 260, y: 65, w: 120, tone: "sky" },
+            { id: "m", label: "Merge", x: 440, y: 65, w: 100, tone: "sky" },
+          ]}
+          edges={[
+            { from: "s", to: "u", label: "?" },
+            { from: "u", to: "m" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A pipe; they share no state" },
+        { id: "b", text: "A method call; they share a global variable" },
+        { id: "c", text: "A message broker; they share a database" },
+        { id: "d", text: "Inheritance; they share a base class" },
+      ],
+      correctOptionId: "a",
+      explanation: "In pipe-and-filter, connectors are pipes carrying data streams, and the style invariant is that filters are independent: no shared state.",
+    },
+    {
+      id: "d7",
+      prompt: "Diagram construction: a ride-sharing app needs a mobile client, request routing to Trips, Users and Payments services, and each service's data kept separately. Which diagram fits?",
+      options: [
+        { id: "a", text: "Clients → API gateway → Trips, Users, Payments services, each with its own database" },
+        { id: "b", text: "Clients → one server → one shared database" },
+        { id: "c", text: "A chain of filters from client to database" },
+        { id: "d", text: "Peers that all store every trip" },
+      ],
+      correctOptionId: "a",
+      explanation: "Independent services, each owning its data, behind a single entry point: microservices with an API gateway, as in the styles summary's Netflix-style reference architecture.",
+    },
   ]}
 />

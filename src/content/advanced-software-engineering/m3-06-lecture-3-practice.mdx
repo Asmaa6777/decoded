@@ -1,7 +1,7 @@
 import { Callout, Quiz } from "@/components/mdx/MdxComponents";
 import { questionsForQuiz } from "@/lib/questions";
 import { questions } from "@/content/advanced-software-engineering/questions";
-import { BoxDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
+import { BoxDiagram, SequenceDiagram } from "@/components/mdx/SoftwareEngineeringVisualizers";
 
 # Lecture 3 Practice
 
@@ -114,6 +114,52 @@ This course has no past exams. These questions were written for this course from
       ],
       correctOptionId: "c",
       explanation: "With ISP the OTA manager sees only installOtaUpdate(). Accepting VehicleOperator or the concrete stack would expose steer() and brake(): a larger attack surface.",
+    },
+    {
+      id: "d5",
+      prompt: "Sequence understanding: at runtime, which object does SensorFusion.fuse() call first, and what does it call it through?",
+      figure: (
+        <SequenceDiagram
+          participants={["SensorFusion", "ObjectSensor (interface)", "SupplierCRadarAdapter"]}
+          steps={[
+            { from: 0, to: 1, label: "detectObjects(cycle)" },
+            { from: 1, to: 2, label: "", hidden: true },
+            { from: 2, to: 0, label: "ObjectList (vehicle frame)", dashed: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "The call reaches SupplierCRadarAdapter.detectObjects() through the ObjectSensor interface (polymorphic dispatch)" },
+        { id: "b", text: "SensorFusion calls the CAN driver directly" },
+        { id: "c", text: "The adapter calls SensorFusion first" },
+        { id: "d", text: "The interface runs its own code" },
+      ],
+      correctOptionId: "a",
+      explanation: "At runtime the call still flows from policy to detail; only the source-code dependency is inverted. The interface has no code of its own: the adapter's implementation runs.",
+    },
+    {
+      id: "d6",
+      prompt: "Diagram construction: Navigation must let the driver switch between Fastest, Eco and Avoid-tolls at runtime. Which class diagram is right?",
+      options: [
+        { id: "a", text: "NavigationService with a switch on a mode string" },
+        { id: "b", text: "NavigationService → RoutingStrategy (interface), with FastestRoute, EcoRoute and AvoidTollsRoute realizing it" },
+        { id: "c", text: "FastestRoute, EcoRoute and AvoidTollsRoute each extend NavigationService" },
+        { id: "d", text: "One RoutingStrategy class with three boolean flags" },
+      ],
+      correctOptionId: "b",
+      explanation: "The Strategy pattern: the service depends on one interface and holds a strategy object it can swap at runtime. Subclassing the service (c) binds at build time; the switch (a) violates OCP.",
+    },
+    {
+      id: "d7",
+      prompt: "System interpretation: in the ISP design, which client can accept both a HumanDriverModel and an AutomatedDrivingStack?",
+      options: [
+        { id: "a", text: "DriverMonitoringSystem.check(AttentionMonitorable)" },
+        { id: "b", text: "OtaUpdateManager.update(OtaUpdatable, …)" },
+        { id: "c", text: "VehicleMotionController.apply(MotionControl)" },
+        { id: "d", text: "None of them" },
+      ],
+      correctOptionId: "c",
+      explanation: "Both operators implement MotionControl, so the motion controller works with either. That's what makes Level 3 handover clean. Only the human is AttentionMonitorable; only the AD stack is OtaUpdatable.",
     },
   ]}
 />

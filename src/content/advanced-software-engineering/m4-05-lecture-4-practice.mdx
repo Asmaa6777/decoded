@@ -124,5 +124,75 @@ This course has no past exams. These questions were written for this course from
       correctOptionId: "b",
       explanation: "The install style maps C&C components to files and folders in production, and its notation must show the file tree. Deployment maps components to hardware instead.",
     },
+    {
+      id: "d5",
+      prompt: "Missing component: in this install view, what goes in the box marked ?",
+      figure: (
+        <BoxDiagram
+          width={560}
+          height={200}
+          nodes={[
+            { id: "ear", label: "DukesBankApp.ear", stereo: "artifact", x: 280, y: 40, w: 200, h: 50 },
+            { id: "m", label: "?", x: 150, y: 120, w: 150, kind: "missing" },
+            { id: "c", label: "customer-ejb.jar", x: 410, y: 120, w: 160 },
+            { id: "comp", label: "AccountController\nAccountEJB", x: 150, y: 180, w: 170, h: 40, kind: "component" },
+          ]}
+          edges={[
+            { from: "ear", to: "m", label: "«manifest»", dashed: true },
+            { from: "ear", to: "c", dashed: true },
+            { from: "m", to: "comp", dashed: true },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "A server machine" },
+        { id: "b", text: "account-ejb.jar, the archive that packages the account components" },
+        { id: "c", text: "The development team" },
+        { id: "d", text: "A message queue" },
+      ],
+      correctOptionId: "b",
+      explanation: "An install view maps components to files. The .ear contains .jar files, and account-ejb.jar manifests AccountController and AccountEJB. Machines belong in a deployment view; teams in work assignment.",
+    },
+    {
+      id: "d6",
+      prompt: "Relationship identification: one Client module runs as ten client processes talking to one server. What is the relationship between the module and the processes?",
+      options: [
+        { id: "a", text: "One module, many components" },
+        { id: "b", text: "Many modules, one component" },
+        { id: "c", text: "Exactly one module per component" },
+        { id: "d", text: "Generalization" },
+      ],
+      correctOptionId: "a",
+      explanation: "This is the lecture's decomposition-vs-client-server figure: a single module becomes many runtime components. That's why a module view alone can't answer performance questions.",
+    },
+    {
+      id: "d7",
+      prompt: "System interpretation: in this deployment, which machine failure stops every user?",
+      figure: (
+        <BoxDiagram
+          width={600}
+          height={170}
+          nodes={[
+            { id: "pc", label: "User PCs", x: 80, y: 80, w: 120, h: 50, kind: "node" },
+            { id: "app", label: "App server", x: 290, y: 80, w: 140, h: 50, kind: "node", tone: "sky" },
+            { id: "db1", label: "DB (primary)", x: 500, y: 45, w: 140, h: 44, kind: "node" },
+            { id: "db2", label: "DB (replica)", x: 500, y: 125, w: 140, h: 44, kind: "node" },
+          ]}
+          edges={[
+            { from: "pc", to: "app", head: "none" },
+            { from: "app", to: "db1", head: "none" },
+            { from: "app", to: "db2", head: "none" },
+          ]}
+        />
+      ),
+      options: [
+        { id: "a", text: "One user PC" },
+        { id: "b", text: "The app server: it is the only one, so it is a single point of failure" },
+        { id: "c", text: "The primary database" },
+        { id: "d", text: "None; everything is replicated" },
+      ],
+      correctOptionId: "b",
+      explanation: "The database is replicated, so it survives losing one copy. The single app server is not. This is the kind of availability question deployment views answer.",
+    },
   ]}
 />
