@@ -32,6 +32,16 @@ A CS student or self-taught engineer who is smart, short on time and tired of he
 - Promising a lesson that doesn't exist, such as "later in this course" for something no lesson covers.
 - Copied passages from source material, or the name of any institution or teacher.
 
+## Epigraphs
+
+Like a book chapter, a course opens with a short quote under the title of its first lesson, about the subject as a whole. Computational Mathematics opens with Richard Hamming's "The purpose of computing is insight, not numbers."
+
+- **Every course gets one,** in its first lesson. A single lesson can have its own when a good one exists; most won't, and that's fine.
+- **An idea in words, not a formula.** A notion, a short story or an analogy, in one or two sentences. It doesn't have to be famous, just apt and worth rereading after the course.
+- **Real and correctly credited.** Unless one is given to you, finding the quote is part of writing the lesson. Check it in the original book, paper or talk, or in a reference that cites one (Wikiquote lists sourced and disputed quotes separately). Skip anything misattributed or unsourced; many quotes credited to Einstein are. Quote the words exactly, never a paraphrase.
+- **Credit the person, and the work and year when known.** A scientist, writer or engineer is fine; a teacher or institution from your source material is not.
+- **Write it on one line,** right after the `#` heading: `<Epigraph quote="..." by="Richard Hamming" source="Numerical Methods for Scientists and Engineers, 1962" />`. The quote is a prop so link previews never mistake it for the lesson's first paragraph.
+
 ## Shape of a lesson
 
 - **Open with the problem.** Start from something the reader already knows, or the problem that made the idea necessary. Never open with a definition. A line of history is fine when it *is* the problem; History told as a story, with who was stuck, what they tried and what happened, is a plus. A list of dates and names for its own sake gets cut.
@@ -55,6 +65,7 @@ Import every component at the top of the `.mdx` file from `@/components/mdx/MdxC
 | `<Callout tone="mint">` | What you just built: a recap at the end of a section or lesson. |
 | `<Callout tone="neon">` | The one key insight. Rare; using it often drains it. |
 | `<PracticalApplication>`, `<ApplicationsGrid>` | A real tool, link, video or exercise. No platitudes. |
+| `<Epigraph>` | The opening quote under a course's or lesson's title (see [Epigraphs](#epigraphs)). |
 | `<CodeTabs>` | Code in more than one language (see [Code](#code)). |
 | `<Quiz>` | The graded quiz at the end of a module or course. |
 | `<Quiz practice>` | Past-exam multiple choice inside a lesson. No score is saved. |
@@ -101,6 +112,7 @@ Write links as ordinary markdown, `[words](/courses/<course>/<lesson>#<section>)
 
 ## Checklist
 
+- [ ] A course's first lesson has a sourced epigraph
 - [ ] Opens with a problem or something familiar, not a definition
 - [ ] Every term is defined in plain words, bolded where defined, before it's used
 - [ ] Every example is worked step by step, and every code sample runs
