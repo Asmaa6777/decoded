@@ -38,7 +38,7 @@ Three fonts. Each has one job. Never use a font for the wrong job.
 
 ### Typographic patterns
 
-- **Eyebrow:** uppercase, monospace, `tracking-[0.2em]`, 11px, muted color. Sits above a section heading to label *what kind of thing this is*. Examples: `THE PEOPLE`, `OUR ORIGIN`, `TRACKS`, `CS THEORY · REAL-WORLD SKILLS MAPPED`.
+- **Eyebrow:** uppercase, monospace, `tracking-[0.2em]`, 11px, muted color. Sits above a section heading to label *what kind of thing this is*. Examples: `THE PEOPLE`, `OUR ORIGIN`, `TRACKS`, `CS THEORY · IN DEPTH, CONNECTED`.
 - **Display headings:** Syne, font-weight 700–800, tight tracking (`-0.01em`), short. Avoid headlines longer than two lines. Lowercase the word in the accent color when one phrase is being highlighted (e.g. "Computer science Proofs, **decoded** to production tools" — `decoded` is the neon word).
 - **Body:** Lora 18px, line-height 1.75. Generous. Never tighten this — readability is load-bearing.
 - **Mono for metadata:** anything that is *data about* the content (duration, version, status, route, tag) is monospace, 10–12px, uppercase, wide tracking. This is the "terminal" half of the aesthetic.
@@ -113,7 +113,7 @@ Bad (corporate-edu, AI-flavored):
 
 Two to five words. State *what kind of thing follows*. Examples:
 
-- `CS THEORY · REAL-WORLD SKILLS MAPPED`
+- `CS THEORY · IN DEPTH, CONNECTED`
 - `OUR ORIGIN`
 - `THE PEOPLE`
 - `TRACKS`
