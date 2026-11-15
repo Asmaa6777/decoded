@@ -206,6 +206,26 @@ function courseCard(mod, course) {
   );
 }
 
+/** The preview for a companion invite to this course. The Worker names who sent it in the page title. */
+function inviteCard(mod, course) {
+  const accent = C[course.accent];
+  const titleSize = course.title.length > 24 ? 70 : 84;
+  return frame(
+    [
+      header(),
+      h(
+        "div",
+        { flexDirection: "column", gap: 22 },
+        h("div", { alignItems: "center", gap: 20 }, glyph(mod, course.slug, accent, 52), h("div", mono(18, accent), "You're invited to study together")),
+        h("div", { fontFamily: "Syne", fontWeight: 800, fontSize: titleSize, lineHeight: 1.0, color: C.fg, letterSpacing: -2.5, maxWidth: 1000 }, course.title),
+        h("div", { fontFamily: "Lora", fontStyle: "italic", fontSize: 30, lineHeight: 1.35, color: C.soft, maxWidth: 940 }, "See each other's progress in this course, and nothing else."),
+      ),
+      footer(mod, h("div", mono(16, C.muted), "One link, one companion")),
+    ],
+    accent,
+  );
+}
+
 /* ---------- render ---------- */
 
 async function loadFonts() {
@@ -308,9 +328,16 @@ await writeRoute(template, "/privacy", {
   image: img("home"),
 });
 
+// The Worker reads course titles from here when it writes previews for shared profile and invite links.
+await writeFile(
+  path.join(DIST, "og/courses.json"),
+  JSON.stringify(Object.fromEntries(mod.courses.map((c) => [c.slug, { title: c.title, available: c.status === "available" }]))),
+);
+
 let pages = 5;
 for (const course of mod.courses) {
   await renderPng(courseCard(mod, course), fonts, path.join(DIST, `og/${course.slug}.png`));
+  if (course.status === "available") await renderPng(inviteCard(mod, course), fonts, path.join(DIST, `og/invite-${course.slug}.png`));
   await writeRoute(template, `/courses/${course.slug}`, {
     title: `${course.title} — Decoded`,
     description: course.description,
@@ -388,4 +415,5 @@ ${routes.map((url) => `  <url><loc>${esc(url)}</loc></url>`).join("\n")}
 `;
 await writeFile(path.join(DIST, "sitemap.xml"), sitemap);
 
-console.log(`og: ${mod.courses.length + 2} images, ${pages} pages`);
+const invites = mod.courses.filter((c) => c.status === "available").length;
+console.log(`og: ${mod.courses.length + 2 + invites} images, ${pages} pages`);
