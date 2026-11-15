@@ -14,6 +14,40 @@ Object.defineProperty(window, "matchMedia", {
   }),
 });
 
+// Node 22+ defines globalThis.localStorage as undefined without --localstorage-file,
+// which shadows jsdom's storage when accessed as a bare identifier.
+const storage = new Map<string, string>();
+const localStorageMock = {
+  getItem: (key: string) => storage.get(key) ?? null,
+  setItem: (key: string, value: string) => {
+    storage.set(key, String(value));
+  },
+  removeItem: (key: string) => {
+    storage.delete(key);
+  },
+  clear: () => {
+    storage.clear();
+  },
+  get length() {
+    return storage.size;
+  },
+  key: (i: number) => Array.from(storage.keys())[i] ?? null,
+};
+
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "localStorage", {
+    value: localStorageMock,
+    writable: true,
+    configurable: true,
+  });
+}
+
+Object.defineProperty(globalThis, "localStorage", {
+  value: localStorageMock,
+  writable: true,
+  configurable: true,
+});
+
 // jsdom lacks ResizeObserver; ReactFlow's ZoomPane uses it. No-op is enough.
 class ResizeObserverStub {
   observe() {}
