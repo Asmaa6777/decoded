@@ -28,7 +28,7 @@ export default function Index() {
       <section className="relative z-10 overflow-hidden border-b border-border">
         <HeroField />
         <div className="container relative py-20 md:py-28">
-          <div className="rise-in eyebrow text-neon mb-5">CS Theory · Real-world skills mapped</div>
+          <div className="rise-in eyebrow text-neon mb-5">CS theory · In depth, connected</div>
           {/* Syne is very wide: three fixed lines, sized to the viewport so each fits on one line from md up */}
           <h1 className="rise-in font-display font-extrabold leading-[0.95] tracking-tight text-[clamp(2.5rem,5.4vw,4.5rem)]">
             <span className="block md:whitespace-nowrap">Computer science</span>
@@ -38,8 +38,8 @@ export default function Index() {
             <span className="block md:whitespace-nowrap">production tools</span>
           </h1>
           <p style={{ "--d": "120ms" } as CSSProperties} className="rise-in mt-8 max-w-2xl text-lg md:text-xl text-muted-foreground italic font-body leading-relaxed">
-            Every course in a CS curriculum maps to something practical, used daily, with applications everywhere. It just has to be mapped.
-            This is the layer that connects the theory with what's out there.
+            Every course in a CS degree is already inside something you use: the regex in your editor, the encryption in
+            your browser, the pixels on your screen. Each lesson here starts with the idea and ends at the tool.
           </p>
 
           <ContinueLearning />
@@ -82,13 +82,12 @@ export default function Index() {
             </h2>
             <div className="font-body text-lg leading-relaxed text-foreground/80 space-y-5">
               <p>
-                University courses hide the tools engineers use every day behind dense proofs, heavy notation
-                and theorems. You shouldn't have to decode your own syllabus just to find out what it's really
-                about or where it shows up in production. Decoded pulls out the real-world use hiding inside
-                your coursework.
+                Most CS courses teach the proof and stop there. The tool that idea turned into, the one engineers
+                use every day, gets a passing mention or none at all. You shouldn't have to decode your own
+                syllabus to find out why it matters.
               </p>
               <p className="text-neon">
-                One topic at a time.
+                Decoded takes one topic at a time, explains it in plain words and shows you the software it runs in.
               </p>
             </div>
           </div>
