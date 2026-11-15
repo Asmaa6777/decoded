@@ -1,6 +1,8 @@
 import { Suspense, useEffect, useState, useMemo, useRef } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { MDXProvider } from "@mdx-js/react";
+// KaTeX styles only matter where formulas render, so they load with this page.
+import "katex/dist/katex.min.css";
 import { SiteHeader, SiteFooter } from "@/components/layout/SiteChrome";
 import { getLesson, lessonNeighbors, lessonKind } from "@/content/registry";
 import { useProgress } from "@/hooks/useProgress";
