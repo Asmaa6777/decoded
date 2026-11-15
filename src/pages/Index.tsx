@@ -6,6 +6,7 @@ import { TrackPicker } from "@/components/TrackPicker";
 import { courses } from "@/content/registry";
 import { DecodeText } from "@/components/DecodeText";
 import { CourseGlyph } from "@/components/brand/Glyphs";
+import { HeroField } from "@/components/HeroField";
 
 const accentText: Record<string, string> = {
   neon: "text-neon", orange: "text-orange", sky: "text-sky", violet: "text-violet", mint: "text-mint",
@@ -24,8 +25,9 @@ export default function Index() {
       <SiteHeader />
 
       {/* HERO */}
-      <section className="relative z-10 border-b border-border">
-        <div className="container py-20 md:py-28">
+      <section className="relative z-10 overflow-hidden border-b border-border">
+        <HeroField />
+        <div className="container relative py-20 md:py-28">
           <div className="rise-in eyebrow text-neon mb-5">CS Theory · Real-world skills mapped</div>
           {/* Syne is very wide: three fixed lines, sized to the viewport so each fits on one line from md up */}
           <h1 className="rise-in font-display font-extrabold leading-[0.95] tracking-tight text-[clamp(2.5rem,5.4vw,4.5rem)]">
