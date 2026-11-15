@@ -7,6 +7,7 @@ import { getCourse, flattenLessons } from "@/content/registry";
 import { glossary } from "@/content/advanced-software-engineering/glossary";
 import { accumulate, float32Spacing, featureCost, FRONT_CAMERA_METHODS, runInvoicePipeline, INVOICE_FILES, queueFrames } from "@/lib/softwareEngineering";
 import { Term, KeyTerms } from "@/components/mdx/SoftwareEngineeringVisualizers";
+import { questions as bank } from "@/content/advanced-software-engineering/questions";
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -83,6 +84,16 @@ describe("Advanced Software Engineering course", () => {
       }
     }
     expect(Object.keys(glossary).filter((id) => !usedAnywhere.has(id))).toEqual([]);
+  });
+
+  it("covers every content lesson in its lecture's scored quiz, and points each question back to its lesson", () => {
+    course.modules.forEach((m, i) => {
+      const quiz = `lecture-${i + 1}-practice`;
+      const qs = bank.filter((q) => q.quiz === quiz);
+      expect(qs.length, quiz).toBeGreaterThanOrEqual(10);
+      for (const q of qs) expect(m.lessons.map((l) => l.slug), q.id).toContain(q.lesson);
+      for (const l of m.lessons.filter((x) => x.kind !== "quiz")) expect(qs.some((q) => q.lesson === l.slug), `${quiz} has no question on ${l.slug}`).toBe(true);
+    });
   });
 
   it("keeps people, institutions and slide footers out of the lessons", () => {

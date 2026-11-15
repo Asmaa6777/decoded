@@ -37,12 +37,12 @@ Lectures: **L1** Foundations of Modern Engineering: The AI-Augmented SDLC · **L
   - [x] L3
   - [x] L4
   - [x] L5
-- [ ] 7. MCQ practice
-  - [ ] L1
-  - [ ] L2
-  - [ ] L3
-  - [ ] L4
-  - [ ] L5
+- [x] 7. MCQ practice
+  - [x] L1
+  - [x] L2
+  - [x] L3
+  - [x] L4
+  - [x] L5
 - [ ] 8. System and diagram questions
   - [ ] L1
   - [ ] L2
@@ -263,3 +263,18 @@ Opened the diagram-heavy lessons in Chromium at 390 px wide, in dark and light t
 **Checked:** both themes, reduced motion (none of the course's components animate), no page overflow on the checked lessons, a term popup opens from the keyboard (focus + Enter), lint, the course tests and the build.
 
 **Judged and left as text or tables:** the 4D model, the eight expectations, and the SWE-vs-ML table: they are lists to revise from, and a picture would add nothing.
+
+### Round 7, MCQ practice: L1 to L5
+
+Checked each lecture's scored quiz (now in `questions.ts`) for coverage of every lesson, a mix of question types, plausible distractors and explanations that say why the wrong options are wrong.
+
+**Found:** every lesson already had at least one question, but some topics were untested (architectural inversion, Pets.com and the 2002 data center, fitness functions as compliance, hands-on strategies, inheritance-vs-delegation binding time, deployment views for capacity, P2P drawbacks, messaging vs pub/sub, the SOA triangle), and comparison and "which is NOT" questions were rare. No question linked back to the lesson that teaches it.
+
+**Changed:**
+- 15 new questions, 3 per lecture (48 → 63): comparison questions (the harness's two questions, inheritance vs delegation, messaging vs pub/sub, P2P vs client-server), "which is NOT correct" (float32 bug, ISP benefits, views), scenario/design-decision (fitness-function linter, memory capacity, the mixed-criticality merge) and application (SOA order, C&C vs module question).
+- Every question now has a `lesson` field, so the site's review and exam features can say which lesson to re-read.
+- The course test now requires at least 10 questions per lecture, a valid `lesson` on each, and at least one question on every content lesson.
+
+**Mix per lecture (approx.):** conceptual 3, terminology 2, scenario/application 3, comparison 1–2, "which is NOT" 1–2, design decision 1.
+
+**Not checked:** whether the site's course exam picks these up as expected (it reads the same bank; no browser check this round).

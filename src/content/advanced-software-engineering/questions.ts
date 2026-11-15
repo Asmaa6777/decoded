@@ -8,6 +8,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-1-practice/q1",
     quiz: "lecture-1-practice",
+    lesson: "engineering-in-the-age-of-ai",
     prompt: "The course's core paradigm says architecture is…",
     options: [
       {
@@ -33,6 +34,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-1-practice/q2",
     quiz: "lecture-1-practice",
+    lesson: "engineering-in-the-age-of-ai",
     prompt: "An AI agent marks a coding task 'done' as soon as the project compiles, but a logic bug remains. Which failure from the case study is this?",
     options: [
       {
@@ -58,6 +60,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-1-practice/q3",
     quiz: "lecture-1-practice",
+    lesson: "engineering-in-the-age-of-ai",
     prompt: "Which harness mechanism most directly prevents premature victory?",
     options: [
       {
@@ -83,6 +86,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-1-practice/q4",
     quiz: "lecture-1-practice",
+    lesson: "engineering-in-the-age-of-ai",
     prompt: "In the initializer/worker pattern, how do worker agents know what earlier workers did?",
     options: [
       {
@@ -108,6 +112,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-1-practice/q5",
     quiz: "lecture-1-practice",
+    lesson: "engineering-in-the-age-of-ai",
     prompt: "Which statement is NOT a lesson of the harness case study?",
     options: [
       {
@@ -133,6 +138,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-1-practice/q6",
     quiz: "lecture-1-practice",
+    lesson: "case-study-ai-generated-pid",
     prompt: "In a PID controller, which term grows while a small error persists over time?",
     options: [
       {
@@ -158,6 +164,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-1-practice/q7",
     quiz: "lecture-1-practice",
+    lesson: "case-study-ai-generated-pid",
     prompt: "Why did the AI-written unit tests pass even though the controller lost altitude?",
     options: [
       {
@@ -183,6 +190,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-1-practice/q8",
     quiz: "lecture-1-practice",
+    lesson: "case-study-ai-generated-pid",
     prompt: "The import yaml_config_parser was a real but malicious package. Which control would most directly have stopped it?",
     options: [
       {
@@ -208,6 +216,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-2-practice/q1",
     quiz: "lecture-2-practice",
+    lesson: "complexity-architecture-and-design",
     prompt: "A billing system copies the same discount rule into five modules, so every rule change needs five edits. What kind of complexity is this?",
     options: [
       {
@@ -233,6 +242,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-2-practice/q2",
     quiz: "lecture-2-practice",
+    lesson: "complexity-architecture-and-design",
     prompt: "Which of Brooks' properties explains why software is under constant pressure to change, unlike a building?",
     options: [
       {
@@ -258,6 +268,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-2-practice/q3",
     quiz: "lecture-2-practice",
+    lesson: "complexity-architecture-and-design",
     prompt: "According to the lecture's definition, which detail belongs in the architecture rather than only in the design?",
     options: [
       {
@@ -283,6 +294,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-2-practice/q4",
     quiz: "lecture-2-practice",
+    lesson: "the-economics-of-architecture",
     prompt: "In a healthy system, the cost of a change should depend on…",
     options: [
       {
@@ -308,6 +320,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-2-practice/q5",
     quiz: "lecture-2-practice",
+    lesson: "the-economics-of-architecture",
     prompt: "Program A works perfectly but is rigid and tightly coupled. Program B has bugs but is modular. According to the lecture, which survives longer and why?",
     options: [
       {
@@ -333,6 +346,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-2-practice/q6",
     quiz: "lecture-2-practice",
+    lesson: "the-economics-of-architecture",
     prompt: "In the Eisenhower matrix, where does architecture belong, and what is the failure mode?",
     options: [
       {
@@ -358,6 +372,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-2-practice/q7",
     quiz: "lecture-2-practice",
+    lesson: "the-architects-role",
     prompt: "'Prefer asynchronous messaging' belongs to which dimension of the 4D model?",
     options: [
       {
@@ -383,6 +398,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-2-practice/q8",
     quiz: "lecture-2-practice",
+    lesson: "the-architects-role",
     prompt: "A new architect can read the diagrams of a system but can't tell why it uses an event store instead of a relational database. Which law is being violated by the original team?",
     options: [
       {
@@ -408,6 +424,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-2-practice/q9",
     quiz: "lecture-2-practice",
+    lesson: "ml-systems-in-production",
     prompt: "Which is NOT a good reason to use machine learning?",
     options: [
       {
@@ -433,6 +450,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-2-practice/q10",
     quiz: "lecture-2-practice",
+    lesson: "ml-systems-in-production",
     prompt: "How do ML systems typically fail, compared with traditional software?",
     options: [
       {
@@ -458,6 +476,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-3-practice/q1",
     quiz: "lecture-3-practice",
+    lesson: "design-principles-and-srp",
     prompt: "A class is changed by the perception team, the diagnostics team and the HMI team. What does SRP say?",
     options: [
       {
@@ -483,6 +502,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-3-practice/q2",
     quiz: "lecture-3-practice",
+    lesson: "design-principles-and-srp",
     prompt: "Applying the 'itself' test, which method should move OUT of FrontCamera?",
     options: [
       {
@@ -508,6 +528,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-3-practice/q3",
     quiz: "lecture-3-practice",
+    lesson: "design-principles-and-srp",
     prompt: "MediaLibrary.search() reads artist, genre, source and year from other objects to decide matches. Which smell is this, and where should the logic go?",
     options: [
       {
@@ -533,6 +554,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-3-practice/q4",
     quiz: "lecture-3-practice",
+    lesson: "open-closed-principle",
     prompt: "After the OCP refactoring, adding Blind Spot Detection requires…",
     options: [
       {
@@ -558,6 +580,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-3-practice/q5",
     quiz: "lecture-3-practice",
+    lesson: "open-closed-principle",
     prompt: "The driver switches navigation from Fastest to Eco while driving. Which approach to OCP fits best?",
     options: [
       {
@@ -583,6 +606,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-3-practice/q6",
     quiz: "lecture-3-practice",
+    lesson: "liskov-substitution-principle",
     prompt: "OccupancyGrid3D extends OccupancyGrid compiles and passes unit tests. Why does it still violate LSP?",
     options: [
       {
@@ -608,6 +632,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-3-practice/q7",
     quiz: "lecture-3-practice",
+    lesson: "liskov-substitution-principle",
     prompt: "Which change to a subtype breaks LSP's contract rule?",
     options: [
       {
@@ -633,6 +658,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-3-practice/q8",
     quiz: "lecture-3-practice",
+    lesson: "interface-segregation-principle",
     prompt: "AutomatedDrivingStack returns false from areHandsOnWheel() because the interface forces it to. Which principle is violated?",
     options: [
       {
@@ -658,6 +684,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-3-practice/q9",
     quiz: "lecture-3-practice",
+    lesson: "dependency-inversion-principle",
     prompt: "In the DIP fix, which package should contain the ObjectSensor interface?",
     options: [
       {
@@ -683,6 +710,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-3-practice/q10",
     quiz: "lecture-3-practice",
+    lesson: "dependency-inversion-principle",
     prompt: "Which statement about Dependency Inversion and Dependency Injection is correct?",
     options: [
       {
@@ -708,6 +736,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-4-practice/q1",
     quiz: "lecture-4-practice",
+    lesson: "views-and-structures",
     prompt: "What is the difference between a structure and a view?",
     options: [
       {
@@ -733,6 +762,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-4-practice/q2",
     quiz: "lecture-4-practice",
+    lesson: "views-and-structures",
     prompt: "Why can't a single view represent an architecture?",
     options: [
       {
@@ -758,6 +788,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-4-practice/q3",
     quiz: "lecture-4-practice",
+    lesson: "views-and-structures",
     prompt: "A config file and a parser grammar file are…",
     options: [
       {
@@ -783,6 +814,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-4-practice/q4",
     quiz: "lecture-4-practice",
+    lesson: "views-and-structures",
     prompt: "'Every module becomes exactly one component at runtime.' Is this true?",
     options: [
       {
@@ -808,6 +840,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-4-practice/q5",
     quiz: "lecture-4-practice",
+    lesson: "module-views",
     prompt: "Which two constraints does the decomposition style impose?",
     options: [
       {
@@ -833,6 +866,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-4-practice/q6",
     quiz: "lecture-4-practice",
+    lesson: "module-views",
     prompt: "Module A uses module B when…",
     options: [
       {
@@ -858,6 +892,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-4-practice/q7",
     quiz: "lecture-4-practice",
+    lesson: "module-views",
     prompt: "Which view is the best tool for planning incremental development?",
     options: [
       {
@@ -883,6 +918,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-4-practice/q8",
     quiz: "lecture-4-practice",
+    lesson: "component-and-connector-views",
     prompt: "A team wants to know which parts of a system can run in parallel and where they compete for a shared lock. Which view?",
     options: [
       {
@@ -908,6 +944,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-4-practice/q9",
     quiz: "lecture-4-practice",
+    lesson: "component-and-connector-views",
     prompt: "In UML component notation, a lollipop (line ending in a circle) is…",
     options: [
       {
@@ -933,6 +970,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-4-practice/q10",
     quiz: "lecture-4-practice",
+    lesson: "allocation-views",
     prompt: "The work assignment style maps…",
     options: [
       {
@@ -958,6 +996,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-5-practice/q1",
     quiz: "lecture-5-practice",
+    lesson: "architecture-process-and-styles",
     prompt: "Which three things does every architectural style define?",
     options: [
       {
@@ -983,6 +1022,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-5-practice/q2",
     quiz: "lecture-5-practice",
+    lesson: "architecture-process-and-styles",
     prompt: "Architecturally significant requirements are essentially…",
     options: [
       {
@@ -1008,6 +1048,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-5-practice/q3",
     quiz: "lecture-5-practice",
+    lesson: "architecture-process-and-styles",
     prompt: "In Step 2, what is the difference between 2a and 2b?",
     options: [
       {
@@ -1033,6 +1074,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-5-practice/q4",
     quiz: "lecture-5-practice",
+    lesson: "architecture-process-and-styles",
     prompt: "Why does the architecture process loop back from validation?",
     options: [
       {
@@ -1058,6 +1100,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-5-practice/q5",
     quiz: "lecture-5-practice",
+    lesson: "n-tier-client-server-and-peer-to-peer",
     prompt: "In n-tier client-server, how can availability be improved?",
     options: [
       {
@@ -1083,6 +1126,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-5-practice/q6",
     quiz: "lecture-5-practice",
+    lesson: "n-tier-client-server-and-peer-to-peer",
     prompt: "Which is the defining property of peer-to-peer?",
     options: [
       {
@@ -1108,6 +1152,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-5-practice/q7",
     quiz: "lecture-5-practice",
+    lesson: "pipe-and-filter-and-messaging",
     prompt: "What is the style invariant of pipe-and-filter?",
     options: [
       {
@@ -1133,6 +1178,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-5-practice/q8",
     quiz: "lecture-5-practice",
+    lesson: "pipe-and-filter-and-messaging",
     prompt: "After a client writes a message to a queue in the messaging style, it…",
     options: [
       {
@@ -1158,6 +1204,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-5-practice/q9",
     quiz: "lecture-5-practice",
+    lesson: "ten-styles-at-a-glance",
     prompt: "A browser runs your handler automatically when a button is clicked, though your code never called it. Which style?",
     options: [
       {
@@ -1183,6 +1230,7 @@ export const questions: Question[] = [
   {
     id: "advanced-software-engineering/lecture-5-practice/q10",
     quiz: "lecture-5-practice",
+    lesson: "ten-styles-at-a-glance",
     prompt: "Which is NOT a typical drawback of microservices?",
     options: [
       {
@@ -1204,5 +1252,395 @@ export const questions: Question[] = [
     ],
     correctOptionId: "d",
     explanation: "Independent deployment is microservices' main advantage, not a drawback."
+  },
+  {
+    id: "advanced-software-engineering/lecture-1-practice/q9",
+    quiz: "lecture-1-practice",
+    lesson: "engineering-in-the-age-of-ai",
+    prompt: "What does the lecture mean by 'architectural inversion' in the harness case study?",
+    options: [
+      {
+        id: "a",
+        text: "Workers call the initializer instead of the other way round"
+      },
+      {
+        id: "b",
+        text: "The intelligence lives not only in the model's weights but in the deterministic harness that constrains, coordinates and verifies it"
+      },
+      {
+        id: "c",
+        text: "Dependencies point from low-level code to high-level code"
+      },
+      {
+        id: "d",
+        text: "The model is trained on its own output"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "It inverts where we look for intelligence: from the model alone to the system around it. Option (c) describes Dependency Inversion from Lecture 3, a different idea with a similar name."
+  },
+  {
+    id: "advanced-software-engineering/lecture-1-practice/q10",
+    quiz: "lecture-1-practice",
+    lesson: "engineering-in-the-age-of-ai",
+    prompt: "Compare the two questions the Anthropic team asked. Which shift led to the breakthrough?",
+    options: [
+      {
+        id: "a",
+        text: "From 'how do we build a harness?' to 'how do we make the model smarter?'"
+      },
+      {
+        id: "b",
+        text: "From 'how do we make the model smarter?' to 'how do we build a deterministic system to keep the model on track?'"
+      },
+      {
+        id: "c",
+        text: "From 'which benchmark?' to 'which programming language?'"
+      },
+      {
+        id: "d",
+        text: "From 'more tools' to 'more parameters'"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "The breakthrough came from engineering around the model, not from waiting for a smarter one. (a) is the shift in the wrong direction; 'more parameters' is the scaling myth."
+  },
+  {
+    id: "advanced-software-engineering/lecture-1-practice/q11",
+    quiz: "lecture-1-practice",
+    lesson: "case-study-ai-generated-pid",
+    prompt: "Which statement about the float32 integral bug is NOT correct?",
+    options: [
+      {
+        id: "a",
+        text: "Near 100000, float32 values are about 0.0078 apart"
+      },
+      {
+        id: "b",
+        text: "Adding 0.0000001 to 100000 in float32 leaves 100000"
+      },
+      {
+        id: "c",
+        text: "The bug raised an overflow exception that was ignored"
+      },
+      {
+        id: "d",
+        text: "Short unit tests didn't reach the large sums where the bug appears"
+      }
+    ],
+    correctOptionId: "c",
+    explanation: "Nothing was raised: the correction was silently rounded away, which is why the lecture calls it a silent logic bug. The other three statements are true."
+  },
+  {
+    id: "advanced-software-engineering/lecture-2-practice/q11",
+    quiz: "lecture-2-practice",
+    lesson: "the-architects-role",
+    prompt: "Pets.com and the 2002 data center are two case studies. What do they teach together?",
+    options: [
+      {
+        id: "a",
+        text: "Microservices are always wrong"
+      },
+      {
+        id: "b",
+        text: "Scale must be designed in from the start, and which styles make sense depends on the era's costs"
+      },
+      {
+        id: "c",
+        text: "Marketing budgets should be cut"
+      },
+      {
+        id: "d",
+        text: "Databases should never be shared"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "Pets.com: elastic scale can't be added later. 2002: 50 isolated services cost millions in licences then, almost nothing with containers now. Both say architecture depends on context."
+  },
+  {
+    id: "advanced-software-engineering/lecture-2-practice/q12",
+    quiz: "lecture-2-practice",
+    lesson: "the-architects-role",
+    prompt: "An architect writes a custom linter that fails the build when a UI module imports the database layer. Which expectation and which tool is this?",
+    options: [
+      {
+        id: "a",
+        text: "Keep current with trends; an ADR"
+      },
+      {
+        id: "b",
+        text: "Ensure compliance; a fitness function"
+      },
+      {
+        id: "c",
+        text: "Navigate politics; a POC"
+      },
+      {
+        id: "d",
+        text: "Diverse exposure; Scrum"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "Automated checks that the architecture is followed are fitness functions, the means to 'ensure compliance'. It is also one of the four hands-on strategies (developer tooling)."
+  },
+  {
+    id: "advanced-software-engineering/lecture-2-practice/q13",
+    quiz: "lecture-2-practice",
+    lesson: "the-architects-role",
+    prompt: "Which is the best way for an architect to stay hands-on, according to the lecture?",
+    options: [
+      {
+        id: "a",
+        text: "Take ownership of the core framework on the critical path"
+      },
+      {
+        id: "b",
+        text: "Build developer tooling, POCs and low-priority technical-debt stories"
+      },
+      {
+        id: "c",
+        text: "Stop coding to focus on diagrams"
+      },
+      {
+        id: "d",
+        text: "Review every pull request personally before merge"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "Hands-on work must stay off the critical path, or the architect becomes the bottleneck. Stopping coding makes an 'ivory tower' architect; reviewing every PR is another bottleneck."
+  },
+  {
+    id: "advanced-software-engineering/lecture-3-practice/q11",
+    quiz: "lecture-3-practice",
+    lesson: "open-closed-principle",
+    prompt: "Compare inheritance and delegation as ways to satisfy OCP. Which pairing is correct?",
+    options: [
+      {
+        id: "a",
+        text: "Inheritance: binds at runtime; delegation: binds at compile time"
+      },
+      {
+        id: "b",
+        text: "Inheritance: binds at build/config time; delegation: can be swapped at runtime"
+      },
+      {
+        id: "c",
+        text: "Both require editing the existing service"
+      },
+      {
+        id: "d",
+        text: "Neither adds new classes"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "From the lecture's table: inheritance plugs in a subtype at build/config time; delegation (Strategy) swaps the object at runtime. In both, new behavior is new code and the service isn't edited."
+  },
+  {
+    id: "advanced-software-engineering/lecture-3-practice/q12",
+    quiz: "lecture-3-practice",
+    lesson: "interface-segregation-principle",
+    prompt: "Which is NOT a benefit of splitting VehicleOperator into MotionControl, AttentionMonitorable, SelfDiagnosable and OtaUpdatable?",
+    options: [
+      {
+        id: "a",
+        text: "The OTA manager can no longer reach steer() or brake()"
+      },
+      {
+        id: "b",
+        text: "Dummy methods returning null or false disappear"
+      },
+      {
+        id: "c",
+        text: "DMS changes no longer force re-testing motion control"
+      },
+      {
+        id: "d",
+        text: "The vehicle needs fewer sensors"
+      }
+    ],
+    correctOptionId: "d",
+    explanation: "ISP changes the software's dependencies, not the hardware. The other three are the lecture's listed gains: smaller attack surface, no dummies, independent lifecycles."
+  },
+  {
+    id: "advanced-software-engineering/lecture-3-practice/q13",
+    quiz: "lecture-3-practice",
+    lesson: "design-principles-and-srp",
+    prompt: "A team merges perception (ASIL B) and flash logging (QM) into one class to save 3.5 ms. What is the main risk the lecture points to?",
+    options: [
+      {
+        id: "a",
+        text: "The class becomes too long to read"
+      },
+      {
+        id: "b",
+        text: "The non-safety logging can interfere with safety-critical perception, breaking Freedom From Interference"
+      },
+      {
+        id: "c",
+        text: "Java can't run two jobs in one class"
+      },
+      {
+        id: "d",
+        text: "Logging will become faster"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "Two actors in one class is an SRP violation, and sharing memory and execution context lets QM code disturb ASIL B code. That is why the 3.5 ms is worth paying."
+  },
+  {
+    id: "advanced-software-engineering/lecture-4-practice/q11",
+    quiz: "lecture-4-practice",
+    lesson: "allocation-views",
+    prompt: "You need to check whether the servers have enough memory for the components placed on them. Which view helps, and what must it record?",
+    options: [
+      {
+        id: "a",
+        text: "Uses view; which modules depend on which"
+      },
+      {
+        id: "b",
+        text: "Deployment view; memory each machine provides and memory each component requires"
+      },
+      {
+        id: "c",
+        text: "Work assignment view; team sizes"
+      },
+      {
+        id: "d",
+        text: "Decomposition view; package names"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "The lecture asks whether a deployment view can help with memory capacity analysis: yes, with properties of the physical units (provided) and of the software elements (required)."
+  },
+  {
+    id: "advanced-software-engineering/lecture-4-practice/q12",
+    quiz: "lecture-4-practice",
+    lesson: "component-and-connector-views",
+    prompt: "Which question is best answered by a C&C view rather than a module view?",
+    options: [
+      {
+        id: "a",
+        text: "Which package is part of which subsystem?"
+      },
+      {
+        id: "b",
+        text: "Which classes inherit from which?"
+      },
+      {
+        id: "c",
+        text: "Which parts of the system are replicated at runtime?"
+      },
+      {
+        id: "d",
+        text: "Which team owns which module?"
+      }
+    ],
+    correctOptionId: "c",
+    explanation: "Replication is a runtime property, so it shows in C&C views. Part-of and inheritance are module views; team ownership is work assignment (allocation)."
+  },
+  {
+    id: "advanced-software-engineering/lecture-4-practice/q13",
+    quiz: "lecture-4-practice",
+    lesson: "views-and-structures",
+    prompt: "Which statement is NOT correct?",
+    options: [
+      {
+        id: "a",
+        text: "A view is a representation of one or more structures"
+      },
+      {
+        id: "b",
+        text: "Module structures, C&C structures and allocation structures are the three kinds"
+      },
+      {
+        id: "c",
+        text: "A deployment view mainly helps reason about modifiability"
+      },
+      {
+        id: "d",
+        text: "Different views expose different quality attributes"
+      }
+    ],
+    correctOptionId: "c",
+    explanation: "Deployment views mainly help with performance and availability. Modifiability is the strength of module views."
+  },
+  {
+    id: "advanced-software-engineering/lecture-5-practice/q11",
+    quiz: "lecture-5-practice",
+    lesson: "ten-styles-at-a-glance",
+    prompt: "Messaging and publish-subscribe both use a broker. What is the key difference?",
+    options: [
+      {
+        id: "a",
+        text: "Messaging is synchronous; pub/sub is asynchronous"
+      },
+      {
+        id: "b",
+        text: "In a queue each message goes to one receiver; in pub/sub every subscriber to a topic gets a copy"
+      },
+      {
+        id: "c",
+        text: "Pub/sub needs no network"
+      },
+      {
+        id: "d",
+        text: "Messaging can't buffer messages"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "One consumer per message vs one copy per subscriber. Both are asynchronous and both buffer through the broker."
+  },
+  {
+    id: "advanced-software-engineering/lecture-5-practice/q12",
+    quiz: "lecture-5-practice",
+    lesson: "n-tier-client-server-and-peer-to-peer",
+    prompt: "Which is a typical drawback of peer-to-peer compared with client-server?",
+    options: [
+      {
+        id: "a",
+        text: "A single point of failure at the server"
+      },
+      {
+        id: "b",
+        text: "It is hard to secure and manage, because you must trust unknown peers"
+      },
+      {
+        id: "c",
+        text: "It can't scale beyond one machine"
+      },
+      {
+        id: "d",
+        text: "Clients can't share resources"
+      }
+    ],
+    correctOptionId: "b",
+    explanation: "P2P removes the central server (so no single point of failure) and scales well, but trust, security and management get harder. The single point of failure is client-server's drawback."
+  },
+  {
+    id: "advanced-software-engineering/lecture-5-practice/q13",
+    quiz: "lecture-5-practice",
+    lesson: "ten-styles-at-a-glance",
+    prompt: "In the SOA triangle for web services, what is the correct order of steps?",
+    options: [
+      {
+        id: "a",
+        text: "Bind, publish, find"
+      },
+      {
+        id: "b",
+        text: "Find, bind, publish"
+      },
+      {
+        id: "c",
+        text: "The provider publishes, the consumer finds it in the registry, then the consumer binds to and invokes the provider"
+      },
+      {
+        id: "d",
+        text: "The registry calls the consumer"
+      }
+    ],
+    correctOptionId: "c",
+    explanation: "1. publish (provider → registry), 2. find (consumer → registry), 3. bind/invoke (consumer → provider), over SOAP or REST."
   }
 ];
