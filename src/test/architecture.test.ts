@@ -3,8 +3,12 @@ import {
   amat,
   amdahl,
   calculateAmdahlRequiredSpeedup,
+  calculateCacheOverhead,
   calculateControlStoreSize,
+  calculateDramRefreshOverhead,
   calculateMaxZeroOpInstructions,
+  calculateMultiLevelAmat,
+  calculatePageTableOverhead,
   calculateRegisterWindows,
   cpi,
   cpuTime,
@@ -141,4 +145,42 @@ describe("module 2 calculations", () => {
     expect(calculateAmdahlRequiredSpeedup(0.6, 3.0)).toBeNull();
   });
 });
+
+describe("module 3 calculations", () => {
+  it("calculates DRAM refresh overhead", () => {
+    const res = calculateDramRefreshOverhead(8192, 64, 50);
+    expect(res.refreshTimeMs).toBeCloseTo(0.4096, 4);
+    expect(res.overheadPercent).toBeCloseTo(0.64, 2);
+    expect(res.refreshIntervalUs).toBeCloseTo(7.8125, 4);
+  });
+
+  it("calculates cache overhead across architectures", () => {
+    // 32-bit address, 64 KB cache, 32-byte blocks, 4-way set-associative
+    const res = calculateCacheOverhead(32, 64, 32, 4, 2); // 2 LRU bits, 1 valid, 1 dirty
+    expect(res.offsetBits).toBe(5);
+    expect(res.indexBits).toBe(9);
+    expect(res.tagBits).toBe(18);
+    expect(res.totalSets).toBe(512);
+    expect(res.totalLines).toBe(2048);
+    expect(res.metadataBitsPerLine).toBe(22); // 18 + 1 + 1 + 2
+    expect(res.totalMetadataBytes).toBe(5632); // 2048 * 22 / 8 = 5632 bytes
+  });
+
+  it("calculates multi-level cache AMAT", () => {
+    // L1 hit 1 cycle, L1 MR 4%, L2 hit 10 cycles, L2 MR 20%, Memory 100 cycles
+    const amatCycles = calculateMultiLevelAmat(1, 0.04, 10, 0.20, 100);
+    expect(amatCycles).toBeCloseTo(2.2, 1);
+  });
+
+  it("calculates page table overhead", () => {
+    // 32-bit address, 4 KB pages, 4-byte PTE
+    const res = calculatePageTableOverhead(32, 4, 4);
+    expect(res.offsetBits).toBe(12);
+    expect(res.vpnBits).toBe(20);
+    expect(res.entriesPerPage).toBe(1024);
+    expect(res.bitsPerLevel).toBe(10);
+    expect(res.flatTableBytes).toBe(4 * 1024 * 1024); // 4 MB flat page table
+  });
+});
+
 

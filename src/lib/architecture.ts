@@ -326,3 +326,93 @@ export function calculateAmdahlRequiredSpeedup(
   return fractionEnhanced / denom;
 }
 
+/* ---------------------- memory & cache practice ----------------------- */
+
+/** Computes DRAM refresh overhead percentage and time spent refreshing. */
+export function calculateDramRefreshOverhead(
+  totalRows: number,
+  refreshPeriodMs: number,
+  cycleTimeNs: number
+): { refreshTimeMs: number; overheadPercent: number; refreshIntervalUs: number } {
+  const refreshTimeMs = (totalRows * cycleTimeNs) / 1e6;
+  const overheadPercent = (refreshTimeMs / refreshPeriodMs) * 100;
+  const refreshIntervalUs = (refreshPeriodMs * 1e3) / totalRows;
+  return { refreshTimeMs, overheadPercent, refreshIntervalUs };
+}
+
+/** Computes tag bits, index bits, and metadata storage overhead for a cache. */
+export function calculateCacheOverhead(
+  addressBits: number,
+  cacheSizeKB: number,
+  blockSizeBytes: number,
+  ways: number,
+  replacementBitsPerLine = 0
+): {
+  tagBits: number;
+  indexBits: number;
+  offsetBits: number;
+  totalSets: number;
+  totalLines: number;
+  metadataBitsPerLine: number;
+  totalMetadataBytes: number;
+} {
+  const totalBytes = cacheSizeKB * 1024;
+  const totalLines = totalBytes / blockSizeBytes;
+  const totalSets = totalLines / ways;
+  const offsetBits = Math.round(Math.log2(blockSizeBytes));
+  const indexBits = totalSets > 1 ? Math.round(Math.log2(totalSets)) : 0;
+  const tagBits = addressBits - indexBits - offsetBits;
+  const metadataBitsPerLine = tagBits + 1 + 1 + replacementBitsPerLine; // tag + valid + dirty + replacement
+  const totalMetadataBytes = Math.ceil((totalLines * metadataBitsPerLine) / 8);
+  return {
+    tagBits,
+    indexBits,
+    offsetBits,
+    totalSets,
+    totalLines,
+    metadataBitsPerLine,
+    totalMetadataBytes,
+  };
+}
+
+/** Computes multi-level cache Average Memory Access Time (AMAT). */
+export function calculateMultiLevelAmat(
+  l1HitTime: number,
+  l1MissRate: number,
+  l2HitTime: number,
+  l2LocalMissRate: number,
+  memLatency: number
+): number {
+  const l1MissPenalty = l2HitTime + l2LocalMissRate * memLatency;
+  return l1HitTime + l1MissRate * l1MissPenalty;
+}
+
+/** Computes hierarchical page table parameters and flat table memory footprint. */
+export function calculatePageTableOverhead(
+  addressBits: number,
+  pageSizeKB: number,
+  pteBytes: number
+): {
+  offsetBits: number;
+  vpnBits: number;
+  entriesPerPage: number;
+  bitsPerLevel: number;
+  flatTableBytes: number;
+} {
+  const pageSizeBytes = pageSizeKB * 1024;
+  const offsetBits = Math.round(Math.log2(pageSizeBytes));
+  const vpnBits = addressBits - offsetBits;
+  const entriesPerPage = pageSizeBytes / pteBytes;
+  const bitsPerLevel = Math.round(Math.log2(entriesPerPage));
+  const totalVirtualPages = Math.pow(2, vpnBits);
+  const flatTableBytes = totalVirtualPages * pteBytes;
+  return {
+    offsetBits,
+    vpnBits,
+    entriesPerPage,
+    bitsPerLevel,
+    flatTableBytes,
+  };
+}
+
+

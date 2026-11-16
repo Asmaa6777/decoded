@@ -72,6 +72,8 @@ export const questions: Question[] = [
   {
     id: "computer-architecture/final-quiz/q6",
     quiz: "final-quiz",
+    lesson: "cache-mapping",
+    section: "anatomy-of-an-address-offset-index-and-tag",
     prompt: "A direct-mapped cache has 256 blocks of 16 bytes, with 32-bit addresses. How many tag bits are there?",
     options: [
       { id: "a", text: "20" },
@@ -80,11 +82,13 @@ export const questions: Question[] = [
       { id: "d", text: "16" },
     ],
     correctOptionId: "a",
-    explanation: "Offset is 4 bits, index is 8 bits, and 32 - 8 - 4 = 20 are left for the tag.",
+    explanation: "With 16-byte blocks, the offset field is log₂(16) = 4 bits. With 256 direct-mapped blocks, the index field is log₂(256) = 8 bits. The remaining bits form the tag: 32 - 8 - 4 = 20 bits. 24 (b) forgets the index field, 28 (c) accounts only for the offset, and 16 (d) assumes a 16-bit tag without calculating field sizes.",
   },
   {
     id: "computer-architecture/final-quiz/q7",
     quiz: "final-quiz",
+    lesson: "cache-mapping",
+    section: "three-ways-to-map",
     prompt: "A program alternates between two blocks and keeps missing, even though the cache has empty lines. Which change is most likely to fix it?",
     options: [
       { id: "a", text: "Making the cache more associative" },
@@ -93,11 +97,13 @@ export const questions: Question[] = [
       { id: "d", text: "Lowering the clock speed" },
     ],
     correctOptionId: "a",
-    explanation: "They're fighting over one slot, which is a conflict miss. With two ways, both fit in the set.",
+    explanation: "When two active blocks map to the same set in a direct-mapped cache, they repeatedly evict each other in a conflict miss (thrashing), even if other sets are empty. Increasing associativity gives each set multiple slots, allowing both blocks to reside in the cache simultaneously. Switching to write-through (b) affects memory writes rather than conflict misses. Replacing LRU with FIFO (c) does not help when only one block fits per slot, and changing clock speed (d) has no effect on cache hit rates.",
   },
   {
     id: "computer-architecture/final-quiz/q8",
     quiz: "final-quiz",
+    lesson: "cache-policies",
+    section: "what-happens-on-a-write",
     prompt: "What does a dirty bit record?",
     options: [
       { id: "a", text: "The block has an error" },
@@ -106,11 +112,13 @@ export const questions: Question[] = [
       { id: "d", text: "The block came from the disk" },
     ],
     correctOptionId: "b",
-    explanation: "Under write-back, a dirty block must be written to memory when it's evicted.",
+    explanation: "In a write-back cache, writes update the cache line immediately and set its dirty bit to 1, indicating that the cache line contains modified data that has not yet been copied to main memory. When the block is evicted, the dirty bit informs the controller that it must write the block back to RAM. Parity or ECC bits record errors (disproving a), LRU or replacement bits determine impending eviction (disproving c), and valid bits record whether data is present (disproving d).",
   },
   {
     id: "computer-architecture/final-quiz/q9",
     quiz: "final-quiz",
+    lesson: "virtual-memory",
+    section: "pages-frames-and-address-decomposition",
     prompt: "With 4 KB pages, what is the page and offset of virtual address 9000?",
     options: [
       { id: "a", text: "Page 1, offset 5000" },
@@ -119,7 +127,7 @@ export const questions: Question[] = [
       { id: "d", text: "Page 9, offset 0" },
     ],
     correctOptionId: "b",
-    explanation: "4 KB is 4096 bytes. 9000 ÷ 4096 = 2, with a remainder of 9000 - 8192 = 808.",
+    explanation: "A 4 KB page contains 4,096 bytes (2¹²). The virtual page number is ⌊9000 / 4096⌋ = 2, and the offset within the page is 9000 mod 4096 = 9000 - 8192 = 808 bytes. Page 1 with offset 5000 (a) assumes 4000-byte decimal pages. Page 2 with offset 1000 (c) mistakenly subtracts 8000 instead of 8192, and Page 9 with offset 0 (d) confuses 9000 with a decimal page index.",
   },
   {
     id: "computer-architecture/final-quiz/q10",
