@@ -71,7 +71,7 @@ This creates two access paths:
 - **Row buffer hit (Page hit)**: The requested data is already in the open row buffer. The access needs only CAS latency: $t_{\text{access}} = t_{CL}$.
 - **Row buffer conflict (Page miss)**: The address is in a different row of the same bank. The controller must precharge the old row, activate the new one, and read the column: $t_{\text{access}} = t_{RP} + t_{RCD} + t_{CL}$.
 
-When memory is sold as **DDR4-3200 16-18-18-38**, those four numbers represent $t_{CL}$, $t_{RCD}$, $t_{RP}$, and $t_{RAS}$ in clock cycles at a 1600 MHz bus clock.
+When memory is sold as **DDR4-3200 16-18-18-38**, those four numbers represent $t_{CL}$, $t_{RCD}$, $t_{RP}$, and $t_{RAS}$ in clock cycles at a 1600 MHz bus clock. With a bus clock cycle of $t_{CK} = 1 / (1600 \times 10^6) = 0.625\text{ ns}$, CAS latency $t_{CL} = 16\text{ cycles}$ translates to $16 \times 0.625 = 10.0\text{ ns}$, while row activation $t_{RCD} = 18\text{ cycles}$ takes $18 \times 0.625 = 11.25\text{ ns}$.
 
 ## Memory Organization: Sizing and Chip Arrays
 
@@ -296,7 +296,7 @@ T_{\text{refresh}} = 8{,}192\text{ rows} \times 50\text{ ns/row} = 409{,}600\tex
 $$
 The percentage of memory controller time lost to refresh is:
 $$
-\text{Overhead} = \frac{0.4096\text{ ms}}{64\text{ ms}} \times 100\% = \frac{50\text{ ns}}{7{,}812.5\text{ ns}} \times 100\% = 0.64\%
+\text{Overhead} = \frac{0.4096\text{ ms}}{64\text{ ms}} \times 100\text{\%} = \frac{50\text{ ns}}{7{,}812.5\text{ ns}} \times 100\text{\%} = 0.64\text{\%}
 $$
 The controller remains available for processor reads and writes 100% - 0.64% = 99.36% of the time.
 
@@ -307,7 +307,7 @@ T_{\text{refresh, high}} = 8{,}192 \times 60\text{ ns} = 491{,}520\text{ ns} = 0
 $$
 New overhead percentage:
 $$
-\text{Overhead}_{\text{high}} = \frac{0.49152\text{ ms}}{32\text{ ms}} \times 100\% = 1.536\%
+\text{Overhead}_{\text{high}} = \frac{0.49152\text{ ms}}{32\text{ ms}} \times 100\text{\%} = 1.536\text{\%}
 $$
 Halving the retention interval and slowing the row cycle time increases memory controller overhead by $1.536 / 0.64 = 2.4\times$.
 
@@ -372,7 +372,16 @@ $$\text{Word Address of } A[i][j] = i \times 8 + j$$
   Words 16, 24 map to Bank 1 ($\lfloor 16/16 \rfloor = 1, \lfloor 24/16 \rfloor = 1$).
   Words 32, 40 map to Bank 2 ($\lfloor 32/16 \rfloor = 2, \lfloor 40/16 \rfloor = 2$).
   Words 48, 56 map to Bank 3 ($\lfloor 48/16 \rfloor = 3, \lfloor 56/16 \rfloor = 3$).
-  Accesses distribute across all 4 banks in pairs of two, overlapping cycles and completing in **230 ns**.
+  Accesses distribute across all 4 banks in pairs of two. Because requests are issued in sequence:
+  - $t = 0\text{ ns}$: Word 0 issued to Bank 0. Data is on the bus from $30 \dots 40\text{ ns}$. Bank 0 completes its recovery cycle at $t = 40\text{ ns}$.
+  - $t = 40\text{ ns}$: Word 8 issued to Bank 0 as soon as Bank 0 recovers. Data on bus $70 \dots 80\text{ ns}$.
+  - $t = 50\text{ ns}$: Word 16 issued to Bank 1 (Bank 1 is completely idle). Data on bus $80 \dots 90\text{ ns}$. Bank 1 busy until $50 + 40 = 90\text{ ns}$.
+  - $t = 90\text{ ns}$: Word 24 issued to Bank 1. Data on bus $120 \dots 130\text{ ns}$.
+  - $t = 100\text{ ns}$: Word 32 issued to Bank 2 (Bank 2 is idle). Data on bus $130 \dots 140\text{ ns}$. Bank 2 busy until $140\text{ ns}$.
+  - $t = 140\text{ ns}$: Word 40 issued to Bank 2. Data on bus $170 \dots 180\text{ ns}$.
+  - $t = 150\text{ ns}$: Word 48 issued to Bank 3 (Bank 3 is idle). Data on bus $180 \dots 190\text{ ns}$. Bank 3 busy until $190\text{ ns}$.
+  - $t = 190\text{ ns}$: Word 56 issued to Bank 3. Bank access completes at $190 + 30 = 220\text{ ns}$, and bus transfer finishes at $220 + 10 = \mathbf{230\text{ ns}}$.
+  Total time: **230 ns**. High-order interleaving outperforms low-order interleaving by $320 / 230 \approx 1.39\times$ for this specific column stride because accesses split across 4 banks instead of stalling entirely on Bank 0.
 
 **Part 3: Stride conflict pathology and remedies:**
 In an $M$-bank low-order interleaved system, when memory is traversed with stride $S$, the number of distinct banks engaged is:
@@ -488,7 +497,7 @@ $$
 $$
 Storage overhead:
 $$
-\text{Storage Overhead} = \frac{8\text{ check bits}}{64\text{ data bits}} \times 100\% = 12.5\%
+\text{Storage Overhead} = \frac{8\text{ check bits}}{64\text{ data bits}} \times 100\text{\%} = 12.5\text{\%}
 $$
 Standard non-ECC DIMMs provide a 64-bit wide data bus using 8 chips of 8 bits each ($8 \times 8 = 64$ bits). Server ECC DIMMs add a 9th memory chip ($9 \times 8 = 72$ bits). The 8 bits provided by the 9th chip store the 8 SECDED check bits for each 64-bit transfer.
 
@@ -515,8 +524,15 @@ Calculate check bits using even parity ($\text{XOR}$ sum of bits whose position 
 - $p_8$ (positions with bit 3 set: 8, 9, 10, 11, 12):
   $$p_8 = b_9 \oplus b_{10} \oplus b_{11} \oplus b_{12} = 1 \oplus 1 \oplus 0 \oplus 1 = 1$$
 
+Place the data bits and bolded parity bits into positions $b_{12} \dots b_1$:
+
+| Bit | $b_{12}$ | $b_{11}$ | $b_{10}$ | $b_9$ | $b_8$ | $b_7$ | $b_6$ | $b_5$ | $b_4$ | $b_3$ | $b_2$ | $b_1$ |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Role** | $d_8$ | $d_7$ | $d_6$ | $d_5$ | $\mathbf{p_8}$ | $d_4$ | $d_3$ | $d_2$ | $\mathbf{p_4}$ | $d_1$ | $\mathbf{p_2}$ | $\mathbf{p_1}$ |
+| **Value** | 1 | 0 | 1 | 1 | $\mathbf{1}$ | 0 | 0 | 1 | $\mathbf{0}$ | 0 | $\mathbf{1}$ | $\mathbf{0}$ |
+
 The generated 12-bit codeword is:
-$$b_{12} \dots b_1 = 1\ 0\ 1\ 1\ \mathbf{1}\ 0\ 0\ \mathbf{0}\ 1\ 0\ \mathbf{1}\ \mathbf{0}_2$$
+$$b_{12} \dots b_1 = 1\ 0\ 1\ 1\ \mathbf{1}\ 0\ 0\ 1\ \mathbf{0}\ 0\ \mathbf{1}\ \mathbf{0}_2$$
 
 **Part 4: Syndrome calculation on single-bit error:**
 Suppose bit position 7 ($b_7 = d_4$) flips from 0 to 1 during storage or transmission.

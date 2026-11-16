@@ -67,10 +67,10 @@ High-speed **processor caches** use three placement schemes to map main memory b
 
 ### 1. Direct-Mapped Cache
 
-In a **direct-mapped cache**, each memory block maps to exactly one specific line in the cache.
+In a **direct-mapped cache**, each memory block maps to exactly one specific line in the cache. Because each set holds exactly one line ($k = 1$), the total number of sets $S$ equals the total number of cache lines ($S = N$). Thus, the Set Index and Cache Line Index are identical:
 
 $$
-\text{Cache Line} = (\text{Block Address}) \bmod S
+\text{Cache Line Index} = (\text{Block Address}) \bmod S
 $$
 
 Because $S$ is a power of two ($2^s$), this modulo operation corresponds to taking the $s$ index bits of the address directly.
@@ -421,8 +421,12 @@ In a 16 KB 2-way cache with 32-byte blocks:
 - Number of sets $S = 512 / 2 = 256 \implies s = 8$ bits ($A_{12} \dots A_5$).
 - Tag $t = 32 - 8 - 5 = 19$ bits.
 - Because each set contains 2 lines (Way 0 and Way 1), Way 0 stores `a[i]` while Way 1 stores `b[i]`. Neither array evicts the other!
-However, because this specific loop advances by $i += 8$ integers ($32$ bytes per iteration), each access references a brand new 32-byte memory block. Therefore, each access is a compulsory miss for a new line, yielding a 0% hit rate for this specific stride.
-If the loop were modified to step sequentially ($i += 1$), each 32-byte line holds 8 integers. In that case, `a[0]` misses, but `a[1 \dots 7]` hit (7 hits out of 8 accesses), achieving an 87.5% hit rate in the 2-way cache, compared to 0% in the direct-mapped cache where `b` continually thrushes `a` on every access.
+However, because this specific loop advances by $i += 8$ integers ($32$ bytes per iteration), each access references a brand new 32-byte memory block that has never been loaded before. Therefore, every single access is a compulsory miss, yielding a 0% hit rate for this specific stride under both cache designs.
+
+The power of associativity becomes visible when the stride is sequential ($i += 1$):
+- Each 32-byte line holds 8 integers ($8 \times 4\text{ bytes} = 32\text{ bytes}$).
+- In the direct-mapped cache: `a[0]` loads Set 0, then `b[0]` evicts `a[0]` from Set 0. In iteration 1, `a[1]` maps to Set 0 and misses because `b[0]` evicted it; then `b[1]` evicts `a[1]` again. Hit rate remains 0% due to ping-pong thrashing.
+- In the 2-way cache: Set 0 holds both `a` in Way 0 and `b` in Way 1. `a[0]` misses (compulsory), but `a[1 \dots 7]` all hit (7 hits). Similarly, `b[0]` misses, but `b[1 \dots 7]` hit (7 hits). The 2-way cache achieves a $14 / 16 = 87.5\text{\%}$ hit rate, completely eliminating the conflict misses that ruined the direct-mapped cache.
 </ModelAnswer>
 
 <ModelAnswer title="Problem 5: Sub-block (sector) cache design and trade-offs">
@@ -469,7 +473,7 @@ Format: **16-bit Tag, 10-bit Sector Index, 2-bit Sub-block Select, 4-bit Byte Of
 
 **Part 3: Metadata savings:**
 $$
-\text{Reduction} = \frac{9.0\text{ KB} - 3.0\text{ KB}}{9.0\text{ KB}} \times 100\% = 66.7\%
+\text{Reduction} = \frac{9.0\text{ KB} - 3.0\text{ KB}}{9.0\text{ KB}} \times 100\text{\%} = 66.7\text{\%}
 $$
 The sector cache reduces tag RAM silicon footprint by two-thirds.
 

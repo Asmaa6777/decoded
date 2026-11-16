@@ -238,7 +238,7 @@ Memory speedup achieved:
 $$
 \text{Speedup} = \frac{\text{AMAT}_{\text{baseline}}}{\text{AMAT}_{\text{new}}} = \frac{2.2}{1.8} \approx 1.222
 $$
-This represents a 22.2% reduction in memory access latency.
+This yields a $1.222\times$ memory speedup (an $18.2\text{\%}$ reduction in average access latency from 1.10 ns down to 0.90 ns).
 </ModelAnswer>
 
 <ModelAnswer title="Problem 2: Memory bus traffic under write-through vs. write-back">
@@ -341,17 +341,27 @@ References 1 to 4 (`0, 1, 2, 3`) are compulsory misses for all policies, filling
   *FIFO Summary*: **2 Hits, 10 Misses (Hit rate = 16.7%)**. FIFO evicts active blocks (such as 0 and 1) simply because they arrived early.
 
 - **Policy C: Tree-PLRU**
-  Tree nodes: $B_0$ points to left pair (Ways 0,1) or right pair (Ways 2,3). $B_1$ points to Way 0 or 1. $B_2$ points to Way 2 or 3.
-  Nodes point toward the candidate for eviction. On access, bits flip to point away:
-  - Ref 5 (`0`): Hit. Tree bits update to point to right subtree.
-  - Ref 6 (`1`): Hit. Tree bits point to Way 2.
-  - Ref 7 (`4`): Miss. Evicts Way 2 (block 2). Way 2 gets block 4.
-  - Ref 8 (`0`): Hit.
-  - Ref 9 (`1`): Hit.
-  - Ref 10 (`2`): Miss. Tree points to Way 3 (block 3). Evicts block 3.
-  - Ref 11 (`3`): Miss. Evicts block 4.
-  - Ref 12 (`4`): Miss. Evicts block 0.
-  *Tree-PLRU Summary*: **4 Hits, 8 Misses (Hit rate = 33.3%)**, exactly matching True LRU.
+  Tree nodes: $B_0$ points to left pair ($0 \to \text{Ways 0, 1}$) or right pair ($1 \to \text{Ways 2, 3}$).
+  $B_1$ points to Way 0 ($0$) or Way 1 ($1$).
+  $B_2$ points to Way 2 ($0$) or Way 3 ($1$).
+  The bits point toward the candidate for eviction. On every access, bits on the path flip to point *away* from the accessed way:
+  - Access to Way 0: $B_0 \leftarrow 1, B_1 \leftarrow 1$
+  - Access to Way 1: $B_0 \leftarrow 1, B_1 \leftarrow 0$
+  - Access to Way 2: $B_0 \leftarrow 0, B_2 \leftarrow 1$
+  - Access to Way 3: $B_0 \leftarrow 0, B_2 \leftarrow 0$
+
+  Tracing references 5 through 12 (initial compulsory fills place `[0, 1, 2, 3]` in Ways 0, 1, 2, 3 with tree state $(B_0, B_1, B_2) = (0, 0, 0)$):
+  - Ref 5 (`0`): Hit in Way 0. Tree flips to $(1, 1, 0)$.
+  - Ref 6 (`1`): Hit in Way 1. Tree flips to $(1, 0, 0)$.
+  - Ref 7 (`4`): Miss! Tree points to Right ($B_0=1$), then Way 2 ($B_2=0$). Evicts Way 2 (block 2). Way 2 gets block 4. Tree flips to $(0, 0, 1)$. Set holds `[0, 1, 4, 3]`.
+  - Ref 8 (`0`): Hit in Way 0. Tree flips to $(1, 1, 1)$.
+  - Ref 9 (`1`): Hit in Way 1. Tree flips to $(1, 0, 1)$.
+  - Ref 10 (`2`): Miss! Tree points to Right ($B_0=1$), then Way 3 ($B_2=1$). Evicts Way 3 (block 3). Way 3 gets block 2. Tree flips to $(0, 0, 0)$. Set holds `[0, 1, 4, 2]`.
+  - Ref 11 (`3`): Miss! Tree points to Left ($B_0=0$), then Way 0 ($B_1=0$). Evicts Way 0 (block 0). Way 0 gets block 3. Tree flips to $(1, 1, 0)$. Set holds `[3, 1, 4, 2]`.
+  - Ref 12 (`4`): **HIT in Way 2!** Block 4 is still resident in Way 2 because Tree-PLRU evicted from the left subtree at step 11. Tree flips to $(0, 1, 1)$. Set holds `[3, 1, 4, 2]`.
+
+  *Tree-PLRU Summary*: **5 Hits, 7 Misses (Hit rate = 41.7%)**.
+  Here Tree-PLRU actually achieves a higher hit rate than True LRU (5 hits vs 4 hits). Because True LRU evicted block 4 at step 11, it missed on reference 12. Tree-PLRU protected block 4 in the right subtree because recent hits on blocks 0 and 1 had steered the eviction arrow toward the left subtree.
 
 - **Policy D: Optimal (Belady's MIN)**
   Looking into future references:
@@ -368,7 +378,7 @@ References 1 to 4 (`0, 1, 2, 3`) are compulsory misses for all policies, filling
 **Part 2: Hit rate summary:**
 - LRU: 4 / 12 = 33.3%
 - FIFO: 2 / 12 = 16.7%
-- Tree-PLRU: 4 / 12 = 33.3%
+- Tree-PLRU: 5 / 12 = 41.7%
 - Optimal: 6 / 12 = 50.0%
 
 **Part 3: 3Cs Miss Classification:**
@@ -501,7 +511,7 @@ The architectural team measures miss rates for different block sizes across a be
 The **64-byte block size** minimizes AMAT at **2.80 ns** (a 30% reduction over 16-byte blocks and a 35.8% reduction over 256-byte blocks).
 
 **Part 4: Diminishing returns of large block size:**
-While increasing block size from 64 bytes to 256 bytes exploits spatial locality to marginally drop the miss rate (from 2.0% to 1.6%), the miss penalty grows from 90 ns to 210 ns (+133%). The marginal reduction in miss rate is overwhelmed by the massive bus transfer latency. Furthermore, larger blocks mean fewer total sets in the cache ($64\text{ KB} / 256\text{ B} = 256\text{ lines} = 64\text{ sets}$), which increases conflict misses and wastes bus bandwidth loading words that the program may never touch.
+While increasing block size from 64 bytes to 256 bytes exploits spatial locality to marginally drop the miss rate (from 2.0% to 1.6%), the miss penalty grows from 90 ns to 210 ns (+133%). The marginal reduction in miss rate is overwhelmed by the massive bus transfer latency. Large blocks also mean fewer total sets in the cache ($64\text{ KB} / 256\text{ B} = 256\text{ lines} = 64\text{ sets}$), which increases conflict misses and wastes bus bandwidth loading words that the program may never touch.
 </ModelAnswer>
 
 <ModelAnswer title="Problem 6: Multi-level cache inclusion properties: Inclusive vs. Exclusive vs. Non-Inclusive">

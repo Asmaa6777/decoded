@@ -415,4 +415,73 @@ export function calculatePageTableOverhead(
   };
 }
 
+/** Simulates 4-way Tree-PLRU replacement over a sequence of block references. */
+export function simulateTreePlru4Way(refs: number[]): {
+  hits: number;
+  misses: number;
+  finalWays: (number | null)[];
+} {
+  const ways: (number | null)[] = [null, null, null, null];
+  let b0 = 0; // 0: left (ways 0,1), 1: right (ways 2,3)
+  let b1 = 0; // 0: way 0, 1: way 1
+  let b2 = 0; // 0: way 2, 1: way 3
+
+  const getVictim = (): number => {
+    if (b0 === 0) return b1 === 0 ? 0 : 1;
+    return b2 === 0 ? 2 : 3;
+  };
+
+  const update = (way: number): void => {
+    if (way === 0) {
+      b0 = 1;
+      b1 = 1;
+    } else if (way === 1) {
+      b0 = 1;
+      b1 = 0;
+    } else if (way === 2) {
+      b0 = 0;
+      b2 = 1;
+    } else if (way === 3) {
+      b0 = 0;
+      b2 = 0;
+    }
+  };
+
+  let hits = 0;
+  let misses = 0;
+
+  for (const r of refs) {
+    const existing = ways.indexOf(r);
+    if (existing !== -1) {
+      hits++;
+      update(existing);
+    } else {
+      misses++;
+      const empty = ways.indexOf(null);
+      const victim = empty !== -1 ? empty : getVictim();
+      ways[victim] = r;
+      update(victim);
+    }
+  }
+
+  return { hits, misses, finalWays: ways };
+}
+
+/** Decodes a 48-bit canonical virtual address into x86-64 4-level page table indices. */
+export function decodeCanonicalAddress48(address: bigint): {
+  pml4: number;
+  pdpt: number;
+  pd: number;
+  pt: number;
+  offset: number;
+} {
+  const offset = Number(address & 0xfffn);
+  const pt = Number((address >> 12n) & 0x1ffn);
+  const pd = Number((address >> 21n) & 0x1ffn);
+  const pdpt = Number((address >> 30n) & 0x1ffn);
+  const pml4 = Number((address >> 39n) & 0x1ffn);
+  return { pml4, pdpt, pd, pt, offset };
+}
+
+
 

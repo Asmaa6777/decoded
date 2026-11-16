@@ -10,6 +10,8 @@ import {
   calculateMultiLevelAmat,
   calculatePageTableOverhead,
   calculateRegisterWindows,
+  decodeCanonicalAddress48,
+  simulateTreePlru4Way,
   cpi,
   cpuTime,
   FORMAT_PROGRAMS,
@@ -180,6 +182,23 @@ describe("module 3 calculations", () => {
     expect(res.entriesPerPage).toBe(1024);
     expect(res.bitsPerLevel).toBe(10);
     expect(res.flatTableBytes).toBe(4 * 1024 * 1024); // 4 MB flat page table
+  });
+
+  it("simulates 4-way Tree-PLRU replacement trace", () => {
+    const refs = [0, 1, 2, 3, 0, 1, 4, 0, 1, 2, 3, 4];
+    const res = simulateTreePlru4Way(refs);
+    expect(res.hits).toBe(5);
+    expect(res.misses).toBe(7);
+    expect(res.finalWays).toEqual([3, 1, 4, 2]);
+  });
+
+  it("decodes 48-bit canonical virtual address into x86-64 4-level indices", () => {
+    const res = decodeCanonicalAddress48(0x00007fff01234567n);
+    expect(res.pml4).toBe(255);
+    expect(res.pdpt).toBe(508);
+    expect(res.pd).toBe(9);
+    expect(res.pt).toBe(52);
+    expect(res.offset).toBe(0x567);
   });
 });
 
