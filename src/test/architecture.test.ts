@@ -1,5 +1,32 @@
 import { describe, it, expect } from "vitest";
-import { amat, amdahl, cpi, cpuTime, FORMAT_PROGRAMS, fieldBits, formatFrames, interleaveTimes, mips, pipelineCycles, schedulePipeline, simulateCache, translate, unpipelinedCycles, writePolicyCost, type FormatKind } from "@/lib/architecture";
+import {
+  amat,
+  amdahl,
+  calculateAmdahlRequiredSpeedup,
+  calculateCacheOverhead,
+  calculateControlStoreSize,
+  calculateDramRefreshOverhead,
+  calculateMaxZeroOpInstructions,
+  calculateMultiLevelAmat,
+  calculatePageTableOverhead,
+  calculateRegisterWindows,
+  decodeCanonicalAddress48,
+  simulateTreePlru4Way,
+  cpi,
+  cpuTime,
+  FORMAT_PROGRAMS,
+  fieldBits,
+  formatFrames,
+  interleaveTimes,
+  mips,
+  pipelineCycles,
+  schedulePipeline,
+  simulateCache,
+  translate,
+  unpipelinedCycles,
+  writePolicyCost,
+  type FormatKind,
+} from "@/lib/architecture";
 
 describe("instruction formats", () => {
   it.each([3, 2, 1, 0] as FormatKind[])("%i-address program computes 25", (k) => {
@@ -94,3 +121,85 @@ describe("interleaving", () => {
     expect(interleaveTimes(8, 4, 4).total).toBe(11);
   });
 });
+
+describe("module 2 calculations", () => {
+  it("calculates expanding opcode zero-operand capacity", () => {
+    expect(calculateMaxZeroOpInstructions(16, 4, 15, 8)).toBe(2048);
+    expect(calculateMaxZeroOpInstructions(16, 4, 16, 0)).toBe(0);
+  });
+
+  it("calculates register windows and nesting depth", () => {
+    const res = calculateRegisterWindows(136, 8, 24, 8);
+    expect(res.windows).toBe(8);
+    expect(res.maxNestingDepth).toBe(7);
+  });
+
+  it("calculates horizontal vs vertical control store sizing", () => {
+    const res = calculateControlStoreSize(512, 12, [18, 12, 8, 6], 9);
+    expect(res.horizontalBits).toBe(33280);
+    expect(res.verticalBits).toBe(18432);
+    expect(res.reductionPercent).toBeCloseTo(44.62, 1);
+  });
+
+  it("calculates required Amdahl speedup", () => {
+    expect(calculateAmdahlRequiredSpeedup(0.6, 2.0)).toBeCloseTo(6.0);
+    expect(calculateAmdahlRequiredSpeedup(0.6, 2.5)).toBeNull();
+    expect(calculateAmdahlRequiredSpeedup(0.6, 3.0)).toBeNull();
+  });
+});
+
+describe("module 3 calculations", () => {
+  it("calculates DRAM refresh overhead", () => {
+    const res = calculateDramRefreshOverhead(8192, 64, 50);
+    expect(res.refreshTimeMs).toBeCloseTo(0.4096, 4);
+    expect(res.overheadPercent).toBeCloseTo(0.64, 2);
+    expect(res.refreshIntervalUs).toBeCloseTo(7.8125, 4);
+  });
+
+  it("calculates cache overhead across architectures", () => {
+    // 32-bit address, 64 KB cache, 32-byte blocks, 4-way set-associative
+    const res = calculateCacheOverhead(32, 64, 32, 4, 2); // 2 LRU bits, 1 valid, 1 dirty
+    expect(res.offsetBits).toBe(5);
+    expect(res.indexBits).toBe(9);
+    expect(res.tagBits).toBe(18);
+    expect(res.totalSets).toBe(512);
+    expect(res.totalLines).toBe(2048);
+    expect(res.metadataBitsPerLine).toBe(22); // 18 + 1 + 1 + 2
+    expect(res.totalMetadataBytes).toBe(5632); // 2048 * 22 / 8 = 5632 bytes
+  });
+
+  it("calculates multi-level cache AMAT", () => {
+    // L1 hit 1 cycle, L1 MR 4%, L2 hit 10 cycles, L2 MR 20%, Memory 100 cycles
+    const amatCycles = calculateMultiLevelAmat(1, 0.04, 10, 0.20, 100);
+    expect(amatCycles).toBeCloseTo(2.2, 1);
+  });
+
+  it("calculates page table overhead", () => {
+    // 32-bit address, 4 KB pages, 4-byte PTE
+    const res = calculatePageTableOverhead(32, 4, 4);
+    expect(res.offsetBits).toBe(12);
+    expect(res.vpnBits).toBe(20);
+    expect(res.entriesPerPage).toBe(1024);
+    expect(res.bitsPerLevel).toBe(10);
+    expect(res.flatTableBytes).toBe(4 * 1024 * 1024); // 4 MB flat page table
+  });
+
+  it("simulates 4-way Tree-PLRU replacement trace", () => {
+    const refs = [0, 1, 2, 3, 0, 1, 4, 0, 1, 2, 3, 4];
+    const res = simulateTreePlru4Way(refs);
+    expect(res.hits).toBe(5);
+    expect(res.misses).toBe(7);
+    expect(res.finalWays).toEqual([3, 1, 4, 2]);
+  });
+
+  it("decodes 48-bit canonical virtual address into x86-64 4-level indices", () => {
+    const res = decodeCanonicalAddress48(0x00007fff01234567n);
+    expect(res.pml4).toBe(255);
+    expect(res.pdpt).toBe(508);
+    expect(res.pd).toBe(9);
+    expect(res.pt).toBe(52);
+    expect(res.offset).toBe(0x567);
+  });
+});
+
+

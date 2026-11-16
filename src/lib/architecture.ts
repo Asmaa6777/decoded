@@ -255,3 +255,233 @@ export function interleaveTimes(words: number, banks: number, cycle: number, tra
   });
   return { rows, total: Math.max(...rows.map((r) => r.end), 0), single: words * cycle };
 }
+
+/* -------------------- instruction formats & practice ------------------- */
+
+/** Computes maximum zero-operand instructions supported with expanding opcodes. */
+export function calculateMaxZeroOpInstructions(
+  instructionBits: number,
+  regBits: number,
+  threeRegCount: number,
+  twoRegCount: number
+): number {
+  const opcodeBits3Reg = instructionBits - 3 * regBits;
+  const totalPatterns3Reg = 1 << opcodeBits3Reg;
+  const remainingPrefixes3Reg = totalPatterns3Reg - threeRegCount;
+  if (remainingPrefixes3Reg <= 0) return 0;
+
+  const opcodeBits2Reg = instructionBits - 2 * regBits;
+  const expansionBitsStep1 = opcodeBits2Reg - opcodeBits3Reg;
+  const totalPatterns2Reg = remainingPrefixes3Reg * (1 << expansionBitsStep1);
+  const remainingPrefixes2Reg = totalPatterns2Reg - twoRegCount;
+  if (remainingPrefixes2Reg <= 0) return 0;
+
+  const remainingBitsForZeroOp = 2 * regBits;
+  return remainingPrefixes2Reg * (1 << remainingBitsForZeroOp);
+}
+
+/** Computes number of register windows and max nesting depth before trap. */
+export function calculateRegisterWindows(
+  totalPhysicalRegs: number,
+  globalRegs: number,
+  windowSize: number,
+  overlapRegs: number
+): { windows: number; maxNestingDepth: number } {
+  const available = totalPhysicalRegs - globalRegs;
+  const stepSize = windowSize - overlapRegs;
+  const windows = Math.floor(available / stepSize);
+  return {
+    windows,
+    maxNestingDepth: windows - 1,
+  };
+}
+
+/** Sizing comparison between horizontal and vertical control stores. */
+export function calculateControlStoreSize(
+  microinstructions: number,
+  independentSignals: number,
+  signalGroups: number[],
+  nextAddressBits: number
+): { horizontalBits: number; verticalBits: number; reductionPercent: number } {
+  const totalDirect = independentSignals + signalGroups.reduce((a, b) => a + b, 0);
+  const horizontalWord = totalDirect + nextAddressBits;
+  const horizontalBits = microinstructions * horizontalWord;
+
+  const encodedBits = signalGroups.reduce((sum, g) => sum + Math.ceil(Math.log2(g)), 0);
+  const verticalWord = independentSignals + encodedBits + nextAddressBits;
+  const verticalBits = microinstructions * verticalWord;
+
+  const reductionPercent = ((horizontalBits - verticalBits) / horizontalBits) * 100;
+  return { horizontalBits, verticalBits, reductionPercent };
+}
+
+/** Computes component speedup required for target overall speedup under Amdahl's Law. */
+export function calculateAmdahlRequiredSpeedup(
+  fractionEnhanced: number,
+  targetSpeedup: number
+): number | null {
+  const maxSpeedup = 1 / (1 - fractionEnhanced);
+  if (targetSpeedup >= maxSpeedup) return null;
+  const denom = 1 / targetSpeedup - (1 - fractionEnhanced);
+  return fractionEnhanced / denom;
+}
+
+/* ---------------------- memory & cache practice ----------------------- */
+
+/** Computes DRAM refresh overhead percentage and time spent refreshing. */
+export function calculateDramRefreshOverhead(
+  totalRows: number,
+  refreshPeriodMs: number,
+  cycleTimeNs: number
+): { refreshTimeMs: number; overheadPercent: number; refreshIntervalUs: number } {
+  const refreshTimeMs = (totalRows * cycleTimeNs) / 1e6;
+  const overheadPercent = (refreshTimeMs / refreshPeriodMs) * 100;
+  const refreshIntervalUs = (refreshPeriodMs * 1e3) / totalRows;
+  return { refreshTimeMs, overheadPercent, refreshIntervalUs };
+}
+
+/** Computes tag bits, index bits, and metadata storage overhead for a cache. */
+export function calculateCacheOverhead(
+  addressBits: number,
+  cacheSizeKB: number,
+  blockSizeBytes: number,
+  ways: number,
+  replacementBitsPerLine = 0
+): {
+  tagBits: number;
+  indexBits: number;
+  offsetBits: number;
+  totalSets: number;
+  totalLines: number;
+  metadataBitsPerLine: number;
+  totalMetadataBytes: number;
+} {
+  const totalBytes = cacheSizeKB * 1024;
+  const totalLines = totalBytes / blockSizeBytes;
+  const totalSets = totalLines / ways;
+  const offsetBits = Math.round(Math.log2(blockSizeBytes));
+  const indexBits = totalSets > 1 ? Math.round(Math.log2(totalSets)) : 0;
+  const tagBits = addressBits - indexBits - offsetBits;
+  const metadataBitsPerLine = tagBits + 1 + 1 + replacementBitsPerLine; // tag + valid + dirty + replacement
+  const totalMetadataBytes = Math.ceil((totalLines * metadataBitsPerLine) / 8);
+  return {
+    tagBits,
+    indexBits,
+    offsetBits,
+    totalSets,
+    totalLines,
+    metadataBitsPerLine,
+    totalMetadataBytes,
+  };
+}
+
+/** Computes multi-level cache Average Memory Access Time (AMAT). */
+export function calculateMultiLevelAmat(
+  l1HitTime: number,
+  l1MissRate: number,
+  l2HitTime: number,
+  l2LocalMissRate: number,
+  memLatency: number
+): number {
+  const l1MissPenalty = l2HitTime + l2LocalMissRate * memLatency;
+  return l1HitTime + l1MissRate * l1MissPenalty;
+}
+
+/** Computes hierarchical page table parameters and flat table memory footprint. */
+export function calculatePageTableOverhead(
+  addressBits: number,
+  pageSizeKB: number,
+  pteBytes: number
+): {
+  offsetBits: number;
+  vpnBits: number;
+  entriesPerPage: number;
+  bitsPerLevel: number;
+  flatTableBytes: number;
+} {
+  const pageSizeBytes = pageSizeKB * 1024;
+  const offsetBits = Math.round(Math.log2(pageSizeBytes));
+  const vpnBits = addressBits - offsetBits;
+  const entriesPerPage = pageSizeBytes / pteBytes;
+  const bitsPerLevel = Math.round(Math.log2(entriesPerPage));
+  const totalVirtualPages = Math.pow(2, vpnBits);
+  const flatTableBytes = totalVirtualPages * pteBytes;
+  return {
+    offsetBits,
+    vpnBits,
+    entriesPerPage,
+    bitsPerLevel,
+    flatTableBytes,
+  };
+}
+
+/** Simulates 4-way Tree-PLRU replacement over a sequence of block references. */
+export function simulateTreePlru4Way(refs: number[]): {
+  hits: number;
+  misses: number;
+  finalWays: (number | null)[];
+} {
+  const ways: (number | null)[] = [null, null, null, null];
+  let b0 = 0; // 0: left (ways 0,1), 1: right (ways 2,3)
+  let b1 = 0; // 0: way 0, 1: way 1
+  let b2 = 0; // 0: way 2, 1: way 3
+
+  const getVictim = (): number => {
+    if (b0 === 0) return b1 === 0 ? 0 : 1;
+    return b2 === 0 ? 2 : 3;
+  };
+
+  const update = (way: number): void => {
+    if (way === 0) {
+      b0 = 1;
+      b1 = 1;
+    } else if (way === 1) {
+      b0 = 1;
+      b1 = 0;
+    } else if (way === 2) {
+      b0 = 0;
+      b2 = 1;
+    } else if (way === 3) {
+      b0 = 0;
+      b2 = 0;
+    }
+  };
+
+  let hits = 0;
+  let misses = 0;
+
+  for (const r of refs) {
+    const existing = ways.indexOf(r);
+    if (existing !== -1) {
+      hits++;
+      update(existing);
+    } else {
+      misses++;
+      const empty = ways.indexOf(null);
+      const victim = empty !== -1 ? empty : getVictim();
+      ways[victim] = r;
+      update(victim);
+    }
+  }
+
+  return { hits, misses, finalWays: ways };
+}
+
+/** Decodes a 48-bit canonical virtual address into x86-64 4-level page table indices. */
+export function decodeCanonicalAddress48(address: bigint): {
+  pml4: number;
+  pdpt: number;
+  pd: number;
+  pt: number;
+  offset: number;
+} {
+  const offset = Number(address & 0xfffn);
+  const pt = Number((address >> 12n) & 0x1ffn);
+  const pd = Number((address >> 21n) & 0x1ffn);
+  const pdpt = Number((address >> 30n) & 0x1ffn);
+  const pml4 = Number((address >> 39n) & 0x1ffn);
+  return { pml4, pdpt, pd, pt, offset };
+}
+
+
+

@@ -15,7 +15,7 @@ export const questions: Question[] = [
       { id: "d", text: "The type of memory chip" },
     ],
     correctOptionId: "a",
-    explanation: "A programmer sees the instruction set. The others can change between chips without any change to software.",
+    explanation: "The instruction set is visible directly to the programmer and compiler as an architectural contract. Cache size (b), clock speed (c), and the memory chip technology (d) are organizational implementations that can change between processor models without breaking software compatibility.",
   },
   {
     id: "computer-architecture/final-quiz/q2",
@@ -28,7 +28,7 @@ export const questions: Question[] = [
       { id: "d", text: "6" },
     ],
     correctOptionId: "a",
-    explanation: "0.5(1) + 0.3(3) + 0.2(2) = 0.5 + 0.9 + 0.4 = 1.8.",
+    explanation: "The weighted CPI is 0.5(1) + 0.3(3) + 0.2(2) = 0.5 + 0.9 + 0.4 = 1.8. 2.0 is the incorrect unweighted average (1 + 3 + 2) / 3, which ignores instruction frequencies. 2.2 results from swapping frequency weights, and 6 is the raw sum of cycle counts.",
   },
   {
     id: "computer-architecture/final-quiz/q3",
@@ -41,7 +41,7 @@ export const questions: Question[] = [
       { id: "d", text: "125" },
     ],
     correctOptionId: "c",
-    explanation: "500 × 10⁶ ÷ (2 × 10⁶) = 250.",
+    explanation: "MIPS = clockHz / (CPI × 10⁶) = 500 × 10⁶ / (2 × 10⁶) = 250. 1000 mistakenly multiplies clock rate by CPI instead of dividing, 500 ignores the CPI of 2, and 125 incorrectly divides by 2 twice.",
   },
   {
     id: "computer-architecture/final-quiz/q4",
@@ -54,7 +54,7 @@ export const questions: Question[] = [
       { id: "d", text: "A microprogrammed control unit" },
     ],
     correctOptionId: "c",
-    explanation: "The others are all typical of CISC. Keeping memory access separate is what keeps RISC instructions simple and regular.",
+    explanation: "Strict load-store memory access is a core hallmark of RISC; arithmetic operations execute only on registers. Variable-length instructions (a), numerous complex addressing modes (b), and microprogrammed control units (d) are typical characteristics of CISC architectures.",
   },
   {
     id: "computer-architecture/final-quiz/q5",
@@ -67,11 +67,13 @@ export const questions: Question[] = [
       { id: "d", text: "It needs no clock" },
     ],
     correctOptionId: "b",
-    explanation: "Hardwired is faster. Microcode is effectively software for the control unit.",
+    explanation: "Microprogrammed control provides flexibility because modifying or fixing control logic requires rewriting control ROM words rather than refabricating gates. Hardwired control is faster than microcode (disproving a). Microcode requires control memory (disproving c), and both designs require a clock (disproving d).",
   },
   {
     id: "computer-architecture/final-quiz/q6",
     quiz: "final-quiz",
+    lesson: "cache-mapping",
+    section: "anatomy-of-an-address-offset-index-and-tag",
     prompt: "A direct-mapped cache has 256 blocks of 16 bytes, with 32-bit addresses. How many tag bits are there?",
     options: [
       { id: "a", text: "20" },
@@ -80,11 +82,13 @@ export const questions: Question[] = [
       { id: "d", text: "16" },
     ],
     correctOptionId: "a",
-    explanation: "Offset is 4 bits, index is 8 bits, and 32 - 8 - 4 = 20 are left for the tag.",
+    explanation: "With 16-byte blocks, the offset field is log₂(16) = 4 bits. With 256 direct-mapped blocks, the index field is log₂(256) = 8 bits. The remaining bits form the tag: 32 - 8 - 4 = 20 bits. 24 (b) forgets the index field, 28 (c) accounts only for the offset, and 16 (d) assumes a 16-bit tag without calculating field sizes.",
   },
   {
     id: "computer-architecture/final-quiz/q7",
     quiz: "final-quiz",
+    lesson: "cache-mapping",
+    section: "three-ways-to-map",
     prompt: "A program alternates between two blocks and keeps missing, even though the cache has empty lines. Which change is most likely to fix it?",
     options: [
       { id: "a", text: "Making the cache more associative" },
@@ -93,11 +97,13 @@ export const questions: Question[] = [
       { id: "d", text: "Lowering the clock speed" },
     ],
     correctOptionId: "a",
-    explanation: "They're fighting over one slot, which is a conflict miss. With two ways, both fit in the set.",
+    explanation: "When two active blocks map to the same set in a direct-mapped cache, they repeatedly evict each other in a conflict miss (thrashing), even if other sets are empty. Increasing associativity gives each set multiple slots, allowing both blocks to reside in the cache simultaneously. Switching to write-through (b) affects memory writes rather than conflict misses. Replacing LRU with FIFO (c) does not help when only one block fits per slot, and changing clock speed (d) has no effect on cache hit rates.",
   },
   {
     id: "computer-architecture/final-quiz/q8",
     quiz: "final-quiz",
+    lesson: "cache-policies",
+    section: "what-happens-on-a-write",
     prompt: "What does a dirty bit record?",
     options: [
       { id: "a", text: "The block has an error" },
@@ -106,11 +112,13 @@ export const questions: Question[] = [
       { id: "d", text: "The block came from the disk" },
     ],
     correctOptionId: "b",
-    explanation: "Under write-back, a dirty block must be written to memory when it's evicted.",
+    explanation: "In a write-back cache, writes update the cache line immediately and set its dirty bit to 1, indicating that the cache line contains modified data that has not yet been copied to main memory. When the block is evicted, the dirty bit informs the controller that it must write the block back to RAM. Parity or ECC bits record errors (disproving a), LRU or replacement bits determine impending eviction (disproving c), and valid bits record whether data is present (disproving d).",
   },
   {
     id: "computer-architecture/final-quiz/q9",
     quiz: "final-quiz",
+    lesson: "virtual-memory",
+    section: "pages-frames-and-address-decomposition",
     prompt: "With 4 KB pages, what is the page and offset of virtual address 9000?",
     options: [
       { id: "a", text: "Page 1, offset 5000" },
@@ -119,7 +127,7 @@ export const questions: Question[] = [
       { id: "d", text: "Page 9, offset 0" },
     ],
     correctOptionId: "b",
-    explanation: "4 KB is 4096 bytes. 9000 ÷ 4096 = 2, with a remainder of 9000 - 8192 = 808.",
+    explanation: "A 4 KB page contains 4,096 bytes (2¹²). The virtual page number is ⌊9000 / 4096⌋ = 2, and the offset within the page is 9000 mod 4096 = 9000 - 8192 = 808 bytes. Page 1 with offset 5000 (a) assumes 4000-byte decimal pages. Page 2 with offset 1000 (c) mistakenly subtracts 8000 instead of 8192, and Page 9 with offset 0 (d) confuses 9000 with a decimal page index.",
   },
   {
     id: "computer-architecture/final-quiz/q10",
